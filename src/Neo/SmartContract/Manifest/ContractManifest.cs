@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
@@ -149,7 +150,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The JSON <see cref="string"/>.</param>
         /// <returns>The parsed manifest.</returns>
-        public static ContractManifest Parse(string json) => Parse(Utility.StrictUTF8.GetBytes(json));
+        public static ContractManifest Parse(string json) => Parse(json.ToStrictUtf8Bytes());
 
         /// <summary>
         /// Converts the manifest to a JSON object.

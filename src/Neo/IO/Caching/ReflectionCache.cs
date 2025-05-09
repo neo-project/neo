@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using System;
 using System.Collections.Generic;
@@ -32,11 +34,13 @@ namespace Neo.IO.Caching
                 if (attribute == null) continue;
 
                 // Append to cache
-                s_dictionary.Add((T)field.GetValue(null), attribute.Type);
+                var key = (T?)field.GetValue(null);
+                if (key == null) continue;
+                s_dictionary.Add(key, attribute.Type);
             }
         }
 
-        public static object CreateInstance(T key, object def = null)
+        public static object? CreateInstance(T key, object? def = null)
         {
             // Get Type from cache
             if (s_dictionary.TryGetValue(key, out var t))
@@ -46,11 +50,14 @@ namespace Neo.IO.Caching
             return def;
         }
 
-        public static ISerializable CreateSerializable(T key, ReadOnlyMemory<byte> data)
+        public static ISerializable? CreateSerializable(T key, ReadOnlyMemory<byte> data)
         {
             if (s_dictionary.TryGetValue(key, out var t))
                 return data.AsSerializable(t);
+
             return null;
         }
     }
 }
+
+#nullable disable

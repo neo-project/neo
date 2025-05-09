@@ -9,12 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -101,6 +103,11 @@ namespace Neo.SmartContract.Native
         /// Gets the instance of the <see cref="OracleContract"/> class.
         /// </summary>
         public static OracleContract Oracle { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="Notary"/> class.
+        /// </summary>
+        public static Notary Notary { get; } = new();
 
         #endregion
 
@@ -279,7 +286,7 @@ namespace Neo.SmartContract.Native
         /// <param name="index">Block index</param>
         /// <param name="hardforks">Active hardforks</param>
         /// <returns>True if the native contract must be initialized</returns>
-        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, out Hardfork[] hardforks)
+        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, [NotNullWhen(true)] out Hardfork[] hardforks)
         {
             var hfs = new List<Hardfork>();
 
@@ -288,8 +295,8 @@ namespace Neo.SmartContract.Native
             {
                 if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
                 {
-                    // If is not set in the configuration is treated as enabled from the genesis
-                    activeIn = 0;
+                    // If hf is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
+                    continue;
                 }
 
                 if (activeIn == index)
@@ -347,10 +354,42 @@ namespace Neo.SmartContract.Native
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
-        private protected KeyBuilder CreateStorageKey(byte prefix)
-        {
-            return new KeyBuilder(Id, prefix);
-        }
+        #region Storage keys
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix) => StorageKey.Create(Id, prefix);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, byte data) => StorageKey.Create(Id, prefix, data);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, int bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, uint bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, long bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, ulong bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, ReadOnlySpan<byte> content) => StorageKey.Create(Id, prefix, content);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash) => StorageKey.Create(Id, prefix, hash);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash) => StorageKey.Create(Id, prefix, hash);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, ECPoint pubKey) => StorageKey.Create(Id, prefix, pubKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => StorageKey.Create(Id, prefix, hash, signer);
+
+        #endregion
 
         /// <summary>
         /// Gets the native contract with the specified hash.

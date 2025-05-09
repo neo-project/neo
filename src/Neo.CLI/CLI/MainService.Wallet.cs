@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -69,6 +70,12 @@ namespace Neo.CLI
         private void OnCloseWalletCommand()
         {
             if (NoWallet()) return;
+
+            if (CurrentWallet is not null)
+            {
+                SignerFactory.UnregisterSigner(CurrentWallet.Name);
+            }
+
             CurrentWallet = null;
             ConsoleHelper.Info("Wallet is closed");
         }
@@ -212,8 +219,16 @@ namespace Neo.CLI
         /// <summary>
         /// Process "create wallet" command
         /// </summary>
+        /// <param name="path">The path of the wallet file.</param>
+        /// <param name="wifOrFile">
+        /// The WIF or file of the wallet.
+        /// If <see langword="null"/> or empty, a new wallet will be created.
+        /// If it is a WIF, it will be added to the wallet.
+        /// If it is a file, it will be read each line as a WIF and added to the wallet.
+        /// </param>
+        /// <param name="walletName">The name of the wallet.</param>
         [ConsoleCommand("create wallet", Category = "Wallet Commands")]
-        private void OnCreateWalletCommand(string path, string? wifOrFile = null)
+        private void OnCreateWalletCommand(string path, string? wifOrFile = null, string? walletName = null)
         {
             string password = ConsoleHelper.ReadUserInput("password", true);
             if (password.Length == 0)
@@ -221,19 +236,22 @@ namespace Neo.CLI
                 ConsoleHelper.Info("Cancelled");
                 return;
             }
+
             string password2 = ConsoleHelper.ReadUserInput("repeat password", true);
             if (password != password2)
             {
                 ConsoleHelper.Error("Two passwords not match.");
                 return;
             }
+
             if (File.Exists(path))
             {
                 Console.WriteLine("This wallet already exists, please create another one.");
                 return;
             }
-            bool createDefaultAccount = wifOrFile is null;
-            CreateWallet(path, password, createDefaultAccount);
+
+            bool createDefaultAccount = string.IsNullOrEmpty(wifOrFile);
+            CreateWallet(path, password, createDefaultAccount, walletName);
             if (!createDefaultAccount) OnImportKeyCommand(wifOrFile!);
         }
 
@@ -405,7 +423,7 @@ namespace Neo.CLI
                 {
                     type = "Standard";
                 }
-                else if (NativeContract.ContractManagement.GetContract(snapshot, account.ScriptHash) != null)
+                else if (NativeContract.ContractManagement.IsContract(snapshot, account.ScriptHash))
                 {
                     type = "Deployed-Nonstandard";
                 }
@@ -635,7 +653,7 @@ namespace Neo.CLI
                     return;
                 }
                 tx.NetworkFee += (long)decimalExtraFee.Value;
-            };
+            }
 
             ConsoleHelper.Info("Network fee: ",
                 $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)} GAS\t",

@@ -24,18 +24,13 @@ namespace Neo.Persistence
     /// <summary>
     /// Represents a cache for the underlying storage of the NEO blockchain.
     /// </summary>
-    public abstract class DataCache : IReadOnlyStoreView
+    public abstract class DataCache : IReadOnlyStore
     {
         /// <summary>
         /// Represents an entry in the cache.
         /// </summary>
-        public class Trackable(StorageKey key, StorageItem item, TrackState state)
+        public class Trackable(StorageItem item, TrackState state)
         {
-            /// <summary>
-            /// The key of the entry.
-            /// </summary>
-            public StorageKey Key { get; } = key;
-
             /// <summary>
             /// The data of the entry.
             /// </summary>
@@ -47,8 +42,13 @@ namespace Neo.Persistence
             public TrackState State { get; set; } = state;
         }
 
-        private readonly Dictionary<StorageKey, Trackable> _dictionary = new();
-        private readonly HashSet<StorageKey> _changeSet = new();
+        private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
+        private readonly HashSet<StorageKey>? _changeSet;
+
+        /// <summary>
+        /// True if DataCache is readOnly
+        /// </summary>
+        public bool IsReadOnly => _changeSet == null;
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -69,12 +69,22 @@ namespace Neo.Persistence
                     }
                     else
                     {
-                        trackable = new Trackable(key, GetInternal(key), TrackState.None);
+                        trackable = new Trackable(GetInternal(key), TrackState.None);
                         _dictionary.Add(key, trackable);
                     }
                     return trackable.Item;
                 }
             }
+        }
+
+        /// <summary>
+        /// Data cache constructor
+        /// </summary>
+        /// <param name="readOnly">True if you don't want to allow writes</param>
+        protected DataCache(bool readOnly)
+        {
+            if (!readOnly)
+                _changeSet = [];
         }
 
         /// <summary>
@@ -100,9 +110,9 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    _dictionary[key] = new Trackable(key, value, TrackState.Added);
+                    _dictionary[key] = new Trackable(value, TrackState.Added);
                 }
-                _changeSet.Add(key);
+                _changeSet?.Add(key);
             }
         }
 
@@ -118,6 +128,11 @@ namespace Neo.Persistence
         /// </summary>
         public virtual void Commit()
         {
+            if (_changeSet is null)
+            {
+                throw new InvalidOperationException("DataCache is read only");
+            }
+
             lock (_dictionary)
             {
                 foreach (var key in _changeSet)
@@ -144,6 +159,24 @@ namespace Neo.Persistence
         }
 
         /// <summary>
+        /// Gets the change set in the cache.
+        /// </summary>
+        /// <returns>The change set.</returns>
+        public IEnumerable<KeyValuePair<StorageKey, Trackable>> GetChangeSet()
+        {
+            if (_changeSet is null)
+            {
+                throw new InvalidOperationException("DataCache is read only");
+            }
+
+            lock (_dictionary)
+            {
+                foreach (var key in _changeSet)
+                    yield return new(key, _dictionary[key]);
+            }
+        }
+
+        /// <summary>
         /// Creates a snapshot, which uses this instance as the underlying storage.
         /// </summary>
         /// <returns>The snapshot of this instance.</returns>
@@ -156,7 +189,7 @@ namespace Neo.Persistence
         /// <summary>
         /// Creates a clone of the snapshot cache, which uses this instance as the underlying storage.
         /// </summary>
-        /// <returns>The <see cref="DataCache"/> of this <see cref="SnapshotCache"/> instance.</returns>
+        /// <returns>The <see cref="ClonedCache"/> of this <see cref="DataCache"/> instance.</returns>
         public DataCache CloneCache()
         {
             return new ClonedCache(this);
@@ -175,20 +208,20 @@ namespace Neo.Persistence
                     if (trackable.State == TrackState.Added)
                     {
                         trackable.State = TrackState.NotFound;
-                        _changeSet.Remove(key);
+                        _changeSet?.Remove(key);
                     }
                     else if (trackable.State != TrackState.NotFound)
                     {
                         trackable.State = TrackState.Deleted;
-                        _changeSet.Add(key);
+                        _changeSet?.Add(key);
                     }
                 }
                 else
                 {
                     var item = TryGetInternal(key);
                     if (item == null) return;
-                    _dictionary.Add(key, new Trackable(key, item, TrackState.Deleted));
-                    _changeSet.Add(key);
+                    _dictionary.Add(key, new Trackable(item, TrackState.Deleted));
+                    _changeSet?.Add(key);
                 }
             }
         }
@@ -198,6 +231,23 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         protected abstract void DeleteInternal(StorageKey key);
+
+        /// <summary>
+        /// Finds the entries starting with the specified prefix.
+        /// </summary>
+        /// <param name="direction">The search direction.</param>
+        /// <returns>The entries found with the desired prefix.</returns>
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(SeekDirection direction = SeekDirection.Forward)
+        {
+            return Find((byte[]?)null, direction);
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        {
+            var key = key_prefix?.ToArray();
+            return Find(key, direction);
+        }
 
         /// <summary>
         /// Finds the entries starting with the specified prefix.
@@ -257,7 +307,7 @@ namespace Neo.Persistence
         /// <returns>The entries found with the desired range.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
         {
-            ByteArrayComparer comparer = direction == SeekDirection.Forward
+            var comparer = direction == SeekDirection.Forward
                 ? ByteArrayComparer.Default
                 : ByteArrayComparer.Reverse;
             foreach (var (key, value) in Seek(start, direction))
@@ -265,19 +315,6 @@ namespace Neo.Persistence
                     yield return (key, value);
                 else
                     yield break;
-        }
-
-        /// <summary>
-        /// Gets the change set in the cache.
-        /// </summary>
-        /// <returns>The change set.</returns>
-        public IEnumerable<Trackable> GetChangeSet()
-        {
-            lock (_dictionary)
-            {
-                foreach (StorageKey key in _changeSet)
-                    yield return _dictionary[key];
-            }
         }
 
         /// <summary>
@@ -342,13 +379,13 @@ namespace Neo.Persistence
                         else
                         {
                             trackable.State = TrackState.Added;
-                            _changeSet.Add(key);
+                            _changeSet?.Add(key);
                         }
                     }
                     else if (trackable.State == TrackState.None)
                     {
                         trackable.State = TrackState.Changed;
-                        _changeSet.Add(key);
+                        _changeSet?.Add(key);
                     }
                 }
                 else
@@ -357,14 +394,14 @@ namespace Neo.Persistence
                     if (item == null)
                     {
                         if (factory == null) return null;
-                        trackable = new Trackable(key, factory(), TrackState.Added);
+                        trackable = new Trackable(factory(), TrackState.Added);
                     }
                     else
                     {
-                        trackable = new Trackable(key, item, TrackState.Changed);
+                        trackable = new Trackable(item, TrackState.Changed);
                     }
                     _dictionary.Add(key, trackable);
-                    _changeSet.Add(key);
+                    _changeSet?.Add(key);
                 }
                 return trackable.Item;
             }
@@ -397,7 +434,7 @@ namespace Neo.Persistence
                         else
                         {
                             trackable.State = TrackState.Added;
-                            _changeSet.Add(key);
+                            _changeSet?.Add(key);
                         }
                     }
                 }
@@ -406,12 +443,12 @@ namespace Neo.Persistence
                     var item = TryGetInternal(key);
                     if (item == null)
                     {
-                        trackable = new Trackable(key, factory(), TrackState.Added);
-                        _changeSet.Add(key);
+                        trackable = new Trackable(factory(), TrackState.Added);
+                        _changeSet?.Add(key);
                     }
                     else
                     {
-                        trackable = new Trackable(key, item, TrackState.None);
+                        trackable = new Trackable(item, TrackState.None);
                     }
                     _dictionary.Add(key, trackable);
                 }
@@ -429,7 +466,7 @@ namespace Neo.Persistence
         {
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
-            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+            var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             lock (_dictionary)
             {
                 cached = _dictionary
@@ -455,20 +492,22 @@ namespace Neo.Persistence
             using var e1 = cached.GetEnumerator();
             using var e2 = uncached.GetEnumerator();
             (byte[] KeyBytes, StorageKey Key, StorageItem Item) i1, i2;
-            bool c1 = e1.MoveNext();
-            bool c2 = e2.MoveNext();
+            var c1 = e1.MoveNext();
+            var c2 = e2.MoveNext();
             i1 = c1 ? e1.Current : default;
             i2 = c2 ? e2.Current : default;
             while (c1 || c2)
             {
                 if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
                 {
+                    if (i1.Key == null || i1.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
                     yield return (i1.Key, i1.Item);
                     c1 = e1.MoveNext();
                     i1 = c1 ? e1.Current : default;
                 }
                 else
                 {
+                    if (i2.Key == null || i2.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
                     yield return (i2.Key, i2.Item);
                     c2 = e2.MoveNext();
                     i2 = c2 ? e2.Current : default;
@@ -501,7 +540,7 @@ namespace Neo.Persistence
                 }
                 var value = TryGetInternal(key);
                 if (value == null) return null;
-                _dictionary.Add(key, new Trackable(key, value, TrackState.None));
+                _dictionary.Add(key, new Trackable(value, TrackState.None));
                 return value;
             }
         }
@@ -529,3 +568,5 @@ namespace Neo.Persistence
         protected abstract void UpdateInternal(StorageKey key, StorageItem value);
     }
 }
+
+#nullable disable

@@ -35,7 +35,7 @@ namespace Neo.UnitTests.SmartContract.Native
         class NeedSnapshot
         {
             [ContractMethod]
-            public bool MethodReadOnlyStoreView(IReadOnlyStoreView view) => view is null;
+            public bool MethodReadOnlyStoreView(IReadOnlyStore view) => view is null;
 
             [ContractMethod]
             public bool MethodDataCache(DataCache dataCache) => dataCache is null;

@@ -47,7 +47,7 @@ namespace Neo.UnitTests.SmartContract
 
             StackItem stackItem4 = new InteropInterface(new object());
             Action action4 = () => BinarySerializer.Serialize(stackItem4, ExecutionEngineLimits.Default);
-            Assert.ThrowsException<NotSupportedException>(action4);
+            Assert.ThrowsExactly<NotSupportedException>(action4);
 
             List<StackItem> list6 = new List<StackItem> { 1 };
             StackItem stackItem62 = new Array(list6);
@@ -75,12 +75,12 @@ namespace Neo.UnitTests.SmartContract
             Map stackItem91 = new Map();
             stackItem91[1] = stackItem91;
             Action action9 = () => BinarySerializer.Serialize(stackItem91, ExecutionEngineLimits.Default);
-            Assert.ThrowsException<NotSupportedException>(action9);
+            Assert.ThrowsExactly<NotSupportedException>(action9);
 
             Array stackItem10 = new Array();
             stackItem10.Add(stackItem10);
             Action action10 = () => BinarySerializer.Serialize(stackItem10, ExecutionEngineLimits.Default);
-            Assert.ThrowsException<NotSupportedException>(action10);
+            Assert.ThrowsExactly<NotSupportedException>(action10);
         }
 
         [TestMethod]
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] byteArray4 = BinarySerializer.Serialize(1, ExecutionEngineLimits.Default);
             byteArray4[0] = 0x40;
             Action action4 = () => BinarySerializer.Deserialize(byteArray4, ExecutionEngineLimits.Default);
-            Assert.ThrowsException<FormatException>(action4);
+            Assert.ThrowsExactly<FormatException>(action4);
 
             List<StackItem> list5 = new List<StackItem> { 1 };
             StackItem stackItem52 = new Array(list5);

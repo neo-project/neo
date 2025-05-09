@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_MemoryPool : TestKit
     {
-        private static NeoSystem testBlockchain;
+        private static NeoSystem _system;
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
@@ -41,12 +41,12 @@ namespace Neo.UnitTests.Ledger
         [ClassInitialize]
         public static void TestSetup(TestContext ctx)
         {
-            testBlockchain = TestBlockchain.TheNeoSystem;
+            _system = TestBlockchain.GetSystem();
         }
 
         private static DataCache GetSnapshot()
         {
-            return testBlockchain.StoreView.CloneCache();
+            return _system.StoreView.CloneCache();
         }
 
         [TestInitialize]
@@ -79,20 +79,14 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>()))
+                .Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
-            mock.Object.Witnesses = new[]
-            {
-                new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
-            };
+            mock.Object.Attributes = [];
+            mock.Object.Signers = [new() { Account = senderAccount, Scopes = WitnessScope.None }];
+            mock.Object.Witnesses = [Witness.Empty];
             return mock.Object;
         }
 
@@ -103,20 +97,14 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
             UInt160 sender = senderAccount;
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList) => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>()))
+                .Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList) => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
-            mock.Object.Witnesses = new[]
-            {
-                new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
-            };
+            mock.Object.Attributes = [];
+            mock.Object.Signers = [new() { Account = senderAccount, Scopes = WitnessScope.None }];
+            mock.Object.Witnesses = [Witness.Empty];
             return mock.Object;
         }
 
@@ -180,8 +168,8 @@ namespace Neo.UnitTests.Ledger
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = _unit.GetSortedVerifiedTransactions().Take(10)
-                    .Concat(_unit.GetSortedVerifiedTransactions().Take(5)).ToArray()
+                Transactions = _unit.GetSortedVerifiedTransactions(10)
+                    .Concat(_unit.GetSortedVerifiedTransactions(5)).ToArray()
             };
             _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
@@ -218,7 +206,7 @@ namespace Neo.UnitTests.Ledger
         {
             var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 70, true);
@@ -231,13 +219,13 @@ namespace Neo.UnitTests.Ledger
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = _unit.GetSortedVerifiedTransactions().Take(10).ToArray()
+                Transactions = _unit.GetSortedVerifiedTransactions(10)
             };
 
             // Simulate the transfer process in tx by burning the balance
             UInt160 sender = block.Transactions[0].Sender;
 
-            ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestBlockchain.TheNeoSystem.Settings, gas: (long)balance);
+            ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestProtocolSettings.Default, gas: (long)balance);
             applicationEngine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
             _ = NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30, true); // Set the balance to meet 30 txs only
@@ -259,7 +247,7 @@ namespace Neo.UnitTests.Ledger
             long txFee = 1;
             var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 7, true); // balance enough for 7 mempooled txs
@@ -326,7 +314,7 @@ namespace Neo.UnitTests.Ledger
             var maliciousSender = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 }));
             var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
@@ -426,7 +414,7 @@ namespace Neo.UnitTests.Ledger
             long txFee = 1;
             var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
@@ -489,9 +477,9 @@ namespace Neo.UnitTests.Ledger
         {
             AddTransactions(100);
 
-            var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions().ToList();
+            var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions();
             // verify all 100 transactions are returned in sorted order
-            Assert.AreEqual(100, sortedVerifiedTxs.Count);
+            Assert.AreEqual(100, sortedVerifiedTxs.Length);
             VerifyTransactionsSortedDescending(sortedVerifiedTxs);
 
             // move all to unverified
@@ -517,7 +505,7 @@ namespace Neo.UnitTests.Ledger
 
                 // reverify 1 high priority and 1 low priority transaction
                 _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, GetSnapshot());
-                var verifiedTxs = _unit.GetSortedVerifiedTransactions().ToArray();
+                var verifiedTxs = _unit.GetSortedVerifiedTransactions();
                 Assert.AreEqual(1, verifiedTxs.Length);
                 Assert.AreEqual(maxTransaction, verifiedTxs[0]);
                 var blockWith2Tx = new Block
@@ -535,8 +523,7 @@ namespace Neo.UnitTests.Ledger
 
         void VerifyCapacityThresholdForAttemptingToAddATransaction()
         {
-            var sortedVerified = _unit.GetSortedVerifiedTransactions().ToArray();
-
+            var sortedVerified = _unit.GetSortedVerifiedTransactions();
             var txBarelyWontFit = CreateTransactionWithFee(sortedVerified.Last().NetworkFee - 1);
             Assert.IsFalse(_unit.CanTransactionFitInPool(txBarelyWontFit));
             var txBarelyFits = CreateTransactionWithFee(sortedVerified.Last().NetworkFee + 1);
@@ -751,7 +738,7 @@ namespace Neo.UnitTests.Ledger
             AddTransactions(32);
             Assert.AreEqual(32, _unit.SortedTxCount);
 
-            var txs = _unit.GetSortedVerifiedTransactions().ToArray();
+            var txs = _unit.GetSortedVerifiedTransactions();
             _unit.InvalidateVerifiedTransactions();
 
             Assert.AreEqual(0, _unit.SortedTxCount);
@@ -774,6 +761,208 @@ namespace Neo.UnitTests.Ledger
                 Id = id,
                 Key = buffer
             };
+        }
+
+        [TestMethod]
+        public void TestTransactionAddedEvent()
+        {
+            // Arrange
+            bool eventRaised = false;
+            Transaction capturedTx = null;
+            _unit.TransactionAdded += (sender, tx) =>
+            {
+                eventRaised = true;
+                capturedTx = tx;
+            };
+
+            var tx = CreateTransaction();
+            var snapshot = GetSnapshot();
+
+            // Act
+            _unit.TryAdd(tx, snapshot);
+
+            // Assert
+            Assert.IsTrue(eventRaised, "TransactionAdded event should be raised");
+            Assert.AreEqual(tx, capturedTx, "Transaction in event should match the added transaction");
+        }
+
+        [TestMethod]
+        public void TestTransactionRemovedEvent()
+        {
+            // Arrange
+            bool eventRaised = false;
+            TransactionRemovedEventArgs capturedArgs = null;
+            _unit.TransactionRemoved += (sender, args) =>
+            {
+                eventRaised = true;
+                capturedArgs = args;
+            };
+
+            // Add transactions to fill the pool to capacity
+            AddTransactions(_unit.Capacity);
+
+            // Add one more to trigger capacity exceeded removal
+            var txToAdd = CreateTransaction(long.MaxValue); // High fee to ensure it gets added
+            var snapshot = GetSnapshot();
+
+            // Act
+            _unit.TryAdd(txToAdd, snapshot);
+
+            // Assert
+            Assert.IsTrue(eventRaised, "TransactionRemoved event should be raised");
+            Assert.IsTrue(capturedArgs?.Transactions.Count > 0, "Removed transactions should be included");
+            Assert.AreEqual(TransactionRemovalReason.CapacityExceeded, capturedArgs?.Reason,
+                "Removal reason should be CapacityExceeded");
+        }
+
+        [TestMethod]
+        public void TestGetSortedVerifiedTransactionsWithCount()
+        {
+            // Arrange
+            AddTransactions(50);
+
+            // Act - Get subset of transactions
+            var transactions10 = _unit.GetSortedVerifiedTransactions(10);
+            var transactions20 = _unit.GetSortedVerifiedTransactions(20);
+            var transactionsAll = _unit.GetSortedVerifiedTransactions();
+
+            // Assert
+            Assert.AreEqual(10, transactions10.Length, "Should return exactly 10 transactions");
+            Assert.AreEqual(20, transactions20.Length, "Should return exactly 20 transactions");
+            Assert.AreEqual(50, transactionsAll.Length, "Should return all transactions");
+
+            // Verify they are in the right order (highest fee first)
+            VerifyTransactionsSortedDescending(transactions10);
+            VerifyTransactionsSortedDescending(transactions20);
+            VerifyTransactionsSortedDescending(transactionsAll);
+
+            // Verify the first 10 transactions in both sets are the same
+            for (int i = 0; i < 10; i++)
+            {
+                Assert.AreEqual(transactions10[i], transactions20[i],
+                    "The first 10 transactions should be the same in both result sets");
+            }
+        }
+
+        [TestMethod]
+        public void TestComplexConflictScenario()
+        {
+            // Arrange
+            var snapshot = GetSnapshot();
+
+            // Create a chain of conflicting transactions
+            var tx1 = CreateTransaction(100000);
+            var tx2 = CreateTransaction(200000);
+            var tx3 = CreateTransaction(150000);
+            var tx4 = CreateTransaction(300000);
+
+            // Set up conflicts: tx2 conflicts with tx1, tx3 conflicts with tx2, tx4 conflicts with tx3
+            tx2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx1.Hash } };
+            tx3.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx2.Hash } };
+            tx4.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx3.Hash } };
+
+            // Act & Assert - Add transactions in specific order to test conflict resolution
+
+            // Add tx1 first
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx1, snapshot), "tx1 should be added successfully");
+            Assert.AreEqual(1, _unit.Count, "Pool should contain 1 transaction");
+            Assert.IsTrue(_unit.ContainsKey(tx1.Hash), "Pool should contain tx1");
+
+            // Add tx2 which conflicts with tx1 but has higher fee
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx2, snapshot), "tx2 should be added successfully");
+            Assert.AreEqual(1, _unit.Count, "Pool should still contain 1 transaction (tx2 replaced tx1)");
+            Assert.IsTrue(_unit.ContainsKey(tx2.Hash), "Pool should contain tx2");
+            Assert.IsFalse(_unit.ContainsKey(tx1.Hash), "Pool should no longer contain tx1");
+
+            // Add tx3 which conflicts with tx2 but has lower fee
+            Assert.AreEqual(VerifyResult.HasConflicts, _unit.TryAdd(tx3, snapshot), "tx3 should not be added due to conflicts");
+            Assert.AreEqual(1, _unit.Count, "Pool should still contain 1 transaction");
+            Assert.IsTrue(_unit.ContainsKey(tx2.Hash), "Pool should still contain tx2");
+            Assert.IsFalse(_unit.ContainsKey(tx3.Hash), "Pool should not contain tx3");
+
+            // Add tx4 which conflicts with tx3 (which is not in the pool)
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx4, snapshot), "tx4 should be added successfully");
+            Assert.AreEqual(2, _unit.Count, "Pool should contain 2 transactions");
+            Assert.IsTrue(_unit.ContainsKey(tx2.Hash), "Pool should contain tx2");
+            Assert.IsTrue(_unit.ContainsKey(tx4.Hash), "Pool should contain tx4");
+        }
+
+        [TestMethod]
+        public void TestMultipleConflictsManagement()
+        {
+            // Arrange
+            var snapshot = GetSnapshot();
+
+            // Create a transaction with multiple conflicts
+            var tx1 = CreateTransaction(100000);
+            var tx2 = CreateTransaction(100000);
+            var tx3 = CreateTransaction(100000);
+
+            // Create a transaction that conflicts with all three
+            var txMultiConflict = CreateTransaction(350000); // Higher fee than all three combined
+            txMultiConflict.Attributes = new TransactionAttribute[]
+            {
+                new Conflicts() { Hash = tx1.Hash },
+                new Conflicts() { Hash = tx2.Hash },
+                new Conflicts() { Hash = tx3.Hash }
+            };
+
+            // Act
+            _unit.TryAdd(tx1, snapshot);
+            _unit.TryAdd(tx2, snapshot);
+            _unit.TryAdd(tx3, snapshot);
+
+            Assert.AreEqual(3, _unit.Count, "Should have 3 transactions in the pool");
+
+            // Add the transaction with multiple conflicts
+            var result = _unit.TryAdd(txMultiConflict, snapshot);
+
+            // Assert
+            Assert.AreEqual(VerifyResult.Succeed, result, "Transaction with multiple conflicts should be added");
+            Assert.AreEqual(1, _unit.Count, "Should have 1 transaction in the pool after conflicts resolved");
+            Assert.IsTrue(_unit.ContainsKey(txMultiConflict.Hash), "Pool should contain the transaction with higher fee");
+            Assert.IsFalse(_unit.ContainsKey(tx1.Hash), "Pool should not contain tx1");
+            Assert.IsFalse(_unit.ContainsKey(tx2.Hash), "Pool should not contain tx2");
+            Assert.IsFalse(_unit.ContainsKey(tx3.Hash), "Pool should not contain tx3");
+        }
+
+        [TestMethod]
+        public void TestReverificationBehavior()
+        {
+            // Arrange
+            _unit = new MemoryPool(new NeoSystem(TestProtocolSettings.Default with { MemoryPoolMaxTransactions = 1000 }, storageProvider: (string)null));
+
+            // Add transactions to the pool
+            AddTransactions(100);
+
+            // Invalidate all verified transactions to move them to unverified
+            _unit.InvalidateVerifiedTransactions();
+            Assert.AreEqual(0, _unit.VerifiedCount);
+            Assert.AreEqual(100, _unit.UnVerifiedCount);
+
+            // Act
+            var snapshot = GetSnapshot();
+
+            // Verify transactions in batches
+            int verifiedInFirstBatch = 0;
+            int verifiedInSecondBatch = 0;
+
+            // First batch - should reverify some transactions
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(20, snapshot);
+            verifiedInFirstBatch = _unit.VerifiedCount;
+
+            // Second batch - should reverify more transactions
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(30, snapshot);
+            verifiedInSecondBatch = _unit.VerifiedCount - verifiedInFirstBatch;
+
+            // Assert
+            Assert.IsTrue(verifiedInFirstBatch > 0, "First batch should reverify some transactions");
+            Assert.IsTrue(verifiedInSecondBatch > 0, "Second batch should reverify additional transactions");
+            Assert.IsTrue(_unit.VerifiedCount < 100, "Not all transactions should be reverified in just two batches");
+
+            // Verify that transactions are reverified in fee order (highest fee first)
+            var verifiedTxs = _unit.GetSortedVerifiedTransactions();
+            VerifyTransactionsSortedDescending(verifiedTxs);
         }
     }
 }

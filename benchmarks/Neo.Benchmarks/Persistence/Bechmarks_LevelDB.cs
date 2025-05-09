@@ -13,7 +13,6 @@ using BenchmarkDotNet.Attributes;
 using Neo.Persistence;
 using Neo.Plugins.Storage;
 using Neo.SmartContract;
-using System.Diagnostics;
 
 namespace Neo.Benchmarks.Persistence.Benchmarks
 {
@@ -26,7 +25,7 @@ namespace Neo.Benchmarks.Persistence.Benchmarks
         private const string PathLevelDB = "Data_LevelDB_Benchmarks";
 
         private static readonly LevelDBStore levelDb = new();
-        private static ISnapshot snapshot;
+        private static IStoreSnapshot snapshot;
 
         [GlobalSetup]
         public void Setup()

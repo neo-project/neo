@@ -32,13 +32,13 @@ namespace Neo.Plugins.Storage
             _db.Dispose();
         }
 
-        public ISnapshot GetSnapshot()
+        public IStoreSnapshot GetSnapshot()
         {
-            return new Snapshot(_db);
+            return new Snapshot(this, _db);
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             keyOrPrefix ??= [];
 

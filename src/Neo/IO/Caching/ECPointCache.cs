@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 
@@ -16,10 +18,8 @@ namespace Neo.IO.Caching
 {
     internal class ECPointCache : FIFOCache<byte[], ECPoint>
     {
-        public ECPointCache(int max_capacity)
-            : base(max_capacity, ByteArrayEqualityComparer.Default)
-        {
-        }
+        public ECPointCache(int maxCapacity)
+            : base(maxCapacity, ByteArrayEqualityComparer.Default) { }
 
         protected override byte[] GetKeyForItem(ECPoint item)
         {
@@ -27,3 +27,5 @@ namespace Neo.IO.Caching
         }
     }
 }
+
+#nullable disable

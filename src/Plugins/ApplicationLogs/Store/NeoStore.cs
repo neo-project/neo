@@ -24,7 +24,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
         #region Globals
 
         private readonly IStore _store;
-        private ISnapshot _blocklogsnapshot;
+        private IStoreSnapshot _blocklogsnapshot;
 
         #endregion
 
@@ -42,6 +42,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void Dispose()
         {
+            _blocklogsnapshot?.Dispose();
             _store?.Dispose();
             GC.SuppressFinalize(this);
         }

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 #nullable enable
+
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -126,8 +127,9 @@ namespace Neo.Ledger
         {
             _system = system;
             Capacity = system.Settings.MemoryPoolMaxTransactions;
-            MaxMillisecondsToReverifyTx = (double)system.Settings.MillisecondsPerBlock / 3;
-            MaxMillisecondsToReverifyTxPerIdle = (double)system.Settings.MillisecondsPerBlock / 15;
+            var timePerBlock = system.GetTimePerBlock().TotalMilliseconds;
+            MaxMillisecondsToReverifyTx = timePerBlock / 3;
+            MaxMillisecondsToReverifyTxPerIdle = timePerBlock / 15;
         }
 
         /// <summary>
@@ -234,12 +236,25 @@ namespace Neo.Ledger
         /// Gets the sorted verified transactions in the <see cref="MemoryPool"/>.
         /// </summary>
         /// <returns>The sorted verified transactions.</returns>
-        public IEnumerable<Transaction> GetSortedVerifiedTransactions()
+        public Transaction[] GetSortedVerifiedTransactions(int count = -1)
         {
             _txRwLock.EnterReadLock();
             try
             {
-                return _sortedTransactions.Reverse().Select(p => p.Tx).ToArray();
+                if (count < 0)
+                {
+                    // Return all results
+                    return _sortedTransactions
+                        .Reverse()
+                        .Select(p => p.Tx)
+                        .ToArray();
+                }
+
+                return _sortedTransactions
+                    .Reverse()
+                    .Take(count)
+                    .Select(p => p.Tx)
+                    .ToArray();
             }
             finally
             {
@@ -248,19 +263,18 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static PoolItem? GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
-            SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem>? sortedPool)
+        private PoolItem? GetLowestFeeTransaction(out SortedSet<PoolItem>? sortedPool)
         {
-            var minItem = unverifiedTxSorted.Min;
-            sortedPool = minItem != null ? unverifiedTxSorted : null;
+            var minItem = _unverifiedSortedTransactions.Min;
+            sortedPool = minItem != null ? _unverifiedSortedTransactions : null;
 
-            var verifiedMin = verifiedTxSorted.Min;
+            var verifiedMin = _sortedTransactions.Min;
             if (verifiedMin == null) return minItem;
 
             if (minItem != null && verifiedMin.CompareTo(minItem) >= 0)
                 return minItem;
 
-            sortedPool = verifiedTxSorted;
+            sortedPool = _sortedTransactions;
             minItem = verifiedMin;
 
             return minItem;
@@ -272,7 +286,7 @@ namespace Neo.Ledger
 
             try
             {
-                return GetLowestFeeTransaction(_sortedTransactions, _unverifiedSortedTransactions, out sortedPool);
+                return GetLowestFeeTransaction(out sortedPool);
             }
             finally
             {
@@ -335,7 +349,7 @@ namespace Neo.Ledger
             }
 
             TransactionAdded?.Invoke(this, poolItem.Tx);
-            if (removedTransactions.Count() > 0)
+            if (removedTransactions.Count > 0)
                 TransactionRemoved?.Invoke(this, new()
                 {
                     Transactions = removedTransactions,
@@ -526,11 +540,11 @@ namespace Neo.Ledger
             {
                 _txRwLock.ExitWriteLock();
             }
-            if (conflictingItems.Count() > 0)
+            if (conflictingItems.Count > 0)
             {
                 TransactionRemoved?.Invoke(this, new()
                 {
-                    Transactions = conflictingItems.ToArray(),
+                    Transactions = conflictingItems,
                     Reason = TransactionRemovalReason.Conflict,
                 });
             }
@@ -540,7 +554,7 @@ namespace Neo.Ledger
             if (block.Index > 0 && _system.HeaderCache.Count > 0)
                 return;
 
-            ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions, (int)_system.Settings.MaxTransactionsPerBlock, MaxMillisecondsToReverifyTx, snapshot);
+            ReverifyTransactions((int)_system.Settings.MaxTransactionsPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
 
         internal void InvalidateAllTransactions()
@@ -556,8 +570,7 @@ namespace Neo.Ledger
             }
         }
 
-        private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
-            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, DataCache snapshot)
+        private int ReverifyTransactions(int count, double millisecondsTimeout, DataCache snapshot)
         {
             DateTime reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new(count);
@@ -567,7 +580,7 @@ namespace Neo.Ledger
             try
             {
                 // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
-                foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
+                foreach (PoolItem item in _unverifiedSortedTransactions.Reverse().Take(count))
                 {
                     if (CheckConflicts(item.Tx, out List<PoolItem> conflictsToBeRemoved) &&
                         item.Tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx)) == VerifyResult.Succeed)
@@ -575,7 +588,7 @@ namespace Neo.Ledger
                         reverifiedItems.Add(item);
                         if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                         {
-                            verifiedSortedTxPool.Add(item);
+                            _sortedTransactions.Add(item);
                             foreach (var attr in item.Tx.GetAttributes<Conflicts>())
                             {
                                 if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
@@ -606,7 +619,7 @@ namespace Neo.Ledger
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
-                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.Settings.MillisecondsPerBlock * blocksTillRebroadcast);
+                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.GetTimePerBlock().TotalMilliseconds * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
                     if (_unsortedTransactions.ContainsKey(item.Tx.Hash))
@@ -619,13 +632,13 @@ namespace Neo.Ledger
                     }
 
                     _unverifiedTransactions.Remove(item.Tx.Hash);
-                    unverifiedSortedTxPool.Remove(item);
+                    _unverifiedSortedTransactions.Remove(item);
                 }
 
                 foreach (PoolItem item in invalidItems)
                 {
                     _unverifiedTransactions.Remove(item.Tx.Hash);
-                    unverifiedSortedTxPool.Remove(item);
+                    _unverifiedSortedTransactions.Remove(item);
                 }
             }
             finally
@@ -633,12 +646,14 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            var invalidTransactions = invalidItems.Select(p => p.Tx).ToArray();
-            TransactionRemoved?.Invoke(this, new()
+            if (invalidItems.Count > 0)
             {
-                Transactions = invalidTransactions,
-                Reason = TransactionRemovalReason.NoLongerValid
-            });
+                TransactionRemoved?.Invoke(this, new()
+                {
+                    Transactions = invalidItems.Select(p => p.Tx).ToArray(),
+                    Reason = TransactionRemovalReason.NoLongerValid
+                });
+            }
 
             return reverifiedItems.Count;
         }
@@ -660,8 +675,7 @@ namespace Neo.Ledger
             if (_unverifiedSortedTransactions.Count > 0)
             {
                 int verifyCount = _sortedTransactions.Count > _system.Settings.MaxTransactionsPerBlock ? 1 : maxToVerify;
-                ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
-                    verifyCount, MaxMillisecondsToReverifyTxPerIdle, snapshot);
+                ReverifyTransactions(verifyCount, MaxMillisecondsToReverifyTxPerIdle, snapshot);
             }
 
             return _unverifiedTransactions.Count > 0;
@@ -687,3 +701,5 @@ namespace Neo.Ledger
         }
     }
 }
+
+#nullable disable

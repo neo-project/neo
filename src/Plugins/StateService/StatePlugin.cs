@@ -15,7 +15,6 @@ using Neo.Cryptography.MPTTrie;
 using Neo.Extensions;
 using Neo.IEventHandlers;
 using Neo.Json;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer;
@@ -100,7 +99,7 @@ namespace Neo.Plugins.StateService
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
-            StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index, snapshot.GetChangeSet().Where(p => p.State != TrackState.None).Where(p => p.Key.Id != NativeContract.Ledger.Id).ToList());
+            StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index, snapshot.GetChangeSet().Where(p => p.Value.State != TrackState.None).Where(p => p.Key.Id != NativeContract.Ledger.Id).ToList());
         }
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)

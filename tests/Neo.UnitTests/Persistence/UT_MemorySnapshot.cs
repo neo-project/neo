@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence;
+using Neo.Persistence.Providers;
 using System.Linq;
 
 namespace Neo.UnitTests.Persistence
@@ -74,7 +74,7 @@ namespace Neo.UnitTests.Persistence
             _snapshot.Put([0x00, 0x00, 0x03], [0x03]);
 
             // Can not get anything from the snapshot
-            var entries = _snapshot.Seek([0x00, 0x00, 0x02]).ToArray();
+            var entries = _snapshot.Find([0x00, 0x00, 0x02]).ToArray();
             Assert.AreEqual(0, entries.Length);
         }
 

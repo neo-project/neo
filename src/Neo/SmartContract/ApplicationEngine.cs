@@ -175,12 +175,18 @@ namespace Neo.SmartContract
         /// <param name="trigger">The trigger of the execution.</param>
         /// <param name="container">The container of the script.</param>
         /// <param name="snapshotCache">The snapshot used by the engine during execution.</param>
-        /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
+        /// <param name="persistingBlock">
+        /// The block being persisted.
+        /// It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.
+        /// </param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
-        /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">
+        /// The maximum gas, in the unit of datoshi, used in this execution.
+        /// The execution will fail when the gas is exhausted.
+        /// </param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(
+        protected ApplicationEngine(
             TriggerType trigger, IVerifiable container, DataCache snapshotCache, Block persistingBlock,
             ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
             : base(jumpTable ?? DefaultJumpTable)
@@ -192,15 +198,22 @@ namespace Neo.SmartContract
             ProtocolSettings = settings;
             _feeAmount = gas;
             Diagnostic = diagnostic;
-            ExecFeeFactor = snapshotCache is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshotCache);
-            StoragePrice = snapshotCache is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshotCache);
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+            if (snapshotCache is null || persistingBlock?.Index == 0)
+            {
+                ExecFeeFactor = PolicyContract.DefaultExecFeeFactor;
+                StoragePrice = PolicyContract.DefaultStoragePrice;
+            }
+            else
+            {
+                ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
+                StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
+            }
+
             if (persistingBlock is not null)
             {
-                fixed (byte* p = nonceData)
-                {
-                    *(ulong*)p ^= persistingBlock.Nonce;
-                }
+                ref ulong nonce = ref System.Runtime.CompilerServices.Unsafe.As<byte, ulong>(ref nonceData[0]);
+                nonce ^= persistingBlock.Nonce;
             }
             diagnostic?.Initialized(this);
         }
@@ -397,14 +410,21 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Use the loaded <see cref="IApplicationEngineProvider"/> to create a new instance of the <see cref="ApplicationEngine"/> class. If no <see cref="IApplicationEngineProvider"/> is loaded, the constructor of <see cref="ApplicationEngine"/> will be called.
+        /// Use the loaded <see cref="IApplicationEngineProvider"/> to create a new instance of the <see cref="ApplicationEngine"/> class.
+        /// If no <see cref="IApplicationEngineProvider"/> is loaded, the constructor of <see cref="ApplicationEngine"/> will be called.
         /// </summary>
         /// <param name="trigger">The trigger of the execution.</param>
         /// <param name="container">The container of the script.</param>
         /// <param name="snapshot">The snapshot used by the engine during execution.</param>
-        /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
+        /// <param name="persistingBlock">
+        /// The block being persisted.
+        /// It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.
+        /// </param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
-        /// <param name="gas">The maximum gas used in this execution, in the unit of datoshi. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">
+        /// The maximum gas used in this execution, in the unit of datoshi.
+        /// The execution will fail when the gas is exhausted.
+        /// </param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
@@ -638,7 +658,7 @@ namespace Neo.SmartContract
             Diagnostic?.PostExecuteInstruction(instruction);
         }
 
-        private static Block CreateDummyBlock(IReadOnlyStoreView snapshot, ProtocolSettings settings)
+        private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
         {
             UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
             Block currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
@@ -649,23 +669,20 @@ namespace Neo.SmartContract
                     Version = 0,
                     PrevHash = hash,
                     MerkleRoot = new UInt256(),
-                    Timestamp = currentBlock.Timestamp + settings.MillisecondsPerBlock,
+                    Timestamp = currentBlock.Timestamp + (uint)snapshot.GetTimePerBlock(settings).TotalMilliseconds,
                     Index = currentBlock.Index + 1,
                     NextConsensus = currentBlock.NextConsensus,
-                    Witness = new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
-                    },
+                    Witness = Witness.Empty,
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = [],
             };
         }
 
         private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags)
         {
-            MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-                ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).GetMethod;
+            var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+            MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, flags)
+                ?? typeof(ApplicationEngine).GetProperty(handler, flags).GetMethod;
             InteropDescriptor descriptor = new()
             {
                 Name = name,

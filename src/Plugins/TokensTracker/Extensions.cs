@@ -34,20 +34,20 @@ namespace Neo.Plugins
         public static int GetVarSize(this ByteString item)
         {
             var length = item.GetSpan().Length;
-            return UnsafeData.GetVarSize(length) + length;
+            return length.GetVarSize() + length;
         }
 
         public static int GetVarSize(this BigInteger item)
         {
             var length = item.GetByteCount();
-            return UnsafeData.GetVarSize(length) + length;
+            return length.GetVarSize() + length;
         }
 
         public static IEnumerable<(TKey, TValue)> FindPrefix<TKey, TValue>(this IStore db, byte[] prefix)
             where TKey : ISerializable, new()
             where TValue : class, ISerializable, new()
         {
-            foreach (var (key, value) in db.Seek(prefix, SeekDirection.Forward))
+            foreach (var (key, value) in db.Find(prefix, SeekDirection.Forward))
             {
                 if (!key.AsSpan().StartsWith(prefix)) break;
                 yield return (key.AsSerializable<TKey>(1), value.AsSerializable<TValue>());
@@ -58,7 +58,7 @@ namespace Neo.Plugins
             where TKey : ISerializable, new()
             where TValue : class, ISerializable, new()
         {
-            foreach (var (key, value) in db.Seek(startKey, SeekDirection.Forward))
+            foreach (var (key, value) in db.Find(startKey, SeekDirection.Forward))
             {
                 if (key.AsSpan().SequenceCompareTo(endKey) > 0) break;
                 yield return (key.AsSerializable<TKey>(1), value.AsSerializable<TValue>());

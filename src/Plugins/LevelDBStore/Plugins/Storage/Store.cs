@@ -47,8 +47,8 @@ namespace Neo.Plugins.Storage
             _options.Dispose();
         }
 
-        public ISnapshot GetSnapshot() =>
-            new Snapshot(_db);
+        public IStoreSnapshot GetSnapshot() =>
+            new Snapshot(this, _db);
 
         public void Put(byte[] key, byte[] value) =>
             _db.Put(WriteOptions.Default, key, value);
@@ -69,7 +69,7 @@ namespace Neo.Plugins.Storage
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[], byte[])> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward) =>
+        public IEnumerable<(byte[], byte[])> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward) =>
             _db.Seek(ReadOptions.Default, keyOrPrefix, direction);
 
         public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator() =>

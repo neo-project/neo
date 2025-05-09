@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Dispatch;
@@ -27,3 +29,5 @@ namespace Neo.IO.Actors
         internal protected virtual bool ShallDrop(object message, IEnumerable queue) => false;
     }
 }
+
+#nullable disable

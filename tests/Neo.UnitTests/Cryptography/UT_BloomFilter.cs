@@ -37,14 +37,14 @@ namespace Neo.UnitTests.Cryptography
             int m = -7, n = 10;
             uint nTweak = 123456;
             Action action = () => new BloomFilter(m, n, nTweak);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
             action = () => new BloomFilter(m, n, nTweak, new byte[] { 0, 1, 2, 3, 4 });
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
 
             m = 7;
             n = -10;
             action = () => new BloomFilter(m, n, nTweak);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
 
             n = 10;
             BloomFilter filter = new BloomFilter(m, n, nTweak);
@@ -83,10 +83,10 @@ namespace Neo.UnitTests.Cryptography
         {
             uint nTweak = 123456;
             Action action = () => new BloomFilter(0, 3, nTweak);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
 
             action = () => new BloomFilter(3, 0, nTweak);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
         }
     }
 }

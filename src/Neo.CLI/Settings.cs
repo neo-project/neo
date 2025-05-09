@@ -11,7 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
-using Neo.Persistence;
+using Neo.Persistence.Providers;
 using System;
 using System.Reflection;
 using System.Threading;
@@ -113,14 +113,16 @@ namespace Neo
         public int MinDesiredConnections { get; }
         public int MaxConnections { get; }
         public int MaxConnectionsPerAddress { get; }
+        public int MaxKnownHashes { get; }
 
         public P2PSettings(IConfigurationSection section)
         {
             Port = section.GetValue<ushort>(nameof(Port), 10333);
-            EnableCompression = section.GetValue(nameof(EnableCompression), Peer.DefaultEnableCompression);
-            MinDesiredConnections = section.GetValue(nameof(MinDesiredConnections), Peer.DefaultMinDesiredConnections);
-            MaxConnections = section.GetValue(nameof(MaxConnections), Peer.DefaultMaxConnections);
-            MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), 3);
+            EnableCompression = section.GetValue(nameof(EnableCompression), ChannelsConfig.DefaultEnableCompression);
+            MinDesiredConnections = section.GetValue(nameof(MinDesiredConnections), ChannelsConfig.DefaultMinDesiredConnections);
+            MaxConnections = section.GetValue(nameof(MaxConnections), ChannelsConfig.DefaultMaxConnections);
+            MaxKnownHashes = section.GetValue(nameof(MaxKnownHashes), ChannelsConfig.DefaultMaxKnownHashes);
+            MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), ChannelsConfig.DefaultMaxConnectionsPerAddress);
         }
 
         public P2PSettings() { }

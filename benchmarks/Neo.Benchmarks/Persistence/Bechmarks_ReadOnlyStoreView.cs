@@ -50,7 +50,7 @@ namespace Neo.Benchmarks.Persistence.Benchmarks
         [Benchmark]
         public void ReadOnlyStoreView_LevelDB()
         {
-            var view = new ReadOnlyStoreView(levelDbStore);
+            var view = (IReadOnlyStore)levelDbStore;
             var ok = view.TryGet(key1, out var _);
             Debug.Assert(ok);
 
@@ -61,7 +61,7 @@ namespace Neo.Benchmarks.Persistence.Benchmarks
         [Benchmark]
         public void SnapshotCache_LevelDB()
         {
-            var snapshot = new SnapshotCache(levelDbStore);
+            var snapshot = new StoreCache(levelDbStore);
             var ok = snapshot.TryGet(key1, out var _);
             Debug.Assert(ok);
 

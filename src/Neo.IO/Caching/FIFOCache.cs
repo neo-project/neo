@@ -13,12 +13,9 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
-    public abstract class FIFOCache<TKey, TValue>
-        (int max_capacity, IEqualityComparer<TKey>? comparer = null) : Cache<TKey, TValue>(max_capacity, comparer)
-        where TKey : notnull
+    public abstract class FIFOCache<TKey, TValue>(int maxCapacity, IEqualityComparer<TKey>? comparer = null)
+        : Cache<TKey, TValue>(maxCapacity, comparer) where TKey : notnull
     {
-        protected override void OnAccess(CacheItem item)
-        {
-        }
+        protected override void OnAccess(CacheItem item) { }
     }
 }

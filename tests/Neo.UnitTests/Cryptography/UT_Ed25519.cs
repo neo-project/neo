@@ -88,7 +88,7 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] invalidPrivateKey = new byte[31]; // Invalid size
             Action act = () => Ed25519.GetPublicKey(invalidPrivateKey);
-            Assert.ThrowsException<ArgumentException>(act, "Invalid private key size*");
+            Assert.ThrowsExactly<ArgumentException>(act, "Invalid private key size*");
         }
 
         [TestMethod]
@@ -98,7 +98,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] invalidSignature = new byte[63]; // Invalid size
             byte[] publicKey = new byte[Ed25519.PublicKeySize];
             Action act = () => Ed25519.Verify(publicKey, message, invalidSignature);
-            Assert.ThrowsException<ArgumentException>(act, "Invalid signature size*");
+            Assert.ThrowsExactly<ArgumentException>(act, "Invalid signature size*");
         }
 
         [TestMethod]
@@ -108,7 +108,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] signature = new byte[Ed25519.SignatureSize];
             byte[] invalidPublicKey = new byte[31]; // Invalid size
             Action act = () => Ed25519.Verify(invalidPublicKey, message, signature);
-            Assert.ThrowsException<ArgumentException>(act, "Invalid public key size*");
+            Assert.ThrowsExactly<ArgumentException>(act, "Invalid public key size*");
         }
 
         // Test vectors from RFC 8032 (https://datatracker.ietf.org/doc/html/rfc8032)

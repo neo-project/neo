@@ -9,11 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.IO.Caching;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace Neo.Ledger
@@ -23,31 +26,33 @@ namespace Neo.Ledger
     /// </summary>
     public sealed class HeaderCache : IDisposable, IEnumerable<Header>
     {
-        private readonly IndexedQueue<Header> headers = new();
-        private readonly ReaderWriterLockSlim readerWriterLock = new();
+        public const int MaxHeaders = 10_000;
+
+        private readonly IndexedQueue<Header> _headers = new();
+        private readonly ReaderWriterLockSlim _readerWriterLock = new();
 
         /// <summary>
         /// Gets the <see cref="Header"/> at the specified index in the cache.
         /// </summary>
         /// <param name="index">The zero-based index of the <see cref="Header"/> to get.</param>
         /// <returns>The <see cref="Header"/> at the specified index in the cache.</returns>
-        public Header this[uint index]
+        public Header? this[uint index]
         {
             get
             {
-                readerWriterLock.EnterReadLock();
+                _readerWriterLock.EnterReadLock();
                 try
                 {
-                    if (headers.Count == 0) return null;
-                    uint firstIndex = headers[0].Index;
+                    if (_headers.Count == 0) return null;
+                    var firstIndex = _headers[0].Index;
                     if (index < firstIndex) return null;
                     index -= firstIndex;
-                    if (index >= headers.Count) return null;
-                    return headers[(int)index];
+                    if (index >= _headers.Count) return null;
+                    return _headers[(int)index];
                 }
                 finally
                 {
-                    readerWriterLock.ExitReadLock();
+                    _readerWriterLock.ExitReadLock();
                 }
             }
         }
@@ -59,14 +64,14 @@ namespace Neo.Ledger
         {
             get
             {
-                readerWriterLock.EnterReadLock();
+                _readerWriterLock.EnterReadLock();
                 try
                 {
-                    return headers.Count;
+                    return _headers.Count;
                 }
                 finally
                 {
-                    readerWriterLock.ExitReadLock();
+                    _readerWriterLock.ExitReadLock();
                 }
             }
         }
@@ -74,73 +79,80 @@ namespace Neo.Ledger
         /// <summary>
         /// Indicates whether the cache is full.
         /// </summary>
-        public bool Full => Count >= 10000;
+        public bool Full => Count >= MaxHeaders;
 
         /// <summary>
         /// Gets the last <see cref="Header"/> in the cache. Or <see langword="null"/> if the cache is empty.
         /// </summary>
-        public Header Last
+        public Header? Last
         {
             get
             {
-                readerWriterLock.EnterReadLock();
+                _readerWriterLock.EnterReadLock();
                 try
                 {
-                    if (headers.Count == 0) return null;
-                    return headers[^1];
+                    if (_headers.Count == 0) return null;
+                    return _headers[^1];
                 }
                 finally
                 {
-                    readerWriterLock.ExitReadLock();
+                    _readerWriterLock.ExitReadLock();
                 }
             }
         }
 
         public void Dispose()
         {
-            readerWriterLock.Dispose();
+            _readerWriterLock.Dispose();
         }
 
-        internal void Add(Header header)
+        internal bool Add(Header header)
         {
-            readerWriterLock.EnterWriteLock();
+            _readerWriterLock.EnterWriteLock();
             try
             {
-                headers.Enqueue(header);
+                // Enforce the cache limit when Full
+                if (_headers.Count >= MaxHeaders)
+                    return false;
+
+                _headers.Enqueue(header);
             }
             finally
             {
-                readerWriterLock.ExitWriteLock();
+                _readerWriterLock.ExitWriteLock();
             }
+            return true;
         }
 
-        internal bool TryRemoveFirst(out Header header)
+        internal bool TryRemoveFirst([NotNullWhen(true)] out Header? header)
         {
-            readerWriterLock.EnterWriteLock();
+            _readerWriterLock.EnterWriteLock();
             try
             {
-                return headers.TryDequeue(out header);
+                return _headers.TryDequeue(out header);
             }
             finally
             {
-                readerWriterLock.ExitWriteLock();
+                _readerWriterLock.ExitWriteLock();
             }
         }
 
         public IEnumerator<Header> GetEnumerator()
         {
-            readerWriterLock.EnterReadLock();
+            _readerWriterLock.EnterReadLock();
             try
             {
-                foreach (Header header in headers)
+                foreach (var header in _headers)
                     yield return header;
             }
             finally
             {
-                readerWriterLock.ExitReadLock();
+                _readerWriterLock.ExitReadLock();
             }
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
+
+#nullable disable

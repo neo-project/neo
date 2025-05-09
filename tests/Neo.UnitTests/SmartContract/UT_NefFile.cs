@@ -46,7 +46,7 @@ namespace Neo.UnitTests.SmartContract
                 ms.Seek(0, SeekOrigin.Begin);
                 ms.Write(wrongMagic, 0, 4);
                 ISerializable newFile = new NefFile();
-                Assert.ThrowsException<FormatException>(() =>
+                Assert.ThrowsExactly<FormatException>(() =>
                 {
                     MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
@@ -60,7 +60,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 ((ISerializable)file).Serialize(writer);
                 ISerializable newFile = new NefFile();
-                Assert.ThrowsException<FormatException>(() =>
+                Assert.ThrowsExactly<FormatException>(() =>
                 {
                     MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
@@ -75,7 +75,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 ((ISerializable)file).Serialize(writer);
                 ISerializable newFile = new NefFile();
-                Assert.ThrowsException<ArgumentException>(() =>
+                Assert.ThrowsExactly<ArgumentException>(() =>
                 {
                     MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
@@ -132,7 +132,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Wrong compiler
 
-            Assert.ThrowsException<ArgumentException>(() => file.ToArray());
+            Assert.ThrowsExactly<ArgumentException>(() => _ = file.ToArray());
 
             // Wrong script
 
@@ -140,14 +140,14 @@ namespace Neo.UnitTests.SmartContract
             file.Script = new byte[(1024 * 1024) + 1];
             var data = file.ToArray();
 
-            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
+            Assert.ThrowsExactly<FormatException>(() => _ = data.AsSerializable<NefFile>());
 
             // Wrong script hash
 
             file.Script = new byte[1024 * 1024];
             data = file.ToArray();
 
-            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
+            Assert.ThrowsExactly<FormatException>(() => _ = data.AsSerializable<NefFile>());
 
             // Wrong checksum
 
@@ -155,7 +155,7 @@ namespace Neo.UnitTests.SmartContract
             data = file.ToArray();
             file.CheckSum = NefFile.ComputeChecksum(file) + 1;
 
-            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
+            Assert.ThrowsExactly<FormatException>(() => _ = data.AsSerializable<NefFile>());
         }
     }
 }

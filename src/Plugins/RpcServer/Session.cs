@@ -21,7 +21,7 @@ namespace Neo.Plugins.RpcServer
 {
     class Session : IDisposable
     {
-        public readonly SnapshotCache Snapshot;
+        public readonly StoreCache Snapshot;
         public readonly ApplicationEngine Engine;
         public readonly Dictionary<Guid, IIterator> Iterators = new();
         public DateTime StartTime;
@@ -34,7 +34,7 @@ namespace Neo.Plugins.RpcServer
             {
                 Version = 0,
                 Nonce = (uint)random.Next(),
-                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(Snapshot) + system.Settings.MaxValidUntilBlockIncrement,
+                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(Snapshot) + system.GetMaxValidUntilBlockIncrement(),
                 Signers = signers,
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Script = script,

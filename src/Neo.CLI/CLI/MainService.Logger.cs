@@ -93,7 +93,7 @@ namespace Neo.CLI
 
             lock (syncRoot)
             {
-                DateTime now = DateTime.Now;
+                var now = DateTime.Now;
                 var log = $"[{now.TimeOfDay:hh\\:mm\\:ss\\.fff}]";
                 if (_showLog)
                 {
