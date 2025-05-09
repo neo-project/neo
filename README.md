@@ -51,7 +51,7 @@
       width="24px">
   </a>
   &nbsp;
-  <a href="https://discord.io/neo">
+  <a href="https://discord.com/invite/rvZFQ5382k">
       <img
       src=".github/images/discord-logo.png"
       width="25px">
