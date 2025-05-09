@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
@@ -35,6 +36,13 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void TestTryGetHash()
+        {
+            var tx = new Transaction();
+            Assert.IsFalse(tx.TryGetHash(out _));
+        }
+
+        [TestMethod]
         public void Sign()
         {
             TestVerifiable verifiable = new();
@@ -53,25 +61,16 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestRemoveHashsetHashSetCache()
         {
-            var a = new HashSet<int>
-            {
-                1,
-                2,
-                3
-            };
-
-            var b = new HashSetCache<int>(10)
-            {
-                2
-            };
+            var a = new HashSet<int> { 1, 2, 3 };
+            var b = new HashSetCache<int>(10);
+            b.TryAdd(2);
 
             a.Remove(b);
-
             CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
 
-            b.Add(4);
-            b.Add(5);
-            b.Add(1);
+            b.TryAdd(4);
+            b.TryAdd(5);
+            b.TryAdd(1);
             a.Remove(b);
 
             CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());

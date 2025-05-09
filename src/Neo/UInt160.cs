@@ -13,6 +13,7 @@ using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -56,7 +57,7 @@ namespace Neo
                 throw new FormatException($"Invalid length: {value.Length}");
 
             var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
-            value[..Length].CopyTo(span);
+            value.CopyTo(span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -163,7 +164,7 @@ namespace Neo
         /// <param name="str">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt160"/>.</param>
         /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string str, out UInt160 result)
+        public static bool TryParse(string str, [NotNullWhen(true)] out UInt160 result)
         {
             result = null;
             var data = str.AsSpan(); // AsSpan is null safe

@@ -11,6 +11,7 @@
 
 #pragma warning disable IDE0051
 
+using Akka.Dispatch;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
@@ -64,22 +65,56 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public const uint MaxStoragePrice = 10000000;
 
+        /// <summary>
+        /// The maximum block generation time that the committee can set in milliseconds.
+        /// </summary>
+        public const uint MaxMillisecondsPerBlock = 30_000;
+
+        /// <summary>
+        /// The maximum MaxValidUntilBlockIncrement value that the committee can set.
+        /// It is set to be a day of 1-second blocks.
+        /// </summary>
+        public const uint MaxMaxValidUntilBlockIncrement = 86400;
+
+        /// <summary>
+        /// The maximum MaxTraceableBlocks value that the committee can set.
+        /// It is set to be a year of 15-second blocks.
+        /// </summary>
+        public const uint MaxMaxTraceableBlocks = 2102400;
+
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
+        private const byte Prefix_MillisecondsPerBlock = 21;
+        private const byte Prefix_MaxValidUntilBlockIncrement = 22;
+        private const byte Prefix_MaxTraceableBlocks = 23;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
+        private readonly StorageKey _millisecondsPerBlock;
+        private readonly StorageKey _maxValidUntilBlockIncrement;
+        private readonly StorageKey _maxTraceableBlocks;
 
+        /// <summary>
+        /// The event name for the block generation time changed.
+        /// </summary>
+        private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
 
+        [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
+            "old", ContractParameterType.Integer,
+            "new", ContractParameterType.Integer
+        )]
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
             _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
             _storagePrice = CreateStorageKey(Prefix_StoragePrice);
+            _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
+            _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
+            _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -93,6 +128,9 @@ namespace Neo.SmartContract.Native
             if (hardfork == Hardfork.HF_Echidna)
             {
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
+                engine.SnapshotCache.Add(_millisecondsPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
+                engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
+                engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
             }
             return ContractTask.CompletedTask;
         }
@@ -131,12 +169,46 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Gets the block generation time in milliseconds.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The block generation time in milliseconds.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetMillisecondsPerBlock(IReadOnlyStore snapshot)
+        {
+            return (uint)(BigInteger)snapshot[_millisecondsPerBlock];
+        }
+
+        /// <summary>
+        /// Gets the upper increment size of blockchain height (in blocks) exceeding
+        /// that a transaction should fail validation.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>MaxValidUntilBlockIncrement value.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetMaxValidUntilBlockIncrement(IReadOnlyStore snapshot)
+        {
+            return (uint)(BigInteger)snapshot[_maxValidUntilBlockIncrement];
+        }
+
+        /// <summary>
+        /// Gets the length of the chain accessible to smart contracts.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>MaxTraceableBlocks value.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetMaxTraceableBlocks(IReadOnlyStore snapshot)
+        {
+            return (uint)(BigInteger)snapshot[_maxTraceableBlocks];
+        }
+
+        /// <summary>
         /// Gets the fee for attribute before Echidna hardfork.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
         public uint GetAttributeFeeV0(IReadOnlyStore snapshot, byte attributeType)
         {
             return GetAttributeFee(snapshot, attributeType, false);
@@ -148,8 +220,8 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType)
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
+        public uint GetAttributeFeeV1(IReadOnlyStore snapshot, byte attributeType)
         {
             return GetAttributeFee(snapshot, attributeType, true);
         }
@@ -184,13 +256,34 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Sets the block generation time in milliseconds.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="value">The block generation time in milliseconds. Must be between 1 and MaxBlockGenTime.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided value is outside the allowed range.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        public void SetMillisecondsPerBlock(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxMillisecondsPerBlock)
+                throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock value should be between 1 and {MaxMillisecondsPerBlock}, got {value}");
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("invalid committee signature");
+
+            var oldTime = GetMillisecondsPerBlock(engine.SnapshotCache);
+            engine.SnapshotCache.GetAndChange(_millisecondsPerBlock).Set(value);
+
+            engine.SendNotification(Hash, MillisecondsPerBlockChangedEventName,
+                [new VM.Types.Integer(oldTime), new VM.Types.Integer(value)]);
+        }
+
+        /// <summary>
         /// Sets the fee for attribute before Echidna hardfork.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <param name="value">Attribute fee value</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
         private void SetAttributeFeeV0(ApplicationEngine engine, byte attributeType, uint value)
         {
             SetAttributeFee(engine, attributeType, value, false);
@@ -203,7 +296,7 @@ namespace Neo.SmartContract.Native
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <param name="value">Attribute fee value</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
         private void SetAttributeFeeV1(ApplicationEngine engine, byte attributeType, uint value)
         {
             SetAttributeFee(engine, attributeType, value, true);
@@ -250,6 +343,37 @@ namespace Neo.SmartContract.Native
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
+        }
+
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetMaxValidUntilBlockIncrement(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxMaxValidUntilBlockIncrement) throw new ArgumentOutOfRangeException(nameof(value));
+            var mtb = GetMaxTraceableBlocks(engine.SnapshotCache);
+            if (value >= mtb)
+                throw new InvalidOperationException($"MaxValidUntilBlockIncrement must be lower than MaxTraceableBlocks ({value} vs {mtb})");
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement).Set(value);
+        }
+
+        /// <summary>
+        /// Sets the length of the chain accessible to smart contracts.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="value">MaxTraceableBlocks value.</param>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetMaxTraceableBlocks(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxMaxTraceableBlocks)
+                throw new ArgumentOutOfRangeException(nameof(value), $"MaxTraceableBlocks value should be between 1 and {MaxMaxTraceableBlocks}, got {value}");
+            var oldVal = GetMaxTraceableBlocks(engine.SnapshotCache);
+            if (value > oldVal)
+                throw new InvalidOperationException($"MaxTraceableBlocks can not be increased (old {oldVal}, new {value})");
+            var mVUBIncrement = GetMaxValidUntilBlockIncrement(engine.SnapshotCache);
+            if (value <= mVUBIncrement)
+                throw new InvalidOperationException($"MaxTraceableBlocks must be larger than MaxValidUntilBlockIncrement ({value} vs {mVUBIncrement})");
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+            engine.SnapshotCache.GetAndChange(_maxTraceableBlocks).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

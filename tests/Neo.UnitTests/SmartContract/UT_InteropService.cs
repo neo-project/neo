@@ -37,12 +37,14 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_InteropService : TestKit
     {
+        private NeoSystem _system;
         private DataCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            _system = TestBlockchain.GetSystem();
+            _snapshotCache = _system.GetSnapshotCache();
         }
 
         [TestMethod]
@@ -69,28 +71,29 @@ namespace Neo.UnitTests.SmartContract
 
                 snapshotCache.DeleteContract(scriptHash2);
                 var contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer));
-                contract.Manifest.Abi.Events = new[]
-                {
+                contract.Manifest.Abi.Events =
+                [
                     new ContractEventDescriptor
                     {
                         Name = "testEvent2",
-                        Parameters = new[]
-                        {
+                        Parameters =
+                        [
                             new ContractParameterDefinition
                             {
+                                Name = "testName",
                                 Type = ContractParameterType.Any
                             }
-                        }
+                        ]
                     }
-                };
-                contract.Manifest.Permissions = new ContractPermission[]
-                {
+                ];
+                contract.Manifest.Permissions =
+                [
                     new ContractPermission
                     {
                         Contract = ContractPermissionDescriptor.Create(scriptHash2),
-                        Methods = WildcardContainer<string>.Create(new string[]{"test"})
+                        Methods = WildcardContainer<string>.Create(["test"])
                     }
-                };
+                ];
                 snapshotCache.AddContract(scriptHash2, contract);
             }
 
@@ -145,23 +148,23 @@ namespace Neo.UnitTests.SmartContract
                     {
                         Abi = new()
                         {
-                            Events = new[]
-                            {
+                            Events =
+                            [
                                 new ContractEventDescriptor
                                 {
                                     Name = "testEvent1",
-                                    Parameters = Array.Empty<ContractParameterDefinition>()
+                                    Parameters = []
                                 }
-                            }
+                            ]
                         },
-                        Permissions = new ContractPermission[]
-                        {
+                        Permissions =
+                        [
                             new ContractPermission
                             {
                                 Contract = ContractPermissionDescriptor.Create(scriptHash2),
-                                Methods = WildcardContainer<string>.Create(new string[]{"test"})
+                                Methods = WildcardContainer<string>.Create(["test"])
                             }
-                        }
+                        ]
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;
@@ -222,23 +225,23 @@ namespace Neo.UnitTests.SmartContract
                     {
                         Abi = new()
                         {
-                            Events = new[]
-                            {
+                            Events =
+                            [
                                 new ContractEventDescriptor
                                 {
                                     Name = "testEvent1",
-                                    Parameters = Array.Empty<ContractParameterDefinition>()
+                                    Parameters = []
                                 }
-                            }
+                            ]
                         },
-                        Permissions = new ContractPermission[]
-                        {
+                        Permissions =
+                        [
                             new ContractPermission
                             {
                                 Contract = ContractPermissionDescriptor.Create(scriptHash2),
-                                Methods = WildcardContainer<string>.Create(new string[]{"test"})
+                                Methods = WildcardContainer<string>.Create(["test"])
                             }
-                        }
+                        ]
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;
@@ -465,7 +468,7 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             Assert.IsNull(NativeContract.Ledger.GetBlock(engine.SnapshotCache, new UInt256(data1)));
-            Assert.IsNotNull(NativeContract.Ledger.GetBlock(engine.SnapshotCache, TestBlockchain.TheNeoSystem.GenesisBlock.Hash));
+            Assert.IsNotNull(NativeContract.Ledger.GetBlock(engine.SnapshotCache, _system.GenesisBlock.Hash));
         }
 
         [TestMethod]
@@ -510,12 +513,14 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01 };
             Assert.IsNull(NativeContract.ContractManagement.GetContract(engine.SnapshotCache, new UInt160(data1)));
+            Assert.IsFalse(NativeContract.ContractManagement.IsContract(engine.SnapshotCache, new UInt160(data1)));
 
             var state = TestUtils.GetContract();
             engine.SnapshotCache.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, engine.SnapshotCache);
             engine.LoadScript(new byte[] { 0x01 });
             Assert.AreEqual(state.Hash, NativeContract.ContractManagement.GetContract(engine.SnapshotCache, state.Hash).Hash);
+            Assert.IsTrue(NativeContract.ContractManagement.IsContract(engine.SnapshotCache, state.Hash));
         }
 
         [TestMethod]
@@ -618,17 +623,17 @@ namespace Neo.UnitTests.SmartContract
 
             //key.Length > MaxStorageKeySize
             key = new byte[ApplicationEngine.MaxStorageKeySize + 1];
-            value = new byte[] { 0x02 };
+            value = [0x02];
             Assert.ThrowsExactly<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //value.Length > MaxStorageValueSize
-            key = new byte[] { 0x01 };
+            key = [0x01];
             value = new byte[ushort.MaxValue + 1];
             Assert.ThrowsExactly<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //context.IsReadOnly
-            key = new byte[] { 0x01 };
-            value = new byte[] { 0x02 };
+            key = [0x01];
+            value = [0x02];
             storageContext.IsReadOnly = true;
             Assert.ThrowsExactly<ArgumentException>(() => engine.Put(storageContext, key, value));
 
@@ -648,14 +653,14 @@ namespace Neo.UnitTests.SmartContract
             snapshotCache.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             engine.LoadScript(new byte[] { 0x01 });
-            key = new byte[] { 0x01 };
-            value = new byte[] { 0x02 };
+            key = [0x01];
+            value = [0x02];
             storageContext.IsReadOnly = false;
             engine.Put(storageContext, key, value);
 
             //value length == 0
-            key = new byte[] { 0x01 };
-            value = Array.Empty<byte>();
+            key = [0x01];
+            value = [];
             engine.Put(storageContext, key, value);
         }
 
@@ -779,7 +784,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = _snapshotCache.CloneCache();
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
             var block = hasBlock ? new Block { Header = new Header() } : null;
-            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestProtocolSettings.Default, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }
@@ -800,7 +805,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result);
             result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
             Assert.IsTrue(result);
-            result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[0], NamedCurveHash.secp256k1SHA256);
+            result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256);
             Assert.IsFalse(result);
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[64], NamedCurveHash.secp256r1Keccak256));
         }

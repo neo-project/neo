@@ -235,6 +235,23 @@ namespace Neo.Persistence
         /// <summary>
         /// Finds the entries starting with the specified prefix.
         /// </summary>
+        /// <param name="direction">The search direction.</param>
+        /// <returns>The entries found with the desired prefix.</returns>
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(SeekDirection direction = SeekDirection.Forward)
+        {
+            return Find((byte[]?)null, direction);
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        {
+            var key = key_prefix?.ToArray();
+            return Find(key, direction);
+        }
+
+        /// <summary>
+        /// Finds the entries starting with the specified prefix.
+        /// </summary>
         /// <param name="key_prefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired prefix.</returns>
@@ -483,12 +500,14 @@ namespace Neo.Persistence
             {
                 if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
                 {
+                    if (i1.Key == null || i1.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
                     yield return (i1.Key, i1.Item);
                     c1 = e1.MoveNext();
                     i1 = c1 ? e1.Current : default;
                 }
                 else
                 {
+                    if (i2.Key == null || i2.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
                     yield return (i2.Key, i2.Item);
                     c2 = e2.MoveNext();
                     i2 = c2 ? e2.Current : default;

@@ -23,14 +23,14 @@ namespace Neo.UnitTests.Persistence
     [TestClass]
     public class UT_MemoryStore
     {
-        private NeoSystem _neoSystem;
+        private NeoSystem _system;
         private MemoryStore _memoryStore;
 
         [TestInitialize]
         public void Setup()
         {
             _memoryStore = new MemoryStore();
-            _neoSystem = new NeoSystem(TestProtocolSettings.Default, new TestMemoryStoreProvider(_memoryStore));
+            _system = new NeoSystem(TestProtocolSettings.Default, new TestMemoryStoreProvider(_memoryStore));
         }
 
         [TestCleanup]
@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void LoadStoreTest()
         {
-            Assert.IsInstanceOfType<MemoryStore>(TestBlockchain.TheNeoSystem.LoadStore("abc"));
+            Assert.IsInstanceOfType<MemoryStore>(_system.LoadStore("abc"));
         }
 
         [TestMethod]
@@ -59,9 +59,9 @@ namespace Neo.UnitTests.Persistence
             CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, store.TryGet([1]));
 
             store.Put([2], [4, 5, 6]);
-            CollectionAssert.AreEqual(new byte[] { 1 }, store.Seek([]).Select(u => u.Key).First());
-            CollectionAssert.AreEqual(new byte[] { 2 }, store.Seek([2], SeekDirection.Backward).Select(u => u.Key).First());
-            CollectionAssert.AreEqual(new byte[] { 1 }, store.Seek([1], SeekDirection.Backward).Select(u => u.Key).First());
+            CollectionAssert.AreEqual(new byte[] { 1 }, store.Find([]).Select(u => u.Key).First());
+            CollectionAssert.AreEqual(new byte[] { 2 }, store.Find([2], SeekDirection.Backward).Select(u => u.Key).First());
+            CollectionAssert.AreEqual(new byte[] { 1 }, store.Find([1], SeekDirection.Backward).Select(u => u.Key).First());
 
             store.Delete([1]);
             store.Delete([2]);
@@ -72,15 +72,15 @@ namespace Neo.UnitTests.Persistence
             store.Put([0x00, 0x00, 0x03], [0x03]);
             store.Put([0x00, 0x00, 0x04], [0x04]);
 
-            var entries = store.Seek([], SeekDirection.Backward).ToArray();
+            var entries = store.Find([], SeekDirection.Backward).ToArray();
             Assert.AreEqual(0, entries.Length);
         }
 
         [TestMethod]
         public void NeoSystemStoreViewTest()
         {
-            Assert.IsNotNull(_neoSystem.StoreView);
-            var store = _neoSystem.StoreView;
+            Assert.IsNotNull(_system.StoreView);
+            var store = _system.StoreView;
             var key = new StorageKey(Encoding.UTF8.GetBytes("testKey"));
             var value = new StorageItem(Encoding.UTF8.GetBytes("testValue"));
 
@@ -100,7 +100,7 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void NeoSystemStoreAddTest()
         {
-            var storeCache = _neoSystem.GetSnapshotCache();
+            var storeCache = _system.GetSnapshotCache();
             var key = new KeyBuilder(0, 0);
             storeCache.Add(key, new StorageItem(UInt256.Zero.ToArray()));
             storeCache.Commit();
@@ -111,7 +111,7 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void NeoSystemStoreGetAndChange()
         {
-            var storeView = _neoSystem.GetSnapshotCache();
+            var storeView = _system.GetSnapshotCache();
             var key = new KeyBuilder(1, 1);
             var item = new StorageItem([1, 2, 3]);
             storeView.Delete(key);

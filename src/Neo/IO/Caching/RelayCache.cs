@@ -15,8 +15,7 @@ using Neo.Network.P2P.Payloads;
 
 namespace Neo.IO.Caching
 {
-    internal class RelayCache
-        (int max_capacity) : FIFOCache<UInt256, IInventory>(max_capacity)
+    internal class RelayCache(int maxCapacity) : FIFOCache<UInt256, IInventory>(maxCapacity)
     {
         protected override UInt256 GetKeyForItem(IInventory item)
         {

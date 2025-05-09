@@ -44,8 +44,8 @@ namespace Neo.Network.RPC.Tests
         {
             keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
             sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
-            multiSender = Contract.CreateMultiSigContract(1, new ECPoint[] { keyPair1.PublicKey }).ScriptHash;
-            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
+            multiSender = Contract.CreateMultiSigContract(1, [keyPair1.PublicKey]).ScriptHash;
+            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, []);
             client = rpcClientMock.Object;
             address1 = Helper.ToAddress(sender, client.protocolSettings.AddressVersion);
             walletAPI = new WalletAPI(rpcClientMock.Object);
@@ -115,7 +115,7 @@ namespace Neo.Network.RPC.Tests
             UT_TransactionManager.MockInvokeScript(rpcClientMock, decimalsScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(8) });
 
             byte[] testScript = NativeContract.GAS.Hash.MakeScript("transfer", sender, UInt160.Zero, NativeContract.GAS.Factor * 100, null)
-                .Concat(new[] { (byte)OpCode.ASSERT })
+                .Concat([(byte)OpCode.ASSERT])
                 .ToArray();
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 

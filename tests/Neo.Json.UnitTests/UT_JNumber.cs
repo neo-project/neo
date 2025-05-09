@@ -75,7 +75,7 @@ namespace Neo.Json.UnitTests
             Assert.IsTrue(minInt == JNumber.MIN_SAFE_INTEGER);
             Assert.IsTrue(zero == new JNumber());
             Assert.IsFalse(zero != new JNumber());
-            Assert.IsTrue(zero.AsNumber() == zero.GetNumber());
+            Assert.AreEqual(zero.GetNumber(), zero.AsNumber());
             Assert.IsFalse(zero == null);
 
             var jnum = new JNumber(1);

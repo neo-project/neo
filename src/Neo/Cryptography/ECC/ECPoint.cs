@@ -228,13 +228,13 @@ namespace Neo.Cryptography.ECC
 
         public override int GetHashCode()
         {
-            return (X?.GetHashCode() ?? 0) + (Y?.GetHashCode() ?? 0);
+            return HashCode.Combine(Curve.GetHashCode(), X?.GetHashCode() ?? 0, Y?.GetHashCode() ?? 0);
         }
 
         internal static ECPoint Multiply(ECPoint p, BigInteger k)
         {
             // floor(log2(k))
-            var m = (int)VM.Utility.GetBitLength(k);
+            var m = (int)k.GetBitLength();
 
             // width of the Window NAF
             sbyte width;
@@ -397,7 +397,7 @@ namespace Neo.Cryptography.ECC
 
         private static sbyte[] WindowNaf(sbyte width, BigInteger k)
         {
-            var wnaf = new sbyte[VM.Utility.GetBitLength(k) + 1];
+            var wnaf = new sbyte[k.GetBitLength() + 1];
             var pow2wB = (short)(1 << width);
             var i = 0;
             var length = 0;

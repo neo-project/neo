@@ -23,14 +23,13 @@ namespace Neo.Plugins.Trackers.NEP_17
 
         public int Size => UInt160.Length + UInt160.Length;
 
-        public Nep17BalanceKey() : this(new UInt160(), new UInt160())
-        {
-        }
+        public Nep17BalanceKey() : this(new UInt160(), new UInt160()) { }
 
         public Nep17BalanceKey(UInt160 userScriptHash, UInt160 assetScriptHash)
         {
-            if (userScriptHash == null || assetScriptHash == null)
-                throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(userScriptHash, nameof(userScriptHash));
+            ArgumentNullException.ThrowIfNull(assetScriptHash, nameof(assetScriptHash));
+
             UserScriptHash = userScriptHash;
             AssetScriptHash = assetScriptHash;
         }

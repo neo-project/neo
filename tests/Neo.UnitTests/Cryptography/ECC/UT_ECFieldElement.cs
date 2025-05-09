@@ -42,6 +42,20 @@ namespace Neo.UnitTests.Cryptography.ECC
         }
 
         [TestMethod]
+        public void TestGetHashCode()
+        {
+            var pointA = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            var pointB = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            var pointC = new ECFieldElement(new BigInteger(100), ECCurve.Secp256r1); // different curve
+            var pointD = new ECFieldElement(new BigInteger(101), ECCurve.Secp256k1);
+
+            Assert.AreEqual(pointA.GetHashCode(), pointB.GetHashCode());
+            Assert.AreNotEqual(pointA.GetHashCode(), pointC.GetHashCode());
+            Assert.AreNotEqual(pointB.GetHashCode(), pointC.GetHashCode());
+            Assert.AreNotEqual(pointB.GetHashCode(), pointD.GetHashCode());
+        }
+
+        [TestMethod]
         public void TestCompareTo()
         {
             ECFieldElement X1 = new(new BigInteger(100), ECCurve.Secp256k1);

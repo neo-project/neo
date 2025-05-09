@@ -21,25 +21,26 @@ namespace Neo.UnitTests.Network.P2P
     [TestClass]
     public class UT_LocalNode : TestKit
     {
-        private static NeoSystem testBlockchain;
+        private static NeoSystem _system;
 
         [TestInitialize]
         public void Init()
         {
-            testBlockchain = TestBlockchain.TheNeoSystem;
+            _system = TestBlockchain.GetSystem();
         }
 
         [TestMethod]
         public void TestDefaults()
         {
             var senderProbe = CreateTestProbe();
-            senderProbe.Send(testBlockchain.LocalNode, new LocalNode.GetInstance());
+            senderProbe.Send(_system.LocalNode, new ChannelsConfig()); // No Tcp
+            senderProbe.Send(_system.LocalNode, new LocalNode.GetInstance());
             var localnode = senderProbe.ExpectMsg<LocalNode>();
 
             Assert.AreEqual(0, localnode.ListenerTcpPort);
-            Assert.AreEqual(3, localnode.MaxConnectionsPerAddress);
-            Assert.AreEqual(10, localnode.MinDesiredConnections);
-            Assert.AreEqual(40, localnode.MaxConnections);
+            Assert.AreEqual(3, localnode.Config.MaxConnectionsPerAddress);
+            Assert.AreEqual(10, localnode.Config.MinDesiredConnections);
+            Assert.AreEqual(40, localnode.Config.MaxConnections);
             Assert.AreEqual(0, localnode.UnconnectedCount);
 
             CollectionAssert.AreEqual(Array.Empty<RemoteNode>(), localnode.GetRemoteNodes().ToArray());

@@ -384,45 +384,34 @@ namespace Neo.Plugins.OracleService
             var m = n - (n - 1) / 3;
             var oracleSignContract = Contract.CreateMultiSigContract(m, oracleNodes);
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
-            var validUntilBlock = requestTx.BlockIndex + settings.MaxValidUntilBlockIncrement;
+            var maxVUB = snapshot.GetMaxValidUntilBlockIncrement(settings);
+            var validUntilBlock = requestTx.BlockIndex + maxVUB;
             while (useCurrentHeight && validUntilBlock <= height)
             {
-                validUntilBlock += settings.MaxValidUntilBlockIncrement;
+                validUntilBlock += maxVUB;
             }
             var tx = new Transaction()
             {
                 Version = 0,
                 Nonce = unchecked((uint)response.Id),
                 ValidUntilBlock = validUntilBlock,
-                Signers = new[]
-                {
-                    new Signer
-                    {
-                        Account = NativeContract.Oracle.Hash,
-                        Scopes = WitnessScope.None
-                    },
-                    new Signer
-                    {
-                        Account = oracleSignContract.ScriptHash,
-                        Scopes = WitnessScope.None
-                    }
-                },
-                Attributes = new[] { response },
+                Signers = [
+                    new(){ Account = NativeContract.Oracle.Hash, Scopes = WitnessScope.None },
+                    new(){ Account = oracleSignContract.ScriptHash, Scopes = WitnessScope.None },
+                ],
+                Attributes = [response],
                 Script = OracleResponse.FixedScript,
                 Witnesses = new Witness[2]
             };
-            Dictionary<UInt160, Witness> witnessDict = new Dictionary<UInt160, Witness>
+
+            var witnessDict = new Dictionary<UInt160, Witness>
             {
                 [oracleSignContract.ScriptHash] = new Witness
                 {
-                    InvocationScript = Array.Empty<byte>(),
+                    InvocationScript = ReadOnlyMemory<byte>.Empty,
                     VerificationScript = oracleSignContract.Script,
                 },
-                [NativeContract.Oracle.Hash] = new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>(),
-                }
+                [NativeContract.Oracle.Hash] = Witness.Empty,
             };
 
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);

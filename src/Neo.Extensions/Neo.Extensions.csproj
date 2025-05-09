@@ -16,6 +16,7 @@
     <InternalsVisibleTo Include="Neo" />
     <InternalsVisibleTo Include="Neo.IO" />
     <InternalsVisibleTo Include="Neo.UnitTests" />
+    <InternalsVisibleTo Include="Neo.Extensions.Tests" />
   </ItemGroup>
 
 </Project>
