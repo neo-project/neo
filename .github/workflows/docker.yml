@@ -51,6 +51,7 @@ jobs:
         dotnet build ./src/Plugins/LevelDBStore \
           --framework net9.0 \
           --configuration Release \
+          --runtime linux-x64 \
           --output ${{ env.DIST_DIR }}/Plugins/LevelDBStore \
           --verbosity normal \
           -p:VersionPrefix=${{ env.APP_VERSION }}
