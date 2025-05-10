@@ -73,7 +73,7 @@ namespace Neo.CLI
 
             if (CurrentWallet is not null)
             {
-                SignerFactory.UnregisterSigner(CurrentWallet.Name);
+                SignerManager.UnregisterSigner(CurrentWallet.Name);
             }
 
             CurrentWallet = null;
