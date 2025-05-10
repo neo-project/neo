@@ -41,7 +41,7 @@ namespace Neo.SmartContract
             {
                 Script = contract.Script;
                 Parameters = contract.ParameterList.Select(p => new ContractParameter { Type = p }).ToArray();
-                Signatures = new Dictionary<ECPoint, byte[]>();
+                Signatures = new();
             }
 
             public ContextItem(JObject json)
@@ -108,11 +108,12 @@ namespace Neo.SmartContract
             }
         }
 
-        private UInt160[] _ScriptHashes = null;
+        private UInt160[] _scriptHashes = null;
+
         /// <summary>
         /// Gets the script hashes to be verified for the <see cref="Verifiable"/>.
         /// </summary>
-        public IReadOnlyList<UInt160> ScriptHashes => _ScriptHashes ??= Verifiable.GetScriptHashesForVerifying(SnapshotCache);
+        public IReadOnlyList<UInt160> ScriptHashes => _scriptHashes ??= Verifiable.GetScriptHashesForVerifying(SnapshotCache);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractParametersContext"/> class.
@@ -124,7 +125,7 @@ namespace Neo.SmartContract
         {
             Verifiable = verifiable;
             SnapshotCache = snapshotCache;
-            ContextItems = new Dictionary<UInt160, ContextItem>();
+            ContextItems = new();
             Network = network;
         }
 
@@ -134,10 +135,13 @@ namespace Neo.SmartContract
         /// <param name="contract">The contract contains the script.</param>
         /// <param name="index">The index of the parameter.</param>
         /// <param name="parameter">The value of the parameter.</param>
-        /// <returns><see langword="true"/> if the parameter is added successfully; otherwise, <see langword="false"/>.</returns>
+        /// <returns>
+        /// <see langword="true"/>
+        /// If the contract script hash not exists in context, return false; otherwise, return true.
+        /// </returns>
         public bool Add(Contract contract, int index, object parameter)
         {
-            ContextItem item = CreateItem(contract);
+            var item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
             return true;
@@ -148,10 +152,12 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="contract">The contract contains the script.</param>
         /// <param name="parameters">The values of the parameters.</param>
-        /// <returns><see langword="true"/> if the parameters are added successfully; otherwise, <see langword="false"/>.</returns>
+        /// <returns>
+        /// If the contract script hash not exists in context, return false; otherwise, return true.
+        /// </returns>
         public bool Add(Contract contract, params object[] parameters)
         {
-            ContextItem item = CreateItem(contract);
+            var item = CreateItem(contract);
             if (item == null) return false;
             for (int index = 0; index < parameters.Length; index++)
             {
@@ -166,32 +172,48 @@ namespace Neo.SmartContract
         /// <param name="contract">The contract contains the script.</param>
         /// <param name="pubkey">The public key for the signature.</param>
         /// <param name="signature">The signature.</param>
-        /// <returns><see langword="true"/> if the signature is added successfully; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="NotSupportedException">
+        /// Thrown when the contract is single-signature contract and the contract parameters have multiple signatures.
+        /// </exception>
+        /// <returns>
+        /// If:
+        /// 1. The contract is a multi-signature contract and the public key is not in the multi-signature contract;
+        /// 2. The contract script hash not exists in script hash list;
+        /// 3. The contract parameters are all added;
+        /// 4. The contract is single-signature contract and the contract parameters haven't signature;
+        /// It will return false; Otherwise, return true.
+        /// </returns>
         public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature)
         {
             if (IsMultiSigContract(contract.Script, out _, out ECPoint[] points))
             {
-                if (!points.Contains(pubkey)) return false;
-                ContextItem item = CreateItem(contract);
-                if (item == null) return false;
-                if (item.Parameters.All(p => p.Value != null)) return false;
-                if (!item.Signatures.TryAdd(pubkey, signature))
-                    return false;
+                if (!points.Contains(pubkey)) return false; // the public key not in the multi-signature contract
+
+                var item = CreateItem(contract);
+                if (item == null) return false; // the contract script hash not exists in context
+                if (item.Parameters.All(p => p.Value != null)) return false; // the contract parameters are all added
+                if (!item.Signatures.TryAdd(pubkey, signature)) return false; // already added
+
                 if (item.Signatures.Count == contract.ParameterList.Length)
                 {
-                    Dictionary<ECPoint, int> dic = points.Select((p, i) => new
+                    var dic = points.Select((p, i) => new
                     {
                         PublicKey = p,
                         Index = i
                     }).ToDictionary(p => p.PublicKey, p => p.Index);
-                    byte[][] sigs = item.Signatures.Select(p => new
+
+                    var sigs = item.Signatures.Select(p => new
                     {
                         Signature = p.Value,
                         Index = dic[p.Key]
                     }).OrderByDescending(p => p.Index).Select(p => p.Signature).ToArray();
+
                     for (int i = 0; i < sigs.Length; i++)
-                        if (!Add(contract, i, sigs[i]))
-                            throw new InvalidOperationException();
+                    {
+                        // `Add` should always be true because the line `var item = CreateItem(contract)`
+                        // has already checked the contract script hash exists in context
+                        if (!Add(contract, i, sigs[i])) throw new InvalidOperationException();
+                    }
                 }
                 return true;
             }
@@ -199,11 +221,13 @@ namespace Neo.SmartContract
             {
                 int index = -1;
                 for (int i = 0; i < contract.ParameterList.Length; i++)
+                {
                     if (contract.ParameterList[i] == ContractParameterType.Signature)
-                        if (index >= 0)
-                            throw new NotSupportedException();
-                        else
-                            index = i;
+                    {
+                        if (index >= 0) throw new NotSupportedException("more than one signature parameter");
+                        index = i;
+                    }
+                }
 
                 if (index == -1)
                 {
@@ -211,10 +235,11 @@ namespace Neo.SmartContract
                     // return now to prevent array index out of bounds exception
                     return false;
                 }
-                ContextItem item = CreateItem(contract);
-                if (item == null) return false;
-                if (!item.Signatures.TryAdd(pubkey, signature))
-                    return false;
+
+                var item = CreateItem(contract);
+                if (item == null) return false; // the contract script hash not exists in context
+                if (!item.Signatures.TryAdd(pubkey, signature)) return false; // already added
+
                 item.Parameters[index].Value = signature;
                 return true;
             }
@@ -246,7 +271,7 @@ namespace Neo.SmartContract
 
         private ContextItem CreateItem(Contract contract)
         {
-            if (ContextItems.TryGetValue(contract.ScriptHash, out ContextItem item))
+            if (ContextItems.TryGetValue(contract.ScriptHash, out var item))
                 return item;
             if (!ScriptHashes.Contains(contract.ScriptHash))
                 return null;
@@ -263,19 +288,24 @@ namespace Neo.SmartContract
         /// <returns>The converted context.</returns>
         public static ContractParametersContext FromJson(JObject json, DataCache snapshot)
         {
-            var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(json["type"].AsString());
-            if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
+            var typeName = json["type"].AsString();
+            var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(typeName);
+            if (!typeof(IVerifiable).IsAssignableFrom(type))
+                throw new FormatException($"json['type']({typeName}) is not an {nameof(IVerifiable)}");
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
-            byte[] data = Convert.FromBase64String(json["data"].AsString());
-            MemoryReader reader = new(data);
+            var data = Convert.FromBase64String(json["data"].AsString());
+            var reader = new MemoryReader(data);
+
             verifiable.DeserializeUnsigned(ref reader);
             if (json.ContainsProperty("hash"))
             {
-                UInt256 hash = UInt256.Parse(json["hash"].GetString());
-                if (hash != verifiable.Hash) throw new FormatException();
+                var hash = json["hash"].GetString();
+                var h256 = UInt256.Parse(hash);
+                if (h256 != verifiable.Hash) throw new FormatException($"json['hash']({hash}) != {verifiable.Hash}");
             }
-            ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"].GetInt32());
+
+            var context = new ContractParametersContext(snapshot, verifiable, (uint)json["network"].GetInt32());
             foreach (var (key, value) in ((JObject)json["items"]).Properties)
             {
                 context.ContextItems.Add(UInt160.Parse(key), new ContextItem((JObject)value));
@@ -288,7 +318,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
         /// <param name="index">The specified index.</param>
-        /// <returns>The parameter with the specified index.</returns>
+        /// <returns>The parameter with the specified index, null if the script hash not exists in context.</returns>
         public ContractParameter GetParameter(UInt160 scriptHash, int index)
         {
             return GetParameters(scriptHash)?[index];
@@ -298,10 +328,10 @@ namespace Neo.SmartContract
         /// Gets the parameters from the witness script.
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
-        /// <returns>The parameters from the witness script.</returns>
+        /// <returns>The parameters from the witness script, null if the script hash not exists in context.</returns>
         public IReadOnlyList<ContractParameter> GetParameters(UInt160 scriptHash)
         {
-            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+            if (!ContextItems.TryGetValue(scriptHash, out var item))
                 return null;
             return item.Parameters;
         }
@@ -310,10 +340,10 @@ namespace Neo.SmartContract
         /// Gets the signatures from the witness script.
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
-        /// <returns>The signatures from the witness script.</returns>
+        /// <returns>The signatures from the witness script. null if the script hash not exists in context.</returns>
         public IReadOnlyDictionary<ECPoint, byte[]> GetSignatures(UInt160 scriptHash)
         {
-            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+            if (!ContextItems.TryGetValue(scriptHash, out var item))
                 return null;
             return item.Signatures;
         }
@@ -322,10 +352,10 @@ namespace Neo.SmartContract
         /// Gets the witness script with the specified hash.
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
-        /// <returns>The witness script.</returns>
+        /// <returns>The witness script, null if the script hash not exists in context.</returns>
         public byte[] GetScript(UInt160 scriptHash)
         {
-            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+            if (!ContextItems.TryGetValue(scriptHash, out var item))
                 return null;
             return item.Script;
         }
@@ -334,15 +364,16 @@ namespace Neo.SmartContract
         /// Gets the witnesses of the <see cref="Verifiable"/>.
         /// </summary>
         /// <returns>The witnesses of the <see cref="Verifiable"/>.</returns>
-        /// <exception cref="InvalidOperationException">The witnesses are not ready to be added.</exception>
+        /// <exception cref="InvalidOperationException">The witnesses are not ready, i.e Completed is false.</exception>
         public Witness[] GetWitnesses()
         {
-            if (!Completed) throw new InvalidOperationException();
-            Witness[] witnesses = new Witness[ScriptHashes.Count];
+            if (!Completed) throw new InvalidOperationException("Witnesses are not ready");
+
+            var witnesses = new Witness[ScriptHashes.Count];
             for (int i = 0; i < ScriptHashes.Count; i++)
             {
-                ContextItem item = ContextItems[ScriptHashes[i]];
-                using ScriptBuilder sb = new();
+                var item = ContextItems[ScriptHashes[i]];
+                using var sb = new ScriptBuilder();
                 for (int j = item.Parameters.Length - 1; j >= 0; j--)
                 {
                     sb.EmitPush(item.Parameters[j]);
@@ -373,16 +404,18 @@ namespace Neo.SmartContract
         /// <returns>The context represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            JObject json = new();
+            var json = new JObject();
             json["type"] = Verifiable.GetType().FullName;
             json["hash"] = Verifiable.Hash.ToString();
-            using (MemoryStream ms = new())
-            using (BinaryWriter writer = new(ms, Utility.StrictUTF8))
+
+            using (var ms = new MemoryStream())
+            using (var writer = new BinaryWriter(ms, Utility.StrictUTF8))
             {
                 Verifiable.SerializeUnsigned(writer);
                 writer.Flush();
                 json["data"] = Convert.ToBase64String(ms.ToArray());
             }
+
             json["items"] = new JObject();
             foreach (var item in ContextItems)
                 json["items"][item.Key.ToString()] = item.Value.ToJson();
