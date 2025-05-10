@@ -22,6 +22,7 @@ namespace Neo.Sign
         /// Initializes a new instance of the <see cref="SignException"/> class.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public SignException(string message) : base(message) { }
+        /// <param name="cause">The cause of the exception.</param>
+        public SignException(string message, Exception cause = null) : base(message, cause) { }
     }
 }
