@@ -38,6 +38,7 @@ jobs:
         --output ${{ env.NEO_NUGET_DIR }} \
         --verbosity normal \
         -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:IncludeSymbols=false \
         -p:DebugSymbols=false \
         -p:DebugType=none \
         -p:ServerGarbageCollection=true \
