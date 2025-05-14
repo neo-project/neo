@@ -208,20 +208,27 @@ namespace Neo.CLI
             lock (syncRoot)
             {
                 ContractState? contract = null;
-
-                if (UInt160.TryParse(nameOrHash, out var scriptHash))
+                NativeContract? nativeContract = null;
+                var isHash = UInt160.TryParse(nameOrHash, out var scriptHash);
+                if (isHash)
+                {
                     contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
+                    if (contract is null)
+                        nativeContract = NativeContract.Contracts.SingleOrDefault(s => s.Hash == scriptHash);
+                }
                 else
                 {
-                    var nativeContract = NativeContract.Contracts.SingleOrDefault(s => s.Name.Equals(nameOrHash, StringComparison.InvariantCultureIgnoreCase));
-
+                    nativeContract = NativeContract.Contracts.SingleOrDefault(s => s.Name.Equals(nameOrHash, StringComparison.InvariantCultureIgnoreCase));
                     if (nativeContract != null)
                         contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, nativeContract.Hash);
                 }
 
                 if (contract is null)
                 {
-                    ConsoleHelper.Error($"Contract {nameOrHash} doesn't exist.");
+                    var state = nativeContract is null
+                        ? "doesn't exist"
+                        : isHash ? $"({nativeContract.Name}) not active yet" : "not active yet";
+                    ConsoleHelper.Error($"Contract {nameOrHash} {state}.");
                     return;
                 }
 
