@@ -29,7 +29,7 @@ namespace Neo.Sign
         /// <param name="network">The network.</param>
         /// <returns>The witness.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the payload is null.</exception>
-        Witness[] SignExtensiblePayload(ExtensiblePayload payload, DataCache snapshot, uint network);
+        Witness SignExtensiblePayload(ExtensiblePayload payload, DataCache snapshot, uint network);
 
         /// <summary>
         /// Signs the specified data with the corresponding private key of the specified public key.

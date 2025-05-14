@@ -673,14 +673,14 @@ namespace Neo.Wallets
         /// <param name="network">The network.</param>
         /// <returns>The signature.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the payload is null.</exception>
-        public Witness[] SignExtensiblePayload(ExtensiblePayload payload, DataCache snapshot, uint network)
+        public Witness SignExtensiblePayload(ExtensiblePayload payload, DataCache snapshot, uint network)
         {
             if (payload is null) throw new ArgumentNullException(nameof(payload));
 
             var context = new ContractParametersContext(snapshot, payload, network);
             Sign(context);
 
-            return context.GetWitnesses();
+            return context.GetWitnesses()[0];
         }
 
         /// <summary>

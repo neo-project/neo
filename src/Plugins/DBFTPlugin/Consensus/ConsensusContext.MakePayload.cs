@@ -59,18 +59,15 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void SignPayload(ExtensiblePayload payload)
         {
-            Witness[] witnesses = null;
             try
             {
-                witnesses = _signer.SignExtensiblePayload(payload, Snapshot, dbftSettings.Network);
+                payload.Witness = _signer.SignExtensiblePayload(payload, Snapshot, dbftSettings.Network);
             }
             catch (InvalidOperationException ex)
             {
                 Utility.Log(nameof(ConsensusContext), LogLevel.Debug, ex.ToString());
                 return;
             }
-
-            payload.Witness = witnesses[0];
         }
 
         /// <summary>
