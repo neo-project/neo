@@ -227,8 +227,7 @@ namespace Neo.SmartContract.Native
 
                 // Hardfork check for https://github.com/neo-project/neo/pull/3158
                 // New notification will case 3.7.0 and 3.6.0 have different behavior
-                var index = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache);
-                if (engine.ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Cockatrice, index))
+                if (engine.IsHardforkEnabled(Hardfork.HF_Cockatrice))
                 {
                     var newCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
 
@@ -368,8 +367,7 @@ namespace Neo.SmartContract.Native
         {
             // This check can be removed post-Echidna if compatible,
             // RegisterInternal does this anyway.
-            var index = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache);
-            if (!engine.ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Echidna, index) &&
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna) &&
                 !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
