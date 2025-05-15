@@ -118,13 +118,14 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             _rpcServer.wallet = _wallet;
 
-            HttpContext context = new DefaultHttpContext();
-
-            var json = new JObject();
-            json["id"] = 1;
-            json["jsonrpc"] = "2.0";
-            json["method"] = "invokefunction";
-            json["params"] = new JArray("0", "totalSupply", new JArray([]), validatorSigner, true);
+            var context = new DefaultHttpContext();
+            var json = new JObject()
+            {
+                ["id"] = 1,
+                ["jsonrpc"] = "2.0",
+                ["method"] = "invokefunction",
+                ["params"] = new JArray("0", "totalSupply", new JArray([]), validatorSigner, true),
+            };
 
             var resp = _rpcServer.ProcessRequestAsync(context, json).GetAwaiter().GetResult();
 
