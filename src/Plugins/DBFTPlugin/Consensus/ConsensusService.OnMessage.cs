@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsensusService.OnMessage.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -82,7 +82,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (message.Version != context.Block.Version || message.PrevHash != context.Block.PrevHash) return;
             if (message.TransactionHashes.Length > neoSystem.Settings.MaxTransactionsPerBlock) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex} tx={message.TransactionHashes.Length}");
-            if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMilliseconds(8 * neoSystem.Settings.MillisecondsPerBlock).ToTimestampMS())
+            if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMilliseconds(8 * context.TimePerBlock.TotalMilliseconds).ToTimestampMS())
             {
                 Log($"Timestamp incorrect: {message.Timestamp}", LogLevel.Warning);
                 return;
@@ -97,6 +97,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // Timeout extension: prepare request has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
+
+            prepareRequestReceivedTime = TimeProvider.Current.UtcNow;
+            prepareRequestReceivedBlockIndex = message.BlockIndex;
 
             context.Block.Header.Timestamp = message.Timestamp;
             context.Block.Header.Nonce = message.Nonce;
@@ -124,11 +127,12 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
             Dictionary<UInt256, Transaction> mempoolVerified = neoSystem.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
+            var mtb = neoSystem.GetMaxTraceableBlocks();
             foreach (UInt256 hash in context.TransactionHashes)
             {
                 if (mempoolVerified.TryGetValue(hash, out Transaction tx))
                 {
-                    if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), neoSystem.Settings.MaxTraceableBlocks))
+                    if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), mtb))
                     {
                         Log($"Invalid request: transaction has on-chain conflict", LogLevel.Warning);
                         return;
@@ -141,7 +145,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 {
                     if (neoSystem.MemPool.TryGetValue(hash, out tx))
                     {
-                        if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), neoSystem.Settings.MaxTraceableBlocks))
+                        if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), mtb))
                         {
                             Log($"Invalid request: transaction has on-chain conflict", LogLevel.Warning);
                             return;

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // JContainer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,21 +9,22 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Json;
-
-public abstract class JContainer : JToken
+namespace Neo.Json
 {
-    public override JToken? this[int index] => Children[index];
-
-    public abstract IReadOnlyList<JToken?> Children { get; }
-
-    public int Count => Children.Count;
-
-    public abstract void Clear();
-
-    public void CopyTo(JToken?[] array, int arrayIndex)
+    public abstract class JContainer : JToken
     {
-        for (int i = 0; i < Count && i + arrayIndex < array.Length; i++)
-            array[i + arrayIndex] = Children[i];
+        public override JToken? this[int index] => Children[index];
+
+        public abstract IReadOnlyList<JToken?> Children { get; }
+
+        public int Count => Children.Count;
+
+        public abstract void Clear();
+
+        public void CopyTo(JToken?[] array, int arrayIndex)
+        {
+            for (int i = 0; i < Count && i + arrayIndex < array.Length; i++)
+                array[i + arrayIndex] = Children[i];
+        }
     }
 }

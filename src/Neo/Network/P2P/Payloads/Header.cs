@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Header.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -113,6 +114,8 @@ namespace Neo.Network.P2P.Payloads
         }
 
         private UInt256 _hash = null;
+
+        /// <inheritdoc/>
         public UInt256 Hash
         {
             get
@@ -130,11 +133,11 @@ namespace Neo.Network.P2P.Payloads
             UInt256.Length +    // PrevHash
             UInt256.Length +    // MerkleRoot
             sizeof(ulong) +     // Timestamp
-            sizeof(ulong) +      // Nonce
+            sizeof(ulong) +     // Nonce
             sizeof(uint) +      // Index
             sizeof(byte) +      // PrimaryIndex
             UInt160.Length +    // NextConsensus
-            1 + Witness.Size;   // Witness
+            (Witness is null ? 1 : 1 + Witness.Size); // Witness, cannot be null for valid header
 
         Witness[] IVerifiable.Witnesses
         {
@@ -144,7 +147,10 @@ namespace Neo.Network.P2P.Payloads
             }
             set
             {
-                if (value.Length != 1) throw new ArgumentException(null, nameof(value));
+                if (value is null)
+                    throw new ArgumentNullException(nameof(IVerifiable.Witnesses));
+                if (value.Length != 1)
+                    throw new ArgumentException($"Expected 1 witness, got {value.Length}.", nameof(IVerifiable.Witnesses));
                 Witness = value[0];
             }
         }
@@ -190,10 +196,10 @@ namespace Neo.Network.P2P.Payloads
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
-            if (prevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
-            if (prev is null) throw new InvalidOperationException();
-            return new[] { prev.Header.nextConsensus };
+            if (prevHash == UInt256.Zero) return [Witness.ScriptHash];
+            var prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash)
+                ?? throw new InvalidOperationException($"Block {prevHash} was not found");
+            return [prev.Header.nextConsensus];
         }
 
         public void Serialize(BinaryWriter writer)
@@ -259,6 +265,23 @@ namespace Neo.Network.P2P.Payloads
             if (prev.index + 1 != index) return false;
             if (prev.timestamp >= timestamp) return false;
             return this.VerifyWitness(settings, snapshot, prev.nextConsensus, Witness, 3_00000000L, out _);
+        }
+
+        public Header Clone()
+        {
+            return new Header()
+            {
+                Version = version,
+                PrevHash = prevHash,
+                MerkleRoot = MerkleRoot,
+                Timestamp = timestamp,
+                Nonce = nonce,
+                Index = index,
+                PrimaryIndex = primaryIndex,
+                NextConsensus = nextConsensus,
+                Witness = Witness?.Clone(),
+                _hash = _hash
+            };
         }
     }
 }

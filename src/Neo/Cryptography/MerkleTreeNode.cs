@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MerkleTreeNode.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,13 +13,12 @@ namespace Neo.Cryptography
 {
     internal class MerkleTreeNode
     {
-        public UInt256 Hash;
-        public MerkleTreeNode Parent;
-        public MerkleTreeNode LeftChild;
-        public MerkleTreeNode RightChild;
+        public UInt256 Hash { get; set; }
+        public MerkleTreeNode Parent { get; set; }
+        public MerkleTreeNode LeftChild { get; set; }
+        public MerkleTreeNode RightChild { get; set; }
 
         public bool IsLeaf => LeftChild == null && RightChild == null;
-
         public bool IsRoot => Parent == null;
     }
 }

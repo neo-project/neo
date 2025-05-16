@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.Wallet.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using Helper = Neo.Wallets.Helper;
 
 namespace Neo.Plugins.RpcServer
 {
@@ -177,9 +178,7 @@ namespace Neo.Plugins.RpcServer
             var tx = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid tx: {_params[0]}")); ;
 
             JObject account = new();
-            var networkfee = Wallets.Helper.CalculateNetworkFee(
-                tx.AsSerializable<Transaction>(), system.StoreView, system.Settings,
-                wallet is not null ? a => wallet.GetAccount(a).Contract.Script : _ => null);
+            var networkfee = Helper.CalculateNetworkFee(tx.AsSerializable<Transaction>(), system.StoreView, system.Settings, wallet);
             account["networkfee"] = networkfee.ToString();
             return account;
         }
@@ -462,7 +461,7 @@ namespace Neo.Plugins.RpcServer
                 (BigDecimal.TryParse(extraFee, descriptor.Decimals, out BigDecimal decimalExtraFee) && decimalExtraFee.Sign > 0).True_Or(RpcErrorFactory.InvalidParams("Incorrect amount format."));
 
                 tx.NetworkFee += (long)decimalExtraFee.Value;
-            };
+            }
             return SignAndRelay(system.StoreView, tx);
         }
 

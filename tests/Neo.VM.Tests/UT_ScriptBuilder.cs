@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ScriptBuilder.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -39,6 +39,21 @@ namespace Neo.Test
             {
                 script.Emit(OpCode.NOP, new byte[] { 0x66 });
                 CollectionAssert.AreEqual(new byte[] { 0x21, 0x66 }, script.ToArray());
+            }
+        }
+
+        [TestMethod]
+        public void TestNullAndEmpty()
+        {
+            using (ScriptBuilder script = new())
+            {
+                ReadOnlySpan<byte> span = null;
+                script.EmitPush(span);
+
+                span = [];
+                script.EmitPush(span);
+
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0, (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
             }
         }
 
@@ -103,8 +118,8 @@ namespace Neo.Test
                 using ScriptBuilder script = new();
                 if (op < OpCode.JMP || op > OpCode.JMPLE_L)
                 {
-                    Assert.ThrowsException<ArgumentOutOfRangeException>(() => script.EmitJump(op, offset_i8));
-                    Assert.ThrowsException<ArgumentOutOfRangeException>(() => script.EmitJump(op, offset_i32));
+                    Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = script.EmitJump(op, offset_i8));
+                    Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = script.EmitJump(op, offset_i32));
                 }
                 else
                 {
@@ -125,8 +140,8 @@ namespace Neo.Test
                 using ScriptBuilder script = new();
                 if (op < OpCode.JMP || op > OpCode.JMPLE_L)
                 {
-                    Assert.ThrowsException<ArgumentOutOfRangeException>(() => script.EmitJump(op, offset_i8));
-                    Assert.ThrowsException<ArgumentOutOfRangeException>(() => script.EmitJump(op, offset_i32));
+                    Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = script.EmitJump(op, offset_i8));
+                    Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = script.EmitJump(op, offset_i32));
                 }
                 else
                 {
@@ -183,8 +198,7 @@ namespace Neo.Test
                 new ScriptBuilder().EmitPush(BigInteger.Parse("57896044618658097711785492504343953926634992332820282019728792003956564819967")).ToArray().ToHexString());
 
             // Test exceeding 256-bit value (2^256)
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
-                new ScriptBuilder().EmitPush(BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639936")));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = new ScriptBuilder().EmitPush(BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639936")));
 
             // Test negative numbers
             Assert.AreEqual("0x00fe", new ScriptBuilder().EmitPush(new BigInteger(-2)).ToArray().ToHexString());
@@ -198,7 +212,7 @@ namespace Neo.Test
             Assert.AreEqual("0x040000000000000000ffffffffffffffff", new ScriptBuilder().EmitPush(BigInteger.Parse("-18446744073709551616")).ToArray().ToHexString());
 
             // Test exception for too large BigInteger
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ScriptBuilder().EmitPush(
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = new ScriptBuilder().EmitPush(
                 BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639937")));
         }
 
@@ -233,7 +247,8 @@ namespace Neo.Test
         {
             using (ScriptBuilder script = new())
             {
-                Assert.ThrowsException<ArgumentNullException>(() => script.EmitPush((byte[])null));
+                script.EmitPush((byte[])null);
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
             }
 
             using (ScriptBuilder script = new())
@@ -266,7 +281,7 @@ namespace Neo.Test
         {
             using (ScriptBuilder script = new())
             {
-                Assert.ThrowsException<ArgumentNullException>(() => script.EmitPush((string)null));
+                Assert.ThrowsExactly<ArgumentNullException>(() => _ = script.EmitPush((string)null));
             }
 
             using (ScriptBuilder script = new())

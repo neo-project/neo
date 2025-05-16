@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // LogStorageStore.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,12 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Persistence;
 using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Plugins.ApplicationLogs.Store
 {
@@ -42,13 +43,13 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         #region Global Variables
 
-        private readonly ISnapshot _snapshot;
+        private readonly IStoreSnapshot _snapshot;
 
         #endregion
 
         #region Ctor
 
-        public LogStorageStore(ISnapshot snapshot)
+        public LogStorageStore(IStoreSnapshot snapshot)
         {
             ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             _snapshot = snapshot;
@@ -157,11 +158,17 @@ namespace Neo.Plugins.ApplicationLogs.Store
                 .ToArray();
             try
             {
-                _snapshot.Put(key, BinarySerializer.Serialize(stackItem, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
+                _snapshot.Put(key, BinarySerializer.Serialize(stackItem, ExecutionEngineLimits.Default with
+                {
+                    MaxItemSize = (uint)Settings.Default.MaxStackSize
+                }));
             }
             catch
             {
-                _snapshot.Put(key, BinarySerializer.Serialize(StackItem.Null, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
+                _snapshot.Put(key, BinarySerializer.Serialize(StackItem.Null, ExecutionEngineLimits.Default with
+                {
+                    MaxItemSize = (uint)Settings.Default.MaxStackSize
+                }));
             }
             return id;
         }
@@ -175,7 +182,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Block)
                 .Add(hash)
                 .ToArray();
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Forward))
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Forward))
             {
                 if (key.AsSpan().StartsWith(prefixKey))
                     yield return (value.AsSerializable<BlockLogState>(), (TriggerType)key.AsSpan(Prefix_Block_Trigger_Size)[0]);
@@ -194,7 +201,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                 .AddBigEndian(ulong.MaxValue) // Get newest to oldest (timestamp)
                 .ToArray();
             uint index = 1;
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Backward)) // Get newest to oldest
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Backward)) // Get newest to oldest
             {
                 if (key.AsSpan().StartsWith(prefix))
                 {
@@ -217,7 +224,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                 .AddBigEndian(ulong.MaxValue) // Get newest to oldest (timestamp)
                 .ToArray();
             uint index = 1;
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Backward)) // Get newest to oldest
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Backward)) // Get newest to oldest
             {
                 if (key.AsSpan().StartsWith(prefix))
                 {
@@ -244,7 +251,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                 .AddBigEndian(ulong.MaxValue) // Get newest to oldest (timestamp)
                 .ToArray();
             uint index = 1;
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Backward)) // Get newest to oldest
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Backward)) // Get newest to oldest
             {
                 if (key.AsSpan().StartsWith(prefix))
                 {
@@ -266,7 +273,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Execution_Block)
                 .Add(hash)
                 .ToArray();
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Forward))
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Forward))
             {
                 if (key.AsSpan().StartsWith(prefixKey))
                     yield return (new Guid(value), (TriggerType)key.AsSpan(Prefix_Execution_Block_Trigger_Size)[0]);
@@ -279,66 +286,60 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         #region TryGet
 
-        public bool TryGetEngineState(Guid engineStateId, out EngineLogState state)
+        public bool TryGetEngineState(Guid engineStateId, [NotNullWhen(true)] out EngineLogState state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Engine)
                 .Add(engineStateId.ToByteArray())
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            state = data?.AsSerializable<EngineLogState>()!;
+            state = _snapshot.TryGet(key, out var data) ? data.AsSerializable<EngineLogState>()! : null;
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetTransactionEngineState(UInt256 hash, out TransactionEngineLogState state)
+        public bool TryGetTransactionEngineState(UInt256 hash, [NotNullWhen(true)] out TransactionEngineLogState state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Engine_Transaction)
                 .Add(hash)
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            state = data?.AsSerializable<TransactionEngineLogState>()!;
+            state = _snapshot.TryGet(key, out var data) ? data.AsSerializable<TransactionEngineLogState>()! : null;
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetBlockState(UInt256 hash, TriggerType trigger, out BlockLogState state)
+        public bool TryGetBlockState(UInt256 hash, TriggerType trigger, [NotNullWhen(true)] out BlockLogState state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Block)
                 .Add(hash)
                 .Add((byte)trigger)
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            state = data?.AsSerializable<BlockLogState>()!;
+            state = _snapshot.TryGet(key, out var data) ? data.AsSerializable<BlockLogState>()! : null;
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetNotifyState(Guid notifyStateId, out NotifyLogState state)
+        public bool TryGetNotifyState(Guid notifyStateId, [NotNullWhen(true)] out NotifyLogState state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Notify)
                 .Add(notifyStateId.ToByteArray())
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            state = data?.AsSerializable<NotifyLogState>()!;
+            state = _snapshot.TryGet(key, out var data) ? data.AsSerializable<NotifyLogState>()! : null;
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetContractState(UInt160 scriptHash, ulong timestamp, uint iterIndex, out ContractLogState state)
+        public bool TryGetContractState(UInt160 scriptHash, ulong timestamp, uint iterIndex, [NotNullWhen(true)] out ContractLogState state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Contract)
                 .Add(scriptHash)
                 .AddBigEndian(timestamp)
                 .AddBigEndian(iterIndex)
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            state = data?.AsSerializable<ContractLogState>()!;
+            state = _snapshot.TryGet(key, out var data) ? data.AsSerializable<ContractLogState>()! : null;
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetExecutionState(Guid executionStateId, out ExecutionLogState state)
+        public bool TryGetExecutionState(Guid executionStateId, [NotNullWhen(true)] out ExecutionLogState state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Execution)
                 .Add(executionStateId.ToByteArray())
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            state = data?.AsSerializable<ExecutionLogState>()!;
+            state = _snapshot.TryGet(key, out var data) ? data.AsSerializable<ExecutionLogState>()! : null;
             return data != null && data.Length > 0;
         }
 
@@ -348,17 +349,8 @@ namespace Neo.Plugins.ApplicationLogs.Store
                 .Add(blockHash)
                 .Add((byte)trigger)
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            if (data == null)
-            {
-                executionStateId = Guid.Empty;
-                return false;
-            }
-            else
-            {
-                executionStateId = new Guid(data);
-                return true;
-            }
+            executionStateId = _snapshot.TryGet(key, out var data) ? new Guid(data) : Guid.Empty;
+            return data != null;
         }
 
         public bool TryGetExecutionTransactionState(UInt256 txHash, out Guid executionStateId)
@@ -366,45 +358,26 @@ namespace Neo.Plugins.ApplicationLogs.Store
             var key = new KeyBuilder(Prefix_Id, Prefix_Execution_Transaction)
                 .Add(txHash)
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            if (data == null)
-            {
-                executionStateId = Guid.Empty;
-                return false;
-            }
-            else
-            {
-                executionStateId = new Guid(data);
-                return true;
-            }
+            executionStateId = _snapshot.TryGet(key, out var data) ? new Guid(data) : Guid.Empty;
+            return data != null;
         }
 
-        public bool TryGetTransactionState(UInt256 hash, out TransactionLogState state)
+        public bool TryGetTransactionState(UInt256 hash, [NotNullWhen(true)] out TransactionLogState state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Transaction)
                 .Add(hash)
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            state = data?.AsSerializable<TransactionLogState>()!;
+            state = _snapshot.TryGet(key, out var data) ? data.AsSerializable<TransactionLogState>()! : null;
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetStackItemState(Guid stackItemId, out StackItem stackItem)
+        public bool TryGetStackItemState(Guid stackItemId, [NotNullWhen(true)] out StackItem stackItem)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_StackItem)
                 .Add(stackItemId.ToByteArray())
                 .ToArray();
-            var data = _snapshot.TryGet(key);
-            if (data == null)
-            {
-                stackItem = StackItem.Null;
-                return false;
-            }
-            else
-            {
-                stackItem = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default);
-                return true;
-            }
+            stackItem = _snapshot.TryGet(key, out var data) ? BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default) : StackItem.Null;
+            return data != null;
         }
 
         #endregion

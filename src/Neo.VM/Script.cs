@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Script.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,7 @@ namespace Neo.VM
     [DebuggerDisplay("Length={Length}")]
     public class Script
     {
+        private int _hashCode = 0;
         private readonly ReadOnlyMemory<byte> _value;
         private readonly bool strictMode;
         private readonly Dictionary<int, Instruction> _instructions = new();
@@ -30,14 +32,7 @@ namespace Neo.VM
         /// <summary>
         /// The length of the script.
         /// </summary>
-        public int Length
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return _value.Length;
-            }
-        }
+        public int Length { get; }
 
         /// <summary>
         /// Gets the <see cref="OpCode"/> at the specified index.
@@ -73,6 +68,7 @@ namespace Neo.VM
         public Script(ReadOnlyMemory<byte> script, bool strictMode)
         {
             _value = script;
+            Length = _value.Length;
             if (strictMode)
             {
                 for (int ip = 0; ip < script.Length; ip += GetInstruction(ip).Size) { }
@@ -142,11 +138,12 @@ namespace Neo.VM
         /// <param name="ip">The position to get the <see cref="Instruction"/>.</param>
         /// <returns>The <see cref="Instruction"/> at the specified position.</returns>
         /// <exception cref="ArgumentException">In strict mode, the <see cref="Instruction"/> was not found at the specified position.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Instruction GetInstruction(int ip)
         {
-            if (ip >= Length) throw new ArgumentOutOfRangeException(nameof(ip));
             if (!_instructions.TryGetValue(ip, out Instruction? instruction))
             {
+                if (ip >= Length) throw new ArgumentOutOfRangeException(nameof(ip));
                 if (strictMode) throw new ArgumentException($"ip not found with strict mode", nameof(ip));
                 instruction = new Instruction(_value, ip);
                 _instructions.Add(ip, instruction);
@@ -157,5 +154,14 @@ namespace Neo.VM
         public static implicit operator ReadOnlyMemory<byte>(Script script) => script._value;
         public static implicit operator Script(ReadOnlyMemory<byte> script) => new(script);
         public static implicit operator Script(byte[] script) => new(script);
+
+        public override int GetHashCode()
+        {
+            if (_hashCode == 0)
+            {
+                _hashCode = HashCode.Combine(_value.Span.XxHash3_32());
+            }
+            return _hashCode;
+        }
     }
 }

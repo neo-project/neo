@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.SmartContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,6 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -81,11 +80,12 @@ namespace Neo.Plugins.RpcServer
                 json["exception"] = GetExceptionMessage(session.Engine.FaultException);
                 json["notifications"] = new JArray(session.Engine.Notifications.Select(n =>
                 {
-                    var obj = new JObject();
-                    obj["eventname"] = n.EventName;
-                    obj["contract"] = n.ScriptHash.ToString();
-                    obj["state"] = ToJson(n.State, session);
-                    return obj;
+                    return new JObject()
+                    {
+                        ["eventname"] = n.EventName,
+                        ["contract"] = n.ScriptHash.ToString(),
+                        ["state"] = ToJson(n.State, session),
+                    };
                 }));
                 if (useDiagnostic)
                 {
@@ -133,10 +133,9 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        private static JObject ToJson(TreeNode<UInt160> node)
+        protected static JObject ToJson(TreeNode<UInt160> node)
         {
-            JObject json = new();
-            json["hash"] = node.Item.ToString();
+            var json = new JObject() { ["hash"] = node.Item.ToString() };
             if (node.Children.Any())
             {
                 json["call"] = new JArray(node.Children.Select(ToJson));
@@ -144,16 +143,16 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        private static JArray ToJson(IEnumerable<DataCache.Trackable> changes)
+        protected static JArray ToJson(IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changes)
         {
-            JArray array = new();
+            var array = new JArray();
             foreach (var entry in changes)
             {
                 array.Add(new JObject
                 {
-                    ["state"] = entry.State.ToString(),
+                    ["state"] = entry.Value.State.ToString(),
                     ["key"] = Convert.ToBase64String(entry.Key.ToArray()),
-                    ["value"] = Convert.ToBase64String(entry.Item.Value.ToArray())
+                    ["value"] = Convert.ToBase64String(entry.Value.Item.Value.ToArray())
                 });
             }
             return array;
@@ -161,7 +160,7 @@ namespace Neo.Plugins.RpcServer
 
         private static JObject ToJson(StackItem item, Session session)
         {
-            JObject json = item.ToJson();
+            var json = item.ToJson();
             if (item is InteropInterface interopInterface && interopInterface.GetInterface<object>() is IIterator iterator)
             {
                 Guid id = Guid.NewGuid();
@@ -218,7 +217,7 @@ namespace Neo.Plugins.RpcServer
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash {nameof(script_hash)}"));
             string operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
-            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : System.Array.Empty<ContractParameter>();
+            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : [];
             Signer[] signers = _params.Count >= 4 ? SignersFromJson((JArray)_params[3], system.Settings) : null;
             Witness[] witnesses = _params.Count >= 4 ? WitnessesFromJson((JArray)_params[3]) : null;
             bool useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
@@ -282,18 +281,24 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken GetUnclaimedGas(JArray _params)
         {
             string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invalid address {nameof(address)}"));
-            JObject json = new();
-            UInt160 script_hash = Result.Ok_Or(() => AddressToScriptHash(address, system.Settings.AddressVersion), RpcError.InvalidParams);
+            var json = new JObject();
+            UInt160 scriptHash = Result.Ok_Or(() => AddressToScriptHash(address, system.Settings.AddressVersion), RpcError.InvalidParams);
 
             var snapshot = system.StoreView;
-            json["unclaimed"] = NativeContract.NEO.UnclaimedGas(snapshot, script_hash, NativeContract.Ledger.CurrentIndex(snapshot) + 1).ToString();
-            json["address"] = script_hash.ToAddress(system.Settings.AddressVersion);
+            json["unclaimed"] = NativeContract.NEO.UnclaimedGas(snapshot, scriptHash, NativeContract.Ledger.CurrentIndex(snapshot) + 1).ToString();
+            json["address"] = scriptHash.ToAddress(system.Settings.AddressVersion);
             return json;
         }
 
         static string GetExceptionMessage(Exception exception)
         {
-            return exception?.GetBaseException().Message;
+            if (exception == null) return null;
+
+            // First unwrap any TargetInvocationException
+            var unwrappedException = UnwrapException(exception);
+
+            // Then get the base exception message
+            return unwrappedException.GetBaseException().Message;
         }
     }
 }

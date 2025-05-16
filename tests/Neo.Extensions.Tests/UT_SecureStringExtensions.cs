@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_SecureStringExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -8,12 +8,6 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neo.Extensions.Tests
 {

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Plugin.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Plugins;
@@ -72,22 +71,28 @@ namespace Neo.UnitTests.Plugins
         {
             var pp = new TestPlugin();
             var file = pp.ConfigFile;
-            file.EndsWith("config.json").Should().BeTrue();
+            Assert.IsTrue(file.EndsWith("config.json"));
         }
 
         [TestMethod]
         public void TestGetName()
         {
             var pp = new TestPlugin();
-            pp.Name.Should().Be("TestPlugin");
+            Assert.AreEqual("TestPlugin", pp.Name);
         }
 
         [TestMethod]
         public void TestGetVersion()
         {
             var pp = new TestPlugin();
-            Action action = () => pp.Version.ToString();
-            action.Should().NotThrow();
+            try
+            {
+                _ = pp.Version.ToString();
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Should not throw but threw {ex}");
+            }
         }
 
         [TestMethod]
@@ -96,10 +101,10 @@ namespace Neo.UnitTests.Plugins
             lock (s_locker)
             {
                 Plugin.Plugins.Clear();
-                Plugin.SendMessage("hey1").Should().BeFalse();
+                Assert.IsFalse(Plugin.SendMessage("hey1"));
 
                 var lp = new TestPlugin();
-                Plugin.SendMessage("hey2").Should().BeTrue();
+                Assert.IsTrue(Plugin.SendMessage("hey2"));
             }
         }
 
@@ -107,7 +112,7 @@ namespace Neo.UnitTests.Plugins
         public void TestGetConfiguration()
         {
             var pp = new TestPlugin();
-            pp.TestGetConfiguration().Key.Should().Be("PluginConfiguration");
+            Assert.AreEqual("PluginConfiguration", pp.TestGetConfiguration().Key);
         }
 
         [TestMethod]
@@ -129,12 +134,12 @@ namespace Neo.UnitTests.Plugins
             _ = new TestNonPlugin();
 
             // Ensure exception is thrown
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
            {
                Blockchain.InvokeCommitting(null, null, null, null);
            });
 
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
            {
                Blockchain.InvokeCommitted(null, null);
            });
@@ -144,7 +149,7 @@ namespace Neo.UnitTests.Plugins
         public void TestOnPluginStopped()
         {
             var pp = new TestPlugin();
-            Assert.AreEqual(false, pp.IsStopped);
+            Assert.IsFalse(pp.IsStopped);
             // Ensure no exception is thrown
             try
             {
@@ -156,7 +161,7 @@ namespace Neo.UnitTests.Plugins
                 Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
             }
 
-            Assert.AreEqual(true, pp.IsStopped);
+            Assert.IsTrue(pp.IsStopped);
         }
 
         [TestMethod]
@@ -164,7 +169,7 @@ namespace Neo.UnitTests.Plugins
         {
             // pp will stop on exception.
             var pp = new TestPlugin();
-            Assert.AreEqual(false, pp.IsStopped);
+            Assert.IsFalse(pp.IsStopped);
             // Ensure no exception is thrown
             try
             {
@@ -176,11 +181,11 @@ namespace Neo.UnitTests.Plugins
                 Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
             }
 
-            Assert.AreEqual(true, pp.IsStopped);
+            Assert.IsTrue(pp.IsStopped);
 
             // pp2 will not stop on exception.
             var pp2 = new TestPlugin(UnhandledExceptionPolicy.Ignore);
-            Assert.AreEqual(false, pp2.IsStopped);
+            Assert.IsFalse(pp2.IsStopped);
             // Ensure no exception is thrown
             try
             {
@@ -192,7 +197,7 @@ namespace Neo.UnitTests.Plugins
                 Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
             }
 
-            Assert.AreEqual(false, pp2.IsStopped);
+            Assert.IsFalse(pp2.IsStopped);
         }
 
         [TestMethod]
@@ -200,18 +205,18 @@ namespace Neo.UnitTests.Plugins
         {
             // node will stop on pp exception.
             var pp = new TestPlugin(UnhandledExceptionPolicy.StopNode);
-            Assert.AreEqual(false, pp.IsStopped);
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.IsFalse(pp.IsStopped);
+            Assert.ThrowsExactly<NotImplementedException>(() =>
             {
                 Blockchain.InvokeCommitting(null, null, null, null);
             });
 
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
             {
                 Blockchain.InvokeCommitted(null, null);
             });
 
-            Assert.AreEqual(false, pp.IsStopped);
+            Assert.IsFalse(pp.IsStopped);
         }
     }
 }

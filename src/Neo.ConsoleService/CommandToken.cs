@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // CommandToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -204,9 +204,9 @@ namespace Neo.ConsoleService
                                 return "";
                             }
 
-                            throw new ArgumentException();
+                            throw new ArgumentException("Unmatched quote");
                         }
-                    case CommandSpaceToken _: throw new ArgumentException();
+                    case CommandSpaceToken _: throw new ArgumentException("Unmatched space");
                     case CommandStringToken str:
                         {
                             args.RemoveAt(0);

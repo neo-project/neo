@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,7 +16,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
-using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P;
 using System;
@@ -109,6 +108,24 @@ namespace Neo.Plugins.RpcServer
             response["jsonrpc"] = "2.0";
             response["id"] = id;
             return response;
+        }
+
+        /// <summary>
+        /// Unwraps an exception to get the original exception.
+        /// This is particularly useful for TargetInvocationException and AggregateException which wrap the actual exception.
+        /// </summary>
+        /// <param name="ex">The exception to unwrap</param>
+        /// <returns>The unwrapped exception</returns>
+        private static Exception UnwrapException(Exception ex)
+        {
+            if (ex is TargetInvocationException targetEx && targetEx.InnerException != null)
+                return targetEx.InnerException;
+
+            // Also handle AggregateException with a single inner exception
+            if (ex is AggregateException aggEx && aggEx.InnerExceptions.Count == 1)
+                return aggEx.InnerExceptions[0];
+
+            return ex;
         }
 
         public void Dispose()
@@ -274,7 +291,7 @@ namespace Neo.Plugins.RpcServer
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
-        private async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
+        internal async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
             var @params = request["params"] ?? new JArray();
@@ -315,11 +332,13 @@ namespace Neo.Plugins.RpcServer
                             {
                                 if (param.ParameterType == typeof(UInt160))
                                 {
-                                    args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i], system.Settings.AddressVersion);
+                                    args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i],
+                                        system.Settings.AddressVersion);
                                 }
                                 else
                                 {
-                                    args[i] = ParameterConverter.ConvertParameter(jsonParameters[i], param.ParameterType);
+                                    args[i] = ParameterConverter.ConvertParameter(jsonParameters[i],
+                                        param.ParameterType);
                                 }
                             }
                             catch (Exception e) when (e is not RpcException)
@@ -333,7 +352,8 @@ namespace Neo.Plugins.RpcServer
                             {
                                 args[i] = param.DefaultValue;
                             }
-                            else if (param.ParameterType.IsValueType && Nullable.GetUnderlyingType(param.ParameterType) == null)
+                            else if (param.ParameterType.IsValueType &&
+                                     Nullable.GetUnderlyingType(param.ParameterType) == null)
                             {
                                 throw new ArgumentException($"Required parameter '{param.Name}' is missing");
                             }
@@ -365,10 +385,22 @@ namespace Neo.Plugins.RpcServer
             }
             catch (Exception ex) when (ex is not RpcException)
             {
+                // Unwrap the exception to get the original error code
+                var unwrappedException = UnwrapException(ex);
 #if DEBUG
-                return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
+                return CreateErrorResponse(request["id"],
+                    RpcErrorFactory.NewCustomError(unwrappedException.HResult, unwrappedException.Message, unwrappedException.StackTrace));
 #else
-        return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message));
+        return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(unwrappedException.HResult, unwrappedException.Message));
+#endif
+            }
+            catch (RpcException ex)
+            {
+#if DEBUG
+                return CreateErrorResponse(request["id"],
+                    RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
+#else
+                return CreateErrorResponse(request["id"], ex.GetError());
 #endif
             }
         }

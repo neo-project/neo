@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // BinarySerializer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.VM;
 using Neo.VM.Types;
@@ -82,10 +83,10 @@ namespace Neo.SmartContract
         public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, IReferenceCounter referenceCounter = null)
         {
             Stack<StackItem> deserialized = new();
-            int undeserialized = 1;
+            var undeserialized = 1;
             while (undeserialized-- > 0)
             {
-                StackItemType type = (StackItemType)reader.ReadByte();
+                var type = (StackItemType)reader.ReadByte();
                 switch (type)
                 {
                     case StackItemType.Any:
@@ -101,7 +102,7 @@ namespace Neo.SmartContract
                         deserialized.Push(reader.ReadVarMemory((int)maxSize));
                         break;
                     case StackItemType.Buffer:
-                        ReadOnlyMemory<byte> memory = reader.ReadVarMemory((int)maxSize);
+                        var memory = reader.ReadVarMemory((int)maxSize);
                         deserialized.Push(new Buffer(memory.Span));
                         break;
                     case StackItemType.Array:

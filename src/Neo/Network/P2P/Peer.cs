@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Peer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,7 +12,6 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions;
-using Neo.IO;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -59,16 +58,6 @@ namespace Neo.Network.P2P
 
         private class Timer { }
 
-        /// <summary>
-        /// The default minimum number of desired connections.
-        /// </summary>
-        public const int DefaultMinDesiredConnections = 10;
-
-        /// <summary>
-        /// The default maximum number of desired connections.
-        /// </summary>
-        public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
-
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
         private IActorRef tcp_listener;
         private ICancelable timer;
@@ -104,19 +93,9 @@ namespace Neo.Network.P2P
         public int ListenerTcpPort { get; private set; }
 
         /// <summary>
-        /// Indicates the maximum number of connections with the same address.
+        /// Channel configuration.
         /// </summary>
-        public int MaxConnectionsPerAddress { get; private set; } = 3;
-
-        /// <summary>
-        /// Indicates the minimum number of desired connections.
-        /// </summary>
-        public int MinDesiredConnections { get; private set; } = DefaultMinDesiredConnections;
-
-        /// <summary>
-        /// Indicates the maximum number of connections.
-        /// </summary>
-        public int MaxConnections { get; private set; } = DefaultMaxConnections;
+        public ChannelsConfig Config { get; private set; }
 
         /// <summary>
         /// Indicates the maximum number of unconnected peers stored in <see cref="UnconnectedPeers"/>.
@@ -130,9 +109,9 @@ namespace Neo.Network.P2P
         {
             get
             {
-                var allowedConnecting = MinDesiredConnections * 4;
-                allowedConnecting = MaxConnections != -1 && allowedConnecting > MaxConnections
-                    ? MaxConnections : allowedConnecting;
+                var allowedConnecting = Config.MinDesiredConnections * 4;
+                allowedConnecting = Config.MaxConnections != -1 && allowedConnecting > Config.MaxConnections
+                    ? Config.MaxConnections : allowedConnecting;
                 return allowedConnecting - ConnectedPeers.Count;
             }
         }
@@ -170,7 +149,7 @@ namespace Neo.Network.P2P
 
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
             // If connections with the peer greater than or equal to MaxConnectionsPerAddress, return.
-            if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
+            if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= Config.MaxConnectionsPerAddress)
                 return;
             if (ConnectedPeers.Values.Contains(endPoint)) return;
             ImmutableInterlocked.Update(ref ConnectingPeers, p =>
@@ -228,10 +207,7 @@ namespace Neo.Network.P2P
         private void OnStart(ChannelsConfig config)
         {
             ListenerTcpPort = config.Tcp?.Port ?? 0;
-
-            MinDesiredConnections = config.MinDesiredConnections;
-            MaxConnections = config.MaxConnections;
-            MaxConnectionsPerAddress = config.MaxConnectionsPerAddress;
+            Config = config;
 
             // schedule time to trigger `OnTimer` event every TimerMillisecondsInterval ms
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
@@ -249,7 +225,7 @@ namespace Neo.Network.P2P
             }
             if (ListenerTcpPort > 0)
             {
-                tcp_manager.Tell(new Tcp.Bind(Self, config.Tcp, options: new[] { new Inet.SO.ReuseAddress(true) }));
+                tcp_manager.Tell(new Tcp.Bind(Self, config.Tcp, options: [new Inet.SO.ReuseAddress(true)]));
             }
         }
 
@@ -263,14 +239,14 @@ namespace Neo.Network.P2P
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
-            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
+            if (Config.MaxConnections != -1 && ConnectedPeers.Count >= Config.MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
                 Sender.Tell(Tcp.Abort.Instance);
                 return;
             }
 
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
-            if (count >= MaxConnectionsPerAddress)
+            if (count >= Config.MaxConnectionsPerAddress)
             {
                 Sender.Tell(Tcp.Abort.Instance);
             }
@@ -324,14 +300,14 @@ namespace Neo.Network.P2P
         private void OnTimer()
         {
             // Check if the number of desired connections is already enough
-            if (ConnectedPeers.Count >= MinDesiredConnections) return;
+            if (ConnectedPeers.Count >= Config.MinDesiredConnections) return;
 
-            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers 
+            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers
             if (UnconnectedPeers.Count == 0)
-                NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
+                NeedMorePeers(Config.MinDesiredConnections - ConnectedPeers.Count);
 
             Random rand = new();
-            IPEndPoint[] endpoints = UnconnectedPeers.OrderBy(u => rand.Next()).Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
+            IPEndPoint[] endpoints = UnconnectedPeers.OrderBy(u => rand.Next()).Take(Config.MinDesiredConnections - ConnectedPeers.Count).ToArray();
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (IPEndPoint endpoint in endpoints)
             {

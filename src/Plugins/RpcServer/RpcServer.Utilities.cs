@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.Utilities.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -37,7 +37,6 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken ValidateAddress(JArray _params)
         {
             string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invlid address format: {_params[0]}"));
-            JObject json = new();
             UInt160 scriptHash;
             try
             {
@@ -47,9 +46,12 @@ namespace Neo.Plugins.RpcServer
             {
                 scriptHash = null;
             }
-            json["address"] = address;
-            json["isvalid"] = scriptHash != null;
-            return json;
+
+            return new JObject()
+            {
+                ["address"] = address,
+                ["isvalid"] = scriptHash != null,
+            };
         }
     }
 }

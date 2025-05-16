@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ContractParameter.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -42,7 +41,7 @@ namespace Neo.UnitTests.SmartContract
 
             ContractParameter contractParameter2 = new(ContractParameterType.Boolean);
             Assert.IsNotNull(contractParameter2);
-            Assert.AreEqual(false, contractParameter2.Value);
+            Assert.IsFalse((bool?)contractParameter2.Value);
 
             ContractParameter contractParameter3 = new(ContractParameterType.Integer);
             Assert.IsNotNull(contractParameter3);
@@ -77,8 +76,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsNotNull(contractParameter10);
             Assert.AreEqual(0, ((List<KeyValuePair<ContractParameter, ContractParameter>>)contractParameter10.Value).Count);
 
-            Action action = () => new ContractParameter(ContractParameterType.Void);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsExactly<ArgumentException>(() => _ = new ContractParameter(ContractParameterType.Void));
         }
 
         [TestMethod]
@@ -127,8 +125,34 @@ namespace Neo.UnitTests.SmartContract
             ContractParameter contractParameter11 = new(ContractParameterType.String);
             JObject jobject11 = contractParameter11.ToJson();
             jobject11["type"] = "Void";
-            Action action = () => ContractParameter.FromJson(jobject11);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsExactly<ArgumentException>(() => _ = ContractParameter.FromJson(jobject11));
+        }
+
+        [TestMethod]
+        public void TestContractParameterCyclicReference()
+        {
+            var map = new ContractParameter
+            {
+                Type = ContractParameterType.Map,
+                Value = new List<KeyValuePair<ContractParameter, ContractParameter>>
+                {
+                    new(
+                        new ContractParameter { Type = ContractParameterType.Integer, Value = 1 },
+                        new ContractParameter { Type = ContractParameterType.Integer, Value = 2 }
+                    )
+                }
+            };
+
+            var value = new List<ContractParameter> { map, map };
+            var item = new ContractParameter { Type = ContractParameterType.Array, Value = value };
+
+            // just check there is no exception
+            var json = item.ToJson();
+            Assert.AreEqual(json.ToString(), ContractParameter.FromJson(json).ToJson().ToString());
+
+            // check cyclic reference
+            value.Add(item);
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = item.ToJson());
         }
 
         [TestMethod]
@@ -138,12 +162,11 @@ namespace Neo.UnitTests.SmartContract
             byte[] expectedArray1 = new byte[64];
             contractParameter1.SetValue(new byte[64].ToHexString());
             Assert.AreEqual(Encoding.Default.GetString(expectedArray1), Encoding.Default.GetString((byte[])contractParameter1.Value));
-            Action action1 = () => contractParameter1.SetValue(new byte[50].ToHexString());
-            action1.Should().Throw<FormatException>();
+            Assert.ThrowsExactly<FormatException>(() => contractParameter1.SetValue(new byte[50].ToHexString()));
 
             ContractParameter contractParameter2 = new(ContractParameterType.Boolean);
             contractParameter2.SetValue("true");
-            Assert.AreEqual(true, contractParameter2.Value);
+            Assert.IsTrue((bool?)contractParameter2.Value);
 
             ContractParameter contractParameter3 = new(ContractParameterType.Integer);
             contractParameter3.SetValue("11");
@@ -171,15 +194,14 @@ namespace Neo.UnitTests.SmartContract
                 privateKey7[j] = (byte)random7.Next(256);
             ECPoint publicKey7 = ECCurve.Secp256r1.G * privateKey7;
             contractParameter7.SetValue(publicKey7.ToString());
-            Assert.AreEqual(true, publicKey7.Equals(contractParameter7.Value));
+            Assert.IsTrue(publicKey7.Equals(contractParameter7.Value));
 
             ContractParameter contractParameter8 = new(ContractParameterType.String);
             contractParameter8.SetValue("AAA");
             Assert.AreEqual("AAA", contractParameter8.Value);
 
             ContractParameter contractParameter9 = new(ContractParameterType.Array);
-            Action action9 = () => contractParameter9.SetValue("AAA");
-            action9.Should().Throw<ArgumentException>();
+            Assert.ThrowsExactly<ArgumentException>(() => contractParameter9.SetValue("AAA"));
         }
 
         [TestMethod]

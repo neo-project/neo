@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TransactionVerificationContext.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -26,12 +26,12 @@ namespace Neo.Ledger
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
         /// </summary>
-        private readonly Dictionary<UInt160, BigInteger> senderFee = new();
+        private readonly Dictionary<UInt160, BigInteger> _senderFee = [];
 
         /// <summary>
         /// Store oracle responses
         /// </summary>
-        private readonly Dictionary<ulong, UInt256> oracleResponses = new();
+        private readonly Dictionary<ulong, UInt256> _oracleResponses = [];
 
         /// <summary>
         /// Adds a verified <see cref="Transaction"/> to the context.
@@ -40,12 +40,12 @@ namespace Neo.Ledger
         public void AddTransaction(Transaction tx)
         {
             var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null) oracleResponses.Add(oracle.Id, tx.Hash);
+            if (oracle != null) _oracleResponses.Add(oracle.Id, tx.Hash);
 
-            if (senderFee.TryGetValue(tx.Sender, out var value))
-                senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
+            if (_senderFee.TryGetValue(tx.Sender, out var value))
+                _senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
             else
-                senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
+                _senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
         }
 
         /// <summary>
@@ -57,16 +57,16 @@ namespace Neo.Ledger
         /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
         public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot)
         {
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
-            senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
+            var balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
+            _senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
-            BigInteger expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
+            var expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
             foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
-                expectedFee -= (conflictTx.NetworkFee + conflictTx.SystemFee);
+                expectedFee -= conflictTx.NetworkFee + conflictTx.SystemFee;
             if (balance < expectedFee) return false;
 
             var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null && oracleResponses.ContainsKey(oracle.Id))
+            if (oracle != null && _oracleResponses.ContainsKey(oracle.Id))
                 return false;
 
             return true;
@@ -78,10 +78,12 @@ namespace Neo.Ledger
         /// <param name="tx">The <see cref="Transaction"/> to be removed.</param>
         public void RemoveTransaction(Transaction tx)
         {
-            if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);
+            if ((_senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0)
+                _senderFee.Remove(tx.Sender);
 
             var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null) oracleResponses.Remove(oracle.Id);
+            if (oracle != null)
+                _oracleResponses.Remove(oracle.Id);
         }
     }
 }

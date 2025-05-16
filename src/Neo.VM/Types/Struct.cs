@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Struct.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -59,7 +59,7 @@ namespace Neo.VM.Types
                 foreach (StackItem item in b)
                 {
                     count--;
-                    if (count < 0) throw new InvalidOperationException("Beyond clone limits!");
+                    if (count < 0) throw new InvalidOperationException("Beyond struct subitem clone limits!");
                     if (item is Struct sb)
                     {
                         Struct sa = new(ReferenceCounter);
@@ -100,7 +100,7 @@ namespace Neo.VM.Types
             while (stack1.Count > 0)
             {
                 if (count-- == 0)
-                    throw new InvalidOperationException("Too many struct items to compare.");
+                    throw new InvalidOperationException("Too many struct items to compare in struct comparison.");
                 StackItem a = stack1.Pop();
                 StackItem b = stack2.Pop();
                 if (a is ByteString byteString)
@@ -110,7 +110,7 @@ namespace Neo.VM.Types
                 else
                 {
                     if (maxComparableSize == 0)
-                        throw new InvalidOperationException("The operand exceeds the maximum comparable size.");
+                        throw new InvalidOperationException("The operand exceeds the maximum comparable size in struct comparison.");
                     maxComparableSize -= 1;
                     if (a is Struct sa)
                     {

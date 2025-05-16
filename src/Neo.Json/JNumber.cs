@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // JNumber.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -96,11 +96,12 @@ namespace Neo.Json
             }
             catch (OverflowException)
             {
-                throw new InvalidCastException();
+                throw new InvalidCastException($"The value is out of range for the enum {enumType.FullName}");
             }
+
             object result = Enum.ToObject(enumType, value);
             if (!Enum.IsDefined(enumType, result))
-                throw new InvalidCastException();
+                throw new InvalidCastException($"The value is not defined in the enum {enumType.FullName}");
             return (T)result;
         }
 

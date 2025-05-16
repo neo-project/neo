@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Murmur128.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,15 +11,16 @@
 
 using System;
 using System.Buffers.Binary;
+using System.IO.Hashing;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 
 namespace Neo.Cryptography
 {
     /// <summary>
     /// Computes the 128 bits murmur hash for the input data.
     /// </summary>
-    public sealed class Murmur128 : HashAlgorithm
+    public sealed class Murmur128 : NonCryptographicHashAlgorithm
     {
         private const ulong c1 = 0x87c37b91114253d5;
         private const ulong c2 = 0x4cf5ad432745937f;
@@ -29,10 +30,31 @@ namespace Neo.Cryptography
         private const uint n1 = 0x52dce729;
         private const uint n2 = 0x38495ab5;
 
-        private readonly uint seed;
-        private int length;
+        private readonly uint _seed;
+        private int _length;
 
-        public override int HashSize => 128;
+        public const int HashSizeInBits = 128;
+
+        [Obsolete("Use HashSizeInBits instead")]
+        public int HashSize => HashSizeInBits;
+
+#if NET8_0_OR_GREATER
+        // The Tail struct is used to store up to 16 bytes of unprocessed data
+        // when computing the hash. It leverages the InlineArray attribute for
+        // efficient memory usage in .NET 8.0 or greater, avoiding heap allocations
+        // and improving performance for small data sizes.
+        [InlineArray(16)]
+        private struct Tail
+        {
+            private byte v0;
+            public Span<byte> AsSpan(int start = 0) => MemoryMarshal.CreateSpan(ref v0, 16).Slice(start);
+        }
+
+        private Tail _tail = new(); // cannot be readonly here
+#else
+        private readonly byte[] _tail = new byte[HashSizeInBits / 8];
+#endif
+        private int _tailLength;
 
         private ulong H1 { get; set; }
         private ulong H2 { get; set; }
@@ -41,82 +63,55 @@ namespace Neo.Cryptography
         /// Initializes a new instance of the <see cref="Murmur128"/> class with the specified seed.
         /// </summary>
         /// <param name="seed">The seed to be used.</param>
-        public Murmur128(uint seed)
+        public Murmur128(uint seed) : base(HashSizeInBits / 8)
         {
-            this.seed = seed;
-            Initialize();
+            _seed = seed;
+            Reset();
         }
 
-        protected override void HashCore(byte[] array, int ibStart, int cbSize)
+        public override void Append(ReadOnlySpan<byte> source)
         {
-            HashCore(array.AsSpan(ibStart, cbSize));
-        }
-
-        protected override void HashCore(ReadOnlySpan<byte> source)
-        {
-            int cbSize = source.Length;
-            length += cbSize;
-            int remainder = cbSize & 15;
-            int alignedLength = cbSize - remainder;
-            for (int i = 0; i < alignedLength; i += 16)
+            _length += source.Length;
+            if (_tailLength > 0)
             {
-                ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(source[i..]);
-                k1 *= c1;
-                k1 = Helper.RotateLeft(k1, r1);
-                k1 *= c2;
-                H1 ^= k1;
-                H1 = Helper.RotateLeft(H1, 27);
-                H1 += H2;
-                H1 = H1 * m + n1;
+                int copyLength = Math.Min(source.Length, HashSizeInBits / 8 - _tailLength);
+                source.Slice(0, copyLength).CopyTo(_tail.AsSpan(_tailLength));
 
-                ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(source[(i + 8)..]);
-                k2 *= c2;
-                k2 = Helper.RotateLeft(k2, r2);
-                k2 *= c1;
-                H2 ^= k2;
-                H2 = Helper.RotateLeft(H2, 31);
-                H2 += H1;
-                H2 = H2 * m + n2;
-            }
-
-            if (remainder > 0)
-            {
-                ulong remainingBytesL = 0, remainingBytesH = 0;
-                switch (remainder)
+                _tailLength += copyLength;
+                if (_tailLength == HashSizeInBits / 8)
                 {
-                    case 15: remainingBytesH ^= (ulong)source[alignedLength + 14] << 48; goto case 14;
-                    case 14: remainingBytesH ^= (ulong)source[alignedLength + 13] << 40; goto case 13;
-                    case 13: remainingBytesH ^= (ulong)source[alignedLength + 12] << 32; goto case 12;
-                    case 12: remainingBytesH ^= (ulong)source[alignedLength + 11] << 24; goto case 11;
-                    case 11: remainingBytesH ^= (ulong)source[alignedLength + 10] << 16; goto case 10;
-                    case 10: remainingBytesH ^= (ulong)source[alignedLength + 9] << 8; goto case 9;
-                    case 9: remainingBytesH ^= (ulong)source[alignedLength + 8] << 0; goto case 8;
-                    case 8: remainingBytesL ^= (ulong)source[alignedLength + 7] << 56; goto case 7;
-                    case 7: remainingBytesL ^= (ulong)source[alignedLength + 6] << 48; goto case 6;
-                    case 6: remainingBytesL ^= (ulong)source[alignedLength + 5] << 40; goto case 5;
-                    case 5: remainingBytesL ^= (ulong)source[alignedLength + 4] << 32; goto case 4;
-                    case 4: remainingBytesL ^= (ulong)source[alignedLength + 3] << 24; goto case 3;
-                    case 3: remainingBytesL ^= (ulong)source[alignedLength + 2] << 16; goto case 2;
-                    case 2: remainingBytesL ^= (ulong)source[alignedLength + 1] << 8; goto case 1;
-                    case 1: remainingBytesL ^= (ulong)source[alignedLength] << 0; break;
+                    Mix(_tail.AsSpan());
+                    _tailLength = 0;
+                    _tail.AsSpan().Clear();
                 }
+                source = source.Slice(copyLength);
+            }
 
-                H2 ^= Helper.RotateLeft(remainingBytesH * c2, r2) * c1;
-                H1 ^= Helper.RotateLeft(remainingBytesL * c1, r1) * c2;
+            for (; source.Length >= 16; source = source[16..])
+            {
+                Mix(source);
+            }
+
+            if (source.Length > 0)
+            {
+                source.CopyTo(_tail.AsSpan());
+                _tailLength = source.Length;
             }
         }
 
-        protected override byte[] HashFinal()
+        protected override void GetCurrentHashCore(Span<byte> destination)
         {
-            byte[] buffer = new byte[sizeof(ulong) * 2];
-            TryHashFinal(buffer, out _);
-            return buffer;
-        }
+            if (_tailLength > 0)
+            {
+                var tail = _tail.AsSpan();
+                ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(tail);
+                ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(tail[8..]);
+                H2 ^= Helper.RotateLeft(k2 * c2, r2) * c1;
+                H1 ^= Helper.RotateLeft(k1 * c1, r1) * c2;
+            }
 
-        protected override bool TryHashFinal(Span<byte> destination, out int bytesWritten)
-        {
-            ulong len = (ulong)length;
-            H1 ^= len; H2 ^= len;
+            H1 ^= (ulong)_length;
+            H2 ^= (ulong)_length;
 
             H1 += H2;
             H2 += H1;
@@ -127,17 +122,33 @@ namespace Neo.Cryptography
             H1 += H2;
             H2 += H1;
 
+            // NOTE: in some implementations, H1, H2 are output in big-endian, and little-endian is used here.
             if (BinaryPrimitives.TryWriteUInt64LittleEndian(destination, H1))
                 BinaryPrimitives.TryWriteUInt64LittleEndian(destination[sizeof(ulong)..], H2);
-
-            bytesWritten = Math.Min(destination.Length, sizeof(ulong) * 2);
-            return bytesWritten == sizeof(ulong) * 2;
         }
 
-        public override void Initialize()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Reset()
         {
-            H1 = H2 = seed;
-            length = 0;
+            H1 = H2 = _seed;
+            _length = 0;
+            _tailLength = 0;
+            _tail.AsSpan().Clear();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Mix(ReadOnlySpan<byte> source)
+        {
+            ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(source);
+            ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(source[8..]);
+
+            H1 ^= Helper.RotateLeft(k1 * c1, r1) * c2;
+            H1 = Helper.RotateLeft(H1, 27) + H2;
+            H1 = H1 * m + n1;
+
+            H2 ^= Helper.RotateLeft(k2 * c2, r2) * c1;
+            H2 = Helper.RotateLeft(H2, 31) + H1;
+            H2 = H2 * m + n2;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -145,8 +156,20 @@ namespace Neo.Cryptography
         {
             h = (h ^ (h >> 33)) * 0xff51afd7ed558ccd;
             h = (h ^ (h >> 33)) * 0xc4ceb9fe1a85ec53;
+            return h ^ (h >> 33);
+        }
 
-            return (h ^ (h >> 33));
+        /// <summary>
+        /// Resets the state and computes the 128 bits murmur hash for the input data.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public byte[] ComputeHash(ReadOnlySpan<byte> source)
+        {
+            Reset();
+            Append(source);
+            return GetCurrentHash();
         }
     }
 }

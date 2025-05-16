@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TreeNode.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace Neo.Plugins.RpcServer
 {
-    class TreeNode<T>
+    public class TreeNode<T>
     {
         private readonly List<TreeNode<T>> children = new();
 

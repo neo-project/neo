@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ProtocolSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -15,6 +15,7 @@ using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 
 namespace Neo
@@ -57,19 +58,25 @@ namespace Neo
         public string[] SeedList { get; init; }
 
         /// <summary>
-        /// Indicates the time in milliseconds between two blocks.
+        /// Indicates the time in milliseconds between two blocks. Note that starting from
+        /// HF_Echidna block generation time is managed by native Policy contract, hence
+        /// use NeoSystemExtensions.GetTimePerBlock extension method instead of direct access
+        /// to this property.
         /// </summary>
         public uint MillisecondsPerBlock { get; init; }
 
         /// <summary>
-        /// Indicates the time between two blocks.
+        /// Indicates the time between two blocks. Note that starting from HF_Echidna block
+        /// generation time is managed by native Policy contract, hence use
+        /// NeoSystemExtensions.GetTimePerBlock extension method instead of direct access
+        /// to this property.
         /// </summary>
         public TimeSpan TimePerBlock => TimeSpan.FromMilliseconds(MillisecondsPerBlock);
 
         /// <summary>
         /// The maximum increment of the <see cref="Transaction.ValidUntilBlock"/> field.
         /// </summary>
-        public uint MaxValidUntilBlockIncrement => 86400000 / MillisecondsPerBlock;
+        public uint MaxValidUntilBlockIncrement { get; init; }
 
         /// <summary>
         /// Indicates the maximum number of transactions that can be contained in a block.
@@ -82,7 +89,10 @@ namespace Neo
         public int MemoryPoolMaxTransactions { get; init; }
 
         /// <summary>
-        /// Indicates the maximum number of blocks that can be traced in the smart contract.
+        /// Indicates the maximum number of blocks that can be traced in the smart contract. Note
+        /// that starting from HF_Echidna the maximum number of traceable blocks is managed by
+        /// native Policy contract, hence use NeoSystemExtensions.GetMaxTraceableBlocks extension
+        /// method instead of direct access to this property.
         /// </summary>
         public uint MaxTraceableBlocks { get; init; }
 
@@ -115,6 +125,7 @@ namespace Neo
             SeedList = Array.Empty<string>(),
             MillisecondsPerBlock = 15000,
             MaxTransactionsPerBlock = 512,
+            MaxValidUntilBlockIncrement = 86400000 / 15000,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             InitialGasDistribution = 52_000_000_00000000,
@@ -124,18 +135,68 @@ namespace Neo
         public static ProtocolSettings Custom { get; set; }
 
         /// <summary>
+        /// Searches for a file in the given path. If not found, checks in the executable directory.
+        /// </summary>
+        /// <param name="fileName">The name of the file to search for.</param>
+        /// <param name="path">The primary path to search in.</param>
+        /// <returns>Full path of the file if found, null otherwise.</returns>
+        public static string FindFile(string fileName, string path)
+        {
+            // Check if the given path is relative
+            if (!Path.IsPathRooted(path))
+            {
+                // Combine with the executable directory if relative
+                var executablePath = AppContext.BaseDirectory;
+                path = Path.Combine(executablePath, path);
+            }
+
+            // Check if file exists in the specified (resolved) path
+            var fullPath = Path.Combine(path, fileName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+
+            // Check if file exists in the executable directory
+            var executableDir = AppContext.BaseDirectory;
+            fullPath = Path.Combine(executableDir, fileName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+
+            // File not found in either location
+            return null;
+        }
+
+        /// <summary>
+        /// Loads the <see cref="ProtocolSettings"/> from the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream of the settings.</param>
+        /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
+        public static ProtocolSettings Load(Stream stream)
+        {
+            var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
+            var section = config.GetSection("ProtocolConfiguration");
+            return Load(section);
+        }
+
+        /// <summary>
         /// Loads the <see cref="ProtocolSettings"/> at the specified path.
         /// </summary>
         /// <param name="path">The path of the settings file.</param>
-        /// <param name="optional">Indicates whether the file is optional.</param>
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
-        public static ProtocolSettings Load(string path, bool optional = true)
+        public static ProtocolSettings Load(string path)
         {
-            IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
-            IConfigurationSection section = config.GetSection("ProtocolConfiguration");
-            var settings = Load(section);
-            CheckingHardfork(settings);
-            return settings;
+            path = FindFile(path, Environment.CurrentDirectory);
+
+            if (path is null)
+            {
+                return Default;
+            }
+
+            using var stream = File.OpenRead(path);
+            return Load(stream);
         }
 
         /// <summary>
@@ -160,11 +221,13 @@ namespace Neo
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
+                MaxValidUntilBlockIncrement = section.GetValue("MaxValidUntilBlockIncrement", Default.MaxValidUntilBlockIncrement),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
                     : Default.Hardforks
             };
+            CheckingHardfork(Custom);
             return Custom;
         }
 

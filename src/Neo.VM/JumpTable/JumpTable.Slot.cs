@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // JumpTable.Slot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -659,7 +659,7 @@ namespace Neo.VM
             if (slot is null)
                 throw new InvalidOperationException("Slot has not been initialized.");
             if (index < 0 || index >= slot.Count)
-                throw new InvalidOperationException($"Index out of range when storing to slot: {index}");
+                throw new InvalidOperationException($"Index out of range when storing to slot: {index}, {index}/[0, {slot.Count}).");
             slot[index] = engine.Pop();
         }
 
@@ -674,7 +674,7 @@ namespace Neo.VM
             if (slot is null)
                 throw new InvalidOperationException("Slot has not been initialized.");
             if (index < 0 || index >= slot.Count)
-                throw new InvalidOperationException($"Index out of range when loading from slot: {index}");
+                throw new InvalidOperationException($"Index out of range when loading from slot: {index}, {index}/[0, {slot.Count}).");
             engine.Push(slot[index]);
         }
 

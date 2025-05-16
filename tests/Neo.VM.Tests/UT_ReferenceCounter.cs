@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ReferenceCounter.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -244,7 +244,6 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
         public void TestInvalidReferenceStackItem()
         {
             var reference = new ReferenceCounter();
@@ -256,8 +255,7 @@ namespace Neo.Test
                 arr2.Add(i);
             }
 
-            arr.Add(arr2);
-            Assert.AreEqual(11, reference.Count);
+            Assert.ThrowsExactly<InvalidOperationException>(() => arr.Add(arr2));
         }
     }
 }

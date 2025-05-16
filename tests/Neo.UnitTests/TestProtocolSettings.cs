@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TestProtocolSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -15,10 +15,9 @@ namespace Neo.UnitTests
 {
     public static class TestProtocolSettings
     {
-        public static readonly ProtocolSettings Default = new()
+        public static readonly ProtocolSettings Default = ProtocolSettings.Default with
         {
-            Network = 5195086u,
-            AddressVersion = ProtocolSettings.Default.AddressVersion,
+            Network = 0x334F454Eu,
             StandbyCommittee =
             [
                 //Validators
@@ -55,18 +54,11 @@ namespace Neo.UnitTests
                 "seed4.neo.org:10333",
                 "seed5.neo.org:10333"
             ],
-            MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
-            MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
-            MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
-            MaxTraceableBlocks = ProtocolSettings.Default.MaxTraceableBlocks,
-            InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
-            Hardforks = ProtocolSettings.Default.Hardforks
         };
 
-        public static readonly ProtocolSettings SoleNode = new()
+        public static readonly ProtocolSettings SoleNode = ProtocolSettings.Default with
         {
-            Network = 5195086u,
-            AddressVersion = ProtocolSettings.Default.AddressVersion,
+            Network = 0x334F454Eu,
             StandbyCommittee =
             [
                 //Validators
@@ -81,12 +73,6 @@ namespace Neo.UnitTests
                 "seed4.neo.org:10333",
                 "seed5.neo.org:10333"
             ],
-            MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
-            MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
-            MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
-            MaxTraceableBlocks = ProtocolSettings.Default.MaxTraceableBlocks,
-            InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
-            Hardforks = ProtocolSettings.Default.Hardforks
         };
     }
 }

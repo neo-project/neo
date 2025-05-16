@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Pointer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -57,7 +57,7 @@ namespace Neo.VM.Types
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Script, Position);
+            return HashCode.Combine(Script.GetHashCode(), Position);
         }
 
         public override string ToString()

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Nep17BalanceKey.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.IO;
@@ -22,14 +23,13 @@ namespace Neo.Plugins.Trackers.NEP_17
 
         public int Size => UInt160.Length + UInt160.Length;
 
-        public Nep17BalanceKey() : this(new UInt160(), new UInt160())
-        {
-        }
+        public Nep17BalanceKey() : this(new UInt160(), new UInt160()) { }
 
         public Nep17BalanceKey(UInt160 userScriptHash, UInt160 assetScriptHash)
         {
-            if (userScriptHash == null || assetScriptHash == null)
-                throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(userScriptHash, nameof(userScriptHash));
+            ArgumentNullException.ThrowIfNull(assetScriptHash, nameof(assetScriptHash));
+
             UserScriptHash = userScriptHash;
             AssetScriptHash = assetScriptHash;
         }

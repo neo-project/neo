@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StackItem.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,6 +11,7 @@
 
 #pragma warning disable CS0659
 
+using Neo.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -178,7 +179,7 @@ namespace Neo.VM.Types
         /// <returns>The <see cref="string"/> value represented by the VM object.</returns>
         public virtual string? GetString()
         {
-            return Utility.StrictUTF8.GetString(GetSpan());
+            return GetSpan().ToStrictUtf8String();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

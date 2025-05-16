@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // BenchmarkMode.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,11 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public enum BenchmarkMode
+namespace Neo.VM.Benchmark.OpCode
 {
-    SimpleOpCode,
-    OneGAS,
-    BaseLine
+    public enum BenchmarkMode
+    {
+        SimpleOpCode,
+        OneGAS,
+        BaseLine
+    }
 }

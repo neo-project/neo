@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_StorageIterator.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,12 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.VM.Types;
-using System;
 using System.Collections.Generic;
 
 namespace Neo.UnitTests.SmartContract.Iterators
@@ -27,8 +25,15 @@ namespace Neo.UnitTests.SmartContract.Iterators
         {
             StorageIterator storageIterator = new(new List<(StorageKey, StorageItem)>().GetEnumerator(), 0, FindOptions.None);
             Assert.IsNotNull(storageIterator);
-            Action action = () => storageIterator.Dispose();
-            action.Should().NotThrow<Exception>();
+            try
+            {
+                storageIterator.Dispose();
+            }
+            catch
+            {
+                Assert.Fail();
+            }
+
         }
 
         [TestMethod]

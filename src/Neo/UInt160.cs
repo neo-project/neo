@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UInt160.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,9 +12,9 @@
 using Neo.Extensions;
 using Neo.IO;
 using System;
-using System.Globalization;
+using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -24,7 +24,7 @@ namespace Neo
     /// Represents a 160-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 20)]
-    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable
+    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable, ISerializableSpan
     {
         /// <summary>
         /// The length of <see cref="UInt160"/> values.
@@ -51,16 +51,13 @@ namespace Neo
         /// Initializes a new instance of the <see cref="UInt160"/> class.
         /// </summary>
         /// <param name="value">The value of the <see cref="UInt160"/>.</param>
-        public unsafe UInt160(ReadOnlySpan<byte> value)
+        public UInt160(ReadOnlySpan<byte> value)
         {
             if (value.Length != Length)
-                throw new FormatException();
+                throw new FormatException($"Invalid length: {value.Length}");
 
-            fixed (void* p = &_value1)
-            {
-                Span<byte> dst = new(p, Length);
-                value[..Length].CopyTo(dst);
-            }
+            var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
+            value.CopyTo(span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -102,6 +99,42 @@ namespace Neo
         }
 
         /// <summary>
+        /// Gets a ReadOnlySpan that represents the current value in little-endian.
+        /// </summary>
+        /// <returns>A ReadOnlySpan that represents the current value in little-endian.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetSpan()
+        {
+            if (BitConverter.IsLittleEndian)
+                return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
+
+            Span<byte> buffer = new byte[Length];
+            Serialize(buffer);
+            return buffer; // Keep the same output as Serialize when BigEndian
+        }
+
+        /// <inheritdoc/>
+        public void Serialize(Span<byte> destination)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                var buffer = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
+                buffer.CopyTo(destination);
+            }
+            else
+            {
+                const int IxValue2 = sizeof(ulong);
+                const int IxValue3 = sizeof(ulong) * 2;
+
+                Span<byte> buffer = stackalloc byte[Length];
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer, _value1);
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], _value2);
+                BinaryPrimitives.WriteUInt32LittleEndian(buffer[IxValue3..], _value3);
+                buffer.CopyTo(destination);
+            }
+        }
+
+        /// <summary>
         /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
         /// </summary>
         /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
@@ -131,28 +164,18 @@ namespace Neo
         /// <param name="str">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt160"/>.</param>
         /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string str, out UInt160 result)
+        public static bool TryParse(string str, [NotNullWhen(true)] out UInt160 result)
         {
-            var startIndex = 0;
-
             result = null;
+            var data = str.AsSpan(); // AsSpan is null safe
+            if (data.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
+                data = data[2..];
 
-            if (string.IsNullOrWhiteSpace(str)) return false;
-
-            if (str.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                startIndex = 2;
-
-            if ((str.Length - startIndex) != Length * 2) return false;
+            if (data.Length != Length * 2) return false;
 
             try
             {
-                var data = new byte[Length];
-                for (var i = 0; i < Length; i++)
-                {
-                    if (!byte.TryParse(str.AsSpan(i * 2 + startIndex, 2), NumberStyles.HexNumber, null, out data[Length - i - 1]))
-                        return false;
-                }
-                result = new(data);
+                result = new UInt160(data.HexToBytesReversed());
                 return true;
             }
             catch

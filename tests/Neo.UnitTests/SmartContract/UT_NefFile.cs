@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_NefFile.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,8 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.SmartContract;
 using System;
@@ -46,7 +46,7 @@ namespace Neo.UnitTests.SmartContract
                 ms.Seek(0, SeekOrigin.Begin);
                 ms.Write(wrongMagic, 0, 4);
                 ISerializable newFile = new NefFile();
-                Assert.ThrowsException<FormatException>(() =>
+                Assert.ThrowsExactly<FormatException>(() =>
                 {
                     MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
@@ -60,7 +60,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 ((ISerializable)file).Serialize(writer);
                 ISerializable newFile = new NefFile();
-                Assert.ThrowsException<FormatException>(() =>
+                Assert.ThrowsExactly<FormatException>(() =>
                 {
                     MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
@@ -75,7 +75,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 ((ISerializable)file).Serialize(writer);
                 ISerializable newFile = new NefFile();
-                Assert.ThrowsException<ArgumentException>(() =>
+                Assert.ThrowsExactly<ArgumentException>(() =>
                 {
                     MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
@@ -87,15 +87,15 @@ namespace Neo.UnitTests.SmartContract
             file.CheckSum = NefFile.ComputeChecksum(file);
             var data = file.ToArray();
             var newFile1 = data.AsSerializable<NefFile>();
-            newFile1.Compiler.Should().Be(file.Compiler);
-            newFile1.CheckSum.Should().Be(file.CheckSum);
-            newFile1.Script.Span.SequenceEqual(file.Script.Span).Should().BeTrue();
+            Assert.AreEqual(file.Compiler, newFile1.Compiler);
+            Assert.AreEqual(file.CheckSum, newFile1.CheckSum);
+            Assert.IsTrue(newFile1.Script.Span.SequenceEqual(file.Script.Span));
         }
 
         [TestMethod]
         public void TestGetSize()
         {
-            file.Size.Should().Be(4 + 32 + 32 + 2 + 1 + 2 + 4 + 4);
+            Assert.AreEqual(4 + 32 + 32 + 2 + 1 + 2 + 4 + 4, file.Size);
         }
 
         [TestMethod]
@@ -132,7 +132,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Wrong compiler
 
-            Assert.ThrowsException<ArgumentException>(() => file.ToArray());
+            Assert.ThrowsExactly<ArgumentException>(() => _ = file.ToArray());
 
             // Wrong script
 
@@ -140,14 +140,14 @@ namespace Neo.UnitTests.SmartContract
             file.Script = new byte[(1024 * 1024) + 1];
             var data = file.ToArray();
 
-            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
+            Assert.ThrowsExactly<FormatException>(() => _ = data.AsSerializable<NefFile>());
 
             // Wrong script hash
 
             file.Script = new byte[1024 * 1024];
             data = file.ToArray();
 
-            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
+            Assert.ThrowsExactly<FormatException>(() => _ = data.AsSerializable<NefFile>());
 
             // Wrong checksum
 
@@ -155,7 +155,7 @@ namespace Neo.UnitTests.SmartContract
             data = file.ToArray();
             file.CheckSum = NefFile.ComputeChecksum(file) + 1;
 
-            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
+            Assert.ThrowsExactly<FormatException>(() => _ = data.AsSerializable<NefFile>());
         }
     }
 }

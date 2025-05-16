@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RoleManagement.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
@@ -26,7 +26,16 @@ namespace Neo.SmartContract.Native
     {
         [ContractEvent(0, name: "Designation",
             "Role", ContractParameterType.Integer,
-            "BlockIndex", ContractParameterType.Integer)]
+            "BlockIndex", ContractParameterType.Integer,
+            Hardfork.HF_Echidna)]
+
+        [ContractEvent(Hardfork.HF_Echidna, 0, name: "Designation",
+            "Role", ContractParameterType.Integer,
+            "BlockIndex", ContractParameterType.Integer,
+            "Old", ContractParameterType.Array,
+            "New", ContractParameterType.Array
+            )]
+
         internal RoleManagement() : base() { }
 
         /// <summary>
@@ -43,11 +52,11 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (Ledger.CurrentIndex(snapshot) + 1 < index)
                 throw new ArgumentOutOfRangeException(nameof(index));
-            byte[] key = CreateStorageKey((byte)role).AddBigEndian(index).ToArray();
-            byte[] boundary = CreateStorageKey((byte)role).ToArray();
+            var key = CreateStorageKey((byte)role, index).ToArray();
+            var boundary = CreateStorageKey((byte)role).ToArray();
             return snapshot.FindRange(key, boundary, SeekDirection.Backward)
                 .Select(u => u.Value.GetInteroperable<NodeList>().ToArray())
-                .FirstOrDefault() ?? System.Array.Empty<ECPoint>();
+                .FirstOrDefault() ?? [];
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
@@ -61,15 +70,25 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException(nameof(DesignateAsRole));
-            uint index = engine.PersistingBlock.Index + 1;
-            var key = CreateStorageKey((byte)role).AddBigEndian(index);
+            var index = engine.PersistingBlock.Index + 1;
+            var key = CreateStorageKey((byte)role, index);
             if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException();
             NodeList list = new();
             list.AddRange(nodes);
             list.Sort();
             engine.SnapshotCache.Add(key, new StorageItem(list));
-            engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role, engine.PersistingBlock.Index }));
+            if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+            {
+                var oldNodes = new VM.Types.Array(engine.ReferenceCounter, GetDesignatedByRole(engine.SnapshotCache, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
+                var newNodes = new VM.Types.Array(engine.ReferenceCounter, nodes.Select(u => (ByteString)u.EncodePoint(true)));
+
+                engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index, oldNodes, newNodes]));
+            }
+            else
+            {
+                engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index]));
+            }
         }
 
         private class NodeList : InteroperableList<ECPoint>

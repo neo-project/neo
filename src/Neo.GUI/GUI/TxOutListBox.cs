@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TxOutListBox.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -23,12 +23,14 @@ namespace Neo.GUI
     {
         public event EventHandler ItemsChanged;
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public AssetDescriptor Asset { get; set; }
 
         public int ItemCount => listBox1.Items.Count;
 
         public IEnumerable<TxOutListBoxItem> Items => listBox1.Items.OfType<TxOutListBoxItem>();
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool ReadOnly
         {
             get
@@ -42,6 +44,7 @@ namespace Neo.GUI
         }
 
         private UInt160 _script_hash = null;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public UInt160 ScriptHash
         {
             get

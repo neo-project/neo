@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_TrimmedBlock.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,13 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.UnitTests.SmartContract;
 using Neo.VM;
 using System;
 using System.IO;
@@ -38,11 +37,11 @@ namespace Neo.UnitTests.Ledger
                     NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                     Witness = new Witness
                     {
-                        InvocationScript = Array.Empty<byte>(),
+                        InvocationScript = ReadOnlyMemory<byte>.Empty,
                         VerificationScript = new[] { (byte)OpCode.PUSH1 }
                     },
                 },
-                Hashes = Array.Empty<UInt256>()
+                Hashes = []
             };
         }
 
@@ -78,12 +77,29 @@ namespace Neo.UnitTests.Ledger
 
             Block block = NativeContract.Ledger.GetBlock(snapshotCache, tblock.Hash);
 
-            block.Index.Should().Be(1);
-            block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
-            block.Transactions.Length.Should().Be(2);
-            block.Transactions[0].Hash.Should().Be(tx1.Hash);
-            block.Witness.InvocationScript.Span.ToHexString().Should().Be(tblock.Header.Witness.InvocationScript.Span.ToHexString());
-            block.Witness.VerificationScript.Span.ToHexString().Should().Be(tblock.Header.Witness.VerificationScript.Span.ToHexString());
+            Assert.AreEqual((uint)1, block.Index);
+            Assert.AreEqual(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"), block.MerkleRoot);
+            Assert.AreEqual(2, block.Transactions.Length);
+            Assert.AreEqual(tx1.Hash, block.Transactions[0].Hash);
+            Assert.AreEqual(tblock.Header.Witness.InvocationScript.Span.ToHexString(), block.Witness.InvocationScript.Span.ToHexString());
+            Assert.AreEqual(tblock.Header.Witness.VerificationScript.Span.ToHexString(), block.Witness.VerificationScript.Span.ToHexString());
+        }
+
+        [TestMethod]
+        public void TestClone()
+        {
+            var block = GetTrimmedBlockWithNoTransaction();
+            var clone = ((IInteroperable)block).Clone() as TrimmedBlock;
+            CollectionAssert.AreEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((block as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                );
+            clone.Header.Index++;
+            Assert.AreNotEqual(clone.Header.Index, block.Header.Index);
+            CollectionAssert.AreNotEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((block as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                );
         }
 
         [TestMethod]
@@ -91,8 +107,8 @@ namespace Neo.UnitTests.Ledger
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             Header header = tblock.Header;
-            header.PrevHash.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
-            header.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
+            Assert.AreEqual(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"), header.PrevHash);
+            Assert.AreEqual(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"), header.MerkleRoot);
         }
 
         [TestMethod]
@@ -100,7 +116,7 @@ namespace Neo.UnitTests.Ledger
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
-            tblock.Size.Should().Be(146); // 138 + 8
+            Assert.AreEqual(146, tblock.Size); // 138 + 8
         }
 
         [TestMethod]
@@ -116,8 +132,8 @@ namespace Neo.UnitTests.Ledger
                 MemoryReader reader = new(ms.ToArray());
                 newBlock.Deserialize(ref reader);
             }
-            tblock.Hashes.Length.Should().Be(newBlock.Hashes.Length);
-            tblock.Header.ToJson(TestProtocolSettings.Default).ToString().Should().Be(newBlock.Header.ToJson(ProtocolSettings.Default).ToString());
+            Assert.AreEqual(newBlock.Hashes.Length, tblock.Hashes.Length);
+            Assert.AreEqual(newBlock.Header.ToJson(ProtocolSettings.Default).ToString(), tblock.Header.ToJson(TestProtocolSettings.Default).ToString());
         }
     }
 }

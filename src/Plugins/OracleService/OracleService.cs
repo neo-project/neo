@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // OracleService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,13 +16,13 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IEventHandlers;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer;
+using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -384,45 +384,34 @@ namespace Neo.Plugins.OracleService
             var m = n - (n - 1) / 3;
             var oracleSignContract = Contract.CreateMultiSigContract(m, oracleNodes);
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
-            var validUntilBlock = requestTx.BlockIndex + settings.MaxValidUntilBlockIncrement;
+            var maxVUB = snapshot.GetMaxValidUntilBlockIncrement(settings);
+            var validUntilBlock = requestTx.BlockIndex + maxVUB;
             while (useCurrentHeight && validUntilBlock <= height)
             {
-                validUntilBlock += settings.MaxValidUntilBlockIncrement;
+                validUntilBlock += maxVUB;
             }
             var tx = new Transaction()
             {
                 Version = 0,
                 Nonce = unchecked((uint)response.Id),
                 ValidUntilBlock = validUntilBlock,
-                Signers = new[]
-                {
-                    new Signer
-                    {
-                        Account = NativeContract.Oracle.Hash,
-                        Scopes = WitnessScope.None
-                    },
-                    new Signer
-                    {
-                        Account = oracleSignContract.ScriptHash,
-                        Scopes = WitnessScope.None
-                    }
-                },
-                Attributes = new[] { response },
+                Signers = [
+                    new(){ Account = NativeContract.Oracle.Hash, Scopes = WitnessScope.None },
+                    new(){ Account = oracleSignContract.ScriptHash, Scopes = WitnessScope.None },
+                ],
+                Attributes = [response],
                 Script = OracleResponse.FixedScript,
                 Witnesses = new Witness[2]
             };
-            Dictionary<UInt160, Witness> witnessDict = new Dictionary<UInt160, Witness>
+
+            var witnessDict = new Dictionary<UInt160, Witness>
             {
                 [oracleSignContract.ScriptHash] = new Witness
                 {
-                    InvocationScript = Array.Empty<byte>(),
+                    InvocationScript = ReadOnlyMemory<byte>.Empty,
                     VerificationScript = oracleSignContract.Script,
                 },
-                [NativeContract.Oracle.Hash] = new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>(),
-                }
+                [NativeContract.Oracle.Hash] = Witness.Empty,
             };
 
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
@@ -444,10 +433,10 @@ namespace Neo.Plugins.OracleService
 
             // Base size for transaction: includes const_header + signers + script + hashes + witnesses, except attributes
 
-            int size_inv = 66 * m;
+            int sizeInv = 66 * m;
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Script.GetVarSize()
-                + UnsafeData.GetVarSize(hashes.Length) + witnessDict[NativeContract.Oracle.Hash].Size
-                + UnsafeData.GetVarSize(size_inv) + size_inv + oracleSignContract.Script.GetVarSize();
+                + hashes.Length.GetVarSize() + witnessDict[NativeContract.Oracle.Hash].Size
+                + sizeInv.GetVarSize() + sizeInv + oracleSignContract.Script.GetVarSize();
 
             var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
             if (response.Result.Length > OracleResponse.MaxResultSize)
@@ -517,7 +506,7 @@ namespace Neo.Plugins.OracleService
         public static byte[] Filter(string input, string filterArgs)
         {
             if (string.IsNullOrEmpty(filterArgs))
-                return Utility.StrictUTF8.GetBytes(input);
+                return input.ToStrictUtf8Bytes();
 
             JToken beforeObject = JToken.Parse(input);
             JArray afterObjects = beforeObject.JsonPath(filterArgs);
@@ -560,12 +549,9 @@ namespace Neo.Plugins.OracleService
             return oracles.Length > 0;
         }
 
-        private static bool CheckOracleAccount(Wallet wallet, ECPoint[] oracles)
+        private static bool CheckOracleAccount(ISigner signer, ECPoint[] oracles)
         {
-            if (wallet is null) return false;
-            return oracles
-                .Select(p => wallet.GetAccount(p))
-                .Any(p => p is not null && p.HasKey && !p.Lock);
+            return signer is not null && oracles.Any(p => signer.ContainsSignable(p));
         }
 
         private static void Log(string message, LogLevel level = LogLevel.Info)

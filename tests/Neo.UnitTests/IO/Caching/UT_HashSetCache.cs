@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_HashSetCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
@@ -24,144 +23,113 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestHashSetCache()
         {
-            var bucket = new HashSetCache<int>(10);
-            for (int i = 1; i <= 100; i++)
+            var bucket = new HashSetCache<int>(100);
+            for (var i = 1; i <= 100; i++)
             {
-                Assert.IsTrue(bucket.Add(i));
-                Assert.IsFalse(bucket.Add(i));
+                Assert.IsTrue(bucket.TryAdd(i));
+                Assert.IsFalse(bucket.TryAdd(i));
             }
-            bucket.Count.Should().Be(100);
+            Assert.AreEqual(100, bucket.Count);
 
-            int sum = 0;
+            var sum = 0;
             foreach (var ele in bucket)
             {
                 sum += ele;
             }
-            sum.Should().Be(5050);
+            Assert.AreEqual(5050, sum);
 
-            bucket.Add(101);
-            bucket.Count.Should().Be(91);
+            bucket.TryAdd(101);
+            Assert.AreEqual(100, bucket.Count);
 
             var items = new int[10];
             var value = 11;
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 items[i] = value;
                 value += 2;
             }
             bucket.ExceptWith(items);
-            bucket.Count.Should().Be(81);
+            Assert.AreEqual(90, bucket.Count);
 
-            bucket.Contains(13).Should().BeFalse();
-            bucket.Contains(50).Should().BeTrue();
+            Assert.IsFalse(bucket.Contains(13));
+            Assert.IsTrue(bucket.Contains(50));
         }
 
         [TestMethod]
         public void TestConstructor()
         {
             Action action1 = () => new HashSetCache<UInt256>(-1);
-            action1.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action1());
 
-            Action action2 = () => new HashSetCache<UInt256>(1, -1);
-            action2.Should().Throw<ArgumentOutOfRangeException>();
+            Action action2 = () => new HashSetCache<UInt256>(-1);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action2());
         }
 
         [TestMethod]
         public void TestAdd()
         {
-            var a = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01
-            });
-            var b = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x02
-            });
-            var set = new HashSetCache<UInt256>(1, 1)
-            {
-                a,
-                b
-            };
+            var key1 = Enumerable.Repeat((byte)1, 32).ToArray();
+            var a = new UInt256(key1);
+
+            var key2 = Enumerable.Repeat((byte)1, 31).Append((byte)2).ToArray();
+            var b = new UInt256(key2);
+
+            var set = new HashSetCache<UInt256>(1);
+            set.TryAdd(a);
+            set.TryAdd(b);
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b });
         }
 
         [TestMethod]
         public void TestGetEnumerator()
         {
-            var a = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01
-            });
-            var b = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x02
-            });
-            var set = new HashSetCache<UInt256>(1, 1)
-            {
-                a,
-                b
-            };
+            var key1 = Enumerable.Repeat((byte)1, 32).ToArray();
+            var a = new UInt256(key1);
+
+            var key2 = Enumerable.Repeat((byte)1, 31).Append((byte)2).ToArray();
+            var b = new UInt256(key2);
+
+            var set = new HashSetCache<UInt256>(1);
+            set.TryAdd(a);
+            set.TryAdd(b);
             IEnumerable ie = set;
-            ie.GetEnumerator().Should().NotBeNull();
+            Assert.IsNotNull(ie.GetEnumerator());
         }
 
         [TestMethod]
         public void TestExceptWith()
         {
-            var a = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01
-            });
-            var b = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x02
-            });
-            var c = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x03
-            });
+            var key1 = Enumerable.Repeat((byte)1, 32).ToArray();
+            var a = new UInt256(key1);
 
-            var set = new HashSetCache<UInt256>(10)
-            {
-                a,
-                b,
-                c
-            };
-            set.ExceptWith(new UInt256[] { b, c });
+            var key2 = Enumerable.Repeat((byte)1, 31).Append((byte)2).ToArray();
+            var b = new UInt256(key2);
+
+            var key3 = Enumerable.Repeat((byte)1, 31).Append((byte)3).ToArray();
+            var c = new UInt256(key3);
+
+            var set = new HashSetCache<UInt256>(10);
+            set.TryAdd(a);
+            set.TryAdd(b);
+            set.TryAdd(c);
+            set.ExceptWith([b, c]);
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a });
-            set.ExceptWith(new UInt256[] { a });
+
+            set.ExceptWith([a]);
             CollectionAssert.AreEqual(set.ToArray(), Array.Empty<UInt256>());
 
-            set = new HashSetCache<UInt256>(10)
-            {
-                a,
-                b,
-                c
-            };
-            set.ExceptWith(new UInt256[] { a });
+            set = new HashSetCache<UInt256>(10);
+            set.TryAdd(a);
+            set.TryAdd(b);
+            set.TryAdd(c);
+            set.ExceptWith([a]);
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b, c });
 
-            set = new HashSetCache<UInt256>(10)
-            {
-                a,
-                b,
-                c
-            };
-            set.ExceptWith(new UInt256[] { c });
+            set = new HashSetCache<UInt256>(10);
+            set.TryAdd(a);
+            set.TryAdd(b);
+            set.TryAdd(c);
+            set.ExceptWith([c]);
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, b });
         }
     }

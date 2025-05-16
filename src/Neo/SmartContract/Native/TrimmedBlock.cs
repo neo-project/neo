@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TrimmedBlock.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -17,6 +17,7 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
@@ -47,6 +48,31 @@ namespace Neo.SmartContract.Native
 
         public int Size => Header.Size + Hashes.GetVarSize();
 
+        /// <summary>
+        /// Create Trimmed block
+        /// </summary>
+        /// <param name="block">Block</param>
+        /// <returns></returns>
+        public static TrimmedBlock Create(Block block)
+        {
+            return Create(block.Header, block.Transactions.Select(p => p.Hash).ToArray());
+        }
+
+        /// <summary>
+        /// Create Trimmed block
+        /// </summary>
+        /// <param name="header">Block header</param>
+        /// <param name="txHashes">Transaction hashes</param>
+        /// <returns></returns>
+        public static TrimmedBlock Create(Header header, UInt256[] txHashes)
+        {
+            return new TrimmedBlock
+            {
+                Header = header,
+                Hashes = txHashes
+            };
+        }
+
         public void Deserialize(ref MemoryReader reader)
         {
             Header = reader.ReadSerializable<Header>();
@@ -61,16 +87,18 @@ namespace Neo.SmartContract.Native
 
         IInteroperable IInteroperable.Clone()
         {
+            // FromStackItem is not supported so we need to do the copy
+
             return new TrimmedBlock
             {
-                Header = Header,
-                Hashes = Hashes
+                Header = Header.Clone(),
+                Hashes = [.. Hashes]
             };
         }
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            TrimmedBlock from = (TrimmedBlock)replica;
+            var from = (TrimmedBlock)replica;
             Header = from.Header;
             Hashes = from.Hashes;
         }
@@ -82,8 +110,8 @@ namespace Neo.SmartContract.Native
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[]
-            {
+            return new Array(referenceCounter,
+            [
                 // Computed properties
                 Header.Hash.ToArray(),
 
@@ -99,7 +127,7 @@ namespace Neo.SmartContract.Native
 
                 // Block properties
                 Hashes.Length
-            });
+            ]);
         }
     }
 }

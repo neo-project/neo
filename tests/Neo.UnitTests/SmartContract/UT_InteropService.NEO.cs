@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_InteropService.NEO.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,11 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -34,14 +32,13 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine(true);
             var iv = engine.ScriptContainer;
             var message = iv.GetSignData(TestProtocolSettings.Default.Network);
-            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            var privateKey = Enumerable.Repeat((byte)0x01, 32).ToArray();
             var keyPair = new KeyPair(privateKey);
             var pubkey = keyPair.PublicKey;
             var signature = Crypto.Sign(message, privateKey);
-            engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
+            Assert.IsTrue(engine.CheckSig(pubkey.EncodePoint(false), signature));
             Action action = () => engine.CheckSig(new byte[70], signature);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsExactly<FormatException>(action);
         }
 
         [TestMethod]
@@ -51,64 +48,34 @@ namespace Neo.UnitTests.SmartContract
             var iv = engine.ScriptContainer;
             var message = iv.GetSignData(TestProtocolSettings.Default.Network);
 
-            byte[] privkey1 = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            var privkey1 = Enumerable.Repeat((byte)0x01, 32).ToArray();
             var key1 = new KeyPair(privkey1);
             var pubkey1 = key1.PublicKey;
             var signature1 = Crypto.Sign(message, privkey1);
 
-            byte[] privkey2 = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02};
+            var privkey2 = Enumerable.Repeat((byte)0x01, 32).ToArray();
             var key2 = new KeyPair(privkey2);
             var pubkey2 = key2.PublicKey;
             var signature2 = Crypto.Sign(message, privkey2);
 
-            var pubkeys = new[]
-            {
-                pubkey1.EncodePoint(false),
-                pubkey2.EncodePoint(false)
-            };
-            var signatures = new[]
-            {
-                signature1,
-                signature2
-            };
-            engine.CheckMultisig(pubkeys, signatures).Should().BeTrue();
+            var pubkeys = new[] { pubkey1.EncodePoint(false), pubkey2.EncodePoint(false) };
+            var signatures = new[] { signature1, signature2 };
+            Assert.IsTrue(engine.CheckMultisig(pubkeys, signatures));
 
-            pubkeys = new byte[0][];
-            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisig(pubkeys, signatures));
+            pubkeys = [];
+            Assert.ThrowsExactly<ArgumentException>(() => _ = engine.CheckMultisig(pubkeys, signatures));
 
-            pubkeys = new[]
-            {
-                pubkey1.EncodePoint(false),
-                pubkey2.EncodePoint(false)
-            };
-            signatures = new byte[0][];
-            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisig(pubkeys, signatures));
+            pubkeys = [pubkey1.EncodePoint(false), pubkey2.EncodePoint(false)];
+            signatures = [];
+            Assert.ThrowsExactly<ArgumentException>(() => _ = engine.CheckMultisig(pubkeys, signatures));
 
-            pubkeys = new[]
-            {
-                pubkey1.EncodePoint(false),
-                pubkey2.EncodePoint(false)
-            };
-            signatures = new[]
-            {
-                signature1,
-                new byte[64]
-            };
-            engine.CheckMultisig(pubkeys, signatures).Should().BeFalse();
+            pubkeys = [pubkey1.EncodePoint(false), pubkey2.EncodePoint(false)];
+            signatures = [signature1, new byte[64]];
+            Assert.IsFalse(engine.CheckMultisig(pubkeys, signatures));
 
-            pubkeys = new[]
-            {
-                pubkey1.EncodePoint(false),
-                new byte[70]
-            };
-            signatures = new[]
-            {
-                signature1,
-                signature2
-            };
-            Assert.ThrowsException<FormatException>(() => engine.CheckMultisig(pubkeys, signatures));
+            pubkeys = [pubkey1.EncodePoint(false), new byte[70]];
+            signatures = [signature1, signature2];
+            Assert.ThrowsExactly<FormatException>(() => _ = engine.CheckMultisig(pubkeys, signatures));
         }
 
         [TestMethod]
@@ -120,42 +87,42 @@ namespace Neo.UnitTests.SmartContract
                 Script = Enumerable.Repeat((byte)OpCode.RET, byte.MaxValue).ToArray(),
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = System.Array.Empty<MethodToken>()
+                Tokens = []
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
             var manifest = TestUtils.CreateDefaultManifest();
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.DeployContract(null, nefFile, manifest.ToJson().ToByteArray(false)));
-            Assert.ThrowsException<ArgumentException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, new byte[ContractManifest.MaxLength + 1]));
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(true), 10000000));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = snapshotCache.DeployContract(null, nefFile, manifest.ToJson().ToByteArray(false)));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, nefFile, new byte[ContractManifest.MaxLength + 1]));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(true), 10000000));
 
-            var script_exceedMaxLength = new NefFile()
+            var scriptExceedMaxLength = new NefFile()
             {
                 Script = new byte[ExecutionEngineLimits.Default.MaxItemSize - 50],
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = Array.Empty<MethodToken>()
+                Tokens = [],
             };
-            script_exceedMaxLength.CheckSum = NefFile.ComputeChecksum(script_exceedMaxLength);
+            scriptExceedMaxLength.CheckSum = NefFile.ComputeChecksum(scriptExceedMaxLength);
 
-            Assert.ThrowsException<FormatException>(() => script_exceedMaxLength.ToArray().AsSerializable<NefFile>());
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.DeployContract(UInt160.Zero, script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
+            Assert.ThrowsExactly<FormatException>(() => _ = scriptExceedMaxLength.ToArray().AsSerializable<NefFile>());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, scriptExceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
 
-            var script_zeroLength = System.Array.Empty<byte>();
-            Assert.ThrowsException<ArgumentException>(() => snapshotCache.DeployContract(UInt160.Zero, script_zeroLength, manifest.ToJson().ToByteArray(true)));
+            var scriptZeroLength = Array.Empty<byte>();
+            Assert.ThrowsExactly<ArgumentException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, scriptZeroLength, manifest.ToJson().ToByteArray(true)));
 
-            var manifest_zeroLength = System.Array.Empty<byte>();
-            Assert.ThrowsException<ArgumentException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest_zeroLength));
+            var manifestZeroLength = Array.Empty<byte>();
+            Assert.ThrowsExactly<ArgumentException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, nefFile, manifestZeroLength));
 
             manifest = TestUtils.CreateDefaultManifest();
             var ret = snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false));
-            ret.Hash.ToString().Should().Be("0x7b37d4bd3d87f53825c3554bd1a617318235a685");
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
+            Assert.AreEqual("0x7b37d4bd3d87f53825c3554bd1a617318235a685", ret.Hash.ToString());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
 
             var state = TestUtils.GetContract();
             snapshotCache.AddContract(state.Hash, state);
 
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
         }
 
         [TestMethod]
@@ -167,26 +134,19 @@ namespace Neo.UnitTests.SmartContract
                 Script = new[] { (byte)OpCode.RET },
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = Array.Empty<MethodToken>()
+                Tokens = [],
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nef.ToArray(), new byte[0]));
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nef.ToArray(), []));
 
             var manifest = TestUtils.CreateDefaultManifest();
-            byte[] privkey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            var privkey = Enumerable.Repeat((byte)0x01, 32).ToArray();
             var key = new KeyPair(privkey);
+
             var pubkey = key.PublicKey;
             var state = TestUtils.GetContract();
             var signature = Crypto.Sign(state.Hash.ToArray(), privkey);
-            manifest.Groups = new ContractGroup[]
-            {
-                new()
-                {
-                    PubKey = pubkey,
-                    Signature = signature
-                }
-            };
+            manifest.Groups = [new() { PubKey = pubkey, Signature = signature }];
 
             var storageItem = new StorageItem
             {
@@ -200,14 +160,14 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshotCache.AddContract(state.Hash, state);
             snapshotCache.Add(storageKey, storageItem);
-            state.UpdateCounter.Should().Be(0);
+            Assert.AreEqual(0, state.UpdateCounter);
             snapshotCache.UpdateContract(state.Hash, nef.ToArray(), manifest.ToJson().ToByteArray(false));
             var ret = NativeContract.ContractManagement.GetContract(snapshotCache, state.Hash);
-            snapshotCache.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
-            ret.UpdateCounter.Should().Be(1);
-            ret.Id.Should().Be(state.Id);
-            ret.Manifest.ToJson().ToString().Should().Be(manifest.ToJson().ToString());
-            ret.Script.Span.ToHexString().Should().Be(nef.Script.Span.ToHexString().ToString());
+            Assert.AreEqual(1, snapshotCache.Find(BitConverter.GetBytes(state.Id)).ToList().Count());
+            Assert.AreEqual(1, ret.UpdateCounter);
+            Assert.AreEqual(state.Id, ret.Id);
+            Assert.AreEqual(manifest.ToJson().ToString(), ret.Manifest.ToJson().ToString());
+            Assert.AreEqual(nef.Script.Span.ToHexString().ToString(), ret.Script.Span.ToHexString());
         }
 
         [TestMethod]
@@ -218,33 +178,33 @@ namespace Neo.UnitTests.SmartContract
                 Script = new byte[] { 0x01 },
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = System.Array.Empty<MethodToken>()
+                Tokens = []
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.UpdateContract(null, null, new byte[] { 0x01 }));
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), null));
-            Assert.ThrowsException<ArgumentException>(() => snapshotCache.UpdateContract(null, null, null));
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, null, [0x01]));
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), null));
+            Assert.ThrowsExactly<ArgumentException>(() => snapshotCache.UpdateContract(null, null, null));
 
             nefFile = new NefFile()
             {
-                Script = new byte[0],
+                Script = ReadOnlyMemory<byte>.Empty,
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = System.Array.Empty<MethodToken>()
+                Tokens = []
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), new byte[] { 0x01 }));
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), new byte[0]));
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), [0x01]));
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), []));
         }
 
         [TestMethod]
         public void TestStorage_Find()
         {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var snapshot = _snapshotCache.CloneCache();
             var state = TestUtils.GetContract();
 
             var storageItem = new StorageItem
@@ -256,19 +216,19 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
-            snapshotCache.AddContract(state.Hash, state);
-            snapshotCache.Add(storageKey, storageItem);
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
+            snapshot.AddContract(state.Hash, state);
+            snapshot.Add(storageKey, storageItem);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
             var iterator = engine.Find(new StorageContext
             {
                 Id = state.Id,
                 IsReadOnly = false
-            }, new byte[] { 0x01 }, FindOptions.ValuesOnly);
+            }, [0x01], FindOptions.ValuesOnly);
             iterator.Next();
             var ele = iterator.Value(null);
-            ele.GetSpan().ToHexString().Should().Be(storageItem.Value.Span.ToHexString());
+            Assert.AreEqual(storageItem.Value.Span.ToHexString(), ele.GetSpan().ToHexString());
         }
     }
 }

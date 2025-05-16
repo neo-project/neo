@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Network.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -15,7 +15,6 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P;
-using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -44,9 +43,8 @@ namespace Neo.CLI
                 AddrPayload.Create(
                     NetworkAddressWithTime.Create(
                         payload, DateTime.UtcNow.ToTimestamp(),
-                        new FullNodeCapability(),
-                        new ServerCapability(NodeCapabilityType.TcpServer, port))
-                    ));
+                        LocalNode.GetNodeCapabilities()
+                    )));
         }
 
         /// <summary>

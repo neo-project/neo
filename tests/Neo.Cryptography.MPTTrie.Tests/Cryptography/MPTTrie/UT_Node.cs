@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Node.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,18 +19,31 @@ using System.Text;
 
 namespace Neo.Cryptography.MPTTrie.Tests
 {
-
     [TestClass]
     public class UT_Node
     {
         private byte[] NodeToArrayAsChild(Node n)
         {
             using var ms = new MemoryStream();
-            using var writer = new BinaryWriter(ms, Neo.Utility.StrictUTF8, true);
+            using var writer = new BinaryWriter(ms, Utility.StrictUTF8, true);
 
             n.SerializeAsChild(writer);
             writer.Flush();
             return ms.ToArray();
+        }
+
+        [TestMethod]
+        public void TestLogLevel()
+        {
+            Utility.LogLevel = LogLevel.Debug;
+            int raised = 0;
+            Utility.Logging += (a, b, c) => raised++;
+
+            Utility.Log("a", LogLevel.Warning, null);
+            Assert.AreEqual(1, raised);
+            Utility.LogLevel = LogLevel.Fatal;
+            Utility.Log("a", LogLevel.Warning, null);
+            Assert.AreEqual(1, raised);
         }
 
         [TestMethod]
@@ -116,8 +128,10 @@ namespace Neo.Cryptography.MPTTrie.Tests
         public void TestBranchSerializeAsChild()
         {
             var n = Node.NewBranch();
-            var data = new List<byte>();
-            data.Add(0x00);
+            var data = new List<byte>
+            {
+                0x00
+            };
             for (int i = 0; i < Node.BranchChildCount; i++)
             {
                 data.Add(0x04);
@@ -158,21 +172,21 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestNewExtensionException()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => Node.NewExtension(null, new Node()));
-            Assert.ThrowsException<ArgumentNullException>(() => Node.NewExtension(new byte[] { 0x01 }, null));
-            Assert.ThrowsException<InvalidOperationException>(() => Node.NewExtension(Array.Empty<byte>(), new Node()));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Node.NewExtension(null, new Node()));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Node.NewExtension(new byte[] { 0x01 }, null));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = Node.NewExtension(Array.Empty<byte>(), new Node()));
         }
 
         [TestMethod]
         public void TestNewHashException()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => Node.NewHash(null));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Node.NewHash(null));
         }
 
         [TestMethod]
         public void TestNewLeafException()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => Node.NewLeaf(null));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Node.NewLeaf(null));
         }
 
         [TestMethod]

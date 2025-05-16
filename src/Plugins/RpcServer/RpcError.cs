@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcError.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -90,9 +90,11 @@ namespace Neo.Plugins.RpcServer
 
         public JToken ToJson()
         {
-            JObject json = new();
-            json["code"] = Code;
-            json["message"] = ErrorMessage;
+            var json = new JObject()
+            {
+                ["code"] = Code,
+                ["message"] = ErrorMessage,
+            };
             if (!string.IsNullOrEmpty(Data))
                 json["data"] = Data;
             return json;

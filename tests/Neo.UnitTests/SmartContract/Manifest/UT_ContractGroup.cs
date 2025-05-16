@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ContractGroup.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 PubKey = keyPair.PublicKey,
                 Signature = new byte[20]
             };
-            Assert.AreEqual(false, contractGroup.IsValid(UInt160.Zero));
+            Assert.IsFalse(contractGroup.IsValid(UInt160.Zero));
 
 
             var message = new byte[] {  0x01,0x01,0x01,0x01,0x01,
@@ -64,7 +64,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 PubKey = keyPair.PublicKey,
                 Signature = signature
             };
-            Assert.AreEqual(true, contractGroup.IsValid(new UInt160(message)));
+            Assert.IsTrue(contractGroup.IsValid(new UInt160(message)));
         }
     }
 }

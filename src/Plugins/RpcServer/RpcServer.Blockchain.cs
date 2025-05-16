@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.Blockchain.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.RpcServer.Model;
@@ -21,6 +20,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Plugins.RpcServer
 {
@@ -47,7 +47,9 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken GetBlock(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
             using var snapshot = system.GetSnapshotCache();
-            var block = blockHashOrIndex.IsIndex ? NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsIndex()) : NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsHash());
+            var block = blockHashOrIndex.IsIndex
+                ? NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsIndex())
+                : NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsHash());
             block.NotNull_Or(RpcError.UnknownBlock);
             if (verbose)
             {
@@ -107,7 +109,10 @@ namespace Neo.Plugins.RpcServer
         /// If you need the detailed information, use the SDK for deserialization.
         /// When verbose is true or 1, detailed information of the block is returned in Json format.
         /// </remarks>
-        /// <returns>The block header data as a <see cref="JToken"/>. In json format if the second item of _params is true, otherwise Base64-encoded byte array.</returns>
+        /// <returns>
+        /// The block header data as a <see cref="JToken"/>.
+        /// In json format if the second item of _params is true, otherwise Base64-encoded byte array.
+        /// </returns>
         [RpcMethodWithParams]
         protected internal virtual JToken GetBlockHeader(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
@@ -265,14 +270,13 @@ namespace Neo.Plugins.RpcServer
             }
 
             byte[] prefix = Result.Ok_Or(() => Convert.FromBase64String(base64KeyPrefix), RpcError.InvalidParams.WithData($"Invalid Base64 string{base64KeyPrefix}"));
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(id, prefix);
 
             JObject json = new();
             JArray jarr = new();
             int pageSize = settings.FindStoragePageSize;
             int i = 0;
 
-            using (var iter = snapshot.Find(prefix_key).Skip(count: start).GetEnumerator())
+            using (var iter = NativeContract.ContractManagement.FindContractStorage(snapshot, id, prefix).Skip(count: start).GetEnumerator())
             {
                 var hasMore = false;
                 while (iter.MoveNext())
@@ -344,7 +348,7 @@ namespace Neo.Plugins.RpcServer
             StackItem[] resultstack;
             try
             {
-                using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: system.Settings, gas: settings.MaxGasInvoke);
+                using var engine = ApplicationEngine.Run(script, snapshot, settings: system.Settings, gas: settings.MaxGasInvoke);
                 resultstack = engine.ResultStack.ToArray();
             }
             catch
@@ -358,11 +362,12 @@ namespace Neo.Plugins.RpcServer
                 if (resultstack.Length > 0)
                 {
                     JArray jArray = new();
-                    var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, system.Settings.ValidatorsCount) ?? throw new RpcException(RpcError.InternalServerError.WithData("Can't get next block validators."));
+                    var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, system.Settings.ValidatorsCount)
+                        ?? throw new RpcException(RpcError.InternalServerError.WithData("Can't get next block validators."));
 
                     foreach (var item in resultstack)
                     {
-                        var value = (VM.Types.Array)item;
+                        var value = (Array)item;
                         foreach (Struct ele in value)
                         {
                             var publickey = ele[0].GetSpan().ToHexString();
@@ -401,7 +406,12 @@ namespace Neo.Plugins.RpcServer
         [RpcMethodWithParams]
         protected internal virtual JToken GetNativeContracts()
         {
-            return new JArray(NativeContract.Contracts.Select(p => NativeContract.ContractManagement.GetContract(system.StoreView, p.Hash).ToJson()));
+            var storeView = system.StoreView;
+            var contractStates = NativeContract.Contracts
+                .Select(p => NativeContract.ContractManagement.GetContract(storeView, p.Hash))
+                .Where(p => p != null) // if not active
+                .Select(p => p.ToJson());
+            return new JArray(contractStates);
         }
     }
 }

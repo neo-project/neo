@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ContractMethodMetadata.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -20,6 +20,8 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using Array = Neo.VM.Types.Array;
+using Boolean = Neo.VM.Types.Boolean;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract.Native
 {
@@ -40,7 +42,8 @@ namespace Neo.SmartContract.Native
 
         public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
-            Name = attribute.Name ?? member.Name.ToLower()[0] + member.Name[1..];
+            Name = attribute.Name ?? member.Name;
+            Name = Name.ToLowerInvariant()[0] + Name[1..];
             Handler = member switch
             {
                 MethodInfo m => m,
@@ -51,6 +54,7 @@ namespace Neo.SmartContract.Native
             if (parameterInfos.Length > 0)
             {
                 NeedApplicationEngine = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(ApplicationEngine));
+                // snapshot is a DataCache instance, and DataCache implements IReadOnlyStoreView
                 NeedSnapshot = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(DataCache));
             }
             if (NeedApplicationEngine || NeedSnapshot)
@@ -91,10 +95,10 @@ namespace Neo.SmartContract.Native
             if (type == typeof(UInt160)) return ContractParameterType.Hash160;
             if (type == typeof(UInt256)) return ContractParameterType.Hash256;
             if (type == typeof(ECPoint)) return ContractParameterType.PublicKey;
-            if (type == typeof(VM.Types.Boolean)) return ContractParameterType.Boolean;
+            if (type == typeof(Boolean)) return ContractParameterType.Boolean;
             if (type == typeof(Integer)) return ContractParameterType.Integer;
             if (type == typeof(ByteString)) return ContractParameterType.ByteArray;
-            if (type == typeof(VM.Types.Buffer)) return ContractParameterType.ByteArray;
+            if (type == typeof(Buffer)) return ContractParameterType.ByteArray;
             if (type == typeof(Array)) return ContractParameterType.Array;
             if (type == typeof(Struct)) return ContractParameterType.Array;
             if (type == typeof(Map)) return ContractParameterType.Map;

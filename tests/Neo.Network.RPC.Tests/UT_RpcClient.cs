@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_RpcClient.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,11 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
@@ -115,7 +114,14 @@ namespace Neo.Network.RPC.Tests
             //dummy url for test
             var client = new RpcClient(new Uri("http://www.xxx.yyy"));
             Action action = () => client.Dispose();
-            action.Should().NotThrow<Exception>();
+            try
+            {
+                action();
+            }
+            catch
+            {
+                Assert.Fail("Dispose should not throw exception");
+            }
         }
 
         [TestMethod]

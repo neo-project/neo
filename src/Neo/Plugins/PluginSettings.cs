@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // PluginSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,25 +9,30 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Microsoft.Extensions.Configuration;
 using Org.BouncyCastle.Security;
 using System;
 
-namespace Neo.Plugins;
-
-public abstract class PluginSettings(IConfigurationSection section)
+namespace Neo.Plugins
 {
-    public UnhandledExceptionPolicy ExceptionPolicy
+    public abstract class PluginSettings(IConfigurationSection section)
     {
-        get
+        public UnhandledExceptionPolicy ExceptionPolicy
         {
-            var policyString = section.GetValue(nameof(UnhandledExceptionPolicy), nameof(UnhandledExceptionPolicy.StopNode));
-            if (Enum.TryParse(policyString, true, out UnhandledExceptionPolicy policy))
+            get
             {
-                return policy;
-            }
+                var policyString = section.GetValue(nameof(UnhandledExceptionPolicy), nameof(UnhandledExceptionPolicy.StopNode));
+                if (Enum.TryParse(policyString, true, out UnhandledExceptionPolicy policy))
+                {
+                    return policy;
+                }
 
-            throw new InvalidParameterException($"{policyString} is not a valid UnhandledExceptionPolicy");
+                throw new InvalidParameterException($"{policyString} is not a valid UnhandledExceptionPolicy");
+            }
         }
     }
 }
+
+#nullable disable

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_BinarySerializer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.VM;
@@ -18,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -47,10 +47,10 @@ namespace Neo.UnitTests.SmartContract
 
             StackItem stackItem4 = new InteropInterface(new object());
             Action action4 = () => BinarySerializer.Serialize(stackItem4, ExecutionEngineLimits.Default);
-            action4.Should().Throw<NotSupportedException>();
+            Assert.ThrowsExactly<NotSupportedException>(action4);
 
             List<StackItem> list6 = new List<StackItem> { 1 };
-            StackItem stackItem62 = new VM.Types.Array(list6);
+            StackItem stackItem62 = new Array(list6);
             byte[] result6 = BinarySerializer.Serialize(stackItem62, ExecutionEngineLimits.Default);
             byte[] expectedArray6 = new byte[] {
                         0x40,0x01,0x21,0x01,0x01
@@ -75,12 +75,12 @@ namespace Neo.UnitTests.SmartContract
             Map stackItem91 = new Map();
             stackItem91[1] = stackItem91;
             Action action9 = () => BinarySerializer.Serialize(stackItem91, ExecutionEngineLimits.Default);
-            action9.Should().Throw<NotSupportedException>();
+            Assert.ThrowsExactly<NotSupportedException>(action9);
 
-            VM.Types.Array stackItem10 = new VM.Types.Array();
+            Array stackItem10 = new Array();
             stackItem10.Add(stackItem10);
             Action action10 = () => BinarySerializer.Serialize(stackItem10, ExecutionEngineLimits.Default);
-            action10.Should().Throw<NotSupportedException>();
+            Assert.ThrowsExactly<NotSupportedException>(action10);
         }
 
         [TestMethod]
@@ -104,14 +104,14 @@ namespace Neo.UnitTests.SmartContract
             byte[] byteArray4 = BinarySerializer.Serialize(1, ExecutionEngineLimits.Default);
             byteArray4[0] = 0x40;
             Action action4 = () => BinarySerializer.Deserialize(byteArray4, ExecutionEngineLimits.Default);
-            action4.Should().Throw<FormatException>();
+            Assert.ThrowsExactly<FormatException>(action4);
 
             List<StackItem> list5 = new List<StackItem> { 1 };
-            StackItem stackItem52 = new VM.Types.Array(list5);
+            StackItem stackItem52 = new Array(list5);
             byte[] byteArray5 = BinarySerializer.Serialize(stackItem52, ExecutionEngineLimits.Default);
             StackItem result5 = BinarySerializer.Deserialize(byteArray5, ExecutionEngineLimits.Default);
-            Assert.AreEqual(((VM.Types.Array)stackItem52).Count, ((VM.Types.Array)result5).Count);
-            Assert.AreEqual(((VM.Types.Array)stackItem52).GetEnumerator().Current, ((VM.Types.Array)result5).GetEnumerator().Current);
+            Assert.AreEqual(((Array)stackItem52).Count, ((Array)result5).Count);
+            Assert.AreEqual(((Array)stackItem52).GetEnumerator().Current, ((Array)result5).GetEnumerator().Current);
 
             List<StackItem> list6 = new List<StackItem> { 1 };
             StackItem stackItem62 = new Struct(list6);
