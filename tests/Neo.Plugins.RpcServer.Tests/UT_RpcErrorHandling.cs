@@ -130,11 +130,13 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Create a context and request object to simulate a real RPC call
             var context = new DefaultHttpContext();
-            var request = new JObject();
-            request["jsonrpc"] = "2.0";
-            request["id"] = 1;
-            request["method"] = "sendrawtransaction";
-            request["params"] = new JArray { txString };
+            var request = new JObject()
+            {
+                ["jsonrpc"] = "2.0",
+                ["id"] = 1,
+                ["method"] = "sendrawtransaction",
+                ["params"] = new JArray { txString },
+            };
 
             // Process the request directly through the RPC server
             var response = await _rpcServer.ProcessRequestAsync(context, request);
@@ -293,11 +295,13 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Create a context and request object to simulate a real RPC call
             var context = new DefaultHttpContext();
-            var request = new JObject();
-            request["jsonrpc"] = "2.0";
-            request["id"] = 1;
-            request["method"] = "sendrawtransaction";
-            request["params"] = new JArray { txString };
+            var request = new JObject()
+            {
+                ["jsonrpc"] = "2.0",
+                ["id"] = 1,
+                ["method"] = "sendrawtransaction",
+                ["params"] = new JArray { txString },
+            };
 
             // Process the request - this should use the standard RPC processing
             var response = await _rpcServer.ProcessRequestAsync(context, request);
@@ -333,9 +337,7 @@ namespace Neo.Plugins.RpcServer.Tests
             catch (FormatException)
             {
                 // Simulate ProcessAsync behavior for malformed JSON
-                responseJson = new JObject();
-                responseJson["error"] = RpcError.BadRequest.ToJson();
-                return responseJson;
+                return new JObject() { ["error"] = RpcError.BadRequest.ToJson() };
             }
 
             if (requestJson is JObject singleRequest)
@@ -353,18 +355,22 @@ namespace Neo.Plugins.RpcServer.Tests
                         {
                             var result = _rpcServer.SendRawTransaction(parameters[0].AsString());
                             // Create a successful response
-                            responseJson = new JObject();
-                            responseJson["jsonrpc"] = "2.0";
-                            responseJson["id"] = singleRequest["id"];
-                            responseJson["result"] = result;
+                            responseJson = new JObject()
+                            {
+                                ["jsonrpc"] = "2.0",
+                                ["id"] = singleRequest["id"],
+                                ["result"] = result,
+                            };
                         }
                         catch (RpcException ex)
                         {
                             // Create an error response with the correct error code
-                            responseJson = new JObject();
-                            responseJson["jsonrpc"] = "2.0";
-                            responseJson["id"] = singleRequest["id"];
-                            responseJson["error"] = ex.GetError().ToJson();
+                            responseJson = new JObject()
+                            {
+                                ["jsonrpc"] = "2.0",
+                                ["id"] = singleRequest["id"],
+                                ["error"] = ex.GetError().ToJson(),
+                            };
                         }
                     }
                     else
@@ -384,10 +390,12 @@ namespace Neo.Plugins.RpcServer.Tests
                 if (batchRequest.Count == 0)
                 {
                     // Simulate ProcessAsync behavior for empty batch
-                    responseJson = new JObject();
-                    responseJson["jsonrpc"] = "2.0";
-                    responseJson["id"] = null;
-                    responseJson["error"] = RpcError.InvalidRequest.ToJson();
+                    responseJson = new JObject()
+                    {
+                        ["jsonrpc"] = "2.0",
+                        ["id"] = null,
+                        ["error"] = RpcError.InvalidRequest.ToJson(),
+                    };
                 }
                 else
                 {
@@ -400,8 +408,7 @@ namespace Neo.Plugins.RpcServer.Tests
             else
             {
                 // Should not happen with valid JSON
-                responseJson = new JObject();
-                responseJson["error"] = RpcError.InvalidRequest.ToJson();
+                responseJson = new JObject() { ["error"] = RpcError.InvalidRequest.ToJson() };
             }
 
             return responseJson;

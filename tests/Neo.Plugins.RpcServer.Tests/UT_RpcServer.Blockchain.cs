@@ -399,15 +399,20 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.Commit();
             var result = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(key), 0);
 
-            var json = new JObject();
             var jarr = new JArray();
-            var j = new JObject();
-            j["key"] = Convert.ToBase64String(key);
-            j["value"] = Convert.ToBase64String(value);
+            var j = new JObject()
+            {
+                ["key"] = Convert.ToBase64String(key),
+                ["value"] = Convert.ToBase64String(value),
+            };
             jarr.Add(j);
-            json["truncated"] = false;
-            json["next"] = 1;
-            json["results"] = jarr;
+
+            var json = new JObject()
+            {
+                ["truncated"] = false,
+                ["next"] = 1,
+                ["results"] = jarr,
+            };
             Assert.AreEqual(json.ToString(), result.ToString());
 
             var result2 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(key));
@@ -518,10 +523,11 @@ namespace Neo.Plugins.RpcServer.Tests
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
             var expected = validators.Select(p =>
             {
-                var validator = new JObject();
-                validator["publickey"] = p.ToString();
-                validator["votes"] = (int)NativeContract.NEO.GetCandidateVote(snapshot, p);
-                return validator;
+                return new JObject()
+                {
+                    ["publickey"] = p.ToString(),
+                    ["votes"] = (int)NativeContract.NEO.GetCandidateVote(snapshot, p),
+                };
             }).ToArray();
             Assert.AreEqual(new JArray(expected).ToString(), result.ToString());
         }
@@ -543,10 +549,12 @@ namespace Neo.Plugins.RpcServer.Tests
             result = _rpcServer.GetCandidates();
             foreach (var candidate in candidates)
             {
-                var item = new JObject();
-                item["publickey"] = candidate.PublicKey.ToString();
-                item["votes"] = candidate.Votes.ToString();
-                item["active"] = validators.Contains(candidate.PublicKey);
+                var item = new JObject()
+                {
+                    ["publickey"] = candidate.PublicKey.ToString(),
+                    ["votes"] = candidate.Votes.ToString(),
+                    ["active"] = validators.Contains(candidate.PublicKey),
+                };
                 json.Add(item);
             }
             Assert.AreEqual(json.ToString(), result.ToString());
