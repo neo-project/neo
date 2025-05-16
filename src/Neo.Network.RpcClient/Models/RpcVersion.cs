@@ -36,25 +36,25 @@ namespace Neo.Network.RPC.Models
 
             public JObject ToJson()
             {
-                JObject json = new();
-                json["network"] = Network;
-                json["validatorscount"] = ValidatorsCount;
-                json["msperblock"] = MillisecondsPerBlock;
-                json["maxvaliduntilblockincrement"] = MaxValidUntilBlockIncrement;
-                json["maxtraceableblocks"] = MaxTraceableBlocks;
-                json["addressversion"] = AddressVersion;
-                json["maxtransactionsperblock"] = MaxTransactionsPerBlock;
-                json["memorypoolmaxtransactions"] = MemoryPoolMaxTransactions;
-                json["initialgasdistribution"] = InitialGasDistribution;
-                json["hardforks"] = new JArray(Hardforks.Select(s => new JObject()
+                return new()
                 {
-                    // Strip HF_ prefix.
-                    ["name"] = StripPrefix(s.Key.ToString(), "HF_"),
-                    ["blockheight"] = s.Value,
-                }));
-                json["standbycommittee"] = new JArray(StandbyCommittee.Select(u => new JString(u.ToString())));
-                json["seedlist"] = new JArray(SeedList.Select(u => new JString(u)));
-                return json;
+                    ["network"] = Network,
+                    ["validatorscount"] = ValidatorsCount,
+                    ["msperblock"] = MillisecondsPerBlock,
+                    ["maxvaliduntilblockincrement"] = MaxValidUntilBlockIncrement,
+                    ["maxtraceableblocks"] = MaxTraceableBlocks,
+                    ["addressversion"] = AddressVersion,
+                    ["maxtransactionsperblock"] = MaxTransactionsPerBlock,
+                    ["memorypoolmaxtransactions"] = MemoryPoolMaxTransactions,
+                    ["initialgasdistribution"] = InitialGasDistribution,
+                    ["hardforks"] = new JArray(Hardforks.Select(s => new JObject()
+                    {
+                        ["name"] = StripPrefix(s.Key.ToString(), "HF_"), // Strip HF_ prefix.
+                        ["blockheight"] = s.Value,
+                    })),
+                    ["standbycommittee"] = new JArray(StandbyCommittee.Select(u => new JString(u.ToString()))),
+                    ["seedlist"] = new JArray(SeedList.Select(u => new JString(u)))
+                };
             }
 
             public static RpcProtocol FromJson(JObject json)
@@ -74,16 +74,11 @@ namespace Neo.Network.RPC.Models
                     {
                         var name = s["name"].AsString();
                         // Add HF_ prefix to the hardfork response for proper Hardfork enum parsing.
-                        return new KeyValuePair<Hardfork, uint>(Enum.Parse<Hardfork>(name.StartsWith("HF_") ? name : $"HF_{name}"), (uint)s["blockheight"].AsNumber());
+                        var hardfork = Enum.Parse<Hardfork>(name.StartsWith("HF_") ? name : $"HF_{name}");
+                        return new KeyValuePair<Hardfork, uint>(hardfork, (uint)s["blockheight"].AsNumber());
                     })),
-                    SeedList = new List<string>(((JArray)json["seedlist"]).Select(s =>
-                    {
-                        return s.AsString();
-                    })),
-                    StandbyCommittee = new List<ECPoint>(((JArray)json["standbycommittee"]).Select(s =>
-                    {
-                        return ECPoint.Parse(s.AsString(), ECCurve.Secp256r1);
-                    }))
+                    SeedList = [.. ((JArray)json["seedlist"]).Select(s => s.AsString())],
+                    StandbyCommittee = [.. ((JArray)json["standbycommittee"]).Select(s => ECPoint.Parse(s.AsString(), ECCurve.Secp256r1))]
                 };
             }
 
@@ -103,13 +98,14 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson()
         {
-            JObject json = new();
-            json["network"] = Protocol.Network; // Obsolete
-            json["tcpport"] = TcpPort;
-            json["nonce"] = Nonce;
-            json["useragent"] = UserAgent;
-            json["protocol"] = Protocol.ToJson();
-            return json;
+            return new()
+            {
+                ["network"] = Protocol.Network, // Obsolete
+                ["tcpport"] = TcpPort,
+                ["nonce"] = Nonce,
+                ["useragent"] = UserAgent,
+                ["protocol"] = Protocol.ToJson()
+            };
         }
 
         public static RpcVersion FromJson(JObject json)

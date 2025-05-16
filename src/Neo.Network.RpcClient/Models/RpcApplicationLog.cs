@@ -29,7 +29,7 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson()
         {
-            JObject json = new JObject();
+            var json = new JObject();
             if (TxId != null)
                 json["txid"] = TxId.ToString();
             if (BlockHash != null)
@@ -65,14 +65,15 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson()
         {
-            JObject json = new();
-            json["trigger"] = Trigger;
-            json["vmstate"] = VMState;
-            json["gasconsumed"] = GasConsumed.ToString();
-            json["exception"] = ExceptionMessage;
-            json["stack"] = Stack.Select(q => q.ToJson()).ToArray();
-            json["notifications"] = Notifications.Select(q => q.ToJson()).ToArray();
-            return json;
+            return new()
+            {
+                ["trigger"] = Trigger,
+                ["vmstate"] = VMState,
+                ["gasconsumed"] = GasConsumed.ToString(),
+                ["exception"] = ExceptionMessage,
+                ["stack"] = Stack.Select(q => q.ToJson()).ToArray(),
+                ["notifications"] = Notifications.Select(q => q.ToJson()).ToArray(),
+            };
         }
 
         public static Execution FromJson(JObject json, ProtocolSettings protocolSettings)
@@ -99,11 +100,12 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson()
         {
-            JObject json = new();
-            json["contract"] = Contract.ToString();
-            json["eventname"] = EventName;
-            json["state"] = State.ToJson();
-            return json;
+            return new()
+            {
+                ["contract"] = Contract.ToString(),
+                ["eventname"] = EventName,
+                ["state"] = State.ToJson(),
+            };
         }
 
         public static RpcNotifyEventArgs FromJson(JObject json, ProtocolSettings protocolSettings)

@@ -25,7 +25,7 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson()
         {
-            return new JObject
+            return new()
             {
                 ["address"] = Address,
                 ["haskey"] = HasKey,

@@ -19,13 +19,7 @@ namespace Neo.Network.RPC.Models
 
         public bool IsValid { get; set; }
 
-        public JObject ToJson()
-        {
-            JObject json = new();
-            json["address"] = Address;
-            json["isvalid"] = IsValid;
-            return json;
-        }
+        public JObject ToJson() => new() { ["address"] = Address, ["isvalid"] = IsValid };
 
         public static RpcValidateAddressResult FromJson(JObject json)
         {
