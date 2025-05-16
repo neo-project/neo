@@ -25,20 +25,20 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson(ProtocolSettings protocolSettings)
         {
-            JObject json = new();
-            json["balance"] = Balances.Select(p => p.ToJson()).ToArray();
-            json["address"] = UserScriptHash.ToAddress(protocolSettings.AddressVersion);
-            return json;
+            return new()
+            {
+                ["balance"] = Balances.Select(p => p.ToJson()).ToArray(),
+                ["address"] = UserScriptHash.ToAddress(protocolSettings.AddressVersion)
+            };
         }
 
         public static RpcNep17Balances FromJson(JObject json, ProtocolSettings protocolSettings)
         {
-            RpcNep17Balances nep17Balance = new()
+            return new()
             {
                 Balances = ((JArray)json["balance"]).Select(p => RpcNep17Balance.FromJson((JObject)p, protocolSettings)).ToList(),
                 UserScriptHash = json["address"].ToScriptHash(protocolSettings)
             };
-            return nep17Balance;
         }
     }
 
@@ -52,22 +52,22 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson()
         {
-            JObject json = new();
-            json["assethash"] = AssetHash.ToString();
-            json["amount"] = Amount.ToString();
-            json["lastupdatedblock"] = LastUpdatedBlock;
-            return json;
+            return new()
+            {
+                ["assethash"] = AssetHash.ToString(),
+                ["amount"] = Amount.ToString(),
+                ["lastupdatedblock"] = LastUpdatedBlock
+            };
         }
 
         public static RpcNep17Balance FromJson(JObject json, ProtocolSettings protocolSettings)
         {
-            RpcNep17Balance balance = new()
+            return new()
             {
                 AssetHash = json["assethash"].ToScriptHash(protocolSettings),
                 Amount = BigInteger.Parse(json["amount"].AsString()),
                 LastUpdatedBlock = (uint)json["lastupdatedblock"].AsNumber()
             };
-            return balance;
         }
     }
 }
