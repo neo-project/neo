@@ -80,11 +80,12 @@ namespace Neo.Plugins.RpcServer
                 json["exception"] = GetExceptionMessage(session.Engine.FaultException);
                 json["notifications"] = new JArray(session.Engine.Notifications.Select(n =>
                 {
-                    var obj = new JObject();
-                    obj["eventname"] = n.EventName;
-                    obj["contract"] = n.ScriptHash.ToString();
-                    obj["state"] = ToJson(n.State, session);
-                    return obj;
+                    return new JObject()
+                    {
+                        ["eventname"] = n.EventName,
+                        ["contract"] = n.ScriptHash.ToString(),
+                        ["state"] = ToJson(n.State, session),
+                    };
                 }));
                 if (useDiagnostic)
                 {
@@ -134,8 +135,7 @@ namespace Neo.Plugins.RpcServer
 
         protected static JObject ToJson(TreeNode<UInt160> node)
         {
-            JObject json = new();
-            json["hash"] = node.Item.ToString();
+            var json = new JObject() { ["hash"] = node.Item.ToString() };
             if (node.Children.Any())
             {
                 json["call"] = new JArray(node.Children.Select(ToJson));
@@ -145,7 +145,7 @@ namespace Neo.Plugins.RpcServer
 
         protected static JArray ToJson(IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changes)
         {
-            JArray array = new();
+            var array = new JArray();
             foreach (var entry in changes)
             {
                 array.Add(new JObject
@@ -160,7 +160,7 @@ namespace Neo.Plugins.RpcServer
 
         private static JObject ToJson(StackItem item, Session session)
         {
-            JObject json = item.ToJson();
+            var json = item.ToJson();
             if (item is InteropInterface interopInterface && interopInterface.GetInterface<object>() is IIterator iterator)
             {
                 Guid id = Guid.NewGuid();
@@ -281,12 +281,12 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken GetUnclaimedGas(JArray _params)
         {
             string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invalid address {nameof(address)}"));
-            JObject json = new();
-            UInt160 script_hash = Result.Ok_Or(() => AddressToScriptHash(address, system.Settings.AddressVersion), RpcError.InvalidParams);
+            var json = new JObject();
+            UInt160 scriptHash = Result.Ok_Or(() => AddressToScriptHash(address, system.Settings.AddressVersion), RpcError.InvalidParams);
 
             var snapshot = system.StoreView;
-            json["unclaimed"] = NativeContract.NEO.UnclaimedGas(snapshot, script_hash, NativeContract.Ledger.CurrentIndex(snapshot) + 1).ToString();
-            json["address"] = script_hash.ToAddress(system.Settings.AddressVersion);
+            json["unclaimed"] = NativeContract.NEO.UnclaimedGas(snapshot, scriptHash, NativeContract.Ledger.CurrentIndex(snapshot) + 1).ToString();
+            json["address"] = scriptHash.ToAddress(system.Settings.AddressVersion);
             return json;
         }
 

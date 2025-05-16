@@ -94,8 +94,7 @@ namespace Neo.Network.RPC.Tests
             mockRpc.Setup(p => p.RpcSendAsync("getblockcount")).ReturnsAsync(100).Verifiable();
 
             // calculatenetworkfee
-            var networkfee = new JObject();
-            networkfee["networkfee"] = 100000000;
+            var networkfee = new JObject() { ["networkfee"] = 100000000 };
             mockRpc.Setup(p => p.RpcSendAsync("calculatenetworkfee", It.Is<JToken[]>(u => true)))
                 .ReturnsAsync(networkfee)
                 .Verifiable();
