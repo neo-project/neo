@@ -1,0 +1,64 @@
+// Copyright (C) 2015-2025 The Neo Project.
+ //
+ // servicepb.proto file belongs to the neo project and is free
+ // software distributed under the MIT software license, see the
+ // accompanying file LICENSE in the main directory of the
+ // repository or http://www.opensource.org/licenses/mit-license.php
+ // for more details.
+ //
+ // Redistribution and use in source and binary forms with or without
+ // modifications are permitted.
+
+syntax = "proto3";
+
+import "signpb.proto";
+
+package servicepb;
+
+message SignExtensiblePayloadRequest {
+    // the payload to be signed
+    signpb.ExtensiblePayload payload = 1;
+
+    // script hashes, H160 list
+    repeated bytes script_hashes = 2;
+
+    // the network id
+    uint32 network = 3;
+}
+
+message SignExtensiblePayloadResponse {
+    // script hash -> account signs, one to one mapping
+    repeated signpb.AccountSigns signs = 1;
+}
+
+message SignBlockRequest {
+    // the block header to be signed
+    signpb.TrimmedBlock block = 1;
+
+    // compressed or uncompressed public key
+    bytes public_key = 2;
+
+    // the network id
+    uint32 network = 3;
+}
+
+message SignBlockResponse {
+    bytes signature = 1;
+}
+
+message GetAccountStatusRequest {
+    // compressed or uncompressed public key
+    bytes public_key = 1;
+}
+
+message GetAccountStatusResponse {
+    signpb.AccountStatus status = 1;
+}
+
+service SecureSign {
+    rpc SignExtensiblePayload(SignExtensiblePayloadRequest) returns (SignExtensiblePayloadResponse) {}
+
+    rpc SignBlock(SignBlockRequest) returns (SignBlockResponse) {}
+
+    rpc GetAccountStatus(GetAccountStatusRequest) returns (GetAccountStatusResponse) {}
+}

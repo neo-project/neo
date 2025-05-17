@@ -14,7 +14,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
-using Neo.Sign;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
