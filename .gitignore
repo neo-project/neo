@@ -266,3 +266,11 @@ launchSettings.json
 
 # Benchmarks
 **/BenchmarkDotNet.Artifacts/
+
+**/corpus/
+**/my_corpus/
+**/reports/
+**/findings/
+**/crashes/
+**/bin/
+**/obj/
