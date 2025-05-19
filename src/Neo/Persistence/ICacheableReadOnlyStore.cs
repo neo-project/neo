@@ -24,7 +24,7 @@ namespace Neo.Persistence
     /// <summary>
     /// This interface provides methods to read from the database.
     /// </summary>
-    public interface ICacheableReadOnlyStore<TKey, TValue> : IReadOnlyStore<TKey, TValue>
+    public interface ICacheableReadOnlyStore<TKey, TValue> : IReadOnlyStore<TKey, TValue> where TKey : class?
     {
         /// <summary>
         /// Tries to get the entry from cache.
