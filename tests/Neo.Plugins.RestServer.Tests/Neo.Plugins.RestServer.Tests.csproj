@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
     <RootNamespace>Neo.Plugins.RestServer.Tests</RootNamespace>
     <NoWarn>NU1605;</NoWarn>
   </PropertyGroup>
