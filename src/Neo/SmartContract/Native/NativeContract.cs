@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -102,6 +103,11 @@ namespace Neo.SmartContract.Native
         /// Gets the instance of the <see cref="OracleContract"/> class.
         /// </summary>
         public static OracleContract Oracle { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="Notary"/> class.
+        /// </summary>
+        public static Notary Notary { get; } = new();
 
         #endregion
 
@@ -280,7 +286,7 @@ namespace Neo.SmartContract.Native
         /// <param name="index">Block index</param>
         /// <param name="hardforks">Active hardforks</param>
         /// <returns>True if the native contract must be initialized</returns>
-        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, out Hardfork[] hardforks)
+        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, [NotNullWhen(true)] out Hardfork[] hardforks)
         {
             var hfs = new List<Hardfork>();
 
@@ -289,8 +295,8 @@ namespace Neo.SmartContract.Native
             {
                 if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
                 {
-                    // If is not set in the configuration is treated as enabled from the genesis
-                    activeIn = 0;
+                    // If hf is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
+                    continue;
                 }
 
                 if (activeIn == index)
@@ -324,7 +330,7 @@ namespace Neo.SmartContract.Native
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="blockHeight">Block height</param>
         /// <returns>True if the native contract is active</returns>
-        internal bool IsActive(ProtocolSettings settings, uint blockHeight)
+        public bool IsActive(ProtocolSettings settings, uint blockHeight)
         {
             if (ActiveIn is null) return true;
 

@@ -54,6 +54,25 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestClone()
+        {
+            var clone = ((IInteroperable)contract).Clone() as ContractState;
+            CollectionAssert.AreEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                );
+
+            clone.Nef.CheckSum++;
+            Assert.AreNotEqual(clone.Nef.CheckSum, contract.Nef.CheckSum);
+            clone.Manifest.Name += "X";
+            Assert.AreNotEqual(clone.Manifest.Name, contract.Manifest.Name);
+            CollectionAssert.AreNotEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                );
+        }
+
+        [TestMethod]
         public void TestIInteroperable()
         {
             IInteroperable newContract = new ContractState();
@@ -66,8 +85,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestCanCall()
         {
             var temp = new ContractState() { Manifest = TestUtils.CreateDefaultManifest() };
-
-            Assert.AreEqual(true, temp.CanCall(new ContractState() { Hash = UInt160.Zero, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
+            Assert.IsTrue(temp.CanCall(new() { Hash = UInt160.Zero, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
         }
 
         [TestMethod]

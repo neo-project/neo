@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
@@ -17,12 +19,12 @@ namespace Neo.SmartContract.Native
 {
     internal class HashIndexState : IInteroperable
     {
-        public UInt256 Hash;
-        public uint Index;
+        public UInt256 Hash { get; set; } = UInt256.Zero;
+        public uint Index { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             Hash = new UInt256(@struct[0].GetSpan());
             Index = (uint)@struct[1].GetInteger();
         }
@@ -33,3 +35,5 @@ namespace Neo.SmartContract.Native
         }
     }
 }
+
+#nullable disable

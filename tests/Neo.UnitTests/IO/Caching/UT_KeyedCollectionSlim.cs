@@ -12,7 +12,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
-using System.Collections;
 
 namespace Neo.UnitTests.IO.Caching
 {
@@ -22,32 +21,32 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void Add_ShouldAddItem()
         {
-            // Arrange
             var collection = new TestKeyedCollectionSlim();
             var item = new TestItem { Id = 1, Name = "Item1" };
-
-            // Act
-            collection.Add(item);
-
-            // Assert
+            var ok = collection.TryAdd(item);
+            Assert.IsTrue(ok);
             Assert.AreEqual(1, collection.Count);
             Assert.IsTrue(collection.Contains(1));
-            Assert.AreEqual(item, collection.First);
+            Assert.AreEqual(item, collection.FirstOrDefault);
         }
 
         [TestMethod]
-        public void Add_ShouldThrowException_WhenKeyAlreadyExists()
+        public void AddTest()
         {
             // Arrange
             var collection = new TestKeyedCollectionSlim();
             var item1 = new TestItem { Id = 1, Name = "Item1" };
             var item2 = new TestItem { Id = 1, Name = "Item2" }; // Same ID as item1
 
-            // Act
-            collection.Add(item1);
+            var ok = collection.TryAdd(item1);
+            Assert.IsTrue(ok);
 
-            // Assert
-            Assert.ThrowsExactly<ArgumentException>(() => collection.Add(item2));
+            ok = collection.TryAdd(item2);
+            Assert.IsFalse(ok);
+
+            collection.Clear();
+            Assert.AreEqual(0, collection.Count);
+            Assert.IsNull(collection.FirstOrDefault);
         }
 
         [TestMethod]
@@ -56,12 +55,13 @@ namespace Neo.UnitTests.IO.Caching
             // Arrange
             var collection = new TestKeyedCollectionSlim();
             var item = new TestItem { Id = 1, Name = "Item1" };
-            collection.Add(item);
+            collection.TryAdd(item);
 
             // Act
-            collection.Remove(1);
+            var ok = collection.Remove(1);
 
             // Assert
+            Assert.IsTrue(ok);
             Assert.AreEqual(0, collection.Count);
             Assert.IsFalse(collection.Contains(1));
         }
@@ -73,11 +73,11 @@ namespace Neo.UnitTests.IO.Caching
             var collection = new TestKeyedCollectionSlim();
             var item1 = new TestItem { Id = 1, Name = "Item1" };
             var item2 = new TestItem { Id = 2, Name = "Item2" };
-            collection.Add(item1);
-            collection.Add(item2);
+            collection.TryAdd(item1);
+            collection.TryAdd(item2);
 
             // Act
-            collection.RemoveFirst();
+            Assert.IsTrue(collection.RemoveFirst());
 
             // Assert
             Assert.AreEqual(1, collection.Count);
@@ -85,37 +85,15 @@ namespace Neo.UnitTests.IO.Caching
             Assert.IsTrue(collection.Contains(2));
         }
 
-        public class TestItem : IStructuralEquatable, IStructuralComparable, IComparable
+        public class TestItem
         {
             public int Id { get; set; }
 
             public string Name { get; set; }
 
-            public int CompareTo(object obj)
-            {
-                if (obj is not TestItem other) throw new ArgumentException("Object is not a TestItem");
-                return Id.CompareTo(other.Id);
-            }
+            public override int GetHashCode() => Id;
 
-            public bool Equals(object other, IEqualityComparer comparer)
-            {
-                return other is TestItem item && Id == item.Id && Name == item.Name;
-            }
-
-            public int GetHashCode(IEqualityComparer comparer)
-            {
-                return HashCode.Combine(Id, Name);
-            }
-
-            public int CompareTo(TestItem other)
-            {
-                return Id.CompareTo(other.Id);
-            }
-
-            public int CompareTo(object other, IComparer comparer)
-            {
-                throw new NotImplementedException();
-            }
+            public override bool Equals(object obj) => obj is TestItem item && Id == item.Id;
         }
 
         internal class TestKeyedCollectionSlim : KeyedCollectionSlim<int, TestItem>

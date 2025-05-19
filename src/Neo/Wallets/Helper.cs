@@ -53,7 +53,7 @@ namespace Neo.Wallets
         {
             Span<byte> data = stackalloc byte[21];
             data[0] = version;
-            scriptHash.ToArray().CopyTo(data[1..]);
+            scriptHash.Serialize(data[1..]);
             return Base58.Base58CheckEncode(data);
         }
 
@@ -75,7 +75,8 @@ namespace Neo.Wallets
 
         internal static byte[] XOR(byte[] x, byte[] y)
         {
-            if (x.Length != y.Length) throw new ArgumentException();
+            if (x.Length != y.Length)
+                throw new ArgumentException($"The x.Length({x.Length}) and y.Length({y.Length}) must be equal.");
             var r = new byte[x.Length];
             for (var i = 0; i < r.Length; i++)
                 r[i] = (byte)(x[i] ^ y[i]);

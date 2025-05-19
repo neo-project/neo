@@ -24,14 +24,15 @@ namespace Neo.Persistence
     /// </summary>
     public class StoreCache : DataCache, IDisposable
     {
-        private readonly IRawReadOnlyStore _store;
+        private readonly IReadOnlyStore<byte[], byte[]> _store;
         private readonly IStoreSnapshot? _snapshot;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StoreCache"/> class.
         /// </summary>
-        /// <param name="store">An <see cref="IReadOnlyStore"/> to create a readonly cache.</param>
-        public StoreCache(IStore store) : base(store.SerializedCache)
+        /// <param name="store">An <see cref="IStore"/> to create a readonly cache.</param>
+        /// <param name="readOnly">True if you don't want to track write changes</param>
+        public StoreCache(IStore store, bool readOnly = true) : base(store.SerializedCache, readOnly)
         {
             _store = store;
         }
@@ -40,7 +41,7 @@ namespace Neo.Persistence
         /// Initializes a new instance of the <see cref="StoreCache"/> class.
         /// </summary>
         /// <param name="snapshot">An <see cref="IStoreSnapshot"/> to create a snapshot cache.</param>
-        public StoreCache(IStoreSnapshot snapshot) : base(snapshot.Store.SerializedCache)
+        public StoreCache(IStoreSnapshot snapshot) : base(false, snapshot.Store.SerializedCache)
         {
             _store = snapshot;
             _snapshot = snapshot;
@@ -93,7 +94,7 @@ namespace Neo.Persistence
 
         protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
         {
-            return _store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
+            return _store.Find(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }
 
         /// <inheritdoc/>

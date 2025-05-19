@@ -48,21 +48,24 @@ namespace Neo.SmartContract.Native
                 State = VMState.NONE
             }).ToArray();
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_BlockHash, engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, engine.PersistingBlock.Hash), new StorageItem(TrimmedBlock.Create(engine.PersistingBlock).ToArray()));
             foreach (TransactionState tx in transactions)
             {
                 // It's possible that there are previously saved malicious conflict records for this transaction.
                 // If so, then remove it and store the relevant transaction itself.
-                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(tx));
+                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(new TransactionState()))
+                    .FromReplica(new StorageItem(tx));
 
                 // Store transaction's conflicits.
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(new TransactionState()))
+                        .FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     foreach (var signer in conflictingSigners)
                     {
-                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(new TransactionState()))
+                            .FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     }
                 }
             }
@@ -73,7 +76,9 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask PostPersistAsync(ApplicationEngine engine)
         {
-            HashIndexState state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
+            var state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState()))
+                // Don't need to seal because the size is fixed and it can't grow
+                .GetInteroperable<HashIndexState>();
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
             return ContractTask.CompletedTask;
@@ -84,9 +89,38 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            return snapshot.Find(CreateStorageKey(Prefix_Block).ToArray()).Any();
+            return snapshot.Find(CreateStorageKey(Prefix_Block)).Any();
         }
 
+        /// <summary>
+        /// Checks whether block with the specified index is reachable from the smart contract
+        /// based on the current state of application engine with respect to MaxTraceableBlocks
+        /// setting stored in native Policy smartcontract starting from HF_Echidna.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="index">The index of the block.</param>
+        /// <returns>Whether the block is traceable.</returns>
+        private bool IsTraceableBlock(ApplicationEngine engine, uint index)
+        {
+            var mtb = engine.ProtocolSettings.MaxTraceableBlocks;
+            if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+                mtb = Policy.GetMaxTraceableBlocks(engine.SnapshotCache);
+            return IsTraceableBlock(engine.SnapshotCache, index, mtb);
+        }
+
+        /// <summary>
+        /// Checks whether block with the specified index is reachable from the smart contract
+        /// based on the current state of snapshot and provided maxTraceableBlocks value. It's
+        /// the caller's duty to provide proper maxTraceableBlocks value with respect to
+        /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
+        /// HF_Echidna.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="index">The index of the block.</param>
+        /// <param name="maxTraceableBlocks">The maximum number of traceable blocks with respect to
+        /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
+        /// HF_Echidna.</param>
+        /// <returns>Whether the block is traceable.</returns>
         private bool IsTraceableBlock(IReadOnlyStore snapshot, uint index, uint maxTraceableBlocks)
         {
             uint currentIndex = CurrentIndex(snapshot);
@@ -234,7 +268,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentException(null, nameof(indexOrHash));
             if (hash is null) return null;
             TrimmedBlock block = GetTrimmedBlock(engine.SnapshotCache, hash);
-            if (block is null || !IsTraceableBlock(engine.SnapshotCache, block.Index, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
             return block;
         }
 
@@ -323,7 +357,7 @@ namespace Neo.SmartContract.Native
         private Transaction GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine.SnapshotCache, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
             return state.Transaction;
         }
 
@@ -331,7 +365,7 @@ namespace Neo.SmartContract.Native
         private Signer[] GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine.SnapshotCache, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
             return state.Transaction.Signers;
         }
 
@@ -339,7 +373,7 @@ namespace Neo.SmartContract.Native
         private VMState GetTransactionVMState(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine.SnapshotCache, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return VMState.NONE;
+            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return VMState.NONE;
             return state.State;
         }
 
@@ -347,7 +381,7 @@ namespace Neo.SmartContract.Native
         private int GetTransactionHeight(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine.SnapshotCache, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return -1;
+            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return -1;
             return (int)state.BlockIndex;
         }
 
@@ -363,19 +397,10 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentException(null, nameof(blockIndexOrHash));
             if (hash is null) return null;
             TrimmedBlock block = GetTrimmedBlock(engine.SnapshotCache, hash);
-            if (block is null || !IsTraceableBlock(engine.SnapshotCache, block.Index, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
             if (txIndex < 0 || txIndex >= block.Hashes.Length)
                 throw new ArgumentOutOfRangeException(nameof(txIndex));
             return GetTransaction(engine.SnapshotCache, block.Hashes[txIndex]);
-        }
-
-        private static TrimmedBlock Trim(Block block)
-        {
-            return new TrimmedBlock
-            {
-                Header = block.Header,
-                Hashes = block.Transactions.Select(p => p.Hash).ToArray()
-            };
         }
     }
 }

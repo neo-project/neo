@@ -236,8 +236,7 @@ namespace Neo.SmartContract.Native
 
                 // Hardfork check for https://github.com/neo-project/neo/pull/3158
                 // New notification will case 3.7.0 and 3.6.0 have different behavior
-                var index = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache);
-                if (engine.ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Cockatrice, index))
+                if (engine.IsHardforkEnabled(Hardfork.HF_Cockatrice))
                 {
                     var newCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
 
@@ -385,8 +384,7 @@ namespace Neo.SmartContract.Native
         {
             // This check can be removed post-Echidna if compatible,
             // RegisterInternal does this anyway.
-            var index = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache);
-            if (!engine.ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Echidna, index) &&
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna) &&
                 !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
@@ -502,7 +500,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetAllCandidates(DataCache snapshot)
+        private IIterator GetAllCandidates(IReadOnlyStore snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
             var enumerator = GetCandidatesInternal(snapshot)
@@ -511,9 +509,9 @@ namespace Neo.SmartContract.Native
             return new StorageIterator(enumerator, 1, options);
         }
 
-        internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(DataCache snapshot)
+        internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(IReadOnlyStore snapshot)
         {
-            byte[] prefixKey = CreateStorageKey(Prefix_Candidate).ToArray();
+            var prefixKey = CreateStorageKey(Prefix_Candidate);
             return snapshot.Find(prefixKey)
                 .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key[1..].AsSerializable<ECPoint>(), State: p.Value.GetInteroperable<CandidateState>()))
                 .Where(p => p.State.Registered)
@@ -555,7 +553,7 @@ namespace Neo.SmartContract.Native
         public NeoAccountState GetAccountState(IReadOnlyStore snapshot, UInt160 account)
         {
             var key = CreateStorageKey(Prefix_Account, account);
-            return snapshot.TryGet(key, out var item) ? item.GetInteroperable<NeoAccountState>() : null;
+            return snapshot.TryGet(key, out var item) ? item.GetInteroperableClone<NeoAccountState>() : null;
         }
 
         /// <summary>

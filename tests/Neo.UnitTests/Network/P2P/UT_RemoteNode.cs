@@ -23,7 +23,7 @@ namespace Neo.UnitTests.Network.P2P
     [TestClass]
     public class UT_RemoteNode : TestKit
     {
-        private static NeoSystem testBlockchain;
+        private static NeoSystem _system;
 
         public UT_RemoteNode()
             : base($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}")
@@ -33,14 +33,14 @@ namespace Neo.UnitTests.Network.P2P
         [ClassInitialize]
         public static void TestSetup(TestContext ctx)
         {
-            testBlockchain = TestBlockchain.TheNeoSystem;
+            _system = TestBlockchain.GetSystem();
         }
 
         [TestMethod]
         public void RemoteNode_Test_Abort_DifferentNetwork()
         {
             var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, new LocalNode(testBlockchain), connectionTestProbe, null, null));
+            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(_system, new LocalNode(_system), connectionTestProbe, null, null, new ChannelsConfig()));
 
             var msg = Message.Create(MessageCommand.Version, new VersionPayload
             {
@@ -49,10 +49,10 @@ namespace Neo.UnitTests.Network.P2P
                 Network = 2,
                 Timestamp = 5,
                 Version = 6,
-                Capabilities = new NodeCapability[]
-                {
+                Capabilities =
+                [
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
-                }
+                ]
             });
 
             var testProbe = CreateTestProbe();
@@ -65,7 +65,11 @@ namespace Neo.UnitTests.Network.P2P
         public void RemoteNode_Test_Accept_IfSameNetwork()
         {
             var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, new LocalNode(testBlockchain), connectionTestProbe, new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080), new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080)));
+            var remoteNodeActor = ActorOfAsTestActorRef(() =>
+                new RemoteNode(_system,
+                    new LocalNode(_system),
+                    connectionTestProbe,
+                    new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080), new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080), new ChannelsConfig()));
 
             var msg = Message.Create(MessageCommand.Version, new VersionPayload()
             {
@@ -74,10 +78,10 @@ namespace Neo.UnitTests.Network.P2P
                 Network = TestProtocolSettings.Default.Network,
                 Timestamp = 5,
                 Version = 6,
-                Capabilities = new NodeCapability[]
-                {
+                Capabilities =
+                [
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
-                }
+                ]
             });
 
             var testProbe = CreateTestProbe();

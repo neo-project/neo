@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native
                     else
                     {
                         // Parse old contract
-                        var oldContract = state.GetInteroperable<ContractState>(false);
+                        using var sealInterop = state.GetInteroperable(out ContractState oldContract, false);
                         // Increase the update counter
                         oldContract.UpdateCounter++;
                         // Modify nef and manifest
@@ -146,6 +146,19 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Check if exists the deployed contract with the specified hash.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the deployed contract.</param>
+        /// <returns>True if deployed contract exists.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 14, RequiredCallFlags = CallFlags.ReadStates)]
+        public bool IsContract(IReadOnlyStore snapshot, UInt160 hash)
+        {
+            var key = CreateStorageKey(Prefix_Contract, hash);
+            return snapshot.Contains(key);
+        }
+
+        /// <summary>
         /// Maps specified ID to deployed contract.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
@@ -164,10 +177,10 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>Iterator with hashes of all deployed contracts.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetContractHashes(DataCache snapshot)
+        private IIterator GetContractHashes(IReadOnlyStore snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix;
-            byte[] prefix_key = CreateStorageKey(Prefix_ContractHash).ToArray();
+            var prefix_key = CreateStorageKey(Prefix_ContractHash);
             var enumerator = snapshot.Find(prefix_key)
                 .Select(p => (p.Key, p.Value, Id: BinaryPrimitives.ReadInt32BigEndian(p.Key.Key.Span[1..])))
                 .Where(p => p.Id >= 0)
@@ -198,21 +211,28 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The deployed contracts.</returns>
-        public IEnumerable<ContractState> ListContracts(DataCache snapshot)
+        public IEnumerable<ContractState> ListContracts(IReadOnlyStore snapshot)
         {
-            byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
-            return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>(false));
+            var listContractsPrefix = CreateStorageKey(Prefix_Contract);
+            return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperableClone<ContractState>(false));
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.All)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.All)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
+            // Require CallFlags.All flag for post-Aspidochelone transactions, ref. #2653, #2673.
+            if (engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone))
+            {
+                var state = engine.CurrentContext.GetState<ExecutionContextState>();
+                if (!state.CallFlags.HasFlag(CallFlags.All))
+                    throw new InvalidOperationException($"Cannot call Deploy with the flag {state.CallFlags}.");
+            }
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
             if (nefFile.Length == 0)
@@ -247,7 +267,7 @@ namespace Neo.SmartContract.Native
 
             if (!contract.Manifest.IsValid(engine.Limits, hash)) throw new InvalidOperationException($"Invalid Manifest: {hash}");
 
-            engine.SnapshotCache.Add(key, new StorageItem(contract));
+            engine.SnapshotCache.Add(key, StorageItem.CreateSealed(contract));
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_ContractHash, contract.Id), new StorageItem(hash.ToArray()));
 
             await OnDeployAsync(engine, contract, data, false);
@@ -255,22 +275,35 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.All)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Update(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.All)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
-            if (nefFile is null && manifest is null) throw new ArgumentException();
+            // Require CallFlags.All flag for post-Aspidochelone transactions, ref. #2653, #2673.
+            if (engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone))
+            {
+                var state = engine.CurrentContext.GetState<ExecutionContextState>();
+                if (!state.CallFlags.HasFlag(CallFlags.All))
+                    throw new InvalidOperationException($"Cannot call Update with the flag {state.CallFlags}.");
+            }
+            if (nefFile is null && manifest is null)
+                throw new ArgumentException("The nefFile and manifest cannot be null at the same time.");
 
             engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
-            var contract = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash))?.GetInteroperable<ContractState>(false);
-            if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
-            if (contract.UpdateCounter == ushort.MaxValue) throw new InvalidOperationException($"The contract reached the maximum number of updates.");
+            var contractState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash))
+                ?? throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
+
+            using var sealInterop = contractState.GetInteroperable(out ContractState contract, false);
+            if (contract is null)
+                throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
+            if (contract.UpdateCounter == ushort.MaxValue)
+                throw new InvalidOperationException($"The contract reached the maximum number of updates.");
 
             if (nefFile != null)
             {

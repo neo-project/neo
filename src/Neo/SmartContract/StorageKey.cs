@@ -33,9 +33,37 @@ namespace Neo.SmartContract
         /// <summary>
         /// The key of the storage entry.
         /// </summary>
-        public ReadOnlyMemory<byte> Key { get; init; }
+        public ReadOnlyMemory<byte> Key
+        {
+            get => _key;
+            // The example below shows how you would of been
+            // able to overwrite keys in the pass
+            // Example:
+            //      byte[] keyData = [0x00, 0x00, 0x00, 0x00, 0x12];
+            //      var keyMemory = new ReadOnlyMemory<byte>(keyData);
+            //      var storageKey1 = new StorageKey { Id = 0, Key = keyMemory };
+            //      // Below will overwrite the key in "storageKey1.Key"
+            //      keyData[0] = 0xff;
+            init => _key = value.ToArray(); // make new region of memory (a copy).
+        }
 
-        private byte[]? _cache;
+        /// <summary>
+        /// Get key length
+        /// </summary>
+        public int Length
+        {
+            get
+            {
+                if (_cache is { IsEmpty: true })
+                {
+                    _cache = Build();
+                }
+                return _cache.Length;
+            }
+        }
+
+        private ReadOnlyMemory<byte> _cache;
+        private readonly ReadOnlyMemory<byte> _key;
 
         // NOTE: StorageKey is readonly, so we can cache the hash code.
         private int _hashCode = 0;
@@ -104,7 +132,7 @@ namespace Neo.SmartContract
         {
             var data = new byte[UInt160Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
+            hash.Serialize(data.AsSpan(PrefixLength..));
             return new(id, data);
         }
 
@@ -119,7 +147,7 @@ namespace Neo.SmartContract
         {
             var data = new byte[UInt256Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
+            hash.Serialize(data.AsSpan(PrefixLength..));
             return new(id, data);
         }
 
@@ -147,8 +175,8 @@ namespace Neo.SmartContract
         {
             var data = new byte[UInt256UInt160Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
-            signer.GetSpan().CopyTo(data.AsSpan()[UInt256Length..]);
+            hash.Serialize(data.AsSpan(PrefixLength..));
+            signer.Serialize(data.AsSpan(UInt256Length..));
             return new(id, data);
         }
 
@@ -164,7 +192,7 @@ namespace Neo.SmartContract
         {
             var data = new byte[Int32Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteInt32BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteInt32BigEndian(data.AsSpan(PrefixLength..), bigEndian);
             return new(id, data);
         }
 
@@ -180,7 +208,7 @@ namespace Neo.SmartContract
         {
             var data = new byte[Int32Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan(PrefixLength..), bigEndian);
             return new(id, data);
         }
 
@@ -196,7 +224,7 @@ namespace Neo.SmartContract
         {
             var data = new byte[Int64Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteInt64BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteInt64BigEndian(data.AsSpan(PrefixLength..), bigEndian);
             return new(id, data);
         }
 
@@ -212,7 +240,7 @@ namespace Neo.SmartContract
         {
             var data = new byte[Int64Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteUInt64BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteUInt64BigEndian(data.AsSpan(PrefixLength..), bigEndian);
             return new(id, data);
         }
 
@@ -227,7 +255,7 @@ namespace Neo.SmartContract
         {
             var data = new byte[PrefixLength + content.Length];
             FillHeader(data, id, prefix);
-            content.CopyTo(data.AsSpan()[PrefixLength..]);
+            content.CopyTo(data.AsSpan(PrefixLength..));
             return new(id, data);
         }
 
@@ -243,42 +271,6 @@ namespace Neo.SmartContract
             return Create(id, prefix, content.GetSpan());
         }
 
-        #endregion
-
-        public StorageKey()
-        {
-            _cache = null;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StorageKey"/> class.
-        /// </summary>
-        /// <param name="id">Contract Id</param>
-        /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
-        private StorageKey(int id, byte[] cache)
-        {
-            _cache = cache;
-            Id = id;
-            Key = cache.AsMemory(sizeof(int));
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StorageKey"/> class.
-        /// </summary>
-        /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
-        internal StorageKey(byte[] cache)
-        {
-            _cache = cache;
-            Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
-            Key = cache.AsMemory(sizeof(int));
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StorageKey"/> class.
-        /// </summary>
-        /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
-        internal StorageKey(ReadOnlySpan<byte> cache) : this(cache.ToArray()) { }
-
         /// <summary>
         /// Creates a search prefix for a contract.
         /// </summary>
@@ -289,8 +281,40 @@ namespace Neo.SmartContract
         {
             var buffer = new byte[sizeof(int) + prefix.Length];
             BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
-            prefix.CopyTo(buffer.AsSpan(sizeof(int)));
+            prefix.CopyTo(buffer.AsSpan(sizeof(int)..));
             return buffer;
+        }
+
+        #endregion
+
+        public StorageKey()
+        {
+            _cache = null;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StorageKey"/> class.
+        /// Note: This method is private and must be called only with safe values
+        /// </summary>
+        /// <param name="id">Contract Id</param>
+        /// <param name="cache">The cached byte array.</param>
+        private StorageKey(int id, ReadOnlyMemory<byte> cache)
+        {
+            Id = id;
+            _cache = cache;
+            _key = _cache[sizeof(int)..]; // "Key" makes a copy, avoid it.
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StorageKey"/> class.
+        /// </summary>
+        /// <param name="cache">The cached byte array.</param>
+        internal StorageKey(ReadOnlySpan<byte> cache)
+        {
+            // DO NOT CHANGE OR ELSE "Create" WILL HAVE PROBLEMS
+            _cache = cache.ToArray(); // Make a copy
+            Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
+            Key = _cache[sizeof(int)..]; // "Key" init makes a copy already.
         }
 
         public bool Equals(StorageKey? other)
@@ -311,13 +335,19 @@ namespace Neo.SmartContract
 
         public byte[] ToArray()
         {
-            if (_cache is null)
+            if (_cache is { IsEmpty: true })
             {
-                _cache = new byte[sizeof(int) + Key.Length];
-                BinaryPrimitives.WriteInt32LittleEndian(_cache, Id);
-                Key.CopyTo(_cache.AsMemory(sizeof(int)));
+                _cache = Build();
             }
-            return _cache;
+            return _cache.ToArray(); // Make a copy
+        }
+
+        private byte[] Build()
+        {
+            var buffer = new byte[sizeof(int) + Key.Length];
+            BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(), Id);
+            Key.CopyTo(buffer.AsMemory(sizeof(int)..));
+            return buffer;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

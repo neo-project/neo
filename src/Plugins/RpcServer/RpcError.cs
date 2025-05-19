@@ -90,9 +90,11 @@ namespace Neo.Plugins.RpcServer
 
         public JToken ToJson()
         {
-            JObject json = new();
-            json["code"] = Code;
-            json["message"] = ErrorMessage;
+            var json = new JObject()
+            {
+                ["code"] = Code,
+                ["message"] = ErrorMessage,
+            };
             if (!string.IsNullOrEmpty(Data))
                 json["data"] = Data;
             return json;

@@ -46,7 +46,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestGetCount()
         {
-            string[] s = new string[] { "hello", "world" };
+            string[] s = ["hello", "world"];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             Assert.AreEqual(2, container.Count);
 
@@ -58,7 +58,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestGetItem()
         {
-            string[] s = new string[] { "hello", "world" };
+            string[] s = ["hello", "world"];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             Assert.AreEqual("hello", container[0]);
             Assert.AreEqual("world", container[1]);
@@ -68,12 +68,12 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestGetEnumerator()
         {
             string[] s = null;
-            IReadOnlyList<string> rs = new string[0];
+            IReadOnlyList<string> rs = Array.Empty<string>();
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             IEnumerator<string> enumerator = container.GetEnumerator();
             Assert.AreEqual(rs.GetEnumerator(), enumerator);
 
-            s = new string[] { "hello", "world" };
+            s = ["hello", "world"];
             container = WildcardContainer<string>.Create(s);
             enumerator = container.GetEnumerator();
             foreach (string _ in s)
@@ -86,7 +86,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestIEnumerableGetEnumerator()
         {
-            string[] s = new string[] { "hello", "world" };
+            string[] s = ["hello", "world"];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             IEnumerable enumerable = container;
             var enumerator = enumerable.GetEnumerator();

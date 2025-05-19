@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
@@ -30,8 +31,15 @@ namespace Neo.UnitTests
         public void GetSignData()
         {
             TestVerifiable verifiable = new();
-            byte[] res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
+            var res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
             Assert.AreEqual("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5", res.ToHexString());
+        }
+
+        [TestMethod]
+        public void TestTryGetHash()
+        {
+            var tx = new Transaction();
+            Assert.IsFalse(tx.TryGetHash(out _));
         }
 
         [TestMethod]
@@ -53,25 +61,16 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestRemoveHashsetHashSetCache()
         {
-            var a = new HashSet<int>
-            {
-                1,
-                2,
-                3
-            };
-
-            var b = new HashSetCache<int>(10)
-            {
-                2
-            };
+            var a = new HashSet<int> { 1, 2, 3 };
+            var b = new HashSetCache<int>(10);
+            b.TryAdd(2);
 
             a.Remove(b);
-
             CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
 
-            b.Add(4);
-            b.Add(5);
-            b.Add(1);
+            b.TryAdd(4);
+            b.TryAdd(5);
+            b.TryAdd(1);
             a.Remove(b);
 
             CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
