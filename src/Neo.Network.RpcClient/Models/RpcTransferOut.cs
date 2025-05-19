@@ -24,7 +24,7 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson(ProtocolSettings protocolSettings)
         {
-            return new JObject
+            return new()
             {
                 ["asset"] = Asset.ToString(),
                 ["value"] = Value,
