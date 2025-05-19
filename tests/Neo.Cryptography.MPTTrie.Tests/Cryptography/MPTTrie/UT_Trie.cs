@@ -47,7 +47,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
         public bool Contains(byte[] key) { throw new NotImplementedException(); }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? key, SeekDirection direction) { throw new NotImplementedException(); }
+        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? key, SeekDirection direction) { throw new NotImplementedException(); }
 
         public byte[]? TryGet(byte[] key)
         {
