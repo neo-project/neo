@@ -35,6 +35,25 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        public void TestDobleCommit()
+        {
+            var key1 = new byte[] { 0x05, 0x02 };
+            var value1 = new byte[] { 0x06, 0x04 };
+
+            var snapshot = (MemorySnapshot)_memoryStore.GetSnapshot();
+            Assert.AreEqual(0, snapshot.WriteBatchLength);
+
+            snapshot.Put(key1, value1);
+            Assert.AreEqual(1, snapshot.WriteBatchLength);
+
+            snapshot.Delete(key1);
+            Assert.AreEqual(1, snapshot.WriteBatchLength);
+            snapshot.Commit();
+
+            Assert.AreEqual(0, snapshot.WriteBatchLength);
+        }
+
+        [TestMethod]
         public void SingleSnapshotTest()
         {
             var key1 = new byte[] { 0x01, 0x02 };
