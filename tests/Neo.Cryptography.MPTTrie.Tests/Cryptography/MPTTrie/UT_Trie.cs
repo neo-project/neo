@@ -123,7 +123,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
             Assert.AreEqual("abcd", value.ToHexString());
             Assert.IsTrue(mpt.TryGetValue("ac".HexToBytes(), out value));
             Assert.AreEqual("2222", value.ToHexString());
-            Assert.IsFalse(mpt.TryGetValue("NotFound".HexToBytes(), out value));
+            Assert.IsFalse(mpt.TryGetValue("000102".HexToBytes(), out value));
             Assert.IsNull(value);
 
             Assert.ThrowsExactly<KeyNotFoundException>(() => _ = mpt["ab99".HexToBytes()]);
