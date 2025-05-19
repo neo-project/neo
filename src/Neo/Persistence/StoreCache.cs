@@ -41,7 +41,7 @@ namespace Neo.Persistence
         /// Initializes a new instance of the <see cref="StoreCache"/> class.
         /// </summary>
         /// <param name="snapshot">An <see cref="IStoreSnapshot"/> to create a snapshot cache.</param>
-        public StoreCache(IStoreSnapshot snapshot) : base(false, snapshot.Store.SerializedCache)
+        public StoreCache(IStoreSnapshot snapshot) : base(snapshot.Store.SerializedCache, false)
         {
             _store = snapshot;
             _snapshot = snapshot;

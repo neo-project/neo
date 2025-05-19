@@ -64,9 +64,13 @@ namespace Neo.Persistence
         /// Constructor
         /// </summary>
         /// <param name="serializedCache">Serialized cache</param>
-        protected DataCache(SerializedCache serializedCache)
+        /// <param name="readOnly">True if you don't want to allow writes</param>
+        protected DataCache(SerializedCache serializedCache, bool readOnly)
         {
             SerializedCache = serializedCache;
+
+            if (!readOnly)
+                _changeSet = [];
         }
 
         /// <summary>
@@ -94,16 +98,6 @@ namespace Neo.Persistence
                     return trackable.Item;
                 }
             }
-        }
-
-        /// <summary>
-        /// Data cache constructor
-        /// </summary>
-        /// <param name="readOnly">True if you don't want to allow writes</param>
-        protected DataCache(bool readOnly)
-        {
-            if (!readOnly)
-                _changeSet = [];
         }
 
         /// <summary>
