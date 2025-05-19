@@ -117,8 +117,72 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] ToByteArrayStandard(this BigInteger value)
         {
-            if (value.IsZero) return Array.Empty<byte>();
+            if (value.IsZero) return [];
             return value.ToByteArray();
+        }
+
+        public static BigInteger Sqrt(this BigInteger value)
+        {
+            if (value < 0) throw new InvalidOperationException($"value {value} can not be negative for '{nameof(Sqrt)}'.");
+            if (value.IsZero) return BigInteger.Zero;
+            if (value < 4) return BigInteger.One;
+
+            var z = value;
+            var x = BigInteger.One << (int)(((value - 1).GetBitLength() + 1) >> 1);
+            while (x < z)
+            {
+                z = x;
+                x = (value / x + x) / 2;
+            }
+
+            return z;
+        }
+
+        /// <summary>
+        /// Gets the number of bits required for shortest two's complement representation of the current instance without the sign bit.
+        /// Note: This method is imprecise and might not work as expected with integers larger than 256 bits if less than .NET5.
+        /// </summary>
+        /// <returns>The minimum non-negative number of bits in two's complement notation without the sign bit.</returns>
+        /// <remarks>
+        /// This method returns 0 if the value of current object is equal to
+        /// <see cref="BigInteger.Zero"/> or <see cref="BigInteger.MinusOne"/>.
+        /// For positive integers the return value is equal to the ordinary binary representation string length.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long GetBitLength(this BigInteger value)
+        {
+#if NET5_0_OR_GREATER
+            return value.GetBitLength();
+#else
+            return BitLength(value);
+#endif
+        }
+
+        /// <summary>
+        /// GetBitLength for earlier than .NET5.0
+        /// </summary>
+        internal static long BitLength(this BigInteger value)
+        {
+            if (value == 0 || value == BigInteger.MinusOne) return 0;
+
+            var b = value.ToByteArray();
+            if (b.Length == 1 || (b.Length == 2 && b[1] == 0))
+            {
+                return BitCount(value.Sign > 0 ? b[0] : (byte)(255 - b[0]));
+            }
+            return (b.Length - 1) * 8 + BitCount(value.Sign > 0 ? b[^1] : (byte)(255 - b[^1]));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int BitCount(byte w)
+        {
+            return w < (1 << 4) // 16
+                ? (w < (1 << 2) // 4
+                    ? (w < (1 << 1) ? w : 2)  // 2
+                    : (w < (1 << 3) ? 3 : 4)) // 8
+                : (w < (1 << 6) // 64
+                    ? (w < (1 << 5) ? 5 : 6)   // 32
+                    : (w < (1 << 7) ? 7 : 8)); // 128
         }
     }
 }

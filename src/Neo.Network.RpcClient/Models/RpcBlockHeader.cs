@@ -24,7 +24,7 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson(ProtocolSettings protocolSettings)
         {
-            JObject json = Header.ToJson(protocolSettings);
+            var json = Header.ToJson(protocolSettings);
             json["confirmations"] = Confirmations;
             json["nextblockhash"] = NextBlockHash?.ToString();
             return json;
