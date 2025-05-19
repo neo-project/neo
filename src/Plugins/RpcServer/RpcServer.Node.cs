@@ -41,23 +41,18 @@ namespace Neo.Plugins.RpcServer
         [RpcMethodWithParams]
         protected internal virtual JToken GetPeers()
         {
-            JObject json = new();
-            json["unconnected"] = new JArray(localNode.GetUnconnectedPeers().Select(p =>
+            return new JObject()
             {
-                JObject peerJson = new();
-                peerJson["address"] = p.Address.ToString();
-                peerJson["port"] = p.Port;
-                return peerJson;
-            }));
-            json["bad"] = new JArray(); //badpeers has been removed
-            json["connected"] = new JArray(localNode.GetRemoteNodes().Select(p =>
-            {
-                JObject peerJson = new();
-                peerJson["address"] = p.Remote.Address.ToString();
-                peerJson["port"] = p.ListenerTcpPort;
-                return peerJson;
-            }));
-            return json;
+                ["unconnected"] = new JArray(localNode.GetUnconnectedPeers().Select(p =>
+                {
+                    return new JObject() { ["address"] = p.Address.ToString(), ["port"] = p.Port, };
+                })),
+                ["bad"] = new JArray(),
+                ["connected"] = new JArray(localNode.GetRemoteNodes().Select(p =>
+                {
+                    return new JObject() { ["address"] = p.Remote.Address.ToString(), ["port"] = p.ListenerTcpPort, };
+                }))
+            };
         }
 
         /// <summary>
@@ -71,55 +66,30 @@ namespace Neo.Plugins.RpcServer
             switch (reason)
             {
                 case VerifyResult.Succeed:
-                    {
-                        var ret = new JObject();
-                        ret["hash"] = hash.ToString();
-                        return ret;
-                    }
+                    return new JObject() { ["hash"] = hash.ToString() };
                 case VerifyResult.AlreadyExists:
-                    {
-                        throw new RpcException(RpcError.AlreadyExists.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.AlreadyExists.WithData(reason.ToString()));
                 case VerifyResult.AlreadyInPool:
-                    {
-                        throw new RpcException(RpcError.AlreadyInPool.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.AlreadyInPool.WithData(reason.ToString()));
                 case VerifyResult.OutOfMemory:
-                    {
-                        throw new RpcException(RpcError.MempoolCapReached.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.MempoolCapReached.WithData(reason.ToString()));
                 case VerifyResult.InvalidScript:
-                    {
-                        throw new RpcException(RpcError.InvalidScript.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InvalidScript.WithData(reason.ToString()));
                 case VerifyResult.InvalidAttribute:
-                    {
-                        throw new RpcException(RpcError.InvalidAttribute.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InvalidAttribute.WithData(reason.ToString()));
                 case VerifyResult.InvalidSignature:
-                    {
-                        throw new RpcException(RpcError.InvalidSignature.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InvalidSignature.WithData(reason.ToString()));
                 case VerifyResult.OverSize:
-                    {
-                        throw new RpcException(RpcError.InvalidSize.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InvalidSize.WithData(reason.ToString()));
                 case VerifyResult.Expired:
-                    {
-                        throw new RpcException(RpcError.ExpiredTransaction.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.ExpiredTransaction.WithData(reason.ToString()));
                 case VerifyResult.InsufficientFunds:
-                    {
-                        throw new RpcException(RpcError.InsufficientFunds.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InsufficientFunds.WithData(reason.ToString()));
                 case VerifyResult.PolicyFail:
-                    {
-                        throw new RpcException(RpcError.PolicyFailed.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.PolicyFailed.WithData(reason.ToString()));
                 default:
-                    {
-                        throw new RpcException(RpcError.VerificationFailed.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.VerificationFailed.WithData(reason.ToString()));
+
             }
         }
 

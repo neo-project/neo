@@ -29,7 +29,7 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson(ProtocolSettings protocolSettings)
         {
-            JObject json = Utility.TransactionToJson(Transaction, protocolSettings);
+            var json = Utility.TransactionToJson(Transaction, protocolSettings);
             if (Confirmations != null)
             {
                 json["blockhash"] = BlockHash.ToString();
@@ -45,10 +45,11 @@ namespace Neo.Network.RPC.Models
 
         public static RpcTransaction FromJson(JObject json, ProtocolSettings protocolSettings)
         {
-            RpcTransaction transaction = new RpcTransaction
+            var transaction = new RpcTransaction
             {
                 Transaction = Utility.TransactionFromJson(json, protocolSettings)
             };
+
             if (json["confirmations"] != null)
             {
                 transaction.BlockHash = UInt256.Parse(json["blockhash"].AsString());

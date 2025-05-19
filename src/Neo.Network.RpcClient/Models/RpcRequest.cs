@@ -37,12 +37,13 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["id"] = Id;
-            json["jsonrpc"] = JsonRpc;
-            json["method"] = Method;
-            json["params"] = new JArray(Params);
-            return json;
+            return new()
+            {
+                ["id"] = Id,
+                ["jsonrpc"] = JsonRpc,
+                ["method"] = Method,
+                ["params"] = new JArray(Params)
+            };
         }
     }
 }
