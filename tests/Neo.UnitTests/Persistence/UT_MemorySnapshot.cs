@@ -54,6 +54,32 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        public void TestDobleCommitTwo()
+        {
+            var key1 = new byte[] { 0x51, 0x02 };
+            var value1 = new byte[] { 0x06, 0x04 };
+
+            var snapshotA = (MemorySnapshot)_memoryStore.GetSnapshot();
+            var snapshotB = (MemorySnapshot)_memoryStore.GetSnapshot();
+
+            Assert.IsFalse(_memoryStore.Contains(key1));
+            snapshotA.Put(key1, value1);
+            snapshotA.Commit();
+            Assert.IsTrue(_memoryStore.Contains(key1));
+
+            snapshotB.Delete(key1);
+            snapshotB.Commit();
+            Assert.IsFalse(_memoryStore.Contains(key1));
+
+            snapshotA.Put(key1, value1);
+            snapshotA.Commit();
+            Assert.IsTrue(_memoryStore.Contains(key1));
+
+            snapshotB.Commit(); // Already committed
+            Assert.IsTrue(_memoryStore.Contains(key1)); // It fails before #3953
+        }
+
+        [TestMethod]
         public void SingleSnapshotTest()
         {
             var key1 = new byte[] { 0x01, 0x02 };
