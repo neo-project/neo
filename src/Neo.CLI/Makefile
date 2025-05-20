@@ -8,3 +8,4 @@ ifeq ($(strip $(VERSION)),)
 	$(error VersionPrefix not found in ../Directory.Build.props)
 endif
 	docker build --build-arg NEO_VERSION=$(VERSION) -t neo-node:$(VERSION) .
+	docker run -p 10332:10332 neo-node:$(VERSION)
