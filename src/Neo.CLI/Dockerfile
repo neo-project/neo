@@ -1,20 +1,23 @@
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0 AS Build
+FROM ubuntu:24.04 as Build
+RUN apt-get update
+RUN apt-get -y install net-tools telnet bash-completion wget  lrzsz zip
+RUN apt-get update && apt-get install -y software-properties-common
+RUN add-apt-repository ppa:dotnet/backports
+RUN apt-get update && apt-get install -y dotnet-sdk-9.0
+RUN apt-get install -y apt-transport-https && apt-get update && apt update && apt install build-essential unzip -y
+RUN apt-get install -y sqlite3 libsqlite3-dev libunwind8-dev
+RUN apt-get install -y screen
 
-# Run this from the repository root folder
-COPY src . 
-COPY NuGet.Config /Neo.CLI
+WORKDIR /neo
+COPY prepare-node.sh .
+RUN chmod +x prepare-node.sh
+ARG NEO_VERSION
+ENV NEO_VERSION=${NEO_VERSION}
 
-WORKDIR /Neo.CLI
-RUN dotnet restore && dotnet publish  -f net9.0 -c Release -o /app 
+RUN chmod +x prepare-node.sh && ./prepare-node.sh v${NEO_VERSION}
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:9.0 AS Final
-RUN apt-get update && apt-get install -y \
-  screen \
-  libleveldb-dev \
-  sqlite3
-RUN rm -rf /var/lib/apt/lists/*
-
-WORKDIR /Neo.CLI
-COPY  --from=Build /app .
-
-ENTRYPOINT ["screen","-DmS","node","dotnet","neo-cli.dll","-r"]
+RUN apt-get update && apt-get install -y vim
+RUN sed -i 's/"BindAddress":[^,]*/"BindAddress": "0.0.0.0"/' neo-cli/Plugins/RpcServer/RpcServer.json
+COPY start.sh .
+RUN chmod -R +x ./neo-cli
+ENTRYPOINT ["sh", "./start.sh"]
