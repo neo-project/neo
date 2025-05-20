@@ -104,8 +104,7 @@ namespace Neo.Plugins.StateService
             if (system.Settings.Network != Settings.Default.Network) return;
             StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index,
                 snapshot.GetChangeSet()
-                    .Where(p => p.Value.State != TrackState.None)
-                    .Where(p => p.Key.Id != NativeContract.Ledger.Id)
+                    .Where(p => p.Value.State != TrackState.None && p.Key.Id != NativeContract.Ledger.Id)
                     .ToList());
         }
 
