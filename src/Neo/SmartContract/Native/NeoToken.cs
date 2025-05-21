@@ -59,6 +59,14 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _votersCount;
         private readonly StorageKey _registerPrice;
 
+        private class LastGasPerBlock(BigInteger gasPerBlock, long index) : IStorageCacheEntry
+        {
+            public readonly BigInteger GasPerBlock = gasPerBlock;
+            public readonly long Index = index;
+
+            public StorageItem GetStorageItem() => new(GasPerBlock);
+        }
+
         [ContractEvent(1, name: "CandidateStateChanged",
            "pubkey", ContractParameterType.PublicKey,
            "registered", ContractParameterType.Boolean,
@@ -202,10 +210,11 @@ namespace Neo.SmartContract.Native
         {
             if (hardfork == ActiveIn)
             {
+                var initIndex = engine.PersistingBlock?.Index ?? 0u;
                 var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
-                engine.SnapshotCache.Add(_votersCount, new StorageItem(Array.Empty<byte>()));
-                engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock, 0u), new StorageItem(5 * GAS.Factor));
+                engine.SnapshotCache.Add(_votersCount, new StorageItem([]));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock, initIndex), new LastGasPerBlock(5 * GAS.Factor, initIndex));
                 engine.SnapshotCache.Add(_registerPrice, new StorageItem(1000 * GAS.Factor));
                 return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
             }
@@ -284,8 +293,7 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             var index = engine.PersistingBlock.Index + 1;
-            var entry = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_GasPerBlock, index), () => new StorageItem(gasPerBlock));
-            entry.Set(gasPerBlock);
+            engine.SnapshotCache.Upsert(CreateStorageKey(Prefix_GasPerBlock, index), new LastGasPerBlock(gasPerBlock, index));
         }
 
         /// <summary>
@@ -296,7 +304,16 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetGasPerBlock(DataCache snapshot)
         {
-            return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
+            var end = Ledger.CurrentIndex(snapshot) + 1;
+            var cached = snapshot.GetFromCache<LastGasPerBlock>();
+            if (cached != null && cached.Index < end)
+            {
+                return cached.GasPerBlock;
+            }
+
+            var last = GetSortedGasRecords(snapshot, end).First();
+            snapshot.AddToCache(new LastGasPerBlock(last.GasPerBlock, last.Index));
+            return last.GasPerBlock;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -320,7 +337,7 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot[_registerPrice];
         }
 
-        private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(DataCache snapshot, uint end)
+        internal IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(DataCache snapshot, uint end)
         {
             var key = CreateStorageKey(Prefix_GasPerBlock, end).ToArray();
             var boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();

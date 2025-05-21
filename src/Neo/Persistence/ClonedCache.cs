@@ -16,7 +16,7 @@ using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
-    class ClonedCache(DataCache innerCache) : DataCache(false)
+    class ClonedCache(DataCache innerCache) : DataCache(innerCache.SerializedCacheChanges, false)
     {
         private readonly DataCache _innerCache = innerCache;
 

@@ -42,7 +42,6 @@ namespace Neo.Plugins.Storage
             _db = db;
             _snapshot = db.CreateSnapshot();
             _batch = new WriteBatch();
-
             _options = new ReadOptions();
             _options.SetFillCache(false);
             _options.SetSnapshot(_snapshot);

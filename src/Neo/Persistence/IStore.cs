@@ -24,6 +24,11 @@ namespace Neo.Persistence
         IDisposable
     {
         /// <summary>
+        /// Serialized cache
+        /// </summary>
+        SerializedCache SerializedCache { get; }
+
+        /// <summary>
         /// Creates a snapshot of the database.
         /// </summary>
         /// <returns>A snapshot of the database.</returns>
