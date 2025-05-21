@@ -118,7 +118,6 @@ namespace Neo
             return buffer; // Keep the same output as Serialize when BigEndian
         }
 
-
         /// <inheritdoc/>
         public void Serialize(Span<byte> destination)
         {

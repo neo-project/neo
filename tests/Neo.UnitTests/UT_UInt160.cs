@@ -151,7 +151,6 @@ namespace Neo.UnitTests.IO
             CollectionAssert.AreEqual(data, value.ToArray());
         }
 
-
         [TestMethod]
         public void TestSpanAndSerializeBigEndian()
         {
