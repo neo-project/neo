@@ -23,7 +23,7 @@ namespace Neo.Cryptography.MPTTrie
                 throw new ArgumentException("could not be empty", nameof(key));
             if (path.Length > Node.MaxKeyLength)
                 throw new ArgumentException("exceeds limit", nameof(key));
-            return TryDelete(ref root, path);
+            return TryDelete(ref _root, path);
         }
 
         private bool TryDelete(ref Node node, ReadOnlySpan<byte> path)
@@ -34,7 +34,7 @@ namespace Neo.Cryptography.MPTTrie
                     {
                         if (path.IsEmpty)
                         {
-                            if (!full) cache.DeleteNode(node.Hash);
+                            if (!_full) _cache.DeleteNode(node.Hash);
                             node = new Node();
                             return true;
                         }
@@ -47,7 +47,7 @@ namespace Neo.Cryptography.MPTTrie
                             var oldHash = node.Hash;
                             var result = TryDelete(ref node.Next, path[node.Key.Length..]);
                             if (!result) return false;
-                            if (!full) cache.DeleteNode(oldHash);
+                            if (!_full) _cache.DeleteNode(oldHash);
                             if (node.Next.IsEmpty)
                             {
                                 node = node.Next;
@@ -55,12 +55,12 @@ namespace Neo.Cryptography.MPTTrie
                             }
                             if (node.Next.Type == NodeType.ExtensionNode)
                             {
-                                if (!full) cache.DeleteNode(node.Next.Hash);
+                                if (!_full) _cache.DeleteNode(node.Next.Hash);
                                 node.Key = new([.. node.Key.Span, .. node.Next.Key.Span]);
                                 node.Next = node.Next.Next;
                             }
                             node.SetDirty();
-                            cache.PutNode(node);
+                            _cache.PutNode(node);
                             return true;
                         }
                         return false;
@@ -78,7 +78,7 @@ namespace Neo.Cryptography.MPTTrie
                             result = TryDelete(ref node.Children[path[0]], path[1..]);
                         }
                         if (!result) return false;
-                        if (!full) cache.DeleteNode(oldHash);
+                        if (!_full) _cache.DeleteNode(oldHash);
                         List<byte> childrenIndexes = new List<byte>(Node.BranchChildCount);
                         for (int i = 0; i < Node.BranchChildCount; i++)
                         {
@@ -88,7 +88,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (childrenIndexes.Count > 1)
                         {
                             node.SetDirty();
-                            cache.PutNode(node);
+                            _cache.PutNode(node);
                             return true;
                         }
                         var lastChildIndex = childrenIndexes[0];
@@ -100,20 +100,20 @@ namespace Neo.Cryptography.MPTTrie
                         }
                         if (lastChild.Type == NodeType.HashNode)
                         {
-                            lastChild = cache.Resolve(lastChild.Hash);
+                            lastChild = _cache.Resolve(lastChild.Hash);
                             if (lastChild is null) throw new InvalidOperationException("Internal error, can't resolve hash");
                         }
                         if (lastChild.Type == NodeType.ExtensionNode)
                         {
-                            if (!full) cache.DeleteNode(lastChild.Hash);
+                            if (!_full) _cache.DeleteNode(lastChild.Hash);
                             lastChild.Key = new([.. childrenIndexes.ToArray(), .. lastChild.Key.Span]);
                             lastChild.SetDirty();
-                            cache.PutNode(lastChild);
+                            _cache.PutNode(lastChild);
                             node = lastChild;
                             return true;
                         }
                         node = Node.NewExtension(childrenIndexes.ToArray(), lastChild);
-                        cache.PutNode(node);
+                        _cache.PutNode(node);
                         return true;
                     }
                 case NodeType.Empty:
@@ -122,7 +122,7 @@ namespace Neo.Cryptography.MPTTrie
                     }
                 case NodeType.HashNode:
                     {
-                        var newNode = cache.Resolve(node.Hash);
+                        var newNode = _cache.Resolve(node.Hash);
                         if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt delete");
                         node = newNode;
                         return TryDelete(ref node, path);
