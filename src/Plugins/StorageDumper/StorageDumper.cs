@@ -23,13 +23,7 @@ namespace Neo.Plugins.StorageDumper
     public class StorageDumper : Plugin, ICommittingHandler, ICommittedHandler
     {
         private NeoSystem? _system;
-
-        private StreamWriter? _writer;
-        /// <summary>
-        /// _currentBlock stores the last cached item
-        /// </summary>
-        private JObject? _currentBlock;
-        private string? _lastCreateDirectory;
+        private readonly Dictionary<uint, JArray> _bs_cache = [];
         protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default?.ExceptionPolicy ?? UnhandledExceptionPolicy.Ignore;
 
         public override string Description => "Exports Neo-CLI status data";
@@ -69,12 +63,12 @@ namespace Neo.Plugins.StorageDumper
             byte[]? prefix = null;
             if (contractHash is not null)
             {
-                var contract = NativeContract.ContractManagement.GetContract(_system.StoreView, contractHash);
-                if (contract is null) throw new InvalidOperationException("contract not found");
+                var contract = NativeContract.ContractManagement.GetContract(_system.StoreView, contractHash)
+                    ?? throw new InvalidOperationException("contract not found");
                 prefix = BitConverter.GetBytes(contract.Id);
             }
             var states = _system.StoreView.Find(prefix);
-            JArray array = new JArray(states.Where(p => !Settings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
+            var array = new JArray(states.Where(p => !Settings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
             {
                 ["key"] = Convert.ToBase64String(p.Key.ToArray()),
                 ["value"] = Convert.ToBase64String(p.Value.ToArray())
@@ -88,7 +82,6 @@ namespace Neo.Plugins.StorageDumper
 
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
-            InitFileWriter(system.Settings.Network, snapshot);
             OnPersistStorage(system.Settings.Network, snapshot);
         }
 
@@ -97,7 +90,7 @@ namespace Neo.Plugins.StorageDumper
             var blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (blockIndex >= Settings.Default!.HeightToBegin)
             {
-                var stateChangeArray = new JArray();
+                var array = new JArray();
 
                 foreach (var trackable in snapshot.GetChangeSet())
                 {
@@ -124,65 +117,51 @@ namespace Neo.Plugins.StorageDumper
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             break;
                     }
-                    stateChangeArray.Add(state);
+                    array.Add(state);
                 }
 
                 var bs_item = new JObject();
                 bs_item["block"] = blockIndex;
-                bs_item["size"] = stateChangeArray.Count;
-                bs_item["storage"] = stateChangeArray;
-                _currentBlock = bs_item;
+                bs_item["size"] = array.Count;
+                bs_item["storage"] = array;
+                if (!_bs_cache.TryGetValue(network, out var cache))
+                {
+                    cache = [];
+                }
+                cache.Add(bs_item);
+                _bs_cache[network] = cache;
             }
         }
 
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            OnCommitStorage(system.Settings.Network);
+            OnCommitStorage(system.Settings.Network, system.GetSnapshotCache());
         }
 
-        void OnCommitStorage(uint network)
+        void OnCommitStorage(uint network, IReadOnlyStore snapshot)
         {
-            if (_currentBlock != null && _writer != null)
+            if (!_bs_cache.TryGetValue(network, out var cache)) return;
+            if (cache.Count == 0) return;
+            var blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (blockIndex % Settings.Default!.BlockCacheSize == 0)
             {
-                _writer.WriteLine(_currentBlock.ToString());
-                _writer.Flush();
+                var path = HandlePaths(network, blockIndex);
+                path = $"{path}/dump-block-{blockIndex}.json";
+                File.WriteAllText(path, cache.ToString());
+                cache.Clear();
             }
         }
 
-        private void InitFileWriter(uint network, IReadOnlyStore snapshot)
+        private static string HandlePaths(uint network, uint blockIndex)
         {
-            uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (_writer == null
-                || blockIndex % Settings.Default!.BlockCacheSize == 0)
-            {
-                string path = GetOrCreateDirectory(network, blockIndex);
-                var filepart = (blockIndex / Settings.Default!.BlockCacheSize) * Settings.Default.BlockCacheSize;
-                path = $"{path}/dump-block-{filepart}.dump";
-                if (_writer != null)
-                {
-                    _writer.Dispose();
-                }
-                _writer = new StreamWriter(new FileStream(path, FileMode.Append));
-            }
-        }
-
-        private string GetOrCreateDirectory(uint network, uint blockIndex)
-        {
-            string dirPathWithBlock = GetDirectoryPath(network, blockIndex);
-            if (_lastCreateDirectory != dirPathWithBlock)
-            {
-                Directory.CreateDirectory(dirPathWithBlock);
-                _lastCreateDirectory = dirPathWithBlock;
-            }
+            var storagePerFolder = Settings.Default!.StoragePerFolder;
+            var folder = (((blockIndex - 1) / storagePerFolder) + 1) * storagePerFolder;
+            if (blockIndex == 0)
+                folder = 0;
+            var dirPathWithBlock = $"./Storage_{network:x8}/BlockStorage_{folder}";
+            Directory.CreateDirectory(dirPathWithBlock);
             return dirPathWithBlock;
         }
-
-        private string GetDirectoryPath(uint network, uint blockIndex)
-        {
-            uint folder = (blockIndex / Settings.Default!.StoragePerFolder) * Settings.Default.StoragePerFolder;
-            return $"./StorageDumper_{network}/BlockStorage_{folder}";
-        }
-
     }
 }
