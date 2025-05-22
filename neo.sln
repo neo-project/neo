@@ -88,6 +88,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Cryptography.MPTTrie.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Network.RPC.Tests", "tests\Neo.Network.RPC.Tests\Neo.Network.RPC.Tests.csproj", "{19B1CF1A-17F4-4E04-AB9C-55CE74952E11}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Plugins.DBFTPlugin.Fuzzing.Tests", "tests\Neo.Plugins.DBFTPlugin.Fuzzing.Tests\Neo.Plugins.DBFTPlugin.Fuzzing.Tests.csproj", "{C9566738-B49A-4854-9BA8-66CDADEE454B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -246,6 +248,10 @@ Global
 		{19B1CF1A-17F4-4E04-AB9C-55CE74952E11}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19B1CF1A-17F4-4E04-AB9C-55CE74952E11}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19B1CF1A-17F4-4E04-AB9C-55CE74952E11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9566738-B49A-4854-9BA8-66CDADEE454B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9566738-B49A-4854-9BA8-66CDADEE454B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9566738-B49A-4854-9BA8-66CDADEE454B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9566738-B49A-4854-9BA8-66CDADEE454B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -290,6 +296,7 @@ Global
 		{E384C5EF-493E-4ED6-813C-6364F968CEE8} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 		{40A23D45-1E81-41A4-B587-16AF26630103} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{19B1CF1A-17F4-4E04-AB9C-55CE74952E11} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
+		{C9566738-B49A-4854-9BA8-66CDADEE454B} = {7F257712-D033-47FF-B439-9D4320D06599}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
