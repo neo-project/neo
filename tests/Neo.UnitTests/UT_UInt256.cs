@@ -197,7 +197,6 @@ namespace Neo.UnitTests.IO
             data = new byte[UInt256.Length];
             valueLittleEndian.Serialize(data.AsSpan());
             CollectionAssert.AreEqual(valueLittleEndian.ToArray(), valueBigEndian.ToArray());
-
         }
     }
 }

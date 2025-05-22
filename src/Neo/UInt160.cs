@@ -111,13 +111,12 @@ namespace Neo
             return GetSpanBigEndian();
         }
 
-        internal Span<byte> GetSpanBigEndian()
+        internal Span<byte> GetSpanLittleEndian()
         {
             Span<byte> buffer = new byte[Length];
             SerializeBigEndian(buffer);
             return buffer; // Keep the same output as Serialize when BigEndian
         }
-
 
         /// <inheritdoc/>
         public void Serialize(Span<byte> destination)
@@ -133,7 +132,7 @@ namespace Neo
             }
         }
 
-        internal void SerializeBigEndian(Span<byte> destination)
+        internal void GetSpanLittleEndian(Span<byte> destination)
         {
             const int IxValue2 = sizeof(ulong);
             const int IxValue3 = sizeof(ulong) * 2;
