@@ -110,17 +110,17 @@ namespace Neo
             if (BitConverter.IsLittleEndian)
                 return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
 
-            return GetSpanBigEndian();
+            return GetSpanLittleEndian();
         }
 
         /// <summary>
         /// Get the output as Serialize when BigEndian
         /// </summary>
         /// <returns>A Span that represents the ourput as Serialize when BigEndian.</returns>
-        internal Span<byte> GetSpanBigEndian()
+        internal Span<byte> GetSpanLittleEndian()
         {
             Span<byte> buffer = new byte[Length];
-            SerializeBigEndian(buffer);
+            SerializeSafeLittleEndian(buffer);
             return buffer; // Keep the same output as Serialize when BigEndian
         }
 
@@ -153,11 +153,11 @@ namespace Neo
             }
             else
             {
-                SerializeBigEndian(destination);
+                SerializeSafeLittleEndian(destination);
             }
         }
 
-        internal void SerializeBigEndian(Span<byte> destination)
+        internal void SerializeSafeLittleEndian(Span<byte> destination)
         {
             const int IxValue2 = sizeof(ulong);
             const int IxValue3 = sizeof(ulong) * 2;

@@ -186,11 +186,11 @@ namespace Neo.UnitTests.IO
             var valueBigEndian = new UInt256(data);
             var valueLittleEndian = new UInt256(data);
 
-            var span = valueBigEndian.GetSpanBigEndian();
+            var span = valueBigEndian.GetSpanLittleEndian();
             Assert.IsTrue(span.SequenceEqual(valueBigEndian.ToArray()));
 
             data = new byte[UInt256.Length];
-            valueBigEndian.SerializeBigEndian(data.AsSpan());
+            valueBigEndian.SerializeSafeLittleEndian(data.AsSpan());
             CollectionAssert.AreEqual(data, valueBigEndian.ToArray());
 
             // Check that Serialize LittleEndian and Serialize BigEndian are equals
