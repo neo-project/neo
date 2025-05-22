@@ -34,6 +34,7 @@ namespace Neo.ConsoleService
                 'a' => '\a',
                 'e' => '\e',
                 '0' => '\0',
+                ' ' => ' ',
                 _ => throw new ArgumentException($"Invalid escaped character: {ch}")
             };
         }
@@ -78,8 +79,14 @@ namespace Neo.ConsoleService
                 }
                 else if (ch == '"' || ch == '\'')
                 {
-                    if (token.Length > 0) addToken(index, quoteChar);
-                    quoteChar = ch;
+                    if (token.Length == 0) // If ch is the first char. To keep consistency with legacy behavior
+                    {
+                        quoteChar = ch;
+                    }
+                    else
+                    {
+                        token.Append(ch); // If ch is not the first char, append it as a normal char
+                    }
                 }
                 else if (char.IsWhiteSpace(ch))
                 {
