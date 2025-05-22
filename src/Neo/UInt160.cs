@@ -132,7 +132,7 @@ namespace Neo
             }
         }
 
-        internal void SerializeBigEndian(Span<byte> destination)
+        internal void GetSpanLittleEndian(Span<byte> destination)
         {
             const int IxValue2 = sizeof(ulong);
             const int IxValue3 = sizeof(ulong) * 2;
