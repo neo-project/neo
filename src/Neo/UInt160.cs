@@ -111,7 +111,7 @@ namespace Neo
             return GetSpanBigEndian();
         }
 
-        internal Span<byte> GetSpanBigEndian()
+        internal Span<byte> GetSpanLittleEndian()
         {
             Span<byte> buffer = new byte[Length];
             SerializeBigEndian(buffer);
