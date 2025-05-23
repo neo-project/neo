@@ -30,24 +30,24 @@ namespace Neo.Plugins.StateService.Verification
         private class Timer { public uint Index; }
         private static readonly uint DelayMilliseconds = 3000;
         private readonly Wallet wallet;
-        private readonly ConcurrentDictionary<uint, VerificationContext> contexts = new ConcurrentDictionary<uint, VerificationContext>();
+        private readonly ConcurrentDictionary<uint, VerificationContext> contexts = new();
 
         public VerificationService(Wallet wallet)
         {
             this.wallet = wallet;
-            StatePlugin._system.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
+            StatePlugin.NeoSystem.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
         private void SendVote(VerificationContext context)
         {
             if (context.VoteMessage is null) return;
             Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay vote, height={context.RootIndex}, retry={context.Retries}");
-            StatePlugin._system.Blockchain.Tell(context.VoteMessage);
+            StatePlugin.NeoSystem.Blockchain.Tell(context.VoteMessage);
         }
 
         private void OnStateRootVote(Vote vote)
         {
-            if (contexts.TryGetValue(vote.RootIndex, out VerificationContext context) && context.AddSignature(vote.ValidatorIndex, vote.Signature.ToArray()))
+            if (contexts.TryGetValue(vote.RootIndex, out var context) && context.AddSignature(vote.ValidatorIndex, vote.Signature.ToArray()))
             {
                 CheckVotes(context);
             }
@@ -59,7 +59,7 @@ namespace Neo.Plugins.StateService.Verification
             {
                 if (context.StateRootMessage is null) return;
                 Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay state root, height={context.StateRoot.Index}, root={context.StateRoot.RootHash}");
-                StatePlugin._system.Blockchain.Tell(context.StateRootMessage);
+                StatePlugin.NeoSystem.Blockchain.Tell(context.StateRootMessage);
             }
         }
 
@@ -105,10 +105,11 @@ namespace Neo.Plugins.StateService.Verification
                 SendVote(context);
                 CheckVotes(context);
                 context.Timer.CancelIfNotNull();
-                context.Timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromMilliseconds((uint)StatePlugin._system.GetTimePerBlock().TotalMilliseconds << context.Retries), Self, new Timer
-                {
-                    Index = index,
-                }, ActorRefs.NoSender);
+                context.Timer = Context.System.Scheduler.ScheduleTellOnceCancelable(
+                    TimeSpan.FromMilliseconds((uint)StatePlugin.NeoSystem.GetTimePerBlock().TotalMilliseconds << context.Retries),
+                    Self,
+                    new Timer { Index = index, },
+                    ActorRefs.NoSender);
                 context.Retries++;
             }
         }
@@ -117,6 +118,7 @@ namespace Neo.Plugins.StateService.Verification
         {
             if (payload.Data.Length == 0) return;
             if ((MessageType)payload.Data.Span[0] != MessageType.Vote) return;
+
             Vote message;
             try
             {

@@ -44,6 +44,7 @@ namespace Neo.Plugins.StateService.Verification
         public int MyIndex => myIndex;
         public uint RootIndex => rootIndex;
         public ECPoint[] Verifiers => verifiers;
+
         public int Sender
         {
             get
@@ -52,8 +53,10 @@ namespace Neo.Plugins.StateService.Verification
                 return p >= 0 ? p : p + verifiers.Length;
             }
         }
+
         public bool IsSender => myIndex == Sender;
         public ICancelable Timer;
+
         public StateRoot StateRoot
         {
             get
@@ -66,7 +69,9 @@ namespace Neo.Plugins.StateService.Verification
                 return root;
             }
         }
+
         public ExtensiblePayload StateRootMessage => rootPayload;
+
         public ExtensiblePayload VoteMessage
         {
             get
@@ -83,7 +88,7 @@ namespace Neo.Plugins.StateService.Verification
             Retries = 0;
             myIndex = -1;
             rootIndex = index;
-            verifiers = NativeContract.RoleManagement.GetDesignatedByRole(StatePlugin._system.StoreView, Role.StateValidator, index);
+            verifiers = NativeContract.RoleManagement.GetDesignatedByRole(StatePlugin.NeoSystem.StoreView, Role.StateValidator, index);
             if (wallet is null) return;
             for (int i = 0; i < verifiers.Length; i++)
             {
@@ -98,9 +103,9 @@ namespace Neo.Plugins.StateService.Verification
         private ExtensiblePayload CreateVoteMessage()
         {
             if (StateRoot is null) return null;
-            if (!signatures.TryGetValue(myIndex, out byte[] sig))
+            if (!signatures.TryGetValue(myIndex, out var sig))
             {
-                sig = StateRoot.Sign(keyPair, StatePlugin._system.Settings.Network);
+                sig = StateRoot.Sign(keyPair, StatePlugin.NeoSystem.Settings.Network);
                 signatures[myIndex] = sig;
             }
             return CreatePayload(MessageType.Vote, new Vote
@@ -116,10 +121,12 @@ namespace Neo.Plugins.StateService.Verification
             if (M <= signatures.Count) return false;
             if (index < 0 || verifiers.Length <= index) return false;
             if (signatures.ContainsKey(index)) return false;
+
             Utility.Log(nameof(VerificationContext), LogLevel.Info, $"vote received, height={rootIndex}, index={index}");
-            ECPoint validator = verifiers[index];
-            byte[] hash_data = StateRoot?.GetSignData(StatePlugin._system.Settings.Network);
-            if (hash_data is null || !Crypto.VerifySignature(hash_data, sig, validator))
+
+            var validator = verifiers[index];
+            var hashData = StateRoot?.GetSignData(StatePlugin.NeoSystem.Settings.Network);
+            if (hashData is null || !Crypto.VerifySignature(hashData, sig, validator))
             {
                 Utility.Log(nameof(VerificationContext), LogLevel.Info, "incorrect vote, invalid signature");
                 return false;
@@ -133,8 +140,8 @@ namespace Neo.Plugins.StateService.Verification
             if (signatures.Count < M) return false;
             if (StateRoot.Witness is null)
             {
-                Contract contract = Contract.CreateMultiSigContract(M, verifiers);
-                ContractParametersContext sc = new(StatePlugin._system.StoreView, StateRoot, StatePlugin._system.Settings.Network);
+                var contract = Contract.CreateMultiSigContract(M, verifiers);
+                var sc = new ContractParametersContext(StatePlugin.NeoSystem.StoreView, StateRoot, StatePlugin.NeoSystem.Settings.Network);
                 for (int i = 0, j = 0; i < verifiers.Length && j < M; i++)
                 {
                     if (!signatures.TryGetValue(i, out byte[] sig)) continue;
@@ -152,15 +159,16 @@ namespace Neo.Plugins.StateService.Verification
         private ExtensiblePayload CreatePayload(MessageType type, ISerializable payload, uint validBlockEndThreshold)
         {
             byte[] data;
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
+            using (var ms = new MemoryStream())
+            using (var writer = new BinaryWriter(ms))
             {
                 writer.Write((byte)type);
                 payload.Serialize(writer);
                 writer.Flush();
                 data = ms.ToArray();
             }
-            ExtensiblePayload msg = new ExtensiblePayload
+
+            var msg = new ExtensiblePayload
             {
                 Category = StatePlugin.StatePayloadCategory,
                 ValidBlockStart = StateRoot.Index,
@@ -168,7 +176,8 @@ namespace Neo.Plugins.StateService.Verification
                 Sender = Contract.CreateSignatureRedeemScript(verifiers[MyIndex]).ToScriptHash(),
                 Data = data,
             };
-            ContractParametersContext sc = new ContractParametersContext(StatePlugin._system.StoreView, msg, StatePlugin._system.Settings.Network);
+
+            var sc = new ContractParametersContext(StatePlugin.NeoSystem.StoreView, msg, StatePlugin.NeoSystem.Settings.Network);
             wallet.Sign(sc);
             msg.Witness = sc.GetWitnesses()[0];
             return msg;
