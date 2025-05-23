@@ -94,6 +94,10 @@
   </a>
 </p>
 
+## Quick Start A Mainnet Node
+1. git clone https://github.com/neo-project/neo.git
+2. cd neo/src/Neo.CLI
+3. make build
 
 ## Table of Contents
 1. [Overview](#overview)
