@@ -36,10 +36,10 @@ namespace Neo
         /// </summary>
         public static readonly UInt256 Zero = new();
 
-        [FieldOffset(0)] private ulong value1;
-        [FieldOffset(8)] private ulong value2;
-        [FieldOffset(16)] private ulong value3;
-        [FieldOffset(24)] private ulong value4;
+        [FieldOffset(0)] private ulong _value1;
+        [FieldOffset(8)] private ulong _value2;
+        [FieldOffset(16)] private ulong _value3;
+        [FieldOffset(24)] private ulong _value4;
 
         public int Size => Length;
 
@@ -57,27 +57,27 @@ namespace Neo
             if (value.Length != Length)
                 throw new FormatException($"Invalid length: {value.Length}");
 
-            var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+            var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
             value.CopyTo(span);
         }
 
         public int CompareTo(UInt256 other)
         {
-            int result = value4.CompareTo(other.value4);
+            var result = _value4.CompareTo(other._value4);
             if (result != 0) return result;
-            result = value3.CompareTo(other.value3);
+            result = _value3.CompareTo(other._value3);
             if (result != 0) return result;
-            result = value2.CompareTo(other.value2);
+            result = _value2.CompareTo(other._value2);
             if (result != 0) return result;
-            return value1.CompareTo(other.value1);
+            return _value1.CompareTo(other._value1);
         }
 
         public void Deserialize(ref MemoryReader reader)
         {
-            value1 = reader.ReadUInt64();
-            value2 = reader.ReadUInt64();
-            value3 = reader.ReadUInt64();
-            value4 = reader.ReadUInt64();
+            _value1 = reader.ReadUInt64();
+            _value2 = reader.ReadUInt64();
+            _value3 = reader.ReadUInt64();
+            _value4 = reader.ReadUInt64();
         }
 
         public override bool Equals(object obj)
@@ -89,15 +89,15 @@ namespace Neo
         public bool Equals(UInt256 other)
         {
             if (other is null) return false;
-            return value1 == other.value1
-                && value2 == other.value2
-                && value3 == other.value3
-                && value4 == other.value4;
+            return _value1 == other._value1
+                && _value2 == other._value2
+                && _value3 == other._value3
+                && _value4 == other._value4;
         }
 
         public override int GetHashCode()
         {
-            return (int)value1;
+            return (int)_value1;
         }
 
         /// <summary>
@@ -108,10 +108,19 @@ namespace Neo
         public ReadOnlySpan<byte> GetSpan()
         {
             if (BitConverter.IsLittleEndian)
-                return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+                return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
 
+            return GetSpanLittleEndian();
+        }
+
+        /// <summary>
+        /// Get the output as Serialize when BigEndian
+        /// </summary>
+        /// <returns>A Span that represents the ourput as Serialize when BigEndian.</returns>
+        internal Span<byte> GetSpanLittleEndian()
+        {
             Span<byte> buffer = new byte[Length];
-            Serialize(buffer);
+            SerializeSafeLittleEndian(buffer);
             return buffer; // Keep the same output as Serialize when BigEndian
         }
 
@@ -129,32 +138,37 @@ namespace Neo
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(value1);
-            writer.Write(value2);
-            writer.Write(value3);
-            writer.Write(value4);
+            writer.Write(_value1);
+            writer.Write(_value2);
+            writer.Write(_value3);
+            writer.Write(_value4);
         }
 
         public void Serialize(Span<byte> destination)
         {
             if (BitConverter.IsLittleEndian)
             {
-                var buffer = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+                var buffer = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
                 buffer.CopyTo(destination);
             }
             else
             {
-                const int IxValue2 = sizeof(ulong);
-                const int IxValue3 = sizeof(ulong) * 2;
-                const int IxValue4 = sizeof(ulong) * 3;
-
-                Span<byte> buffer = stackalloc byte[Length];
-                BinaryPrimitives.WriteUInt64LittleEndian(buffer, value1);
-                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], value2);
-                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue3..], value3);
-                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue4..], value4);
-                buffer.CopyTo(destination);
+                SerializeSafeLittleEndian(destination);
             }
+        }
+
+        internal void SerializeSafeLittleEndian(Span<byte> destination)
+        {
+            const int IxValue2 = sizeof(ulong);
+            const int IxValue3 = sizeof(ulong) * 2;
+            const int IxValue4 = sizeof(ulong) * 3;
+
+            Span<byte> buffer = stackalloc byte[Length];
+            BinaryPrimitives.WriteUInt64LittleEndian(buffer, _value1);
+            BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], _value2);
+            BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue3..], _value3);
+            BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue4..], _value4);
+            buffer.CopyTo(destination);
         }
 
         public override string ToString()

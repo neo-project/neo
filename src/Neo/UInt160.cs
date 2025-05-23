@@ -108,8 +108,13 @@ namespace Neo
             if (BitConverter.IsLittleEndian)
                 return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
 
+            return GetSpanLittleEndian();
+        }
+
+        internal Span<byte> GetSpanLittleEndian()
+        {
             Span<byte> buffer = new byte[Length];
-            Serialize(buffer);
+            SerializeSafeLittleEndian(buffer);
             return buffer; // Keep the same output as Serialize when BigEndian
         }
 
@@ -123,15 +128,20 @@ namespace Neo
             }
             else
             {
-                const int IxValue2 = sizeof(ulong);
-                const int IxValue3 = sizeof(ulong) * 2;
-
-                Span<byte> buffer = stackalloc byte[Length];
-                BinaryPrimitives.WriteUInt64LittleEndian(buffer, _value1);
-                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], _value2);
-                BinaryPrimitives.WriteUInt32LittleEndian(buffer[IxValue3..], _value3);
-                buffer.CopyTo(destination);
+                SerializeSafeLittleEndian(destination);
             }
+        }
+
+        internal void SerializeSafeLittleEndian(Span<byte> destination)
+        {
+            const int IxValue2 = sizeof(ulong);
+            const int IxValue3 = sizeof(ulong) * 2;
+
+            Span<byte> buffer = stackalloc byte[Length];
+            BinaryPrimitives.WriteUInt64LittleEndian(buffer, _value1);
+            BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], _value2);
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer[IxValue3..], _value3);
+            buffer.CopyTo(destination);
         }
 
         /// <summary>
