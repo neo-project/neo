@@ -104,8 +104,9 @@
 2. [Project structure](#project-structure)
 3. [Related projects](#related-projects)
 4. [Opening a new issue](#opening-a-new-issue)
-5. [Bounty program](#bounty-program)
-6. [License](#license)
+5. [Contributing](#contributing)
+6. [Bounty program](#bounty-program)
+7. [License](#license)
 
 ## Overview
 This repository is a csharp implementation of the [neo](https://neo.org) blockchain. It is jointly maintained by the neo core developers and neo global development community.
@@ -149,6 +150,57 @@ Please feel free to create new issues to suggest features or ask questions.
 - [Questions](https://github.com/neo-project/neo/issues/new?assignees=&labels=question&template=questions.md&title=)
 
 If you found a security issue, please refer to our [security policy](https://github.com/neo-project/neo/security/policy).
+
+## Contributing
+
+We welcome contributions to the Neo project! To ensure a smooth collaboration process, please follow these guidelines:
+
+### Branch Rules
+
+- **`master`** - Contains the latest stable release version. This branch reflects the current production state.
+- **`dev`** - The main development branch where all new features and improvements are integrated.
+
+### Pull Request Guidelines
+
+**Important**: All pull requests must be based on the `dev` branch, not `master`.
+
+1. **Fork the repository** and create your feature branch from `dev`:
+   ```bash
+   git checkout dev
+   git pull origin dev
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes** following the project's coding standards and conventions.
+
+3. **Test your changes** thoroughly to ensure they don't break existing functionality.
+
+4. **Commit your changes** with clear, descriptive commit messages:
+   ```bash
+   git commit -m "feat: add new feature description"
+   ```
+
+5. **Push to your fork** and create a pull request against the `dev` branch:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+6. **Create a Pull Request** targeting the `dev` branch with:
+   - Clear title and description
+   - Reference to any related issues
+   - Summary of changes made
+
+### Development Workflow
+
+```
+feature/bug-fix → dev → master (via release)
+```
+
+- Feature branches are merged into `dev`
+- `dev` is periodically merged into `master` for releases
+- Never create PRs directly against `master`
+
+For more detailed contribution guidelines, please check our documentation or reach out to the maintainers.
 
 ## Bounty program
 You can be rewarded by finding security issues. Please refer to our [bounty program page](https://neo.org/bounty) for more information.
