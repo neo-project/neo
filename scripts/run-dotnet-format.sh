@@ -1,6 +1,8 @@
 #!/bin/bash
 # Script to run dotnet format with the same settings as the GitHub workflow
 
+set -e
+
 VERIFY_ONLY=false
 VERBOSITY="diagnostic"
 FOLDER="."
