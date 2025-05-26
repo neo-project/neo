@@ -11,6 +11,7 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Json;
 using Neo.Persistence.Providers;
 using Neo.SmartContract;
@@ -65,8 +66,8 @@ namespace Neo.Plugins.RpcServer.Tests
 
             foreach (var (storeKey, storeValue) in _memoryStore._innerData)
             {
-                Console.WriteLine(storeKey.ToHexString());
-                Console.WriteLine(storeValue.ToHexString());
+                // Console.WriteLine(storeKey.ToHexString());
+                // Console.WriteLine(storeValue.ToHexString());
             }
         }
 
