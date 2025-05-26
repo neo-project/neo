@@ -57,16 +57,9 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var storeProvider = new TestMemoryStoreProvider(memoryStore);
 
             // Create NeoSystem with test dependencies
-            neoSystem = new NeoSystem(
-                TestProtocolSettings.Default,
-                storeProvider,
-                localNode.Ref,
-                blockchain.Ref,
-                taskManager.Ref,
-                txRouter.Ref
-            );
+            neoSystem = new NeoSystem(TestProtocolSettings.Default, storeProvider);
 
-            settings = new Settings();
+            settings = TestBlockchain.CreateDefaultSettings();
         }
 
         [TestCleanup]

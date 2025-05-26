@@ -56,15 +56,8 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             memoryStore = new MemoryStore();
             var storeProvider = new TestMemoryStoreProvider(memoryStore);
 
-            // Create NeoSystem with test dependencies
-            neoSystem = new NeoSystem(
-                TestProtocolSettings.Default,
-                storeProvider,
-                localNode.Ref,
-                blockchain.Ref,
-                taskManager.Ref,
-                txRouter.Ref
-            );
+            // Create NeoSystem with correct constructor
+            neoSystem = new NeoSystem(TestProtocolSettings.Default, storeProvider);
 
             // Setup test wallet
             testWallet = new TestWallet(TestProtocolSettings.Default);
@@ -99,7 +92,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceCreation()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
 
             // Act
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
@@ -120,7 +113,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceStart()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
 
             // Act
@@ -134,7 +127,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceReceivesBlockchainMessages()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
 
             // Start the consensus service
@@ -172,7 +165,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceHandlesExtensiblePayload()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
 
             // Start the consensus service
@@ -204,7 +197,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceHandlesValidConsensusMessage()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
             consensusService.Tell(new ConsensusService.Start());
 
@@ -236,7 +229,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceRejectsInvalidPayload()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
             consensusService.Tell(new ConsensusService.Start());
 

@@ -72,14 +72,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var storeProvider = new TestMemoryStoreProvider(memoryStore);
 
             // Create NeoSystem with test dependencies
-            neoSystem = new NeoSystem(
-                TestProtocolSettings.Default,
-                storeProvider,
-                localNode.Ref,
-                blockchain.Ref,
-                taskManager.Ref,
-                txRouter.Ref
-            );
+            neoSystem = new NeoSystem(TestProtocolSettings.Default, storeProvider);
 
             // Setup test wallets for validators
             testWallets = new TestWallet[ValidatorCount];
@@ -114,7 +107,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestFullConsensusRound()
         {
             // Arrange - Create consensus services for all validators
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {
@@ -146,7 +139,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusWithViewChange()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {
@@ -184,7 +177,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusWithByzantineFailures()
         {
             // Arrange - Only start honest validators (3 out of 4, can tolerate 1 Byzantine)
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var honestValidators = ValidatorCount - 1; // 3 honest validators
 
             for (int i = 0; i < honestValidators; i++)
@@ -216,7 +209,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusRecovery()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {

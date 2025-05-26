@@ -10,10 +10,14 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Microsoft.Extensions.Configuration;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.Persistence.Providers;
+using Neo.Plugins.DBFTPlugin;
+using Neo.UnitTests;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -40,6 +44,23 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         {
             Store.Reset();
             TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
+        }
+
+        internal static Settings CreateDefaultSettings()
+        {
+            var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["ApplicationConfiguration:DBFTPlugin:RecoveryLogs"] = "ConsensusState",
+                    ["ApplicationConfiguration:DBFTPlugin:IgnoreRecoveryLogs"] = "false",
+                    ["ApplicationConfiguration:DBFTPlugin:AutoStart"] = "false",
+                    ["ApplicationConfiguration:DBFTPlugin:Network"] = "5195086",
+                    ["ApplicationConfiguration:DBFTPlugin:MaxBlockSize"] = "262144",
+                    ["ApplicationConfiguration:DBFTPlugin:MaxBlockSystemFee"] = "150000000000"
+                })
+                .Build();
+
+            return new Settings(config.GetSection("ApplicationConfiguration:DBFTPlugin"));
         }
 
         internal static DataCache GetTestSnapshot()

@@ -60,14 +60,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var storeProvider = new TestMemoryStoreProvider(memoryStore);
 
             // Create NeoSystem with test dependencies
-            neoSystem = new NeoSystem(
-                TestProtocolSettings.Default,
-                storeProvider,
-                localNode.Ref,
-                blockchain.Ref,
-                taskManager.Ref,
-                txRouter.Ref
-            );
+            neoSystem = new NeoSystem(TestProtocolSettings.Default, storeProvider);
 
             // Setup test wallets for validators
             testWallets = new TestWallet[ValidatorCount];
@@ -102,7 +95,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestBasicConsensusFlow()
         {
             // Arrange - Create consensus services for all validators
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {
@@ -133,7 +126,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestPrimarySelection()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var primaryService = Sys.ActorOf(
                 ConsensusService.Props(neoSystem, settings, testWallets[0]),
                 "primary-consensus"
@@ -154,7 +147,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusMessageHandling()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(
                 ConsensusService.Props(neoSystem, settings, testWallets[0]),
                 "message-consensus"
@@ -198,7 +191,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestViewChange()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(
                 ConsensusService.Props(neoSystem, settings, testWallets[1]), // Not primary
                 "viewchange-consensus"
@@ -238,7 +231,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestRecoveryMessage()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(
                 ConsensusService.Props(neoSystem, settings, testWallets[0]),
                 "recovery-consensus"
@@ -278,7 +271,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestByzantineFaultTolerance()
         {
             // Arrange - Create consensus services for all validators
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {
@@ -310,7 +303,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestMultipleRounds()
         {
             // Arrange
-            var settings = new Settings();
+            var settings = TestBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(
                 ConsensusService.Props(neoSystem, settings, testWallets[0]),
                 "multiround-consensus"

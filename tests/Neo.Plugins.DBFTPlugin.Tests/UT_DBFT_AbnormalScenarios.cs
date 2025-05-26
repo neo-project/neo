@@ -60,19 +60,12 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var storeProvider = new TestMemoryStoreProvider(memoryStore);
 
             // Create NeoSystem with test dependencies
-            neoSystem = new NeoSystem(
-                TestProtocolSettings.Default,
-                storeProvider,
-                localNode.Ref,
-                blockchain.Ref,
-                taskManager.Ref,
-                txRouter.Ref
-            );
+            neoSystem = new NeoSystem(TestProtocolSettings.Default, storeProvider);
 
             // Setup test wallets for validators
             testWallets = new TestWallet[ValidatorCount];
             consensusServices = new IActorRef[ValidatorCount];
-            settings = new Settings();
+            settings = TestBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {
