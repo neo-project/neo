@@ -25,7 +25,7 @@ namespace Neo.Cryptography.MPTTrie
                     throw new ArgumentException("could not be empty", nameof(key));
                 if (path.Length > Node.MaxKeyLength)
                     throw new ArgumentException("exceeds limit", nameof(key));
-                var result = TryGet(ref root, path, out var value);
+                var result = TryGet(ref _root, path, out var value);
                 return result ? value.ToArray() : throw new KeyNotFoundException();
             }
         }
@@ -38,7 +38,7 @@ namespace Neo.Cryptography.MPTTrie
                 throw new ArgumentException("could not be empty", nameof(key));
             if (path.Length > Node.MaxKeyLength)
                 throw new ArgumentException("exceeds limit", nameof(key));
-            var result = TryGet(ref root, path, out var val);
+            var result = TryGet(ref _root, path, out var val);
             if (result)
                 value = val.ToArray();
             return result;
@@ -61,7 +61,7 @@ namespace Neo.Cryptography.MPTTrie
                     break;
                 case NodeType.HashNode:
                     {
-                        var newNode = cache.Resolve(node.Hash);
+                        var newNode = _cache.Resolve(node.Hash);
                         if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt get");
                         node = newNode;
                         return TryGet(ref node, path, out value);
