@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // CustomAutoPilot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,13 +13,14 @@ using Akka.Actor;
 using Akka.TestKit;
 using System;
 
-namespace Neo.Plugins.DBFTPlugin.Tests;
-
-internal class CustomAutoPilot(Action<IActorRef, object> action) : AutoPilot
+namespace Neo.Plugins.DBFTPlugin.Tests
 {
-    public override AutoPilot Run(IActorRef sender, object message)
+    internal class CustomAutoPilot(Action<IActorRef, object> action) : AutoPilot
     {
-        action(sender, message);
-        return this;
+        public override AutoPilot Run(IActorRef sender, object message)
+        {
+            action(sender, message);
+            return this;
+        }
     }
 }

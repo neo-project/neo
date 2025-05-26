@@ -7,13 +7,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Akka.TestKit" Version="1.5.36" />
+    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.36" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="MSTest" Version="3.8.2" />
+    <PackageReference Include="xunit" Version="2.8.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.7">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
     <ProjectReference Include="..\..\src\Plugins\DBFTPlugin\DBFTPlugin.csproj" />
     <ProjectReference Include="..\Neo.UnitTests\Neo.UnitTests.csproj" />
+
   </ItemGroup>
 
 </Project>

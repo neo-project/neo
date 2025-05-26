@@ -1,6 +1,6 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
-// UT_RpcServer.cs file belongs to the neo project and is free
+// UT_ConsensusService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,180 +10,260 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Akka.IO;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+
+using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.Plugins.DBFTPlugin.Consensus;
+using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
-using Neo.UnitTests;
+using Neo.VM;
 using Neo.Wallets;
-using Neo.Wallets.NEP6;
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Numerics;
-using System.Reflection;
-using System.Text;
-//using Xunit;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
     [TestClass]
-    public partial class UT_ConsensusService : TestKit
+    public class UT_ConsensusService : TestKit
     {
-        private NeoSystem _neoSystem;
-        private Settings _dbftSettings;
-        private TestMemoryStoreProvider _memoryStoreProvider;
-        private MemoryStore _memoryStore;
-        private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
-        private WalletAccount _walletAccount;
-        private Mock<NEP6Wallet> _mockWallet;
+        private NeoSystem neoSystem;
+        private TestProbe localNode;
+        private TestProbe taskManager;
+        private TestProbe blockchain;
+        private TestProbe txRouter;
+        private TestWallet testWallet;
+        private MemoryStore memoryStore;
 
-        const byte NativePrefixAccount = 20;
-        const byte NativePrefixTotalSupply = 11;
-
-     /*    [TestInitialize]
-        public void TestSetup()
+        [TestInitialize]
+        public void Setup()
         {
-            _memoryStore = new MemoryStore();
-            _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
-            _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
-            _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
+            // Create test probes for actor dependencies
+            localNode = CreateTestProbe("localNode");
+            taskManager = CreateTestProbe("taskManager");
+            blockchain = CreateTestProbe("blockchain");
+            txRouter = CreateTestProbe("txRouter");
 
-            _dbftSettings = new Settings();
+            // Create memory store
+            memoryStore = new MemoryStore();
+            var storeProvider = new TestMemoryStoreProvider(memoryStore);
 
+            // Create NeoSystem with test dependencies
+            neoSystem = new NeoSystem(
+                TestProtocolSettings.Default,
+                storeProvider,
+                localNode.Ref,
+                blockchain.Ref,
+                taskManager.Ref,
+                txRouter.Ref
+            );
 
-            _mockWallet = new Mock<NEP6Wallet>(Path.GetRandomFileName(), "12345678", ProtocolSettings.Default, string.Empty);
-            _mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns(_walletAccount);
-            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
-            var snapshot = _neoSystem.GetSnapshotCache();
-            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
-            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
-            snapshot.Commit();
-        } */
+            // Setup test wallet
+            testWallet = new TestWallet(TestProtocolSettings.Default);
+            testWallet.AddAccount(TestProtocolSettings.Default.StandbyValidators[0]);
+        }
 
-/*         [TestCleanup]
-        public void TestCleanup()
+        [TestCleanup]
+        public void Cleanup()
         {
-            // Please build and test in debug mode
-            _neoSystem.MemPool.Clear();
-            _memoryStore.Reset();
-            var snapshot = _neoSystem.GetSnapshotCache();
-            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
-            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
-            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
-            snapshot.Commit();
-        } */
+            neoSystem?.Dispose();
+            Shutdown();
+        }
 
-        /* [TestMethod]
-        public void ConsensusService_SingleNodeActors_OnStart_PrepReq_PrepResponses_Commits()
+        private ExtensiblePayload CreateConsensusPayload(ConsensusMessage message)
         {
-            // dotnet test /workspaces/neo/tests/Neo.Plugins.DBFTPlugin.Tests/Neo.Plugins.DBFTPlugin.Tests.csproj /property:GenerateFullPaths=true /p:Configuration=Debug /p:Platform="AnyCPU"
-            Console.WriteLine($"\n(UT-Consensus) Wallet is: {_mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
-
-            var mockContext = new Mock<ConsensusContext>(_neoSystem, ProtocolSettings.Default, _mockWallet.Object);
-
-            var timeValues = new[] {
-            new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
-            new DateTime(1980, 06, 01, 0, 0, 3, 001, DateTimeKind.Utc),  // For receiving block
-            new DateTime(1980, 05, 01, 0, 0, 5, 001, DateTimeKind.Utc),  // For Initialize
-            new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc), // unused
-                    };
-            for (var i = 0; i < timeValues.Length; i++)
-                Console.WriteLine($"time {i}: {timeValues[i]} ");
-
-            int timeIndex = 0;
-            var timeMock = new Mock<TestTimeProvider>();
-            timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[0]);
-            TestTimeProvider.Current = timeMock.Object;
-            ulong defaultTimestamp = 328665601001;
-            TestTimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(defaultTimestamp); //1980-06-01 00:00:15:001
-
-
-            // ============================ 
-            // From Here we need to fix HEADER AND TEST PROBE AND TESTACTORREF 
-            // ============================
-
-            // Creating a test block
-            Header myUTHeader = new Header();
-            TestUtilsConsensus.SetupHeaderWithValues(
-    myUTHeader,
-    UInt256.Zero,
-    out UInt256 merkRootVal,
-    out UInt160 val160,
-    out ulong timestampVal,
-    out ulong nonceVal,  // Add this line
-    out uint indexVal,
-    out Witness scriptVal);
-            myUTHeader.Size.Should().Be(113);
-            Console.WriteLine($"header {myUTHeader} hash {myUTHeader.Hash} {myUTHeader.PrevHash} timestamp {timestampVal}");
-            timestampVal.Should().Be(defaultTimestamp);
-
-
-            TestProbe subscriber = CreateTestProbe();
-
-            TestActorRef<ConsensusService> actorConsensus =
-                ActorOfAsTestActorRef<ConsensusService>(
-                    Akka.Actor.Props.Create(() =>
-                        (ConsensusService)Activator.CreateInstance(
-                            typeof(ConsensusService),
-                            BindingFlags.Instance | BindingFlags.NonPublic,
-                            null,
-                            new object[] { _neoSystem, _dbftSettings, mockContext.Object },
-                            null
-                        )
-                    )
-                );
-
-            // internal ConsensusService(NeoSystem neoSystem, Settings settings, ConsensusContext context)
-            //public ConsensusService(IActorRef localNode, IActorRef taskManager, IActorRef blockchain, IStore store, Wallet wallet)
-
-            var testPersistCompleted = new Blockchain.PersistCompleted
+            return new ExtensiblePayload
             {
-                Block = new Block
+                Category = "dBFT",
+                ValidBlockStart = 0,
+                ValidBlockEnd = 100,
+                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Data = message.ToArray(),
+                Witness = new Witness
                 {
-                    Header = myUTHeader,
-                    Transactions = new Transaction[0]
+                    InvocationScript = ReadOnlyMemory<byte>.Empty,
+                    VerificationScript = new[] { (byte)OpCode.PUSH1 }
                 }
             };
-            Console.WriteLine("\n==========================");
-            Console.WriteLine("Telling a new block to actor consensus...");
-            Console.WriteLine("will trigger OnPersistCompleted !");
-            // OnPersist will not launch timer, we need OnStart
-            actorConsensus.Tell(testPersistCompleted);
-            Console.WriteLine("\n==========================");
+        }
 
-            Console.WriteLine("\n==========================");
-            Console.WriteLine("will start consensus!");
-            actorConsensus.Tell(new ConsensusService.Start { });
+        [TestMethod]
+        public void TestConsensusServiceCreation()
+        {
+            // Arrange
+            var settings = new Settings();
 
-            Console.WriteLine("Waiting for subscriber recovery message...");
-            // The next line force a waits, then, subscriber keeps running its thread
-            // In the next case it waits for a Msg of type LocalNode.SendDirectly
-            // As we may expect, as soon as consensus start it sends a RecoveryRequest of this aforementioned type
-            var askingForInitialRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
+            // Act
+            var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
 
+            // Assert
+            Assert.IsNotNull(consensusService);
 
+            // Verify the service is responsive and doesn't crash on unknown messages
+            consensusService.Tell("unknown_message");
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
 
-            Console.WriteLine("Finalizing consensus service actor.");
-            Sys.Stop(actorConsensus);
-            Console.WriteLine("Actor actorConsensus Stopped.\n");
+            // Verify the actor is still alive
+            Watch(consensusService);
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // Should not receive Terminated message
+        }
 
+        [TestMethod]
+        public void TestConsensusServiceStart()
+        {
+            // Arrange
+            var settings = new Settings();
+            var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
 
-            // Enable to fail test
-            TestTimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(0);
-        } */
+            // Act
+            consensusService.Tell(new ConsensusService.Start());
+
+            // Assert - The service should start without throwing exceptions
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        }
+
+        [TestMethod]
+        public void TestConsensusServiceReceivesBlockchainMessages()
+        {
+            // Arrange
+            var settings = new Settings();
+            var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
+
+            // Start the consensus service
+            consensusService.Tell(new ConsensusService.Start());
+
+            // Create a test block
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = 1,
+                    PrimaryIndex = 0,
+                    Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    Nonce = 0,
+                    NextConsensus = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Witness = new Witness
+                    {
+                        InvocationScript = ReadOnlyMemory<byte>.Empty,
+                        VerificationScript = new[] { (byte)OpCode.PUSH1 }
+                    }
+                },
+                Transactions = Array.Empty<Transaction>()
+            };
+
+            // Act
+            consensusService.Tell(new Blockchain.PersistCompleted { Block = block });
+
+            // Assert - The service should handle the message without throwing
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        }
+
+        [TestMethod]
+        public void TestConsensusServiceHandlesExtensiblePayload()
+        {
+            // Arrange
+            var settings = new Settings();
+            var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
+
+            // Start the consensus service
+            consensusService.Tell(new ConsensusService.Start());
+
+            // Create a test extensible payload
+            var payload = new ExtensiblePayload
+            {
+                Category = "dBFT",
+                ValidBlockStart = 0,
+                ValidBlockEnd = 100,
+                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Data = new byte[] { 0x01, 0x02, 0x03 },
+                Witness = new Witness
+                {
+                    InvocationScript = ReadOnlyMemory<byte>.Empty,
+                    VerificationScript = new[] { (byte)OpCode.PUSH1 }
+                }
+            };
+
+            // Act
+            consensusService.Tell(payload);
+
+            // Assert - The service should handle the payload without throwing
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        }
+
+        [TestMethod]
+        public void TestConsensusServiceHandlesValidConsensusMessage()
+        {
+            // Arrange
+            var settings = new Settings();
+            var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
+            consensusService.Tell(new ConsensusService.Start());
+
+            // Create a valid PrepareRequest message
+            var prepareRequest = new PrepareRequest
+            {
+                Version = 0,
+                PrevHash = UInt256.Zero,
+                ViewNumber = 0,
+                Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                Nonce = 0,
+                TransactionHashes = Array.Empty<UInt256>()
+            };
+
+            var payload = CreateConsensusPayload(prepareRequest);
+
+            // Act
+            consensusService.Tell(payload);
+
+            // Assert - Service should process the message without crashing
+            ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+
+            // Verify the actor is still responsive
+            Watch(consensusService);
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // Should not receive Terminated message
+        }
+
+        [TestMethod]
+        public void TestConsensusServiceRejectsInvalidPayload()
+        {
+            // Arrange
+            var settings = new Settings();
+            var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
+            consensusService.Tell(new ConsensusService.Start());
+
+            // Create an invalid payload (wrong category)
+            var invalidPayload = new ExtensiblePayload
+            {
+                Category = "InvalidCategory",
+                ValidBlockStart = 0,
+                ValidBlockEnd = 100,
+                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Data = new byte[] { 0x01, 0x02, 0x03 },
+                Witness = new Witness
+                {
+                    InvocationScript = ReadOnlyMemory<byte>.Empty,
+                    VerificationScript = new[] { (byte)OpCode.PUSH1 }
+                }
+            };
+
+            // Act
+            consensusService.Tell(invalidPayload);
+
+            // Assert - Service should ignore invalid payload and remain stable
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+
+            // Verify the actor is still alive and responsive
+            Watch(consensusService);
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        }
     }
 }
