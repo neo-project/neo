@@ -155,21 +155,6 @@ namespace Neo
             Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
-
-        internal NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, IActorRef localNode, IActorRef blockchain, IActorRef taskManager, IActorRef txRouter)
-        {
-            Settings = settings;
-            GenesisBlock = CreateGenesisBlock(settings);
-            StorageProvider = storageProvider;
-            store = storageProvider.GetStore(null);
-            MemPool = new MemoryPool(this);
-
-            Blockchain = blockchain;
-            LocalNode = localNode;
-            TaskManager = taskManager;
-            TxRouter = txRouter;
-        }
-
         /// <summary>
         /// Creates the genesis block for the NEO blockchain.
         /// </summary>

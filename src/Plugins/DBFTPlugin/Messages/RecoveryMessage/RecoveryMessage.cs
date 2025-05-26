@@ -114,17 +114,7 @@ namespace Neo.Plugins.DBFTPlugin.Messages
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-
-            // Handle null ChangeViewMessages
-            if (ChangeViewMessages == null)
-            {
-                writer.WriteVarInt(0); // Write empty array
-            }
-            else
-            {
-                writer.Write(ChangeViewMessages.Values.ToArray());
-            }
-
+            writer.Write(ChangeViewMessages.Values.ToArray());
             bool hasPrepareRequestMessage = PrepareRequestMessage != null;
             writer.Write(hasPrepareRequestMessage);
             if (hasPrepareRequestMessage)
@@ -137,25 +127,8 @@ namespace Neo.Plugins.DBFTPlugin.Messages
                     writer.WriteVarBytes(PreparationHash.ToArray());
             }
 
-            // Handle null PreparationMessages
-            if (PreparationMessages == null)
-            {
-                writer.WriteVarInt(0); // Write empty array
-            }
-            else
-            {
-                writer.Write(PreparationMessages.Values.ToArray());
-            }
-
-            // Handle null CommitMessages
-            if (CommitMessages == null)
-            {
-                writer.WriteVarInt(0); // Write empty array
-            }
-            else
-            {
-                writer.Write(CommitMessages.Values.ToArray());
-            }
+            writer.Write(PreparationMessages.Values.ToArray());
+            writer.Write(CommitMessages.Values.ToArray());
         }
     }
 }

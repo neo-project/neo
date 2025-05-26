@@ -24,12 +24,12 @@ using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
 {
-    public partial class ConsensusService : UntypedActor
+    partial class ConsensusService : UntypedActor
     {
         public class Start { }
-        internal class Timer { public uint Height; public byte ViewNumber; }
+        private class Timer { public uint Height; public byte ViewNumber; }
 
-        internal readonly ConsensusContext context;
+        private readonly ConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
         private readonly IActorRef blockchain;
@@ -38,8 +38,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private uint prepareRequestReceivedBlockIndex;
         private uint block_received_index;
         private bool started = false;
-
-        internal bool IsStarted => started;
 
         /// <summary>
         /// This will record the information from last scheduled timer
@@ -83,7 +81,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void InitializeConsensus(byte viewNumber)
         {
-            Console.WriteLine("InitializeConsensus...");
             context.Reset(viewNumber);
             if (viewNumber > 0)
                 Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
@@ -118,7 +115,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         protected override void OnReceive(object message)
         {
-            Console.WriteLine("OnReceive some message");
             if (message is Start)
             {
                 if (started) return;
@@ -148,7 +144,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void OnStart()
         {
-            Console.WriteLine("OnStart - First Log ConsensusService");
             Log("OnStart");
             started = true;
             if (!dbftSettings.IgnoreRecoveryLogs && context.Load())

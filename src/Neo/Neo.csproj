@@ -31,7 +31,6 @@
     <InternalsVisibleTo Include="Neo.SmartContract.TestEngine" />
     <InternalsVisibleTo Include="Neo.Plugins.RpcServer.Tests" />
     <InternalsVisibleTo Include="Neo.Plugins.OracleService.Tests" />
-    <InternalsVisibleTo Include="Neo.Plugins.DBFTPlugin.Tests" />
   </ItemGroup>
 
 </Project>
