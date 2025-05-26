@@ -10,7 +10,8 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.SmartContract;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 
 namespace Neo.Sign
@@ -21,22 +22,27 @@ namespace Neo.Sign
     public interface ISigner
     {
         /// <summary>
-        /// Signs the <see cref="ContractParametersContext"/> with the wallet.
+        /// Signs the <see cref="ExtensiblePayload"/> with the wallet.
         /// </summary>
-        /// <param name="context">The <see cref="ContractParametersContext"/> to be used.</param>
-        /// <returns>
-        /// <see langword="true"/> if any signature is successfully added to the context;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        bool Sign(ContractParametersContext context);
+        /// <param name="payload">The <see cref="ExtensiblePayload"/> to be used.</param>
+        /// <param name="snapshot">The snapshot.</param>
+        /// <param name="network">The network.</param>
+        /// <returns>The witness.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the payload is null.</exception>
+        Witness SignExtensiblePayload(ExtensiblePayload payload, DataCache snapshot, uint network);
 
         /// <summary>
         /// Signs the specified data with the corresponding private key of the specified public key.
         /// </summary>
-        /// <param name="signData">The data to sign.</param>
+        /// <param name="block">The block to sign.</param>
         /// <param name="publicKey">The public key.</param>
+        /// <param name="network">The network.</param>
         /// <returns>The signature.</returns>
-        ReadOnlyMemory<byte> Sign(byte[] signData, ECPoint publicKey);
+        /// <exception cref="ArgumentNullException">Thrown when the block or public key is null.</exception>
+        /// <exception cref="SignException">
+        /// Thrown when the account is not found or not signable, or the network is not matching.
+        /// </exception>
+        ReadOnlyMemory<byte> SignBlock(Block block, ECPoint publicKey, uint network);
 
         /// <summary>
         /// Checks if the wallet contains an account(has private key and is not locked) with the specified public key.

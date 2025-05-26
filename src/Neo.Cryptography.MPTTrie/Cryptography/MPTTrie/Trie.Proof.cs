@@ -26,7 +26,7 @@ namespace Neo.Cryptography.MPTTrie
             if (path.Length > Node.MaxKeyLength)
                 throw new ArgumentException("exceeds limit", nameof(key));
             proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
-            return GetProof(ref root, path, proof);
+            return GetProof(ref _root, path, proof);
         }
 
         private bool GetProof(ref Node node, ReadOnlySpan<byte> path, HashSet<byte[]> set)
@@ -46,7 +46,7 @@ namespace Neo.Cryptography.MPTTrie
                     break;
                 case NodeType.HashNode:
                     {
-                        var newNode = cache.Resolve(node.Hash);
+                        var newNode = _cache.Resolve(node.Hash);
                         if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt getproof");
                         node = newNode;
                         return GetProof(ref node, path, set);
