@@ -40,7 +40,7 @@ namespace Neo.ConsoleService
         private readonly CountdownEvent _shutdownAcknowledged = new(1);
         private readonly Dictionary<string, List<ConsoleCommandMethod>> _verbs = new();
         private readonly Dictionary<string, object> _instances = new();
-        private readonly Dictionary<Type, Func<List<CommandToken>, bool, object>> _handlers = new();
+        private readonly Dictionary<Type, Func<IList<CommandToken>, bool, object>> _handlers = new();
 
         private readonly List<string> _commandHistory = new();
 
@@ -49,19 +49,17 @@ namespace Neo.ConsoleService
             if (string.IsNullOrEmpty(commandLine)) return true;
 
             var possibleHelp = "";
-            var commandArgs = CommandToken.Parse(commandLine).ToArray();
+            var tokens = commandLine.Tokenize();
             var availableCommands = new List<(ConsoleCommandMethod Command, object?[] Arguments)>();
-
             foreach (var entries in _verbs.Values)
             {
                 foreach (var command in entries)
                 {
-                    if (!command.IsThisCommand(commandArgs, out var consumedArgs)) continue;
+                    var consumed = command.IsThisCommand(tokens);
+                    if (consumed <= 0) continue;
 
                     var arguments = new List<object?>();
-                    var args = commandArgs.Skip(consumedArgs).ToList();
-
-                    CommandSpaceToken.Trim(args);
+                    var args = tokens.Skip(consumed).ToList().Trim();
                     try
                     {
                         var parameters = command.Method.GetParameters();
@@ -74,8 +72,7 @@ namespace Neo.ConsoleService
                             }
                             else
                             {
-                                if (!arg.HasDefaultValue)
-                                    throw new ArgumentException($"Missing argument: {arg.Name}");
+                                if (!arg.HasDefaultValue) throw new ArgumentException($"Missing argument: {arg.Name}");
                                 arguments.Add(arg.DefaultValue);
                             }
                         }
@@ -91,52 +88,44 @@ namespace Neo.ConsoleService
                 }
             }
 
-            switch (availableCommands.Count)
+            if (availableCommands.Count == 0)
             {
-                case 0:
-                    {
-                        if (!string.IsNullOrEmpty(possibleHelp))
-                        {
-                            OnHelpCommand(possibleHelp);
-                            return true;
-                        }
-
-                        return false;
-                    }
-                case 1:
-                    {
-                        var (command, arguments) = availableCommands[0];
-                        object? result = command.Method.Invoke(command.Instance, arguments);
-                        if (result is Task task) task.Wait();
-                        return true;
-                    }
-                default:
-                    {
-                        // Show Ambiguous call
-                        var ambiguousCommands = availableCommands.Select(u => u.Command.Key).Distinct().ToList();
-                        throw new ArgumentException($"Ambiguous calls for: {string.Join(',', ambiguousCommands)}");
-                    }
+                if (!string.IsNullOrEmpty(possibleHelp))
+                {
+                    OnHelpCommand(possibleHelp);
+                    return true;
+                }
+                return false;
             }
+
+            if (availableCommands.Count == 1)
+            {
+                var (command, arguments) = availableCommands[0];
+                object? result = command.Method.Invoke(command.Instance, arguments);
+
+                if (result is Task task) task.Wait();
+                return true;
+            }
+
+            // Show Ambiguous call
+            var ambiguousCommands = availableCommands.Select(u => u.Command.Key).Distinct().ToList();
+            throw new ArgumentException($"Ambiguous calls for: {string.Join(',', ambiguousCommands)}");
         }
 
-        private bool TryProcessValue(Type parameterType, List<CommandToken> args, bool canConsumeAll, out object? value)
+        private bool TryProcessValue(Type parameterType, IList<CommandToken> args, bool consumeAll, out object? value)
         {
             if (args.Count > 0)
             {
                 if (_handlers.TryGetValue(parameterType, out var handler))
                 {
-                    value = handler(args, canConsumeAll);
+                    value = handler(args, consumeAll);
                     return true;
                 }
 
                 if (parameterType.IsEnum)
                 {
-                    var arg = CommandToken.ReadString(args, canConsumeAll);
-                    if (arg is not null)
-                    {
-                        value = Enum.Parse(parameterType, arg.Trim(), true);
-                        return true;
-                    }
+                    value = Enum.Parse(parameterType, args[0].Value, true);
+                    return true;
                 }
             }
 
@@ -159,17 +148,15 @@ namespace Neo.ConsoleService
             {
                 // Filter only the help of this plugin
                 key = "";
-                foreach (var commands in _verbs.Values.Select(u => u))
+                foreach (var commands in _verbs.Values)
                 {
-                    withHelp.AddRange(
-                        commands.Where(u => !string.IsNullOrEmpty(u.HelpCategory) && u.Instance == instance)
-                    );
+                    withHelp.AddRange(commands.Where(u => !string.IsNullOrEmpty(u.HelpCategory) && u.Instance == instance));
                 }
             }
             else
             {
                 // Fetch commands
-                foreach (var commands in _verbs.Values.Select(u => u))
+                foreach (var commands in _verbs.Values)
                 {
                     withHelp.AddRange(commands.Where(u => !string.IsNullOrEmpty(u.HelpCategory)));
                 }
@@ -312,18 +299,16 @@ namespace Neo.ConsoleService
         protected ConsoleServiceBase()
         {
             // Register self commands
-            RegisterCommandHandler<string>((args, canConsumeAll) => CommandToken.ReadString(args, canConsumeAll) ?? "");
-
-            RegisterCommandHandler<string[]>((args, canConsumeAll) =>
+            RegisterCommandHandler<string>((args, consumeAll) =>
             {
-                if (canConsumeAll)
-                {
-                    var ret = CommandToken.ToString(args);
-                    args.Clear();
-                    return ret.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries);
-                }
+                return consumeAll ? args.ConsumeAll() : args.Consume();
+            });
 
-                return (CommandToken.ReadString(args, false)?.Split(',', ' ')) ?? [];
+            RegisterCommandHandler<string[]>((args, consumeAll) =>
+            {
+                return consumeAll
+                    ? args.ConsumeAll().Split([',', ' '], StringSplitOptions.RemoveEmptyEntries)
+                    : args.Consume().Split(',', ' ');
             });
 
             RegisterCommandHandler<string, byte>(false, str => byte.Parse(str));
@@ -338,7 +323,7 @@ namespace Neo.ConsoleService
         /// </summary>
         /// <typeparam name="TRet">Return type</typeparam>
         /// <param name="handler">Handler</param>
-        private void RegisterCommandHandler<TRet>(Func<List<CommandToken>, bool, object> handler)
+        private void RegisterCommandHandler<TRet>(Func<IList<CommandToken>, bool, object> handler)
         {
             _handlers[typeof(TRet)] = handler;
         }
