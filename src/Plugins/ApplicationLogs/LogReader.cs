@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // LogReader.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Extensions;
 using Neo.IEventHandlers;
 using Neo.Json;
 using Neo.Ledger;
@@ -20,7 +21,6 @@ using Neo.Plugins.ApplicationLogs.Store.Models;
 using Neo.Plugins.RpcServer;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using System.Numerics;
 using static System.IO.Path;
 
@@ -30,7 +30,7 @@ namespace Neo.Plugins.ApplicationLogs
     {
         #region Globals
 
-        private NeoStore _neostore;
+        internal NeoStore _neostore;
         private NeoSystem _neosystem;
         private readonly List<LogEventArgs> _logEvents;
 
@@ -123,7 +123,7 @@ namespace Neo.Plugins.ApplicationLogs
         #region Console Commands
 
         [ConsoleCommand("log block", Category = "ApplicationLog Commands")]
-        private void OnGetBlockCommand(string blockHashOrIndex, string eventName = null)
+        internal void OnGetBlockCommand(string blockHashOrIndex, string eventName = null)
         {
             UInt256 blockhash;
             if (uint.TryParse(blockHashOrIndex, out var blockIndex))
@@ -154,7 +154,7 @@ namespace Neo.Plugins.ApplicationLogs
         }
 
         [ConsoleCommand("log tx", Category = "ApplicationLog Commands")]
-        private void OnGetTransactionCommand(UInt256 txhash, string eventName = null)
+        internal void OnGetTransactionCommand(UInt256 txhash, string eventName = null)
         {
             var txApplication = string.IsNullOrEmpty(eventName) ?
                 _neostore.GetTransactionLog(txhash) :
@@ -167,7 +167,7 @@ namespace Neo.Plugins.ApplicationLogs
         }
 
         [ConsoleCommand("log contract", Category = "ApplicationLog Commands")]
-        private void OnGetContractCommand(UInt160 scripthash, uint page = 1, uint pageSize = 1, string eventName = null)
+        internal void OnGetContractCommand(UInt160 scripthash, uint page = 1, uint pageSize = 1, string eventName = null)
         {
             if (page == 0)
             {

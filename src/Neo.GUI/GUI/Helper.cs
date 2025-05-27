@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -51,7 +51,7 @@ namespace Neo.GUI
             ContractParametersContext context;
             try
             {
-                context = new ContractParametersContext(Service.NeoSystem.StoreView, tx, Program.Service.NeoSystem.Settings.Network);
+                context = new ContractParametersContext(Service.NeoSystem.StoreView, tx, Service.NeoSystem.Settings.Network);
             }
             catch (InvalidOperationException)
             {

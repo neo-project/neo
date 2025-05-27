@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // VersionPayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -39,7 +39,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Version;
 
         /// <summary>
-        /// The time when connected to the node.
+        /// The time when connected to the node (UTC).
         /// </summary>
         public uint Timestamp;
 
@@ -52,6 +52,11 @@ namespace Neo.Network.P2P.Payloads
         /// A <see cref="string"/> used to identify the client software of the node.
         /// </summary>
         public string UserAgent;
+
+        /// <summary>
+        /// True if allow compression
+        /// </summary>
+        public bool AllowCompression;
 
         /// <summary>
         /// The capabilities of the node.
@@ -76,15 +81,19 @@ namespace Neo.Network.P2P.Payloads
         /// <returns></returns>
         public static VersionPayload Create(uint network, uint nonce, string userAgent, params NodeCapability[] capabilities)
         {
-            return new VersionPayload
+            var ret = new VersionPayload
             {
                 Network = network,
                 Version = LocalNode.ProtocolVersion,
-                Timestamp = DateTime.Now.ToTimestamp(),
+                Timestamp = DateTime.UtcNow.ToTimestamp(),
                 Nonce = nonce,
                 UserAgent = userAgent,
                 Capabilities = capabilities,
+                // Computed
+                AllowCompression = !capabilities.Any(u => u is DisableCompressionCapability)
             };
+
+            return ret;
         }
 
         void ISerializable.Deserialize(ref MemoryReader reader)
@@ -99,8 +108,11 @@ namespace Neo.Network.P2P.Payloads
             Capabilities = new NodeCapability[reader.ReadVarInt(MaxCapabilities)];
             for (int x = 0, max = Capabilities.Length; x < max; x++)
                 Capabilities[x] = NodeCapability.DeserializeFrom(ref reader);
-            if (Capabilities.Select(p => p.Type).Distinct().Count() != Capabilities.Length)
+            var capabilities = Capabilities.Where(c => c is not UnknownCapability);
+            if (capabilities.Select(p => p.Type).Distinct().Count() != capabilities.Count())
                 throw new FormatException();
+
+            AllowCompression = !capabilities.Any(u => u is DisableCompressionCapability);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

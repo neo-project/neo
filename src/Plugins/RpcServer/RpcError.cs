@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcError.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -55,7 +55,7 @@ namespace Neo.Plugins.RpcServer
         public static readonly RpcError AlreadyInPool = new(-503, "Already in pool");
         public static readonly RpcError InsufficientNetworkFee = new(-504, "Insufficient network fee");
         public static readonly RpcError PolicyFailed = new(-505, "Policy check failed");
-        public static readonly RpcError InvalidScript = new(-509, "Invalid transaction script");
+        public static readonly RpcError InvalidScript = new(-506, "Invalid transaction script");
         public static readonly RpcError InvalidAttribute = new(-507, "Invalid transaction attribute");
         public static readonly RpcError InvalidSignature = new(-508, "Invalid signature");
         public static readonly RpcError InvalidSize = new(-509, "Invalid inventory size");
@@ -90,9 +90,11 @@ namespace Neo.Plugins.RpcServer
 
         public JToken ToJson()
         {
-            JObject json = new();
-            json["code"] = Code;
-            json["message"] = ErrorMessage;
+            var json = new JObject()
+            {
+                ["code"] = Code,
+                ["message"] = ErrorMessage,
+            };
             if (!string.IsNullOrEmpty(Data))
                 json["data"] = Data;
             return json;

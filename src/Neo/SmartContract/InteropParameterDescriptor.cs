@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // InteropParameterDescriptor.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,6 +16,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using Array = Neo.VM.Types.Array;
+using Pointer = Neo.VM.Types.Pointer;
 
 namespace Neo.SmartContract
 {
@@ -59,8 +61,8 @@ namespace Neo.SmartContract
         private static readonly Dictionary<Type, Func<StackItem, object>> converters = new()
         {
             [typeof(StackItem)] = p => p,
-            [typeof(VM.Types.Pointer)] = p => p,
-            [typeof(VM.Types.Array)] = p => p,
+            [typeof(Pointer)] = p => p,
+            [typeof(Array)] = p => p,
             [typeof(InteropInterface)] = p => p,
             [typeof(bool)] = p => p.GetBoolean(),
             [typeof(sbyte)] = p => (sbyte)p.GetInteger(),

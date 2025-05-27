@@ -1,6 +1,6 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
-// UT_RpcServer.Wallet.cs file belongs to the neo project and is free
+// UT_RpcServer.Utilities.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,46 +9,72 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using Neo.Json;
-using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
-using Neo.SmartContract.Native;
-using Neo.UnitTests;
-using Neo.UnitTests.Extensions;
-using System;
-using System.IO;
-using System.Linq;
 
-namespace Neo.Plugins.RpcServer.Tests;
-
-public partial class UT_RpcServer
+namespace Neo.Plugins.RpcServer.Tests
 {
-    [TestMethod]
-    public void TestListPlugins()
+    public partial class UT_RpcServer
     {
-        JArray resp = (JArray)_rpcServer.ListPlugins([]);
-        Assert.AreEqual(resp.Count, 0);
-        Plugins.Plugin.Plugins.Add(new RpcServerPlugin());
-        resp = (JArray)_rpcServer.ListPlugins([]);
-        Assert.AreEqual(resp.Count, 2);
-        foreach (JObject p in resp)
-            Assert.AreEqual(p["name"], nameof(RpcServer));
-    }
+        [TestMethod]
+        public void TestListPlugins()
+        {
+            JArray resp = (JArray)_rpcServer.ListPlugins([]);
+            Assert.AreEqual(resp.Count, 0);
+            Plugin.Plugins.Add(new RpcServerPlugin());
+            resp = (JArray)_rpcServer.ListPlugins([]);
+            Assert.AreEqual(resp.Count, 2);
+            foreach (JObject p in resp)
+                Assert.AreEqual(p["name"], nameof(RpcServer));
+        }
 
-    [TestMethod]
-    public void TestValidateAddress()
-    {
-        string validAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBP";
-        JObject resp = (JObject)_rpcServer.ValidateAddress([validAddr]);
-        Assert.AreEqual(resp["address"], validAddr);
-        Assert.AreEqual(resp["isvalid"], true);
-        string invalidAddr = "ANeo2toNeo3MigrationAddressxwPB2Hz";
-        resp = (JObject)_rpcServer.ValidateAddress([invalidAddr]);
-        Assert.AreEqual(resp["address"], invalidAddr);
-        Assert.AreEqual(resp["isvalid"], false);
+        [TestMethod]
+        public void TestValidateAddress()
+        {
+            string validAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBP";
+            JObject resp = (JObject)_rpcServer.ValidateAddress([validAddr]);
+            Assert.AreEqual(resp["address"], validAddr);
+            Assert.AreEqual(resp["isvalid"], true);
+            string invalidAddr = "ANeo2toNeo3MigrationAddressxwPB2Hz";
+            resp = (JObject)_rpcServer.ValidateAddress([invalidAddr]);
+            Assert.AreEqual(resp["address"], invalidAddr);
+            Assert.AreEqual(resp["isvalid"], false);
+        }
+
+        [TestMethod]
+        public void TestValidateAddress_EmptyString()
+        {
+            var emptyAddr = "";
+            var resp = (JObject)_rpcServer.ValidateAddress([emptyAddr]);
+            Assert.AreEqual(resp["address"], emptyAddr);
+            Assert.AreEqual(resp["isvalid"], false);
+        }
+
+        [TestMethod]
+        public void TestValidateAddress_InvalidChecksum()
+        {
+            // Valid address: NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBP
+            // Change last char to invalidate checksum
+            var invalidChecksumAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBO";
+            var resp = (JObject)_rpcServer.ValidateAddress([invalidChecksumAddr]);
+            Assert.AreEqual(resp["address"], invalidChecksumAddr);
+            Assert.AreEqual(resp["isvalid"], false);
+        }
+
+        [TestMethod]
+        public void TestValidateAddress_WrongLength()
+        {
+            // Address too short
+            var shortAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7P";
+            var resp = (JObject)_rpcServer.ValidateAddress([shortAddr]);
+            Assert.AreEqual(resp["address"], shortAddr);
+            Assert.AreEqual(resp["isvalid"], false);
+
+            // Address too long
+            var longAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBPPP";
+            resp = (JObject)_rpcServer.ValidateAddress([longAddr]);
+            Assert.AreEqual(resp["address"], longAddr);
+            Assert.AreEqual(resp["isvalid"], false);
+        }
     }
 }

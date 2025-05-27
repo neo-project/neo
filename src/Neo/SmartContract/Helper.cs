@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -20,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -49,7 +51,7 @@ namespace Neo.SmartContract
         /// Calculates the verification fee for a multi-signature address.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns>The calculated cost.</returns>
         public static long MultiSignatureContractCost(int m, int n)
@@ -130,7 +132,7 @@ namespace Neo.SmartContract
         /// Determines whether the specified contract is a multi-signature contract.
         /// </summary>
         /// <param name="script">The script of the contract.</param>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n)
@@ -142,10 +144,10 @@ namespace Neo.SmartContract
         /// Determines whether the specified contract is a multi-signature contract.
         /// </summary>
         /// <param name="script">The script of the contract.</param>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="points">The public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, [NotNullWhen(true)] out ECPoint[] points)
         {
             List<ECPoint> list = new();
             if (IsMultiSigContract(script, out m, out _, list))
@@ -304,6 +306,7 @@ namespace Neo.SmartContract
             {
                 return false;
             }
+            if (verifiable.Witnesses == null) return false;
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
@@ -359,7 +362,15 @@ namespace Neo.SmartContract
                 engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
                 if (engine.Execute() == VMState.FAULT) return false;
-                if (!engine.ResultStack.Peek().GetBoolean()) return false;
+                if (engine.ResultStack.Count != 1) return false;
+                try
+                {
+                    if (!engine.ResultStack.Peek().GetBoolean()) return false;
+                }
+                catch
+                {
+                    return false;
+                }
                 fee = engine.FeeConsumed;
             }
             return true;

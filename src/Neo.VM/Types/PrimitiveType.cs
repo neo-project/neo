@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // PrimitiveType.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -46,12 +46,6 @@ namespace Neo.VM.Types
         }
 
         public abstract override bool Equals(StackItem? other);
-
-        /// <summary>
-        /// Get the hash code of the VM object, which is used for key comparison in the <see cref="Map"/>.
-        /// </summary>
-        /// <returns>The hash code of this VM object.</returns>
-        public abstract override int GetHashCode();
 
         public sealed override ReadOnlySpan<byte> GetSpan()
         {

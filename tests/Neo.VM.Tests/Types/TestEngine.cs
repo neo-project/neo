@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TestEngine.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -15,7 +15,7 @@ using System;
 
 namespace Neo.Test.Types
 {
-    class TestEngine : ExecutionEngine
+    public class TestEngine : ExecutionEngine
     {
         public Exception FaultException { get; private set; }
 

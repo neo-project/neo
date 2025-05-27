@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_LocalNode.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using System;
@@ -21,25 +21,26 @@ namespace Neo.UnitTests.Network.P2P
     [TestClass]
     public class UT_LocalNode : TestKit
     {
-        private static NeoSystem testBlockchain;
+        private static NeoSystem _system;
 
         [TestInitialize]
         public void Init()
         {
-            testBlockchain = TestBlockchain.TheNeoSystem;
+            _system = TestBlockchain.GetSystem();
         }
 
         [TestMethod]
         public void TestDefaults()
         {
             var senderProbe = CreateTestProbe();
-            senderProbe.Send(testBlockchain.LocalNode, new LocalNode.GetInstance());
+            senderProbe.Send(_system.LocalNode, new ChannelsConfig()); // No Tcp
+            senderProbe.Send(_system.LocalNode, new LocalNode.GetInstance());
             var localnode = senderProbe.ExpectMsg<LocalNode>();
 
             Assert.AreEqual(0, localnode.ListenerTcpPort);
-            Assert.AreEqual(3, localnode.MaxConnectionsPerAddress);
-            Assert.AreEqual(10, localnode.MinDesiredConnections);
-            Assert.AreEqual(40, localnode.MaxConnections);
+            Assert.AreEqual(3, localnode.Config.MaxConnectionsPerAddress);
+            Assert.AreEqual(10, localnode.Config.MinDesiredConnections);
+            Assert.AreEqual(40, localnode.Config.MaxConnections);
             Assert.AreEqual(0, localnode.UnconnectedCount);
 
             CollectionAssert.AreEqual(Array.Empty<RemoteNode>(), localnode.GetRemoteNodes().ToArray());

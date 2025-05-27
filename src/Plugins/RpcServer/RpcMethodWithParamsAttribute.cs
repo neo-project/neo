@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcMethodWithParamsAttribute.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,10 +11,11 @@
 
 using System;
 
-namespace Neo.Plugins.RpcServer;
-
-[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-public class RpcMethodWithParamsAttribute : Attribute
+namespace Neo.Plugins.RpcServer
 {
-    public string Name { get; set; }
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    public class RpcMethodWithParamsAttribute : Attribute
+    {
+        public string Name { get; set; }
+    }
 }

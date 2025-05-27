@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ExtensiblePayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -55,6 +56,8 @@ namespace Neo.Network.P2P.Payloads
         public Witness Witness;
 
         private UInt256 _hash = null;
+
+        /// <inheritdoc/>
         public UInt256 Hash
         {
             get
@@ -70,12 +73,12 @@ namespace Neo.Network.P2P.Payloads
         InventoryType IInventory.InventoryType => InventoryType.Extensible;
 
         public int Size =>
-            Category.GetVarSize() + //Category
-            sizeof(uint) +          //ValidBlockStart
-            sizeof(uint) +          //ValidBlockEnd
-            UInt160.Length +        //Sender
-            Data.GetVarSize() +     //Data
-            1 + Witness.Size;       //Witness
+            Category.GetVarSize() + // Category
+            sizeof(uint) +          // ValidBlockStart
+            sizeof(uint) +          // ValidBlockEnd
+            UInt160.Length +        // Sender
+            Data.GetVarSize() +     // Data
+            (Witness is null ? 1 : 1 + Witness.Size); // Witness, cannot be null for valid payload
 
         Witness[] IVerifiable.Witnesses
         {
@@ -85,7 +88,10 @@ namespace Neo.Network.P2P.Payloads
             }
             set
             {
-                if (value.Length != 1) throw new ArgumentException();
+                if (value is null)
+                    throw new ArgumentNullException(nameof(IVerifiable.Witnesses));
+                if (value.Length != 1)
+                    throw new ArgumentException($"Expected 1 witness, got {value.Length}.", nameof(IVerifiable.Witnesses));
                 Witness = value[0];
             }
         }
@@ -93,7 +99,9 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(ref reader);
-            if (reader.ReadByte() != 1) throw new FormatException();
+            var count = reader.ReadByte();
+            if (count != 1)
+                throw new FormatException($"Expected 1 witness, got {count}.");
             Witness = reader.ReadSerializable<Witness>();
         }
 
@@ -102,7 +110,8 @@ namespace Neo.Network.P2P.Payloads
             Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
-            if (ValidBlockStart >= ValidBlockEnd) throw new FormatException();
+            if (ValidBlockStart >= ValidBlockEnd)
+                throw new FormatException($"Invalid valid block range: {ValidBlockStart} >= {ValidBlockEnd}.");
             Sender = reader.ReadSerializable<UInt160>();
             Data = reader.ReadVarMemory();
         }
@@ -115,7 +124,8 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write((byte)1); writer.Write(Witness);
+            writer.Write((byte)1);
+            writer.Write(Witness);
         }
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)

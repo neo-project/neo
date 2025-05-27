@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Vote.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -20,6 +20,7 @@ using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Numerics;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.CLI
 {
@@ -141,7 +142,7 @@ namespace Neo.CLI
         {
             if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCandidates", out StackItem result, null, null, false)) return;
 
-            var resJArray = (VM.Types.Array)result;
+            var resJArray = (Array)result;
 
             if (resJArray.Count > 0)
             {
@@ -150,7 +151,7 @@ namespace Neo.CLI
 
                 foreach (var item in resJArray)
                 {
-                    var value = (VM.Types.Array)item;
+                    var value = (Array)item;
                     if (value is null) continue;
 
                     Console.Write(((ByteString)value[0])?.GetSpan().ToHexString() + "\t");
@@ -167,7 +168,7 @@ namespace Neo.CLI
         {
             if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCommittee", out StackItem result, null, null, false)) return;
 
-            var resJArray = (VM.Types.Array)result;
+            var resJArray = (Array)result;
 
             if (resJArray.Count > 0)
             {
@@ -189,7 +190,7 @@ namespace Neo.CLI
         {
             if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getNextBlockValidators", out StackItem result, null, null, false)) return;
 
-            var resJArray = (VM.Types.Array)result;
+            var resJArray = (Array)result;
 
             if (resJArray.Count > 0)
             {
@@ -209,28 +210,28 @@ namespace Neo.CLI
         [ConsoleCommand("get accountstate", Category = "Vote Commands")]
         private void OnGetAccountState(UInt160 address)
         {
-            string notice = "No vote record!";
+            const string notice = "No vote record!";
             var arg = new JObject
             {
                 ["type"] = "Hash160",
                 ["value"] = address.ToString()
             };
 
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getAccountState", out StackItem result, null, new JArray(arg))) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getAccountState", out var result, null, new JArray(arg))) return;
             Console.WriteLine();
             if (result.IsNull)
             {
                 ConsoleHelper.Warning(notice);
                 return;
             }
-            var resJArray = (VM.Types.Array)result;
+            var resJArray = (Array)result;
             if (resJArray is null)
             {
                 ConsoleHelper.Warning(notice);
                 return;
             }
 
-            foreach (StackItem value in resJArray)
+            foreach (var value in resJArray)
             {
                 if (value.IsNull)
                 {
@@ -238,10 +239,24 @@ namespace Neo.CLI
                     return;
                 }
             }
-            var publickey = ECPoint.Parse(((ByteString)resJArray[2])?.GetSpan().ToHexString(), ECCurve.Secp256r1);
-            ConsoleHelper.Info("Voted: ", Contract.CreateSignatureRedeemScript(publickey).ToScriptHash().ToAddress(NeoSystem.Settings.AddressVersion));
-            ConsoleHelper.Info("Amount: ", new BigDecimal(((Integer)resJArray[0]).GetInteger(), NativeContract.NEO.Decimals).ToString());
-            ConsoleHelper.Info("Block: ", ((Integer)resJArray[1]).GetInteger().ToString());
+
+            var hexPubKey = ((ByteString)resJArray[2])?.GetSpan().ToHexString();
+            if (string.IsNullOrEmpty(hexPubKey))
+            {
+                ConsoleHelper.Error("Error parsing the result");
+                return;
+            }
+
+            if (ECPoint.TryParse(hexPubKey, ECCurve.Secp256r1, out var publickey))
+            {
+                ConsoleHelper.Info("Voted: ", Contract.CreateSignatureRedeemScript(publickey).ToScriptHash().ToAddress(NeoSystem.Settings.AddressVersion));
+                ConsoleHelper.Info("Amount: ", new BigDecimal(((Integer)resJArray[0]).GetInteger(), NativeContract.NEO.Decimals).ToString());
+                ConsoleHelper.Info("Block: ", ((Integer)resJArray[1]).GetInteger().ToString());
+            }
+            else
+            {
+                ConsoleHelper.Error("Error parsing the result");
+            }
         }
     }
 }

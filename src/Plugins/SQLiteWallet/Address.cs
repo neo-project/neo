@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Address.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,9 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Wallets.SQLite;
-
-class Address
+namespace Neo.Wallets.SQLite
 {
-    public byte[] ScriptHash { get; set; }
+    class Address
+    {
+        public byte[] ScriptHash { get; set; }
+    }
 }

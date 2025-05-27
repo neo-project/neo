@@ -1,12 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
-    <PackageId>Neo.IO</PackageId>
     <PackageTags>NEO;Blockchain;IO</PackageTags>
-    <OutputPath>../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +12,7 @@
     <InternalsVisibleTo Include="Neo.UnitTests" />
     <InternalsVisibleTo Include="Neo.Extensions" />
     <InternalsVisibleTo Include="Neo.Extensions.Tests" />
+    <InternalsVisibleTo Include="Neo.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>

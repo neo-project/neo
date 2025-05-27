@@ -1,15 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
-    <PackageId>Neo.ConsoleService</PackageId>
+    <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
     <Nullable>enable</Nullable>
-    <OutputPath>../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.1" />
   </ItemGroup>
 
 </Project>

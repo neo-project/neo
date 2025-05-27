@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -25,7 +25,7 @@ namespace Neo.CLI
             return input == "yes" || input == "y";
         }
 
-        public static string ToBase64String(this byte[] input) => System.Convert.ToBase64String(input);
+        public static string ToBase64String(this byte[] input) => Convert.ToBase64String(input);
 
         public static void IsScriptValid(this ReadOnlyMemory<byte> script, ContractAbi abi)
         {

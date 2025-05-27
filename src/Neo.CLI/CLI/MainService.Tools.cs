@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Tools.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,12 +12,13 @@
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.SmartContract;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -69,6 +70,17 @@ namespace Neo.CLI
         }
 
         /// <summary>
+        /// Read .nef file from path and print its content in base64
+        /// </summary>
+        [ParseFunction(".nef file path to content base64")]
+        private string? NefFileToBase64(string path)
+        {
+            if (Path.GetExtension(path).ToLower() != ".nef") return null;
+            if (!File.Exists(path)) return null;
+            return Convert.ToBase64String(File.ReadAllBytes(path));
+        }
+
+        /// <summary>
         /// Little-endian to Big-endian
         /// input:  ce616f7f74617e0fc4b805583af2602a238df63f
         /// output: 0x3ff68d232a60f23a5805b8c40f7e61747f6f61ce
@@ -78,7 +90,7 @@ namespace Neo.CLI
         {
             try
             {
-                if (!IsHex(hex)) return null;
+                if (!hex.IsHex()) return null;
                 return "0x" + hex.HexToBytes().Reverse().ToArray().ToHexString();
             }
             catch (FormatException)
@@ -99,7 +111,7 @@ namespace Neo.CLI
             {
                 var hasHexPrefix = hex.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
                 hex = hasHexPrefix ? hex[2..] : hex;
-                if (!hasHexPrefix || !IsHex(hex)) return null;
+                if (!hasHexPrefix || !hex.IsHex()) return null;
                 return hex.HexToBytes().Reverse().ToArray().ToHexString();
             }
             catch
@@ -114,12 +126,12 @@ namespace Neo.CLI
         /// output: SGVsbG8gV29ybGQh
         /// </summary>
         [ParseFunction("String to Base64")]
-        private string? StringToBase64(string strParam)
+        private string? StringToBase64(string value)
         {
             try
             {
-                var bytearray = Utility.StrictUTF8.GetBytes(strParam);
-                return Convert.ToBase64String(bytearray.AsSpan());
+                var bytes = value.ToStrictUtf8Bytes();
+                return Convert.ToBase64String(bytes.AsSpan());
             }
             catch
             {
@@ -133,24 +145,20 @@ namespace Neo.CLI
         /// output: QOIB
         /// </summary>
         [ParseFunction("Big Integer to Base64")]
-        private string? NumberToBase64(string strParam)
+        private string? NumberToBase64(string value)
         {
             try
             {
-                if (!BigInteger.TryParse(strParam, out var number))
-                {
-                    return null;
-                }
-                var bytearray = number.ToByteArray();
-                return Convert.ToBase64String(bytearray.AsSpan());
+                if (!BigInteger.TryParse(value, out var number)) return null;
+
+                var bytes = number.ToByteArray();
+                return Convert.ToBase64String(bytes.AsSpan());
             }
             catch
             {
                 return null;
             }
         }
-
-        private static bool IsHex(string str) => str.Length % 2 == 0 && str.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
 
         /// <summary>
         /// Fix for Base64 strings containing unicode
@@ -167,7 +175,7 @@ namespace Neo.CLI
                 if (str[i] == '\\' && i + 5 < str.Length && str[i + 1] == 'u')
                 {
                     var hex = str.Substring(i + 2, 4);
-                    if (IsHex(hex))
+                    if (hex.IsHex())
                     {
                         var bts = new byte[2];
                         bts[0] = (byte)int.Parse(hex.Substring(2, 2), NumberStyles.HexNumber);
@@ -321,7 +329,7 @@ namespace Neo.CLI
             try
             {
                 var result = Convert.FromBase64String(bytearray);
-                var utf8String = Utility.StrictUTF8.GetString(result);
+                var utf8String = result.ToStrictUtf8String();
                 return IsPrintable(utf8String) ? utf8String : null;
             }
             catch
@@ -392,6 +400,8 @@ namespace Neo.CLI
             try
             {
                 var pubKey = WIFToPublicKey(wif);
+                if (string.IsNullOrEmpty(pubKey)) return null;
+
                 return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
             }
             catch (Exception)
@@ -439,6 +449,58 @@ namespace Neo.CLI
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Base64 .nef file Analysis
+        /// </summary>
+        [ParseFunction("Base64 .nef file Analysis")]
+        private string? NefFileAnalyis(string base64)
+        {
+            byte[] nefData;
+            if (File.Exists(base64))  // extension name not considered
+                nefData = File.ReadAllBytes(base64);
+            else
+            {
+                try
+                {
+                    nefData = Convert.FromBase64String(base64);
+                }
+                catch { return null; }
+            }
+            NefFile nef;
+            Script script;
+            bool verifyChecksum = false;
+            bool strictMode = false;
+            try
+            {
+                nef = NefFile.Parse(nefData, true);
+                verifyChecksum = true;
+            }
+            catch (FormatException)
+            {
+                nef = NefFile.Parse(nefData, false);
+            }
+            catch { return null; }
+            try
+            {
+                script = new Script(nef.Script, true);
+                strictMode = true;
+            }
+            catch (BadScriptException)
+            {
+                script = new Script(nef.Script, false);
+            }
+            catch { return null; }
+            string? result = ScriptsToOpCode(Convert.ToBase64String(nef.Script.ToArray()));
+            if (result == null)
+                return null;
+            string prefix = $"\r\n# Compiler: {nef.Compiler}";
+            if (!verifyChecksum)
+                prefix += $"\r\n# Warning: Invalid .nef file checksum";
+            if (!strictMode)
+                prefix += $"\r\n# Warning: Failed in {nameof(strictMode)}";
+            return prefix + result;
         }
 
         /// <summary>

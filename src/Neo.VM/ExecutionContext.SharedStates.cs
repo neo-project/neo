@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ExecutionContext.SharedStates.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -23,7 +23,7 @@ namespace Neo.VM
             public Slot? StaticFields;
             public readonly Dictionary<Type, object> States;
 
-            public SharedStates(Script script, ReferenceCounter referenceCounter)
+            public SharedStates(Script script, IReferenceCounter referenceCounter)
             {
                 Script = script;
                 EvaluationStack = new EvaluationStack(referenceCounter);

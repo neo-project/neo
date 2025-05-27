@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NeoSystem.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,6 +16,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -81,9 +82,9 @@ namespace Neo
         /// A readonly view of the store.
         /// </summary>
         /// <remarks>
-        /// It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
+        /// It doesn't need to be disposed because the <see cref="IStoreSnapshot"/> inside it is null.
         /// </remarks>
-        public DataCache StoreView => new SnapshotCache(store);
+        public StoreCache StoreView => new(store);
 
         /// <summary>
         /// The memory pool of the <see cref="NeoSystem"/>.
@@ -99,7 +100,7 @@ namespace Neo
 
         private ImmutableList<object> services = ImmutableList<object>.Empty;
         private readonly IStore store;
-        private readonly IStoreProvider storageProvider;
+        protected readonly IStoreProvider StorageProvider;
         private ChannelsConfig start_message = null;
         private int suspend = 0;
 
@@ -115,8 +116,14 @@ namespace Neo
         /// Initializes a new instance of the <see cref="NeoSystem"/> class.
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
-        /// <param name="storageProvider">The storage engine used to create the <see cref="IStoreProvider"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
-        /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        /// <param name="storageProvider">
+        /// The storage engine used to create the <see cref="IStoreProvider"/> objects.
+        /// If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.
+        /// </param>
+        /// <param name="storagePath">
+        /// The path of the storage.
+        /// If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.
+        /// </param>
         public NeoSystem(ProtocolSettings settings, string storageProvider = null, string storagePath = null) :
             this(settings, StoreFactory.GetStoreProvider(storageProvider ?? nameof(MemoryStore))
                 ?? throw new ArgumentException($"Can't find the storage provider {storageProvider}", nameof(storageProvider)), storagePath)
@@ -128,12 +135,15 @@ namespace Neo
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storageProvider">The <see cref="IStoreProvider"/> to use.</param>
-        /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        /// <param name="storagePath">
+        /// The path of the storage.
+        /// If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.
+        /// </param>
         public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string storagePath = null)
         {
             Settings = settings;
             GenesisBlock = CreateGenesisBlock(settings);
-            this.storageProvider = storageProvider;
+            StorageProvider = storageProvider;
             store = storageProvider.GetStore(storagePath);
             MemPool = new MemoryPool(this);
             Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
@@ -163,11 +173,11 @@ namespace Neo
                 NextConsensus = Contract.GetBFTAddress(settings.StandbyValidators),
                 Witness = new Witness
                 {
-                    InvocationScript = Array.Empty<byte>(),
+                    InvocationScript = ReadOnlyMemory<byte>.Empty,
                     VerificationScript = new[] { (byte)OpCode.PUSH1 }
                 },
             },
-            Transactions = Array.Empty<Transaction>()
+            Transactions = [],
         };
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -202,7 +212,9 @@ namespace Neo
         /// Gets a specified type of service object from the <see cref="NeoSystem"/>.
         /// </summary>
         /// <typeparam name="T">The type of the service object.</typeparam>
-        /// <param name="filter">An action used to filter the service objects. This parameter can be <see langword="null"/>.</param>
+        /// <param name="filter">
+        /// An action used to filter the service objects. his parameter can be <see langword="null"/>.
+        /// </param>
         /// <returns>The service object found.</returns>
         public T GetService<T>(Func<T, bool> filter = null)
         {
@@ -221,7 +233,7 @@ namespace Neo
             using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
-            inbox.Receive(TimeSpan.FromMinutes(5));
+            inbox.Receive(TimeSpan.FromSeconds(30));
         }
 
         /// <summary>
@@ -231,13 +243,13 @@ namespace Neo
         /// <returns>The loaded <see cref="IStore"/>.</returns>
         public IStore LoadStore(string path)
         {
-            return storageProvider.GetStore(path);
+            return StorageProvider.GetStore(path);
         }
 
         /// <summary>
         /// Resumes the startup process of <see cref="LocalNode"/>.
         /// </summary>
-        /// <returns><see langword="true"/> if the startup process is resumed; otherwise, <see langword="false"/>.</returns>
+        /// <returns><see langword="true"/> if the startup process is resumed; otherwise, <see langword="false"/>. </returns>
         public bool ResumeNodeStartup()
         {
             if (Interlocked.Decrement(ref suspend) != 0)
@@ -276,11 +288,11 @@ namespace Neo
         /// <summary>
         /// Gets a snapshot of the blockchain storage.
         /// </summary>
-        /// <returns>An instance of <see cref="SnapshotCache"/></returns>
+        /// <returns>An instance of <see cref="StoreCache"/></returns>
         [Obsolete("This method is obsolete, use GetSnapshotCache instead.")]
-        public SnapshotCache GetSnapshot()
+        public StoreCache GetSnapshot()
         {
-            return new SnapshotCache(store.GetSnapshot());
+            return new StoreCache(store.GetSnapshot());
         }
 
         /// <summary>
@@ -288,10 +300,10 @@ namespace Neo
         /// With the snapshot, we have the latest state of the blockchain, with the cache,
         /// we can run transactions in a sandboxed environment.
         /// </summary>
-        /// <returns>An instance of <see cref="SnapshotCache"/></returns>
-        public SnapshotCache GetSnapshotCache()
+        /// <returns>An instance of <see cref="StoreCache"/></returns>
+        public StoreCache GetSnapshotCache()
         {
-            return new SnapshotCache(store.GetSnapshot());
+            return new StoreCache(store.GetSnapshot());
         }
 
         /// <summary>
@@ -311,10 +323,12 @@ namespace Neo
         /// </summary>
         /// <param name="hash">The hash of the transaction</param>
         /// <param name="signers">The list of signer accounts of the transaction</param>
-        /// <returns><see langword="true"/> if the transaction conflicts with on-chain transaction; otherwise, <see langword="false"/>.</returns>
+        /// <returns>
+        /// <see langword="true"/> if the transaction conflicts with on-chain transaction; otherwise, <see langword="false"/>.
+        /// </returns>
         public bool ContainsConflictHash(UInt256 hash, IEnumerable<UInt160> signers)
         {
-            return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers, Settings.MaxTraceableBlocks);
+            return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers, this.GetMaxTraceableBlocks());
         }
     }
 }

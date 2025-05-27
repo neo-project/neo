@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_HashSetExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Caching;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -28,7 +27,7 @@ namespace Neo.Extensions.Tests.Collections
                 3
             };
 
-            var b = new Dictionary<int, object>
+            var b = new Dictionary<int, object?>
             {
                 [2] = null
             };

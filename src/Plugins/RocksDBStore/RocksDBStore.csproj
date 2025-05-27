@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFramework>net9.0</TargetFramework>
     <PackageId>Neo.Plugins.Storage.RocksDBStore</PackageId>
     <RootNamespace>Neo.Plugins.Storage</RootNamespace>
-    <OutputPath>../../../bin/$(PackageId)</OutputPath>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="rocksdb" Version="9.4.0.50294" />
+    <PackageReference Include="rocksdb" Version="9.7.3.54622" />
   </ItemGroup>
 
 </Project>

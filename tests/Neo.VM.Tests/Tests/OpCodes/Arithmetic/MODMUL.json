@@ -136,6 +136,242 @@
           }
         }
       ]
+    },
+    {
+      "name": "Real test (-3 * 4 % 5)",
+      "script": [
+        "PUSH3",
+        "NEGATE",
+        "PUSH4",
+        "PUSH5",
+        "MODMUL"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "MODMUL",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 5
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 4
+                  },
+                  {
+                    "type": "Integer",
+                    "value": -3
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": -2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test (3 * 4 % -5)",
+      "script": [
+        "PUSH3",
+        "PUSH4",
+        "PUSH5",
+        "NEGATE",
+        "MODMUL"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "MODMUL",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": -5
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 4
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 3
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test (-3 * 4 % -5)",
+      "script": [
+        "PUSH3",
+        "NEGATE",
+        "PUSH4",
+        "PUSH5",
+        "NEGATE",
+        "MODMUL"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "MODMUL",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": -5
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 4
+                  },
+                  {
+                    "type": "Integer",
+                    "value": -3
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": -2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test (3 * -4 % -5)",
+      "script": [
+        "PUSH3",
+        "PUSH4",
+        "NEGATE",
+        "PUSH5",
+        "NEGATE",
+        "MODMUL"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "MODMUL",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": -5
+                  },
+                  {
+                    "type": "Integer",
+                    "value": -4
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 3
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": -2
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

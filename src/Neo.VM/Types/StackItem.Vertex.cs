@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StackItem.Vertex.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,6 +82,11 @@ namespace Neo.VM.Types
         internal int LowLink = 0;
 
         /// <summary>
+        /// Stack Item hashcode
+        /// </summary>
+        protected int _hashCode = 0;
+
+        /// <summary>
         /// Indicates whether the item is currently on the stack for Tarjan's algorithm.
         ///
         /// <remarks>
@@ -120,7 +126,13 @@ namespace Neo.VM.Types
         /// Use this method when you need a hash code for a StackItem.
         /// </summary>
         /// <returns>The hash code for the StackItem.</returns>
-        public override int GetHashCode() =>
-            HashCode.Combine(GetSpan().ToArray());
+        public override int GetHashCode()
+        {
+            if (_hashCode == 0)
+            {
+                _hashCode = HashCode.Combine(Type, GetSpan().XxHash3_32());
+            }
+            return _hashCode;
+        }
     }
 }

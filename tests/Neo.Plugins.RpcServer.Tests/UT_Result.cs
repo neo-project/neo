@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Result.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,18 +9,23 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 
-namespace Neo.Plugins.RpcServer.Tests;
-
-[TestClass]
-public class UT_Result
+namespace Neo.Plugins.RpcServer.Tests
 {
-    [TestMethod]
-    public void TestNotNull_Or()
+    [TestClass]
+    public class UT_Result
     {
-        ContractState? contracts = null;
-        Assert.ThrowsException<RpcException>(() => contracts.NotNull_Or(RpcError.UnknownContract).ToJson());
+        [TestMethod]
+        public void TestNotNull_Or()
+        {
+            ContractState? contracts = null;
+            Assert.ThrowsExactly<RpcException>(() => _ = contracts.NotNull_Or(RpcError.UnknownContract).ToJson());
+        }
     }
 }
+
+#nullable disable

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Nep11BalanceKey.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.VM.Types;
 using System;
@@ -29,8 +30,10 @@ namespace Neo.Plugins.Trackers.NEP_11
 
         public Nep11BalanceKey(UInt160 userScriptHash, UInt160 assetScriptHash, ByteString tokenId)
         {
-            if (userScriptHash == null || assetScriptHash == null || tokenId == null)
-                throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(userScriptHash, nameof(userScriptHash));
+            ArgumentNullException.ThrowIfNull(assetScriptHash, nameof(assetScriptHash));
+            ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));
+
             UserScriptHash = userScriptHash;
             AssetScriptHash = assetScriptHash;
             Token = tokenId;

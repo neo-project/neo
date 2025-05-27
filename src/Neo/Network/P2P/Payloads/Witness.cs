@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Witness.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
@@ -57,6 +58,15 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
+        /// <summary>
+        /// Creates a new <see cref="Witness"/> with empty invocation and verification scripts.
+        /// </summary>
+        public static Witness Empty => new()
+        {
+            InvocationScript = ReadOnlyMemory<byte>.Empty,
+            VerificationScript = ReadOnlyMemory<byte>.Empty,
+        };
+
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
             InvocationScript = reader.ReadVarMemory(MaxInvocationScript);
@@ -79,6 +89,16 @@ namespace Neo.Network.P2P.Payloads
             json["invocation"] = Convert.ToBase64String(InvocationScript.Span);
             json["verification"] = Convert.ToBase64String(VerificationScript.Span);
             return json;
+        }
+
+        public Witness Clone()
+        {
+            return new Witness()
+            {
+                _scriptHash = _scriptHash,
+                InvocationScript = InvocationScript.ToArray(),
+                VerificationScript = VerificationScript.ToArray()
+            };
         }
     }
 }

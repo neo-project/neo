@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Native.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -23,7 +23,12 @@ namespace Neo.CLI
         [ConsoleCommand("list nativecontract", Category = "Native Contract")]
         private void OnListNativeContract()
         {
-            NativeContract.Contracts.ToList().ForEach(p => ConsoleHelper.Info($"\t{p.Name,-20}", $"{p.Hash}"));
+            var currentIndex = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
+            NativeContract.Contracts.ToList().ForEach(contract =>
+            {
+                var active = contract.IsActive(NeoSystem.Settings, currentIndex) ? "" : " not active yet";
+                ConsoleHelper.Info($"\t{contract.Name,-20}", $"{contract.Hash}{active}");
+            });
         }
     }
 }

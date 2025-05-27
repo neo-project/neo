@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Debugger.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -120,7 +120,7 @@ namespace Neo.Test
 
             debugger.Execute();
 
-            Assert.AreEqual(true, engine.ResultStack.Pop().GetBoolean());
+            Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
             Assert.AreEqual(VMState.HALT, engine.State);
 
             // Test step over again
@@ -171,7 +171,7 @@ namespace Neo.Test
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
             Assert.AreEqual(VMState.HALT, debugger.StepInto());
 
-            Assert.AreEqual(true, engine.ResultStack.Pop().GetBoolean());
+            Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
             Assert.AreEqual(VMState.HALT, engine.State);
 
             // Test step into again
@@ -211,7 +211,7 @@ namespace Neo.Test
 
             debugger.Execute();
 
-            Assert.AreEqual(true, engine.ResultStack.Pop().GetBoolean());
+            Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
             Assert.AreEqual(VMState.HALT, engine.State);
         }
     }

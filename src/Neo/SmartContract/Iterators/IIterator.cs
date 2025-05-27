@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // IIterator.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -30,6 +30,6 @@ namespace Neo.SmartContract.Iterators
         /// Gets the element in the collection at the current position of the iterator.
         /// </summary>
         /// <returns>The element in the collection at the current position of the iterator.</returns>
-        StackItem Value(ReferenceCounter referenceCounter);
+        StackItem Value(IReferenceCounter referenceCounter);
     }
 }

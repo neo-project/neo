@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TokenTransferKey.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
@@ -25,8 +26,9 @@ namespace Neo.Plugins.Trackers
 
         public TokenTransferKey(UInt160 userScriptHash, ulong timestamp, UInt160 assetScriptHash, uint xferIndex)
         {
-            if (userScriptHash is null || assetScriptHash is null)
-                throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(userScriptHash, nameof(userScriptHash));
+            ArgumentNullException.ThrowIfNull(assetScriptHash, nameof(assetScriptHash));
+
             UserScriptHash = userScriptHash;
             TimestampMS = timestamp;
             AssetScriptHash = assetScriptHash;

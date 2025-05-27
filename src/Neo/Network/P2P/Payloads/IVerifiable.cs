@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // IVerifiable.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -22,6 +22,7 @@ namespace Neo.Network.P2P.Payloads
     {
         /// <summary>
         /// The hash of the <see cref="IVerifiable"/> object.
+        /// NOTE: This property may throw an exception if the <see cref="IVerifiable"/> object is not valid.
         /// </summary>
         UInt256 Hash => this.CalculateHash();
 

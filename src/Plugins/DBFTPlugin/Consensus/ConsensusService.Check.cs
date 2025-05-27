@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsensusService.Check.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
@@ -61,7 +60,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (context.CommitPayloads.Count(p => context.GetMessage(p)?.ViewNumber == context.ViewNumber) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 block_received_index = context.Block.Index;
-                block_received_time = TimeProvider.Current.UtcNow;
                 Block block = context.CreateBlock();
                 Log($"Sending {nameof(Block)}: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 blockchain.Tell(block);
@@ -96,7 +94,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 context.Save();
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
-                ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock));
+                ChangeTimer(context.TimePerBlock);
                 CheckCommits();
             }
         }

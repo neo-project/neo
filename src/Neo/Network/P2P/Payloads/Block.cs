@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Block.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,11 +10,13 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -35,6 +37,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public Transaction[] Transactions;
 
+        /// <inheritdoc/>
         public UInt256 Hash => Header.Hash;
 
         /// <summary>
@@ -83,17 +86,43 @@ namespace Neo.Network.P2P.Payloads
         public Witness Witness => Header.Witness;
 
         InventoryType IInventory.InventoryType => InventoryType.Block;
+
         public int Size => Header.Size + Transactions.GetVarSize();
-        Witness[] IVerifiable.Witnesses { get => ((IVerifiable)Header).Witnesses; set => throw new NotSupportedException(); }
+
+        Witness[] IVerifiable.Witnesses
+        {
+            get => ((IVerifiable)Header).Witnesses;
+            set => throw new NotSupportedException();
+        }
 
         public void Deserialize(ref MemoryReader reader)
         {
             Header = reader.ReadSerializable<Header>();
-            Transactions = reader.ReadSerializableArray<Transaction>(ushort.MaxValue);
-            if (Transactions.Distinct().Count() != Transactions.Length)
-                throw new FormatException();
-            if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != Header.MerkleRoot)
-                throw new FormatException();
+            Transactions = DeserializeTransactions(ref reader, ushort.MaxValue, Header.MerkleRoot);
+        }
+
+        private static Transaction[] DeserializeTransactions(ref MemoryReader reader, int maxCount, UInt256 merkleRoot)
+        {
+            var count = (int)reader.ReadVarInt((ulong)maxCount);
+            var hashes = new UInt256[count];
+            var txs = new Transaction[count];
+
+            if (count > 0)
+            {
+                var hashset = new HashSet<UInt256>();
+                for (var i = 0; i < count; i++)
+                {
+                    var tx = reader.ReadSerializable<Transaction>();
+                    if (!hashset.Add(tx.Hash))
+                        throw new FormatException();
+                    txs[i] = tx;
+                    hashes[i] = tx.Hash;
+                }
+            }
+
+            if (MerkleTree.ComputeRoot(hashes) != merkleRoot)
+                throw new FormatException("The computed Merkle root does not match the expected value.");
+            return txs;
         }
 
         void IVerifiable.DeserializeUnsigned(ref MemoryReader reader) => throw new NotSupportedException();
@@ -132,7 +161,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The block represented by a JSON object.</returns>
         public JObject ToJson(ProtocolSettings settings)
         {
-            JObject json = Header.ToJson(settings);
+            var json = Header.ToJson(settings);
             json["size"] = Size;
             json["tx"] = Transactions.Select(p => p.ToJson(settings)).ToArray();
             return json;

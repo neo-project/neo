@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // IReadOnlyStore.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,35 +9,71 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
+using Neo.SmartContract;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Persistence
 {
     /// <summary>
     /// This interface provides methods to read from the database.
     /// </summary>
-    public interface IReadOnlyStore
+    public interface IReadOnlyStore : IReadOnlyStore<StorageKey, StorageItem> { }
+
+    /// <summary>
+    /// This interface provides methods to read from the database.
+    /// </summary>
+    public interface IReadOnlyStore<TKey, TValue> where TKey : class?
     {
         /// <summary>
-        /// Seeks to the entry with the specified key.
+        /// Gets the entry with the specified key.
         /// </summary>
-        /// <param name="key">The key to be sought.</param>
-        /// <param name="direction">The direction of seek.</param>
-        /// <returns>An enumerator containing all the entries after seeking.</returns>
-        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] key, SeekDirection direction);
+        /// <param name="key">The key to get.</param>
+        /// <returns>The entry if found, throws a <see cref="KeyNotFoundException"/> otherwise.</returns>
+        public TValue this[TKey key]
+        {
+            get
+            {
+                if (TryGet(key, out var item))
+                    return item;
+                throw new KeyNotFoundException();
+            }
+        }
 
         /// <summary>
         /// Reads a specified entry from the database.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
-        byte[] TryGet(byte[] key);
+        [Obsolete("use TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value) instead.")]
+        TValue? TryGet(TKey key);
+
+        /// <summary>
+        /// Reads a specified entry from the database.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <param name="value">The data of the entry.</param>
+        /// <returns><see langword="true"/> if the entry exists; otherwise, <see langword="false"/>.</returns>
+        bool TryGet(TKey key, [NotNullWhen(true)] out TValue? value);
 
         /// <summary>
         /// Determines whether the database contains the specified entry.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns><see langword="true"/> if the database contains an entry with the specified key; otherwise, <see langword="false"/>.</returns>
-        bool Contains(byte[] key);
+        bool Contains(TKey key);
+
+        /// <summary>
+        /// Finds the entries starting with the specified prefix.
+        /// </summary>
+        /// <param name="key_prefix">The prefix of the key.</param>
+        /// <param name="direction">The search direction.</param>
+        /// <returns>The entries found with the desired prefix.</returns>
+        public IEnumerable<(TKey Key, TValue Value)> Find(TKey? key_prefix = null, SeekDirection direction = SeekDirection.Forward);
     }
 }
+
+#nullable disable

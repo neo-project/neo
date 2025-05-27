@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.Node.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -23,94 +23,82 @@ namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
-        [RpcMethod]
-        protected virtual JToken GetConnectionCount(JArray _params)
+
+        /// <summary>
+        /// Gets the current number of connections to the node.
+        /// </summary>
+        /// <returns>The number of connections as a JToken.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken GetConnectionCount()
         {
             return localNode.ConnectedCount;
         }
 
-        [RpcMethod]
-        protected virtual JToken GetPeers(JArray _params)
+        /// <summary>
+        /// Gets information about the peers connected to the node.
+        /// </summary>
+        /// <returns>A JObject containing information about unconnected, bad, and connected peers.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken GetPeers()
         {
-            JObject json = new();
-            json["unconnected"] = new JArray(localNode.GetUnconnectedPeers().Select(p =>
+            return new JObject()
             {
-                JObject peerJson = new();
-                peerJson["address"] = p.Address.ToString();
-                peerJson["port"] = p.Port;
-                return peerJson;
-            }));
-            json["bad"] = new JArray(); //badpeers has been removed
-            json["connected"] = new JArray(localNode.GetRemoteNodes().Select(p =>
-            {
-                JObject peerJson = new();
-                peerJson["address"] = p.Remote.Address.ToString();
-                peerJson["port"] = p.ListenerTcpPort;
-                return peerJson;
-            }));
-            return json;
+                ["unconnected"] = new JArray(localNode.GetUnconnectedPeers().Select(p =>
+                {
+                    return new JObject() { ["address"] = p.Address.ToString(), ["port"] = p.Port, };
+                })),
+                ["bad"] = new JArray(),
+                ["connected"] = new JArray(localNode.GetRemoteNodes().Select(p =>
+                {
+                    return new JObject() { ["address"] = p.Remote.Address.ToString(), ["port"] = p.ListenerTcpPort, };
+                }))
+            };
         }
 
+        /// <summary>
+        /// Processes the result of a transaction or block relay and returns appropriate response or throws an exception.
+        /// </summary>
+        /// <param name="reason">The verification result of the relay.</param>
+        /// <param name="hash">The hash of the transaction or block.</param>
+        /// <returns>A JObject containing the hash if successful, otherwise throws an RpcException.</returns>
         private static JObject GetRelayResult(VerifyResult reason, UInt256 hash)
         {
-
             switch (reason)
             {
                 case VerifyResult.Succeed:
-                    {
-                        var ret = new JObject();
-                        ret["hash"] = hash.ToString();
-                        return ret;
-                    }
+                    return new JObject() { ["hash"] = hash.ToString() };
                 case VerifyResult.AlreadyExists:
-                    {
-                        throw new RpcException(RpcError.AlreadyExists.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.AlreadyExists.WithData(reason.ToString()));
                 case VerifyResult.AlreadyInPool:
-                    {
-                        throw new RpcException(RpcError.AlreadyInPool.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.AlreadyInPool.WithData(reason.ToString()));
                 case VerifyResult.OutOfMemory:
-                    {
-                        throw new RpcException(RpcError.MempoolCapReached.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.MempoolCapReached.WithData(reason.ToString()));
                 case VerifyResult.InvalidScript:
-                    {
-                        throw new RpcException(RpcError.InvalidScript.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InvalidScript.WithData(reason.ToString()));
                 case VerifyResult.InvalidAttribute:
-                    {
-                        throw new RpcException(RpcError.InvalidAttribute.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InvalidAttribute.WithData(reason.ToString()));
                 case VerifyResult.InvalidSignature:
-                    {
-                        throw new RpcException(RpcError.InvalidSignature.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InvalidSignature.WithData(reason.ToString()));
                 case VerifyResult.OverSize:
-                    {
-                        throw new RpcException(RpcError.InvalidSize.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InvalidSize.WithData(reason.ToString()));
                 case VerifyResult.Expired:
-                    {
-                        throw new RpcException(RpcError.ExpiredTransaction.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.ExpiredTransaction.WithData(reason.ToString()));
                 case VerifyResult.InsufficientFunds:
-                    {
-                        throw new RpcException(RpcError.InsufficientFunds.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.InsufficientFunds.WithData(reason.ToString()));
                 case VerifyResult.PolicyFail:
-                    {
-                        throw new RpcException(RpcError.PolicyFailed.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.PolicyFailed.WithData(reason.ToString()));
                 default:
-                    {
-                        throw new RpcException(RpcError.VerificationFailed.WithData(reason.ToString()));
-                    }
+                    throw new RpcException(RpcError.VerificationFailed.WithData(reason.ToString()));
+
             }
         }
 
-        [RpcMethod]
-        protected internal virtual JToken GetVersion(JArray _params)
+        /// <summary>
+        /// Gets version information about the node, including network, protocol, and RPC settings.
+        /// </summary>
+        /// <returns>A JObject containing detailed version and configuration information.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken GetVersion()
         {
             JObject json = new();
             json["tcpport"] = localNode.ListenerTcpPort;
@@ -125,9 +113,9 @@ namespace Neo.Plugins.RpcServer
             protocol["addressversion"] = system.Settings.AddressVersion;
             protocol["network"] = system.Settings.Network;
             protocol["validatorscount"] = system.Settings.ValidatorsCount;
-            protocol["msperblock"] = system.Settings.MillisecondsPerBlock;
-            protocol["maxtraceableblocks"] = system.Settings.MaxTraceableBlocks;
-            protocol["maxvaliduntilblockincrement"] = system.Settings.MaxValidUntilBlockIncrement;
+            protocol["msperblock"] = system.GetTimePerBlock().TotalMilliseconds;
+            protocol["maxtraceableblocks"] = system.GetMaxTraceableBlocks();
+            protocol["maxvaliduntilblockincrement"] = system.GetMaxValidUntilBlockIncrement();
             protocol["maxtransactionsperblock"] = system.Settings.MaxTransactionsPerBlock;
             protocol["memorypoolmaxtransactions"] = system.Settings.MemoryPoolMaxTransactions;
             protocol["initialgasdistribution"] = system.Settings.InitialGasDistribution;
@@ -146,23 +134,39 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
+        /// <summary>
+        /// Removes a specified prefix from a string if it exists.
+        /// </summary>
+        /// <param name="s">The input string.</param>
+        /// <param name="prefix">The prefix to remove.</param>
+        /// <returns>The string with the prefix removed if it existed, otherwise the original string.</returns>
         private static string StripPrefix(string s, string prefix)
         {
             return s.StartsWith(prefix) ? s.Substring(prefix.Length) : s;
         }
 
-        [RpcMethod]
-        protected internal virtual JToken SendRawTransaction(JArray _params)
+        /// <summary>
+        /// Sends a raw transaction to the network.
+        /// </summary>
+        /// <param name="base64Tx">The base64-encoded transaction.</param>
+        /// <returns>A JToken containing the result of the transaction relay.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken SendRawTransaction(string base64Tx)
         {
-            Transaction tx = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()).AsSerializable<Transaction>(), RpcError.InvalidParams.WithData($"Invalid Transaction Format: {_params[0]}"));
+            Transaction tx = Result.Ok_Or(() => Convert.FromBase64String(base64Tx).AsSerializable<Transaction>(), RpcError.InvalidParams.WithData($"Invalid Transaction Format: {base64Tx}"));
             RelayResult reason = system.Blockchain.Ask<RelayResult>(tx).Result;
             return GetRelayResult(reason.Result, tx.Hash);
         }
 
-        [RpcMethod]
-        protected internal virtual JToken SubmitBlock(JArray _params)
+        /// <summary>
+        /// Submits a new block to the network.
+        /// </summary>
+        /// <param name="base64Block">The base64-encoded block.</param>
+        /// <returns>A JToken containing the result of the block submission.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken SubmitBlock(string base64Block)
         {
-            Block block = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()).AsSerializable<Block>(), RpcError.InvalidParams.WithData($"Invalid Block Format: {_params[0]}"));
+            Block block = Result.Ok_Or(() => Convert.FromBase64String(base64Block).AsSerializable<Block>(), RpcError.InvalidParams.WithData($"Invalid Block Format: {base64Block}"));
             RelayResult reason = system.Blockchain.Ask<RelayResult>(block).Result;
             return GetRelayResult(reason.Result, block.Hash);
         }

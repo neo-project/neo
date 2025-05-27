@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_RpcModels.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -170,6 +170,21 @@ namespace Neo.Network.RPC.Tests
             JToken json = TestUtils.RpcTestCases.Find(p => p.Name == nameof(RpcClient.GetVersionAsync).ToLower()).Response.Result;
             var item = RpcVersion.FromJson((JObject)json);
             Assert.AreEqual(json.ToString(), item.ToJson().ToString());
+        }
+
+        [TestMethod]
+        public void TestRpcStack()
+        {
+            var stack = new RpcStack()
+            {
+                Type = "Boolean",
+                Value = true,
+            };
+
+            var expectedJsonString = "{\"type\":\"Boolean\",\"value\":true}";
+            var actualJsonString = stack.ToJson().ToString();
+
+            Assert.AreEqual(expectedJsonString, actualJsonString);
         }
     }
 }

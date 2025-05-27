@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // HashIndexState.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+#nullable enable
+
+using Neo.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 
@@ -17,19 +19,21 @@ namespace Neo.SmartContract.Native
 {
     class HashIndexState : IInteroperable
     {
-        public UInt256 Hash;
-        public uint Index;
+        public UInt256 Hash { get; set; } = UInt256.Zero;
+        public uint Index { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             Hash = new UInt256(@struct[0].GetSpan());
             Index = (uint)@struct[1].GetInteger();
         }
 
-        StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter) { Hash.ToArray(), Index };
         }
     }
 }
+
+#nullable disable

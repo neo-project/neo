@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UInt256.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,8 +12,10 @@
 using Neo.Extensions;
 using Neo.IO;
 using System;
-using System.Globalization;
+using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Neo
@@ -22,7 +24,7 @@ namespace Neo
     /// Represents a 256-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable
+    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable, ISerializableSpan
     {
         /// <summary>
         /// The length of <see cref="UInt256"/> values.
@@ -44,22 +46,19 @@ namespace Neo
         /// <summary>
         /// Initializes a new instance of the <see cref="UInt256"/> class.
         /// </summary>
-        public UInt256()
-        {
-        }
+        public UInt256() { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UInt256"/> class.
         /// </summary>
         /// <param name="value">The value of the <see cref="UInt256"/>.</param>
-        public unsafe UInt256(ReadOnlySpan<byte> value)
+        public UInt256(ReadOnlySpan<byte> value)
         {
-            if (value.Length != Length) throw new FormatException();
-            fixed (ulong* p = &value1)
-            {
-                Span<byte> dst = new(p, Length);
-                value[..Length].CopyTo(dst);
-            }
+            if (value.Length != Length)
+                throw new FormatException($"Invalid length: {value.Length}");
+
+            var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+            value.CopyTo(span);
         }
 
         public int CompareTo(UInt256 other)
@@ -102,6 +101,21 @@ namespace Neo
         }
 
         /// <summary>
+        /// Gets a ReadOnlySpan that represents the current value in little-endian.
+        /// </summary>
+        /// <returns>A ReadOnlySpan that represents the current value in little-endian.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetSpan()
+        {
+            if (BitConverter.IsLittleEndian)
+                return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+
+            Span<byte> buffer = new byte[Length];
+            Serialize(buffer);
+            return buffer; // Keep the same output as Serialize when BigEndian
+        }
+
+        /// <summary>
         /// Parses an <see cref="UInt256"/> from the specified <see cref="string"/>.
         /// </summary>
         /// <param name="value">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
@@ -121,6 +135,28 @@ namespace Neo
             writer.Write(value4);
         }
 
+        public void Serialize(Span<byte> destination)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                var buffer = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+                buffer.CopyTo(destination);
+            }
+            else
+            {
+                const int IxValue2 = sizeof(ulong);
+                const int IxValue3 = sizeof(ulong) * 2;
+                const int IxValue4 = sizeof(ulong) * 3;
+
+                Span<byte> buffer = stackalloc byte[Length];
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer, value1);
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], value2);
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue3..], value3);
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue4..], value4);
+                buffer.CopyTo(destination);
+            }
+        }
+
         public override string ToString()
         {
             return "0x" + this.ToArray().ToHexString(reverse: true);
@@ -132,29 +168,24 @@ namespace Neo
         /// <param name="s">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt256"/>.</param>
         /// <returns><see langword="true"/> if an <see cref="UInt256"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string s, out UInt256 result)
+        public static bool TryParse(string s, [NotNullWhen(true)] out UInt256 result)
         {
-            if (s == null)
+            result = null;
+            var data = s.AsSpan(); // AsSpan is null safe
+            if (data.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
+                data = data[2..];
+
+            if (data.Length != Length * 2) return false;
+
+            try
             {
-                result = null;
+                result = new UInt256(data.HexToBytesReversed());
+                return true;
+            }
+            catch
+            {
                 return false;
             }
-            if (s.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                s = s[2..];
-            if (s.Length != Length * 2)
-            {
-                result = null;
-                return false;
-            }
-            byte[] data = new byte[Length];
-            for (int i = 0; i < Length; i++)
-                if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
-                {
-                    result = null;
-                    return false;
-                }
-            result = new UInt256(data);
-            return true;
         }
 
         public static bool operator ==(UInt256 left, UInt256 right)

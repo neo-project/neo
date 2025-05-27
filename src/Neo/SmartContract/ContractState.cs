@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ContractState.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -54,18 +54,6 @@ namespace Neo.SmartContract
         /// The script of the contract.
         /// </summary>
         public ReadOnlyMemory<byte> Script => Nef.Script;
-
-        IInteroperable IInteroperable.Clone()
-        {
-            return new ContractState
-            {
-                Id = Id,
-                UpdateCounter = UpdateCounter,
-                Hash = Hash,
-                Nef = Nef,
-                Manifest = Manifest
-            };
-        }
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
@@ -119,9 +107,9 @@ namespace Neo.SmartContract
             };
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToStackItem(referenceCounter) });
+            return new Array(referenceCounter, [Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToStackItem(referenceCounter)]);
         }
     }
 }

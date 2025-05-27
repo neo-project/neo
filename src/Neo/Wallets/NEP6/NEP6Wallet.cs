@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NEP6Wallet.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -41,7 +41,12 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public readonly ScryptParameters Scrypt;
 
-        public override string Name => name;
+        /// <summary>
+        /// The name of the wallet.
+        /// If the name is not set, it will be the file name without extension of the wallet file.
+        /// </summary>
+        public override string Name =>
+            !string.IsNullOrEmpty(name) ? name : System.IO.Path.GetFileNameWithoutExtension(Path);
 
         /// <summary>
         /// The version of the wallet standard. It is currently fixed at 1.0 and will be used for functional upgrades in the future.
@@ -293,12 +298,18 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public JObject ToJson()
         {
+            NEP6Account[] accountValues;
+            lock (accounts)
+            {
+                accountValues = accounts.Values.ToArray();
+            }
+
             return new()
             {
                 ["name"] = name,
                 ["version"] = version.ToString(),
                 ["scrypt"] = Scrypt.ToJson(),
-                ["accounts"] = accounts.Values.Select(p => p.ToJson()).ToArray(),
+                ["accounts"] = accountValues.Select(p => p.ToJson()).ToArray(),
                 ["extra"] = extra
             };
         }
@@ -345,26 +356,28 @@ namespace Neo.Wallets.NEP6
         public override bool ChangePassword(string oldPassword, string newPassword)
         {
             bool succeed = true;
+            NEP6Account[] accountsValues;
             lock (accounts)
             {
-                Parallel.ForEach(accounts.Values, (account, state) =>
-                {
-                    if (!account.ChangePasswordPrepare(oldPassword, newPassword))
-                    {
-                        state.Stop();
-                        succeed = false;
-                    }
-                });
+                accountsValues = accounts.Values.ToArray();
             }
+            Parallel.ForEach(accountsValues, (account, state) =>
+            {
+                if (!account.ChangePasswordPrepare(oldPassword, newPassword))
+                {
+                    state.Stop();
+                    succeed = false;
+                }
+            });
             if (succeed)
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (NEP6Account account in accountsValues)
                     account.ChangePasswordCommit();
                 password = newPassword.ToSecureString();
             }
             else
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (NEP6Account account in accountsValues)
                     account.ChangePasswordRollback();
             }
             return succeed;

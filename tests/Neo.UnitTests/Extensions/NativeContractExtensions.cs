@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NativeContractExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -37,7 +38,8 @@ namespace Neo.UnitTests.Extensions
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest, null);
 
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } }, Attributes = System.Array.Empty<TransactionAttribute>() } : null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: datoshi);
+                sender != null ? new Transaction() { Signers = [new() { Account = sender }], Attributes = [] } : null,
+                snapshot, settings: TestProtocolSettings.Default, gas: datoshi);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)
@@ -57,7 +59,7 @@ namespace Neo.UnitTests.Extensions
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "update", nefFile, manifest, null);
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             // Fake calling script hash
@@ -80,7 +82,7 @@ namespace Neo.UnitTests.Extensions
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "destroy");
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             // Fake calling script hash
@@ -100,14 +102,26 @@ namespace Neo.UnitTests.Extensions
 
         public static void AddContract(this DataCache snapshot, UInt160 hash, ContractState state)
         {
+            //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
             snapshot.Add(key, new StorageItem(state));
+            //key: id, value: hash
+            var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(state.Id);
+            if (!snapshot.Contains(key2)) snapshot.Add(key2, new StorageItem(hash.ToArray()));
         }
 
         public static void DeleteContract(this DataCache snapshot, UInt160 hash)
         {
+            //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
+            var value = snapshot.TryGet(key)?.GetInteroperable<ContractState>();
             snapshot.Delete(key);
+            if (value != null)
+            {
+                //key: id, value: hash
+                var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(value.Id);
+                snapshot.Delete(key2);
+            }
         }
 
         public static StackItem Call(this NativeContract contract, DataCache snapshot, string method, params ContractParameter[] args)
@@ -117,7 +131,12 @@ namespace Neo.UnitTests.Extensions
 
         public static StackItem Call(this NativeContract contract, DataCache snapshot, IVerifiable container, Block persistingBlock, string method, params ContractParameter[] args)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
+            return Call(contract, engine, method, args);
+        }
+
+        public static StackItem Call(this NativeContract contract, ApplicationEngine engine, string method, params ContractParameter[] args)
+        {
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(contract.Hash, method, args);
             engine.LoadScript(script.ToArray());
