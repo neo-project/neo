@@ -290,6 +290,7 @@ namespace Neo.UnitTests
             Assert.IsTrue(a >= b);
             Assert.IsTrue(c >= a);
         }
+
         [TestMethod]
         public void TestGetHashCode()
         {
