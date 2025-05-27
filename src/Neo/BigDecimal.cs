@@ -209,6 +209,10 @@ namespace Neo
             return CompareTo(other) == 0;
         }
 
+        /// <summary>
+        /// Get the hash code of the decimal value. Semantic equivalence is not guaranteed.
+        /// </summary>
+        /// <returns>hash code</returns>
         public override readonly int GetHashCode()
         {
             return HashCode.Combine(_decimals, _value.GetHashCode());
