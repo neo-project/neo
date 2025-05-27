@@ -215,9 +215,7 @@ namespace Neo
         /// <returns>hash code</returns>
         public override readonly int GetHashCode()
         {
-            var divisor = BigInteger.Pow(10, _decimals);
-            var result = BigInteger.DivRem(_value, divisor, out var remainder);
-            return HashCode.Combine(result, remainder);
+            return HashCode.Combine(_decimals, _value.GetHashCode());
         }
 
         public static bool operator ==(BigDecimal left, BigDecimal right)
