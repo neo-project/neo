@@ -98,13 +98,13 @@ namespace Neo.CLI
 
             if (jsonRelease == null)
             {
-                // If exact version not found, get the latest available version
+                // If exact version not found, always use the latest available version
                 jsonRelease = json.AsArray()
                     .Where(s => GetBoolValue(s, "prerelease") == prerelease)
                     .Select(s =>
                     {
                         var tagName = GetStringValue(s, "tag_name");
-                        if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
+                        if (!string.IsNullOrEmpty(tagName) && tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
                             return new { JsonObject = s, Version = version };
@@ -119,11 +119,10 @@ namespace Neo.CLI
                 if (jsonRelease != null)
                 {
                     var tagName = GetStringValue(jsonRelease, "tag_name");
-                    if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
+                    if (!string.IsNullOrEmpty(tagName) && tagName.Length > 1 && tagName.StartsWith('v') &&
                         Version.TryParse(tagName[1..], out var latestVersion))
                     {
                         ConsoleHelper.Info($"Could not find version v{pluginVersion}, installing the latest available: v{latestVersion}");
-                        // Continue with the found release using the standard asset download logic below
                     }
                     else
                     {
@@ -154,6 +153,7 @@ namespace Neo.CLI
 
         /// <summary>
         /// Safely extracts a string value from a JsonNode.
+        /// Handles null references and invalid JSON gracefully.
         /// </summary>
         /// <param name="node">The JsonNode to extract from</param>
         /// <param name="propertyName">The property name to extract</param>
@@ -172,6 +172,7 @@ namespace Neo.CLI
 
         /// <summary>
         /// Safely extracts a boolean value from a JsonNode.
+        /// Handles null references and invalid JSON gracefully.
         /// </summary>
         /// <param name="node">The JsonNode to extract from</param>
         /// <param name="propertyName">The property name to extract</param>

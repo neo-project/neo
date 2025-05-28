@@ -21,7 +21,8 @@ namespace Neo.CLI.UnitTests
     public class UT_MainService_Plugins
     {
         /// <summary>
-        /// Helper method to safely extract string values from JsonNode
+        /// Helper method to safely extract string values from JsonNode.
+        /// Handles null references and invalid JSON gracefully.
         /// </summary>
         private static string GetStringValue(JsonNode node, string propertyName)
         {
@@ -36,7 +37,8 @@ namespace Neo.CLI.UnitTests
         }
 
         /// <summary>
-        /// Helper method to safely extract boolean values from JsonNode
+        /// Helper method to safely extract boolean values from JsonNode.
+        /// Handles null references and invalid JSON gracefully.
         /// </summary>
         private static bool GetBoolValue(JsonNode node, string propertyName)
         {
@@ -133,7 +135,7 @@ namespace Neo.CLI.UnitTests
                     .Select(s =>
                     {
                         var tagName = GetStringValue(s, "tag_name");
-                        if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
+                        if (tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
                             return new { JsonObject = s, Version = version };
@@ -193,7 +195,7 @@ namespace Neo.CLI.UnitTests
                     .Select(s =>
                     {
                         var tagName = GetStringValue(s, "tag_name");
-                        if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
+                        if (tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
                             return new { JsonObject = s, Version = version };
@@ -267,7 +269,7 @@ namespace Neo.CLI.UnitTests
                     .Select(s =>
                     {
                         var tagName = GetStringValue(s, "tag_name");
-                        if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
+                        if (tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
                             return new { JsonObject = s, Version = version };
@@ -332,7 +334,7 @@ namespace Neo.CLI.UnitTests
                     .Select(s =>
                     {
                         var tagName = GetStringValue(s, "tag_name");
-                        if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
+                        if (tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
                             return new { JsonObject = s, Version = version };
@@ -464,7 +466,7 @@ namespace Neo.CLI.UnitTests
                 .Select(s =>
                 {
                     var tagName = GetStringValue(s, "tag_name");
-                    if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
+                    if (tagName.Length > 1 && tagName.StartsWith('v') &&
                         Version.TryParse(tagName[1..], out var version))
                     {
                         return new { JsonObject = s, Version = version };
