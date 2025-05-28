@@ -28,7 +28,7 @@ namespace Neo.Plugins.LedgerDebugger
     /// Plugin for debugging NEO ledger by recording and replaying block execution states.
     /// Implements <see cref="ICommittingHandler"/> to capture state during block execution.
     /// </summary>
-    public abstract class LedgerDebugger : Plugin, ICommittingHandler, IDisposable
+    public class LedgerDebugger : Plugin, ICommittingHandler, IDisposable
     {
         #region Private Fields
 
@@ -62,7 +62,7 @@ namespace Neo.Plugins.LedgerDebugger
         /// <summary>
         /// Initializes a new instance of the <see cref="LedgerDebugger"/> class.
         /// </summary>
-        protected LedgerDebugger()
+        public LedgerDebugger()
         {
             // Subscribe to blockchain committing events
             Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
