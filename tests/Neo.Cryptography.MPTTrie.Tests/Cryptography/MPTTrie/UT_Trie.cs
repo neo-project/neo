@@ -22,21 +22,21 @@ namespace Neo.Cryptography.MPTTrie.Tests
 {
     class TestSnapshot : IStoreSnapshot
     {
-        public Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+        public Dictionary<byte[], byte[]> _store = new(ByteArrayEqualityComparer.Default);
 
-        private byte[] StoreKey(byte[] key)
+        private static byte[] StoreKey(byte[] key)
         {
             return [.. key];
         }
 
         public void Put(byte[] key, byte[] value)
         {
-            store[key] = value;
+            _store[key] = value;
         }
 
         public void Delete(byte[] key)
         {
-            store.Remove(StoreKey(key));
+            _store.Remove(StoreKey(key));
         }
 
         public IStore Store => throw new NotImplementedException();
@@ -49,26 +49,26 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
         public byte[] TryGet(byte[] key)
         {
-            var result = store.TryGetValue(StoreKey(key), out byte[] value);
+            var result = _store.TryGetValue(StoreKey(key), out byte[] value);
             if (result) return value;
             return null;
         }
 
         public bool TryGet(byte[] key, out byte[] value)
         {
-            return store.TryGetValue(StoreKey(key), out value);
+            return _store.TryGetValue(StoreKey(key), out value);
         }
 
         public void Dispose() { throw new NotImplementedException(); }
 
-        public int Size => store.Count;
+        public int Size => _store.Count;
     }
 
     [TestClass]
     public class UT_Trie
     {
-        private Node root;
-        private IStore mptdb;
+        private Node _root;
+        private IStore _mptdb;
 
         private void PutToStore(IStore store, Node node)
         {
@@ -85,31 +85,47 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var v3 = Node.NewLeaf(Encoding.ASCII.GetBytes("existing"));//key=acae
             var v4 = Node.NewLeaf(Encoding.ASCII.GetBytes("missing"));
             var h3 = Node.NewHash(v3.Hash);
-            var e1 = Node.NewExtension(new byte[] { 0x01 }, v1);
-            var e3 = Node.NewExtension(new byte[] { 0x0e }, h3);
-            var e4 = Node.NewExtension(new byte[] { 0x01 }, v4);
+            var e1 = Node.NewExtension([0x01], v1);
+            var e3 = Node.NewExtension([0x0e], h3);
+            var e4 = Node.NewExtension([0x01], v4);
             b.Children[0] = e1;
             b.Children[10] = e3;
             b.Children[16] = v2;
             b.Children[15] = Node.NewHash(e4.Hash);
-            root = r;
-            mptdb = new MemoryStore();
-            PutToStore(mptdb, r);
-            PutToStore(mptdb, b);
-            PutToStore(mptdb, e1);
-            PutToStore(mptdb, e3);
-            PutToStore(mptdb, v1);
-            PutToStore(mptdb, v2);
-            PutToStore(mptdb, v3);
+            _root = r;
+            _mptdb = new MemoryStore();
+            PutToStore(_mptdb, r);
+            PutToStore(_mptdb, b);
+            PutToStore(_mptdb, e1);
+            PutToStore(_mptdb, e3);
+            PutToStore(_mptdb, v1);
+            PutToStore(_mptdb, v2);
+            PutToStore(_mptdb, v3);
         }
 
         [TestMethod]
         public void TestTryGet()
         {
-            var mpt = new Trie(mptdb.GetSnapshot(), root.Hash);
-            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt[Array.Empty<byte>()]);
+            var mpt = new Trie(_mptdb.GetSnapshot(), _root.Hash);
+
+            // Errors
+            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt[[]]);
+            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt[new byte[255]]);
+            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt.TryGetValue([], out _));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt.TryGetValue(new byte[255], out _));
+
+            //Get
             Assert.AreEqual("abcd", mpt["ac01".HexToBytes()].ToHexString());
             Assert.AreEqual("2222", mpt["ac".HexToBytes()].ToHexString());
+
+            //TryGet
+            Assert.IsTrue(mpt.TryGetValue("ac01".HexToBytes(), out var value));
+            Assert.AreEqual("abcd", value.ToHexString());
+            Assert.IsTrue(mpt.TryGetValue("ac".HexToBytes(), out value));
+            Assert.AreEqual("2222", value.ToHexString());
+            Assert.IsFalse(mpt.TryGetValue("000102".HexToBytes(), out value));
+            Assert.IsNull(value);
+
             Assert.ThrowsExactly<KeyNotFoundException>(() => _ = mpt["ab99".HexToBytes()]);
             Assert.ThrowsExactly<KeyNotFoundException>(() => _ = mpt["ac39".HexToBytes()]);
             Assert.ThrowsExactly<KeyNotFoundException>(() => _ = mpt["ac02".HexToBytes()]);
@@ -121,7 +137,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestTryGetResolve()
         {
-            var mpt = new Trie(mptdb.GetSnapshot(), root.Hash);
+            var mpt = new Trie(_mptdb.GetSnapshot(), _root.Hash);
             Assert.AreEqual(Encoding.ASCII.GetBytes("existing").ToHexString(), mpt["acae".HexToBytes()].ToHexString());
         }
 
@@ -134,10 +150,10 @@ namespace Neo.Cryptography.MPTTrie.Tests
             mpt.Put("ac".HexToBytes(), "2222".HexToBytes());
             mpt.Put("acae".HexToBytes(), Encoding.ASCII.GetBytes("existing"));
             mpt.Put("acf1".HexToBytes(), Encoding.ASCII.GetBytes("missing"));
-            Assert.AreEqual(root.Hash.ToString(), mpt.Root.Hash.ToString());
-            Assert.ThrowsExactly<ArgumentException>(() => mpt.Put(Array.Empty<byte>(), "01".HexToBytes()));
-            mpt.Put("01".HexToBytes(), Array.Empty<byte>());
-            Assert.ThrowsExactly<ArgumentException>(() => mpt.Put(new byte[Node.MaxKeyLength / 2 + 1], Array.Empty<byte>()));
+            Assert.AreEqual(_root.Hash.ToString(), mpt.Root.Hash.ToString());
+            Assert.ThrowsExactly<ArgumentException>(() => mpt.Put([], "01".HexToBytes()));
+            mpt.Put("01".HexToBytes(), []);
+            Assert.ThrowsExactly<ArgumentException>(() => mpt.Put(new byte[Node.MaxKeyLength / 2 + 1], []));
             Assert.ThrowsExactly<ArgumentException>(() => mpt.Put("01".HexToBytes(), new byte[Node.MaxValueLength + 1]));
             mpt.Put("ac01".HexToBytes(), "ab".HexToBytes());
         }
@@ -145,17 +161,17 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestPutCantResolve()
         {
-            var mpt = new Trie(mptdb.GetSnapshot(), root.Hash);
-            Assert.ThrowsExactly<InvalidOperationException>(() => mpt.Put("acf111".HexToBytes(), new byte[] { 1 }));
+            var mpt = new Trie(_mptdb.GetSnapshot(), _root.Hash);
+            Assert.ThrowsExactly<InvalidOperationException>(() => mpt.Put("acf111".HexToBytes(), [1]));
         }
 
         [TestMethod]
         public void TestTryDelete()
         {
-            var mpt = new Trie(mptdb.GetSnapshot(), root.Hash);
+            var mpt = new Trie(_mptdb.GetSnapshot(), _root.Hash);
             Assert.IsNotNull(mpt["ac".HexToBytes()]);
             Assert.IsFalse(mpt.Delete("0c99".HexToBytes()));
-            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt.Delete(Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt.Delete([]));
             Assert.IsFalse(mpt.Delete("ac20".HexToBytes()));
             Assert.ThrowsExactly<InvalidOperationException>(() => _ = mpt.Delete("acf1".HexToBytes()));
             Assert.IsTrue(mpt.Delete("ac".HexToBytes()));
@@ -189,8 +205,8 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var r = Node.NewExtension("0a0c".HexToBytes(), b);
             var v1 = Node.NewLeaf("abcd".HexToBytes());//key=ac01
             var v4 = Node.NewLeaf(Encoding.ASCII.GetBytes("missing"));
-            var e1 = Node.NewExtension(new byte[] { 0x01 }, v1);
-            var e4 = Node.NewExtension(new byte[] { 0x01 }, v4);
+            var e1 = Node.NewExtension([0x01], v1);
+            var e4 = Node.NewExtension([0x01], v4);
             b.Children[0] = e1;
             b.Children[15] = Node.NewHash(e4.Hash);
             var store = new MemoryStore();
@@ -203,7 +219,6 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var mpt = new Trie(snapshot, r.Hash);
             Assert.ThrowsExactly<InvalidOperationException>(() => _ = mpt.Delete("ac01".HexToBytes()));
         }
-
 
         [TestMethod]
         public void TestDeleteSameValue()
@@ -252,15 +267,15 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var v3 = Node.NewLeaf(Encoding.ASCII.GetBytes("existing"));//key=acae
             var v4 = Node.NewLeaf(Encoding.ASCII.GetBytes("missing"));
             var h3 = Node.NewHash(v3.Hash);
-            var e1 = Node.NewExtension(new byte[] { 0x01 }, v1);
-            var e3 = Node.NewExtension(new byte[] { 0x0e }, h3);
-            var e4 = Node.NewExtension(new byte[] { 0x01 }, v4);
+            var e1 = Node.NewExtension([0x01], v1);
+            var e3 = Node.NewExtension([0x0e], h3);
+            var e4 = Node.NewExtension([0x01], v4);
             b.Children[0] = e1;
             b.Children[10] = e3;
             b.Children[16] = v2;
             b.Children[15] = Node.NewHash(e4.Hash);
 
-            var mpt = new Trie(mptdb.GetSnapshot(), r.Hash);
+            var mpt = new Trie(_mptdb.GetSnapshot(), r.Hash);
             Assert.AreEqual(r.Hash.ToString(), mpt.Root.Hash.ToString());
             var result = mpt.TryGetProof("ac01".HexToBytes(), out var proof);
             Assert.IsTrue(result);
@@ -279,7 +294,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
             result = mpt.TryGetProof("acae".HexToBytes(), out proof);
             Assert.AreEqual(4, proof.Count);
 
-            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt.TryGetProof(Array.Empty<byte>(), out proof));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt.TryGetProof([], out proof));
 
             result = mpt.TryGetProof("ac0100".HexToBytes(), out proof);
             Assert.IsFalse(result);
@@ -290,12 +305,12 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestVerifyProof()
         {
-            var mpt = new Trie(mptdb.GetSnapshot(), root.Hash);
+            var mpt = new Trie(_mptdb.GetSnapshot(), _root.Hash);
             var result = mpt.TryGetProof("ac01".HexToBytes(), out var proof);
             Assert.IsTrue(result);
-            var value = Trie.VerifyProof(root.Hash, "ac01".HexToBytes(), proof);
+            var value = Trie.VerifyProof(_root.Hash, "ac01".HexToBytes(), proof);
             Assert.IsNotNull(value);
-            Assert.AreEqual(value.ToHexString(), "abcd");
+            Assert.AreEqual("abcd", value.ToHexString());
         }
 
         [TestMethod]
@@ -304,9 +319,9 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
             var mpt = new Trie(snapshot, null);
-            mpt.Put(new byte[] { 0xab }, new byte[] { 0x01 });
-            mpt.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x02 });
-            Assert.AreEqual("01", mpt[new byte[] { 0xab }].ToHexString());
+            mpt.Put([0xab], [0x01]);
+            mpt.Put([0xab, 0xcd], [0x02]);
+            Assert.AreEqual("01", mpt[[0xab]].ToHexString());
         }
 
         [TestMethod]
@@ -315,15 +330,15 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
             var mpt1 = new Trie(snapshot, null);
-            mpt1.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 });
-            mpt1.Put(new byte[] { 0xab }, new byte[] { 0x02 });
-            var r = mpt1.TryGetProof(new byte[] { 0xab, 0xcd }, out var set1);
+            mpt1.Put([0xab, 0xcd], [0x01]);
+            mpt1.Put([0xab], [0x02]);
+            var r = mpt1.TryGetProof([0xab, 0xcd], out var set1);
             Assert.IsTrue(r);
             Assert.AreEqual(4, set1.Count);
             var mpt2 = new Trie(snapshot, null);
-            mpt2.Put(new byte[] { 0xab }, new byte[] { 0x02 });
-            mpt2.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 });
-            r = mpt2.TryGetProof(new byte[] { 0xab, 0xcd }, out var set2);
+            mpt2.Put([0xab], [0x02]);
+            mpt2.Put([0xab, 0xcd], [0x01]);
+            r = mpt2.TryGetProof([0xab, 0xcd], out var set2);
             Assert.IsTrue(r);
             Assert.AreEqual(4, set2.Count);
             Assert.AreEqual(mpt1.Root.Hash, mpt2.Root.Hash);
@@ -335,21 +350,21 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
             var mpt1 = new Trie(snapshot, null);
-            var results = mpt1.Find(ReadOnlySpan<byte>.Empty).ToArray();
+            var results = mpt1.Find([]).ToArray();
             Assert.AreEqual(0, results.Length);
             var mpt2 = new Trie(snapshot, null);
-            mpt2.Put(new byte[] { 0xab, 0xcd, 0xef }, new byte[] { 0x01 });
-            mpt2.Put(new byte[] { 0xab, 0xcd, 0xe1 }, new byte[] { 0x02 });
-            mpt2.Put(new byte[] { 0xab }, new byte[] { 0x03 });
-            results = mpt2.Find(ReadOnlySpan<byte>.Empty).ToArray();
+            mpt2.Put([0xab, 0xcd, 0xef], [0x01]);
+            mpt2.Put([0xab, 0xcd, 0xe1], [0x02]);
+            mpt2.Put([0xab], [0x03]);
+            results = [.. mpt2.Find([])];
             Assert.AreEqual(3, results.Length);
-            results = mpt2.Find(new byte[] { 0xab }).ToArray();
+            results = [.. mpt2.Find([0xab])];
             Assert.AreEqual(3, results.Length);
-            results = mpt2.Find(new byte[] { 0xab, 0xcd }).ToArray();
+            results = [.. mpt2.Find([0xab, 0xcd])];
             Assert.AreEqual(2, results.Length);
-            results = mpt2.Find(new byte[] { 0xac }).ToArray();
+            results = [.. mpt2.Find([0xac])];
             Assert.AreEqual(0, results.Length);
-            results = mpt2.Find(new byte[] { 0xab, 0xcd, 0xef, 0x00 }).ToArray();
+            results = [.. mpt2.Find([0xab, 0xcd, 0xef, 0x00])];
             Assert.AreEqual(0, results.Length);
         }
 
@@ -360,8 +375,8 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var r = Node.NewExtension("0a0c".HexToBytes(), b);
             var v1 = Node.NewLeaf("abcd".HexToBytes());//key=ac01
             var v4 = Node.NewLeaf(Encoding.ASCII.GetBytes("missing"));
-            var e1 = Node.NewExtension(new byte[] { 0x01 }, v1);
-            var e4 = Node.NewExtension(new byte[] { 0x01 }, v4);
+            var e1 = Node.NewExtension([0x01], v1);
+            var e4 = Node.NewExtension([0x01], v4);
             b.Children[0] = e1;
             b.Children[15] = Node.NewHash(e4.Hash);
             var store = new MemoryStore();
@@ -381,12 +396,12 @@ namespace Neo.Cryptography.MPTTrie.Tests
             // r.Key = 0x0a0c
             // b.Key = 0x00
             // l1.Key = 0x01
-            var mpt = new Trie(mptdb.GetSnapshot(), root.Hash);
+            var mpt = new Trie(_mptdb.GetSnapshot(), _root.Hash);
             var prefix = new byte[] { 0xac, 0x01 }; // =  FromNibbles(path = { 0x0a, 0x0c, 0x00, 0x01 });
             var results = mpt.Find(prefix).ToArray();
-            Assert.AreEqual(1, results.Count());
+            Assert.AreEqual(1, results.Length);
 
-            prefix = new byte[] { 0xac }; // =  FromNibbles(path = { 0x0a, 0x0c });
+            prefix = [0xac]; // =  FromNibbles(path = { 0x0a, 0x0c });
             Assert.ThrowsExactly<InvalidOperationException>(() => _ = mpt.Find(prefix).ToArray());
         }
 
@@ -397,7 +412,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var r = Node.NewExtension("0c".HexToBytes(), b);
             var v1 = Node.NewLeaf("abcd".HexToBytes());//key=ac01
             var v2 = Node.NewLeaf("2222".HexToBytes());//key=ac
-            var e1 = Node.NewExtension(new byte[] { 0x01 }, v1);
+            var e1 = Node.NewExtension([0x01], v1);
             b.Children[0] = e1;
             b.Children[16] = v2;
             var store = new MemoryStore();
@@ -409,7 +424,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
             var snapshot = store.GetSnapshot();
             var mpt = new Trie(snapshot, r.Hash);
-            Assert.ThrowsExactly<FormatException>(() => _ = mpt.Find(Array.Empty<byte>()).Count());
+            Assert.ThrowsExactly<FormatException>(() => _ = mpt.Find([]).Count());
         }
 
         [TestMethod]
@@ -533,7 +548,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var key = "01".HexToBytes();
             var snapshot = new TestSnapshot();
             var mpt = new Trie(snapshot, null);
-            mpt.Put(key, Array.Empty<byte>());
+            mpt.Put(key, []);
             var val = mpt[key];
             Assert.IsNotNull(val);
             Assert.AreEqual(0, val.Length);
@@ -554,11 +569,11 @@ namespace Neo.Cryptography.MPTTrie.Tests
             mpt.Put("aa50".HexToBytes(), "04".HexToBytes());
             var r = mpt.Find("aa".HexToBytes()).ToList();
             Assert.AreEqual(3, r.Count);
-            r = mpt.Find("aa".HexToBytes(), "aa30".HexToBytes()).ToList();
+            r = [.. mpt.Find("aa".HexToBytes(), "aa30".HexToBytes())];
             Assert.AreEqual(1, r.Count);
-            r = mpt.Find("aa".HexToBytes(), "aa60".HexToBytes()).ToList();
+            r = [.. mpt.Find("aa".HexToBytes(), "aa60".HexToBytes())];
             Assert.AreEqual(0, r.Count);
-            r = mpt.Find("aa".HexToBytes(), "aa10".HexToBytes()).ToList();
+            r = [.. mpt.Find("aa".HexToBytes(), "aa10".HexToBytes())];
             Assert.AreEqual(1, r.Count);
         }
 
@@ -571,9 +586,9 @@ namespace Neo.Cryptography.MPTTrie.Tests
             mpt.Put("abc3".HexToBytes(), "02".HexToBytes());
             var r = mpt.Find("ab".HexToBytes(), "abd2".HexToBytes()).ToList();
             Assert.AreEqual(0, r.Count);
-            r = mpt.Find("ab".HexToBytes(), "abb2".HexToBytes()).ToList();
+            r = [.. mpt.Find("ab".HexToBytes(), "abb2".HexToBytes())];
             Assert.AreEqual(2, r.Count);
-            r = mpt.Find("ab".HexToBytes(), "abc2".HexToBytes()).ToList();
+            r = [.. mpt.Find("ab".HexToBytes(), "abc2".HexToBytes())];
             Assert.AreEqual(1, r.Count);
         }
     }

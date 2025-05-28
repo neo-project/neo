@@ -38,7 +38,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var expectedHash = UInt256.Zero;
 
             var snapshot = _neoSystem.GetSnapshotCache();
-            var b = snapshot.GetAndChange(key, () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
+            var b = snapshot.GetAndChange(key, () => new(new HashIndexState())).GetInteroperable<HashIndexState>();
             b.Hash = UInt256.Zero;
             b.Index = 100;
             snapshot.Commit();
@@ -222,10 +222,10 @@ namespace Neo.Plugins.RpcServer.Tests
 
             snapshot.DeleteContract(contractState.Hash);
             snapshot.Commit();
-            var ex1 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash)));
+            var ex1 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetContractState(new(contractState.Hash)));
             Assert.AreEqual(RpcError.UnknownContract.Message, ex1.Message);
 
-            var ex2 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id)));
+            var ex2 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetContractState(new(contractState.Id)));
             Assert.AreEqual(RpcError.UnknownContract.Message, ex2.Message);
         }
 
@@ -246,12 +246,14 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetContractState_InvalidFormat()
         {
             // Invalid Hash format (not hex)
-            var exHash = Assert.ThrowsExactly<FormatException>(() => _ = _rpcServer.GetContractState(new ContractNameOrHashOrId("0xInvalidHashString")));
+            var exHash = Assert.ThrowsExactly<FormatException>(
+                () => _ = _rpcServer.GetContractState(new("0xInvalidHashString")));
 
             // Invalid ID format (not integer - although ContractNameOrHashOrId constructor might catch this)
             // Assuming the input could come as a JValue string that fails parsing later
             // For now, let's test with an invalid name that doesn't match natives or parse as hash/id
-            var exName = Assert.ThrowsExactly<FormatException>(() => _ = _rpcServer.GetContractState(new ContractNameOrHashOrId("InvalidContractName")));
+            var exName = Assert.ThrowsExactly<FormatException>(
+                () => _ = _rpcServer.GetContractState(new("InvalidContractName")));
         }
 
         [TestMethod]
@@ -381,7 +383,7 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.StorageItemAdd(snapshot, contractState.Id, key, value);
             snapshot.Commit();
 
-            var result = _rpcServer.GetStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key));
+            var result = _rpcServer.GetStorage(new(contractState.Hash), Convert.ToBase64String(key));
             Assert.AreEqual(Convert.ToBase64String(value), result.AsString());
         }
 
@@ -395,25 +397,32 @@ namespace Neo.Plugins.RpcServer.Tests
             var value = new byte[] { 0x02 };
             TestUtils.StorageItemAdd(snapshot, contractState.Id, key, value);
             snapshot.Commit();
-            var result = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key), 0);
+            var result = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(key), 0);
 
-            var json = new JObject();
             var jarr = new JArray();
-            var j = new JObject();
-            j["key"] = Convert.ToBase64String(key);
-            j["value"] = Convert.ToBase64String(value);
+            var j = new JObject()
+            {
+                ["key"] = Convert.ToBase64String(key),
+                ["value"] = Convert.ToBase64String(value),
+            };
             jarr.Add(j);
-            json["truncated"] = false;
-            json["next"] = 1;
-            json["results"] = jarr;
+
+            var json = new JObject()
+            {
+                ["truncated"] = false,
+                ["next"] = 1,
+                ["results"] = jarr,
+            };
             Assert.AreEqual(json.ToString(), result.ToString());
 
-            var result2 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key));
+            var result2 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(key));
             Assert.AreEqual(result.ToString(), result2.ToString());
 
-            Enumerable.Range(0, 51).ToList().ForEach(i => TestUtils.StorageItemAdd(snapshot, contractState.Id, new byte[] { 0x01, (byte)i }, new byte[] { 0x02 }));
+            Enumerable.Range(0, 51)
+                .ToList()
+                .ForEach(i => TestUtils.StorageItemAdd(snapshot, contractState.Id, [0x01, (byte)i], [0x02]));
             snapshot.Commit();
-            var result4 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(new byte[] { 0x01 }), 0);
+            var result4 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(new byte[] { 0x01 }), 0);
             Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, result4["next"].AsNumber());
             Assert.IsTrue(result4["truncated"].AsBoolean());
         }
@@ -436,14 +445,14 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.Commit();
 
             // Get first page
-            var resultPage1 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(prefix), 0);
+            var resultPage1 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), 0);
             Assert.IsTrue(resultPage1["truncated"].AsBoolean());
             Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, ((JArray)resultPage1["results"]).Count);
             int nextIndex = (int)resultPage1["next"].AsNumber();
             Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, nextIndex);
 
             // Get second page
-            var resultPage2 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
+            var resultPage2 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
             Assert.IsFalse(resultPage2["truncated"].AsBoolean());
             Assert.AreEqual(5, ((JArray)resultPage2["results"]).Count);
             Assert.AreEqual(totalItems, (int)resultPage2["next"].AsNumber()); // Next should be total count
@@ -467,14 +476,14 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.Commit();
 
             // Get all items (assuming page size is larger than 3)
-            var resultPage1 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(prefix), 0);
+            var resultPage1 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), 0);
             Assert.IsFalse(resultPage1["truncated"].AsBoolean());
             Assert.AreEqual(totalItems, ((JArray)resultPage1["results"]).Count);
             int nextIndex = (int)resultPage1["next"].AsNumber();
             Assert.AreEqual(totalItems, nextIndex);
 
             // Try to get next page (should be empty)
-            var resultPage2 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
+            var resultPage2 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
             Assert.IsFalse(resultPage2["truncated"].AsBoolean());
             Assert.AreEqual(0, ((JArray)resultPage2["results"]).Count);
             Assert.AreEqual(nextIndex, (int)resultPage2["next"].AsNumber()); // Next index should remain the same
@@ -514,10 +523,11 @@ namespace Neo.Plugins.RpcServer.Tests
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
             var expected = validators.Select(p =>
             {
-                var validator = new JObject();
-                validator["publickey"] = p.ToString();
-                validator["votes"] = (int)NativeContract.NEO.GetCandidateVote(snapshot, p);
-                return validator;
+                return new JObject()
+                {
+                    ["publickey"] = p.ToString(),
+                    ["votes"] = (int)NativeContract.NEO.GetCandidateVote(snapshot, p),
+                };
             }).ToArray();
             Assert.AreEqual(new JArray(expected).ToString(), result.ToString());
         }
@@ -531,17 +541,20 @@ namespace Neo.Plugins.RpcServer.Tests
             var json = new JArray();
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
 
-            var key = new KeyBuilder(NativeContract.NEO.Id, 33).Add(ECPoint.Parse("02237309a0633ff930d51856db01d17c829a5b2e5cc2638e9c03b4cfa8e9c9f971", ECCurve.Secp256r1));
+            var key = new KeyBuilder(NativeContract.NEO.Id, 33)
+                .Add(ECPoint.Parse("02237309a0633ff930d51856db01d17c829a5b2e5cc2638e9c03b4cfa8e9c9f971", ECCurve.Secp256r1));
             snapshot.Add(key, new StorageItem(new CandidateState() { Registered = true, Votes = 10000 }));
             snapshot.Commit();
             var candidates = NativeContract.NEO.GetCandidates(_neoSystem.GetSnapshotCache());
             result = _rpcServer.GetCandidates();
             foreach (var candidate in candidates)
             {
-                var item = new JObject();
-                item["publickey"] = candidate.PublicKey.ToString();
-                item["votes"] = candidate.Votes.ToString();
-                item["active"] = validators.Contains(candidate.PublicKey);
+                var item = new JObject()
+                {
+                    ["publickey"] = candidate.PublicKey.ToString(),
+                    ["votes"] = candidate.Votes.ToString(),
+                    ["active"] = validators.Contains(candidate.PublicKey),
+                };
                 json.Add(item);
             }
             Assert.AreEqual(json.ToString(), result.ToString());
@@ -560,8 +573,11 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestGetNativeContracts()
         {
+            var snapshot = _neoSystem.GetSnapshotCache();
             var result = _rpcServer.GetNativeContracts();
-            var contracts = new JArray(NativeContract.Contracts.Select(p => NativeContract.ContractManagement.GetContract(_neoSystem.GetSnapshotCache(), p.Hash).ToJson()));
+            var states = NativeContract.Contracts
+                .Select(p => NativeContract.ContractManagement.GetContract(snapshot, p.Hash).ToJson());
+            var contracts = new JArray(states);
             Assert.AreEqual(contracts.ToString(), result.ToString());
         }
 

@@ -36,12 +36,16 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson()
         {
-            JObject json = new();
-            json["script"] = Script;
-            json["state"] = State;
-            json["gasconsumed"] = GasConsumed.ToString();
+            var json = new JObject()
+            {
+                ["script"] = Script,
+                ["state"] = State,
+                ["gasconsumed"] = GasConsumed.ToString()
+            };
+
             if (!string.IsNullOrEmpty(Exception))
                 json["exception"] = Exception;
+
             try
             {
                 json["stack"] = new JArray(Stack.Select(p => p.ToJson()));
@@ -51,13 +55,14 @@ namespace Neo.Network.RPC.Models
                 // ContractParameter.ToJson() may cause InvalidOperationException
                 json["stack"] = "error: recursive reference";
             }
+
             if (!string.IsNullOrEmpty(Tx)) json["tx"] = Tx;
             return json;
         }
 
         public static RpcInvokeResult FromJson(JObject json)
         {
-            RpcInvokeResult invokeScriptResult = new()
+            var invokeScriptResult = new RpcInvokeResult()
             {
                 Script = json["script"].AsString(),
                 State = json["state"].GetEnum<VMState>(),
@@ -81,13 +86,7 @@ namespace Neo.Network.RPC.Models
 
         public JToken Value { get; set; }
 
-        public JObject ToJson()
-        {
-            JObject json = new();
-            json["type"] = Type;
-            json["value"] = Value;
-            return json;
-        }
+        public JObject ToJson() => new() { ["type"] = Type, ["value"] = Value };
 
         public static RpcStack FromJson(JObject json)
         {
