@@ -13,9 +13,11 @@ using Neo.Extensions;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
@@ -82,19 +84,29 @@ namespace Neo.Plugins.LedgerDebugger
         private readonly ReaderWriterLockSlim _lock = new();
 
         /// <summary>
-        /// Cache for recently accessed values to improve performance
+        /// LRU cache for recently accessed values to improve performance
         /// </summary>
-        private readonly ConcurrentDictionary<string, byte[]> _valueCache = new();
+        private readonly LruCache<string, byte[]> _valueCache = new(1000);
 
         /// <summary>
-        /// Maximum size of the value cache
+        /// Bloom filter for fast existence checks
         /// </summary>
-        private const int MaxCacheSize = 1000;
+        private readonly BloomFilter _bloomFilter = new(100000, 0.01); // 100k items, 1% false positive rate
+
+        /// <summary>
+        /// Storage metrics for monitoring efficiency
+        /// </summary>
+        private readonly StorageMetrics _metrics = new();
 
         /// <summary>
         /// Tracks if the instance has been disposed
         /// </summary>
         private volatile bool _disposed = false;
+
+        /// <summary>
+        /// Minimum size for compression (bytes)
+        /// </summary>
+        private const int CompressionThreshold = 1024; // 1KB
 
         #endregion
 
@@ -180,8 +192,7 @@ namespace Neo.Plugins.LedgerDebugger
                     var oldKey = CreateBlockReadSetKey(blockIndex - (uint)_maxReadSetsToKeep);
                     _snapshot.Delete(oldKey);
 
-                    // Also clean up orphaned values from the cache
-                    CleanupValueCache();
+                    // LRU cache automatically handles cleanup, no manual intervention needed
                 }
 
                 _snapshot.Commit();
@@ -252,6 +263,7 @@ namespace Neo.Plugins.LedgerDebugger
                     _snapshot?.Dispose();
                     _store?.Dispose();
                     _valueCache.Clear();
+                    _bloomFilter.Clear();
                     _disposed = true;
                 }
             }
@@ -275,18 +287,35 @@ namespace Neo.Plugins.LedgerDebugger
         }
 
         /// <summary>
-        /// Cleans up the value cache when it gets too large.
+        /// Gets storage efficiency metrics.
         /// </summary>
-        private void CleanupValueCache()
+        /// <returns>Storage metrics for monitoring</returns>
+        public StorageMetrics GetMetrics()
         {
-            if (_valueCache.Count > MaxCacheSize)
+            return _metrics;
+        }
+
+        /// <summary>
+        /// Performs background maintenance tasks to optimize storage.
+        /// </summary>
+        public void PerformMaintenance()
+        {
+            _lock.EnterWriteLock();
+            try
             {
-                // Simple cleanup: remove half the entries
-                var keysToRemove = _valueCache.Keys.Take(_valueCache.Count / 2).ToArray();
-                foreach (var key in keysToRemove)
+                // Clear cache to free memory
+                _valueCache.Clear();
+
+                // Reset bloom filter periodically to prevent saturation
+                if (_metrics.StoreAttempts > 50000)
                 {
-                    _valueCache.TryRemove(key, out _);
+                    _bloomFilter.Clear();
+                    _metrics.Reset();
                 }
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
             }
         }
 
@@ -295,26 +324,76 @@ namespace Neo.Plugins.LedgerDebugger
         #region Content-Addressable Storage Implementation
 
         /// <summary>
-        /// Stores a value using content-addressable storage if it exceeds the threshold size.
+        /// Stores a value using content-addressable storage with compression and deduplication.
         /// Small values (≤ ValueHashThreshold) are returned directly.
-        /// Large values (> ValueHashThreshold) are stored by their hash, and the hash is returned.
+        /// Large values are compressed if beneficial, stored by hash, and the hash is returned.
         /// </summary>
         /// <param name="valueBytes">The value bytes to store</param>
         /// <returns>The value itself for small values, or its hash for large values</returns>
         private byte[] StoreValue(byte[] valueBytes)
         {
+            _metrics.IncrementStoreAttempts();
+
             // For small values, return them directly without additional storage
             if (valueBytes.Length <= ValueHashThreshold)
+            {
+                _metrics.IncrementSmallValues();
                 return valueBytes;
+            }
 
-            // For larger values, calculate hash and store value using content-addressable storage
+            // Calculate hash for deduplication
             var hash = _sha256.ComputeHash(valueBytes);
+            var hashString = Convert.ToHexString(hash);
             var valueKey = CreateValueKey(hash);
 
-            // Only store if not already present (deduplication)
-            if (!_snapshot!.Contains(valueKey))
+            // Check bloom filter first for fast negative lookups
+            if (!_bloomFilter.Contains(hashString))
             {
-                _snapshot.Put(valueKey, valueBytes);
+                // Definitely not present, so we need to store it
+                var dataToStore = valueBytes;
+
+                // Apply compression if the value is large enough and compression is beneficial
+                if (valueBytes.Length >= CompressionThreshold)
+                {
+                    var compressed = CompressData(valueBytes);
+                    if (compressed.Length < valueBytes.Length * 0.9) // Only use if >10% reduction
+                    {
+                        dataToStore = compressed;
+                        _metrics.IncrementCompressedValues();
+                    }
+                }
+
+                _snapshot!.Put(valueKey, dataToStore);
+                _bloomFilter.Add(hashString);
+                _metrics.IncrementStoredValues();
+                _metrics.AddStorageBytes(dataToStore.Length);
+            }
+            else
+            {
+                // Might be present, check actual storage
+                if (!_snapshot!.Contains(valueKey))
+                {
+                    // False positive in bloom filter
+                    var dataToStore = valueBytes;
+
+                    if (valueBytes.Length >= CompressionThreshold)
+                    {
+                        var compressed = CompressData(valueBytes);
+                        if (compressed.Length < valueBytes.Length * 0.9)
+                        {
+                            dataToStore = compressed;
+                            _metrics.IncrementCompressedValues();
+                        }
+                    }
+
+                    _snapshot.Put(valueKey, dataToStore);
+                    _metrics.IncrementStoredValues();
+                    _metrics.AddStorageBytes(dataToStore.Length);
+                }
+                else
+                {
+                    _metrics.IncrementDeduplicatedValues();
+                }
             }
 
             return hash;
@@ -322,37 +401,86 @@ namespace Neo.Plugins.LedgerDebugger
 
         /// <summary>
         /// Retrieves a value from storage, handling both direct values and hash references.
-        /// Uses caching to improve performance for frequently accessed values.
+        /// Uses LRU caching and automatic decompression for optimal performance.
         /// </summary>
         /// <param name="keyOrValue">Either a direct value (≤ ValueHashThreshold) or a hash reference</param>
         /// <returns>The actual value bytes</returns>
         private byte[] RetrieveValue(byte[] keyOrValue)
         {
+            _metrics.IncrementRetrieveAttempts();
+
             // If it's a small value, it's stored directly - return it as is
             if (keyOrValue.Length <= ValueHashThreshold)
+            {
+                _metrics.IncrementCacheHits(); // Small values are effectively cached
                 return keyOrValue;
+            }
 
-            // For a hash reference, check cache first
+            // For a hash reference, check LRU cache first
             var hashString = Convert.ToHexString(keyOrValue);
             if (_valueCache.TryGetValue(hashString, out var cachedValue))
             {
+                _metrics.IncrementCacheHits();
                 return cachedValue;
             }
 
-            // Retrieve from storage and cache the result
+            // Cache miss - retrieve from storage
+            _metrics.IncrementCacheMisses();
             var valueKey = CreateValueKey(keyOrValue);
             if (_snapshot!.TryGet(valueKey, out var storedValue))
             {
-                // Add to cache if not too large
-                if (_valueCache.Count < MaxCacheSize)
-                {
-                    _valueCache.TryAdd(hashString, storedValue);
-                }
-                return storedValue;
+                // Decompress if needed (detect compression by trying to decompress)
+                var actualValue = TryDecompressData(storedValue);
+
+                // Add to LRU cache (automatically handles eviction)
+                _valueCache.Set(hashString, actualValue);
+
+                return actualValue;
             }
 
             // Fallback: return the hash itself if value not found
             return keyOrValue;
+        }
+
+        /// <summary>
+        /// Compresses data using GZip compression.
+        /// </summary>
+        /// <param name="data">Data to compress</param>
+        /// <returns>Compressed data with compression marker</returns>
+        private static byte[] CompressData(byte[] data)
+        {
+            using var output = new MemoryStream();
+            output.WriteByte(1); // Compression marker
+            using (var gzip = new GZipStream(output, CompressionLevel.Optimal))
+            {
+                gzip.Write(data);
+            }
+            return output.ToArray();
+        }
+
+        /// <summary>
+        /// Attempts to decompress data, returning original data if not compressed.
+        /// </summary>
+        /// <param name="data">Data that might be compressed</param>
+        /// <returns>Decompressed data or original data if not compressed</returns>
+        private static byte[] TryDecompressData(byte[] data)
+        {
+            if (data.Length == 0 || data[0] != 1) // Check compression marker
+                return data;
+
+            try
+            {
+                using var input = new MemoryStream(data, 1, data.Length - 1); // Skip marker
+                using var gzip = new GZipStream(input, CompressionMode.Decompress);
+                using var output = new MemoryStream();
+                gzip.CopyTo(output);
+                return output.ToArray();
+            }
+            catch
+            {
+                // If decompression fails, return original data
+                return data;
+            }
         }
 
         #endregion
@@ -456,5 +584,207 @@ namespace Neo.Plugins.LedgerDebugger
 
         #endregion
     }
-}
 
+    /// <summary>
+    /// LRU (Least Recently Used) cache implementation for efficient value caching.
+    /// </summary>
+    /// <typeparam name="TKey">The type of keys</typeparam>
+    /// <typeparam name="TValue">The type of values</typeparam>
+    internal class LruCache<TKey, TValue> where TKey : notnull
+    {
+        private readonly int _capacity;
+        private readonly Dictionary<TKey, LinkedListNode<CacheItem>> _cache;
+        private readonly LinkedList<CacheItem> _lruList;
+        private readonly object _lock = new();
+
+        public LruCache(int capacity)
+        {
+            _capacity = capacity;
+            _cache = new Dictionary<TKey, LinkedListNode<CacheItem>>(capacity);
+            _lruList = new LinkedList<CacheItem>();
+        }
+
+        public bool TryGetValue(TKey key, out TValue value)
+        {
+            lock (_lock)
+            {
+                if (_cache.TryGetValue(key, out var node))
+                {
+                    // Move to front (most recently used)
+                    _lruList.Remove(node);
+                    _lruList.AddFirst(node);
+                    value = node.Value.Value;
+                    return true;
+                }
+                value = default!;
+                return false;
+            }
+        }
+
+        public void Set(TKey key, TValue value)
+        {
+            lock (_lock)
+            {
+                if (_cache.TryGetValue(key, out var existingNode))
+                {
+                    // Update existing item
+                    existingNode.Value.Value = value;
+                    _lruList.Remove(existingNode);
+                    _lruList.AddFirst(existingNode);
+                }
+                else
+                {
+                    // Add new item
+                    if (_cache.Count >= _capacity)
+                    {
+                        // Remove least recently used item
+                        var lru = _lruList.Last!;
+                        _lruList.RemoveLast();
+                        _cache.Remove(lru.Value.Key);
+                    }
+
+                    var newNode = new LinkedListNode<CacheItem>(new CacheItem(key, value));
+                    _lruList.AddFirst(newNode);
+                    _cache[key] = newNode;
+                }
+            }
+        }
+
+        public void Clear()
+        {
+            lock (_lock)
+            {
+                _cache.Clear();
+                _lruList.Clear();
+            }
+        }
+
+        public int Count
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _cache.Count;
+                }
+            }
+        }
+
+        private class CacheItem
+        {
+            public TKey Key { get; }
+            public TValue Value { get; set; }
+
+            public CacheItem(TKey key, TValue value)
+            {
+                Key = key;
+                Value = value;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Bloom filter implementation for fast existence checks with configurable false positive rate.
+    /// </summary>
+    internal class BloomFilter
+    {
+        private readonly BitArray _bits;
+        private readonly int _hashFunctions;
+        private readonly int _size;
+
+        public BloomFilter(int expectedItems, double falsePositiveRate)
+        {
+            // Calculate optimal size and hash functions
+            _size = (int)Math.Ceiling(-expectedItems * Math.Log(falsePositiveRate) / (Math.Log(2) * Math.Log(2)));
+            _hashFunctions = (int)Math.Ceiling(_size * Math.Log(2) / expectedItems);
+            _bits = new BitArray(_size);
+        }
+
+        public void Add(string item)
+        {
+            var hashes = GetHashes(item);
+            for (int i = 0; i < _hashFunctions; i++)
+            {
+                var index = Math.Abs((hashes[0] + i * hashes[1]) % _size);
+                _bits[index] = true;
+            }
+        }
+
+        public bool Contains(string item)
+        {
+            var hashes = GetHashes(item);
+            for (int i = 0; i < _hashFunctions; i++)
+            {
+                var index = Math.Abs((hashes[0] + i * hashes[1]) % _size);
+                if (!_bits[index])
+                    return false;
+            }
+            return true;
+        }
+
+        public void Clear()
+        {
+            _bits.SetAll(false);
+        }
+
+        private static int[] GetHashes(string item)
+        {
+            var hash1 = item.GetHashCode();
+            var hash2 = item.GetHashCode(StringComparison.Ordinal);
+            return new[] { hash1, hash2 };
+        }
+    }
+
+    /// <summary>
+    /// Storage metrics for monitoring efficiency and performance.
+    /// </summary>
+    public class StorageMetrics
+    {
+        private long _storeAttempts;
+        private long _retrieveAttempts;
+        private long _cacheHits;
+        private long _cacheMisses;
+        private long _smallValues;
+        private long _storedValues;
+        private long _compressedValues;
+        private long _deduplicatedValues;
+        private long _totalStorageBytes;
+
+        public long StoreAttempts => _storeAttempts;
+        public long RetrieveAttempts => _retrieveAttempts;
+        public long CacheHits => _cacheHits;
+        public long CacheMisses => _cacheMisses;
+        public long SmallValues => _smallValues;
+        public long StoredValues => _storedValues;
+        public long CompressedValues => _compressedValues;
+        public long DeduplicatedValues => _deduplicatedValues;
+        public long TotalStorageBytes => _totalStorageBytes;
+
+        public double CacheHitRate => _retrieveAttempts > 0 ? (double)_cacheHits / _retrieveAttempts : 0;
+        public double CompressionRate => _storedValues > 0 ? (double)_compressedValues / _storedValues : 0;
+        public double DeduplicationRate => _storeAttempts > 0 ? (double)_deduplicatedValues / _storeAttempts : 0;
+
+        public void IncrementStoreAttempts() => Interlocked.Increment(ref _storeAttempts);
+        public void IncrementRetrieveAttempts() => Interlocked.Increment(ref _retrieveAttempts);
+        public void IncrementCacheHits() => Interlocked.Increment(ref _cacheHits);
+        public void IncrementCacheMisses() => Interlocked.Increment(ref _cacheMisses);
+        public void IncrementSmallValues() => Interlocked.Increment(ref _smallValues);
+        public void IncrementStoredValues() => Interlocked.Increment(ref _storedValues);
+        public void IncrementCompressedValues() => Interlocked.Increment(ref _compressedValues);
+        public void IncrementDeduplicatedValues() => Interlocked.Increment(ref _deduplicatedValues);
+        public void AddStorageBytes(long bytes) => Interlocked.Add(ref _totalStorageBytes, bytes);
+
+        public void Reset()
+        {
+            Interlocked.Exchange(ref _storeAttempts, 0);
+            Interlocked.Exchange(ref _retrieveAttempts, 0);
+            Interlocked.Exchange(ref _cacheHits, 0);
+            Interlocked.Exchange(ref _cacheMisses, 0);
+            Interlocked.Exchange(ref _smallValues, 0);
+            Interlocked.Exchange(ref _storedValues, 0);
+            Interlocked.Exchange(ref _compressedValues, 0);
+            Interlocked.Exchange(ref _deduplicatedValues, 0);
+            Interlocked.Exchange(ref _totalStorageBytes, 0);
+        }
+    }
+}

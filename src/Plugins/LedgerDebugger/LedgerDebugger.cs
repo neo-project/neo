@@ -316,7 +316,7 @@ namespace Neo.Plugins.LedgerDebugger
         /// <summary>
         /// Console command to show storage statistics and health information.
         /// </summary>
-        [ConsoleCommand("ledger debug info", Category = "Ledger Debug", Description = "Show LedgerDebugger storage statistics")]
+        [ConsoleCommand("ledger debug info", Category = "Ledger Debug", Description = "Show LedgerDebugger storage statistics and efficiency metrics")]
         private void ShowDebugInfo()
         {
             try
@@ -334,11 +334,25 @@ namespace Neo.Plugins.LedgerDebugger
                 }
 
                 var currentHeight = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
+                var metrics = _blockReadSetStorage.GetMetrics();
 
                 Log("=== LedgerDebugger Information ===");
                 Log($"Storage Path: {Settings.Default?.Path ?? "Not configured"}");
+                Log($"Store Provider: {Settings.Default?.StoreProvider ?? "Not configured"}");
                 Log($"Max Read Sets to Keep: {Settings.Default?.MaxReadSetsToKeep ?? 0}");
                 Log($"Current Blockchain Height: {currentHeight}");
+
+                Log("\n=== Storage Efficiency Metrics ===");
+                Log($"Store Attempts: {metrics.StoreAttempts:N0}");
+                Log($"Retrieve Attempts: {metrics.RetrieveAttempts:N0}");
+                Log($"Cache Hit Rate: {metrics.CacheHitRate:P2}");
+                Log($"Compression Rate: {metrics.CompressionRate:P2}");
+                Log($"Deduplication Rate: {metrics.DeduplicationRate:P2}");
+                Log($"Small Values: {metrics.SmallValues:N0}");
+                Log($"Stored Values: {metrics.StoredValues:N0}");
+                Log($"Compressed Values: {metrics.CompressedValues:N0}");
+                Log($"Deduplicated Values: {metrics.DeduplicatedValues:N0}");
+                Log($"Total Storage Bytes: {FormatBytes(metrics.TotalStorageBytes)}");
 
                 // Count available read sets
                 uint availableReadSets = 0;
@@ -352,13 +366,57 @@ namespace Neo.Plugins.LedgerDebugger
                     }
                 }
 
+                Log($"\n=== Read Set Availability ===");
                 Log($"Available Read Sets (last 100 blocks): {availableReadSets}");
+                Log($"Coverage: {(double)availableReadSets / Math.Min(100, currentHeight + 1):P1}");
                 Log("=====================================");
             }
             catch (Exception ex)
             {
                 Log($"Error retrieving debug info: {ex.Message}", LogLevel.Error);
             }
+        }
+
+        /// <summary>
+        /// Console command to perform storage maintenance and optimization.
+        /// </summary>
+        [ConsoleCommand("ledger debug maintenance", Category = "Ledger Debug", Description = "Perform storage maintenance and optimization")]
+        private void PerformMaintenance()
+        {
+            try
+            {
+                if (_blockReadSetStorage == null)
+                {
+                    Log("Block read set storage not initialized", LogLevel.Error);
+                    return;
+                }
+
+                Log("Performing storage maintenance...");
+                _blockReadSetStorage.PerformMaintenance();
+                Log("Storage maintenance completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Log($"Error during maintenance: {ex.Message}", LogLevel.Error);
+            }
+        }
+
+        /// <summary>
+        /// Formats bytes into human-readable format.
+        /// </summary>
+        /// <param name="bytes">Number of bytes</param>
+        /// <returns>Formatted string</returns>
+        private static string FormatBytes(long bytes)
+        {
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int counter = 0;
+            decimal number = bytes;
+            while (Math.Round(number / 1024) >= 1)
+            {
+                number /= 1024;
+                counter++;
+            }
+            return $"{number:N1} {suffixes[counter]}";
         }
 
         #endregion
