@@ -165,7 +165,7 @@ namespace Neo.UnitTests.IO
             CollectionAssert.AreEqual(data, spanLittleEndian.ToArray());
 
             var dataLittleEndian = new byte[UInt160.Length];
-            value.SerializeLittleEndian(dataLittleEndian.AsSpan());
+            value.SafeSerialize(dataLittleEndian.AsSpan());
             CollectionAssert.AreEqual(data, dataLittleEndian);
 
             // Check that Serialize LittleEndian and Serialize BigEndian are equals
@@ -175,7 +175,7 @@ namespace Neo.UnitTests.IO
 
             var shortBuffer = new byte[UInt160.Length - 1];
             Assert.ThrowsExactly<ArgumentException>(() => value.Serialize(shortBuffer.AsSpan()));
-            Assert.ThrowsExactly<ArgumentException>(() => value.SerializeLittleEndian(shortBuffer.AsSpan()));
+            Assert.ThrowsExactly<ArgumentException>(() => value.SafeSerialize(shortBuffer.AsSpan()));
         }
     }
 }

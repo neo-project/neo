@@ -120,7 +120,7 @@ namespace Neo
         internal Span<byte> GetSpanLittleEndian()
         {
             Span<byte> buffer = new byte[Length];
-            SerializeLittleEndian(buffer);
+            SafeSerialize(buffer);
             return buffer; // Keep the same output as Serialize when BigEndian
         }
 
@@ -154,13 +154,13 @@ namespace Neo
             }
             else
             {
-                SerializeLittleEndian(destination);
+                SafeSerialize(destination);
             }
         }
 
         // internal for testing, don't use it directly
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void SerializeLittleEndian(Span<byte> destination)
+        internal void SafeSerialize(Span<byte> destination)
         {
             // Avoid partial write and keep the same Exception as before if the buffer is too small
             if (destination.Length < Length)
