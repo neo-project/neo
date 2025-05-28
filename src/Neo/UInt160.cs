@@ -114,7 +114,7 @@ namespace Neo
         internal Span<byte> GetSpanLittleEndian()
         {
             Span<byte> buffer = new byte[Length];
-            SerializeSafeLittleEndian(buffer);
+            SerializeLittleEndian(buffer);
             return buffer; // Keep the same output as Serialize when BigEndian
         }
 
@@ -128,20 +128,23 @@ namespace Neo
             }
             else
             {
-                SerializeSafeLittleEndian(destination);
+                SerializeLittleEndian(destination);
             }
         }
 
-        internal void SerializeSafeLittleEndian(Span<byte> destination)
+        // internal for testing, don't use it directly
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void SerializeLittleEndian(Span<byte> destination)
         {
+            // Avoid partial write and keep the same Exception as before if the buffer is too small
+            if (destination.Length < Length)
+                throw new ArgumentException($"buffer({destination.Length}) is too small", nameof(destination));
+
             const int IxValue2 = sizeof(ulong);
             const int IxValue3 = sizeof(ulong) * 2;
-
-            Span<byte> buffer = stackalloc byte[Length];
-            BinaryPrimitives.WriteUInt64LittleEndian(buffer, _value1);
-            BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], _value2);
-            BinaryPrimitives.WriteUInt32LittleEndian(buffer[IxValue3..], _value3);
-            buffer.CopyTo(destination);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination, _value1);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination[IxValue2..], _value2);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination[IxValue3..], _value3);
         }
 
         /// <summary>
