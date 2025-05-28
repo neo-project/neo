@@ -15,14 +15,14 @@ using System;
 namespace Neo.Plugins.LedgerDebugger
 {
     /// <summary>
-    /// Configuration settings for the LedgerDebugger plugin.
+    /// Configuration settings for LedgerDebugger plugin.
     /// </summary>
     internal class Settings
     {
         #region Constants
 
         /// <summary>
-        /// Default storage path pattern. {0} will be replaced with network identifier.
+        /// Default storage path pattern.
         /// </summary>
         private const string DefaultPath = "ReadSets_{0}";
 
@@ -32,7 +32,7 @@ namespace Neo.Plugins.LedgerDebugger
         private const string DefaultStoreProvider = "LevelDBStore";
 
         /// <summary>
-        /// Default maximum number of read sets to keep.
+        /// Default maximum read sets to keep.
         /// </summary>
         private const int DefaultMaxReadSetsToKeep = 10000;
 
@@ -41,22 +41,22 @@ namespace Neo.Plugins.LedgerDebugger
         #region Properties
 
         /// <summary>
-        /// Gets the storage path for block read sets.
+        /// Storage path for block read sets.
         /// </summary>
         public string Path { get; }
 
         /// <summary>
-        /// Gets the storage provider for block read sets.
+        /// Storage provider for block read sets.
         /// </summary>
         public string StoreProvider { get; }
 
         /// <summary>
-        /// Gets the maximum number of read sets to keep before removing older ones.
+        /// Maximum read sets to keep.
         /// </summary>
         public int MaxReadSetsToKeep { get; }
 
         /// <summary>
-        /// Gets the singleton instance of settings.
+        /// Singleton instance of settings.
         /// </summary>
         public static Settings? Default { get; private set; }
 
@@ -65,10 +65,8 @@ namespace Neo.Plugins.LedgerDebugger
         #region Constructor
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Settings"/> class.
+        /// Initializes settings from configuration section.
         /// </summary>
-        /// <param name="section">The configuration section to load settings from.</param>
-        /// <exception cref="ArgumentNullException">Thrown if section is null.</exception>
         private Settings(IConfigurationSection section)
         {
             if (section == null)
@@ -97,8 +95,6 @@ namespace Neo.Plugins.LedgerDebugger
         /// <summary>
         /// Loads settings from configuration section.
         /// </summary>
-        /// <param name="section">The configuration section.</param>
-        /// <exception cref="ArgumentNullException">Thrown if section is null.</exception>
         public static void Load(IConfigurationSection section)
         {
             if (section == null)

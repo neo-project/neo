@@ -170,10 +170,8 @@ namespace Neo.Plugins.LedgerDebugger
         #region Console Commands
 
         /// <summary>
-        /// Console command to re-execute a block with the previously captured state.
+        /// Re-execute a block using captured state.
         /// </summary>
-        /// <param name="blockIndex">The index of the block to re-execute</param>
-        /// <param name="txHash">Optional transaction hash to highlight during execution</param>
         [ConsoleCommand("execute block", Category = "Ledger Debug", Description = "Re-execute a block using captured state")]
         private void ExecuteBlock(uint blockIndex, UInt256? txHash = null)
         {
@@ -251,9 +249,6 @@ namespace Neo.Plugins.LedgerDebugger
         /// <summary>
         /// Executes the OnPersist phase for a block.
         /// </summary>
-        /// <param name="snapshot">The data cache snapshot</param>
-        /// <param name="block">The block to execute</param>
-        /// <exception cref="InvalidOperationException">Thrown if execution fails</exception>
         private void ExecuteOnPersist(DataCache snapshot, Block block)
         {
             using var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, _neoSystem!.Settings, 0);
@@ -273,9 +268,6 @@ namespace Neo.Plugins.LedgerDebugger
         /// <summary>
         /// Executes the transactions in a block.
         /// </summary>
-        /// <param name="snapshot">The data cache snapshot</param>
-        /// <param name="block">The block containing transactions</param>
-        /// <param name="txHash">Optional transaction hash to highlight</param>
         private void ExecuteTransactions(DataCache snapshot, Block block, UInt256? txHash)
         {
             var clonedSnapshot = snapshot.CloneCache();
@@ -314,7 +306,7 @@ namespace Neo.Plugins.LedgerDebugger
         }
 
         /// <summary>
-        /// Console command to show storage statistics and health information.
+        /// Show storage statistics and efficiency metrics.
         /// </summary>
         [ConsoleCommand("ledger debug info", Category = "Ledger Debug", Description = "Show LedgerDebugger storage statistics and efficiency metrics")]
         private void ShowDebugInfo()
@@ -378,7 +370,7 @@ namespace Neo.Plugins.LedgerDebugger
         }
 
         /// <summary>
-        /// Console command to perform storage maintenance and optimization.
+        /// Perform storage maintenance and optimization.
         /// </summary>
         [ConsoleCommand("ledger debug maintenance", Category = "Ledger Debug", Description = "Perform storage maintenance and optimization")]
         private void PerformMaintenance()
@@ -404,8 +396,6 @@ namespace Neo.Plugins.LedgerDebugger
         /// <summary>
         /// Formats bytes into human-readable format.
         /// </summary>
-        /// <param name="bytes">Number of bytes</param>
-        /// <returns>Formatted string</returns>
         private static string FormatBytes(long bytes)
         {
             string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
@@ -424,7 +414,7 @@ namespace Neo.Plugins.LedgerDebugger
         #region ICommittingHandler Implementation
 
         /// <summary>
-        /// Handler for blockchain committing events. Captures the read set during block execution.
+        /// Captures read set during block execution.
         /// </summary>
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
