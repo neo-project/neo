@@ -97,14 +97,18 @@ namespace Neo.CLI
 
             if (jsonRelease == null)
             {
+                // If exact version not found, get the latest available version
                 jsonRelease = json.AsArray()
                     .Where(s => s?["prerelease"]?.GetValue<bool>() == prerelease)
                     .Select(s =>
                     {
                         var tagName = s?["tag_name"]?.GetValue<string>();
-                        return Version.TryParse(tagName?[1..], out var version)
-                            ? new { JsonObject = s, Version = version }
-                            : null;
+                        if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
+                            Version.TryParse(tagName[1..], out var version))
+                        {
+                            return new { JsonObject = s, Version = version };
+                        }
+                        return null;
                     })
                     .OfType<dynamic>()
                     .OrderByDescending(s => s.Version)
@@ -113,16 +117,22 @@ namespace Neo.CLI
 
                 if (jsonRelease != null)
                 {
-                    var latestVersion = Version.Parse(jsonRelease["tag_name"]!.GetValue<string>()[1..]);
-                    if (latestVersion < pluginVersion)
+                    var tagName = jsonRelease["tag_name"]?.GetValue<string>();
+                    if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
+                        Version.TryParse(tagName[1..], out var latestVersion))
                     {
-                        var latestDownloadUrl = $"https://github.com/neo-project/neo/releases/download/v{latestVersion}/{pluginName}.zip";
-                        ConsoleHelper.Info($"Could not find the corresponding version, installing the latest: v{latestVersion}");
-                        return await httpClient.GetStreamAsync(latestDownloadUrl);
+                        ConsoleHelper.Info($"Could not find version v{pluginVersion}, installing the latest available: v{latestVersion}");
+                        // Continue with the found release using the standard asset download logic below
+                    }
+                    else
+                    {
+                        throw new Exception($"Could not parse version from release tag: {tagName}");
                     }
                 }
-
-                throw new Exception($"Could not find Release {pluginVersion}");
+                else
+                {
+                    throw new Exception($"Could not find any compatible release for {pluginName}");
+                }
             }
 
             var jsonAssets = jsonRelease["assets"]?.AsArray()
