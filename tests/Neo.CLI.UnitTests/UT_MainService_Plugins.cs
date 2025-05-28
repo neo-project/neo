@@ -10,18 +10,45 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Neo.Json;
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Text.Json.Nodes;
 
 namespace Neo.CLI.UnitTests
 {
     [TestClass]
     public class UT_MainService_Plugins
     {
+        /// <summary>
+        /// Helper method to safely extract string values from JsonNode
+        /// </summary>
+        private static string GetStringValue(JsonNode node, string propertyName)
+        {
+            try
+            {
+                return node?[propertyName]?.GetValue<string>() ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Helper method to safely extract boolean values from JsonNode
+        /// </summary>
+        private static bool GetBoolValue(JsonNode node, string propertyName)
+        {
+            try
+            {
+                return node?[propertyName]?.GetValue<bool>() ?? false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
         /// <summary>
         /// Test the plugin version parsing and selection logic
         /// </summary>
@@ -46,17 +73,17 @@ namespace Neo.CLI.UnitTests
                 }}
             ]";
 
-            var json = (JArray)JToken.Parse(jsonResponse);
+            var json = JsonNode.Parse(jsonResponse)!.AsArray();
 
             // Act
             var jsonRelease = json
                 .FirstOrDefault(s =>
-                    s?["tag_name"]?.AsString() == pluginVersionString &&
-                    s?["prerelease"]?.AsBoolean() == prerelease);
+                    GetStringValue(s, "tag_name") == pluginVersionString &&
+                    GetBoolValue(s, "prerelease") == prerelease);
 
             // Assert
             Assert.IsNotNull(jsonRelease);
-            Assert.AreEqual(pluginVersionString, jsonRelease["tag_name"]?.AsString());
+            Assert.AreEqual(pluginVersionString, GetStringValue(jsonRelease, "tag_name"));
         }
 
         [TestMethod]
@@ -90,22 +117,22 @@ namespace Neo.CLI.UnitTests
                 }}
             ]";
 
-            var json = (JArray)JToken.Parse(jsonResponse);
+            var json = JsonNode.Parse(jsonResponse)!.AsArray();
 
             // Act - First try exact match
             var jsonRelease = json
                 .FirstOrDefault(s =>
-                    s?["tag_name"]?.AsString() == requestedVersionString &&
-                    s?["prerelease"]?.AsBoolean() == prerelease);
+                    GetStringValue(s, "tag_name") == requestedVersionString &&
+                    GetBoolValue(s, "prerelease") == prerelease);
 
             // If not found, get latest
             if (jsonRelease == null)
             {
                 jsonRelease = json
-                    .Where(s => s?["prerelease"]?.AsBoolean() == prerelease)
+                    .Where(s => GetBoolValue(s, "prerelease") == prerelease)
                     .Select(s =>
                     {
-                        var tagName = s?["tag_name"]?.AsString();
+                        var tagName = GetStringValue(s, "tag_name");
                         if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
@@ -121,7 +148,7 @@ namespace Neo.CLI.UnitTests
 
             // Assert
             Assert.IsNotNull(jsonRelease);
-            Assert.AreEqual("v2.0.0", jsonRelease["tag_name"]?.AsString());
+            Assert.AreEqual("v2.0.0", GetStringValue(jsonRelease, "tag_name"));
         }
 
         [TestMethod]
@@ -150,22 +177,22 @@ namespace Neo.CLI.UnitTests
                 }}
             ]";
 
-            var json = (JArray)JToken.Parse(jsonResponse);
+            var json = JsonNode.Parse(jsonResponse)!.AsArray();
 
             // Act - First try exact match
             var jsonRelease = json
                 .FirstOrDefault(s =>
-                    s?["tag_name"]?.AsString() == requestedVersionString &&
-                    s?["prerelease"]?.AsBoolean() == prerelease);
+                    GetStringValue(s, "tag_name") == requestedVersionString &&
+                    GetBoolValue(s, "prerelease") == prerelease);
 
             // If not found, try to get latest with proper version parsing
             if (jsonRelease == null)
             {
                 jsonRelease = json
-                    .Where(s => s?["prerelease"]?.AsBoolean() == prerelease)
+                    .Where(s => GetBoolValue(s, "prerelease") == prerelease)
                     .Select(s =>
                     {
-                        var tagName = s?["tag_name"]?.AsString();
+                        var tagName = GetStringValue(s, "tag_name");
                         if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
@@ -224,22 +251,22 @@ namespace Neo.CLI.UnitTests
                 }}
             ]";
 
-            var json = (JArray)JToken.Parse(jsonResponse);
+            var json = JsonNode.Parse(jsonResponse)!.AsArray();
 
             // Act - First try exact match
             var jsonRelease = json
                 .FirstOrDefault(s =>
-                    s?["tag_name"]?.AsString() == requestedVersionString &&
-                    s?["prerelease"]?.AsBoolean() == prerelease);
+                    GetStringValue(s, "tag_name") == requestedVersionString &&
+                    GetBoolValue(s, "prerelease") == prerelease);
 
             // If not found, get latest valid version
             if (jsonRelease == null)
             {
                 jsonRelease = json
-                    .Where(s => s?["prerelease"]?.AsBoolean() == prerelease)
+                    .Where(s => GetBoolValue(s, "prerelease") == prerelease)
                     .Select(s =>
                     {
-                        var tagName = s?["tag_name"]?.AsString();
+                        var tagName = GetStringValue(s, "tag_name");
                         if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
@@ -255,7 +282,7 @@ namespace Neo.CLI.UnitTests
 
             // Assert - Should get v2.1.0 as it's the latest valid version
             Assert.IsNotNull(jsonRelease);
-            Assert.AreEqual("v2.1.0", jsonRelease["tag_name"]?.AsString());
+            Assert.AreEqual("v2.1.0", GetStringValue(jsonRelease, "tag_name"));
         }
 
         [TestMethod]
@@ -289,22 +316,22 @@ namespace Neo.CLI.UnitTests
                 }}
             ]";
 
-            var json = (JArray)JToken.Parse(jsonResponse);
+            var json = JsonNode.Parse(jsonResponse)!.AsArray();
 
             // Act - First try exact match
             var jsonRelease = json
                 .FirstOrDefault(s =>
-                    s?["tag_name"]?.AsString() == requestedVersionString &&
-                    s?["prerelease"]?.AsBoolean() == prerelease);
+                    GetStringValue(s, "tag_name") == requestedVersionString &&
+                    GetBoolValue(s, "prerelease") == prerelease);
 
             // If not found, get latest stable version (not prerelease)
             if (jsonRelease == null)
             {
                 jsonRelease = json
-                    .Where(s => s?["prerelease"]?.AsBoolean() == prerelease)
+                    .Where(s => GetBoolValue(s, "prerelease") == prerelease)
                     .Select(s =>
                     {
-                        var tagName = s?["tag_name"]?.AsString();
+                        var tagName = GetStringValue(s, "tag_name");
                         if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
@@ -320,8 +347,8 @@ namespace Neo.CLI.UnitTests
 
             // Assert - Should get v1.5.0 (stable) not v2.0.0 (prerelease)
             Assert.IsNotNull(jsonRelease);
-            Assert.AreEqual("v1.5.0", jsonRelease["tag_name"]?.AsString());
-            Assert.AreEqual(false, jsonRelease["prerelease"]?.AsBoolean());
+            Assert.AreEqual("v1.5.0", GetStringValue(jsonRelease, "tag_name"));
+            Assert.AreEqual(false, GetBoolValue(jsonRelease, "prerelease"));
         }
 
         [TestMethod]
@@ -350,20 +377,20 @@ namespace Neo.CLI.UnitTests
                 }}
             ]";
 
-            var json = (JArray)JToken.Parse(jsonResponse);
+            var json = JsonNode.Parse(jsonResponse)!.AsArray();
             var jsonRelease = json.FirstOrDefault();
 
             // Act
-            var jsonAssets = (JArray)jsonRelease["assets"];
+            var jsonAssets = jsonRelease!["assets"]!.AsArray();
             var jsonPlugin = jsonAssets
                 .FirstOrDefault(s =>
-                    Path.GetFileNameWithoutExtension(s?["name"]?.AsString() ?? string.Empty)
+                    Path.GetFileNameWithoutExtension(GetStringValue(s, "name"))
                         .Equals(pluginName, StringComparison.InvariantCultureIgnoreCase));
 
             // Assert
             Assert.IsNotNull(jsonPlugin);
-            Assert.AreEqual("RpcServer.zip", jsonPlugin["name"]?.AsString());
-            Assert.AreEqual("https://example.com/RpcServer.zip", jsonPlugin["browser_download_url"]?.AsString());
+            Assert.AreEqual("RpcServer.zip", GetStringValue(jsonPlugin, "name"));
+            Assert.AreEqual("https://example.com/RpcServer.zip", GetStringValue(jsonPlugin, "browser_download_url"));
         }
 
         [TestMethod]
@@ -388,14 +415,14 @@ namespace Neo.CLI.UnitTests
                 }}
             ]";
 
-            var json = (JArray)JToken.Parse(jsonResponse);
+            var json = JsonNode.Parse(jsonResponse)!.AsArray();
             var jsonRelease = json.FirstOrDefault();
 
             // Act
-            var jsonAssets = (JArray)jsonRelease["assets"];
+            var jsonAssets = jsonRelease!["assets"]!.AsArray();
             var jsonPlugin = jsonAssets
                 .FirstOrDefault(s =>
-                    Path.GetFileNameWithoutExtension(s?["name"]?.AsString() ?? string.Empty)
+                    Path.GetFileNameWithoutExtension(GetStringValue(s, "name"))
                         .Equals(pluginName, StringComparison.InvariantCultureIgnoreCase));
 
             // Assert
@@ -429,14 +456,14 @@ namespace Neo.CLI.UnitTests
                 }}
             ]";
 
-            var json = (JArray)JToken.Parse(jsonResponse);
+            var json = JsonNode.Parse(jsonResponse)!.AsArray();
 
             // Act - Get versions in descending order
             var versions = json
-                .Where(s => s?["prerelease"]?.AsBoolean() == false)
+                .Where(s => GetBoolValue(s, "prerelease") == false)
                 .Select(s =>
                 {
-                    var tagName = s?["tag_name"]?.AsString();
+                    var tagName = GetStringValue(s, "tag_name");
                     if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
                         Version.TryParse(tagName[1..], out var version))
                     {
@@ -446,7 +473,7 @@ namespace Neo.CLI.UnitTests
                 })
                 .OfType<dynamic>()
                 .OrderByDescending(s => s.Version)
-                .Select(s => s.JsonObject["tag_name"]?.AsString())
+                .Select(s => GetStringValue(s.JsonObject, "tag_name"))
                 .ToList();
 
             // Assert - Should be ordered: v2.1.0, v2.0.0, v1.5.0, v1.0.0

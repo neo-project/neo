@@ -68,41 +68,42 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Download plugin from github release
-        /// The function of download and install are divided
-        /// for the consideration of `update` command that
-        /// might be added in the future.
+        /// Download plugin from GitHub release.
+        /// Downloads the specified plugin version or falls back to the latest available version.
         /// </summary>
-        /// <param name="pluginName">name of the plugin</param>
-        /// <param name="pluginVersion"></param>
-        /// <param name="customDownloadUrl">Custom plugin download url.</param>
-        /// <param name="prerelease"></param>
-        /// <returns>Downloaded content</returns>
+        /// <param name="pluginName">Name of the plugin to download</param>
+        /// <param name="pluginVersion">Requested plugin version</param>
+        /// <param name="customDownloadUrl">Custom plugin download URL (optional)</param>
+        /// <param name="prerelease">Whether to include prerelease versions</param>
+        /// <returns>Downloaded plugin content stream</returns>
+        /// <exception cref="HttpRequestException">Thrown when HTTP request fails</exception>
+        /// <exception cref="Exception">Thrown when plugin or version cannot be found</exception>
         private static async Task<Stream> DownloadPluginAsync(string pluginName, Version pluginVersion, string? customDownloadUrl = null, bool prerelease = false)
         {
-            ConsoleHelper.Info($"Downloading {pluginName} {pluginVersion}...");
+            ConsoleHelper.Info($"Downloading {pluginName} v{pluginVersion}...");
             using var httpClient = new HttpClient();
 
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
             var url = customDownloadUrl == null ? Settings.Default.Plugins.DownloadUrl : new Uri(customDownloadUrl);
-            var json = await httpClient.GetFromJsonAsync<JsonArray>(url) ?? throw new HttpRequestException($"Failed: {url}");
+            var json = await httpClient.GetFromJsonAsync<JsonArray>(url) ?? throw new HttpRequestException($"Failed to fetch releases from: {url}");
             var pluginVersionString = $"v{pluginVersion.ToString(3)}";
 
+            // First, try to find exact version match
             var jsonRelease = json.AsArray()
                 .FirstOrDefault(s =>
-                    s?["tag_name"]?.GetValue<string>() == pluginVersionString &&
-                    s?["prerelease"]?.GetValue<bool>() == prerelease);
+                    GetStringValue(s, "tag_name") == pluginVersionString &&
+                    GetBoolValue(s, "prerelease") == prerelease);
 
             if (jsonRelease == null)
             {
                 // If exact version not found, get the latest available version
                 jsonRelease = json.AsArray()
-                    .Where(s => s?["prerelease"]?.GetValue<bool>() == prerelease)
+                    .Where(s => GetBoolValue(s, "prerelease") == prerelease)
                     .Select(s =>
                     {
-                        var tagName = s?["tag_name"]?.GetValue<string>();
+                        var tagName = GetStringValue(s, "tag_name");
                         if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
                             Version.TryParse(tagName[1..], out var version))
                         {
@@ -117,7 +118,7 @@ namespace Neo.CLI
 
                 if (jsonRelease != null)
                 {
-                    var tagName = jsonRelease["tag_name"]?.GetValue<string>();
+                    var tagName = GetStringValue(jsonRelease, "tag_name");
                     if (tagName != null && tagName.Length > 1 && tagName.StartsWith('v') &&
                         Version.TryParse(tagName[1..], out var latestVersion))
                     {
@@ -136,17 +137,55 @@ namespace Neo.CLI
             }
 
             var jsonAssets = jsonRelease["assets"]?.AsArray()
-                ?? throw new Exception("Could not find any Plugins");
+                ?? throw new Exception("Could not find any assets in the release");
 
             var jsonPlugin = jsonAssets
                 .FirstOrDefault(s =>
-                    Path.GetFileNameWithoutExtension(s?["name"]?.GetValue<string>() ?? string.Empty)
+                    Path.GetFileNameWithoutExtension(GetStringValue(s, "name") ?? string.Empty)
                         .Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
-                ?? throw new Exception($"Could not find {pluginName}");
+                ?? throw new Exception($"Could not find plugin '{pluginName}' in release assets");
 
-            var downloadUrl = jsonPlugin["browser_download_url"]?.GetValue<string>()
-                ?? throw new Exception("Could not find download URL");
+            var downloadUrl = GetStringValue(jsonPlugin, "browser_download_url")
+                ?? throw new Exception("Could not find download URL for the plugin");
+
+            ConsoleHelper.Info($"Downloading from: {downloadUrl}");
             return await httpClient.GetStreamAsync(downloadUrl);
+        }
+
+        /// <summary>
+        /// Safely extracts a string value from a JsonNode.
+        /// </summary>
+        /// <param name="node">The JsonNode to extract from</param>
+        /// <param name="propertyName">The property name to extract</param>
+        /// <returns>The string value or null if not found or invalid</returns>
+        private static string? GetStringValue(JsonNode? node, string propertyName)
+        {
+            try
+            {
+                return node?[propertyName]?.GetValue<string>();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Safely extracts a boolean value from a JsonNode.
+        /// </summary>
+        /// <param name="node">The JsonNode to extract from</param>
+        /// <param name="propertyName">The property name to extract</param>
+        /// <returns>The boolean value or false if not found or invalid</returns>
+        private static bool GetBoolValue(JsonNode? node, string propertyName)
+        {
+            try
+            {
+                return node?[propertyName]?.GetValue<bool>() ?? false;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -299,6 +338,11 @@ namespace Neo.CLI
             }
         }
 
+        /// <summary>
+        /// Gets the list of available plugins from the GitHub releases.
+        /// </summary>
+        /// <returns>Enumerable of plugin names</returns>
+        /// <exception cref="HttpRequestException">Thrown when HTTP request fails</exception>
         private async Task<IEnumerable<string>> GetPluginListAsync()
         {
             using var httpClient = new HttpClient();
@@ -307,14 +351,16 @@ namespace Neo.CLI
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
             var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl)
-                ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
+                ?? throw new HttpRequestException($"Failed to fetch plugin list from: {Settings.Default.Plugins.DownloadUrl}");
+
+            var targetVersion = $"v{Settings.Default.Plugins.Version.ToString(3)}";
+
             return json.AsArray()
-                .Where(w =>
-                    w != null &&
-                    w["tag_name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
-                .SelectMany(s => s!["assets"]!.AsArray())
-                .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()))
-                .Where(s => !s.StartsWith("neo-cli", StringComparison.InvariantCultureIgnoreCase));
+                .Where(w => w != null && GetStringValue(w, "tag_name") == targetVersion)
+                .SelectMany(s => s!["assets"]?.AsArray() ?? [])
+                .Select(s => Path.GetFileNameWithoutExtension(GetStringValue(s, "name") ?? string.Empty))
+                .Where(s => !string.IsNullOrEmpty(s) && !s.StartsWith("neo-cli", StringComparison.InvariantCultureIgnoreCase))
+                .OfType<string>();
         }
     }
 }
