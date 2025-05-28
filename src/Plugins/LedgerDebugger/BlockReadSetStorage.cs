@@ -13,9 +13,12 @@ using Neo.Extensions;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace Neo.Plugins.LedgerDebugger
 {
@@ -73,6 +76,26 @@ namespace Neo.Plugins.LedgerDebugger
         /// </summary>
         private readonly int _maxReadSetsToKeep;
 
+        /// <summary>
+        /// Lock for thread-safe operations
+        /// </summary>
+        private readonly ReaderWriterLockSlim _lock = new();
+
+        /// <summary>
+        /// Cache for recently accessed values to improve performance
+        /// </summary>
+        private readonly ConcurrentDictionary<string, byte[]> _valueCache = new();
+
+        /// <summary>
+        /// Maximum size of the value cache
+        /// </summary>
+        private const int MaxCacheSize = 1000;
+
+        /// <summary>
+        /// Tracks if the instance has been disposed
+        /// </summary>
+        private volatile bool _disposed = false;
+
         #endregion
 
         #region Constructor
@@ -81,17 +104,25 @@ namespace Neo.Plugins.LedgerDebugger
         /// Initializes a new instance of the <see cref="BlockReadSetStorage"/> class.
         /// </summary>
         /// <param name="path">The path where the storage will be created</param>
+        /// <param name="storeProvider">The storage provider to use (default: LevelDBStore)</param>
+        /// <param name="maxReadSetsToKeep">Maximum number of read sets to keep (default: 10000)</param>
         /// <exception cref="ArgumentException">Thrown if the path is invalid</exception>
         /// <exception cref="IOException">Thrown if there is an error accessing the storage location</exception>
-        public BlockReadSetStorage(string path)
+        public BlockReadSetStorage(string path, string storeProvider = "LevelDBStore", int maxReadSetsToKeep = 10000)
         {
             if (string.IsNullOrEmpty(path))
                 throw new ArgumentException("Storage path cannot be null or empty", nameof(path));
 
+            if (string.IsNullOrEmpty(storeProvider))
+                throw new ArgumentException("Store provider cannot be null or empty", nameof(storeProvider));
+
+            if (maxReadSetsToKeep < 0)
+                throw new ArgumentException("Max read sets to keep cannot be negative", nameof(maxReadSetsToKeep));
+
             var fullPath = Path.GetFullPath(path);
-            _store = StoreFactory.GetStore(Settings.Default?.StoreProvider ?? "LevelDBStore", fullPath);
+            _store = StoreFactory.GetStore(storeProvider, fullPath);
             _snapshot = _store.GetSnapshot();
-            _maxReadSetsToKeep = Settings.Default?.MaxReadSetsToKeep ?? 10000;
+            _maxReadSetsToKeep = maxReadSetsToKeep;
         }
 
         /// <summary>
@@ -117,11 +148,21 @@ namespace Neo.Plugins.LedgerDebugger
         /// <param name="blockIndex">The block index to associate with the read set</param>
         /// <param name="readSet">The read set to store</param>
         /// <exception cref="ArgumentNullException">Thrown if readSet is null</exception>
+        /// <exception cref="ObjectDisposedException">Thrown if the storage has been disposed</exception>
+        /// <exception cref="InvalidOperationException">Thrown if the operation fails</exception>
         /// <returns>True if the operation was successful</returns>
         public virtual bool Add(uint blockIndex, Dictionary<StorageKey, StorageItem> readSet)
         {
             ArgumentNullException.ThrowIfNull(readSet);
+            ThrowIfDisposed();
 
+            if (readSet.Count == 0)
+            {
+                // No point storing empty read sets
+                return true;
+            }
+
+            _lock.EnterWriteLock();
             try
             {
                 // Refresh the snapshot to ensure we have a clean state
@@ -129,25 +170,31 @@ namespace Neo.Plugins.LedgerDebugger
                 _snapshot = _store.GetSnapshot();
 
                 var key = CreateBlockReadSetKey(blockIndex);
-                _snapshot.Put(key, SerializeBlockReadSet(readSet));
+                var serializedData = SerializeBlockReadSet(readSet);
+                _snapshot.Put(key, serializedData);
 
                 // Apply the read set limit if needed
-                if (_maxReadSetsToKeep > 0)
+                if (_maxReadSetsToKeep > 0 && blockIndex >= _maxReadSetsToKeep)
                 {
-                    // Simply delete the oldest block(s) if we exceed the limit
-                    if (blockIndex >= _maxReadSetsToKeep)
-                    {
-                        var oldKey = CreateBlockReadSetKey((uint)(blockIndex - _maxReadSetsToKeep));
-                        _snapshot.Delete(oldKey);
-                    }
+                    // Delete the oldest block(s) if we exceed the limit
+                    var oldKey = CreateBlockReadSetKey(blockIndex - (uint)_maxReadSetsToKeep);
+                    _snapshot.Delete(oldKey);
+
+                    // Also clean up orphaned values from the cache
+                    CleanupValueCache();
                 }
 
                 _snapshot.Commit();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                // Log the specific error for debugging
+                throw new InvalidOperationException($"Failed to store read set for block {blockIndex}: {ex.Message}", ex);
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
             }
         }
 
@@ -159,19 +206,33 @@ namespace Neo.Plugins.LedgerDebugger
         /// <returns>True if the read set was found, otherwise false</returns>
         public bool TryGet(uint blockIndex, out Dictionary<byte[], byte[]>? readSet)
         {
-            var key = CreateBlockReadSetKey(blockIndex);
+            ThrowIfDisposed();
 
-            // Ensure we have a valid snapshot
-            _snapshot ??= _store.GetSnapshot();
-
-            if (_snapshot.TryGet(key, out var value))
+            _lock.EnterReadLock();
+            try
             {
-                readSet = DeserializeBlockReadSet(value);
-                return true;
-            }
+                var key = CreateBlockReadSetKey(blockIndex);
 
-            readSet = null;
-            return false;
+                // Ensure we have a valid snapshot
+                _snapshot ??= _store.GetSnapshot();
+
+                if (_snapshot.TryGet(key, out var value))
+                {
+                    readSet = DeserializeBlockReadSet(value);
+                    return true;
+                }
+
+                readSet = null;
+                return false;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve read set for block {blockIndex}: {ex.Message}", ex);
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
         }
 
         /// <summary>
@@ -179,10 +240,54 @@ namespace Neo.Plugins.LedgerDebugger
         /// </summary>
         public void Dispose()
         {
-            _sha256?.Dispose();
-            _snapshot?.Dispose();
-            _store?.Dispose();
+            if (_disposed)
+                return;
+
+            _lock.EnterWriteLock();
+            try
+            {
+                if (!_disposed)
+                {
+                    _sha256?.Dispose();
+                    _snapshot?.Dispose();
+                    _store?.Dispose();
+                    _valueCache.Clear();
+                    _disposed = true;
+                }
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+                _lock.Dispose();
+            }
+
             GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Checks if the instance has been disposed and throws an exception if it has.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if the instance has been disposed</exception>
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(BlockReadSetStorage));
+        }
+
+        /// <summary>
+        /// Cleans up the value cache when it gets too large.
+        /// </summary>
+        private void CleanupValueCache()
+        {
+            if (_valueCache.Count > MaxCacheSize)
+            {
+                // Simple cleanup: remove half the entries
+                var keysToRemove = _valueCache.Keys.Take(_valueCache.Count / 2).ToArray();
+                foreach (var key in keysToRemove)
+                {
+                    _valueCache.TryRemove(key, out _);
+                }
+            }
         }
 
         #endregion
@@ -217,6 +322,7 @@ namespace Neo.Plugins.LedgerDebugger
 
         /// <summary>
         /// Retrieves a value from storage, handling both direct values and hash references.
+        /// Uses caching to improve performance for frequently accessed values.
         /// </summary>
         /// <param name="keyOrValue">Either a direct value (≤ ValueHashThreshold) or a hash reference</param>
         /// <returns>The actual value bytes</returns>
@@ -226,9 +332,27 @@ namespace Neo.Plugins.LedgerDebugger
             if (keyOrValue.Length <= ValueHashThreshold)
                 return keyOrValue;
 
-            // For a hash reference, retrieve the actual value from content-addressable storage
+            // For a hash reference, check cache first
+            var hashString = Convert.ToHexString(keyOrValue);
+            if (_valueCache.TryGetValue(hashString, out var cachedValue))
+            {
+                return cachedValue;
+            }
+
+            // Retrieve from storage and cache the result
             var valueKey = CreateValueKey(keyOrValue);
-            return _snapshot!.TryGet(valueKey, out var storedValue) ? storedValue : keyOrValue;
+            if (_snapshot!.TryGet(valueKey, out var storedValue))
+            {
+                // Add to cache if not too large
+                if (_valueCache.Count < MaxCacheSize)
+                {
+                    _valueCache.TryAdd(hashString, storedValue);
+                }
+                return storedValue;
+            }
+
+            // Fallback: return the hash itself if value not found
+            return keyOrValue;
         }
 
         #endregion

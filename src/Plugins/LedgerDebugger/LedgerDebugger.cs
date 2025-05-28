@@ -64,8 +64,18 @@ namespace Neo.Plugins.LedgerDebugger
         /// </summary>
         public LedgerDebugger()
         {
-            // Subscribe to blockchain committing events
-            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            try
+            {
+                // Subscribe to blockchain committing events
+                Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+
+                Log("LedgerDebugger plugin initialized successfully");
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to initialize LedgerDebugger: {ex.Message}", LogLevel.Error);
+                throw;
+            }
         }
 
         #endregion
@@ -87,12 +97,27 @@ namespace Neo.Plugins.LedgerDebugger
                 // Store reference to NeoSystem
                 _neoSystem = system ?? throw new ArgumentNullException(nameof(system));
 
+                // Validate settings
+                ValidateSettings();
+
                 // Initialize block read set storage
                 string blockReadSetPath = Settings.Default?.Path ?? throw new InvalidOperationException("Storage path not configured");
                 blockReadSetPath = System.IO.Path.GetFullPath(blockReadSetPath);
 
-                _blockReadSetStorage = new BlockReadSetStorage(blockReadSetPath);
+                // Ensure storage directory exists
+                var storageDir = System.IO.Path.GetDirectoryName(blockReadSetPath);
+                if (!string.IsNullOrEmpty(storageDir) && !Directory.Exists(storageDir))
+                {
+                    Directory.CreateDirectory(storageDir);
+                    Log($"Created storage directory: {storageDir}");
+                }
+
+                _blockReadSetStorage = new BlockReadSetStorage(
+                    blockReadSetPath,
+                    Settings.Default.StoreProvider,
+                    Settings.Default.MaxReadSetsToKeep);
                 Log($"Block ReadSetStorage initialized at {blockReadSetPath}");
+                Log($"Max read sets to keep: {Settings.Default.MaxReadSetsToKeep}");
 
                 Log($"LedgerDebugger loaded for system: {system.Settings.Network}");
             }
@@ -101,6 +126,22 @@ namespace Neo.Plugins.LedgerDebugger
                 Log($"Failed to initialize LedgerDebugger: {ex.Message}", LogLevel.Error);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Validates the plugin settings.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if settings are invalid</exception>
+        private static void ValidateSettings()
+        {
+            if (Settings.Default == null)
+                throw new InvalidOperationException("Settings not loaded");
+
+            if (string.IsNullOrWhiteSpace(Settings.Default.Path))
+                throw new InvalidOperationException("Storage path cannot be null or empty");
+
+            if (Settings.Default.MaxReadSetsToKeep < 0)
+                throw new InvalidOperationException("MaxReadSetsToKeep cannot be negative");
         }
 
         /// <inheritdoc/>
@@ -138,6 +179,7 @@ namespace Neo.Plugins.LedgerDebugger
         {
             try
             {
+                // Validate prerequisites
                 if (_blockReadSetStorage == null)
                 {
                     Log("Block read set storage not initialized", LogLevel.Error);
@@ -150,15 +192,25 @@ namespace Neo.Plugins.LedgerDebugger
                     return;
                 }
 
+                // Validate block index
+                var currentHeight = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
+                if (blockIndex > currentHeight)
+                {
+                    Log($"Block index {blockIndex} is beyond current blockchain height {currentHeight}", LogLevel.Error);
+                    return;
+                }
+
+                Log($"Attempting to re-execute block {blockIndex}...");
+
                 if (!_blockReadSetStorage.TryGet(blockIndex, out var readSet))
                 {
-                    Log($"No read set found for block {blockIndex}", LogLevel.Error);
+                    Log($"No read set found for block {blockIndex}. Block may not have been captured during execution.", LogLevel.Error);
                     return;
                 }
 
                 if (readSet == null || readSet.Count == 0)
                 {
-                    Log($"Empty read set for block {blockIndex}", LogLevel.Error);
+                    Log($"Empty read set for block {blockIndex}. Block may have had no state reads.", LogLevel.Warning);
                     return;
                 }
 
@@ -261,6 +313,54 @@ namespace Neo.Plugins.LedgerDebugger
             snapshot.Commit();
         }
 
+        /// <summary>
+        /// Console command to show storage statistics and health information.
+        /// </summary>
+        [ConsoleCommand("ledger debug info", Category = "Ledger Debug", Description = "Show LedgerDebugger storage statistics")]
+        private void ShowDebugInfo()
+        {
+            try
+            {
+                if (_blockReadSetStorage == null)
+                {
+                    Log("Block read set storage not initialized", LogLevel.Error);
+                    return;
+                }
+
+                if (_neoSystem == null)
+                {
+                    Log("NEO system not initialized", LogLevel.Error);
+                    return;
+                }
+
+                var currentHeight = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
+
+                Log("=== LedgerDebugger Information ===");
+                Log($"Storage Path: {Settings.Default?.Path ?? "Not configured"}");
+                Log($"Max Read Sets to Keep: {Settings.Default?.MaxReadSetsToKeep ?? 0}");
+                Log($"Current Blockchain Height: {currentHeight}");
+
+                // Count available read sets
+                uint availableReadSets = 0;
+                uint oldestBlock = currentHeight > 100 ? currentHeight - 100 : 0; // Check last 100 blocks
+
+                for (uint i = oldestBlock; i <= currentHeight; i++)
+                {
+                    if (_blockReadSetStorage.TryGet(i, out var readSet) && readSet != null && readSet.Count > 0)
+                    {
+                        availableReadSets++;
+                    }
+                }
+
+                Log($"Available Read Sets (last 100 blocks): {availableReadSets}");
+                Log("=====================================");
+            }
+            catch (Exception ex)
+            {
+                Log($"Error retrieving debug info: {ex.Message}", LogLevel.Error);
+            }
+        }
+
         #endregion
 
         #region ICommittingHandler Implementation
@@ -272,28 +372,48 @@ namespace Neo.Plugins.LedgerDebugger
         {
             try
             {
-                // Skip if snapshot has no read set or block has no transactions
-                if (snapshot is not { ReadSet.Count: > 0 } || block.Transactions.Length == 0)
+                // Validate inputs
+                if (system == null || block == null || snapshot == null)
+                {
+                    Log("Invalid parameters in Blockchain_Committing_Handler", LogLevel.Warning);
+                    return;
+                }
+
+                // Skip if storage is not initialized
+                if (_blockReadSetStorage == null)
+                {
+                    // Only log this once to avoid spam
+                    return;
+                }
+
+                // Skip if snapshot has no read set
+                if (snapshot.ReadSet == null || snapshot.ReadSet.Count == 0)
+                {
+                    // This is normal for blocks with no state reads
+                    return;
+                }
+
+                // Skip if block has no transactions (genesis block, etc.)
+                if (block.Transactions.Length == 0)
                 {
                     return;
                 }
 
-                try
+                // Store the read set
+                var success = _blockReadSetStorage.Add(block.Index, snapshot.ReadSet);
+                if (success)
                 {
-                    if (_blockReadSetStorage != null)
-                    {
-                        _blockReadSetStorage.Add(block.Index, snapshot.ReadSet);
-                        Log($"Stored readset for block {block.Index} with {snapshot.ReadSet.Count} read operations");
-                    }
+                    Log($"Stored read set for block {block.Index} with {snapshot.ReadSet.Count} read operations");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Log($"Error storing readset for block {block.Index}: {ex.Message}", LogLevel.Error);
+                    Log($"Failed to store read set for block {block.Index}", LogLevel.Warning);
                 }
             }
             catch (Exception ex)
             {
-                Log($"Error in Blockchain_Committing_Handler: {ex.Message}", LogLevel.Error);
+                Log($"Error in Blockchain_Committing_Handler for block {block?.Index}: {ex.Message}", LogLevel.Error);
+                // Don't rethrow - we don't want to break the blockchain commit process
             }
         }
 
