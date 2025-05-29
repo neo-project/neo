@@ -25,6 +25,9 @@ namespace Neo.Plugins.Storage
         private readonly DB _db;
         private readonly Options _options;
 
+        /// <inheritdoc/>
+        public event IStore.DelNewSnapshot? OnNewSnapshot;
+
         public Store(string path)
         {
             _options = new Options
@@ -47,8 +50,12 @@ namespace Neo.Plugins.Storage
             _options.Dispose();
         }
 
-        public IStoreSnapshot GetSnapshot() =>
-            new Snapshot(this, _db);
+        public IStoreSnapshot GetSnapshot()
+        {
+            var snapshot = new Snapshot(this, _db);
+            OnNewSnapshot?.Invoke(this, snapshot);
+            return snapshot;
+        }
 
         public void Put(byte[] key, byte[] value) =>
             _db.Put(WriteOptions.Default, key, value);

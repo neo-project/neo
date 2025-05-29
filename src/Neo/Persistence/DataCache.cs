@@ -42,8 +42,19 @@ namespace Neo.Persistence
             public TrackState State { get; set; } = state;
         }
 
+        /// <summary>
+        /// Delegate for storage entries
+        /// </summary>
+        /// <param name="sender">DataCache</param>
+        /// <param name="key">Key</param>
+        /// <param name="item">Item</param>
+        public delegate void DelOnEntry(DataCache sender, StorageKey key, StorageItem item);
+
         private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
         private readonly HashSet<StorageKey>? _changeSet;
+
+        public event DelOnEntry? OnRead;
+        public event DelOnEntry? OnUpdate;
 
         /// <summary>
         /// True if DataCache is readOnly
@@ -145,7 +156,7 @@ namespace Neo.Persistence
                             trackable.State = TrackState.None;
                             break;
                         case TrackState.Changed:
-                            UpdateInternal(key, trackable.Item);
+                            UpdateInternalWrapper(key, trackable.Item);
                             trackable.State = TrackState.None;
                             break;
                         case TrackState.Deleted:
@@ -218,7 +229,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    var item = TryGetInternal(key);
+                    var item = TryGetInternalWrapper(key);
                     if (item == null) return;
                     _dictionary.Add(key, new Trackable(item, TrackState.Deleted));
                     _changeSet?.Add(key);
@@ -390,7 +401,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    var item = TryGetInternal(key);
+                    var item = TryGetInternalWrapper(key);
                     if (item == null)
                     {
                         if (factory == null) return null;
@@ -405,6 +416,21 @@ namespace Neo.Persistence
                 }
                 return trackable.Item;
             }
+        }
+
+        private StorageItem? TryGetInternalWrapper(StorageKey key)
+        {
+            var item = TryGetInternal(key);
+            if (item == null) return null;
+
+            OnRead?.Invoke(this, key, item);
+            return item;
+        }
+
+        private void UpdateInternalWrapper(StorageKey key, StorageItem value)
+        {
+            UpdateInternal(key, value);
+            OnUpdate?.Invoke(this, key, value);
         }
 
         /// <summary>
@@ -440,7 +466,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    var item = TryGetInternal(key);
+                    var item = TryGetInternalWrapper(key);
                     if (item == null)
                     {
                         trackable = new Trackable(factory(), TrackState.Added);
@@ -538,7 +564,7 @@ namespace Neo.Persistence
                         return null;
                     return trackable.Item;
                 }
-                var value = TryGetInternal(key);
+                var value = TryGetInternalWrapper(key);
                 if (value == null) return null;
                 _dictionary.Add(key, new Trackable(value, TrackState.None));
                 return value;
