@@ -28,12 +28,12 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="sender">Store</param>
         /// <param name="snapshot">Snapshot</param>
-        public delegate void DelNewSnapshot(IStore sender, IStoreSnapshot snapshot);
+        public delegate void OnNewSnapshotDelegate(IStore sender, IStoreSnapshot snapshot);
 
         /// <summary>
         /// Event raised when a new snapshot is created
         /// </summary>
-        public event DelNewSnapshot? OnNewSnapshot;
+        public event OnNewSnapshotDelegate? OnNewSnapshot;
 
         /// <summary>
         /// Creates a snapshot of the database.

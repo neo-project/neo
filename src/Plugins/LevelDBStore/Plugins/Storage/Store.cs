@@ -26,7 +26,7 @@ namespace Neo.Plugins.Storage
         private readonly Options _options;
 
         /// <inheritdoc/>
-        public event IStore.DelNewSnapshot? OnNewSnapshot;
+        public event IStore.OnNewSnapshotDelegate? OnNewSnapshot;
 
         public Store(string path)
         {

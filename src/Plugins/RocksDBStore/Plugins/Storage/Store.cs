@@ -23,7 +23,7 @@ namespace Neo.Plugins.Storage
         private readonly RocksDb _db;
 
         /// <inheritdoc/>
-        public event IStore.DelNewSnapshot? OnNewSnapshot;
+        public event IStore.OnNewSnapshotDelegate? OnNewSnapshot;
 
         public Store(string path)
         {
