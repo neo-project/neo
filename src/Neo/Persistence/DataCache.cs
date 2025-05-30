@@ -16,7 +16,7 @@ using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;DelNewSnapshot
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Neo.Persistence
