@@ -177,26 +177,29 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
-        public void TestSpanAndSerializeBigEndian()
+        public void TestSpanAndSerializeLittleEndian()
         {
             var random = new Random();
             var data = new byte[UInt256.Length];
             random.NextBytes(data);
 
-            var valueBigEndian = new UInt256(data);
-            var valueLittleEndian = new UInt256(data);
-
-            var span = valueBigEndian.GetSpanLittleEndian();
-            Assert.IsTrue(span.SequenceEqual(valueBigEndian.ToArray()));
-
-            data = new byte[UInt256.Length];
-            valueBigEndian.SerializeSafeLittleEndian(data.AsSpan());
-            CollectionAssert.AreEqual(data, valueBigEndian.ToArray());
+            var value = new UInt256(data);
+            var spanLittleEndian = value.GetSpanLittleEndian();
+            CollectionAssert.AreEqual(data, spanLittleEndian.ToArray());
 
             // Check that Serialize LittleEndian and Serialize BigEndian are equals
-            data = new byte[UInt256.Length];
-            valueLittleEndian.Serialize(data.AsSpan());
-            CollectionAssert.AreEqual(valueLittleEndian.ToArray(), valueBigEndian.ToArray());
+            var dataLittleEndian = new byte[UInt256.Length];
+            value.SafeSerialize(dataLittleEndian.AsSpan());
+            CollectionAssert.AreEqual(value.ToArray(), dataLittleEndian);
+
+            // Check that Serialize LittleEndian and Serialize BigEndian are equals
+            var dataSerialized = new byte[UInt256.Length];
+            value.Serialize(dataSerialized.AsSpan());
+            CollectionAssert.AreEqual(value.ToArray(), dataSerialized);
+
+            var shortBuffer = new byte[UInt256.Length - 1];
+            Assert.ThrowsExactly<ArgumentException>(() => value.Serialize(shortBuffer.AsSpan()));
+            Assert.ThrowsExactly<ArgumentException>(() => value.SafeSerialize(shortBuffer.AsSpan()));
         }
     }
 }
