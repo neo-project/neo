@@ -48,13 +48,13 @@ namespace Neo.Persistence
         /// <param name="sender">DataCache</param>
         /// <param name="key">Key</param>
         /// <param name="item">Item</param>
-        public delegate void DelOnEntry(DataCache sender, StorageKey key, StorageItem item);
+        public delegate void OnEntryDelegate(DataCache sender, StorageKey key, StorageItem item);
 
         private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
         private readonly HashSet<StorageKey>? _changeSet;
 
-        public event DelOnEntry? OnRead;
-        public event DelOnEntry? OnUpdate;
+        public event OnEntryDelegate? OnRead;
+        public event OnEntryDelegate? OnUpdate;
 
         /// <summary>
         /// True if DataCache is readOnly
