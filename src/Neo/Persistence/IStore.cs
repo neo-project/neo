@@ -24,6 +24,18 @@ namespace Neo.Persistence
         IDisposable
     {
         /// <summary>
+        /// Delegate for OnNewSnapshot
+        /// </summary>
+        /// <param name="sender">Store</param>
+        /// <param name="snapshot">Snapshot</param>
+        public delegate void OnNewSnapshotDelegate(IStore sender, IStoreSnapshot snapshot);
+
+        /// <summary>
+        /// Event raised when a new snapshot is created
+        /// </summary>
+        public event OnNewSnapshotDelegate? OnNewSnapshot;
+
+        /// <summary>
         /// Creates a snapshot of the database.
         /// </summary>
         /// <returns>A snapshot of the database.</returns>
