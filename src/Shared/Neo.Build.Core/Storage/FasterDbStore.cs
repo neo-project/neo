@@ -24,10 +24,15 @@ namespace Neo.Build.Core.Storage
     public class FasterDbStore : IStore, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         public FasterDbStore(
-            string dirPath)
+            string dirPath,
+            Guid? checkpointId = null)
         {
             _storePath = Path.GetFullPath(dirPath);
             _store = LocalStorageDevice.Create(_storePath, out _logSettings, out _checkpointSettings);
+
+            if (checkpointId.HasValue)
+                _store.Recover(checkpointId.Value);
+
             _sessionPool = new(
                 _logSettings.LogDevice.ThrottleLimit,
                 () => _store.For(new ByteArrayFunctions()).NewSession<ByteArrayFunctions>());
@@ -48,13 +53,20 @@ namespace Neo.Build.Core.Storage
 
         public void Dispose()
         {
-            _store.CheckpointManager.PurgeAll();
+            //_store.CheckpointManager.PurgeAll();
             _store.TryInitiateFullCheckpoint(out _, CheckpointType.Snapshot);
             _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
             _store.Log.FlushAndEvict(true);
             _store.Dispose();
             _sessionPool.Dispose();
             GC.SuppressFinalize(this);
+        }
+
+        public Guid CreateFullCheckPoint()
+        {
+            _store.TryInitiateFullCheckpoint(out var checkpointId, CheckpointType.Snapshot);
+            _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
+            return checkpointId;
         }
 
         public void Reset() =>

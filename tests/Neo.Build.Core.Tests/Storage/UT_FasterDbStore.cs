@@ -11,6 +11,7 @@
 
 using Neo.Build.Core.Storage;
 using Neo.Persistence;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -92,6 +93,35 @@ namespace Neo.Build.Core.Tests.Storage
             items = [.. store.Seek(null, SeekDirection.Backward)];
 
             Assert.AreEqual(0, items.Length);
+        }
+
+        [TestMethod]
+        public void TestCreateFullCheckPoint()
+        {
+            var checkpointId = Guid.Empty;
+
+            using (var store = new FasterDbStore("chkpntTest"))
+            {
+                store.Put([0x01, 0x00], [0x00]);
+                store.Put([0x01, 0x01], [0x01]);
+                store.Put([0x01, 0x02], [0x02]);
+
+                checkpointId = store.CreateFullCheckPoint();
+
+                store.Put([0x01, 0xff], [0xff]);
+
+                CollectionAssert.AreEqual(store.TryGet([0x01, 0xff]), new byte[] { 0xff });
+                CollectionAssert.AreEqual(store.TryGet([0x01, 0x00]), new byte[] { 0x00 });
+                CollectionAssert.AreEqual(store.TryGet([0x01, 0x01]), new byte[] { 0x01 });
+                CollectionAssert.AreEqual(store.TryGet([0x01, 0x02]), new byte[] { 0x02 });
+            }
+
+            using (var store = new FasterDbStore("chkpntTest", checkpointId))
+            {
+                CollectionAssert.AreEqual(store.TryGet([0x01, 0x00]), new byte[] { 0x00 });
+                CollectionAssert.AreEqual(store.TryGet([0x01, 0x01]), new byte[] { 0x01 });
+                CollectionAssert.AreEqual(store.TryGet([0x01, 0x02]), new byte[] { 0x02 });
+            }
         }
     }
 }
