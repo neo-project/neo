@@ -24,10 +24,15 @@ namespace Neo.Build.Core.Storage
     public class FasterDbStore : IStore, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         public FasterDbStore(
-            string dirPath)
+            string dirPath,
+            Guid? checkpointId = null)
         {
             _storePath = Path.GetFullPath(dirPath);
             _store = LocalStorageDevice.Create(_storePath, out _logSettings, out _checkpointSettings);
+
+            if (checkpointId.HasValue)
+                _store.Recover(checkpointId.Value);
+
             _sessionPool = new(
                 _logSettings.LogDevice.ThrottleLimit,
                 () => _store.For(new ByteArrayFunctions()).NewSession<ByteArrayFunctions>());
