@@ -263,5 +263,55 @@ namespace Neo.SmartContract.Native
 
             return count;
         }
+
+        [ContractMethod(CpuFee = 1 << 10)]
+        public static ulong GetRandom(ApplicationEngine engine, ulong minValue, ulong maxValue)
+        {
+            if (minValue > maxValue)
+                throw new ArgumentOutOfRangeException(nameof(minValue));
+
+            return GetRandom(engine, maxValue - minValue) + minValue;
+        }
+
+        [ContractMethod(CpuFee = 1 << 10)]
+        private static ulong GetRandom(ApplicationEngine engine, ulong maxValue)
+        {
+            var randomProduct = BigMul(maxValue, (ulong)(engine.GetRandom() & ulong.MaxValue), out var lowPart);
+
+            if (lowPart < maxValue)
+            {
+                var remainder = (0ul - maxValue) % maxValue;
+
+                while (lowPart < remainder)
+                {
+                    randomProduct = BigMul(maxValue, (ulong)(engine.GetRandom() & ulong.MaxValue), out lowPart);
+                }
+            }
+
+            return randomProduct;
+
+            static ulong BigMul(ulong a, ulong b, out ulong low)
+            {
+                // Adaptation of algorithm for multiplication
+                // of 32-bit unsigned integers described
+                // in Hacker's Delight by Henry S. Warren, Jr. (ISBN 0-201-91465-4), Chapter 8
+                // Basically, it's an optimized version of FOIL method applied to
+                // low and high dwords of each operand
+
+                // Use 32-bit uints to optimize the fallback for 32-bit platforms.
+                var al = (uint)a;
+                var ah = (uint)(a >> 32);
+                var bl = (uint)b;
+                var bh = (uint)(b >> 32);
+
+                var mull = ((ulong)al) * bl;
+                var t = ((ulong)ah) * bl + (mull >> 32);
+                var tl = ((ulong)al) * bh + (uint)t;
+
+                low = tl << 32 | (uint)mull;
+
+                return ((ulong)ah) * bh + (t >> 32) + (tl >> 32);
+            }
+        }
     }
 }

@@ -427,5 +427,27 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual("U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t", engine.ResultStack.Pop<ByteString>().GetString());
             }
         }
+
+        [TestMethod]
+        public void TestGetRandomRanges()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using (var script = new ScriptBuilder())
+            {
+                // Test encoding
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1_00000000, 1_00000000);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 100_000_000_000_00000000, 100_000_000_000_00000000);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(3, engine.ResultStack.Count);
+                Assert.AreEqual(100_000_000_000_00000000, engine.ResultStack.Pop<Integer>());
+                Assert.AreEqual(1_00000000, engine.ResultStack.Pop<Integer>());
+                Assert.AreEqual(0_00000000, engine.ResultStack.Pop<Integer>());
+            }
+        }
     }
 }
