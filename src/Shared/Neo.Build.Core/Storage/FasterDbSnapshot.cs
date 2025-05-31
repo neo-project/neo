@@ -85,7 +85,7 @@ namespace Neo.Build.Core.Storage
         public void Put(byte[] key, byte[] value) =>
             _writeBatch[key] = value;
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction)
+        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
             keyOrPrefix ??= [];
             if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;

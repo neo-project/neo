@@ -95,13 +95,13 @@ namespace Neo.Build.Core.Tests.Storage
             using var snapshot = store.GetSnapshot();
             store.Put([0x02, 0x01], [0x11]);
 
-            var items = snapshot.Seek([0x02], SeekDirection.Forward).ToArray();
+            var items = snapshot.Find([0x02], SeekDirection.Forward).ToArray();
 
             Assert.AreEqual(2, items.Length);
             CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x02, 0x00 });
             CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x02, 0x01 });
 
-            items = [.. snapshot.Seek(null, SeekDirection.Forward)];
+            items = [.. snapshot.Find(null, SeekDirection.Forward)];
 
             Assert.AreEqual(5, items.Length);
             CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x01, 0x00 });
@@ -110,21 +110,21 @@ namespace Neo.Build.Core.Tests.Storage
             CollectionAssert.AreEqual(items[3].Key, new byte[] { 0x02, 0x00 });
             CollectionAssert.AreEqual(items[4].Key, new byte[] { 0x02, 0x01 });
 
-            items = [.. snapshot.Seek([0x01, 0x02], SeekDirection.Backward)];
+            items = [.. snapshot.Find([0x01, 0x02], SeekDirection.Backward)];
 
             Assert.AreEqual(3, items.Length);
             CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x01, 0x02 });
             CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x01, 0x01 });
             CollectionAssert.AreEqual(items[2].Key, new byte[] { 0x01, 0x00 });
 
-            items = [.. snapshot.Seek([0x02], SeekDirection.Backward)];
+            items = [.. snapshot.Find([0x02], SeekDirection.Backward)];
 
             Assert.AreEqual(3, items.Length);
             CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x01, 0x02 });
             CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x01, 0x01 });
             CollectionAssert.AreEqual(items[2].Key, new byte[] { 0x01, 0x00 });
 
-            items = [.. snapshot.Seek(null, SeekDirection.Backward)];
+            items = [.. snapshot.Find(null, SeekDirection.Backward)];
 
             Assert.AreEqual(0, items.Length);
         }
