@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
@@ -28,7 +27,7 @@ using static Neo.Plugins.OracleService.Tests.TestUtils;
 namespace Neo.Plugins.OracleService.Tests
 {
     [TestClass]
-    public class E2E_Https : TestKit
+    public class E2E_Https
     {
         UInt160 customContract;
 
@@ -54,7 +53,7 @@ namespace Neo.Plugins.OracleService.Tests
                         }]);
                 // Expected result: 12685221
                 sb.EmitDynamicCall(customContract, "createRequest",
-                    ["https://api.github.com/orgs/neo-project", "$.id", "callback", new byte[] { }, 1_0000_0000]);
+                    ["https://api.github.com/orgs/neo-project", "$.id", "callback", Array.Empty<byte>(), 1_0000_0000]);
                 script = sb.ToArray();
             }
             Transaction[] txs = [

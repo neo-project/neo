@@ -23,16 +23,16 @@ namespace Neo.Extensions.Tests
         public void TestToHexString()
         {
             byte[]? nullStr = null;
-            Assert.ThrowsException<ArgumentNullException>(nullStr.ToHexString);
-            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString(false));
-            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString(true));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString());
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString(false));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString(true));
 
             byte[] empty = Array.Empty<byte>();
             Assert.AreEqual("", empty.ToHexString());
             Assert.AreEqual("", empty.ToHexString(false));
             Assert.AreEqual("", empty.ToHexString(true));
 
-            byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
+            byte[] str1 = [(byte)'n', (byte)'e', (byte)'o'];
             Assert.AreEqual("6e656f", str1.ToHexString());
             Assert.AreEqual("6e656f", str1.ToHexString(false));
             Assert.AreEqual("6f656e", str1.ToHexString(true));
@@ -56,17 +56,48 @@ namespace Neo.Extensions.Tests
             input = Array.Empty<byte>();
             span = new ReadOnlySpan<byte>(input);
             result = span.ToHexString();
-            Assert.IsTrue(result.Length == 0);
+            Assert.AreEqual(0, result.Length);
 
-            input = new byte[] { 0x5A };
+            input = [0x5A];
             span = new ReadOnlySpan<byte>(input);
             result = span.ToHexString();
             Assert.AreEqual("5a", result);
 
-            input = new byte[] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF };
+            input = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF];
             span = new ReadOnlySpan<byte>(input);
             result = span.ToHexString();
             Assert.AreEqual("0123456789abcdef", result);
+        }
+
+        [TestMethod]
+        public void TestNotZero()
+        {
+            Assert.IsFalse(new ReadOnlySpan<byte>(Array.Empty<byte>()).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[4]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[7]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[8]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[9]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[11]).NotZero());
+
+            Assert.IsTrue(new ReadOnlySpan<byte>([0x00, 0x00, 0x00, 0x01]).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01]).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01]).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00]).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01]).NotZero());
+
+            var bytes = new byte[64];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                ReadOnlySpan<byte> span = bytes.AsSpan();
+                Assert.IsFalse(span[i..].NotZero());
+
+                for (int j = i; j < bytes.Length; j++)
+                {
+                    bytes[j] = 0x01;
+                    Assert.IsTrue(span[i..].NotZero());
+                    bytes[j] = 0x00;
+                }
+            }
         }
     }
 }

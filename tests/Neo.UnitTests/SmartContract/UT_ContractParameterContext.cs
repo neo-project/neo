@@ -10,13 +10,16 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
+using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -31,10 +34,7 @@ namespace Neo.UnitTests.SmartContract
         {
             if (contract == null)
             {
-                byte[] privateKey = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                byte[] privateKey = Enumerable.Repeat((byte)0x01, 32).ToArray();
                 key = new KeyPair(privateKey);
                 contract = Contract.CreateSignatureContract(key.PublicKey);
             }
@@ -44,7 +44,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetComplete()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
+            var tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
             var context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
             Assert.IsFalse(context.Completed);
         }
@@ -53,18 +53,39 @@ namespace Neo.UnitTests.SmartContract
         public void TestToString()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
+            var tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
             var context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
             context.Add(contract, 0, new byte[] { 0x01 });
-            string str = context.ToString();
-            Assert.AreEqual(@"{""type"":""Neo.Network.P2P.Payloads.Transaction"",""hash"":""0x602c1fa1c08b041e4e6b87aa9a9f9c643166cd34bdd5215a3dd85778c59cce88"",""data"":""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAARI="",""items"":{},""network"":" + TestProtocolSettings.Default.Network + "}", str);
+            var expected = """
+            {
+                "type":"Neo.Network.P2P.Payloads.Transaction",
+                "hash":"0x602c1fa1c08b041e4e6b87aa9a9f9c643166cd34bdd5215a3dd85778c59cce88",
+                "data":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAARI=",
+                "items":{},
+                "network": 
+            """ + TestProtocolSettings.Default.Network.ToString() + "}";
+            expected = Regex.Replace(expected, @"\s+", "");
+            Assert.AreEqual(expected, context.ToString());
         }
 
         [TestMethod]
         public void TestParse()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"data\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAARI=\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}],\"signatures\":{\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\":\"AQ==\"}}},\"network\":" + TestProtocolSettings.Default.Network + "}", snapshotCache);
+            var json = """
+            {
+                "type":"Neo.Network.P2P.Payloads.Transaction",
+                "data":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAARI=",
+                "items":{
+                    "0xbecaad15c0ea585211faf99738a4354014f177f2":{
+                        "script":"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq",
+                        "parameters":[{"type":"Signature","value":"AQ=="}],
+                        "signatures":{"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c":"AQ=="}
+                    }
+                },
+                "network":
+            """ + TestProtocolSettings.Default.Network + "}";
+            var ret = ContractParametersContext.Parse(json, snapshotCache);
             Assert.AreEqual("0x1bd5c777ec35768892bd3daab60fb7a1cb905066", ret.ScriptHashes[0].ToString());
             Assert.AreEqual(new byte[] { 18 }.ToHexString(), ((Transaction)ret.Verifiable).Script.Span.ToHexString());
         }
@@ -73,8 +94,20 @@ namespace Neo.UnitTests.SmartContract
         public void TestFromJson()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            Action action = () => ContractParametersContext.Parse("{\"type\":\"wrongType\",\"data\":\"00000000007c97764845172d827d3c863743293931a691271a0000000000000000000000000000000000000000000100\",\"items\":{\"0x1bd5c777ec35768892bd3daab60fb7a1cb905066\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1650680a906ad4\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}", snapshotCache);
-            Assert.ThrowsException<FormatException>(action);
+            var json = """
+            {
+                "type":"wrongType",
+                "data":"00000000007c97764845172d827d3c863743293931a691271a0000000000000000000000000000000000000000000100",
+                "items":{
+                    "0x1bd5c777ec35768892bd3daab60fb7a1cb905066":{
+                        "script":"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1650680a906ad4",
+                        "parameters":[{"type":"Signature","value":"01"}]
+                    }
+                }
+            }
+            """;
+            Action action = () => ContractParametersContext.Parse(json, snapshotCache);
+            Assert.ThrowsExactly<FormatException>(action);
         }
 
         [TestMethod]
@@ -112,7 +145,8 @@ namespace Neo.UnitTests.SmartContract
             Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x902e0d38da5e513b6d07c1c55b85e77d3dce8063"));
             var context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
             context.Add(contract, 0, new byte[] { 0x01 });
-            Witness[] witnesses = context.GetWitnesses();
+
+            var witnesses = context.GetWitnesses();
             Assert.AreEqual(1, witnesses.Length);
             Assert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0x01, 0x01 }.ToHexString(), witnesses[0].InvocationScript.Span.ToHexString());
             Assert.AreEqual(contract.Script.ToHexString(), witnesses[0].VerificationScript.Span.ToHexString());
@@ -128,48 +162,74 @@ namespace Neo.UnitTests.SmartContract
             //singleSign
 
             var context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
-            Assert.IsTrue(context.AddSignature(contract, key.PublicKey, new byte[] { 0x01 }));
+            Assert.IsTrue(context.AddSignature(contract, key.PublicKey, [0x01]));
 
             var contract1 = Contract.CreateSignatureContract(key.PublicKey);
             contract1.ParameterList = Array.Empty<ContractParameterType>();
             context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
-            Assert.IsFalse(context.AddSignature(contract1, key.PublicKey, new byte[] { 0x01 }));
+            Assert.IsFalse(context.AddSignature(contract1, key.PublicKey, [0x01]));
 
-            contract1.ParameterList = new[] { ContractParameterType.Signature, ContractParameterType.Signature };
-            Action action1 = () => context.AddSignature(contract1, key.PublicKey, new byte[] { 0x01 });
-            Assert.ThrowsException<NotSupportedException>(action1);
+            contract1.ParameterList = [ContractParameterType.Signature, ContractParameterType.Signature];
+            Action action1 = () => context.AddSignature(contract1, key.PublicKey, [0x01]);
+            Assert.ThrowsExactly<NotSupportedException>(action1);
 
             //multiSign
-
-            byte[] privateKey2 = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02 };
+            byte[] privateKey2 = Enumerable.Repeat((byte)0x01, 31).Append((byte)0x02).ToArray();
             var key2 = new KeyPair(privateKey2);
-            var multiSignContract = Contract.CreateMultiSigContract(2,
-                    new ECPoint[]
-                    {
-                        key.PublicKey,
-                        key2.PublicKey
-                    });
+            var multiSignContract = Contract.CreateMultiSigContract(2, [key.PublicKey, key2.PublicKey]);
             var multiSender = UInt160.Parse("0xf76b51bc6605ac3cfcd188173af0930507f51210");
+
             tx = TestUtils.GetTransaction(multiSender);
             context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
-            Assert.IsTrue(context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }));
-            Assert.IsTrue(context.AddSignature(multiSignContract, key2.PublicKey, new byte[] { 0x01 }));
+            Assert.IsTrue(context.AddSignature(multiSignContract, key.PublicKey, [0x01]));
+            Assert.IsTrue(context.AddSignature(multiSignContract, key2.PublicKey, [0x01]));
 
             tx = TestUtils.GetTransaction(singleSender);
             context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
-            Assert.IsFalse(context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }));
+            Assert.IsFalse(context.AddSignature(multiSignContract, key.PublicKey, [0x01]));
 
             tx = TestUtils.GetTransaction(multiSender);
             context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
-            byte[] privateKey3 = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x03 };
+            byte[] privateKey3 = Enumerable.Repeat((byte)0x01, 31).Append((byte)0x03).ToArray();
             var key3 = new KeyPair(privateKey3);
-            Assert.IsFalse(context.AddSignature(multiSignContract, key3.PublicKey, new byte[] { 0x01 }));
+            Assert.IsFalse(context.AddSignature(multiSignContract, key3.PublicKey, [0x01]));
+        }
+
+        [TestMethod]
+        public void TestAddWithScriptHash()
+        {
+            var h160 = UInt160.Parse("0x902e0d38da5e513b6d07c1c55b85e77d3dce8063");
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var tx = TestUtils.GetTransaction(h160);
+            var context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
+            Assert.IsFalse(context.AddWithScriptHash(h160));
+
+            var contract = new ContractState()
+            {
+                Hash = h160,
+                Nef = new(),
+                Manifest = new()
+                {
+                    Name = "TestContract",
+                    Groups = [],
+                    SupportedStandards = [],
+                    Abi = new() { Methods = [new() { Name = ContractBasicMethod.Verify, Parameters = [] }], Events = [] }
+                }
+            };
+            snapshotCache.AddContract(h160, contract);
+            Assert.IsTrue(context.AddWithScriptHash(h160));
+
+            snapshotCache.DeleteContract(h160);
+            contract.Manifest.Abi = new()
+            {
+                Methods = [new() {
+                    Name = ContractBasicMethod.Verify,
+                    Parameters = [new() { Name = "signature", Type = ContractParameterType.Signature }],
+                }],
+                Events = []
+            };
+            snapshotCache.AddContract(h160, contract);
+            Assert.IsFalse(context.AddWithScriptHash(h160));
         }
     }
 }

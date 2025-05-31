@@ -171,5 +171,20 @@ namespace Neo.Network.RPC.Tests
             var item = RpcVersion.FromJson((JObject)json);
             Assert.AreEqual(json.ToString(), item.ToJson().ToString());
         }
+
+        [TestMethod]
+        public void TestRpcStack()
+        {
+            var stack = new RpcStack()
+            {
+                Type = "Boolean",
+                Value = true,
+            };
+
+            var expectedJsonString = "{\"type\":\"Boolean\",\"value\":true}";
+            var actualJsonString = stack.ToJson().ToString();
+
+            Assert.AreEqual(expectedJsonString, actualJsonString);
+        }
     }
 }

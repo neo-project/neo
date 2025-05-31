@@ -16,22 +16,19 @@ using System;
 
 namespace Neo.Ledger
 {
-    internal class TransactionRouter : UntypedActor
+    internal class TransactionRouter(NeoSystem system) : UntypedActor
     {
         public record Preverify(Transaction Transaction, bool Relay);
         public record PreverifyCompleted(Transaction Transaction, bool Relay, VerifyResult Result);
 
-        private readonly NeoSystem system;
-
-        public TransactionRouter(NeoSystem system)
-        {
-            this.system = system;
-        }
+        private readonly NeoSystem _system = system;
 
         protected override void OnReceive(object message)
         {
             if (message is not Preverify preverify) return;
-            system.Blockchain.Tell(new PreverifyCompleted(preverify.Transaction, preverify.Relay, preverify.Transaction.VerifyStateIndependent(system.Settings)), Sender);
+            var send = new PreverifyCompleted(preverify.Transaction, preverify.Relay,
+                    preverify.Transaction.VerifyStateIndependent(_system.Settings));
+            _system.Blockchain.Tell(send, Sender);
         }
 
         internal static Props Props(NeoSystem system)

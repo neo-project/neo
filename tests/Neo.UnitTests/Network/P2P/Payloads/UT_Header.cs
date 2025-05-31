@@ -50,11 +50,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var val256 = UInt256.Zero;
             var snapshotCache = TestBlockchain.GetTestSnapshotCache().CloneCache();
             var uut = TestUtils.MakeHeader(null, val256);
-            uut.Witness = new Witness()
-            {
-                InvocationScript = Array.Empty<byte>(),
-                VerificationScript = Array.Empty<byte>()
-            };
+            uut.Witness = Witness.Empty;
 
             TestUtils.BlocksAdd(snapshotCache, uut.Hash, new TrimmedBlock()
             {
@@ -66,7 +62,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     NextConsensus = uut.NextConsensus,
                     Witness = uut.Witness
                 },
-                Hashes = Array.Empty<UInt256>()
+                Hashes = []
             });
 
             var trim = NativeContract.Ledger.GetTrimmedBlock(snapshotCache, uut.Hash);
@@ -98,6 +94,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsFalse(uut.Equals(null));
         }
 
+        [TestMethod]
+        public void CloneTest()
+        {
+            var uut = TestUtils.MakeHeader(null, UInt256.Zero);
+            var clone = uut.Clone();
+            CollectionAssert.AreEqual(uut.ToArray(), clone.ToArray());
+            // Check not referenced
+            uut.Witness.InvocationScript = new byte[123];
+            CollectionAssert.AreNotEqual(clone.Witness.InvocationScript.ToArray(), uut.Witness.InvocationScript.ToArray());
+        }
 
         [TestMethod]
         public void Equals_SameHeader()
@@ -131,11 +137,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Witness()
+        public void TestWitness()
         {
             IVerifiable item = new Header();
             void Actual() => item.Witnesses = null;
-            Assert.ThrowsException<ArgumentNullException>(Actual);
+            Assert.ThrowsExactly<ArgumentNullException>(Actual);
 
             item.Witnesses = [new()];
             Assert.AreEqual(1, item.Witnesses.Length);

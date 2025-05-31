@@ -114,6 +114,8 @@ namespace Neo.Network.P2P.Payloads
         }
 
         private UInt256 _hash = null;
+
+        /// <inheritdoc/>
         public UInt256 Hash
         {
             get
@@ -194,10 +196,10 @@ namespace Neo.Network.P2P.Payloads
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
-            if (prevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
-            if (prev is null) throw new InvalidOperationException();
-            return new[] { prev.Header.nextConsensus };
+            if (prevHash == UInt256.Zero) return [Witness.ScriptHash];
+            var prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash)
+                ?? throw new InvalidOperationException($"Block {prevHash} was not found");
+            return [prev.Header.nextConsensus];
         }
 
         public void Serialize(BinaryWriter writer)
@@ -263,6 +265,23 @@ namespace Neo.Network.P2P.Payloads
             if (prev.index + 1 != index) return false;
             if (prev.timestamp >= timestamp) return false;
             return this.VerifyWitness(settings, snapshot, prev.nextConsensus, Witness, 3_00000000L, out _);
+        }
+
+        public Header Clone()
+        {
+            return new Header()
+            {
+                Version = version,
+                PrevHash = prevHash,
+                MerkleRoot = MerkleRoot,
+                Timestamp = timestamp,
+                Nonce = nonce,
+                Index = index,
+                PrimaryIndex = primaryIndex,
+                NextConsensus = nextConsensus,
+                Witness = Witness?.Clone(),
+                _hash = _hash
+            };
         }
     }
 }

@@ -134,12 +134,12 @@ namespace Neo.UnitTests.Plugins
             _ = new TestNonPlugin();
 
             // Ensure exception is thrown
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
            {
                Blockchain.InvokeCommitting(null, null, null, null);
            });
 
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
            {
                Blockchain.InvokeCommitted(null, null);
            });
@@ -149,7 +149,7 @@ namespace Neo.UnitTests.Plugins
         public void TestOnPluginStopped()
         {
             var pp = new TestPlugin();
-            Assert.AreEqual(false, pp.IsStopped);
+            Assert.IsFalse(pp.IsStopped);
             // Ensure no exception is thrown
             try
             {
@@ -161,7 +161,7 @@ namespace Neo.UnitTests.Plugins
                 Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
             }
 
-            Assert.AreEqual(true, pp.IsStopped);
+            Assert.IsTrue(pp.IsStopped);
         }
 
         [TestMethod]
@@ -169,7 +169,7 @@ namespace Neo.UnitTests.Plugins
         {
             // pp will stop on exception.
             var pp = new TestPlugin();
-            Assert.AreEqual(false, pp.IsStopped);
+            Assert.IsFalse(pp.IsStopped);
             // Ensure no exception is thrown
             try
             {
@@ -181,11 +181,11 @@ namespace Neo.UnitTests.Plugins
                 Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
             }
 
-            Assert.AreEqual(true, pp.IsStopped);
+            Assert.IsTrue(pp.IsStopped);
 
             // pp2 will not stop on exception.
             var pp2 = new TestPlugin(UnhandledExceptionPolicy.Ignore);
-            Assert.AreEqual(false, pp2.IsStopped);
+            Assert.IsFalse(pp2.IsStopped);
             // Ensure no exception is thrown
             try
             {
@@ -197,7 +197,7 @@ namespace Neo.UnitTests.Plugins
                 Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
             }
 
-            Assert.AreEqual(false, pp2.IsStopped);
+            Assert.IsFalse(pp2.IsStopped);
         }
 
         [TestMethod]
@@ -205,18 +205,18 @@ namespace Neo.UnitTests.Plugins
         {
             // node will stop on pp exception.
             var pp = new TestPlugin(UnhandledExceptionPolicy.StopNode);
-            Assert.AreEqual(false, pp.IsStopped);
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.IsFalse(pp.IsStopped);
+            Assert.ThrowsExactly<NotImplementedException>(() =>
             {
                 Blockchain.InvokeCommitting(null, null, null, null);
             });
 
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
             {
                 Blockchain.InvokeCommitted(null, null);
             });
 
-            Assert.AreEqual(false, pp.IsStopped);
+            Assert.IsFalse(pp.IsStopped);
         }
     }
 }

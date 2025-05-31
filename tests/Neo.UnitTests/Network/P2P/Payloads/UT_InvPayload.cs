@@ -60,7 +60,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.Type, clone.Type);
             CollectionAssert.AreEqual(test.Hashes, clone.Hashes);
 
-            Assert.ThrowsException<FormatException>(() => InvPayload.Create((InventoryType)0xff, UInt256.Zero).ToArray().AsSerializable<InvPayload>());
+            Assert.ThrowsExactly<FormatException>(() => _ = InvPayload.Create((InventoryType)0xff, UInt256.Zero).ToArray().AsSerializable<InvPayload>());
         }
     }
 }

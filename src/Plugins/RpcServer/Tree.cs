@@ -14,7 +14,7 @@ using System.Collections.Generic;
 
 namespace Neo.Plugins.RpcServer
 {
-    class Tree<T>
+    public class Tree<T>
     {
         public TreeNode<T> Root { get; private set; }
 

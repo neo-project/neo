@@ -43,7 +43,12 @@ namespace Neo.Persistence
         }
 
         private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
-        private readonly HashSet<StorageKey> _changeSet = [];
+        private readonly HashSet<StorageKey>? _changeSet;
+
+        /// <summary>
+        /// True if DataCache is readOnly
+        /// </summary>
+        public bool IsReadOnly => _changeSet == null;
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -73,6 +78,16 @@ namespace Neo.Persistence
         }
 
         /// <summary>
+        /// Data cache constructor
+        /// </summary>
+        /// <param name="readOnly">True if you don't want to allow writes</param>
+        protected DataCache(bool readOnly)
+        {
+            if (!readOnly)
+                _changeSet = [];
+        }
+
+        /// <summary>
         /// Adds a new entry to the cache.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
@@ -97,7 +112,7 @@ namespace Neo.Persistence
                 {
                     _dictionary[key] = new Trackable(value, TrackState.Added);
                 }
-                _changeSet.Add(key);
+                _changeSet?.Add(key);
             }
         }
 
@@ -113,6 +128,11 @@ namespace Neo.Persistence
         /// </summary>
         public virtual void Commit()
         {
+            if (_changeSet is null)
+            {
+                throw new InvalidOperationException("DataCache is read only");
+            }
+
             lock (_dictionary)
             {
                 foreach (var key in _changeSet)
@@ -135,6 +155,24 @@ namespace Neo.Persistence
                     }
                 }
                 _changeSet.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Gets the change set in the cache.
+        /// </summary>
+        /// <returns>The change set.</returns>
+        public IEnumerable<KeyValuePair<StorageKey, Trackable>> GetChangeSet()
+        {
+            if (_changeSet is null)
+            {
+                throw new InvalidOperationException("DataCache is read only");
+            }
+
+            lock (_dictionary)
+            {
+                foreach (var key in _changeSet)
+                    yield return new(key, _dictionary[key]);
             }
         }
 
@@ -170,12 +208,12 @@ namespace Neo.Persistence
                     if (trackable.State == TrackState.Added)
                     {
                         trackable.State = TrackState.NotFound;
-                        _changeSet.Remove(key);
+                        _changeSet?.Remove(key);
                     }
                     else if (trackable.State != TrackState.NotFound)
                     {
                         trackable.State = TrackState.Deleted;
-                        _changeSet.Add(key);
+                        _changeSet?.Add(key);
                     }
                 }
                 else
@@ -183,7 +221,7 @@ namespace Neo.Persistence
                     var item = TryGetInternal(key);
                     if (item == null) return;
                     _dictionary.Add(key, new Trackable(item, TrackState.Deleted));
-                    _changeSet.Add(key);
+                    _changeSet?.Add(key);
                 }
             }
         }
@@ -193,6 +231,23 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         protected abstract void DeleteInternal(StorageKey key);
+
+        /// <summary>
+        /// Finds the entries starting with the specified prefix.
+        /// </summary>
+        /// <param name="direction">The search direction.</param>
+        /// <returns>The entries found with the desired prefix.</returns>
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(SeekDirection direction = SeekDirection.Forward)
+        {
+            return Find((byte[]?)null, direction);
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        {
+            var key = key_prefix?.ToArray();
+            return Find(key, direction);
+        }
 
         /// <summary>
         /// Finds the entries starting with the specified prefix.
@@ -263,19 +318,6 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Gets the change set in the cache.
-        /// </summary>
-        /// <returns>The change set.</returns>
-        public IEnumerable<KeyValuePair<StorageKey, Trackable>> GetChangeSet()
-        {
-            lock (_dictionary)
-            {
-                foreach (var key in _changeSet)
-                    yield return new(key, _dictionary[key]);
-            }
-        }
-
-        /// <summary>
         /// Determines whether the cache contains the specified entry.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
@@ -337,13 +379,13 @@ namespace Neo.Persistence
                         else
                         {
                             trackable.State = TrackState.Added;
-                            _changeSet.Add(key);
+                            _changeSet?.Add(key);
                         }
                     }
                     else if (trackable.State == TrackState.None)
                     {
                         trackable.State = TrackState.Changed;
-                        _changeSet.Add(key);
+                        _changeSet?.Add(key);
                     }
                 }
                 else
@@ -359,7 +401,7 @@ namespace Neo.Persistence
                         trackable = new Trackable(item, TrackState.Changed);
                     }
                     _dictionary.Add(key, trackable);
-                    _changeSet.Add(key);
+                    _changeSet?.Add(key);
                 }
                 return trackable.Item;
             }
@@ -392,7 +434,7 @@ namespace Neo.Persistence
                         else
                         {
                             trackable.State = TrackState.Added;
-                            _changeSet.Add(key);
+                            _changeSet?.Add(key);
                         }
                     }
                 }
@@ -402,7 +444,7 @@ namespace Neo.Persistence
                     if (item == null)
                     {
                         trackable = new Trackable(factory(), TrackState.Added);
-                        _changeSet.Add(key);
+                        _changeSet?.Add(key);
                     }
                     else
                     {
@@ -458,12 +500,14 @@ namespace Neo.Persistence
             {
                 if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
                 {
+                    if (i1.Key == null || i1.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
                     yield return (i1.Key, i1.Item);
                     c1 = e1.MoveNext();
                     i1 = c1 ? e1.Current : default;
                 }
                 else
                 {
+                    if (i2.Key == null || i2.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
                     yield return (i2.Key, i2.Item);
                     c2 = e2.MoveNext();
                     i2 = c2 ? e2.Current : default;

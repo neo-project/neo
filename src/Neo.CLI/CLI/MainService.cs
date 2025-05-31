@@ -17,6 +17,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
+using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -142,9 +143,9 @@ namespace Neo.CLI
             base.RunConsole();
         }
 
-        public void CreateWallet(string path, string password, bool createDefaultAccount = true)
+        public void CreateWallet(string path, string password, bool createDefaultAccount = true, string? walletName = null)
         {
-            Wallet wallet = Wallet.Create(null, path, password, NeoSystem.Settings);
+            Wallet wallet = Wallet.Create(walletName, path, password, NeoSystem.Settings);
             if (wallet == null)
             {
                 ConsoleHelper.Warning("Wallet files in that format are not supported, please use a .json or .db3 file extension.");
@@ -158,80 +159,9 @@ namespace Neo.CLI
                 ConsoleHelper.Info("ScriptHash: ", $"{account.ScriptHash}");
             }
             wallet.Save();
+
             CurrentWallet = wallet;
-        }
-
-        private IEnumerable<Block> GetBlocks(Stream stream, bool read_start = false)
-        {
-            using BinaryReader r = new BinaryReader(stream);
-            uint start = read_start ? r.ReadUInt32() : 0;
-            uint count = r.ReadUInt32();
-            uint end = start + count - 1;
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
-            if (end <= currentHeight) yield break;
-            for (uint height = start; height <= end; height++)
-            {
-                var size = r.ReadInt32();
-                if (size > Message.PayloadMaxSize)
-                    throw new ArgumentException($"Block {height} exceeds the maximum allowed size");
-
-                byte[] array = r.ReadBytes(size);
-                if (height > currentHeight)
-                {
-                    Block block = array.AsSerializable<Block>();
-                    yield return block;
-                }
-            }
-        }
-
-        private IEnumerable<Block> GetBlocksFromFile()
-        {
-            const string pathAcc = "chain.acc";
-            if (File.Exists(pathAcc))
-                using (FileStream fs = new(pathAcc, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    foreach (var block in GetBlocks(fs))
-                        yield return block;
-
-            const string pathAccZip = pathAcc + ".zip";
-            if (File.Exists(pathAccZip))
-                using (FileStream fs = new(pathAccZip, FileMode.Open, FileAccess.Read, FileShare.Read))
-                using (ZipArchive zip = new(fs, ZipArchiveMode.Read))
-                using (Stream? zs = zip.GetEntry(pathAcc)?.Open())
-                {
-                    if (zs is not null)
-                    {
-                        foreach (var block in GetBlocks(zs))
-                            yield return block;
-                    }
-                }
-
-            var paths = Directory.EnumerateFiles(".", "chain.*.acc", SearchOption.TopDirectoryOnly).Concat(Directory.EnumerateFiles(".", "chain.*.acc.zip", SearchOption.TopDirectoryOnly)).Select(p => new
-            {
-                FileName = Path.GetFileName(p),
-                Start = uint.Parse(Regex.Match(p, @"\d+").Value),
-                IsCompressed = p.EndsWith(".zip")
-            }).OrderBy(p => p.Start);
-
-            uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
-            foreach (var path in paths)
-            {
-                if (path.Start > height + 1) break;
-                if (path.IsCompressed)
-                    using (FileStream fs = new(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    using (ZipArchive zip = new(fs, ZipArchiveMode.Read))
-                    using (Stream? zs = zip.GetEntry(Path.GetFileNameWithoutExtension(path.FileName))?.Open())
-                    {
-                        if (zs is not null)
-                        {
-                            foreach (var block in GetBlocks(zs, true))
-                                yield return block;
-                        }
-                    }
-                else
-                    using (FileStream fs = new(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
-                        foreach (var block in GetBlocks(fs, true))
-                            yield return block;
-            }
+            SignerManager.RegisterSigner(wallet.Name, wallet);
         }
 
         private bool NoWallet()
@@ -363,10 +293,13 @@ namespace Neo.CLI
         {
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException();
+                throw new FileNotFoundException($"Wallet file \"{path}\" not found.");
             }
 
+            if (CurrentWallet is not null) SignerManager.UnregisterSigner(CurrentWallet.Name);
+
             CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
+            SignerManager.RegisterSigner(CurrentWallet.Name, CurrentWallet);
         }
 
         public async void Start(CommandLineOptions options)
@@ -375,7 +308,7 @@ namespace Neo.CLI
             bool verifyImport = !(options.NoVerify ?? false);
 
             Utility.LogLevel = options.Verbose;
-            ProtocolSettings protocol = ProtocolSettings.Load("config.json");
+            var protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
             try
@@ -439,30 +372,14 @@ namespace Neo.CLI
                 RegisterCommand(plugin, plugin.Name);
             }
 
-            using (IEnumerator<Block> blocksBeingImported = GetBlocksFromFile().GetEnumerator())
-            {
-                while (true)
-                {
-                    List<Block> blocksToImport = new List<Block>();
-                    for (int i = 0; i < 10; i++)
-                    {
-                        if (!blocksBeingImported.MoveNext()) break;
-                        blocksToImport.Add(blocksBeingImported.Current);
-                    }
-                    if (blocksToImport.Count == 0) break;
-                    await NeoSystem.Blockchain.Ask<Blockchain.ImportCompleted>(new Blockchain.Import
-                    {
-                        Blocks = blocksToImport,
-                        Verify = verifyImport
-                    });
-                    if (NeoSystem is null) return;
-                }
-            }
+            await ImportBlocksFromFile(verifyImport);
+
             NeoSystem.StartNode(new ChannelsConfig
             {
                 Tcp = new IPEndPoint(IPAddress.Any, Settings.Default.P2P.Port),
                 MinDesiredConnections = Settings.Default.P2P.MinDesiredConnections,
                 MaxConnections = Settings.Default.P2P.MaxConnections,
+                MaxKnownHashes = Settings.Default.P2P.MaxKnownHashes,
                 MaxConnectionsPerAddress = Settings.Default.P2P.MaxConnectionsPerAddress
             });
 
@@ -472,22 +389,24 @@ namespace Neo.CLI
                 {
                     if (Settings.Default.UnlockWallet.Path is null)
                     {
-                        throw new InvalidOperationException("UnlockWallet.Path must be defined");
+                        ConsoleHelper.Error("UnlockWallet.Path must be defined");
                     }
                     else if (Settings.Default.UnlockWallet.Password is null)
                     {
-                        throw new InvalidOperationException("UnlockWallet.Password must be defined");
+                        ConsoleHelper.Error("UnlockWallet.Password must be defined");
                     }
-
-                    OpenWallet(Settings.Default.UnlockWallet.Path, Settings.Default.UnlockWallet.Password);
+                    else
+                    {
+                        OpenWallet(Settings.Default.UnlockWallet.Path, Settings.Default.UnlockWallet.Password);
+                    }
                 }
                 catch (FileNotFoundException)
                 {
-                    ConsoleHelper.Warning($"wallet file \"{Settings.Default.UnlockWallet.Path}\" not found.");
+                    ConsoleHelper.Warning($"wallet file \"{Path.GetFullPath(Settings.Default.UnlockWallet.Path!)}\" not found.");
                 }
                 catch (CryptographicException)
                 {
-                    ConsoleHelper.Error($"Failed to open file \"{Settings.Default.UnlockWallet.Path}\"");
+                    ConsoleHelper.Error($"Failed to open file \"{Path.GetFullPath(Settings.Default.UnlockWallet.Path!)}\"");
                 }
                 catch (Exception ex)
                 {
@@ -511,52 +430,6 @@ namespace Neo.CLI
         {
             Dispose_Logger();
             Interlocked.Exchange(ref _neoSystem, null)?.Dispose();
-        }
-
-        private void WriteBlocks(uint start, uint count, string path, bool writeStart)
-        {
-            uint end = start + count - 1;
-            using FileStream fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.WriteThrough);
-            if (fs.Length > 0)
-            {
-                byte[] buffer = new byte[sizeof(uint)];
-                if (writeStart)
-                {
-                    fs.Seek(sizeof(uint), SeekOrigin.Begin);
-                    fs.ReadExactly(buffer);
-                    start += BitConverter.ToUInt32(buffer, 0);
-                    fs.Seek(sizeof(uint), SeekOrigin.Begin);
-                }
-                else
-                {
-                    fs.ReadExactly(buffer);
-                    start = BitConverter.ToUInt32(buffer, 0);
-                    fs.Seek(0, SeekOrigin.Begin);
-                }
-            }
-            else
-            {
-                if (writeStart)
-                {
-                    fs.Write(BitConverter.GetBytes(start), 0, sizeof(uint));
-                }
-            }
-            if (start <= end)
-                fs.Write(BitConverter.GetBytes(count), 0, sizeof(uint));
-            fs.Seek(0, SeekOrigin.End);
-            Console.WriteLine("Export block from " + start + " to " + end);
-
-            using (var percent = new ConsolePercent(start, end))
-            {
-                for (uint i = start; i <= end; i++)
-                {
-                    Block block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, i);
-                    byte[] array = block.ToArray();
-                    fs.Write(BitConverter.GetBytes(array.Length), 0, sizeof(int));
-                    fs.Write(array, 0, array.Length);
-                    percent.Value = i;
-                }
-            }
         }
 
         private static void WriteLineWithoutFlicker(string message = "", int maxWidth = 80)
