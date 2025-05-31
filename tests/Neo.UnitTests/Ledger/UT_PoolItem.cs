@@ -142,27 +142,19 @@ namespace Neo.UnitTests.Ledger
             Transaction tx = new Transaction
             {
                 Nonce = (uint)TestRandom.Next(),
-                Script = overrideScriptBytes ?? new byte[0],
+                Script = overrideScriptBytes ?? ReadOnlyMemory<byte>.Empty,
                 NetworkFee = networkFee,
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = Array.Empty<Signer>(),
-                Witnesses = new[]
-                {
-                    new Witness
-                    {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new byte[0]
-                    }
-                }
+                Attributes = [],
+                Signers = [],
+                Witnesses = [Witness.Empty]
             };
 
             Assert.AreEqual(0, tx.Attributes.Length);
             Assert.AreEqual(0, tx.Signers.Length);
 
             int diff = size - tx.Size;
-            if (diff < 0) throw new ArgumentException();
-            if (diff > 0)
-                tx.Witnesses[0].VerificationScript = new byte[diff];
+            if (diff < 0) throw new ArgumentException($"The size({size}) cannot be less than the Transaction.Size({tx.Size}).");
+            if (diff > 0) tx.Witnesses[0].VerificationScript = new byte[diff];
             return tx;
         }
     }

@@ -58,6 +58,15 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
+        /// <summary>
+        /// Creates a new <see cref="Witness"/> with empty invocation and verification scripts.
+        /// </summary>
+        public static Witness Empty => new()
+        {
+            InvocationScript = ReadOnlyMemory<byte>.Empty,
+            VerificationScript = ReadOnlyMemory<byte>.Empty,
+        };
+
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
             InvocationScript = reader.ReadVarMemory(MaxInvocationScript);
@@ -80,6 +89,16 @@ namespace Neo.Network.P2P.Payloads
             json["invocation"] = Convert.ToBase64String(InvocationScript.Span);
             json["verification"] = Convert.ToBase64String(VerificationScript.Span);
             return json;
+        }
+
+        public Witness Clone()
+        {
+            return new Witness()
+            {
+                _scriptHash = _scriptHash,
+                InvocationScript = InvocationScript.ToArray(),
+                VerificationScript = VerificationScript.ToArray()
+            };
         }
     }
 }

@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;

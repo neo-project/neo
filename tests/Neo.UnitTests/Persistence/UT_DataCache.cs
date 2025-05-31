@@ -42,7 +42,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestInitialize]
         public void Initialize()
         {
-            myDataCache = new(store);
+            myDataCache = new(store, false);
         }
 
         [TestMethod]
@@ -65,7 +65,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 var item = myDataCache[key1];
             };
-            Assert.ThrowsException<KeyNotFoundException>(action);
+            Assert.ThrowsExactly<KeyNotFoundException>(action);
         }
 
         [TestMethod]
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 var item = myDataCache[key1];
             };
-            Assert.ThrowsException<KeyNotFoundException>(action);
+            Assert.ThrowsExactly<KeyNotFoundException>(action);
         }
 
         [TestMethod]
@@ -88,7 +88,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(value1, myDataCache[key1]);
 
             Action action = () => myDataCache.Add(key1, value1);
-            Assert.ThrowsException<ArgumentException>(action);
+            Assert.ThrowsExactly<ArgumentException>(action);
 
             store.Put(key2.ToArray(), value2.ToArray());
             myDataCache.Delete(key2);
@@ -97,7 +97,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.Value.State).FirstOrDefault());
 
             action = () => myDataCache.Add(key2, value2);
-            Assert.ThrowsException<ArgumentException>(action);
+            Assert.ThrowsExactly<ArgumentException>(action);
         }
 
         [TestMethod]
@@ -183,9 +183,9 @@ namespace Neo.UnitTests.IO.Caching
 
             // null and empty with the backwards direction -> miserably fails.
             Action action = () => myDataCache.Find(null, SeekDirection.Backward);
-            Assert.ThrowsException<ArgumentNullException>(action);
+            Assert.ThrowsExactly<ArgumentNullException>(action);
             action = () => myDataCache.Find([], SeekDirection.Backward);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
 
             items = myDataCache.Find(k1, SeekDirection.Backward);
             Assert.AreEqual(key1, items.ElementAt(0).Key);
@@ -215,7 +215,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(key1, items.ElementAt(3).Key);
             Assert.AreEqual(value1, items.ElementAt(3).Value);
 
-            items = myDataCache.Find(key5.ToArray());
+            items = myDataCache.Find(key5);
             Assert.AreEqual(0, items.Count());
         }
 
@@ -389,7 +389,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
             store.Put(key4.ToArray(), value3.ToArray());
 
-            var items = myDataCache.Find().GetEnumerator();
+            var items = myDataCache.Find(SeekDirection.Forward).GetEnumerator();
             items.MoveNext();
             Assert.AreEqual(key1, items.Current.Key);
 

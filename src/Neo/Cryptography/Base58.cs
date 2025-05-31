@@ -42,7 +42,8 @@ namespace Neo.Cryptography
         #pragma warning restore format
 
         /// <summary>
-        /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
+        /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array.
+        /// The encoded <see cref="string"/> contains the checksum of the binary data.
         /// </summary>
         /// <param name="input">The <see cref="string"/> to convert.</param>
         /// <returns>A byte array that is equivalent to <paramref name="input"/>.</returns>

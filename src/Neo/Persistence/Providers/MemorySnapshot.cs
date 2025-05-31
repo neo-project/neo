@@ -31,6 +31,8 @@ namespace Neo.Persistence.Providers
 
         public IStore Store { get; }
 
+        internal int WriteBatchLength => _writeBatch.Count;
+
         internal MemorySnapshot(MemoryStore store, ConcurrentDictionary<byte[], byte[]> innerData)
         {
             Store = store;
@@ -46,6 +48,8 @@ namespace Neo.Persistence.Providers
                     _innerData.TryRemove(pair.Key, out _);
                 else
                     _innerData[pair.Key] = pair.Value;
+
+            _writeBatch.Clear();
         }
 
         public void Delete(byte[] key)
@@ -61,7 +65,7 @@ namespace Neo.Persistence.Providers
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             keyOrPrefix ??= [];
             if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;

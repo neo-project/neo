@@ -90,18 +90,32 @@ namespace Neo.UnitTests
                 Script = randomBytes,
                 Attributes = [],
                 Signers = [new Signer { Account = UInt160.Zero }],
-                Witnesses =
-                [
-                    new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
-                    }
-                ]
+                Witnesses = [Witness.Empty],
             };
         }
 
         public static Transaction GetTransaction(UInt160 sender)
+        {
+            return new Transaction
+            {
+                Script = new[] { (byte)OpCode.PUSH2 },
+                Attributes = [],
+                Signers =
+                [
+                    new()
+                    {
+                        Account = sender,
+                        Scopes = WitnessScope.CalledByEntry,
+                        AllowedContracts = [],
+                        AllowedGroups = [],
+                        Rules = [],
+                    }
+                ],
+                Witnesses = [Witness.Empty],
+            };
+        }
+
+        public static Transaction GetTransaction(UInt160 sender, UInt160 signer)
         {
             return new Transaction
             {
@@ -116,14 +130,27 @@ namespace Neo.UnitTests
                         AllowedContracts = [],
                         AllowedGroups = [],
                         Rules = [],
+                    },
+                    new Signer
+                    {
+                        Account = signer,
+                        Scopes = WitnessScope.CalledByEntry,
+                        AllowedContracts = [],
+                        AllowedGroups = [],
+                        Rules = [],
                     }
                 ],
                 Witnesses =
                 [
                     new Witness
                     {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
+                        InvocationScript = Memory<byte>.Empty,
+                        VerificationScript = Memory<byte>.Empty,
+                    },
+                    new Witness
+                    {
+                        InvocationScript = Memory<byte>.Empty,
+                        VerificationScript = Memory<byte>.Empty,
                     }
                 ]
             };
@@ -221,7 +248,7 @@ namespace Neo.UnitTests
                     MerkleRoot = new UInt256(Crypto.Hash256(tx.Hash.ToArray())),
                     Timestamp = TimeProvider.Current.UtcNow.ToTimestampMS(),
                     NextConsensus = UInt160.Zero,
-                    Witness = new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                    Witness = Witness.Empty,
                 },
                 Transactions = [tx]
             };

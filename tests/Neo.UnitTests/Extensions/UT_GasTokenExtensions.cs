@@ -19,18 +19,12 @@ namespace Neo.UnitTests.Extensions
     [TestClass]
     public class UT_GasTokenExtensions
     {
-        private NeoSystem system;
+        private NeoSystem _system;
 
         [TestInitialize]
         public void Initialize()
         {
-            system = TestBlockchain.TheNeoSystem;
-        }
-
-        [TestCleanup]
-        public void Clean()
-        {
-            TestBlockchain.ResetStore();
+            _system = TestBlockchain.GetSystem();
         }
 
         [TestMethod]
@@ -38,7 +32,7 @@ namespace Neo.UnitTests.Extensions
         {
             UInt160 expected = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
 
-            var accounts = NativeContract.GAS.GetAccounts(system.StoreView);
+            var accounts = NativeContract.GAS.GetAccounts(_system.StoreView);
             var actual = accounts.FirstOrDefault();
 
             Assert.AreEqual(expected, actual.Address);

@@ -10,13 +10,17 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.VM;
+using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -67,8 +71,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Transfer
 
             Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock));
-            Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
-            Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
             Assert.AreEqual(100000000, NativeContract.NEO.BalanceOf(snapshot, from));
             Assert.AreEqual(0, NativeContract.NEO.BalanceOf(snapshot, to));
 
@@ -103,15 +107,15 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Burn
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default, gas: 0);
             engine.LoadScript(Array.Empty<byte>());
 
-            await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(async () =>
+            await Assert.ThrowsExactlyAsync<ArgumentOutOfRangeException>(async () =>
                 await NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
 
             // Burn more than expected
 
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
                 await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(52000500_00000001)));
 
             // Real burn
@@ -129,9 +133,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Bad inputs
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(engine.SnapshotCache, from, to, BigInteger.MinusOne, true, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.SnapshotCache, new byte[19], to, BigInteger.One, false, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.SnapshotCache, from, new byte[19], BigInteger.One, false, persistingBlock));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = NativeContract.GAS.Transfer(engine.SnapshotCache, from, to, BigInteger.MinusOne, true, persistingBlock));
+            Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.GAS.Transfer(engine.SnapshotCache, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.GAS.Transfer(engine.SnapshotCache, from, new byte[19], BigInteger.One, false, persistingBlock));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)

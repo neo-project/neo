@@ -69,6 +69,20 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(storageKey1, storageKey2);
             Assert.AreNotEqual(storageKey1, storageKeyDifferentId);
             Assert.AreNotEqual(storageKey1, storageKeyDifferentKey);
+
+            // Testing to see if we are using same pointers.
+            // Make sure we create copies of the memory in StorageKey class
+            // WE DO NOT WANT DATA REFERENCED TO OVER THE MEMORY REGION
+            byte[] dataCopy = [0xff, 0xff, 0xff, 0xfe, 0xff];
+            storageKey2 = new StorageKey(dataCopy);
+            Assert.IsTrue(storageKey2.Key.Span.SequenceEqual([(byte)0xff]));
+            Assert.AreNotEqual(storageKey1, storageKey2);
+            ((byte[])[0x00, 0x00, 0x00, 0x00, 0x01]).CopyTo(dataCopy.AsMemory());
+            Assert.IsTrue(storageKey2.Key.Span.SequenceEqual([(byte)0xff]));
+
+            // This shows data isn't referenced
+            dataCopy.CopyTo(keyData.AsMemory());
+            Assert.IsFalse(storageKey1.Key.Span.SequenceEqual(dataCopy));
         }
 
         [TestMethod]

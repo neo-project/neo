@@ -111,7 +111,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 sizeof(byte) +      // PrimaryIndex
                 UInt160.Length +    // NextConsensus
                 1 + _witnessSize +  // Witness
-                UnsafeData.GetVarSize(expectedTransactions);
+                expectedTransactions.GetVarSize();
         }
     }
 }

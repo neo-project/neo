@@ -22,7 +22,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            var test = new FilterAddPayload() { Data = new byte[0] };
+            var test = new FilterAddPayload() { Data = ReadOnlyMemory<byte>.Empty };
             Assert.AreEqual(1, test.Size);
 
             test = new FilterAddPayload() { Data = new byte[] { 1, 2, 3 } };

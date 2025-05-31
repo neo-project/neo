@@ -17,7 +17,6 @@ using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
@@ -59,11 +58,12 @@ namespace Neo.Network.P2P
         /// <summary>
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>
-        private readonly HashSetCache<UInt256> knownHashes;
+        private readonly HashSetCache<UInt256> _knownHashes;
         private readonly Dictionary<UInt256, int> globalInvTasks = new();
         private readonly Dictionary<uint, int> globalIndexTasks = new();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new();
-        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
+        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+            TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         private uint lastSeenPersistedIndex = 0;
 
         private bool HasHeaderTask => globalInvTasks.ContainsKey(HeaderTaskHash);
@@ -75,15 +75,15 @@ namespace Neo.Network.P2P
         public TaskManager(NeoSystem system)
         {
             this.system = system;
-            knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
+            // Exactly the same as mempool
+            _knownHashes = new HashSetCache<UInt256>(Math.Max(100, system.MemPool.Capacity));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
         private void OnHeaders(Header[] _)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
-                return;
+            if (!sessions.TryGetValue(Sender, out var session)) return;
             if (session.InvTasks.Remove(HeaderTaskHash))
                 DecrementGlobalTask(HeaderTaskHash);
             RequestTasks(Sender, session);
@@ -92,15 +92,18 @@ namespace Neo.Network.P2P
         private void OnInvalidBlock(Block invalidBlock)
         {
             foreach (var (actor, session) in sessions)
-                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out Block block))
+            {
+                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out var block))
+                {
                     if (block.Hash == invalidBlock.Hash)
                         actor.Tell(Tcp.Abort.Instance);
+                }
+            }
         }
 
         private void OnNewTasks(InvPayload payload)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
-                return;
+            if (!sessions.TryGetValue(Sender, out var session)) return;
 
             // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
             uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(system.StoreView), lastSeenPersistedIndex);
@@ -113,7 +116,7 @@ namespace Neo.Network.P2P
 
             HashSet<UInt256> hashes = new(payload.Hashes);
             // Remove all previously processed knownHashes from the list that is being requested
-            hashes.Remove(knownHashes);
+            hashes.Remove(_knownHashes);
             // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p)));
@@ -199,30 +202,40 @@ namespace Neo.Network.P2P
 
         private void OnUpdate(Update update)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
-                return;
+            if (!sessions.TryGetValue(Sender, out var session)) return;
             session.LastBlockIndex = update.LastBlockIndex;
         }
 
         private void OnRestartTasks(InvPayload payload)
         {
-            knownHashes.ExceptWith(payload.Hashes);
-            foreach (UInt256 hash in payload.Hashes)
+            _knownHashes.ExceptWith(payload.Hashes);
+            foreach (var hash in payload.Hashes)
+            {
                 globalInvTasks.Remove(hash);
-            foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
+            }
+
+            foreach (var group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
+            {
                 system.LocalNode.Tell(Message.Create(MessageCommand.GetData, group));
+            }
         }
 
         private void OnTaskCompleted(IInventory inventory)
         {
-            Block block = inventory as Block;
-            knownHashes.Add(inventory.Hash);
+            var block = inventory as Block;
+            _knownHashes.TryAdd(inventory.Hash);
             globalInvTasks.Remove(inventory.Hash);
             if (block is not null)
+            {
                 globalIndexTasks.Remove(block.Index);
-            foreach (TaskSession ms in sessions.Values)
+            }
+
+            foreach (var ms in sessions.Values)
+            {
                 ms.AvailableTasks.Remove(inventory.Hash);
-            if (sessions.TryGetValue(Sender, out TaskSession session))
+            }
+
+            if (sessions.TryGetValue(Sender, out var session))
             {
                 session.InvTasks.Remove(inventory.Hash);
                 if (block is not null)
@@ -280,8 +293,8 @@ namespace Neo.Network.P2P
                 globalInvTasks[hash] = 1;
                 return true;
             }
-            if (value >= MaxConcurrentTasks)
-                return false;
+
+            if (value >= MaxConcurrentTasks) return false;
 
             globalInvTasks[hash] = value + 1;
             return true;
@@ -295,8 +308,8 @@ namespace Neo.Network.P2P
                 globalIndexTasks[index] = 1;
                 return true;
             }
-            if (value >= MaxConcurrentTasks)
-                return false;
+
+            if (value >= MaxConcurrentTasks) return false;
 
             globalIndexTasks[index] = value + 1;
             return true;
@@ -304,25 +317,31 @@ namespace Neo.Network.P2P
 
         private void OnTerminated(IActorRef actor)
         {
-            if (!sessions.TryGetValue(actor, out TaskSession session))
-                return;
-            foreach (UInt256 hash in session.InvTasks.Keys)
+            if (!sessions.TryGetValue(actor, out var session)) return;
+            foreach (var hash in session.InvTasks.Keys)
+            {
                 DecrementGlobalTask(hash);
-            foreach (uint index in session.IndexTasks.Keys)
+            }
+            foreach (var index in session.IndexTasks.Keys)
+            {
                 DecrementGlobalTask(index);
+            }
             sessions.Remove(actor);
         }
 
         private void OnTimer()
         {
-            foreach (TaskSession session in sessions.Values)
+            foreach (var session in sessions.Values)
             {
                 var now = TimeProvider.Current.UtcNow;
                 session.InvTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
                 session.IndexTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
             }
+
             foreach (var (actor, session) in sessions)
+            {
                 RequestTasks(actor, session);
+            }
         }
 
         protected override void PostStop()
@@ -350,7 +369,7 @@ namespace Neo.Network.P2P
             // If there are pending tasks of InventoryType.Block we should process them
             if (session.AvailableTasks.Count > 0)
             {
-                session.AvailableTasks.Remove(knownHashes);
+                session.AvailableTasks.Remove(_knownHashes);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
                 HashSet<UInt256> hashes = new(session.AvailableTasks);

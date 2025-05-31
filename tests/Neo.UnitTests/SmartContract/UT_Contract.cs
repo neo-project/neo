@@ -112,7 +112,7 @@ namespace Neo.UnitTests.SmartContract
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
             Action action = () => Contract.CreateMultiSigRedeemScript(0, publicKeys);
-            Assert.ThrowsException<ArgumentException>(() => action());
+            Assert.ThrowsExactly<ArgumentException>(() => action());
             byte[] script = Contract.CreateMultiSigRedeemScript(2, publicKeys);
             byte[] expectedArray = new byte[77];
             expectedArray[0] = (byte)OpCode.PUSH2;
@@ -178,7 +178,7 @@ namespace Neo.UnitTests.SmartContract
             var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
-                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
+                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, snapshot, settings: TestProtocolSettings.Default))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
@@ -208,7 +208,7 @@ namespace Neo.UnitTests.SmartContract
             long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
-                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
+                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, snapshot, settings: TestProtocolSettings.Default))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();

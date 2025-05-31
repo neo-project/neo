@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
@@ -203,7 +204,7 @@ namespace Neo.IO
                 if (_span[i] != 0)
                     throw new FormatException();
             _pos = end;
-            return Utility.StrictUTF8.GetString(data);
+            return data.ToStrictUtf8String();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -213,7 +214,7 @@ namespace Neo.IO
             EnsurePosition(length);
             var data = _span.Slice(_pos, length);
             _pos += length;
-            return Utility.StrictUTF8.GetString(data);
+            return data.ToStrictUtf8String();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

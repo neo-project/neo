@@ -42,19 +42,19 @@ namespace Neo.Test
         public void TestStrictMode()
         {
             var rawScript = new byte[] { (byte)OpCode.PUSH0, 0xFF };
-            Assert.ThrowsException<BadScriptException>(() => new Script(rawScript, true));
+            Assert.ThrowsExactly<BadScriptException>(() => _ = new Script(rawScript, true));
 
             var script = new Script(rawScript, false);
             Assert.AreEqual(2, script.Length);
 
             rawScript = new byte[] { (byte)OpCode.PUSHDATA1 };
-            Assert.ThrowsException<BadScriptException>(() => new Script(rawScript, true));
+            Assert.ThrowsExactly<BadScriptException>(() => _ = new Script(rawScript, true));
 
             rawScript = new byte[] { (byte)OpCode.PUSHDATA2 };
-            Assert.ThrowsException<BadScriptException>(() => new Script(rawScript, true));
+            Assert.ThrowsExactly<BadScriptException>(() => _ = new Script(rawScript, true));
 
             rawScript = new byte[] { (byte)OpCode.PUSHDATA4 };
-            Assert.ThrowsException<BadScriptException>(() => new Script(rawScript, true));
+            Assert.ThrowsExactly<BadScriptException>(() => _ = new Script(rawScript, true));
         }
 
         [TestMethod]
@@ -78,8 +78,8 @@ namespace Neo.Test
             Assert.AreEqual(OpCode.PUSH0, ins.OpCode);
             Assert.IsTrue(ins.Operand.IsEmpty);
             Assert.AreEqual(1, ins.Size);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => { var x = ins.TokenI16; });
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => { var x = ins.TokenU32; });
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { var x = ins.TokenI16; });
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { var x = ins.TokenU32; });
 
             ins = script.GetInstruction(1);
 
@@ -98,7 +98,7 @@ namespace Neo.Test
             Assert.AreEqual(Encoding.ASCII.GetString(new byte[] { 123, 0x00, 0x00, 0x00 }), ins.TokenString);
             Assert.AreEqual(123U, ins.TokenU32);
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => script.GetInstruction(100));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = script.GetInstruction(100));
         }
     }
 }

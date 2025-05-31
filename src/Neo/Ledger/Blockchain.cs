@@ -117,7 +117,11 @@ namespace Neo.Ledger
         }
 
         internal class Initialize { }
-        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new(); public HashSet<IActorRef> Nodes = new(); }
+        private class UnverifiedBlocksList
+        {
+            public List<Block> Blocks { get; } = [];
+            public HashSet<IActorRef> Nodes { get; } = [];
+        }
 
         public static event CommittingHandler Committing;
         public static event CommittedHandler Committed;
@@ -194,7 +198,7 @@ namespace Neo.Ledger
                 }
             }
 
-            list.Blocks.AddLast(block);
+            list.Blocks.Add(block);
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
@@ -203,13 +207,14 @@ namespace Neo.Ledger
             system.MemPool.InvalidateAllTransactions();
 
             var snapshot = system.StoreView;
+            var mtb = system.GetMaxTraceableBlocks();
 
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
             {
                 if (NativeContract.Ledger.ContainsTransaction(snapshot, tx.Hash))
                     continue;
-                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account), system.Settings.MaxTraceableBlocks))
+                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account), mtb))
                     continue;
                 // First remove the tx if it is unverified in the pool.
                 system.MemPool.TryRemoveUnVerified(tx.Hash, out _);
@@ -246,6 +251,8 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
+            if (!block.TryGetHash(out var blockHash)) return VerifyResult.Invalid;
+
             var snapshot = system.StoreView;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
@@ -263,25 +270,28 @@ namespace Neo.Ledger
             }
             else
             {
-                if (!block.Hash.Equals(system.HeaderCache[block.Index].Hash))
+                var header = system.HeaderCache[block.Index];
+                if (header == null || !blockHash.Equals(header.Hash))
                     return VerifyResult.Invalid;
             }
-            block_cache.TryAdd(block.Hash, block);
+            block_cache.TryAdd(blockHash, block);
             if (block.Index == currentHeight + 1)
             {
-                Block block_persist = block;
-                List<Block> blocksToPersistList = new();
+                var block_persist = block;
+                var blocksToPersistList = new List<Block>();
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
                     if (block_persist.Index + 1 > headerHeight) break;
-                    UInt256 hash = system.HeaderCache[block_persist.Index + 1].Hash;
-                    if (!block_cache.TryGetValue(hash, out block_persist)) break;
+                    var header = system.HeaderCache[block_persist.Index + 1];
+                    if (header == null) break;
+                    if (!block_cache.TryGetValue(header.Hash, out block_persist)) break;
                 }
 
                 int blocksPersisted = 0;
-                uint extraRelayingBlocks = system.Settings.MillisecondsPerBlock < ProtocolSettings.Default.MillisecondsPerBlock
-                    ? (ProtocolSettings.Default.MillisecondsPerBlock - system.Settings.MillisecondsPerBlock) / 1000
+                TimeSpan timePerBlock = system.GetTimePerBlock();
+                uint extraRelayingBlocks = timePerBlock.TotalMilliseconds < ProtocolSettings.Default.MillisecondsPerBlock
+                    ? (ProtocolSettings.Default.MillisecondsPerBlock - (uint)timePerBlock.TotalMilliseconds) / 1000
                     : 0;
                 foreach (Block blockToPersist in blocksToPersistList)
                 {
@@ -317,13 +327,14 @@ namespace Neo.Ledger
             if (!system.HeaderCache.Full)
             {
                 var snapshot = system.StoreView;
-                uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
-                foreach (Header header in headers)
+                var headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+                foreach (var header in headers)
                 {
+                    if (!header.TryGetHash(out _)) continue;
                     if (header.Index > headerHeight + 1) break;
                     if (header.Index < headerHeight + 1) continue;
                     if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
-                    system.HeaderCache.Add(header);
+                    if (!system.HeaderCache.Add(header)) break;
                     ++headerHeight;
                 }
             }
@@ -332,6 +343,8 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
+            if (!payload.TryGetHash(out _)) return VerifyResult.Invalid;
+
             var snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
@@ -341,12 +354,15 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            switch (system.ContainsTransaction(transaction.Hash))
+            if (!transaction.TryGetHash(out var hash)) return VerifyResult.Invalid;
+
+            switch (system.ContainsTransaction(hash))
             {
                 case ContainsTransactionType.ExistsInPool: return VerifyResult.AlreadyInPool;
                 case ContainsTransactionType.ExistsInLedger: return VerifyResult.AlreadyExists;
             }
-            if (system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
+
+            if (system.ContainsConflictHash(hash, transaction.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
             return system.MemPool.TryAdd(transaction, system.StoreView);
         }
 
@@ -399,7 +415,13 @@ namespace Neo.Ledger
 
         private void OnTransaction(Transaction tx)
         {
-            switch (system.ContainsTransaction(tx.Hash))
+            if (!tx.TryGetHash(out var hash))
+            {
+                SendRelayResult(tx, VerifyResult.Invalid);
+                return;
+            }
+
+            switch (system.ContainsTransaction(hash))
             {
                 case ContainsTransactionType.ExistsInPool:
                     SendRelayResult(tx, VerifyResult.AlreadyInPool);
@@ -409,7 +431,7 @@ namespace Neo.Ledger
                     break;
                 default:
                     {
-                        if (system.ContainsConflictHash(tx.Hash, tx.Signers.Select(s => s.Account)))
+                        if (system.ContainsConflictHash(hash, tx.Signers.Select(s => s.Account)))
                             SendRelayResult(tx, VerifyResult.HasConflicts);
                         else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
                         break;

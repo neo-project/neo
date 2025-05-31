@@ -53,5 +53,13 @@ namespace Neo.Benchmark
             var result = data.Murmur32(0);
             Debug.Assert(result == 3731881930u);
         }
+
+        [Benchmark]
+        public void Murmur128_ComputeHash()
+        {
+            var result = data.Murmur128(0);
+            if (result.Length != 16)
+                throw new InvalidOperationException($"Invalid hash length {result.Length}");
+        }
     }
 }

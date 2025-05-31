@@ -21,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -146,7 +147,7 @@ namespace Neo.SmartContract
         /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="points">The public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, [NotNullWhen(true)] out ECPoint[] points)
         {
             List<ECPoint> list = new();
             if (IsMultiSigContract(script, out m, out _, list))
@@ -305,6 +306,7 @@ namespace Neo.SmartContract
             {
                 return false;
             }
+            if (verifiable.Witnesses == null) return false;
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
@@ -360,7 +362,15 @@ namespace Neo.SmartContract
                 engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
                 if (engine.Execute() == VMState.FAULT) return false;
-                if (!engine.ResultStack.Peek().GetBoolean()) return false;
+                if (engine.ResultStack.Count != 1) return false;
+                try
+                {
+                    if (!engine.ResultStack.Peek().GetBoolean()) return false;
+                }
+                catch
+                {
+                    return false;
+                }
                 fee = engine.FeeConsumed;
             }
             return true;

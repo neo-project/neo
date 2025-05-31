@@ -16,21 +16,21 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_NeoSystem
     {
-        private NeoSystem neoSystem;
+        private NeoSystem _system;
 
         [TestInitialize]
         public void Setup()
         {
-            neoSystem = TestBlockchain.TheNeoSystem;
+            _system = TestBlockchain.GetSystem();
         }
 
         [TestMethod]
-        public void TestGetBlockchain() => Assert.IsNotNull(neoSystem.Blockchain);
+        public void TestGetBlockchain() => Assert.IsNotNull(_system.Blockchain);
 
         [TestMethod]
-        public void TestGetLocalNode() => Assert.IsNotNull(neoSystem.LocalNode);
+        public void TestGetLocalNode() => Assert.IsNotNull(_system.LocalNode);
 
         [TestMethod]
-        public void TestGetTaskManager() => Assert.IsNotNull(neoSystem.TaskManager);
+        public void TestGetTaskManager() => Assert.IsNotNull(_system.TaskManager);
     }
 }

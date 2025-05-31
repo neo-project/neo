@@ -14,7 +14,7 @@ using Neo.VM;
 
 namespace Neo.Plugins.RpcServer
 {
-    class Diagnostic : IDiagnostic
+    public class Diagnostic : IDiagnostic
     {
         public Tree<UInt160> InvocationTree { get; } = new();
 

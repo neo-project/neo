@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System;
 using System.Diagnostics;
 using System.Numerics;
@@ -118,12 +119,14 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator ByteString(string value)
         {
-            return new ByteString(Utility.StrictUTF8.GetBytes(value));
+            return new ByteString(value.ToStrictUtf8Bytes());
         }
 
         public override string ToString()
         {
-            return GetSpan().TryGetString(out var str) ? $"\"{str}\"" : $"\"Base64: {Convert.ToBase64String(GetSpan())}\"";
+            return GetSpan().TryToStrictUtf8String(out var str)
+                ? $"\"{str}\""
+                : $"\"Base64: {Convert.ToBase64String(GetSpan())}\"";
         }
     }
 }

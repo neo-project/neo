@@ -22,6 +22,7 @@ namespace Neo.Network.P2P.Payloads
     {
         /// <summary>
         /// The hash of the <see cref="IVerifiable"/> object.
+        /// NOTE: This property may throw an exception if the <see cref="IVerifiable"/> object is not valid.
         /// </summary>
         UInt256 Hash => this.CalculateHash();
 

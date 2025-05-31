@@ -47,7 +47,9 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken GetBlock(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
             using var snapshot = system.GetSnapshotCache();
-            var block = blockHashOrIndex.IsIndex ? NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsIndex()) : NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsHash());
+            var block = blockHashOrIndex.IsIndex
+                ? NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsIndex())
+                : NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsHash());
             block.NotNull_Or(RpcError.UnknownBlock);
             if (verbose)
             {
@@ -107,7 +109,10 @@ namespace Neo.Plugins.RpcServer
         /// If you need the detailed information, use the SDK for deserialization.
         /// When verbose is true or 1, detailed information of the block is returned in Json format.
         /// </remarks>
-        /// <returns>The block header data as a <see cref="JToken"/>. In json format if the second item of _params is true, otherwise Base64-encoded byte array.</returns>
+        /// <returns>
+        /// The block header data as a <see cref="JToken"/>.
+        /// In json format if the second item of _params is true, otherwise Base64-encoded byte array.
+        /// </returns>
         [RpcMethodWithParams]
         protected internal virtual JToken GetBlockHeader(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
@@ -343,7 +348,7 @@ namespace Neo.Plugins.RpcServer
             StackItem[] resultstack;
             try
             {
-                using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: system.Settings, gas: settings.MaxGasInvoke);
+                using var engine = ApplicationEngine.Run(script, snapshot, settings: system.Settings, gas: settings.MaxGasInvoke);
                 resultstack = engine.ResultStack.ToArray();
             }
             catch
@@ -357,7 +362,8 @@ namespace Neo.Plugins.RpcServer
                 if (resultstack.Length > 0)
                 {
                     JArray jArray = new();
-                    var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, system.Settings.ValidatorsCount) ?? throw new RpcException(RpcError.InternalServerError.WithData("Can't get next block validators."));
+                    var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, system.Settings.ValidatorsCount)
+                        ?? throw new RpcException(RpcError.InternalServerError.WithData("Can't get next block validators."));
 
                     foreach (var item in resultstack)
                     {
@@ -400,7 +406,12 @@ namespace Neo.Plugins.RpcServer
         [RpcMethodWithParams]
         protected internal virtual JToken GetNativeContracts()
         {
-            return new JArray(NativeContract.Contracts.Select(p => NativeContract.ContractManagement.GetContract(system.StoreView, p.Hash).ToJson()));
+            var storeView = system.StoreView;
+            var contractStates = NativeContract.Contracts
+                .Select(p => NativeContract.ContractManagement.GetContract(storeView, p.Hash))
+                .Where(p => p != null) // if not active
+                .Select(p => p.ToJson());
+            return new JArray(contractStates);
         }
     }
 }

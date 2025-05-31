@@ -39,7 +39,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Version;
 
         /// <summary>
-        /// The time when connected to the node.
+        /// The time when connected to the node (UTC).
         /// </summary>
         public uint Timestamp;
 
@@ -85,7 +85,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 Network = network,
                 Version = LocalNode.ProtocolVersion,
-                Timestamp = DateTime.Now.ToTimestamp(),
+                Timestamp = DateTime.UtcNow.ToTimestamp(),
                 Nonce = nonce,
                 UserAgent = userAgent,
                 Capabilities = capabilities,

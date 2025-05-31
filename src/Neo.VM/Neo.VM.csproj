@@ -16,4 +16,8 @@
     <PackageReference Include="System.IO.Hashing" Version="9.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
+  </ItemGroup>
+
 </Project>

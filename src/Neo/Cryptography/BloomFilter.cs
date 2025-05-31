@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Linq;
@@ -20,18 +22,18 @@ namespace Neo.Cryptography
     /// </summary>
     public class BloomFilter
     {
-        private readonly uint[] seeds;
-        private readonly BitArray bits;
+        private readonly uint[] _seeds;
+        private readonly BitArray _bits;
 
         /// <summary>
         /// The number of hash functions used by the bloom filter.
         /// </summary>
-        public int K => seeds.Length;
+        public int K => _seeds.Length;
 
         /// <summary>
         /// The size of the bit array used by the bloom filter.
         /// </summary>
-        public int M => bits.Length;
+        public int M => _bits.Length;
 
         /// <summary>
         /// Used to generate the seeds of the murmur hash functions.
@@ -47,9 +49,11 @@ namespace Neo.Cryptography
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="k"/> or <paramref name="m"/> is less than or equal to 0.</exception>
         public BloomFilter(int m, int k, uint nTweak)
         {
-            if (k <= 0 || m <= 0) throw new ArgumentOutOfRangeException();
-            seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
-            bits = new BitArray(m)
+            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k));
+            if (m <= 0) throw new ArgumentOutOfRangeException(nameof(m));
+
+            _seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            _bits = new BitArray(m)
             {
                 Length = m
             };
@@ -66,9 +70,11 @@ namespace Neo.Cryptography
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="k"/> or <paramref name="m"/> is less than or equal to 0.</exception>
         public BloomFilter(int m, int k, uint nTweak, ReadOnlyMemory<byte> elements)
         {
-            if (k <= 0 || m <= 0) throw new ArgumentOutOfRangeException();
-            seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
-            bits = new BitArray(elements.ToArray())
+            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k));
+            if (m <= 0) throw new ArgumentOutOfRangeException(nameof(m));
+
+            _seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            _bits = new BitArray(elements.ToArray())
             {
                 Length = m
             };
@@ -81,8 +87,8 @@ namespace Neo.Cryptography
         /// <param name="element">The object to add to the <see cref="BloomFilter"/>.</param>
         public void Add(ReadOnlyMemory<byte> element)
         {
-            foreach (uint i in seeds.AsParallel().Select(s => element.Span.Murmur32(s)))
-                bits.Set((int)(i % (uint)bits.Length), true);
+            foreach (var i in _seeds.AsParallel().Select(s => element.Span.Murmur32(s)))
+                _bits.Set((int)(i % (uint)_bits.Length), true);
         }
 
         /// <summary>
@@ -92,8 +98,8 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if <paramref name="element"/> is found in the <see cref="BloomFilter"/>; otherwise, <see langword="false"/>.</returns>
         public bool Check(byte[] element)
         {
-            foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
-                if (!bits.Get((int)(i % (uint)bits.Length)))
+            foreach (var i in _seeds.AsParallel().Select(element.Murmur32))
+                if (!_bits.Get((int)(i % (uint)_bits.Length)))
                     return false;
             return true;
         }
@@ -104,7 +110,9 @@ namespace Neo.Cryptography
         /// <param name="newBits">The byte array to store the bits.</param>
         public void GetBits(byte[] newBits)
         {
-            bits.CopyTo(newBits, 0);
+            _bits.CopyTo(newBits, 0);
         }
     }
 }
+
+#nullable disable

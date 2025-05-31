@@ -20,32 +20,6 @@ namespace Neo.CLI
 {
     partial class MainService
     {
-        /// <summary>
-        /// Process "export blocks" command
-        /// </summary>
-        /// <param name="start">Start</param>
-        /// <param name="count">Number of blocks</param>
-        /// <param name="path">Path</param>
-        [ConsoleCommand("export blocks", Category = "Blockchain Commands")]
-        private void OnExportBlocksStartCountCommand(uint start, uint count = uint.MaxValue, string? path = null)
-        {
-            uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
-            if (height < start)
-            {
-                ConsoleHelper.Error("invalid start height.");
-                return;
-            }
-
-            count = Math.Min(count, height - start + 1);
-
-            if (string.IsNullOrEmpty(path))
-            {
-                path = $"chain.{start}.acc";
-            }
-
-            WriteBlocks(start, count, path, true);
-        }
-
         [ConsoleCommand("show block", Category = "Blockchain Commands")]
         private void OnShowBlockCommand(string indexOrHash)
         {
@@ -119,7 +93,7 @@ namespace Neo.CLI
             {
                 var tx = NativeContract.Ledger.GetTransactionState(NeoSystem.StoreView, hash);
 
-                if (tx is null)
+                if (tx?.Transaction is null)
                 {
                     ConsoleHelper.Error($"Transaction {hash} doesn't exist.");
                     return;
@@ -127,7 +101,7 @@ namespace Neo.CLI
 
                 var block = NativeContract.Ledger.GetHeader(NeoSystem.StoreView, tx.BlockIndex);
 
-                DateTime transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                var transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 transactionDatetime = transactionDatetime.AddMilliseconds(block.Timestamp).ToLocalTime();
 
                 ConsoleHelper.Info("", "-------------", "Transaction", "-------------");
@@ -212,6 +186,10 @@ namespace Neo.CLI
                                 ConsoleHelper.Info("", "    Type: ", $"{n.Type}");
                                 ConsoleHelper.Info("", "  Height: ", $"{n.Height}");
                                 break;
+                            case NotaryAssisted n:
+                                ConsoleHelper.Info("", "    Type: ", $"{n.Type}");
+                                ConsoleHelper.Info("", "   NKeys: ", $"{n.NKeys}");
+                                break;
                             default:
                                 ConsoleHelper.Info("", "  Type: ", $"{attribute.Type}");
                                 ConsoleHelper.Info("", "  Size: ", $"{attribute.Size} Byte(s)");
@@ -230,20 +208,27 @@ namespace Neo.CLI
             lock (syncRoot)
             {
                 ContractState? contract = null;
-
-                if (UInt160.TryParse(nameOrHash, out var scriptHash))
+                NativeContract? nativeContract = null;
+                var isHash = UInt160.TryParse(nameOrHash, out var scriptHash);
+                if (isHash)
+                {
                     contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
+                    if (contract is null)
+                        nativeContract = NativeContract.Contracts.SingleOrDefault(s => s.Hash == scriptHash);
+                }
                 else
                 {
-                    var nativeContract = NativeContract.Contracts.SingleOrDefault(s => s.Name.Equals(nameOrHash, StringComparison.InvariantCultureIgnoreCase));
-
+                    nativeContract = NativeContract.Contracts.SingleOrDefault(s => s.Name.Equals(nameOrHash, StringComparison.InvariantCultureIgnoreCase));
                     if (nativeContract != null)
                         contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, nativeContract.Hash);
                 }
 
                 if (contract is null)
                 {
-                    ConsoleHelper.Error($"Contract {nameOrHash} doesn't exist.");
+                    var state = nativeContract is null
+                        ? "doesn't exist"
+                        : isHash ? $"({nativeContract.Name}) not active yet" : "not active yet";
+                    ConsoleHelper.Error($"Contract {nameOrHash} {state}.");
                     return;
                 }
 

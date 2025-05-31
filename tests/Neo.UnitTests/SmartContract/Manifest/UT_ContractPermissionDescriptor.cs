@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             ContractPermissionDescriptor contractPermissionDescriptor = ContractPermissionDescriptor.Create(key.PublicKey);
             Assert.IsNotNull(contractPermissionDescriptor);
             Assert.AreEqual(key.PublicKey, contractPermissionDescriptor.Group);
-            Assert.AreEqual(false, contractPermissionDescriptor.IsWildcard);
+            Assert.IsFalse(contractPermissionDescriptor.IsWildcard);
         }
 
         [TestMethod]
@@ -45,15 +45,15 @@ namespace Neo.UnitTests.SmartContract.Manifest
             KeyPair key = new KeyPair(privateKey);
             ContractPermissionDescriptor temp = ContractPermissionDescriptor.Create(key.PublicKey);
             ContractPermissionDescriptor result = ContractPermissionDescriptor.FromJson(temp.ToJson());
-            Assert.AreEqual(null, result.Hash);
+            Assert.IsNull(result.Hash);
             Assert.AreEqual(result.Group, result.Group);
-            Assert.ThrowsException<FormatException>(() => ContractPermissionDescriptor.FromJson(string.Empty));
+            Assert.ThrowsExactly<FormatException>(() => _ = ContractPermissionDescriptor.FromJson(string.Empty));
         }
 
         [TestMethod]
         public void TestContractManifestFromJson()
         {
-            Assert.ThrowsException<NullReferenceException>(() => ContractManifest.FromJson(new JObject()));
+            Assert.ThrowsExactly<NullReferenceException>(() => _ = ContractManifest.FromJson(new JObject()));
             var jsonFiles = Directory.GetFiles(Path.Combine("SmartContract", "Manifest", "TestFile"));
             foreach (var item in jsonFiles)
             {

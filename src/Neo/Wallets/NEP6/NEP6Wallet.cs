@@ -41,7 +41,12 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public readonly ScryptParameters Scrypt;
 
-        public override string Name => name;
+        /// <summary>
+        /// The name of the wallet.
+        /// If the name is not set, it will be the file name without extension of the wallet file.
+        /// </summary>
+        public override string Name =>
+            !string.IsNullOrEmpty(name) ? name : System.IO.Path.GetFileNameWithoutExtension(Path);
 
         /// <summary>
         /// The version of the wallet standard. It is currently fixed at 1.0 and will be used for functional upgrades in the future.

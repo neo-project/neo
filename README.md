@@ -51,7 +51,7 @@
       width="24px">
   </a>
   &nbsp;
-  <a href="https://discord.io/neo">
+  <a href="https://discord.com/invite/rvZFQ5382k">
       <img
       src=".github/images/discord-logo.png"
       width="25px">
@@ -120,7 +120,6 @@ An overview of the project folders can be seen below.
 |[/src/neo/Persistence/](https://github.com/neo-project/neo/tree/master/src/Neo/Persistence)|Classes used to allow other classes to access application state.|
 |[/src/neo/Plugins/](https://github.com/neo-project/neo/tree/master/src/Neo/Plugins)|Interfaces used to extend Neo, including the storage interface.|
 |[/src/neo/SmartContract/](https://github.com/neo-project/neo/tree/master/src/Neo/SmartContract)|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
-|[/src/neo/VM/](https://github.com/neo-project/neo/tree/master/src/Neo/VM)|Helper methods used to interact with the VM.|
 |[/src/neo/Wallets/](https://github.com/neo-project/neo/tree/master/src/Neo/Wallets)|Wallet and account implementation.|
 |[/src/Neo.CLI/](https://github.com/neo-project/neo/tree/master/src/Neo.CLI)| `neo-cli` console application for running a _FULL_ node.|
 |[/src/Neo.Extensions/](https://github.com/neo-project/neo/tree/master/src/Neo.Extensions)| Extensions to expand the existing functionality.|

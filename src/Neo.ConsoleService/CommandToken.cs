@@ -204,9 +204,9 @@ namespace Neo.ConsoleService
                                 return "";
                             }
 
-                            throw new ArgumentException();
+                            throw new ArgumentException("Unmatched quote");
                         }
-                    case CommandSpaceToken _: throw new ArgumentException();
+                    case CommandSpaceToken _: throw new ArgumentException("Unmatched space");
                     case CommandStringToken str:
                         {
                             args.RemoveAt(0);

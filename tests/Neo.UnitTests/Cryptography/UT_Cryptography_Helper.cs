@@ -36,13 +36,13 @@ namespace Neo.UnitTests.Cryptography
 
             input = "3v";
             Action action = () => input.Base58CheckDecode();
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
             input = "3vQB7B6MrGQZaxCuFg4og";
             action = () => input.Base58CheckDecode();
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
-            Assert.ThrowsException<FormatException>(() => string.Empty.Base58CheckDecode());
+            Assert.ThrowsExactly<FormatException>(() => _ = string.Empty.Base58CheckDecode());
         }
 
         [TestMethod]
@@ -57,12 +57,23 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestSha256()
         {
-            byte[] value = Encoding.ASCII.GetBytes("hello world");
-            byte[] result = value.Sha256(0, value.Length);
+            var value = Encoding.ASCII.GetBytes("hello world");
+            var result = value.Sha256(0, value.Length);
             Assert.AreEqual("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", result.ToHexString());
             CollectionAssert.AreEqual(result, value.Sha256());
             CollectionAssert.AreEqual(result, ((Span<byte>)value).Sha256());
             CollectionAssert.AreEqual(result, ((ReadOnlySpan<byte>)value).Sha256());
+        }
+
+        [TestMethod]
+        public void TestSha512()
+        {
+            var value = Encoding.ASCII.GetBytes("hello world");
+            var result = value.Sha512(0, value.Length);
+            Assert.AreEqual("309ecc489c12d6eb4cc40f50c902f2b4d0ed77ee511a7c7a9bcd3ca86d4cd86f989dd35bc5ff499670da34255b45b0cfd830e81f605dcf7dc5542e93ae9cd76f", result.ToHexString());
+            CollectionAssert.AreEqual(result, value.Sha512());
+            CollectionAssert.AreEqual(result, ((Span<byte>)value).Sha512());
+            CollectionAssert.AreEqual(result, ((ReadOnlySpan<byte>)value).Sha512());
         }
 
         [TestMethod]
@@ -134,16 +145,9 @@ namespace Neo.UnitTests.Cryptography
             {
                 Script = TestUtils.GetByteArray(32, 0x42),
                 SystemFee = 4200000000,
-                Signers = new Signer[] { new Signer() { Account = (Array.Empty<byte>()).ToScriptHash() } },
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Witnesses = new[]
-                {
-                    new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
-                    }
-                }
+                Signers = [new() { Account = Array.Empty<byte>().ToScriptHash() }],
+                Attributes = [],
+                Witnesses = [Witness.Empty]
             };
             Assert.IsFalse(filter.Test(tx));
             filter.Add(tx.Witnesses[0].ScriptHash.ToArray());

@@ -52,8 +52,8 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (Ledger.CurrentIndex(snapshot) + 1 < index)
                 throw new ArgumentOutOfRangeException(nameof(index));
-            byte[] key = CreateStorageKey((byte)role).AddBigEndian(index).ToArray();
-            byte[] boundary = CreateStorageKey((byte)role).ToArray();
+            var key = CreateStorageKey((byte)role, index).ToArray();
+            var boundary = CreateStorageKey((byte)role).ToArray();
             return snapshot.FindRange(key, boundary, SeekDirection.Backward)
                 .Select(u => u.Value.GetInteroperable<NodeList>().ToArray())
                 .FirstOrDefault() ?? [];
@@ -70,8 +70,8 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException(nameof(DesignateAsRole));
-            uint index = engine.PersistingBlock.Index + 1;
-            var key = CreateStorageKey((byte)role).AddBigEndian(index);
+            var index = engine.PersistingBlock.Index + 1;
+            var key = CreateStorageKey((byte)role, index);
             if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException();
             NodeList list = new();

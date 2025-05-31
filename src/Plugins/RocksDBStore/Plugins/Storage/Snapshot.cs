@@ -67,7 +67,7 @@ namespace Neo.Plugins.Storage
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction)
+        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction)
         {
             keyOrPrefix ??= [];
 

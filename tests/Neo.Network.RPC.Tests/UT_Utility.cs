@@ -50,7 +50,7 @@ namespace Neo.Network.RPC.Tests
         public void TestGetKeyPair()
         {
             string nul = null;
-            Assert.ThrowsException<ArgumentNullException>(() => Utility.GetKeyPair(nul));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Utility.GetKeyPair(nul));
 
             string wif = "KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p";
             var result = Utility.GetKeyPair(wif);
@@ -65,14 +65,14 @@ namespace Neo.Network.RPC.Tests
             Assert.AreEqual(keyPair, result);
 
             var action = () => { Utility.GetKeyPair("00"); };
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
         }
 
         [TestMethod]
         public void TestGetScriptHash()
         {
             string nul = null;
-            Assert.ThrowsException<ArgumentNullException>(() => Utility.GetScriptHash(nul, protocolSettings));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Utility.GetScriptHash(nul, protocolSettings));
 
             string addr = scriptHash.ToAddress(protocolSettings.AddressVersion);
             var result = Utility.GetScriptHash(addr, protocolSettings);
@@ -87,7 +87,7 @@ namespace Neo.Network.RPC.Tests
             Assert.AreEqual(scriptHash, result);
 
             var action = () => { Utility.GetScriptHash("00", protocolSettings); };
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
         }
 
         [TestMethod]
@@ -228,7 +228,7 @@ namespace Neo.Network.RPC.Tests
 
             amount = 1.23456789m;
             decimals = 4;
-            Assert.ThrowsException<ArgumentException>(() => result = amount.ToBigInteger(decimals));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = result = amount.ToBigInteger(decimals));
         }
     }
 }

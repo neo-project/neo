@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -158,9 +159,8 @@ namespace Neo.VM
         {
             if (_hashCode == 0)
             {
-                return _hashCode = HashCode.Combine(Unsafe.HashBytes(_value.Span));
+                _hashCode = HashCode.Combine(_value.Span.XxHash3_32());
             }
-
             return _hashCode;
         }
     }

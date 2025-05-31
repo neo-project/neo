@@ -110,6 +110,24 @@ namespace Neo.Plugins.RpcServer
             return response;
         }
 
+        /// <summary>
+        /// Unwraps an exception to get the original exception.
+        /// This is particularly useful for TargetInvocationException and AggregateException which wrap the actual exception.
+        /// </summary>
+        /// <param name="ex">The exception to unwrap</param>
+        /// <returns>The unwrapped exception</returns>
+        private static Exception UnwrapException(Exception ex)
+        {
+            if (ex is TargetInvocationException targetEx && targetEx.InnerException != null)
+                return targetEx.InnerException;
+
+            // Also handle AggregateException with a single inner exception
+            if (ex is AggregateException aggEx && aggEx.InnerExceptions.Count == 1)
+                return aggEx.InnerExceptions[0];
+
+            return ex;
+        }
+
         public void Dispose()
         {
             Dispose_SmartContract();
@@ -367,23 +385,23 @@ namespace Neo.Plugins.RpcServer
             }
             catch (Exception ex) when (ex is not RpcException)
             {
+                // Unwrap the exception to get the original error code
+                var unwrappedException = UnwrapException(ex);
 #if DEBUG
                 return CreateErrorResponse(request["id"],
-                    RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
+                    RpcErrorFactory.NewCustomError(unwrappedException.HResult, unwrappedException.Message, unwrappedException.StackTrace));
 #else
-        return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message));
+        return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(unwrappedException.HResult, unwrappedException.Message));
 #endif
             }
             catch (RpcException ex)
             {
-
 #if DEBUG
                 return CreateErrorResponse(request["id"],
                     RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
 #else
                 return CreateErrorResponse(request["id"], ex.GetError());
 #endif
-
             }
         }
 

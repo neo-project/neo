@@ -127,7 +127,7 @@ namespace Neo.SmartContract
                     Value = text;
                     break;
                 default:
-                    throw new ArgumentException();
+                    throw new ArgumentException($"The ContractParameterType '{Type}' is not supported.");
             }
         }
 

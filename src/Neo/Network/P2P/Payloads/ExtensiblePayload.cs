@@ -56,6 +56,8 @@ namespace Neo.Network.P2P.Payloads
         public Witness Witness;
 
         private UInt256 _hash = null;
+
+        /// <inheritdoc/>
         public UInt256 Hash
         {
             get
