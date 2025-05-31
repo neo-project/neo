@@ -53,13 +53,20 @@ namespace Neo.Build.Core.Storage
 
         public void Dispose()
         {
-            _store.CheckpointManager.PurgeAll();
+            //_store.CheckpointManager.PurgeAll();
             _store.TryInitiateFullCheckpoint(out _, CheckpointType.Snapshot);
             _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
             _store.Log.FlushAndEvict(true);
             _store.Dispose();
             _sessionPool.Dispose();
             GC.SuppressFinalize(this);
+        }
+
+        public Guid CreateFullCheckPoint()
+        {
+            _store.TryInitiateFullCheckpoint(out var checkpointId, CheckpointType.Snapshot);
+            _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
+            return checkpointId;
         }
 
         public void Reset() =>
