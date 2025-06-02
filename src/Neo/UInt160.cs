@@ -159,7 +159,6 @@ namespace Neo
             return "0x" + this.ToArray().ToHexString(reverse: true);
         }
 
-
         /// <summary>
         /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
         /// </summary>
