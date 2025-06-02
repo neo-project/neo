@@ -124,18 +124,6 @@ namespace Neo
             return buffer; // Keep the same output as Serialize when BigEndian
         }
 
-        /// <summary>
-        /// Parses an <see cref="UInt256"/> from the specified <see cref="string"/>.
-        /// </summary>
-        /// <param name="value">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
-        /// <returns>The parsed <see cref="UInt256"/>.</returns>
-        /// <exception cref="FormatException"><paramref name="value"/> is not in the correct format.</exception>
-        public static UInt256 Parse(string value)
-        {
-            if (!TryParse(value, out var result)) throw new FormatException();
-            return result;
-        }
-
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(_value1);
@@ -183,18 +171,17 @@ namespace Neo
         /// <summary>
         /// Parses an <see cref="UInt256"/> from the specified <see cref="string"/>.
         /// </summary>
-        /// <param name="s">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
+        /// <param name="value">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt256"/>.</param>
-        /// <returns><see langword="true"/> if an <see cref="UInt256"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string s, [NotNullWhen(true)] out UInt256 result)
+        /// <returns>
+        /// <see langword="true"/> if an <see cref="UInt256"/> is successfully parsed; otherwise, <see langword="false"/>.
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParse(string value, [NotNullWhen(true)] out UInt256 result)
         {
             result = null;
-            var data = s.AsSpan(); // AsSpan is null safe
-            if (data.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                data = data[2..];
-
+            var data = value.AsSpan().TrimStartIgnoreCase("0x");
             if (data.Length != Length * 2) return false;
-
             try
             {
                 result = new UInt256(data.HexToBytesReversed());
@@ -204,6 +191,20 @@ namespace Neo
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Parses an <see cref="UInt256"/> from the specified <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
+        /// <returns>The parsed <see cref="UInt256"/>.</returns>
+        /// <exception cref="FormatException"><paramref name="value"/> is not in the correct format.</exception>
+        public static UInt256 Parse(string value)
+        {
+            var data = value.AsSpan().TrimStartIgnoreCase("0x");
+            if (data.Length != Length * 2)
+                throw new FormatException($"value.Length({data.Length}) != {Length * 2}");
+            return new UInt256(data.HexToBytesReversed());
         }
 
         public static bool operator ==(UInt256 left, UInt256 right)
