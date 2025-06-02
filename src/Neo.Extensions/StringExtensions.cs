@@ -175,7 +175,10 @@ namespace Neo.Extensions
         /// </summary>
         /// <param name="value">The <see cref="string"/> to trim.</param>
         /// <param name="prefix">The prefix to trim.</param>
-        /// <returns>The trimmed <see cref="string"/> without prefix. If no prefix is found than the input <see cref="string"/> is returned unmodified.</returns>
+        /// <returns>
+        /// The trimmed ReadOnlySpan without prefix. If no prefix is found, the input is returned unmodified.
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlySpan<char> TrimStartIgnoreCase(this ReadOnlySpan<char> value, ReadOnlySpan<char> prefix)
         {
             if (value.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase))
