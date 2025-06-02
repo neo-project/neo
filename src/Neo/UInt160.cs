@@ -147,18 +147,6 @@ namespace Neo
             BinaryPrimitives.WriteUInt32LittleEndian(destination[IxValue3..], _value3);
         }
 
-        /// <summary>
-        /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
-        /// </summary>
-        /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
-        /// <returns>The parsed <see cref="UInt160"/>.</returns>
-        /// <exception cref="FormatException"><paramref name="value"/> is not in the correct format.</exception>
-        public static UInt160 Parse(string value)
-        {
-            if (!TryParse(value, out var result)) throw new FormatException();
-            return result;
-        }
-
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(_value1);
@@ -174,18 +162,16 @@ namespace Neo
         /// <summary>
         /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
         /// </summary>
-        /// <param name="str">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
+        /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt160"/>.</param>
-        /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string str, [NotNullWhen(true)] out UInt160 result)
+        /// <returns>
+        /// <see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool TryParse(string value, [NotNullWhen(true)] out UInt160 result)
         {
             result = null;
-            var data = str.AsSpan(); // AsSpan is null safe
-            if (data.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                data = data[2..];
-
+            var data = value.AsSpan().TrimStartIgnoreCase("0x");
             if (data.Length != Length * 2) return false;
-
             try
             {
                 result = new UInt160(data.HexToBytesReversed());
@@ -195,6 +181,21 @@ namespace Neo
             {
                 return false;
             }
+        }
+
+
+        /// <summary>
+        /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
+        /// <returns>The parsed <see cref="UInt160"/>.</returns>
+        /// <exception cref="FormatException"><paramref name="value"/> is not in the correct format.</exception>
+        public static UInt160 Parse(string value)
+        {
+            var data = value.AsSpan().TrimStartIgnoreCase("0x");
+            if (data.Length != Length * 2)
+                throw new FormatException($"value.Length({data.Length}) != {Length * 2}");
+            return new UInt160(data.HexToBytesReversed());
         }
 
         public static implicit operator UInt160(string s)

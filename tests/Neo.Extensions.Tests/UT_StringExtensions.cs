@@ -94,6 +94,14 @@ namespace Neo.Extensions.Tests
         }
 
         [TestMethod]
+        public void TestTrimStartIgnoreCase()
+        {
+            Assert.AreEqual("010203", "0x010203".AsSpan().TrimStartIgnoreCase("0x").ToString());
+            Assert.AreEqual("010203", "0x010203".AsSpan().TrimStartIgnoreCase("0X").ToString());
+            Assert.AreEqual("010203", "0X010203".AsSpan().TrimStartIgnoreCase("0x").ToString());
+        }
+
+        [TestMethod]
         public void TestGetVarSizeGeneric()
         {
             for (int i = 0; i < 9; i++)

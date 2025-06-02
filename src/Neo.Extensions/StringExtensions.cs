@@ -149,7 +149,7 @@ namespace Neo.Extensions
             if (value.IsEmpty)
                 return [];
             if (value.Length % 2 == 1)
-                throw new FormatException();
+                throw new FormatException($"value.Length({value.Length}) not multiple of 2");
             var result = new byte[value.Length / 2];
             for (var i = 0; i < result.Length; i++)
                 result[i] = byte.Parse(value.Slice(i * 2, 2), NumberStyles.AllowHexSpecifier);
@@ -168,6 +168,22 @@ namespace Neo.Extensions
         {
             var size = value.GetStrictUtf8ByteCount();
             return size.GetVarSize() + size;
+        }
+
+        /// <summary>
+        /// Trims the specified prefix from the start of the <see cref="string"/>, ignoring case.
+        /// </summary>
+        /// <param name="value">The <see cref="string"/> to trim.</param>
+        /// <param name="prefix">The prefix to trim.</param>
+        /// <returns>
+        /// The trimmed ReadOnlySpan without prefix. If no prefix is found, the input is returned unmodified.
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ReadOnlySpan<char> TrimStartIgnoreCase(this ReadOnlySpan<char> value, ReadOnlySpan<char> prefix)
+        {
+            if (value.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase))
+                return value[prefix.Length..];
+            return value;
         }
     }
 }
