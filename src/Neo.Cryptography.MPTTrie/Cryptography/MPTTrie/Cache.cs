@@ -32,23 +32,23 @@ namespace Neo.Cryptography.MPTTrie
             public TrackState State;
         }
 
-        private readonly IStoreSnapshot store;
-        private readonly byte prefix;
-        private readonly Dictionary<UInt256, Trackable> cache = new Dictionary<UInt256, Trackable>();
+        private readonly IStoreSnapshot _store;
+        private readonly byte _prefix;
+        private readonly Dictionary<UInt256, Trackable> _cache = [];
 
         public Cache(IStoreSnapshot store, byte prefix)
         {
-            this.store = store;
-            this.prefix = prefix;
+            _store = store;
+            _prefix = prefix;
         }
 
         private byte[] Key(UInt256 hash)
         {
             byte[] buffer = new byte[UInt256.Length + 1];
-            using (MemoryStream ms = new MemoryStream(buffer, true))
-            using (BinaryWriter writer = new BinaryWriter(ms))
+            using (var ms = new MemoryStream(buffer, true))
+            using (var writer = new BinaryWriter(ms))
             {
-                writer.Write(prefix);
+                writer.Write(_prefix);
                 hash.Serialize(writer);
             }
             return buffer;
@@ -56,13 +56,13 @@ namespace Neo.Cryptography.MPTTrie
 
         public Node Resolve(UInt256 hash)
         {
-            if (cache.TryGetValue(hash, out Trackable t))
+            if (_cache.TryGetValue(hash, out var t))
             {
                 return t.Node?.Clone();
             }
 
-            var n = store.TryGet(Key(hash), out var data) ? data.AsSerializable<Node>() : null;
-            cache.Add(hash, new Trackable
+            var n = _store.TryGet(Key(hash), out var data) ? data.AsSerializable<Node>() : null;
+            _cache.Add(hash, new Trackable
             {
                 Node = n,
                 State = TrackState.None,
@@ -76,14 +76,14 @@ namespace Neo.Cryptography.MPTTrie
             if (n is null)
             {
                 np.Reference = 1;
-                cache[np.Hash] = new Trackable
+                _cache[np.Hash] = new Trackable
                 {
                     Node = np.Clone(),
                     State = TrackState.Added,
                 };
                 return;
             }
-            var entry = cache[np.Hash];
+            var entry = _cache[np.Hash];
             entry.Node.Reference++;
             entry.State = TrackState.Changed;
         }
@@ -94,12 +94,12 @@ namespace Neo.Cryptography.MPTTrie
             if (n is null) return;
             if (1 < n.Reference)
             {
-                var entry = cache[hash];
+                var entry = _cache[hash];
                 entry.Node.Reference--;
                 entry.State = TrackState.Changed;
                 return;
             }
-            cache[hash] = new Trackable
+            _cache[hash] = new Trackable
             {
                 Node = null,
                 State = TrackState.Deleted,
@@ -108,20 +108,20 @@ namespace Neo.Cryptography.MPTTrie
 
         public void Commit()
         {
-            foreach (var item in cache)
+            foreach (var item in _cache)
             {
                 switch (item.Value.State)
                 {
                     case TrackState.Added:
                     case TrackState.Changed:
-                        store.Put(Key(item.Key), item.Value.Node.ToArray());
+                        _store.Put(Key(item.Key), item.Value.Node.ToArray());
                         break;
                     case TrackState.Deleted:
-                        store.Delete(Key(item.Key));
+                        _store.Delete(Key(item.Key));
                         break;
                 }
             }
-            cache.Clear();
+            _cache.Clear();
         }
     }
 }
