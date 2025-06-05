@@ -6,11 +6,7 @@
     <RootNamespace>Neo.Consensus</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>Neo.Plugins.DBFTPlugin.Tests</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
+  <InternalsVisibleTo Include="Neo.Plugins.DBFTPlugin.Tests" />
 
   <ItemGroup>
     <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
