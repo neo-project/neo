@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32516.85
@@ -92,6 +91,16 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignClient", "src\Plugins\SignClient\SignClient.csproj", "{CAD55942-48A3-4526-979D-7519FADF19FE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Plugins.SignClient.Tests", "tests\Neo.Plugins.SignClient.Tests\Neo.Plugins.SignClient.Tests.csproj", "{E2CFEAA1-45F2-4075-94ED-866862C6863F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sdk", "sdk", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{B4B5F0EE-1E89-4CB6-B03C-97919C864F56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.Core.Tests", "tests\Neo.Build.Core.Tests\Neo.Build.Core.Tests.csproj", "{6C1B4D3D-FFB4-F470-7670-DE33EAD41127}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.Core", "src\Shared\Neo.Build.Core\Neo.Build.Core.csproj", "{FC25CED7-CC28-2D02-2C4E-572B8EF6B648}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.ToolSet", "src\Shared\Neo.Build.ToolSet\Neo.Build.ToolSet.csproj", "{D9504AC3-C0EB-B320-FB61-7D2D70CA33D1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -259,6 +268,18 @@ Global
 		{E2CFEAA1-45F2-4075-94ED-866862C6863F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2CFEAA1-45F2-4075-94ED-866862C6863F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2CFEAA1-45F2-4075-94ED-866862C6863F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C1B4D3D-FFB4-F470-7670-DE33EAD41127}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C1B4D3D-FFB4-F470-7670-DE33EAD41127}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C1B4D3D-FFB4-F470-7670-DE33EAD41127}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C1B4D3D-FFB4-F470-7670-DE33EAD41127}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC25CED7-CC28-2D02-2C4E-572B8EF6B648}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC25CED7-CC28-2D02-2C4E-572B8EF6B648}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC25CED7-CC28-2D02-2C4E-572B8EF6B648}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC25CED7-CC28-2D02-2C4E-572B8EF6B648}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9504AC3-C0EB-B320-FB61-7D2D70CA33D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9504AC3-C0EB-B320-FB61-7D2D70CA33D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9504AC3-C0EB-B320-FB61-7D2D70CA33D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9504AC3-C0EB-B320-FB61-7D2D70CA33D1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -305,6 +326,10 @@ Global
 		{19B1CF1A-17F4-4E04-AB9C-55CE74952E11} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{CAD55942-48A3-4526-979D-7519FADF19FE} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{E2CFEAA1-45F2-4075-94ED-866862C6863F} = {7F257712-D033-47FF-B439-9D4320D06599}
+		{B4B5F0EE-1E89-4CB6-B03C-97919C864F56} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{6C1B4D3D-FFB4-F470-7670-DE33EAD41127} = {B4B5F0EE-1E89-4CB6-B03C-97919C864F56}
+		{FC25CED7-CC28-2D02-2C4E-572B8EF6B648} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{D9504AC3-C0EB-B320-FB61-7D2D70CA33D1} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
