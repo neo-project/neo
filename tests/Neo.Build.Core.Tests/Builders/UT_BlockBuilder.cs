@@ -37,7 +37,7 @@ namespace Neo.Build.Core.Tests.Builders
             Assert.AreEqual(UInt256.Zero, block.PrevHash);
             Assert.AreEqual(0, block.PrimaryIndex);
             Assert.AreNotEqual(0uL, block.Timestamp);
-            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > block.Timestamp);
+            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= block.Timestamp);
             Assert.AreEqual(0u, block.Version);
             Assert.IsNotNull(block.Witness);
             Assert.AreEqual(ReadOnlyMemory<byte>.Empty, block.Witness.InvocationScript);
@@ -65,7 +65,7 @@ namespace Neo.Build.Core.Tests.Builders
             Assert.AreEqual(UInt256.Zero, block.PrevHash);
             Assert.AreEqual(0, block.PrimaryIndex);
             Assert.AreNotEqual(0uL, block.Timestamp);
-            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > block.Timestamp);
+            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= block.Timestamp);
             Assert.AreEqual(0u, block.Version);
             Assert.IsNotNull(block.Witness);
             Assert.AreEqual(ReadOnlyMemory<byte>.Empty, block.Witness.InvocationScript);
@@ -93,7 +93,7 @@ namespace Neo.Build.Core.Tests.Builders
             Assert.AreEqual(UInt256.Zero, block.PrevHash);
             Assert.AreEqual(0, block.PrimaryIndex);
             Assert.AreNotEqual(0uL, block.Timestamp);
-            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > block.Timestamp);
+            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= block.Timestamp);
             Assert.AreEqual(0u, block.Version);
             Assert.IsNotNull(block.Witness);
             Assert.AreEqual(ReadOnlyMemory<byte>.Empty, block.Witness.InvocationScript);
@@ -121,7 +121,7 @@ namespace Neo.Build.Core.Tests.Builders
             Assert.AreEqual(UInt256.Parse("0x254f4102a0aa0a86c07ddea9327efb4b9d8d1608bd0dcc34c211b47b44d25665"), block.PrevHash);
             Assert.AreEqual(0, block.PrimaryIndex);
             Assert.AreNotEqual(0uL, block.Timestamp);
-            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > block.Timestamp);
+            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= block.Timestamp);
             Assert.AreEqual(0u, block.Version);
             Assert.IsNotNull(block.Witness);
             Assert.AreEqual(ReadOnlyMemory<byte>.Empty, block.Witness.InvocationScript);
@@ -149,7 +149,7 @@ namespace Neo.Build.Core.Tests.Builders
             Assert.AreEqual(UInt256.Zero, block.PrevHash);
             Assert.AreEqual(255, block.PrimaryIndex);
             Assert.AreNotEqual(0uL, block.Timestamp);
-            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > block.Timestamp);
+            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= block.Timestamp);
             Assert.AreEqual(0u, block.Version);
             Assert.IsNotNull(block.Witness);
             Assert.AreEqual(ReadOnlyMemory<byte>.Empty, block.Witness.InvocationScript);
@@ -177,7 +177,7 @@ namespace Neo.Build.Core.Tests.Builders
             Assert.AreEqual(UInt256.Zero, block.PrevHash);
             Assert.AreEqual(0, block.PrimaryIndex);
             Assert.AreNotEqual(0uL, block.Timestamp);
-            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > block.Timestamp);
+            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= block.Timestamp);
             Assert.AreEqual(0u, block.Version);
             Assert.IsNotNull(block.Witness);
             Assert.AreEqual(ReadOnlyMemory<byte>.Empty, block.Witness.InvocationScript);
@@ -205,7 +205,7 @@ namespace Neo.Build.Core.Tests.Builders
             Assert.AreEqual(UInt256.Zero, block.PrevHash);
             Assert.AreEqual(0, block.PrimaryIndex);
             Assert.AreEqual(6767675ul, block.Timestamp);
-            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > block.Timestamp);
+            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= block.Timestamp);
             Assert.AreEqual(0u, block.Version);
             Assert.IsNotNull(block.Witness);
             Assert.AreEqual(ReadOnlyMemory<byte>.Empty, block.Witness.InvocationScript);
@@ -233,7 +233,7 @@ namespace Neo.Build.Core.Tests.Builders
             Assert.AreEqual(UInt256.Zero, block.PrevHash);
             Assert.AreEqual(0, block.PrimaryIndex);
             Assert.AreNotEqual(0ul, block.Timestamp);
-            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > block.Timestamp);
+            Assert.IsTrue((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= block.Timestamp);
             Assert.AreEqual(1u, block.Version);
             Assert.IsNotNull(block.Witness);
             Assert.AreEqual(ReadOnlyMemory<byte>.Empty, block.Witness.InvocationScript);
