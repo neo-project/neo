@@ -20,7 +20,7 @@ namespace Neo.Cryptography.MPTTrie
     {
         public static Node NewHash(UInt256 hash)
         {
-            if (hash is null) throw new ArgumentNullException(nameof(NewHash));
+            ArgumentNullException.ThrowIfNull(hash);
             var n = new Node
             {
                 type = NodeType.HashNode,
