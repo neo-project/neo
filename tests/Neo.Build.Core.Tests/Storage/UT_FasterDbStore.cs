@@ -100,24 +100,27 @@ namespace Neo.Build.Core.Tests.Storage
         {
             var checkpointId = Guid.Empty;
 
+            // create a store and put some data
             using (var store = new FasterDbStore("chkpntTest"))
             {
                 store.Put([0x01, 0x00], [0x00]);
                 store.Put([0x01, 0x01], [0x01]);
                 store.Put([0x01, 0x02], [0x02]);
 
-                checkpointId = store.CreateFullCheckPoint();
+                checkpointId = store.CreateFullCheckPoint(); // Create a checkpoint with above data
 
-                store.Put([0x01, 0xff], [0xff]);
+                store.Put([0x01, 0xff], [0xff]); // This should not be present in the checkpoint
 
-                CollectionAssert.AreEqual(store.TryGet([0x01, 0xff]), new byte[] { 0xff });
+                CollectionAssert.AreEqual(store.TryGet([0x01, 0xff]), new byte[] { 0xff }); // Should be present in the store after checkpoint
                 CollectionAssert.AreEqual(store.TryGet([0x01, 0x00]), new byte[] { 0x00 });
                 CollectionAssert.AreEqual(store.TryGet([0x01, 0x01]), new byte[] { 0x01 });
                 CollectionAssert.AreEqual(store.TryGet([0x01, 0x02]), new byte[] { 0x02 });
             }
 
+            // restore from checkpoint
             using (var store = new FasterDbStore("chkpntTest", checkpointId))
             {
+                Assert.IsNull(store.TryGet([0x01, 0xff])); // Should not be present in the checkpoint
                 CollectionAssert.AreEqual(store.TryGet([0x01, 0x00]), new byte[] { 0x00 });
                 CollectionAssert.AreEqual(store.TryGet([0x01, 0x01]), new byte[] { 0x01 });
                 CollectionAssert.AreEqual(store.TryGet([0x01, 0x02]), new byte[] { 0x02 });
