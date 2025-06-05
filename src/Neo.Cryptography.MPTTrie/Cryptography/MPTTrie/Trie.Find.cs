@@ -26,7 +26,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.IsEmpty)
                         {
                             start = node;
-                            return ReadOnlySpan<byte>.Empty;
+                            return [];
                         }
                         break;
                     }
@@ -34,8 +34,8 @@ namespace Neo.Cryptography.MPTTrie
                     break;
                 case NodeType.HashNode:
                     {
-                        var newNode = _cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt seek");
+                        var newNode = _cache.Resolve(node.Hash)
+                            ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt seek");
                         node = newNode;
                         return Seek(ref node, path, out start);
                     }
@@ -44,7 +44,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.IsEmpty)
                         {
                             start = node;
-                            return ReadOnlySpan<byte>.Empty;
+                            return [];
                         }
                         return new([.. path[..1], .. Seek(ref node.Children[path[0]], path[1..], out start)]);
                     }
@@ -68,14 +68,14 @@ namespace Neo.Cryptography.MPTTrie
                     }
             }
             start = null;
-            return ReadOnlySpan<byte>.Empty;
+            return [];
         }
 
         public IEnumerable<(ReadOnlyMemory<byte> Key, ReadOnlyMemory<byte> Value)> Find(ReadOnlySpan<byte> prefix, byte[] from = null)
         {
             var path = ToNibbles(prefix);
-            int offset = 0;
-            if (from is null) from = Array.Empty<byte>();
+            var offset = 0;
+            from ??= [];
             if (0 < from.Length)
             {
                 if (!from.AsSpan().StartsWith(prefix))
@@ -84,12 +84,12 @@ namespace Neo.Cryptography.MPTTrie
             }
             if (path.Length > Node.MaxKeyLength || from.Length > Node.MaxKeyLength)
                 throw new ArgumentException("exceeds limit");
-            path = Seek(ref _root, path, out Node start).ToArray();
+            path = Seek(ref _root, path, out var start).ToArray();
             if (from.Length > 0)
             {
-                for (int i = 0; i < from.Length && i < path.Length; i++)
+                for (var i = 0; i < from.Length && i < path.Length; i++)
                 {
-                    if (path[i] < from[i]) return Enumerable.Empty<(ReadOnlyMemory<byte>, ReadOnlyMemory<byte>)>();
+                    if (path[i] < from[i]) return [];
                     if (path[i] > from[i])
                     {
                         offset = from.Length;
@@ -120,8 +120,8 @@ namespace Neo.Cryptography.MPTTrie
                     break;
                 case NodeType.HashNode:
                     {
-                        var newNode = _cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt find");
+                        var newNode = _cache.Resolve(node.Hash)
+                            ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt find");
                         node = newNode;
                         foreach (var item in Travers(node, path, from, offset))
                             yield return item;
@@ -131,7 +131,7 @@ namespace Neo.Cryptography.MPTTrie
                     {
                         if (offset < from.Length)
                         {
-                            for (int i = 0; i < Node.BranchChildCount - 1; i++)
+                            for (var i = 0; i < Node.BranchChildCount - 1; i++)
                             {
                                 if (from[offset] < i)
                                 {
@@ -149,7 +149,7 @@ namespace Neo.Cryptography.MPTTrie
                         {
                             foreach (var item in Travers(node.Children[Node.BranchChildCount - 1], path, from, offset))
                                 yield return item;
-                            for (int i = 0; i < Node.BranchChildCount - 1; i++)
+                            for (var i = 0; i < Node.BranchChildCount - 1; i++)
                             {
                                 foreach (var item in Travers(node.Children[i], [.. path, .. new byte[] { (byte)i }], from, offset))
                                     yield return item;
