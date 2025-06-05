@@ -28,22 +28,16 @@ namespace Neo.Cryptography.MPTTrie
         {
             get
             {
-                int size = sizeof(NodeType);
-                switch (type)
+                var size = sizeof(NodeType);
+                return type switch
                 {
-                    case NodeType.BranchNode:
-                        return size + BranchSize + Reference.GetVarSize();
-                    case NodeType.ExtensionNode:
-                        return size + ExtensionSize + Reference.GetVarSize();
-                    case NodeType.LeafNode:
-                        return size + LeafSize + Reference.GetVarSize();
-                    case NodeType.HashNode:
-                        return size + HashSize;
-                    case NodeType.Empty:
-                        return size;
-                    default:
-                        throw new InvalidOperationException($"{nameof(Node)} Cannt get size, unsupport type");
-                }
+                    NodeType.BranchNode => size + BranchSize + Reference.GetVarSize(),
+                    NodeType.ExtensionNode => size + ExtensionSize + Reference.GetVarSize(),
+                    NodeType.LeafNode => size + LeafSize + Reference.GetVarSize(),
+                    NodeType.HashNode => size + HashSize,
+                    NodeType.Empty => size,
+                    _ => throw new InvalidOperationException($"{nameof(Node)} Cannt get size, unsupport type"),
+                };
             }
         }
 
@@ -61,18 +55,12 @@ namespace Neo.Cryptography.MPTTrie
         {
             get
             {
-                switch (type)
+                return type switch
                 {
-                    case NodeType.BranchNode:
-                    case NodeType.ExtensionNode:
-                    case NodeType.LeafNode:
-                        return NewHash(Hash).Size;
-                    case NodeType.HashNode:
-                    case NodeType.Empty:
-                        return Size;
-                    default:
-                        throw new InvalidOperationException(nameof(Node));
-                }
+                    NodeType.BranchNode or NodeType.ExtensionNode or NodeType.LeafNode => NewHash(Hash).Size,
+                    NodeType.HashNode or NodeType.Empty => Size,
+                    _ => throw new InvalidOperationException(nameof(Node)),
+                };
             }
         }
 
@@ -128,8 +116,8 @@ namespace Neo.Cryptography.MPTTrie
 
         public byte[] ToArrayWithoutReference()
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms, Utility.StrictUTF8, true);
+            using var ms = new MemoryStream();
+            using var writer = new BinaryWriter(ms, Utility.StrictUTF8, true);
 
             SerializeWithoutReference(writer);
             writer.Flush();
@@ -165,22 +153,16 @@ namespace Neo.Cryptography.MPTTrie
 
         private Node CloneAsChild()
         {
-            switch (type)
+            return type switch
             {
-                case NodeType.BranchNode:
-                case NodeType.ExtensionNode:
-                case NodeType.LeafNode:
-                    return new Node
-                    {
-                        type = NodeType.HashNode,
-                        hash = Hash,
-                    };
-                case NodeType.HashNode:
-                case NodeType.Empty:
-                    return Clone();
-                default:
-                    throw new InvalidOperationException(nameof(Clone));
-            }
+                NodeType.BranchNode or NodeType.ExtensionNode or NodeType.LeafNode => new Node
+                {
+                    type = NodeType.HashNode,
+                    hash = Hash,
+                },
+                NodeType.HashNode or NodeType.Empty => Clone(),
+                _ => throw new InvalidOperationException(nameof(Clone)),
+            };
         }
 
         public Node Clone()
@@ -194,7 +176,7 @@ namespace Neo.Cryptography.MPTTrie
                         Reference = Reference,
                         Children = new Node[BranchChildCount],
                     };
-                    for (int i = 0; i < BranchChildCount; i++)
+                    for (var i = 0; i < BranchChildCount; i++)
                     {
                         n.Children[i] = Children[i].CloneAsChild();
                     }
