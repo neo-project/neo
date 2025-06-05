@@ -54,56 +54,52 @@ namespace Neo.Cryptography.MPTTrie
             return buffer;
         }
 
-        public Node Resolve(UInt256 hash)
+        public Node Resolve(UInt256 hash) => ResolveInternal(hash).Node?.Clone();
+
+        private Trackable ResolveInternal(UInt256 hash)
         {
-            if (cache.TryGetValue(hash, out Trackable t))
+            if (cache.TryGetValue(hash, out var t))
             {
-                return t.Node?.Clone();
+                return t;
             }
 
             var n = store.TryGet(Key(hash), out var data) ? data.AsSerializable<Node>() : null;
-            cache.Add(hash, new Trackable
+
+            t = new Trackable
             {
                 Node = n,
                 State = TrackState.None,
-            });
-            return n?.Clone();
+            };
+            cache.Add(hash, t);
+            return t;
         }
 
         public void PutNode(Node np)
         {
-            var n = Resolve(np.Hash);
-            if (n is null)
+            var entry = ResolveInternal(np.Hash);
+            if (entry.Node is null)
             {
                 np.Reference = 1;
-                cache[np.Hash] = new Trackable
-                {
-                    Node = np.Clone(),
-                    State = TrackState.Added,
-                };
+                entry.Node = np.Clone();
+                entry.State = TrackState.Added;
                 return;
             }
-            var entry = cache[np.Hash];
             entry.Node.Reference++;
             entry.State = TrackState.Changed;
         }
 
         public void DeleteNode(UInt256 hash)
         {
-            var n = Resolve(hash);
-            if (n is null) return;
-            if (1 < n.Reference)
+            var entry = ResolveInternal(hash);
+            if (entry.Node is null) return;
+            if (1 < entry.Node.Reference)
             {
-                var entry = cache[hash];
                 entry.Node.Reference--;
                 entry.State = TrackState.Changed;
                 return;
             }
-            cache[hash] = new Trackable
-            {
-                Node = null,
-                State = TrackState.Deleted,
-            };
+            entry.Node = null;
+            entry.State = TrackState.Deleted;
         }
 
         public void Commit()
