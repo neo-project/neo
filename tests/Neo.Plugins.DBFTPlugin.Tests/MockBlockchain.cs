@@ -21,7 +21,7 @@ using System.Collections.Generic;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
-    public static class TestBlockchain
+    public static class MockBlockchain
     {
         public static readonly NeoSystem TheNeoSystem;
         public static readonly UInt160[] DefaultExtensibleWitnessWhiteList;
@@ -34,10 +34,10 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             public IStore GetStore(string path) => Store;
         }
 
-        static TestBlockchain()
+        static MockBlockchain()
         {
             Console.WriteLine("initialize NeoSystem");
-            TheNeoSystem = new NeoSystem(TestProtocolSettings.Default, new StoreProvider());
+            TheNeoSystem = new NeoSystem(MockProtocolSettings.Default, new StoreProvider());
         }
 
         internal static void ResetStore()

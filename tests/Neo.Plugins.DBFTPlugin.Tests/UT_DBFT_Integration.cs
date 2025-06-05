@@ -40,7 +40,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         private TestProbe taskManager;
         private TestProbe blockchain;
         private TestProbe txRouter;
-        private TestWallet[] testWallets;
+        private MockWallet[] testWallets;
         private IActorRef[] consensusServices;
         private MemoryStore memoryStore;
         private const int ValidatorCount = 4; // Smaller for integration tests
@@ -55,7 +55,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             txRouter = CreateTestProbe("txRouter");
 
             // Setup autopilot for localNode to handle consensus messages
-            localNode.SetAutoPilot(new CustomAutoPilot((sender, message) =>
+            localNode.SetAutoPilot(new MockAutoPilot((sender, message) =>
             {
                 if (message is ExtensiblePayload payload)
                 {
@@ -69,19 +69,19 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Create memory store
             memoryStore = new MemoryStore();
-            var storeProvider = new TestMemoryStoreProvider(memoryStore);
+            var storeProvider = new MockMemoryStoreProvider(memoryStore);
 
             // Create NeoSystem with test dependencies
-            neoSystem = new NeoSystem(TestProtocolSettings.Default, storeProvider);
+            neoSystem = new NeoSystem(MockProtocolSettings.Default, storeProvider);
 
             // Setup test wallets for validators
-            testWallets = new TestWallet[ValidatorCount];
+            testWallets = new MockWallet[ValidatorCount];
             consensusServices = new IActorRef[ValidatorCount];
 
             for (int i = 0; i < ValidatorCount; i++)
             {
-                var testWallet = new TestWallet(TestProtocolSettings.Default);
-                var validatorKey = TestProtocolSettings.Default.StandbyValidators[i];
+                var testWallet = new MockWallet(MockProtocolSettings.Default);
+                var validatorKey = MockProtocolSettings.Default.StandbyValidators[i];
                 testWallet.AddAccount(validatorKey);
                 testWallets[i] = testWallet;
             }
@@ -107,7 +107,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestFullConsensusRound()
         {
             // Arrange - Create consensus services for all validators
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {
@@ -139,7 +139,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusWithViewChange()
         {
             // Arrange
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {
@@ -177,7 +177,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusWithByzantineFailures()
         {
             // Arrange - Only start honest validators (3 out of 4, can tolerate 1 Byzantine)
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
             var honestValidators = ValidatorCount - 1; // 3 honest validators
 
             for (int i = 0; i < honestValidators; i++)
@@ -209,7 +209,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusRecovery()
         {
             // Arrange
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {

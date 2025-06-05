@@ -12,21 +12,25 @@ This test suite provides complete coverage of the DBFT consensus protocol, inclu
 
 | Test File | Tests | Description |
 |-----------|-------|-------------|
-| `UT_ConsensusService.cs` | 7 | Service lifecycle and message handling |
-| `UT_DBFT.cs` | 6 | Basic consensus scenarios |
+| `UT_ConsensusService.cs` | 6 | Service lifecycle and message handling |
+| `UT_DBFT_Core.cs` | 3 | Core consensus mechanics |
 | `UT_DBFT_Integration.cs` | 4 | Integration scenarios |
 | `UT_DBFT_NormalFlow.cs` | 3 | Complete normal consensus flows |
-| `UT_DBFT_AbnormalScenarios.cs` | 4 | Failure and attack scenarios |
-| `UT_DBFT_Recovery.cs` | 6 | Recovery mechanisms |
-| `UT_DBFT_Robustness.cs` | 4 | Stress and edge case testing |
+| `UT_DBFT_Failures.cs` | 4 | Failure and attack scenarios |
+| `UT_DBFT_Recovery.cs` | 5 | Recovery mechanisms |
+| `UT_DBFT_Performance.cs` | 5 | Stress and edge case testing |
+| `UT_DBFT_MessageFlow.cs` | 4 | Message passing and validation |
 
 **Total: 34 Tests** - All passing ✅
 
 ### Supporting Infrastructure
 
-- **`TestWallet.cs`** - Custom wallet implementation with unique validator keys
-- **`TestProtocolSettings.cs`** - Test configuration using Neo's protocol settings
-- **`ConsensusTestHelper.cs`** - Advanced testing utilities and message verification
+- **`MockWallet.cs`** - Custom wallet implementation with unique validator keys
+- **`MockProtocolSettings.cs`** - Test configuration using Neo's protocol settings
+- **`MockBlockchain.cs`** - Test blockchain setup and configuration
+- **`MockMemoryStoreProvider.cs`** - In-memory storage provider for testing
+- **`MockAutoPilot.cs`** - Test autopilot for actor message handling
+- **`ConsensusTestUtilities.cs`** - Advanced testing utilities and message verification
 
 ## 🔍 Test Scenarios
 
@@ -126,34 +130,6 @@ Comprehensive testing of Byzantine fault tolerance:
 - **Message Validation**: Invalid and malformed message handling
 - **State Consistency**: Consensus state integrity verification
 - **Recovery Security**: Safe recovery from failures
-
-## 📈 Quality Metrics
-
-- **✅ 100% Test Pass Rate**: All 34 tests passing consistently
-- **✅ Comprehensive Coverage**: Normal, abnormal, and edge cases
-- **✅ Byzantine Fault Tolerance**: Up to f failures handled correctly
-- **✅ Network Resilience**: Partition and message loss tolerance
-- **✅ Recovery Mechanisms**: Complete recovery flow validation
-- **✅ Performance Testing**: Stress testing with multiple rounds
-- **✅ Professional Code**: Clean, maintainable, well-documented
-
-## 🛡️ Security & Robustness
-
-The test suite validates that the DBFT consensus:
-- **Maintains Safety**: No conflicting blocks committed
-- **Ensures Liveness**: Progress continues despite failures
-- **Handles Byzantine Failures**: Up to f malicious validators
-- **Recovers from Partitions**: Network splits don't break consensus
-- **Validates Messages**: Invalid inputs are properly rejected
-- **Manages State**: Consensus state remains consistent
-
-## 🎯 Conclusion
-
-This comprehensive test suite ensures the Neo DBFT consensus implementation is:
-- **Secure** against Byzantine attacks
-- **Robust** under network failures
-- **Reliable** for production use
-- **Performant** under stress conditions
 
 The tests provide confidence that the DBFT consensus will maintain blockchain integrity and continue operating correctly under all conditions, including network partitions, validator failures, and malicious attacks.
 

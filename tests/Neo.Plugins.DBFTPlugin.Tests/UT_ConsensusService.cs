@@ -40,7 +40,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         private TestProbe taskManager;
         private TestProbe blockchain;
         private TestProbe txRouter;
-        private TestWallet testWallet;
+        private MockWallet testWallet;
         private MemoryStore memoryStore;
 
         [TestInitialize]
@@ -54,14 +54,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Create memory store
             memoryStore = new MemoryStore();
-            var storeProvider = new TestMemoryStoreProvider(memoryStore);
+            var storeProvider = new MockMemoryStoreProvider(memoryStore);
 
             // Create NeoSystem with correct constructor
-            neoSystem = new NeoSystem(TestProtocolSettings.Default, storeProvider);
+            neoSystem = new NeoSystem(MockProtocolSettings.Default, storeProvider);
 
             // Setup test wallet
-            testWallet = new TestWallet(TestProtocolSettings.Default);
-            testWallet.AddAccount(TestProtocolSettings.Default.StandbyValidators[0]);
+            testWallet = new MockWallet(MockProtocolSettings.Default);
+            testWallet.AddAccount(MockProtocolSettings.Default.StandbyValidators[0]);
         }
 
         [TestCleanup]
@@ -78,7 +78,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 Category = "dBFT",
                 ValidBlockStart = 0,
                 ValidBlockEnd = 100,
-                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Sender = Contract.GetBFTAddress(MockProtocolSettings.Default.StandbyValidators),
                 Data = message.ToArray(),
                 Witness = new Witness
                 {
@@ -92,7 +92,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceCreation()
         {
             // Arrange
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
 
             // Act
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
@@ -113,7 +113,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceStart()
         {
             // Arrange
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
 
             // Act
@@ -127,7 +127,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceReceivesBlockchainMessages()
         {
             // Arrange
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
 
             // Start the consensus service
@@ -142,7 +142,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                     PrimaryIndex = 0,
                     Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                     Nonce = 0,
-                    NextConsensus = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                    NextConsensus = Contract.GetBFTAddress(MockProtocolSettings.Default.StandbyValidators),
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
                     Witness = new Witness
@@ -165,7 +165,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceHandlesExtensiblePayload()
         {
             // Arrange
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
 
             // Start the consensus service
@@ -177,7 +177,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 Category = "dBFT",
                 ValidBlockStart = 0,
                 ValidBlockEnd = 100,
-                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Sender = Contract.GetBFTAddress(MockProtocolSettings.Default.StandbyValidators),
                 Data = new byte[] { 0x01, 0x02, 0x03 },
                 Witness = new Witness
                 {
@@ -197,7 +197,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceHandlesValidConsensusMessage()
         {
             // Arrange
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
             consensusService.Tell(new ConsensusService.Start());
 
@@ -229,7 +229,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public void TestConsensusServiceRejectsInvalidPayload()
         {
             // Arrange
-            var settings = TestBlockchain.CreateDefaultSettings();
+            var settings = MockBlockchain.CreateDefaultSettings();
             var consensusService = Sys.ActorOf(ConsensusService.Props(neoSystem, settings, testWallet));
             consensusService.Tell(new ConsensusService.Start());
 
@@ -239,7 +239,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 Category = "InvalidCategory",
                 ValidBlockStart = 0,
                 ValidBlockEnd = 100,
-                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Sender = Contract.GetBFTAddress(MockProtocolSettings.Default.StandbyValidators),
                 Data = new byte[] { 0x01, 0x02, 0x03 },
                 Witness = new Witness
                 {

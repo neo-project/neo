@@ -34,14 +34,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
     ///
     /// This tests actual consensus logic flow rather than just message passing.
     /// </summary>
-    public class ConsensusTestHelper
+    public class ConsensusTestUtilities
     {
         private readonly TestProbe localNodeProbe;
         private readonly List<ExtensiblePayload> sentMessages;
         private readonly Dictionary<ConsensusMessageType, int> messageTypeCounts;
         private readonly Dictionary<IActorRef, TestProbe> actorProbes;
 
-        public ConsensusTestHelper(TestProbe localNodeProbe)
+        public ConsensusTestUtilities(TestProbe localNodeProbe)
         {
             this.localNodeProbe = localNodeProbe;
             sentMessages = new List<ExtensiblePayload>();
@@ -63,7 +63,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 Category = "dBFT",
                 ValidBlockStart = 0,
                 ValidBlockEnd = blockIndex,
-                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Sender = Contract.GetBFTAddress(MockProtocolSettings.Default.StandbyValidators),
                 Data = message.ToArray(),
                 Witness = new Witness
                 {

@@ -14,7 +14,7 @@ using Neo.Persistence.Providers;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
-    public class TestMemoryStoreProvider(MemoryStore memoryStore) : IStoreProvider
+    public class MockMemoryStoreProvider(MemoryStore memoryStore) : IStoreProvider
     {
         public MemoryStore MemoryStore { get; init; } = memoryStore;
         public string Name => nameof(MemoryStore);

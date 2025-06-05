@@ -19,11 +19,11 @@ using System.Linq;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
-    public class TestWallet : Wallet
+    public class MockWallet : Wallet
     {
         private readonly Dictionary<UInt160, TestWalletAccount> accounts = new();
 
-        public TestWallet(ProtocolSettings settings) : base(null, settings)
+        public MockWallet(ProtocolSettings settings) : base(null, settings)
         {
         }
 

@@ -33,7 +33,7 @@ using System.Linq;
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
     [TestClass]
-    public class UT_DBFT_Robustness : TestKit
+    public class UT_DBFT_Performance : TestKit
     {
         private NeoSystem neoSystem;
         private TestProbe localNode;
@@ -54,12 +54,12 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Create memory store
             memoryStore = new MemoryStore();
-            var storeProvider = new TestMemoryStoreProvider(memoryStore);
+            var storeProvider = new MockMemoryStoreProvider(memoryStore);
 
             // Create NeoSystem with test dependencies
-            neoSystem = new NeoSystem(TestProtocolSettings.Default, storeProvider);
+            neoSystem = new NeoSystem(MockProtocolSettings.Default, storeProvider);
 
-            settings = TestBlockchain.CreateDefaultSettings();
+            settings = MockBlockchain.CreateDefaultSettings();
         }
 
         [TestCleanup]
@@ -80,7 +80,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 Category = "dBFT",
                 ValidBlockStart = 0,
                 ValidBlockEnd = message.BlockIndex,
-                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Sender = Contract.GetBFTAddress(MockProtocolSettings.Default.StandbyValidators),
                 Data = message.ToArray(),
                 Witness = new Witness
                 {
@@ -95,13 +95,13 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         {
             // Arrange - Test with minimum validator count (4 validators, f=1)
             const int minValidatorCount = 4;
-            var testWallets = new TestWallet[minValidatorCount];
+            var testWallets = new MockWallet[minValidatorCount];
             var consensusServices = new IActorRef[minValidatorCount];
 
             for (int i = 0; i < minValidatorCount; i++)
             {
-                var testWallet = new TestWallet(TestProtocolSettings.Default);
-                var validatorKey = TestProtocolSettings.Default.StandbyValidators[i];
+                var testWallet = new MockWallet(MockProtocolSettings.Default);
+                var validatorKey = MockProtocolSettings.Default.StandbyValidators[i];
                 testWallet.AddAccount(validatorKey);
                 testWallets[i] = testWallet;
 
@@ -149,13 +149,13 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             // Maximum Byzantine failures that can be tolerated (f=2 for 7 validators)
             // const int maxByzantineFailures = 2;
 
-            var testWallets = new TestWallet[validatorCount];
+            var testWallets = new MockWallet[validatorCount];
             var consensusServices = new IActorRef[validatorCount];
 
             for (int i = 0; i < validatorCount; i++)
             {
-                var testWallet = new TestWallet(TestProtocolSettings.Default);
-                var validatorKey = TestProtocolSettings.Default.StandbyValidators[i];
+                var testWallet = new MockWallet(MockProtocolSettings.Default);
+                var validatorKey = MockProtocolSettings.Default.StandbyValidators[i];
                 testWallet.AddAccount(validatorKey);
                 testWallets[i] = testWallet;
 
@@ -225,13 +225,13 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             const int validatorCount = 7;
             const int numberOfRounds = 5;
 
-            var testWallets = new TestWallet[validatorCount];
+            var testWallets = new MockWallet[validatorCount];
             var consensusServices = new IActorRef[validatorCount];
 
             for (int i = 0; i < validatorCount; i++)
             {
-                var testWallet = new TestWallet(TestProtocolSettings.Default);
-                var validatorKey = TestProtocolSettings.Default.StandbyValidators[i];
+                var testWallet = new MockWallet(MockProtocolSettings.Default);
+                var validatorKey = MockProtocolSettings.Default.StandbyValidators[i];
                 testWallet.AddAccount(validatorKey);
                 testWallets[i] = testWallet;
 
@@ -284,13 +284,13 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             const int validatorCount = 7;
             const int transactionCount = 100;
 
-            var testWallets = new TestWallet[validatorCount];
+            var testWallets = new MockWallet[validatorCount];
             var consensusServices = new IActorRef[validatorCount];
 
             for (int i = 0; i < validatorCount; i++)
             {
-                var testWallet = new TestWallet(TestProtocolSettings.Default);
-                var validatorKey = TestProtocolSettings.Default.StandbyValidators[i];
+                var testWallet = new MockWallet(MockProtocolSettings.Default);
+                var validatorKey = MockProtocolSettings.Default.StandbyValidators[i];
                 testWallet.AddAccount(validatorKey);
                 testWallets[i] = testWallet;
 
@@ -345,13 +345,13 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             // Arrange - Test multiple simultaneous view changes
             const int validatorCount = 7;
 
-            var testWallets = new TestWallet[validatorCount];
+            var testWallets = new MockWallet[validatorCount];
             var consensusServices = new IActorRef[validatorCount];
 
             for (int i = 0; i < validatorCount; i++)
             {
-                var testWallet = new TestWallet(TestProtocolSettings.Default);
-                var validatorKey = TestProtocolSettings.Default.StandbyValidators[i];
+                var testWallet = new MockWallet(MockProtocolSettings.Default);
+                var validatorKey = MockProtocolSettings.Default.StandbyValidators[i];
                 testWallet.AddAccount(validatorKey);
                 testWallets[i] = testWallet;
 

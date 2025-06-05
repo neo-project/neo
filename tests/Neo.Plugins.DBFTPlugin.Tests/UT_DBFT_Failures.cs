@@ -33,7 +33,7 @@ using System.Linq;
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
     [TestClass]
-    public class UT_DBFT_AbnormalScenarios : TestKit
+    public class UT_DBFT_Failures : TestKit
     {
         private const int ValidatorCount = 7;
         private NeoSystem neoSystem;
@@ -41,7 +41,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         private TestProbe taskManager;
         private TestProbe blockchain;
         private TestProbe txRouter;
-        private TestWallet[] testWallets;
+        private MockWallet[] testWallets;
         private IActorRef[] consensusServices;
         private MemoryStore memoryStore;
         private Settings settings;
@@ -57,20 +57,20 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Create memory store
             memoryStore = new MemoryStore();
-            var storeProvider = new TestMemoryStoreProvider(memoryStore);
+            var storeProvider = new MockMemoryStoreProvider(memoryStore);
 
             // Create NeoSystem with test dependencies
-            neoSystem = new NeoSystem(TestProtocolSettings.Default, storeProvider);
+            neoSystem = new NeoSystem(MockProtocolSettings.Default, storeProvider);
 
             // Setup test wallets for validators
-            testWallets = new TestWallet[ValidatorCount];
+            testWallets = new MockWallet[ValidatorCount];
             consensusServices = new IActorRef[ValidatorCount];
-            settings = TestBlockchain.CreateDefaultSettings();
+            settings = MockBlockchain.CreateDefaultSettings();
 
             for (int i = 0; i < ValidatorCount; i++)
             {
-                var testWallet = new TestWallet(TestProtocolSettings.Default);
-                var validatorKey = TestProtocolSettings.Default.StandbyValidators[i];
+                var testWallet = new MockWallet(MockProtocolSettings.Default);
+                var validatorKey = MockProtocolSettings.Default.StandbyValidators[i];
                 testWallet.AddAccount(validatorKey);
                 testWallets[i] = testWallet;
             }
@@ -94,7 +94,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 Category = "dBFT",
                 ValidBlockStart = 0,
                 ValidBlockEnd = message.BlockIndex,
-                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Sender = Contract.GetBFTAddress(MockProtocolSettings.Default.StandbyValidators),
                 Data = message.ToArray(),
                 Witness = new Witness
                 {
@@ -266,7 +266,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 Category = "dBFT",
                 ValidBlockStart = 0,
                 ValidBlockEnd = 1,
-                Sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators),
+                Sender = Contract.GetBFTAddress(MockProtocolSettings.Default.StandbyValidators),
                 Data = new byte[] { 0xFF, 0xFF, 0xFF }, // Invalid data
                 Witness = new Witness
                 {
