@@ -160,9 +160,7 @@ namespace Neo.Build.Core.Storage
             _sessionPool.Return(session);
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

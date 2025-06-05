@@ -21,7 +21,7 @@ using System.Net;
 
 namespace Neo.Build.ToolSet.Providers
 {
-    internal sealed class NeoBuildConfigurationProvider : ConfigurationProvider
+    internal class NeoBuildConfigurationProvider : ConfigurationProvider
     {
         private const string PREFIX = "NEOBUILD";
 
