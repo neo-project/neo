@@ -36,6 +36,7 @@ namespace Neo.UnitTests.SmartContract.Native
             data = new byte[] { 1, 2, 3 };
 
             CollectionAssert.AreEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
+            CollectionAssert.AreEqual(data, StdLib.Base64Decode("A \r Q \t I \n D"));
             CollectionAssert.AreEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
             Assert.AreEqual("AQIDBA==", StdLib.Base64Encode(new byte[] { 1, 2, 3, 4 }));
             Assert.AreEqual("2VfUX", StdLib.Base58Encode(new byte[] { 1, 2, 3, 4 }));
@@ -417,12 +418,14 @@ namespace Neo.UnitTests.SmartContract.Native
                 // Test encoding
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlEncode", "Subject=test@example.com&Issuer=https://example.com");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlDecode", "U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlDecode", "U 3 \t V \n \riamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t");
 
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(2, engine.ResultStack.Count);
+                Assert.AreEqual(3, engine.ResultStack.Count);
+                Assert.AreEqual("Subject=test@example.com&Issuer=https://example.com", engine.ResultStack.Pop<ByteString>());
                 Assert.AreEqual("Subject=test@example.com&Issuer=https://example.com", engine.ResultStack.Pop<ByteString>());
                 Assert.AreEqual("U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t", engine.ResultStack.Pop<ByteString>().GetString());
             }
