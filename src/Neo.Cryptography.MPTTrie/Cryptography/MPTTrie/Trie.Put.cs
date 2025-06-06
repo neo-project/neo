@@ -18,7 +18,7 @@ namespace Neo.Cryptography.MPTTrie
         private static ReadOnlySpan<byte> CommonPrefix(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
         {
             var minLen = a.Length <= b.Length ? a.Length : b.Length;
-            int i = 0;
+            var i = 0;
             if (a.Length != 0 && b.Length != 0)
             {
                 for (i = 0; i < minLen; i++)
@@ -77,7 +77,7 @@ namespace Neo.Cryptography.MPTTrie
                         var pathRemain = path[prefix.Length..];
                         var keyRemain = node.Key.Span[prefix.Length..];
                         var child = Node.NewBranch();
-                        Node grandChild = new Node();
+                        var grandChild = new Node();
                         if (keyRemain.Length == 1)
                         {
                             child.Children[keyRemain[0]] = node.Next;
@@ -145,8 +145,8 @@ namespace Neo.Cryptography.MPTTrie
                     }
                 case NodeType.HashNode:
                     {
-                        Node newNode = _cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt put");
+                        var newNode = _cache.Resolve(node.Hash)
+                            ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt put");
                         node = newNode;
                         Put(ref node, path, val);
                         break;
