@@ -11,6 +11,7 @@
 
 using System;
 using System.Numerics;
+using System.Security.Cryptography;
 
 namespace Neo.Extensions
 {
@@ -20,14 +21,18 @@ namespace Neo.Extensions
         {
             if (sizeInBits < 0)
                 throw new ArgumentException("sizeInBits must be non-negative");
+
             if (sizeInBits == 0)
                 return 0;
+
             Span<byte> b = stackalloc byte[sizeInBits / 8 + 1];
-            rand.NextBytes(b);
+            RandomNumberGenerator.Fill(b);
+
             if (sizeInBits % 8 == 0)
                 b[^1] = 0;
             else
                 b[^1] &= (byte)((1 << sizeInBits % 8) - 1);
+
             return new BigInteger(b);
         }
     }
