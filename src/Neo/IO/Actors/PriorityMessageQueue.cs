@@ -22,13 +22,13 @@ using System.Threading;
 
 namespace Neo.IO.Actors
 {
-    internal class PriorityMessageQueue
-        (Func<object, IEnumerable, bool> dropper, Func<object, bool> priority_generator) : IMessageQueue, IUnboundedMessageQueueSemantics
+    internal class PriorityMessageQueue(Func<object, IEnumerable, bool> dropper, Func<object, bool> priorityGenerator)
+        : IMessageQueue, IUnboundedMessageQueueSemantics
     {
         private readonly ConcurrentQueue<Envelope> _high = new();
         private readonly ConcurrentQueue<Envelope> _low = new();
         private readonly Func<object, IEnumerable, bool> _dropper = dropper;
-        private readonly Func<object, bool> _priority_generator = priority_generator;
+        private readonly Func<object, bool> _priorityGenerator = priorityGenerator;
         private int _idle = 1;
 
         public bool HasMessages => !_high.IsEmpty || !_low.IsEmpty;
@@ -44,7 +44,7 @@ namespace Neo.IO.Actors
             if (envelope.Message is Idle) return;
             if (_dropper(envelope.Message, _high.Concat(_low).Select(p => p.Message)))
                 return;
-            var queue = _priority_generator(envelope.Message) ? _high : _low;
+            var queue = _priorityGenerator(envelope.Message) ? _high : _low;
             queue.Enqueue(envelope);
         }
 

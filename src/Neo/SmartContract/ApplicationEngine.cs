@@ -342,33 +342,34 @@ namespace Neo.SmartContract
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             if (hasReturnValue ^ (method.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
-            ExecutionContext context_new = LoadContract(contract, method, flags & callingFlags);
-            state = context_new.GetState<ExecutionContextState>();
+
+            var contextNew = LoadContract(contract, method, flags & callingFlags);
+            state = contextNew.GetState<ExecutionContextState>();
             state.CallingContext = currentContext;
 
             for (int i = args.Count - 1; i >= 0; i--)
-                context_new.EvaluationStack.Push(args[i]);
+                contextNew.EvaluationStack.Push(args[i]);
 
-            return context_new;
+            return contextNew;
         }
 
         internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
-            ExecutionContextState state = context_new.GetState<ExecutionContextState>();
+            var contextNew = CallContractInternal(hash, method, CallFlags.All, false, args);
+            var state = contextNew.GetState<ExecutionContextState>();
             state.NativeCallingScriptHash = callingScriptHash;
             ContractTask task = new();
-            contractTasks.Add(context_new, task.GetAwaiter());
+            contractTasks.Add(contextNew, task.GetAwaiter());
             return task;
         }
 
         internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
-            ExecutionContextState state = context_new.GetState<ExecutionContextState>();
+            var contextNew = CallContractInternal(hash, method, CallFlags.All, true, args);
+            var state = contextNew.GetState<ExecutionContextState>();
             state.NativeCallingScriptHash = callingScriptHash;
             ContractTask<T> task = new();
-            contractTasks.Add(context_new, task.GetAwaiter());
+            contractTasks.Add(contextNew, task.GetAwaiter());
             return task;
         }
 

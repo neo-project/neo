@@ -241,9 +241,9 @@ namespace Neo.Network.P2P
                 if (block is not null)
                 {
                     session.IndexTasks.Remove(block.Index);
-                    if (session.ReceivedBlock.TryGetValue(block.Index, out var block_old))
+                    if (session.ReceivedBlock.TryGetValue(block.Index, out var blockOld))
                     {
-                        if (block.Hash != block_old.Hash)
+                        if (block.Hash != blockOld.Hash)
                         {
                             Sender.Tell(Tcp.Abort.Instance);
                             return;
@@ -449,8 +449,8 @@ namespace Neo.Network.P2P
         {
             if (message is not TaskManager.NewTasks tasks) return false;
             // Remove duplicate tasks
-            if (queue.OfType<TaskManager.NewTasks>().Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes))) return true;
-            return false;
+            return queue.OfType<TaskManager.NewTasks>()
+                .Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes));
         }
     }
 }

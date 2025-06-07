@@ -36,14 +36,14 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Creates a new instance of the <see cref="GetBlocksPayload"/> class.
         /// </summary>
-        /// <param name="hash_start">The starting hash of the blocks to request.</param>
+        /// <param name="hashStart">The starting hash of the blocks to request.</param>
         /// <param name="count">The number of blocks to request. Set this parameter to -1 to request as many blocks as possible.</param>
         /// <returns>The created payload.</returns>
-        public static GetBlocksPayload Create(UInt256 hash_start, short count = -1)
+        public static GetBlocksPayload Create(UInt256 hashStart, short count = -1)
         {
             return new GetBlocksPayload
             {
-                HashStart = hash_start,
+                HashStart = hashStart,
                 Count = count
             };
         }

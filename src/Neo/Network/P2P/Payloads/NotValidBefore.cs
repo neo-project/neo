@@ -50,8 +50,8 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            var block_height = NativeContract.Ledger.CurrentIndex(snapshot);
-            return block_height >= Height;
+            var blockHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            return blockHeight >= Height;
         }
     }
 }

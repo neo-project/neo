@@ -47,16 +47,16 @@ namespace Neo.Network.P2P
         /// </summary>
         public ISerializable Payload;
 
-        private ReadOnlyMemory<byte>
-            _payload_raw,
-            _payload_compressed;
+        private ReadOnlyMemory<byte> _payloadRaw;
+
+        private ReadOnlyMemory<byte> _payloadCompressed;
 
         /// <summary>
         /// True if the message is compressed
         /// </summary>
         public bool IsCompressed => Flags.HasFlag(MessageFlags.Compressed);
 
-        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payload_compressed.GetVarSize();
+        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payloadCompressed.GetVarSize();
 
         /// <summary>
         /// True if the message should be compressed
@@ -91,18 +91,18 @@ namespace Neo.Network.P2P
                 Flags = MessageFlags.None,
                 Command = command,
                 Payload = payload,
-                _payload_raw = payload?.ToArray() ?? Array.Empty<byte>()
+                _payloadRaw = payload?.ToArray() ?? Array.Empty<byte>()
             };
 
-            message._payload_compressed = message._payload_raw;
+            message._payloadCompressed = message._payloadRaw;
 
             // Try compression
-            if (tryCompression && message._payload_compressed.Length > CompressionMinSize)
+            if (tryCompression && message._payloadCompressed.Length > CompressionMinSize)
             {
-                var compressed = message._payload_compressed.Span.CompressLz4();
-                if (compressed.Length < message._payload_compressed.Length - CompressionThreshold)
+                var compressed = message._payloadCompressed.Span.CompressLz4();
+                if (compressed.Length < message._payloadCompressed.Length - CompressionThreshold)
                 {
-                    message._payload_compressed = compressed;
+                    message._payloadCompressed = compressed;
                     message.Flags |= MessageFlags.Compressed;
                 }
             }
@@ -112,10 +112,10 @@ namespace Neo.Network.P2P
 
         private void DecompressPayload()
         {
-            if (_payload_compressed.Length == 0) return;
+            if (_payloadCompressed.Length == 0) return;
             var decompressed = Flags.HasFlag(MessageFlags.Compressed)
-                ? _payload_compressed.Span.DecompressLz4(PayloadMaxSize)
-                : _payload_compressed;
+                ? _payloadCompressed.Span.DecompressLz4(PayloadMaxSize)
+                : _payloadCompressed;
             Payload = ReflectionCache<MessageCommand>.CreateSerializable(Command, decompressed);
         }
 
@@ -123,7 +123,7 @@ namespace Neo.Network.P2P
         {
             Flags = (MessageFlags)reader.ReadByte();
             Command = (MessageCommand)reader.ReadByte();
-            _payload_compressed = reader.ReadVarMemory(PayloadMaxSize);
+            _payloadCompressed = reader.ReadVarMemory(PayloadMaxSize);
             DecompressPayload();
         }
 
@@ -131,7 +131,7 @@ namespace Neo.Network.P2P
         {
             writer.Write((byte)Flags);
             writer.Write((byte)Command);
-            writer.WriteVarBytes(_payload_compressed.Span);
+            writer.WriteVarBytes(_payloadCompressed.Span);
         }
 
         public byte[] ToArray(bool enablecompression)
@@ -149,7 +149,7 @@ namespace Neo.Network.P2P
 
                 writer.Write((byte)(Flags & ~MessageFlags.Compressed));
                 writer.Write((byte)Command);
-                writer.WriteVarBytes(_payload_raw.Span);
+                writer.WriteVarBytes(_payloadRaw.Span);
 
                 writer.Flush();
                 return ms.ToArray();
@@ -193,7 +193,7 @@ namespace Neo.Network.P2P
             {
                 Flags = flags,
                 Command = (MessageCommand)header[1],
-                _payload_compressed = length <= 0 ? ReadOnlyMemory<byte>.Empty : data.Slice(payloadIndex, (int)length).ToArray()
+                _payloadCompressed = length <= 0 ? ReadOnlyMemory<byte>.Empty : data.Slice(payloadIndex, (int)length).ToArray()
             };
             msg.DecompressPayload();
 

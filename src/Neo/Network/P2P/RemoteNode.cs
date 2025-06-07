@@ -33,15 +33,15 @@ namespace Neo.Network.P2P
         internal class StartProtocol { }
         internal class Relay { public IInventory Inventory; }
 
-        private readonly NeoSystem system;
-        private readonly LocalNode localNode;
-        private readonly Queue<Message> message_queue_high = new();
-        private readonly Queue<Message> message_queue_low = new();
-        private DateTime lastSent = TimeProvider.Current.UtcNow;
-        private readonly bool[] sentCommands = new bool[1 << (sizeof(MessageCommand) * 8)];
-        private ByteString msg_buffer = ByteString.Empty;
-        private bool ack = true;
-        private uint lastHeightSent = 0;
+        private readonly NeoSystem _system;
+        private readonly LocalNode _localNode;
+        private readonly Queue<Message> _messageQueueHigh = new();
+        private readonly Queue<Message> _messageQueueLow = new();
+        private DateTime _lastSent = TimeProvider.Current.UtcNow;
+        private readonly bool[] _sentCommands = new bool[1 << (sizeof(MessageCommand) * 8)];
+        private ByteString _messageBuffer = ByteString.Empty;
+        private bool _ack = true;
+        private uint _lastHeightSent = 0;
 
         /// <summary>
         /// The address of the remote Tcp server.
@@ -80,8 +80,8 @@ namespace Neo.Network.P2P
         public RemoteNode(NeoSystem system, LocalNode localNode, object connection, IPEndPoint remote, IPEndPoint local, ChannelsConfig config)
             : base(connection, remote, local)
         {
-            this.system = system;
-            this.localNode = localNode;
+            _system = system;
+            _localNode = localNode;
             _knownHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes));
             _sentHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes));
             localNode.RemoteNodes.TryAdd(Self, this);
@@ -95,11 +95,11 @@ namespace Neo.Network.P2P
         /// </summary>
         private void CheckMessageQueue()
         {
-            if (!verack || !ack) return;
-            Queue<Message> queue = message_queue_high;
+            if (!_verack || !_ack) return;
+            Queue<Message> queue = _messageQueueHigh;
             if (queue.Count == 0)
             {
-                queue = message_queue_low;
+                queue = _messageQueueLow;
                 if (queue.Count == 0) return;
             }
             SendMessage(queue.Dequeue());
@@ -123,26 +123,26 @@ namespace Neo.Network.P2P
             };
             Queue<Message> message_queue = message.Command switch
             {
-                MessageCommand.Alert or MessageCommand.Extensible or MessageCommand.FilterAdd or MessageCommand.FilterClear or MessageCommand.FilterLoad or MessageCommand.GetAddr or MessageCommand.Mempool => message_queue_high,
-                _ => message_queue_low,
+                MessageCommand.Alert or MessageCommand.Extensible or MessageCommand.FilterAdd or MessageCommand.FilterClear or MessageCommand.FilterLoad or MessageCommand.GetAddr or MessageCommand.Mempool => _messageQueueHigh,
+                _ => _messageQueueLow,
             };
             if (!is_single || message_queue.All(p => p.Command != message.Command))
             {
                 message_queue.Enqueue(message);
-                lastSent = TimeProvider.Current.UtcNow;
+                _lastSent = TimeProvider.Current.UtcNow;
             }
             CheckMessageQueue();
         }
 
         protected override void OnAck()
         {
-            ack = true;
+            _ack = true;
             CheckMessageQueue();
         }
 
         protected override void OnData(ByteString data)
         {
-            msg_buffer = msg_buffer.Concat(data);
+            _messageBuffer = _messageBuffer.Concat(data);
 
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
                 OnMessage(message);
@@ -159,8 +159,8 @@ namespace Neo.Network.P2P
                 case Message msg:
                     if (msg.Payload is PingPayload payload)
                     {
-                        if (payload.LastBlockIndex > lastHeightSent)
-                            lastHeightSent = payload.LastBlockIndex;
+                        if (payload.LastBlockIndex > _lastHeightSent)
+                            _lastHeightSent = payload.LastBlockIndex;
                         else if (msg.Command == MessageCommand.Ping)
                             break;
                     }
@@ -183,7 +183,7 @@ namespace Neo.Network.P2P
             if (!IsFullNode) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
-                if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
+                if (_bloomFilter != null && !_bloomFilter.Test((Transaction)inventory))
                     return;
             }
             EnqueueMessage(MessageCommand.Inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
@@ -194,7 +194,7 @@ namespace Neo.Network.P2P
             if (!IsFullNode) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
-                if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
+                if (_bloomFilter != null && !_bloomFilter.Test((Transaction)inventory))
                     return;
             }
             EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
@@ -202,13 +202,13 @@ namespace Neo.Network.P2P
 
         private void OnStartProtocol()
         {
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, localNode.GetNodeCapabilities())));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(_system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, _localNode.GetNodeCapabilities())));
         }
 
         protected override void PostStop()
         {
             timer.CancelIfNotNull();
-            if (localNode.RemoteNodes.TryRemove(Self, out _))
+            if (_localNode.RemoteNodes.TryRemove(Self, out _))
             {
                 _knownHashes.Clear();
                 _sentHashes.Clear();
@@ -223,19 +223,19 @@ namespace Neo.Network.P2P
 
         private void SendMessage(Message message)
         {
-            ack = false;
+            _ack = false;
             // Here it is possible that we dont have the Version message yet,
             // so we need to send the message uncompressed
             SendData(ByteString.FromBytes(message.ToArray(Version?.AllowCompression ?? false)));
-            sentCommands[(byte)message.Command] = true;
+            _sentCommands[(byte)message.Command] = true;
         }
 
         private Message TryParseMessage()
         {
-            var length = Message.TryDeserialize(msg_buffer, out var msg);
+            var length = Message.TryDeserialize(_messageBuffer, out var msg);
             if (length <= 0) return null;
 
-            msg_buffer = msg_buffer.Slice(length).Compact();
+            _messageBuffer = _messageBuffer.Slice(length).Compact();
             return msg;
         }
     }

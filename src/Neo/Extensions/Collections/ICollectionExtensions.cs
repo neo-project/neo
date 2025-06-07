@@ -28,31 +28,31 @@ namespace Neo.Extensions
         /// <returns>The size of the array.</returns>
         public static int GetVarSize<T>(this IReadOnlyCollection<T> value)
         {
-            int value_size;
+            int valueSize;
             var t = typeof(T);
             if (typeof(ISerializable).IsAssignableFrom(t))
             {
-                value_size = value.OfType<ISerializable>().Sum(p => p.Size);
+                valueSize = value.OfType<ISerializable>().Sum(p => p.Size);
             }
             else if (t.GetTypeInfo().IsEnum)
             {
-                int element_size;
+                int elementSize;
                 var u = t.GetTypeInfo().GetEnumUnderlyingType();
                 if (u == typeof(sbyte) || u == typeof(byte))
-                    element_size = 1;
+                    elementSize = 1;
                 else if (u == typeof(short) || u == typeof(ushort))
-                    element_size = 2;
+                    elementSize = 2;
                 else if (u == typeof(int) || u == typeof(uint))
-                    element_size = 4;
+                    elementSize = 4;
                 else //if (u == typeof(long) || u == typeof(ulong))
-                    element_size = 8;
-                value_size = value.Count * element_size;
+                    elementSize = 8;
+                valueSize = value.Count * elementSize;
             }
             else
             {
-                value_size = value.Count * Marshal.SizeOf<T>();
+                valueSize = value.Count * Marshal.SizeOf<T>();
             }
-            return value.Count.GetVarSize() + value_size;
+            return value.Count.GetVarSize() + valueSize;
         }
 
         /// <summary>
