@@ -10,23 +10,17 @@
 // modifications are permitted.
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography.MPTTrie
 {
     partial class Trie
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ReadOnlySpan<byte> CommonPrefix(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
         {
-            var minLen = a.Length <= b.Length ? a.Length : b.Length;
-            var i = 0;
-            if (a.Length != 0 && b.Length != 0)
-            {
-                for (i = 0; i < minLen; i++)
-                {
-                    if (a[i] != b[i]) break;
-                }
-            }
-            return a[..i];
+            int offset = a.CommonPrefixLength(b);
+            return a[..offset];
         }
 
         public void Put(byte[] key, byte[] value)
