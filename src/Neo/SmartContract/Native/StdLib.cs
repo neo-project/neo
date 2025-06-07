@@ -264,54 +264,43 @@ namespace Neo.SmartContract.Native
             return count;
         }
 
-        [ContractMethod(CpuFee = 1 << 10)]
-        public static ulong GetRandom(ApplicationEngine engine, ulong minValue, ulong maxValue)
+        [ContractMethod(CpuFee = 1 << 7)]
+        private static BigInteger GetRandom(ApplicationEngine engine, BigInteger minValue, BigInteger maxValue)
         {
-            if (minValue > maxValue)
+            // Another way
+            // minValue + (engine.GetRandom() % (maxValue - minValue + BigInteger.One));
+
+            if (minValue >= maxValue)
                 throw new ArgumentOutOfRangeException(nameof(minValue));
 
-            return GetRandom(engine, maxValue - minValue) + minValue;
-        }
+            // The total possible range is [0, 115,792,089,237,316,195,423,570,985,008,687,907,853,269,984,665,640,564,039,457,584,007,913,129,639,936).
+            // Subtract one to account for zero being an actual possibility.
+            var range = maxValue - minValue - BigInteger.One;
 
-        [ContractMethod(CpuFee = 1 << 10)]
-        private static ulong GetRandom(ApplicationEngine engine, ulong maxValue)
-        {
-            var randomProduct = BigMul(maxValue, (ulong)(engine.GetRandom() & ulong.MaxValue), out var lowPart);
+            // If there is only one possible choice, nothing random will actually happen, so return
+            // the only possibility.
+            if (range == 0)
+                return minValue;
 
-            if (lowPart < maxValue)
-            {
-                var remainder = (0ul - maxValue) % maxValue;
+            // Create a mask for the bits that we care about for the range. The other bits will be
+            // masked away.
+            var mask = range;
+            mask |= mask >> 1;
+            mask |= mask >> 2;
+            mask |= mask >> 4;
+            mask |= mask >> 8;
+            mask |= mask >> 16;
+            mask |= mask >> 32;
+            mask |= mask >> 64;
+            mask |= mask >> 128;
 
-                while (lowPart < remainder)
-                {
-                    randomProduct = BigMul(maxValue, (ulong)(engine.GetRandom() & ulong.MaxValue), out lowPart);
-                }
-            }
+            BigInteger result;
 
-            return randomProduct;
+            do
+                result = mask & engine.GetRandom();
+            while (result > range);
 
-            static ulong BigMul(ulong a, ulong b, out ulong low)
-            {
-                // Adaptation of algorithm for multiplication
-                // of 32-bit unsigned integers described
-                // in Hacker's Delight by Henry S. Warren, Jr. (ISBN 0-201-91465-4), Chapter 8
-                // Basically, it's an optimized version of FOIL method applied to
-                // low and high dwords of each operand
-
-                // Use 32-bit uints to optimize the fallback for 32-bit platforms.
-                var al = (uint)a;
-                var ah = (uint)(a >> 32);
-                var bl = (uint)b;
-                var bh = (uint)(b >> 32);
-
-                var mull = ((ulong)al) * bl;
-                var t = ((ulong)ah) * bl + (mull >> 32);
-                var tl = ((ulong)al) * bh + (uint)t;
-
-                low = tl << 32 | (uint)mull;
-
-                return ((ulong)ah) * bh + (t >> 32) + (tl >> 32);
-            }
+            return result + minValue;
         }
     }
 }
