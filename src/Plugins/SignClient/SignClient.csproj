@@ -25,6 +25,8 @@
     <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />
     <!-- NOTE: Need install rosetta2 on macOS ARM64 -->
     <PackageReference Include="Grpc.Tools" Version="2.70.0" PrivateAssets="all" />
+
+    <PackageReference Include="Ookii.VmSockets" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>

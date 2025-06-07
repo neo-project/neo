@@ -44,15 +44,23 @@ namespace Neo.Plugins.SignClient.Tests
 
         private static SignClient NewClient(Block? block, ExtensiblePayload? payload)
         {
-            // for test sign service, set SIGN_SERVICE_ENDPOINT env
+            // When test sepcific endpoint, set SIGN_SERVICE_ENDPOINT_TYPE and set SIGN_SERVICE_ENDPOINT
+            // For example:
+            // export SIGN_SERVICE_ENDPOINT=http://127.0.0.1:9991
+            // export SIGN_SERVICE_ENDPOINT_TYPE=tcp
+            // or
+            // export SIGN_SERVICE_ENDPOINT=http://2345:9991
+            // export SIGN_SERVICE_ENDPOINT_TYPE=vsock
             var endpoint = Environment.GetEnvironmentVariable("SIGN_SERVICE_ENDPOINT");
+            var endpointType = Environment.GetEnvironmentVariable("SIGN_SERVICE_ENDPOINT_TYPE");
             if (endpoint is not null)
             {
                 var section = new ConfigurationBuilder()
                     .AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         [Settings.SectionName + ":Name"] = "SignClient",
-                        [Settings.SectionName + ":Endpoint"] = endpoint
+                        [Settings.SectionName + ":Endpoint"] = endpoint,
+                        [Settings.SectionName + ":EndpointType"] = endpointType ?? Settings.EndpointTcp
                     })
                     .Build()
                     .GetSection(Settings.SectionName);
