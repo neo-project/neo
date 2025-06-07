@@ -317,6 +317,11 @@ namespace Neo.SmartContract
                 buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
                 price = 1 << 13;
             }
+            else if (IsHardforkEnabled(Hardfork.HF_Echidna)) // please add new hardfork name
+            {
+                buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
+                price = 1 << 13;
+            }
             else
             {
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
