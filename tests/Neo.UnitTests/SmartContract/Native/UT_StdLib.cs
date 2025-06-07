@@ -427,5 +427,35 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual("U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t", engine.ResultStack.Pop<ByteString>().GetString());
             }
         }
+
+        [TestMethod]
+        public void TestGetRandomRanges()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using (var script = new ScriptBuilder())
+            {
+                // Test encoding
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 100_000_000_000_00000000, 100_000_000_001_00000000);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1_00000000, 2_00000000);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1, 2);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual(3, engine.ResultStack.Count);
+
+                var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.AreEqual(BigInteger.One, actualValue); // This doesn't do calculation
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue <= 2_00000000);
+                Assert.IsTrue(actualValue > 1_00000000);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue <= 100_000_000_001_00000000);
+                Assert.IsTrue(actualValue > 100_000_000_000_00000000);
+            }
+        }
     }
 }

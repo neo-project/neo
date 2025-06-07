@@ -263,5 +263,44 @@ namespace Neo.SmartContract.Native
 
             return count;
         }
+
+        [ContractMethod(CpuFee = 1 << 7)]
+        private static BigInteger GetRandom(ApplicationEngine engine, BigInteger minValue, BigInteger maxValue)
+        {
+            // Another way
+            // minValue + (engine.GetRandom() % (maxValue - minValue + BigInteger.One));
+
+            if (minValue >= maxValue)
+                throw new ArgumentOutOfRangeException(nameof(minValue));
+
+            // The total possible range is [0, 115,792,089,237,316,195,423,570,985,008,687,907,853,269,984,665,640,564,039,457,584,007,913,129,639,936).
+            // Subtract one to account for zero being an actual possibility.
+            var range = maxValue - minValue - BigInteger.One;
+
+            // If there is only one possible choice, nothing random will actually happen, so return
+            // the only possibility.
+            if (range == 0)
+                return minValue;
+
+            // Create a mask for the bits that we care about for the range. The other bits will be
+            // masked away.
+            var mask = range;
+            mask |= mask >> 1;
+            mask |= mask >> 2;
+            mask |= mask >> 4;
+            mask |= mask >> 8;
+            mask |= mask >> 16;
+            mask |= mask >> 32;
+            mask |= mask >> 64;
+            mask |= mask >> 128;
+
+            BigInteger result;
+
+            do
+                result = mask & engine.GetRandom();
+            while (result > range);
+
+            return result + minValue;
+        }
     }
 }
