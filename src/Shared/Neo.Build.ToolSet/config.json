@@ -1,0 +1,17 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information"
+    },
+    "Debug": {
+      "LogLevel": {
+        "Default": "Debug"
+      }
+    },
+    "EventSource": {
+      "LogLevel": {
+        "Default": "Warning"
+      }
+    }
+  }
+}
