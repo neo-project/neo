@@ -46,6 +46,8 @@ namespace Neo.Build.Core.Storage
                 Empty,
                 ByteArrayFunctions>> _sessionPool;
 
+        public event IStore.OnNewSnapshotDelegate? OnNewSnapshot;
+
         public void Dispose()
         {
             _store.CheckpointManager.PurgeAll();
@@ -81,7 +83,11 @@ namespace Neo.Build.Core.Storage
             _store.TryInitiateFullCheckpoint(out var snapshotId, CheckpointType.Snapshot);
             _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
             _store.Log.FlushAndEvict(true);
-            return new FasterDbSnapshot(this, _checkpointSettings, snapshotId);
+
+            var snapshot = new FasterDbSnapshot(this, _checkpointSettings, snapshotId);
+            OnNewSnapshot?.Invoke(this, snapshot);
+
+            return snapshot;
         }
 
         public void Put(byte[] key, byte[] value)
@@ -97,7 +103,7 @@ namespace Neo.Build.Core.Storage
             _sessionPool.Return(session);
         }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction)
+        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction)
         {
             keyOrPrefix ??= [];
             if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;

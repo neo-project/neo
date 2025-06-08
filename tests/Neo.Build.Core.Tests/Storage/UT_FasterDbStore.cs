@@ -60,13 +60,13 @@ namespace Neo.Build.Core.Tests.Storage
             store.Put([0x01, 0x01], [0x01]);
             store.Put([0x02, 0x00], [0x10]);
 
-            var items = store.Seek([0x02], SeekDirection.Forward).ToArray();
+            var items = store.Find([0x02], SeekDirection.Forward).ToArray();
 
             Assert.AreEqual(2, items.Length);
             CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x02, 0x00 });
             CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x02, 0x01 });
 
-            items = [.. store.Seek(null, SeekDirection.Forward)];
+            items = [.. store.Find(null, SeekDirection.Forward)];
 
             Assert.AreEqual(5, items.Length);
             CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x01, 0x00 });
@@ -75,21 +75,21 @@ namespace Neo.Build.Core.Tests.Storage
             CollectionAssert.AreEqual(items[3].Key, new byte[] { 0x02, 0x00 });
             CollectionAssert.AreEqual(items[4].Key, new byte[] { 0x02, 0x01 });
 
-            items = [.. store.Seek([0x01, 0x02], SeekDirection.Backward)];
+            items = [.. store.Find([0x01, 0x02], SeekDirection.Backward)];
 
             Assert.AreEqual(3, items.Length);
             CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x01, 0x02 });
             CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x01, 0x01 });
             CollectionAssert.AreEqual(items[2].Key, new byte[] { 0x01, 0x00 });
 
-            items = [.. store.Seek([0x02], SeekDirection.Backward)];
+            items = [.. store.Find([0x02], SeekDirection.Backward)];
 
             Assert.AreEqual(3, items.Length);
             CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x01, 0x02 });
             CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x01, 0x01 });
             CollectionAssert.AreEqual(items[2].Key, new byte[] { 0x01, 0x00 });
 
-            items = [.. store.Seek(null, SeekDirection.Backward)];
+            items = [.. store.Find(null, SeekDirection.Backward)];
 
             Assert.AreEqual(0, items.Length);
         }
