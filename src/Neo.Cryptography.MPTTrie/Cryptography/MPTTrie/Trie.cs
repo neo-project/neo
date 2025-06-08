@@ -22,12 +22,12 @@ namespace Neo.Cryptography.MPTTrie
         private readonly Cache _cache;
         public Node Root => _root;
 
-        public Trie(IStoreSnapshot store, UInt256 root, bool full_state = false)
+        public Trie(IStoreSnapshot store, UInt256 root, bool fullState = false)
         {
             ArgumentNullException.ThrowIfNull(store);
             _cache = new Cache(store, Prefix);
             _root = root is null ? new Node() : Node.NewHash(root);
-            _full = full_state;
+            _full = fullState;
         }
 
         private static byte[] ToNibbles(ReadOnlySpan<byte> path)
