@@ -252,14 +252,14 @@ namespace Neo.Cryptography.BLS12_381.Tests
                 83, 255, 255, 185, 254, 255, 255, 255, 255, 170, 170
             }));
 
-            Assert.ThrowsException<FormatException>(() => Fp.FromBytes(new byte[]
+            Assert.ThrowsExactly<FormatException>(() => _ = Fp.FromBytes(new byte[]
             {
                 27, 1, 17, 234, 57, 127, 230, 154, 75, 27, 167, 182, 67, 75, 172, 215, 100, 119, 75,
                 132, 243, 133, 18, 191, 103, 48, 210, 160, 246, 176, 246, 36, 30, 171, 255, 254, 177,
                 83, 255, 255, 185, 254, 255, 255, 255, 255, 170, 170
             }));
 
-            Assert.ThrowsException<FormatException>(() => Fp.FromBytes(Enumerable.Repeat<byte>(0xff, 48).ToArray()));
+            Assert.ThrowsExactly<FormatException>(() => _ = Fp.FromBytes(Enumerable.Repeat<byte>(0xff, 48).ToArray()));
         }
 
         [TestMethod]
@@ -314,7 +314,7 @@ namespace Neo.Cryptography.BLS12_381.Tests
             });
 
             Assert.AreEqual(b, a.Invert());
-            Assert.ThrowsException<DivideByZeroException>(() => Fp.Zero.Invert());
+            Assert.ThrowsExactly<DivideByZeroException>(() => _ = Fp.Zero.Invert());
         }
 
         [TestMethod]

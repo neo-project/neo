@@ -68,8 +68,14 @@ namespace Neo.Extensions.Tests
         {
             CollectionAssert.AreEqual(new byte[] { 0xFF }, BigInteger.MinusOne.ToByteArrayStandard());
             CollectionAssert.AreEqual(new byte[] { 0xFF, 0x00 }, new BigInteger(byte.MaxValue).ToByteArrayStandard());
-            CollectionAssert.AreEqual(new byte[] { 0xFF, 0xFF, 0x00 }, new BigInteger(ushort.MaxValue).ToByteArrayStandard());
-            CollectionAssert.AreEqual(new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0 }, new BigInteger(JNumber.MIN_SAFE_INTEGER).ToByteArrayStandard());
+            CollectionAssert.AreEqual(
+                new byte[] { 0xFF, 0xFF, 0x00 },
+                new BigInteger(ushort.MaxValue).ToByteArrayStandard()
+            );
+            CollectionAssert.AreEqual(
+                new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0 },
+                new BigInteger(JNumber.MIN_SAFE_INTEGER).ToByteArrayStandard()
+            );
         }
 
         [TestMethod]
@@ -129,17 +135,17 @@ namespace Neo.Extensions.Tests
 
             a = new BigInteger(6);
             n = new BigInteger(12); // 6 and 12 are not coprime
-            Assert.ThrowsException<ArithmeticException>(() => a.ModInverse(n));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = a.ModInverse(n));
         }
 
         [TestMethod]
         public void TestModInverse_EdgeCases()
         {
-            Assert.ThrowsException<ArithmeticException>(() => BigInteger.Zero.ModInverse(11));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(11));
 
             Assert.AreEqual(1, BigInteger.One.ModInverse(2));
 
-            Assert.ThrowsException<ArithmeticException>(() => new BigInteger(2).ModInverse(4));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = new BigInteger(2).ModInverse(4));
 
             Assert.AreEqual(long.MaxValue - 1, new BigInteger(long.MaxValue - 1).ModInverse(long.MaxValue));
         }
@@ -179,6 +185,98 @@ namespace Neo.Extensions.Tests
             Assert.AreEqual(0, new List<BigInteger>().Sum());
             Assert.AreEqual(0, new List<BigInteger> { JNumber.MIN_SAFE_INTEGER, JNumber.MAX_SAFE_INTEGER }.Sum());
             Assert.AreEqual(JNumber.MAX_SAFE_INTEGER * 2, new List<BigInteger> { JNumber.MAX_SAFE_INTEGER, JNumber.MAX_SAFE_INTEGER }.Sum());
+        }
+
+        [TestMethod]
+        public void TestSqrtTest()
+        {
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = BigInteger.MinusOne.Sqrt());
+
+            Assert.AreEqual(BigInteger.Zero, BigInteger.Zero.Sqrt());
+            Assert.AreEqual(new BigInteger(1), new BigInteger(1).Sqrt());
+            Assert.AreEqual(new BigInteger(1), new BigInteger(2).Sqrt());
+            Assert.AreEqual(new BigInteger(1), new BigInteger(3).Sqrt());
+            Assert.AreEqual(new BigInteger(2), new BigInteger(4).Sqrt());
+            Assert.AreEqual(new BigInteger(9), new BigInteger(81).Sqrt());
+        }
+
+        private static byte[] GetRandomByteArray(Random random)
+        {
+            var byteValue = random.Next(0, 32);
+            var value = new byte[byteValue];
+
+            random.NextBytes(value);
+            return value;
+        }
+
+        private void VerifyGetBitLength(BigInteger value, long expected)
+        {
+            var result = value.GetBitLength();
+            Assert.AreEqual(expected, value.GetBitLength(), "Native method has not the expected result");
+            Assert.AreEqual(result, BigIntegerExtensions.GetBitLength(value), "Result doesn't match");
+            Assert.AreEqual(result, BigIntegerExtensions.BitLength(value), "Result doesn't match");
+        }
+
+        [TestMethod]
+        public void TestGetBitLength()
+        {
+            var random = new Random();
+
+            // Big Number (net standard didn't work)
+            Assert.ThrowsExactly<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
+
+            // Trivial cases
+            //                     sign bit|shortest two's complement
+            //                              string w/o sign bit
+            VerifyGetBitLength(0, 0);  // 0|
+            VerifyGetBitLength(1, 1);  // 0|1
+            VerifyGetBitLength(-1, 0); // 1|
+            VerifyGetBitLength(2, 2);  // 0|10
+            VerifyGetBitLength(-2, 1); // 1|0
+            VerifyGetBitLength(3, 2);  // 0|11
+            VerifyGetBitLength(-3, 2); // 1|01
+            VerifyGetBitLength(4, 3);  // 0|100
+            VerifyGetBitLength(-4, 2); // 1|00
+            VerifyGetBitLength(5, 3);  // 0|101
+            VerifyGetBitLength(-5, 3); // 1|011
+            VerifyGetBitLength(6, 3);  // 0|110
+            VerifyGetBitLength(-6, 3); // 1|010
+            VerifyGetBitLength(7, 3);  // 0|111
+            VerifyGetBitLength(-7, 3); // 1|001
+            VerifyGetBitLength(8, 4);  // 0|1000
+            VerifyGetBitLength(-8, 3); // 1|000
+
+            // Random cases
+            for (uint i = 0; i < 1000; i++)
+            {
+                var b = new BigInteger(GetRandomByteArray(random));
+                Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.GetBitLength(b), message: $"Error comparing: {b}");
+                Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.BitLength(b), message: $"Error comparing: {b}");
+            }
+
+            foreach (var bv in new[] { BigInteger.Zero, BigInteger.One, BigInteger.MinusOne, new(ulong.MaxValue), new(long.MinValue) })
+            {
+                Assert.AreEqual(bv.GetBitLength(), BigIntegerExtensions.GetBitLength(bv));
+                Assert.AreEqual(bv.GetBitLength(), BigIntegerExtensions.BitLength(bv));
+            }
+
+            for (var i = 0; i < 1000; i++)
+            {
+                var b = new BigInteger(i);
+                Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.GetBitLength(b), message: $"Error comparing: {b}");
+                Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.BitLength(b), message: $"Error comparing: {b}");
+            }
+        }
+
+        [TestMethod]
+        public void TestModInverseTest()
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.Zero));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.One));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.Zero));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.One));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = new BigInteger(ushort.MaxValue).ModInverse(byte.MaxValue));
+            Assert.AreEqual(new BigInteger(52), new BigInteger(19).ModInverse(141));
         }
     }
 }

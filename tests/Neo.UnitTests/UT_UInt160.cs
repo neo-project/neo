@@ -13,6 +13,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.IO;
 using System;
 
 namespace Neo.UnitTests.IO
@@ -23,7 +24,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestFail()
         {
-            Assert.ThrowsException<FormatException>(() => new UInt160(new byte[UInt160.Length + 1]));
+            Assert.ThrowsExactly<FormatException>(() => _ = new UInt160(new byte[UInt160.Length + 1]));
         }
 
         [TestMethod]
@@ -45,7 +46,7 @@ namespace Neo.UnitTests.IO
         {
             UInt160 uInt160 = "0xff00000000000000000000000000000000000001";
             Assert.IsNotNull(uInt160);
-            Assert.IsTrue(uInt160.ToString() == "0xff00000000000000000000000000000000000001");
+            Assert.AreEqual("0xff00000000000000000000000000000000000001", uInt160.ToString());
         }
 
         [TestMethod]
@@ -78,11 +79,11 @@ namespace Neo.UnitTests.IO
         public void TestParse()
         {
             Action action = () => UInt160.Parse(null);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
             UInt160 result = UInt160.Parse("0x0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result);
             Action action1 = () => UInt160.Parse("000000000000000000000000000000000000000");
-            Assert.ThrowsException<FormatException>(action1);
+            Assert.ThrowsExactly<FormatException>(action1);
             UInt160 result1 = UInt160.Parse("0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result1);
         }
@@ -90,42 +91,42 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestTryParse()
         {
-            Assert.AreEqual(false, UInt160.TryParse(null, out _));
-            Assert.AreEqual(true, UInt160.TryParse("0x0000000000000000000000000000000000000000", out var temp));
+            Assert.IsFalse(UInt160.TryParse(null, out _));
+            Assert.IsTrue(UInt160.TryParse("0x0000000000000000000000000000000000000000", out var temp));
             Assert.AreEqual("0x0000000000000000000000000000000000000000", temp.ToString());
             Assert.AreEqual(UInt160.Zero, temp);
-            Assert.AreEqual(true, UInt160.TryParse("0x1230000000000000000000000000000000000000", out temp));
+            Assert.IsTrue(UInt160.TryParse("0x1230000000000000000000000000000000000000", out temp));
             Assert.AreEqual("0x1230000000000000000000000000000000000000", temp.ToString());
-            Assert.AreEqual(false, UInt160.TryParse("000000000000000000000000000000000000000", out _));
-            Assert.AreEqual(false, UInt160.TryParse("0xKK00000000000000000000000000000000000000", out _));
-            Assert.AreEqual(false, UInt160.TryParse(" 1 2 3 45 000000000000000000000000000000", out _));
+            Assert.IsFalse(UInt160.TryParse("000000000000000000000000000000000000000", out _));
+            Assert.IsFalse(UInt160.TryParse("0xKK00000000000000000000000000000000000000", out _));
+            Assert.IsFalse(UInt160.TryParse(" 1 2 3 45 000000000000000000000000000000", out _));
         }
 
         [TestMethod]
         public void TestOperatorLarger()
         {
-            Assert.AreEqual(false, UInt160.Zero > UInt160.Zero);
+            Assert.IsFalse(UInt160.Zero > UInt160.Zero);
             Assert.IsFalse(UInt160.Zero > "0x0000000000000000000000000000000000000000");
         }
 
         [TestMethod]
         public void TestOperatorLargerAndEqual()
         {
-            Assert.AreEqual(true, UInt160.Zero >= UInt160.Zero);
+            Assert.IsTrue(UInt160.Zero >= UInt160.Zero);
             Assert.IsTrue(UInt160.Zero >= "0x0000000000000000000000000000000000000000");
         }
 
         [TestMethod]
         public void TestOperatorSmaller()
         {
-            Assert.AreEqual(false, UInt160.Zero < UInt160.Zero);
+            Assert.IsFalse(UInt160.Zero < UInt160.Zero);
             Assert.IsFalse(UInt160.Zero < "0x0000000000000000000000000000000000000000");
         }
 
         [TestMethod]
         public void TestOperatorSmallerAndEqual()
         {
-            Assert.AreEqual(true, UInt160.Zero <= UInt160.Zero);
+            Assert.IsTrue(UInt160.Zero <= UInt160.Zero);
             Assert.IsTrue(UInt160.Zero >= "0x0000000000000000000000000000000000000000");
         }
 
@@ -140,6 +141,41 @@ namespace Neo.UnitTests.IO
             var value = new UInt160(data);
             var span = value.GetSpan();
             Assert.IsTrue(span.SequenceEqual(value.ToArray()));
+
+            data = new byte[UInt160.Length];
+            value.Serialize(data.AsSpan());
+            CollectionAssert.AreEqual(data, value.ToArray());
+
+            data = new byte[UInt160.Length];
+            ((ISerializableSpan)value).Serialize(data.AsSpan());
+            CollectionAssert.AreEqual(data, value.ToArray());
+        }
+
+        [TestMethod]
+        public void TestSpanAndSerializeLittleEndian()
+        {
+            // random data
+            var random = new Random();
+            var data = new byte[UInt160.Length];
+            random.NextBytes(data);
+
+            var value = new UInt160(data);
+
+            var spanLittleEndian = value.GetSpanLittleEndian();
+            CollectionAssert.AreEqual(data, spanLittleEndian.ToArray());
+
+            var dataLittleEndian = new byte[UInt160.Length];
+            value.SafeSerialize(dataLittleEndian.AsSpan());
+            CollectionAssert.AreEqual(data, dataLittleEndian);
+
+            // Check that Serialize LittleEndian and Serialize BigEndian are equals
+            var dataSerialized = new byte[UInt160.Length];
+            value.Serialize(dataSerialized.AsSpan());
+            CollectionAssert.AreEqual(value.ToArray(), dataSerialized);
+
+            var shortBuffer = new byte[UInt160.Length - 1];
+            Assert.ThrowsExactly<ArgumentException>(() => value.Serialize(shortBuffer.AsSpan()));
+            Assert.ThrowsExactly<ArgumentException>(() => value.SafeSerialize(shortBuffer.AsSpan()));
         }
     }
 }

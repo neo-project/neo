@@ -40,7 +40,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.K, clone.K);
             Assert.AreEqual(test.Tweak, clone.Tweak);
 
-            Assert.ThrowsException<FormatException>(() => new FilterLoadPayload() { Filter = Array.Empty<byte>(), K = 51, Tweak = uint.MaxValue }.ToArray().AsSerializable<FilterLoadPayload>());
+            Assert.ThrowsExactly<FormatException>(() => _ = new FilterLoadPayload() { Filter = Array.Empty<byte>(), K = 51, Tweak = uint.MaxValue }.ToArray().AsSerializable<FilterLoadPayload>());
         }
     }
 }
