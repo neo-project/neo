@@ -9,65 +9,50 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
 
 namespace Neo.Plugins.OracleService.Tests
 {
     [TestClass]
-    public class UT_OracleService : TestKit
+    public class UT_OracleService
     {
         [TestMethod]
         public void TestFilter()
         {
-            var json = @"{
-  ""Stores"": [
-    ""Lambton Quay"",
-    ""Willis Street""
-  ],
-  ""Manufacturers"": [
-    {
-      ""Name"": ""Acme Co"",
-      ""Products"": [
-        {
-          ""Name"": ""Anvil"",
-          ""Price"": 50
-        }
-      ]
-    },
-    {
-      ""Name"": ""Contoso"",
-      ""Products"": [
-        {
-          ""Name"": ""Elbow Grease"",
-          ""Price"": 99.95
-        },
-        {
-          ""Name"": ""Headlight Fluid"",
-          ""Price"": 4
-        }
-      ]
-    }
-  ]
-}";
-
-            Assert.AreEqual(@"[""Acme Co""]", Utility.StrictUTF8.GetString(OracleService.Filter(json, "$.Manufacturers[0].Name")));
-            Assert.AreEqual("[50]", Utility.StrictUTF8.GetString(OracleService.Filter(json, "$.Manufacturers[0].Products[0].Price")));
-            Assert.AreEqual(@"[""Elbow Grease""]", Utility.StrictUTF8.GetString(OracleService.Filter(json, "$.Manufacturers[1].Products[0].Name")));
-            Assert.AreEqual(@"[{""Name"":""Elbow Grease"",""Price"":99.95}]", Utility.StrictUTF8.GetString(OracleService.Filter(json, "$.Manufacturers[1].Products[0]")));
+            var json = """
+            {
+                "Stores": ["Lambton Quay",  "Willis Street"],
+                "Manufacturers": [{
+                    "Name": "Acme Co",
+                    "Products": [{ "Name": "Anvil", "Price": 50 }]
+                },{
+                    "Name": "Contoso",
+                    "Products": [
+                        { "Name": "Elbow Grease", "Price": 99.95 },
+                        { "Name": "Headlight Fluid", "Price": 4 }
+                    ]
+                }]
+            }
+            """;
+            Assert.AreEqual(@"[""Acme Co""]", OracleService.Filter(json, "$.Manufacturers[0].Name").ToStrictUtf8String());
+            Assert.AreEqual("[50]", OracleService.Filter(json, "$.Manufacturers[0].Products[0].Price").ToStrictUtf8String());
+            Assert.AreEqual(@"[""Elbow Grease""]",
+                OracleService.Filter(json, "$.Manufacturers[1].Products[0].Name").ToStrictUtf8String());
+            Assert.AreEqual(@"[{""Name"":""Elbow Grease"",""Price"":99.95}]",
+                OracleService.Filter(json, "$.Manufacturers[1].Products[0]").ToStrictUtf8String());
         }
 
         [TestMethod]
         public void TestCreateOracleResponseTx()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-
             var executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
             Assert.AreEqual(executionFactor, (uint)30);
+
             var feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             Assert.AreEqual(feePerByte, 1000);
 
@@ -81,17 +66,16 @@ namespace Neo.Plugins.OracleService.Tests
                 CallbackMethod = "callback",
                 UserData = []
             };
+
             byte Prefix_Transaction = 11;
-            snapshotCache.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, request.OriginalTxid), new StorageItem(new TransactionState()
+            snapshotCache.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, request.OriginalTxid), new(new TransactionState()
             {
                 BlockIndex = 1,
-                Transaction = new Transaction()
-                {
-                    ValidUntilBlock = 1
-                }
+                Transaction = new() { ValidUntilBlock = 1 }
             }));
-            OracleResponse response = new OracleResponse() { Id = 1, Code = OracleResponseCode.Success, Result = new byte[] { 0x00 } };
-            ECPoint[] oracleNodes = new ECPoint[] { ECCurve.Secp256r1.G };
+
+            OracleResponse response = new() { Id = 1, Code = OracleResponseCode.Success, Result = new byte[] { 0x00 } };
+            ECPoint[] oracleNodes = [ECCurve.Secp256r1.G];
             var tx = OracleService.CreateResponseTx(snapshotCache, request, response, oracleNodes, ProtocolSettings.Default);
 
             Assert.AreEqual(166, tx.Size);

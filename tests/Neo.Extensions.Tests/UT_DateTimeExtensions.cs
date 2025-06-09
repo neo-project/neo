@@ -21,7 +21,7 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestToTimestamp()
         {
-            var time = DateTime.Now;
+            var time = DateTime.UtcNow;
             var expected = (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
             var actual = time.ToTimestamp();
 
@@ -31,7 +31,7 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestToTimestampMS()
         {
-            var time = DateTime.Now;
+            var time = DateTime.UtcNow;
             var expected = (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
             var actual = time.ToTimestampMS();
 

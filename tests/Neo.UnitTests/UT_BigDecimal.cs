@@ -31,7 +31,7 @@ namespace Neo.UnitTests
             BigDecimal result3 = originalValue.ChangeDecimals(5);
             Assert.AreEqual(originalValue.Value, result3.Value);
             Action action = () => originalValue.ChangeDecimals(2);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
         }
 
         [TestMethod]
@@ -100,6 +100,28 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void TestCompareDecimalsObject()
+        {
+            var a = new BigDecimal(new BigInteger(12345), 2);
+            var b = new BigDecimal(new BigInteger(12345), 2);
+            var c = new BigDecimal(new BigInteger(54321), 2);
+            var d = new BigDecimal(new BigInteger(12345), 3);
+            var e = new BigInteger(12345);
+
+            // Check same value and decimal
+            Assert.IsTrue(a.Equals((object)b));
+
+            // Check different value and decimal
+            Assert.IsFalse(a.Equals((object)c));
+
+            // Check same value and different decimal
+            Assert.IsFalse(a.Equals((object)d));
+
+            // Check different data type
+            Assert.IsFalse(a.Equals(e));
+        }
+
+        [TestMethod]
         public void TestGetSign()
         {
             BigDecimal value = new(new BigInteger(45600), 7);
@@ -119,7 +141,7 @@ namespace Neo.UnitTests
 
             s = "abcdEfg";
             Action action = () => BigDecimal.Parse(s, decimals);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
         }
 
         [TestMethod]
@@ -232,6 +254,56 @@ namespace Neo.UnitTests
             decimals = 5;
             Assert.IsFalse(BigDecimal.TryParse(s, decimals, out result));
             Assert.AreEqual(default(BigDecimal), result);
+        }
+
+        [TestMethod]
+        public void TestOperators()
+        {
+            var a = new BigDecimal(new BigInteger(1000), 2);
+            var b = new BigDecimal(new BigInteger(10000), 3);
+            var c = new BigDecimal(new BigInteger(10001), 2);
+
+            // Check equal operator
+            Assert.IsTrue(a == b);
+            Assert.IsFalse(a == c);
+
+            // Check different operator
+            Assert.IsFalse(a != b);
+            Assert.IsTrue(a != c);
+
+            // Check less operator
+            Assert.IsTrue(a < c);
+            Assert.IsFalse(a < b);
+
+            // Check less or equal operator
+            Assert.IsTrue(a <= c);
+            Assert.IsTrue(a <= b);
+            Assert.IsFalse(c <= a);
+
+            // Check greater operator
+            Assert.IsFalse(a > c);
+            Assert.IsFalse(a > b);
+            Assert.IsTrue(c > a);
+
+            // Check greater or equal operator
+            Assert.IsFalse(a >= c);
+            Assert.IsTrue(a >= b);
+            Assert.IsTrue(c >= a);
+        }
+
+        [TestMethod]
+        public void TestGetHashCode()
+        {
+            var a = new BigDecimal(new BigInteger(123450), 3);
+            var b = new BigDecimal(new BigInteger(123450), 3);
+            var c = new BigDecimal(new BigInteger(12345), 2);
+            var d = new BigDecimal(new BigInteger(123451), 3);
+            // Check hash codes are equal for equivalent decimals
+            Assert.AreEqual(a.GetHashCode(), b.GetHashCode());
+            // Check hash codes may differ for semantically equivalent values
+            Assert.AreNotEqual(a.GetHashCode(), c.GetHashCode());
+            // Check hash codes are not equal for different values
+            Assert.AreNotEqual(a.GetHashCode(), d.GetHashCode());
         }
     }
 }

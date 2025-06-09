@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -42,14 +42,14 @@ namespace Neo.UnitTests.SmartContract
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = Array.Empty<Signer>(),
+                Attributes = [],
+                Signers = [],
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
                 Version = 0x06,
-                Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
+                Witnesses = [new() { VerificationScript = new byte[] { 0x07 } }],
             };
 
             var block = new TrimmedBlock()
@@ -58,17 +58,13 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Index = 0,
                     Timestamp = 2,
-                    Witness = new Witness()
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
-                    },
+                    Witness = Witness.Empty,
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
                     PrimaryIndex = 1,
                     NextConsensus = UInt160.Zero,
                 },
-                Hashes = new[] { tx.Hash }
+                Hashes = [tx.Hash]
             };
 
             var snapshot = _snapshotCache.CloneCache();
@@ -78,7 +74,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Without block
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -101,7 +97,7 @@ namespace Neo.UnitTests.SmartContract
                 Transaction = tx
             }));
 
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -113,7 +109,7 @@ namespace Neo.UnitTests.SmartContract
             height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
             height.Index = block.Index;
 
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -143,23 +139,24 @@ namespace Neo.UnitTests.SmartContract
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Signers = new Signer[] {
-                    new Signer()
+                Signers =
+                [
+                    new()
                     {
                         Account = UInt160.Zero,
                         Scopes = WitnessScope.None,
-                        AllowedContracts = Array.Empty<UInt160>(),
-                        AllowedGroups = Array.Empty<ECPoint>(),
-                        Rules = Array.Empty<WitnessRule>(),
+                        AllowedContracts = [],
+                        AllowedGroups = [],
+                        Rules = [],
                     }
-                },
-                Attributes = Array.Empty<TransactionAttribute>(),
+                ],
+                Attributes = [],
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
                 Version = 0x06,
-                Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
+                Witnesses = [new() { VerificationScript = new byte[] { 0x07 } }],
             };
 
             engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot);
@@ -273,17 +270,9 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check the results
 
-                CollectionAssert.AreEqual
-                    (
+                CollectionAssert.AreEqual(
                     engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
-                    new int[]
-                        {
-                        1, /* A */
-                        1, /* B */
-                        2, /* B */
-                        1  /* C */
-                        }
-                    );
+                    new int[] { 1 /* A */, 1 /* B */, 2 /* B */, 1  /* C */});
             }
         }
     }

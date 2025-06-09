@@ -66,5 +66,33 @@ namespace Neo.UnitTests.Ledger
             got = cache[1];
             Assert.IsNull(got);
         }
+
+        [TestMethod]
+        public void TestHeaderCache_Limit()
+        {
+            var cache = new HeaderCache();
+            uint capacity = 10000;
+
+            // Fill the cache
+            for (uint i = 0; i < capacity; i++)
+            {
+                cache.Add(new Header { Index = i });
+            }
+
+            Assert.AreEqual((int)capacity, cache.Count);
+            Assert.IsTrue(cache.Full);
+            Assert.AreEqual(capacity - 1, cache.Last.Index);
+
+            // Try adding one more
+            cache.Add(new Header { Index = capacity });
+
+            // Verify count did not increase and last item remains the same
+            Assert.AreEqual((int)capacity, cache.Count);
+            Assert.IsTrue(cache.Full);
+            Assert.AreEqual(capacity - 1, cache.Last.Index);
+
+            // Verify the extra item was not added
+            Assert.IsNull(cache[capacity]);
+        }
     }
 }

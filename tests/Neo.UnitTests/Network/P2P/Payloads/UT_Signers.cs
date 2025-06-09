@@ -171,7 +171,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "00000000000000000000000000000000000000004001010201020102010001";
             CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
-            Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
+            Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
         }
 
         [TestMethod]
@@ -209,7 +209,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "00000000000000000000000000000000000000004001010301030103010001";
             CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
-            Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
+            Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
         }
 
         [TestMethod]
@@ -313,18 +313,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Account = UInt160.Zero,
                 Scopes = WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.WitnessRules,
-                AllowedContracts = new[] { UInt160.Zero },
-                AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
-                Rules = new WitnessRule[] { new() { Action = WitnessRuleAction.Allow, Condition = new BooleanCondition { Expression = true } } }
+                AllowedContracts = [UInt160.Zero],
+                AllowedGroups = [ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1)],
+                Rules = [new() { Action = WitnessRuleAction.Allow, Condition = new BooleanCondition() { Expression = true } }]
             };
             var json = signer.ToJson();
-            var new_signer = Signer.FromJson(json);
-            Assert.IsTrue(new_signer.Account.Equals(signer.Account));
-            Assert.IsTrue(new_signer.Scopes == signer.Scopes);
-            Assert.AreEqual(1, new_signer.AllowedContracts.Length);
-            Assert.IsTrue(new_signer.AllowedContracts[0].Equals(signer.AllowedContracts[0]));
-            Assert.AreEqual(1, new_signer.AllowedGroups.Length);
-            Assert.IsTrue(new_signer.AllowedGroups[0].Equals(signer.AllowedGroups[0]));
+            var newSigner = Signer.FromJson(json);
+            Assert.IsTrue(newSigner.Account.Equals(signer.Account));
+            Assert.AreEqual(signer.Scopes, newSigner.Scopes);
+            Assert.AreEqual(1, newSigner.AllowedContracts.Length);
+            Assert.IsTrue(newSigner.AllowedContracts[0].Equals(signer.AllowedContracts[0]));
+            Assert.AreEqual(1, newSigner.AllowedGroups.Length);
+            Assert.IsTrue(newSigner.AllowedGroups[0].Equals(signer.AllowedGroups[0]));
         }
     }
 }

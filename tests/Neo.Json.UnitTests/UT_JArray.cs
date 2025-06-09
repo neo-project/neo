@@ -86,7 +86,7 @@ namespace Neo.Json.UnitTests
             Assert.AreEqual(jArray[0], bob);
 
             Action action = () => jArray[1] = alice;
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
         }
 
         [TestMethod]
@@ -106,7 +106,7 @@ namespace Neo.Json.UnitTests
 
             jArray.Clear();
             Action action = () => jArray[0].ToString();
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
         }
 
         [TestMethod]
@@ -267,7 +267,7 @@ namespace Neo.Json.UnitTests
         {
             var jArray = new JArray { alice };
             Action action = () => { var item = jArray[1]; };
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
         }
 
         [TestMethod]

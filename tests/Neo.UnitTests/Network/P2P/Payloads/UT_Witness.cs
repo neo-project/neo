@@ -24,17 +24,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Witness
     {
-        Witness uut;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            uut = new Witness();
-        }
 
         [TestMethod]
         public void InvocationScript_Get()
         {
+            var uut = Witness.Empty;
             Assert.IsTrue(uut.InvocationScript.IsEmpty);
         }
 
@@ -63,19 +57,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var data = new ContractParametersContext(snapshotCache, new Transaction()
             {
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new[] {new Signer()
-                {
-                    Account = multiSignContract.ScriptHash,
-                    Scopes = WitnessScope.CalledByEntry
-                }},
+                Attributes = [],
+                Signers = [new() { Account = multiSignContract.ScriptHash, Scopes = WitnessScope.CalledByEntry }],
                 NetworkFee = 0,
                 Nonce = 0,
-                Script = Array.Empty<byte>(),
+                Script = ReadOnlyMemory<byte>.Empty,
                 SystemFee = 0,
                 ValidUntilBlock = 0,
                 Version = 0,
-                Witnesses = Array.Empty<Witness>()
+                Witnesses = []
             }, TestProtocolSettings.Default.Network);
 
             for (int x = 0; x < m; x++)
@@ -115,58 +105,69 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Check max size
 
-            Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
+            Assert.ThrowsExactly<FormatException>(() => _ = witness.ToArray().AsSerializable<Witness>());
 
             // Check max size
 
             witness.InvocationScript = new byte[10];
             witness.VerificationScript = new byte[1025];
-            Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
+            Assert.ThrowsExactly<FormatException>(() => _ = witness.ToArray().AsSerializable<Witness>());
         }
 
         [TestMethod]
         public void InvocationScript_Set()
         {
-            byte[] dataArray = new byte[] { 0, 32, 32, 20, 32, 32 };
-            uut.InvocationScript = dataArray;
+            var uut = new Witness() { InvocationScript = new byte[] { 0, 32, 32, 20, 32, 32 } };
             Assert.AreEqual(6, uut.InvocationScript.Length);
             Assert.AreEqual("002020142020", uut.InvocationScript.Span.ToHexString());
         }
 
-        private static void SetupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)
+        private static Witness MakeWitnessWithValues(int lenghtInvocation, int lengthVerification)
         {
-            invocationScript = TestUtils.GetByteArray(lenghtInvocation, 0x20);
-            verificationScript = TestUtils.GetByteArray(lengthVerification, 0x20);
-            uut.InvocationScript = invocationScript;
-            uut.VerificationScript = verificationScript;
+            return new()
+            {
+                InvocationScript = TestUtils.GetByteArray(lenghtInvocation, 0x20),
+                VerificationScript = TestUtils.GetByteArray(lengthVerification, 0x20)
+            };
         }
 
         [TestMethod]
         public void SizeWitness_Small_Arrary()
         {
-            SetupWitnessWithValues(uut, 252, 253, out _, out _);
-
+            var uut = MakeWitnessWithValues(252, 253);
             Assert.AreEqual(509, uut.Size); // (1 + 252*1) + (1 + 2 + 253*1)
         }
 
         [TestMethod]
         public void SizeWitness_Large_Arrary()
         {
-            SetupWitnessWithValues(uut, 65535, 65536, out _, out _);
-
+            var uut = MakeWitnessWithValues(65535, 65536);
             Assert.AreEqual(131079, uut.Size); // (1 + 2 + 65535*1) + (1 + 4 + 65536*1)
         }
 
         [TestMethod]
         public void ToJson()
         {
-            SetupWitnessWithValues(uut, 2, 3, out _, out _);
-
+            var uut = MakeWitnessWithValues(2, 3);
             JObject json = uut.ToJson();
             Assert.IsTrue(json.ContainsProperty("invocation"));
             Assert.IsTrue(json.ContainsProperty("verification"));
             Assert.AreEqual("ICA=", json["invocation"].AsString());
             Assert.AreEqual("ICAg", json["verification"].AsString());
+        }
+
+        [TestMethod]
+        public void TestEmpty()
+        {
+            var w1 = Witness.Empty;
+            var w2 = Witness.Empty;
+            Assert.AreEqual(2, w1.Size);
+            Assert.AreEqual(0, w1.InvocationScript.Length);
+            Assert.AreEqual(0, w1.VerificationScript.Length);
+            Assert.AreEqual(2, w2.Size);
+            Assert.AreEqual(0, w2.InvocationScript.Length);
+            Assert.AreEqual(0, w2.VerificationScript.Length);
+            Assert.IsFalse(ReferenceEquals(w1, w2));
         }
     }
 }

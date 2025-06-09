@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
 using Neo.SmartContract;
+using System;
 using System.Linq;
 
 namespace Neo.UnitTests
@@ -26,36 +27,31 @@ namespace Neo.UnitTests
             var storages = snapshotCache.CloneCache();
             var cache = new ClonedCache(storages);
 
-            storages.Add
-                (
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            storages.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            storages.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x03 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
 
             CollectionAssert.AreEqual(
                 cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
                 new byte[] { 0x01, 0x02, 0x03 }
-                );
+            );
         }
 
         [TestMethod]
@@ -65,29 +61,26 @@ namespace Neo.UnitTests
             var storages = snapshotCache.CloneCache();
             var cache = new ClonedCache(storages);
 
-            storages.Add
-                (
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            storages.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            CollectionAssert.AreEqual(cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            CollectionAssert.AreEqual(
+                cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
                 new byte[] { 0x01, 0x02 }
-                );
+             );
         }
 
         [TestMethod]
@@ -97,21 +90,19 @@ namespace Neo.UnitTests
             var storages = snapshotCache.CloneCache();
             var cache = new ClonedCache(storages);
 
-            cache.Add
-                (
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
 
             CollectionAssert.AreEqual(
                 cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
                 new byte[] { 0x02 }
-                );
+            );
         }
     }
 }

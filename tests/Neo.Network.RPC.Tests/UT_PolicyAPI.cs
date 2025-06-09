@@ -33,7 +33,7 @@ namespace Neo.Network.RPC.Tests
         {
             keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
             sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
-            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
+            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, []);
             policyAPI = new PolicyAPI(rpcClientMock.Object);
         }
 
@@ -73,7 +73,7 @@ namespace Neo.Network.RPC.Tests
             byte[] testScript = NativeContract.Policy.Hash.MakeScript("isBlocked", UInt160.Zero);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Boolean, Value = true });
             var result = await policyAPI.IsBlockedAsync(UInt160.Zero);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
     }
 }

@@ -621,7 +621,9 @@ namespace Neo.Cryptography.BLS12_381.Tests
             // multiplying by `x` a point in G2 is the same as multiplying by
             // the equivalent scalar.
             var generator = G2Projective.Generator;
+#pragma warning disable CS0162 // Unreachable code detected
             var x = BLS_X_IS_NEGATIVE ? -new Scalar(BLS_X) : new Scalar(BLS_X);
+#pragma warning restore CS0162 // Unreachable code detected
             Assert.AreEqual(generator * x, generator.MulByX());
 
             var point = G2Projective.Generator * new Scalar(42);

@@ -20,20 +20,28 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_MerkleBlockPayload
     {
+        private NeoSystem _system;
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            _system = TestBlockchain.GetSystem();
+        }
+
         [TestMethod]
         public void Size_Get()
         {
-            var test = MerkleBlockPayload.Create(TestBlockchain.TheNeoSystem.GenesisBlock, new BitArray(1024, false));
+            var test = MerkleBlockPayload.Create(_system.GenesisBlock, new BitArray(1024, false));
             Assert.AreEqual(247, test.Size); // 239 + nonce
 
-            test = MerkleBlockPayload.Create(TestBlockchain.TheNeoSystem.GenesisBlock, new BitArray(0, false));
+            test = MerkleBlockPayload.Create(_system.GenesisBlock, new BitArray(0, false));
             Assert.AreEqual(119, test.Size); // 111 + nonce
         }
 
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = MerkleBlockPayload.Create(TestBlockchain.TheNeoSystem.GenesisBlock, new BitArray(2, false));
+            var test = MerkleBlockPayload.Create(_system.GenesisBlock, new BitArray(2, false));
             var clone = test.ToArray().AsSerializable<MerkleBlockPayload>();
 
             Assert.AreEqual(test.TxCount, clone.TxCount);

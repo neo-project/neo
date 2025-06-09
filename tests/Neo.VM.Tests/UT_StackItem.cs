@@ -41,62 +41,62 @@ namespace Neo.Test
             StackItem itemB = "NEO";
             StackItem itemC = "SmartEconomy";
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             itemA = new Buffer(1);
             itemB = new Buffer(1);
             itemC = new Buffer(2);
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             itemA = new byte[] { 1, 2, 3 };
             itemB = new byte[] { 1, 2, 3 };
             itemC = new byte[] { 5, 6 };
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             itemA = true;
             itemB = true;
             itemC = false;
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             itemA = 1;
             itemB = 1;
             itemC = 123;
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             itemA = new Null();
             itemB = new Null();
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
 
             itemA = new Array { true, false, 0 };
             itemB = new Array { true, false, 0 };
             itemC = new Array { true, false, 1 };
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             itemA = new Struct { true, false, 0 };
             itemB = new Struct { true, false, 0 };
             itemC = new Struct { true, false, 1 };
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             itemA = new Map { [true] = false, [0] = 1 };
             itemB = new Map { [true] = false, [0] = 1 };
             itemC = new Map { [true] = false, [0] = 2 };
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             // Test CompoundType GetHashCode for subitems
             var junk = new Array { true, false, 0 };
@@ -104,23 +104,23 @@ namespace Neo.Test
             itemB = new Map { [true] = junk, [0] = junk };
             itemC = new Map { [true] = junk, [0] = 2 };
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             itemA = new InteropInterface(123);
             itemB = new InteropInterface(123);
             itemC = new InteropInterface(124);
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
 
             var script = new Script(System.Array.Empty<byte>());
             itemA = new Pointer(script, 123);
             itemB = new Pointer(script, 123);
             itemC = new Pointer(script, 1234);
 
-            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
+            Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
         }
 
         [TestMethod]

@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Caching;
+using System;
 using System.IO;
 
 namespace Neo.UnitTests.IO.Caching
@@ -63,13 +64,13 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCreateSerializable()
         {
-            object item1 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item1, new byte[0]);
+            object item1 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item1, ReadOnlyMemory<byte>.Empty);
             Assert.IsTrue(item1 is TestItem1);
 
-            object item2 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item2, new byte[0]);
+            object item2 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item2, ReadOnlyMemory<byte>.Empty);
             Assert.IsTrue(item2 is TestItem2);
 
-            object item3 = ReflectionCache<MyTestEnum>.CreateSerializable((MyTestEnum)0x02, new byte[0]);
+            object item3 = ReflectionCache<MyTestEnum>.CreateSerializable((MyTestEnum)0x02, ReadOnlyMemory<byte>.Empty);
             Assert.IsNull(item3);
         }
 

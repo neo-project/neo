@@ -117,24 +117,24 @@ namespace Neo.Cryptography.BLS12_381.Tests
             });
 
             // modulus is invalid
-            Assert.ThrowsException<FormatException>(() => Scalar.FromBytes(new byte[]
+            Assert.ThrowsExactly<FormatException>(() => _ = Scalar.FromBytes(new byte[]
             {
                 1, 0, 0, 0, 255, 255, 255, 255, 254, 91, 254, 255, 2, 164, 189, 83, 5, 216, 161, 9, 8,
                 216, 57, 51, 72, 125, 157, 41, 83, 167, 237, 115
             }));
 
             // Anything larger than the modulus is invalid
-            Assert.ThrowsException<FormatException>(() => Scalar.FromBytes(new byte[]
+            Assert.ThrowsExactly<FormatException>(() => _ = Scalar.FromBytes(new byte[]
             {
                 2, 0, 0, 0, 255, 255, 255, 255, 254, 91, 254, 255, 2, 164, 189, 83, 5, 216, 161, 9, 8,
                 216, 57, 51, 72, 125, 157, 41, 83, 167, 237, 115
             }));
-            Assert.ThrowsException<FormatException>(() => Scalar.FromBytes(new byte[]
+            Assert.ThrowsExactly<FormatException>(() => _ = Scalar.FromBytes(new byte[]
             {
                 1, 0, 0, 0, 255, 255, 255, 255, 254, 91, 254, 255, 2, 164, 189, 83, 5, 216, 161, 9, 8,
                 216, 58, 51, 72, 125, 157, 41, 83, 167, 237, 115
             }));
-            Assert.ThrowsException<FormatException>(() => Scalar.FromBytes(new byte[]
+            Assert.ThrowsExactly<FormatException>(() => _ = Scalar.FromBytes(new byte[]
             {
                 1, 0, 0, 0, 255, 255, 255, 255, 254, 91, 254, 255, 2, 164, 189, 83, 5, 216, 161, 9, 8,
                 216, 57, 51, 72, 125, 157, 41, 83, 167, 237, 116
@@ -299,7 +299,7 @@ namespace Neo.Cryptography.BLS12_381.Tests
         [TestMethod]
         public void TestInversion()
         {
-            Assert.ThrowsException<DivideByZeroException>(() => Scalar.Zero.Invert());
+            Assert.ThrowsExactly<DivideByZeroException>(() => _ = Scalar.Zero.Invert());
             Assert.AreEqual(Scalar.One, Scalar.One.Invert());
             Assert.AreEqual(-Scalar.One, (-Scalar.One).Invert());
 
