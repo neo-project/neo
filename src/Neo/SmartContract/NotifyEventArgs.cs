@@ -47,13 +47,13 @@ namespace Neo.SmartContract
         /// Initializes a new instance of the <see cref="NotifyEventArgs"/> class.
         /// </summary>
         /// <param name="container">The container that containing the executed script.</param>
-        /// <param name="script_hash">The script hash of the contract that sends the log.</param>
+        /// <param name="scriptHash">The script hash of the contract that sends the log.</param>
         /// <param name="eventName">The name of the event.</param>
         /// <param name="state">The arguments of the event.</param>
-        public NotifyEventArgs(IVerifiable container, UInt160 script_hash, string eventName, Array state)
+        public NotifyEventArgs(IVerifiable container, UInt160 scriptHash, string eventName, Array state)
         {
             ScriptContainer = container;
-            ScriptHash = script_hash;
+            ScriptHash = scriptHash;
             EventName = eventName;
             State = state;
         }
