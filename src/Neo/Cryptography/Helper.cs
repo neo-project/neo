@@ -259,7 +259,7 @@ namespace Neo.Cryptography
 
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
-            if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
+            if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce), "`nonce` must be 12 bytes");
             var tag = new byte[16];
             var cipherBytes = new byte[plainData.Length];
             if (!s_isOSX)

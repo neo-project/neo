@@ -68,7 +68,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public static KeyPair GetKeyPair(string key)
         {
-            if (string.IsNullOrEmpty(key)) { throw new ArgumentNullException(nameof(key)); }
+            ArgumentException.ThrowIfNullOrEmpty(key, nameof(key));
             if (key.StartsWith("0x")) { key = key[2..]; }
 
             return key.Length switch
@@ -88,7 +88,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public static UInt160 GetScriptHash(string account, ProtocolSettings protocolSettings)
         {
-            if (string.IsNullOrEmpty(account)) { throw new ArgumentNullException(nameof(account)); }
+            ArgumentException.ThrowIfNullOrEmpty(account, nameof(account));
             if (account.StartsWith("0x")) { account = account[2..]; }
 
             return account.Length switch

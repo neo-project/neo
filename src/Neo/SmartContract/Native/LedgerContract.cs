@@ -265,7 +265,7 @@ namespace Neo.SmartContract.Native
             else if (indexOrHash.Length == UInt256.Length)
                 hash = new UInt256(indexOrHash);
             else
-                throw new ArgumentException(null, nameof(indexOrHash));
+                throw new ArgumentException($"Invalid indexOrHash length: {indexOrHash.Length}", nameof(indexOrHash));
             if (hash is null) return null;
             TrimmedBlock block = GetTrimmedBlock(engine.SnapshotCache, hash);
             if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
@@ -394,7 +394,7 @@ namespace Neo.SmartContract.Native
             else if (blockIndexOrHash.Length == UInt256.Length)
                 hash = new UInt256(blockIndexOrHash);
             else
-                throw new ArgumentException(null, nameof(blockIndexOrHash));
+                throw new ArgumentException($"Invalid blockIndexOrHash length: {blockIndexOrHash.Length}", nameof(blockIndexOrHash));
             if (hash is null) return null;
             TrimmedBlock block = GetTrimmedBlock(engine.SnapshotCache, hash);
             if (block is null || !IsTraceableBlock(engine, block.Index)) return null;

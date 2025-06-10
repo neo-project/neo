@@ -72,7 +72,7 @@ namespace Neo.SmartContract.Native
 
         internal async ContractTask Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
         {
-            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount), "cannot be negative");
             if (amount.IsZero) return;
             StorageItem storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account), () => new StorageItem(new TState()));
             TState state = storage.GetInteroperable<TState>();
@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native
 
         internal async ContractTask Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
-            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount), "cannot be negative");
             if (amount.IsZero) return;
             StorageKey key = CreateStorageKey(Prefix_Account, account);
             StorageItem storage = engine.SnapshotCache.GetAndChange(key);
@@ -133,7 +133,7 @@ namespace Neo.SmartContract.Native
         {
             if (from is null) throw new ArgumentNullException(nameof(from));
             if (to is null) throw new ArgumentNullException(nameof(to));
-            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount), "cannot be negative");
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
             StorageKey key_from = CreateStorageKey(Prefix_Account, from);

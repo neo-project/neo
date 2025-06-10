@@ -40,7 +40,7 @@ namespace Neo.Network.P2P.Capabilities
             if (type != NodeCapabilityType.TcpServer && type != NodeCapabilityType.WsServer)
 #pragma warning restore CS0612 // Type or member is obsolete
             {
-                throw new ArgumentException(nameof(type));
+                throw new ArgumentException($"Invalid type: {type}", nameof(type));
             }
 
             Port = port;
