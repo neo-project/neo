@@ -408,7 +408,7 @@ namespace Neo.UnitTests.SmartContract
 
             engineA.LoadScript(script.ToArray());
             engineA.Execute();
-            Assert.AreEqual(engineA.State, VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engineA.State);
 
             var result = engineA.ResultStack.Pop();
             Assert.IsInstanceOfType(result, typeof(Null));
@@ -419,7 +419,7 @@ namespace Neo.UnitTests.SmartContract
 
             engineB.LoadScript(script.ToArray());
             engineB.Execute();
-            Assert.AreEqual(engineB.State, VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engineB.State);
 
             result = engineB.ResultStack.Pop();
             Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
@@ -497,7 +497,7 @@ namespace Neo.UnitTests.SmartContract
             script.EmitDynamicCall(NativeContract.Ledger.Hash, "getTransactionHeight", state.Transaction.Hash);
             engine.LoadScript(script.ToArray());
             engine.Execute();
-            Assert.AreEqual(engine.State, VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.State);
 
             var result = engine.ResultStack.Pop();
             Assert.IsInstanceOfType(result, typeof(Integer));

@@ -222,7 +222,7 @@ namespace Neo.UnitTests.SmartContract
             var entry = new Map();
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "{}");
+            Assert.AreEqual("{}", json);
         }
 
         [TestMethod]
@@ -246,7 +246,7 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("{}"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Map));
-            Assert.AreEqual(((Map)items).Count, 0);
+            Assert.AreEqual(0, ((Map)items).Count);
         }
 
         [TestMethod]
@@ -255,7 +255,7 @@ namespace Neo.UnitTests.SmartContract
             var entry = new Array();
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[]");
+            Assert.AreEqual("[]", json);
         }
 
         [TestMethod]
@@ -266,7 +266,7 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Array));
-            Assert.AreEqual(((Array)items).Count, 0);
+            Assert.AreEqual(0, ((Array)items).Count);
         }
 
         [TestMethod]
@@ -281,7 +281,7 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "{\"test1\":1,\"test3\":3,\"test2\":2}");
+            Assert.AreEqual("{\"test1\":1,\"test3\":3,\"test2\":2}", json);
         }
 
         [TestMethod]
@@ -292,7 +292,7 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("{\"test1\":123,\"test2\":321}"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Map));
-            Assert.AreEqual(((Map)items).Count, 2);
+            Assert.AreEqual(2, ((Map)items).Count);
 
             var map = (Map)items;
 
@@ -312,7 +312,7 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[true,\"test\",123]");
+            Assert.AreEqual("[true,\"test\",123]", json);
         }
 
         [TestMethod]
@@ -323,12 +323,12 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[true,\"test\",123,9.05E+28]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Array));
-            Assert.AreEqual(((Array)items).Count, 4);
+            Assert.AreEqual(4, ((Array)items).Count);
 
             var array = (Array)items;
 
             Assert.IsTrue(array[0].GetBoolean());
-            Assert.AreEqual(array[1].GetString(), "test");
+            Assert.AreEqual("test", array[1].GetString());
             Assert.AreEqual(array[2].GetInteger(), 123);
             Assert.AreEqual(array[3].GetInteger(), BigInteger.Parse("90500000000000000000000000000"));
         }
@@ -344,7 +344,7 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[[true,\"test1\",123],[true,\"test2\",321]]");
+            Assert.AreEqual("[[true,\"test1\",123],[true,\"test2\",321]]", json);
         }
 
         [TestMethod]
@@ -355,26 +355,26 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[[true,\"test1\",123],[true,\"test2\",321]]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Array));
-            Assert.AreEqual(((Array)items).Count, 2);
+            Assert.AreEqual(2, ((Array)items).Count);
 
             var array = (Array)items;
 
             Assert.IsInstanceOfType(array[0], typeof(Array));
-            Assert.AreEqual(((Array)array[0]).Count, 3);
+            Assert.AreEqual(3, ((Array)array[0]).Count);
 
             array = (Array)array[0];
-            Assert.AreEqual(array.Count, 3);
+            Assert.AreEqual(3, array.Count);
 
             Assert.IsTrue(array[0].GetBoolean());
-            Assert.AreEqual(array[1].GetString(), "test1");
+            Assert.AreEqual("test1", array[1].GetString());
             Assert.AreEqual(array[2].GetInteger(), 123);
 
             array = (Array)items;
             array = (Array)array[1];
-            Assert.AreEqual(array.Count, 3);
+            Assert.AreEqual(3, array.Count);
 
             Assert.IsTrue(array[0].GetBoolean());
-            Assert.AreEqual(array[1].GetString(), "test2");
+            Assert.AreEqual("test2", array[1].GetString());
             Assert.AreEqual(array[2].GetInteger(), 321);
         }
     }
