@@ -152,15 +152,15 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestNativeContractId()
         {
             // native contract id is implicitly defined in NativeContract.cs(the defined order)
-            Assert.AreEqual(NativeContract.ContractManagement.Id, -1);
-            Assert.AreEqual(NativeContract.StdLib.Id, -2);
-            Assert.AreEqual(NativeContract.CryptoLib.Id, -3);
-            Assert.AreEqual(NativeContract.Ledger.Id, -4);
-            Assert.AreEqual(NativeContract.NEO.Id, -5);
-            Assert.AreEqual(NativeContract.GAS.Id, -6);
-            Assert.AreEqual(NativeContract.Policy.Id, -7);
-            Assert.AreEqual(NativeContract.RoleManagement.Id, -8);
-            Assert.AreEqual(NativeContract.Oracle.Id, -9);
+            Assert.AreEqual(-1, NativeContract.ContractManagement.Id);
+            Assert.AreEqual(-2, NativeContract.StdLib.Id);
+            Assert.AreEqual(-3, NativeContract.CryptoLib.Id);
+            Assert.AreEqual(-4, NativeContract.Ledger.Id);
+            Assert.AreEqual(-5, NativeContract.NEO.Id);
+            Assert.AreEqual(-6, NativeContract.GAS.Id);
+            Assert.AreEqual(-7, NativeContract.Policy.Id);
+            Assert.AreEqual(-8, NativeContract.RoleManagement.Id);
+            Assert.AreEqual(-9, NativeContract.Oracle.Id);
         }
 
 

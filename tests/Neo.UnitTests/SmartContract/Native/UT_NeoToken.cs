@@ -79,8 +79,8 @@ namespace Neo.UnitTests.SmartContract.Native
                     var methods = NativeContract.NEO.GetContractMethods(engine);
                     var entries = methods.Values.Where(u => u.Name == method).ToArray();
 
-                    Assert.AreEqual(entries.Length, 1);
-                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States);
+                    Assert.AreEqual(1, entries.Length);
+                    Assert.AreEqual(CallFlags.States, entries[0].RequiredCallFlags);
                 }
 
                 // Test WITH HF_Echidna
@@ -93,8 +93,8 @@ namespace Neo.UnitTests.SmartContract.Native
                     var methods = NativeContract.NEO.GetContractMethods(engine);
                     var entries = methods.Values.Where(u => u.Name == method).ToArray();
 
-                    Assert.AreEqual(entries.Length, 1);
-                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States | CallFlags.AllowNotify);
+                    Assert.AreEqual(1, entries.Length);
+                    Assert.AreEqual(CallFlags.States | CallFlags.AllowNotify, entries[0].RequiredCallFlags);
                 }
             }
         }
