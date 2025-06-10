@@ -26,11 +26,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var test = new NetworkAddressWithTime() { Capabilities = [], Address = IPAddress.Any, Timestamp = 1 };
             Assert.AreEqual(21, test.Size);
-            Assert.AreEqual(test.EndPoint.Port, 0);
+            Assert.AreEqual(0, test.EndPoint.Port);
 
             test = NetworkAddressWithTime.Create(IPAddress.Any, 1, [new ServerCapability(NodeCapabilityType.TcpServer, 22)]);
             Assert.AreEqual(24, test.Size);
-            Assert.AreEqual(test.EndPoint.Port, 22);
+            Assert.AreEqual(22, test.EndPoint.Port);
         }
 
         [TestMethod]

@@ -428,8 +428,8 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(1, _unit.SortedTxCount);
             Assert.AreEqual(0, _unit.UnverifiedSortedTxCount);
 
-            Assert.AreEqual(_unit.TryAdd(mp1, engine.SnapshotCache), VerifyResult.HasConflicts); // mp1 conflicts with mp2 but has lower network fee
-            Assert.AreEqual(_unit.SortedTxCount, 1);
+            Assert.AreEqual(VerifyResult.HasConflicts, _unit.TryAdd(mp1, engine.SnapshotCache)); // mp1 conflicts with mp2 but has lower network fee
+            Assert.AreEqual(1, _unit.SortedTxCount);
             CollectionAssert.Contains(_unit.GetVerifiedTransactions().ToList(), mp2);
 
             // Act & Assert: try to invalidate verified transactions and push conflicting one.

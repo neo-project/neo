@@ -21,8 +21,8 @@ namespace Neo.ConsoleService.Tests
         {
             var cmd = " ";
             var args = cmd.Tokenize();
-            Assert.AreEqual(args.Count, 1);
-            Assert.AreEqual(args[0].Value, " ");
+            Assert.AreEqual(1, args.Count);
+            Assert.AreEqual(" ", args[0].Value);
         }
 
         [TestMethod]
@@ -30,10 +30,10 @@ namespace Neo.ConsoleService.Tests
         {
             var cmd = "show  state";
             var args = cmd.Tokenize();
-            Assert.AreEqual(args.Count, 3);
-            Assert.AreEqual(args[0].Value, "show");
-            Assert.AreEqual(args[1].Value, "  ");
-            Assert.AreEqual(args[2].Value, "state");
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual("  ", args[1].Value);
+            Assert.AreEqual("state", args[2].Value);
             Assert.AreEqual(cmd, args.JoinRaw());
         }
 
@@ -42,10 +42,10 @@ namespace Neo.ConsoleService.Tests
         {
             var cmd = "show \"hello world\"";
             var args = cmd.Tokenize();
-            Assert.AreEqual(args.Count, 3);
-            Assert.AreEqual(args[0].Value, "show");
-            Assert.AreEqual(args[1].Value, " ");
-            Assert.AreEqual(args[2].Value, "hello world");
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("hello world", args[2].Value);
         }
 
         [TestMethod]
@@ -53,10 +53,10 @@ namespace Neo.ConsoleService.Tests
         {
             var cmd = "show \"'\"";
             var args = cmd.Tokenize();
-            Assert.AreEqual(args.Count, 3);
-            Assert.AreEqual(args[0].Value, "show");
-            Assert.AreEqual(args[1].Value, " ");
-            Assert.AreEqual(args[2].Value, "'");
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("'", args[2].Value);
         }
 
         [TestMethod]
@@ -64,11 +64,11 @@ namespace Neo.ConsoleService.Tests
         {
             var cmd = "show \"123\\\"456\""; // Double quote because it is quoted twice in code and command.
             var args = CommandTokenizer.Tokenize(cmd);
-            Assert.AreEqual(args.Count, 3);
-            Assert.AreEqual(args[0].Value, "show");
-            Assert.AreEqual(args[1].Value, " ");
-            Assert.AreEqual(args[2].Value, "123\"456");
-            Assert.AreEqual(args[2].RawValue, "\"123\"456\"");
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("123\"456", args[2].Value);
+            Assert.AreEqual("\"123\"456\"", args[2].RawValue);
         }
 
         [TestMethod]
@@ -76,42 +76,42 @@ namespace Neo.ConsoleService.Tests
         {
             var cmd = "show 'x1,x2,x3'";
             var args = CommandTokenizer.Tokenize(cmd);
-            Assert.AreEqual(args.Count, 3);
-            Assert.AreEqual(args[0].Value, "show");
-            Assert.AreEqual(args[1].Value, " ");
-            Assert.AreEqual(args[2].Value, "x1,x2,x3");
-            Assert.AreEqual(args[2].RawValue, "'x1,x2,x3'");
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("x1,x2,x3", args[2].Value);
+            Assert.AreEqual("'x1,x2,x3'", args[2].RawValue);
 
             cmd = "show '\\n \\r \\t \\''"; // Double quote because it is quoted twice in code and command.
             args = CommandTokenizer.Tokenize(cmd);
-            Assert.AreEqual(args.Count, 3);
-            Assert.AreEqual(args[0].Value, "show");
-            Assert.AreEqual(args[1].Value, " ");
-            Assert.AreEqual(args[2].Value, "\n \r \t \'");
-            Assert.AreEqual(args[0].RawValue, "show");
-            Assert.AreEqual(args[1].RawValue, " ");
-            Assert.AreEqual(args[2].RawValue, "'\n \r \t \''");
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("\n \r \t \'", args[2].Value);
+            Assert.AreEqual("show", args[0].RawValue);
+            Assert.AreEqual(" ", args[1].RawValue);
+            Assert.AreEqual("'\n \r \t \''", args[2].RawValue);
             Assert.AreEqual("show '\n \r \t \''", args.JoinRaw());
 
             var json = "[{\"type\":\"Hash160\",\"value\":\"0x0010922195a6c7cab3233f923716ad8e2dd63f8a\"}]";
             cmd = "invoke 0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5 balanceOf " + json;
             args = CommandTokenizer.Tokenize(cmd);
-            Assert.AreEqual(args.Count, 7);
-            Assert.AreEqual(args[0].Value, "invoke");
-            Assert.AreEqual(args[1].Value, " ");
-            Assert.AreEqual(args[2].Value, "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5");
-            Assert.AreEqual(args[3].Value, " ");
-            Assert.AreEqual(args[4].Value, "balanceOf");
-            Assert.AreEqual(args[5].Value, " ");
+            Assert.AreEqual(7, args.Count);
+            Assert.AreEqual("invoke", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5", args[2].Value);
+            Assert.AreEqual(" ", args[3].Value);
+            Assert.AreEqual("balanceOf", args[4].Value);
+            Assert.AreEqual(" ", args[5].Value);
             Assert.AreEqual(args[6].Value, json);
 
             cmd = "show x'y'";
             args = CommandTokenizer.Tokenize(cmd);
-            Assert.AreEqual(args.Count, 3);
-            Assert.AreEqual(args[0].Value, "show");
-            Assert.AreEqual(args[1].Value, " ");
-            Assert.AreEqual(args[2].Value, "x'y'");
-            Assert.AreEqual(args[2].RawValue, "x'y'");
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("x'y'", args[2].Value);
+            Assert.AreEqual("x'y'", args[2].RawValue);
         }
     }
 }
