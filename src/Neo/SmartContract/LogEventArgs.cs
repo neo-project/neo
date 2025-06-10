@@ -38,12 +38,12 @@ namespace Neo.SmartContract
         /// Initializes a new instance of the <see cref="LogEventArgs"/> class.
         /// </summary>
         /// <param name="container">The container that containing the executed script.</param>
-        /// <param name="script_hash">The script hash of the contract that sends the log.</param>
+        /// <param name="scriptHash">The script hash of the contract that sends the log.</param>
         /// <param name="message">The message of the log.</param>
-        public LogEventArgs(IVerifiable container, UInt160 script_hash, string message)
+        public LogEventArgs(IVerifiable container, UInt160 scriptHash, string message)
         {
             ScriptContainer = container;
-            ScriptHash = script_hash;
+            ScriptHash = scriptHash;
             Message = message;
         }
     }
