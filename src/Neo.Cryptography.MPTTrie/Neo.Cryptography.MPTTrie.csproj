@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>Neo.Cryptography.MPT</PackageId>
-    <RootNamespace>Neo.Cryptography</RootNamespace>
+    <RootNamespace>Neo.Cryptography.MPTTrie</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
