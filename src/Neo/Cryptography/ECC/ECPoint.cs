@@ -438,7 +438,7 @@ namespace Neo.Cryptography.ECC
         public static ECPoint operator *(ECPoint p, byte[] n)
         {
             if (n.Length != 32)
-                throw new ArgumentException(null, nameof(n));
+                throw new ArgumentException("`n` must be 32 bytes", nameof(n));
             if (p.IsInfinity)
                 return p;
             var k = new BigInteger(n, isUnsigned: true, isBigEndian: true);

@@ -215,7 +215,7 @@ namespace Neo.SmartContract
         protected internal void RuntimeLoadScript(byte[] script, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
-                throw new ArgumentOutOfRangeException(nameof(callFlags));
+                throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
 
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
@@ -333,7 +333,8 @@ namespace Neo.SmartContract
         /// <param name="state">The message of the log.</param>
         protected internal void RuntimeLog(byte[] state)
         {
-            if (state.Length > MaxNotificationSize) throw new ArgumentException("Message is too long.", nameof(state));
+            if (state.Length > MaxNotificationSize)
+                throw new ArgumentException($"Too long notification: {state.Length} > {MaxNotificationSize}", nameof(state));
             try
             {
                 string message = state.ToStrictUtf8String();
@@ -358,7 +359,8 @@ namespace Neo.SmartContract
                 RuntimeNotifyV1(eventName, state);
                 return;
             }
-            if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            if (eventName.Length > MaxEventName)
+                throw new ArgumentException($"Too long `eventName`: {eventName.Length} > {MaxEventName}", nameof(eventName));
 
             string name = eventName.ToStrictUtf8String();
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
@@ -383,7 +385,8 @@ namespace Neo.SmartContract
 
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
         {
-            if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            if (eventName.Length > MaxEventName)
+                throw new ArgumentException($"Too long `eventName`: {eventName.Length} > {MaxEventName}", nameof(eventName));
             if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);

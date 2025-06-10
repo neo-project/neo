@@ -315,7 +315,8 @@ namespace Neo.SmartContract.Native
         {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
                 throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
-            if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value > MaxAttributeFee)
+                throw new ArgumentOutOfRangeException(nameof(value), $"must be less than {MaxAttributeFee}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee, attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
@@ -324,7 +325,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetFeePerByte(ApplicationEngine engine, long value)
         {
-            if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value < 0 || value > 1_00000000)
+                throw new ArgumentOutOfRangeException(nameof(value), $"must be between [0, 100000000], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);
         }
@@ -332,7 +334,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetExecFeeFactor(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value == 0 || value > MaxExecFeeFactor)
+                throw new ArgumentOutOfRangeException(nameof(value), $"must be between [1, {MaxExecFeeFactor}], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_execFeeFactor).Set(value);
         }
@@ -340,7 +343,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetStoragePrice(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value == 0 || value > MaxStoragePrice)
+                throw new ArgumentOutOfRangeException(nameof(value), $"must be between [1, {MaxStoragePrice}], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
         }
@@ -348,7 +352,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMaxValidUntilBlockIncrement(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > MaxMaxValidUntilBlockIncrement) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value == 0 || value > MaxMaxValidUntilBlockIncrement)
+                throw new ArgumentOutOfRangeException(nameof(value), $"must be between [1, {MaxMaxValidUntilBlockIncrement}], got {value}");
             var mtb = GetMaxTraceableBlocks(engine.SnapshotCache);
             if (value >= mtb)
                 throw new InvalidOperationException($"MaxValidUntilBlockIncrement must be lower than MaxTraceableBlocks ({value} vs {mtb})");
@@ -365,7 +370,7 @@ namespace Neo.SmartContract.Native
         private void SetMaxTraceableBlocks(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxMaxTraceableBlocks)
-                throw new ArgumentOutOfRangeException(nameof(value), $"MaxTraceableBlocks value should be between 1 and {MaxMaxTraceableBlocks}, got {value}");
+                throw new ArgumentOutOfRangeException(nameof(value), $"must be between [1, {MaxMaxTraceableBlocks}], got {value}");
             var oldVal = GetMaxTraceableBlocks(engine.SnapshotCache);
             if (value > oldVal)
                 throw new InvalidOperationException($"MaxTraceableBlocks can not be increased (old {oldVal}, new {value})");
