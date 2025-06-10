@@ -36,7 +36,7 @@ namespace Neo.Build.Core.Logging
         public const int StorageFind = 502;
         public const int StorageDelete = 503;
 
-        public const int IteratorMove = 600;
+        public const int IteratorNext = 600;
         public const int IteratorGet = 601;
     }
 }

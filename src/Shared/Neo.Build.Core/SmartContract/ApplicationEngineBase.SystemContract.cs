@@ -23,35 +23,27 @@ namespace Neo.Build.Core.SmartContract
     {
         protected virtual void SystemContractCall(UInt160 contractHash, string methodName, CallFlags callFlags, Array args)
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
-                "{SysCall} hash={Contract}, method={Method}, flags={Flags}, args={Args}",
-                nameof(System_Contract_Call), contractHash, methodName, callFlags.ToString(), args.ToJson().ToString());
-
             CallContract(contractHash, methodName, callFlags, args);
 
-            _traceLogger.LogInformation(VMEventLog.Result,
-                "{SysCall} result={Result}",
-                nameof(System_Contract_Call), ResultStack.ToJson());
+            _traceLogger.LogInformation(VMEventLog.Call,
+                "{SysCall} hash={Contract}, method={Method}, flags={Flags}, args={Args}, result={Result}",
+                nameof(System_Contract_Call), contractHash, methodName, callFlags.ToString(), args.ToJson().ToString(), ResultStack.ToJson());
         }
 
         protected virtual void SystemContractCallNative(byte version)
         {
+            CallNativeContract(version);
+
             _traceLogger.LogInformation(VMEventLog.Call,
                 "{SysCall} version=0x{Version}",
                 nameof(System_Contract_CallNative), version.ToString("x02"));
-
-            CallNativeContract(version);
         }
 
         protected virtual CallFlags SystemContractGetCallFlags()
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
-                "{SysCall}",
-                nameof(System_Contract_GetCallFlags));
-
             var result = GetCallFlags();
 
-            _traceLogger.LogInformation(VMEventLog.Result,
+            _traceLogger.LogInformation(VMEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Contract_GetCallFlags), result.ToString());
 
@@ -60,15 +52,11 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual UInt160 SystemContractCreateStandardAccount(ECPoint publicKey)
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
-                "{SysCall} key={Key}",
-                nameof(System_Contract_CreateStandardAccount), publicKey);
-
             var result = CreateStandardAccount(publicKey);
 
-            _traceLogger.LogInformation(VMEventLog.Result,
-                "{SysCall} result={Result}",
-                nameof(System_Contract_CreateStandardAccount), result);
+            _traceLogger.LogInformation(VMEventLog.Call,
+                "{SysCall} key={Key}, result={Result}",
+                nameof(System_Contract_CreateStandardAccount), publicKey, result);
 
             return result;
         }
@@ -76,36 +64,31 @@ namespace Neo.Build.Core.SmartContract
         protected virtual UInt160 SystemContractCreateMultisigAccount(int verifyCount, ECPoint[] publicKeys)
         {
             var publicKeyStrings = publicKeys.Select(s => s.ToString());
-
-            _traceLogger.LogInformation(VMEventLog.Call,
-                "{SysCall} m={Count}, keys=[{Keys}]",
-                nameof(System_Contract_CreateMultisigAccount), verifyCount, string.Join(',', publicKeyStrings));
-
             var result = CreateMultisigAccount(verifyCount, publicKeys);
 
             _traceLogger.LogInformation(VMEventLog.Result,
-                "{SysCall} result={Result}",
-                nameof(System_Contract_CreateMultisigAccount), result);
+                "{SysCall} m={Count}, keys=[{Keys}], result={Result}",
+                nameof(System_Contract_CreateMultisigAccount), verifyCount, string.Join(',', publicKeyStrings), result);
 
             return result;
         }
 
         protected virtual void SystemContractNativeOnPersist()
         {
+            NativeOnPersistAsync();
+
             _traceLogger.LogInformation(VMEventLog.Persist,
                 "{SysCall}",
                 nameof(System_Contract_NativeOnPersist));
-
-            NativeOnPersistAsync();
         }
 
         protected virtual void SystemContractNativePostPersist()
         {
+            NativePostPersistAsync();
+
             _traceLogger.LogInformation(VMEventLog.PostPersist,
                 "{SysCall}",
                 nameof(System_Contract_NativePostPersist));
-
-            NativePostPersistAsync();
         }
     }
 }
