@@ -27,7 +27,7 @@ namespace Neo.Cryptography.MPTTrie
                 Reference = 1,
                 Children = new Node[BranchChildCount],
             };
-            for (int i = 0; i < BranchChildCount; i++)
+            for (var i = 0; i < BranchChildCount; i++)
             {
                 n.Children[i] = new Node();
             }
@@ -38,8 +38,8 @@ namespace Neo.Cryptography.MPTTrie
         {
             get
             {
-                int size = 0;
-                for (int i = 0; i < BranchChildCount; i++)
+                var size = 0;
+                for (var i = 0; i < BranchChildCount; i++)
                 {
                     size += Children[i].SizeAsChild;
                 }
@@ -49,7 +49,7 @@ namespace Neo.Cryptography.MPTTrie
 
         private void SerializeBranch(BinaryWriter writer)
         {
-            for (int i = 0; i < BranchChildCount; i++)
+            for (var i = 0; i < BranchChildCount; i++)
             {
                 Children[i].SerializeAsChild(writer);
             }
@@ -58,7 +58,7 @@ namespace Neo.Cryptography.MPTTrie
         private void DeserializeBranch(ref MemoryReader reader)
         {
             Children = new Node[BranchChildCount];
-            for (int i = 0; i < BranchChildCount; i++)
+            for (var i = 0; i < BranchChildCount; i++)
             {
                 var n = new Node();
                 n.Deserialize(ref reader);
