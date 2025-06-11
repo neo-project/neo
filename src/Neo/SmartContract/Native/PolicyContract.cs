@@ -370,7 +370,7 @@ namespace Neo.SmartContract.Native
         private void SetMaxTraceableBlocks(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxMaxTraceableBlocks)
-                throw new ArgumentOutOfRangeException(nameof(value), $"must be between [1, {MaxMaxTraceableBlocks}], got {value}");
+                throw new ArgumentOutOfRangeException(nameof(value), $"MaxTraceableBlocks must be between [1, {MaxMaxTraceableBlocks}], got {value}");
             var oldVal = GetMaxTraceableBlocks(engine.SnapshotCache);
             if (value > oldVal)
                 throw new InvalidOperationException($"MaxTraceableBlocks can not be increased (old {oldVal}, new {value})");
