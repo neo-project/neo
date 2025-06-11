@@ -236,8 +236,11 @@ namespace Neo.SmartContract.Native
         /// <returns>The fee for attribute.</returns>
         private uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType, bool allowNotaryAssisted)
         {
-            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) ||
+                (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+            {
                 throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
+            }
 
             var key = CreateStorageKey(Prefix_AttributeFee, attributeType);
             return snapshot.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
@@ -313,10 +316,15 @@ namespace Neo.SmartContract.Native
         /// <returns>The fee for attribute.</returns>
         private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value, bool allowNotaryAssisted)
         {
-            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) ||
+                (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+            {
                 throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
+            }
+
             if (value > MaxAttributeFee)
-                throw new ArgumentOutOfRangeException(nameof(value), $"must be less than {MaxAttributeFee}");
+                throw new ArgumentOutOfRangeException(nameof(value), $"AttributeFee must be less than {MaxAttributeFee}");
+
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee, attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
@@ -326,7 +334,7 @@ namespace Neo.SmartContract.Native
         private void SetFeePerByte(ApplicationEngine engine, long value)
         {
             if (value < 0 || value > 1_00000000)
-                throw new ArgumentOutOfRangeException(nameof(value), $"must be between [0, 100000000], got {value}");
+                throw new ArgumentOutOfRangeException(nameof(value), $"FeePerByte must be between [0, 100000000], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);
         }
@@ -335,7 +343,7 @@ namespace Neo.SmartContract.Native
         private void SetExecFeeFactor(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxExecFeeFactor)
-                throw new ArgumentOutOfRangeException(nameof(value), $"must be between [1, {MaxExecFeeFactor}], got {value}");
+                throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {MaxExecFeeFactor}], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_execFeeFactor).Set(value);
         }
