@@ -40,7 +40,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var res = _rpcServer.OpenWallet(paramsArray);
             Assert.IsTrue(res.AsBoolean());
             Assert.IsNotNull(_rpcServer.wallet);
-            Assert.AreEqual(_rpcServer.wallet.GetAccounts().FirstOrDefault()!.Address, "NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv");
+            Assert.AreEqual("NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv", _rpcServer.wallet.GetAccounts().FirstOrDefault()!.Address);
             _rpcServer.CloseWallet([]);
             File.Delete(Path);
             Assert.IsNull(_rpcServer.wallet);
@@ -67,7 +67,7 @@ namespace Neo.Plugins.RpcServer.Tests
             File.WriteAllText(Path, "{\"name\":null,\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv\",\"label\":null,\"isDefault\":false,\"lock\":false,\"key\":\"6PYPMrsCJ3D4AXJCFWYT2WMSBGF7dLoaNipW14t4UFAkZw3Z9vQRQV1bEU\",\"contract\":{\"script\":\"DCEDaR\\u002BFVb8lOdiMZ/wCHLiI\\u002Bzuf17YuGFReFyHQhB80yMpBVuezJw==\",\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}");
             exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.OpenWallet(paramsArray), "Should throw RpcException for unsupported wallet");
             Assert.AreEqual(RpcError.WalletNotSupported.Code, exception.HResult);
-            Assert.AreEqual(exception.Message, "Wallet not supported - Invalid password.");
+            Assert.AreEqual("Wallet not supported - Invalid password.", exception.Message);
             File.Delete(Path);
         }
 
@@ -292,10 +292,10 @@ namespace Neo.Plugins.RpcServer.Tests
 
             _rpcServer.wallet = _wallet;
             JObject resp = (JObject)_rpcServer.SendFrom(paramsArray);
-            Assert.AreEqual(resp.Count, 12);
+            Assert.AreEqual(12, resp.Count);
             Assert.AreEqual(resp["sender"], ValidatorAddress);
             JArray signers = (JArray)resp["signers"];
-            Assert.AreEqual(signers.Count, 1);
+            Assert.AreEqual(1, signers.Count);
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
             Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
             _rpcServer.wallet = null;
@@ -312,10 +312,10 @@ namespace Neo.Plugins.RpcServer.Tests
 
             _rpcServer.wallet = _wallet;
             JObject resp = (JObject)_rpcServer.SendMany(paramsArray);
-            Assert.AreEqual(resp.Count, 12);
+            Assert.AreEqual(12, resp.Count);
             Assert.AreEqual(resp["sender"], ValidatorAddress);
             JArray signers = (JArray)resp["signers"];
-            Assert.AreEqual(signers.Count, 1);
+            Assert.AreEqual(1, signers.Count);
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
             Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
             _rpcServer.wallet = null;
@@ -333,10 +333,10 @@ namespace Neo.Plugins.RpcServer.Tests
 
             _rpcServer.wallet = _wallet;
             JObject resp = (JObject)_rpcServer.SendToAddress(paramsArray);
-            Assert.AreEqual(resp.Count, 12);
+            Assert.AreEqual(12, resp.Count);
             Assert.AreEqual(resp["sender"], ValidatorAddress);
             JArray signers = (JArray)resp["signers"];
-            Assert.AreEqual(signers.Count, 1);
+            Assert.AreEqual(1, signers.Count);
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
             Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
             _rpcServer.wallet = null;
@@ -546,10 +546,10 @@ namespace Neo.Plugins.RpcServer.Tests
             JObject resp = (JObject)_rpcServer.SendFrom(new JArray(NativeContract.GAS.Hash.ToString(), _walletAccount.Address, _walletAccount.Address, "1"));
             string txHash = resp["hash"].AsString();
             resp = (JObject)_rpcServer.CancelTransaction(new JArray(txHash, new JArray(ValidatorAddress), "1"));
-            Assert.AreEqual(resp.Count, 12);
+            Assert.AreEqual(12, resp.Count);
             Assert.AreEqual(resp["sender"], ValidatorAddress);
             JArray signers = (JArray)resp["signers"];
-            Assert.AreEqual(signers.Count, 1);
+            Assert.AreEqual(1, signers.Count);
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
             Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.None));
             Assert.AreEqual(resp["attributes"][0]["type"], nameof(TransactionAttributeType.Conflicts));
@@ -594,11 +594,11 @@ namespace Neo.Plugins.RpcServer.Tests
             // invoke verify without signer; should return false
             JObject resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString()]);
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
-            Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), false);
+            Assert.AreEqual(false, resp["stack"][0]["value"].AsBoolean());
             // invoke verify with signer; should return true
             resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([]), validatorSigner]);
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
-            Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), true);
+            Assert.AreEqual(true, resp["stack"][0]["value"].AsBoolean());
             // invoke verify with wrong input value; should FAULT
             resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "0" }]), validatorSigner]);
             Assert.AreEqual(resp["state"], nameof(VMState.FAULT));
@@ -606,7 +606,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // invoke verify with 1 param and signer; should return true
             resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]);
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
-            Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), true);
+            Assert.AreEqual(true, resp["stack"][0]["value"].AsBoolean());
             // invoke verify with 2 param (which does not exist); should throw Exception
             Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }, new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]),
                 $"Invalid contract verification function - The smart contract {deployedScriptHash} haven't got verify method with 2 input parameters.");
