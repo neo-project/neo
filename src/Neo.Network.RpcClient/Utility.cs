@@ -16,6 +16,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -282,7 +283,7 @@ namespace Neo.Network.RPC
                     }
                     return map;
                 case StackItemType.Pointer:
-                    return new Pointer(null, (int)json["value"].AsNumber());
+                    return new Pointer(Script.Empty, (int)json["value"].AsNumber());
                 case StackItemType.InteropInterface:
                     return new InteropInterface(json);
                 default:
