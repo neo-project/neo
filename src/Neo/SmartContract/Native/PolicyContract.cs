@@ -344,7 +344,7 @@ namespace Neo.SmartContract.Native
         private void SetStoragePrice(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxStoragePrice)
-                throw new ArgumentOutOfRangeException(nameof(value), $"must be between [1, {MaxStoragePrice}], got {value}");
+                throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {MaxStoragePrice}], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
         }
