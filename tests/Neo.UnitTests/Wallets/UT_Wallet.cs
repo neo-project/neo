@@ -449,7 +449,7 @@ namespace Neo.UnitTests.Wallets
 
             var signature = wallet.SignBlock(block, glkey.PublicKey, network);
             Assert.IsNotNull(signature);
-            Assert.AreEqual(signature.Length, 64);
+            Assert.AreEqual(64, signature.Length);
 
             var signData = block.GetSignData(network);
             var isValid = Crypto.VerifySignature(signData, signature.Span, glkey.PublicKey);

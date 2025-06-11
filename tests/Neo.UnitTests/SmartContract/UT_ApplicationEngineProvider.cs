@@ -68,7 +68,7 @@ namespace Neo.UnitTests.SmartContract
                 .GetField("nonceData", BindingFlags.NonPublic | BindingFlags.Instance)
                 .GetValue(app) as byte[];
             Assert.IsNotNull(nonceData);
-            Assert.AreEqual(nonceData.ToHexString(), "08070605040302010000000000000000");
+            Assert.AreEqual("08070605040302010000000000000000", nonceData.ToHexString());
         }
 
         class TestProvider : IApplicationEngineProvider
