@@ -45,7 +45,7 @@ namespace Neo.Json
         public override double AsNumber()
         {
             if (string.IsNullOrEmpty(Value)) return 0;
-            return double.TryParse(Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result) ? result : double.NaN;
+            return double.TryParse(Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var result) ? result : double.NaN;
         }
 
         public override string AsString()
@@ -69,7 +69,7 @@ namespace Neo.Json
 
         public override T GetEnum<T>(bool ignoreCase = false)
         {
-            T result = Enum.Parse<T>(Value, ignoreCase);
+            var result = Enum.Parse<T>(Value, ignoreCase);
             if (!Enum.IsDefined(typeof(T), result)) throw new InvalidCastException();
             return result;
         }
