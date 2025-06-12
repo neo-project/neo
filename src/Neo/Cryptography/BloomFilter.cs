@@ -49,8 +49,8 @@ namespace Neo.Cryptography
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="k"/> or <paramref name="m"/> is less than or equal to 0.</exception>
         public BloomFilter(int m, int k, uint nTweak)
         {
-            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k));
-            if (m <= 0) throw new ArgumentOutOfRangeException(nameof(m));
+            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k), "cannot be negative");
+            if (m <= 0) throw new ArgumentOutOfRangeException(nameof(m), "cannot be negative");
 
             _seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
             _bits = new BitArray(m)
@@ -70,8 +70,8 @@ namespace Neo.Cryptography
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="k"/> or <paramref name="m"/> is less than or equal to 0.</exception>
         public BloomFilter(int m, int k, uint nTweak, ReadOnlyMemory<byte> elements)
         {
-            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k));
-            if (m <= 0) throw new ArgumentOutOfRangeException(nameof(m));
+            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k), "cannot be negative");
+            if (m <= 0) throw new ArgumentOutOfRangeException(nameof(m), "cannot be negative");
 
             _seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
             _bits = new BitArray(elements.ToArray())

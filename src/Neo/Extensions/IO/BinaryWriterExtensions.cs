@@ -52,14 +52,13 @@ namespace Neo.Extensions
         /// <param name="length">The fixed size of the <see cref="string"/>.</param>
         public static void WriteFixedString(this BinaryWriter writer, string value, int length)
         {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
+            if (value == null) throw new ArgumentNullException(nameof(value));
             if (value.Length > length)
-                throw new ArgumentException(null, nameof(value));
+                throw new ArgumentException($"`value` is too long: {value.Length} > {length}", nameof(value));
 
             var bytes = value.ToStrictUtf8Bytes();
             if (bytes.Length > length)
-                throw new ArgumentException(null, nameof(value));
+                throw new ArgumentException($"utf8-decoded `value` is too long: {bytes.Length} > {length}", nameof(value));
             writer.Write(bytes);
             if (bytes.Length < length)
                 writer.Write(stackalloc byte[length - bytes.Length]);
@@ -103,7 +102,7 @@ namespace Neo.Extensions
         public static void WriteVarInt(this BinaryWriter writer, long value)
         {
             if (value < 0)
-                throw new ArgumentOutOfRangeException(nameof(value));
+                throw new ArgumentOutOfRangeException(nameof(value), "cannot be negative");
             if (value < 0xFD)
             {
                 writer.Write((byte)value);

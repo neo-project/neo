@@ -143,7 +143,7 @@ namespace Neo.Wallets.NEP6
         {
             if (privateKey is null) throw new ArgumentNullException(nameof(privateKey));
             KeyPair key = new(privateKey);
-            if (key.PublicKey.IsInfinity) throw new ArgumentException(null, nameof(privateKey));
+            if (key.PublicKey.IsInfinity) throw new ArgumentException("Invalid private key", nameof(privateKey));
             NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),

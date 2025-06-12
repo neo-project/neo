@@ -72,20 +72,10 @@ namespace Neo.VM.Benchmark
 
         private static void CreateNestedArray(Array? rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter? referenceCounter = null)
         {
-            if (depth < 0)
-            {
-                throw new ArgumentException("Depth must be non-negative", nameof(depth));
-            }
+            ArgumentOutOfRangeException.ThrowIfNegative(depth, nameof(depth));
+            ArgumentNullException.ThrowIfNull(rootArray, nameof(rootArray));
 
-            if (rootArray == null)
-            {
-                throw new ArgumentNullException(nameof(rootArray));
-            }
-
-            if (depth == 0)
-            {
-                return;
-            }
+            if (depth == 0) return;
 
             for (var i = 0; i < elementsPerLevel; i++)
             {
@@ -97,20 +87,10 @@ namespace Neo.VM.Benchmark
 
         private static void CreateNestedTestArray(TestArray rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter? referenceCounter = null)
         {
-            if (depth < 0)
-            {
-                throw new ArgumentException("Depth must be non-negative", nameof(depth));
-            }
+            ArgumentOutOfRangeException.ThrowIfNegative(depth, nameof(depth));
+            ArgumentNullException.ThrowIfNull(rootArray, nameof(rootArray));
 
-            if (rootArray == null)
-            {
-                throw new ArgumentNullException(nameof(rootArray));
-            }
-
-            if (depth == 0)
-            {
-                return;
-            }
+            if (depth == 0) return;
 
             for (var i = 0; i < elementsPerLevel; i++)
             {
