@@ -20,10 +20,10 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestListPlugins()
         {
             JArray resp = (JArray)_rpcServer.ListPlugins([]);
-            Assert.AreEqual(resp.Count, 0);
+            Assert.AreEqual(0, resp.Count);
             Plugin.Plugins.Add(new RpcServerPlugin());
             resp = (JArray)_rpcServer.ListPlugins([]);
-            Assert.AreEqual(resp.Count, 2);
+            Assert.AreEqual(2, resp.Count);
             foreach (JObject p in resp)
                 Assert.AreEqual(p["name"], nameof(RpcServer));
         }

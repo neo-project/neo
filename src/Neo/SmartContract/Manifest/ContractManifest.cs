@@ -74,7 +74,8 @@ namespace Neo.SmartContract.Manifest
             Name = @struct[0].GetString();
             Groups = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractGroup>()).ToArray();
             if (((Map)@struct[2]).Count != 0)
-                throw new ArgumentException(null, nameof(stackItem));
+                throw new ArgumentException("The third field(`features`) is not empty", nameof(stackItem));
+
             SupportedStandards = ((Array)@struct[3]).Select(p => p.GetString()).ToArray();
             Abi = @struct[4].ToInteroperable<ContractAbi>();
             Permissions = ((Array)@struct[5]).Select(p => p.ToInteroperable<ContractPermission>()).ToArray();
@@ -83,7 +84,7 @@ namespace Neo.SmartContract.Manifest
                 Null _ => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
                 // Array array when array.Any(p => ((ByteString)p).Size == 0) => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(ContractPermissionDescriptor.Create).ToArray()),
-                _ => throw new ArgumentException(null, nameof(stackItem))
+                _ => throw new ArgumentException($"The seventh field(`trusts`) is not a null or array", nameof(stackItem))
             };
             Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
         }
@@ -141,7 +142,8 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The parsed manifest.</returns>
         public static ContractManifest Parse(ReadOnlySpan<byte> json)
         {
-            if (json.Length > MaxLength) throw new ArgumentException(null, nameof(json));
+            if (json.Length > MaxLength)
+                throw new ArgumentException($"Too long json content: {json.Length} > {MaxLength}", nameof(json));
             return FromJson((JObject)JToken.Parse(json));
         }
 

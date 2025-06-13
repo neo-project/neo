@@ -72,7 +72,7 @@ namespace Neo.Json
 
         public override T AsEnum<T>(T defaultValue = default, bool ignoreCase = false)
         {
-            Type enumType = typeof(T);
+            var enumType = typeof(T);
             object value;
             try
             {
@@ -82,13 +82,13 @@ namespace Neo.Json
             {
                 return defaultValue;
             }
-            object result = Enum.ToObject(enumType, value);
+            var result = Enum.ToObject(enumType, value);
             return Enum.IsDefined(enumType, result) ? (T)result : defaultValue;
         }
 
         public override T GetEnum<T>(bool ignoreCase = false)
         {
-            Type enumType = typeof(T);
+            var enumType = typeof(T);
             object value;
             try
             {
@@ -99,7 +99,7 @@ namespace Neo.Json
                 throw new InvalidCastException($"The value is out of range for the enum {enumType.FullName}");
             }
 
-            object result = Enum.ToObject(enumType, value);
+            var result = Enum.ToObject(enumType, value);
             if (!Enum.IsDefined(enumType, result))
                 throw new InvalidCastException($"The value is not defined in the enum {enumType.FullName}");
             return (T)result;

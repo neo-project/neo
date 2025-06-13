@@ -217,7 +217,7 @@ namespace Neo.Extensions
                         }
                         break;
                     default:
-                        throw new ArgumentException(null, nameof(parameter));
+                        throw new ArgumentException($"Unsupported parameter type: {parameter.Type}", nameof(parameter));
                 }
             return builder;
         }
@@ -284,7 +284,7 @@ namespace Neo.Extensions
                     builder.Emit(OpCode.PUSHNULL);
                     break;
                 default:
-                    throw new ArgumentException(null, nameof(obj));
+                    throw new ArgumentException($"Unsupported object type: {obj.GetType()}", nameof(obj));
             }
             return builder;
         }

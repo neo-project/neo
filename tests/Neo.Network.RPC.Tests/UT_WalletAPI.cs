@@ -153,7 +153,7 @@ namespace Neo.Network.RPC.Tests
             }
             catch (Exception e)
             {
-                Assert.AreEqual(e.Message, $"Need at least 2 KeyPairs for signing!");
+                Assert.AreEqual($"Need at least 2 KeyPairs for signing!", e.Message);
             }
 
             testScript = NativeContract.GAS.Hash.MakeScript("transfer", multiSender, UInt160.Zero, NativeContract.GAS.Factor * 100, string.Empty)
