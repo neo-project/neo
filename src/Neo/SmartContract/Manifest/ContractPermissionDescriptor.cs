@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Manifest
                     Group = ECPoint.DecodePoint(span, ECCurve.Secp256r1);
                     break;
                 default:
-                    throw new ArgumentException(null, nameof(span));
+                    throw new ArgumentException($"Invalid span length: {span.Length}", nameof(span));
             }
         }
 

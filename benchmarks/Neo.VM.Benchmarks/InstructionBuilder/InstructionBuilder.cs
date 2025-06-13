@@ -56,7 +56,7 @@ namespace Neo.VM.Benchmark
             if (number >= -1 && number <= 16) return AddInstruction(number == -1 ? VM.OpCode.PUSHM1 : VM.OpCode.PUSH0 + (byte)(int)number);
             Span<byte> buffer = stackalloc byte[32];
             if (!number.TryWriteBytes(buffer, out var bytesWritten, isUnsigned: false, isBigEndian: false))
-                throw new ArgumentOutOfRangeException(nameof(number));
+                throw new ArgumentOutOfRangeException(nameof(number), "The `number` is too large");
             var instruction = bytesWritten switch
             {
                 1 => new Instruction
@@ -89,7 +89,7 @@ namespace Neo.VM.Benchmark
                     _opCode = VM.OpCode.PUSHINT256,
                     _operand = PadRight(buffer, bytesWritten, 32, number.Sign < 0).ToArray()
                 },
-                _ => throw new ArgumentOutOfRangeException($"Number too large: {bytesWritten}")
+                _ => throw new ArgumentOutOfRangeException(nameof(number), "The `number` is too large")
             };
             AddInstruction(instruction);
             return instruction;
