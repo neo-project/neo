@@ -16,6 +16,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -68,7 +69,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public static KeyPair GetKeyPair(string key)
         {
-            if (string.IsNullOrEmpty(key)) { throw new ArgumentNullException(nameof(key)); }
+            ArgumentException.ThrowIfNullOrEmpty(key, nameof(key));
             if (key.StartsWith("0x")) { key = key[2..]; }
 
             return key.Length switch
@@ -88,7 +89,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public static UInt160 GetScriptHash(string account, ProtocolSettings protocolSettings)
         {
-            if (string.IsNullOrEmpty(account)) { throw new ArgumentNullException(nameof(account)); }
+            ArgumentException.ThrowIfNullOrEmpty(account, nameof(account));
             if (account.StartsWith("0x")) { account = account[2..]; }
 
             return account.Length switch
@@ -282,7 +283,7 @@ namespace Neo.Network.RPC
                     }
                     return map;
                 case StackItemType.Pointer:
-                    return new Pointer(null, (int)json["value"].AsNumber());
+                    return new Pointer(Script.Empty, (int)json["value"].AsNumber());
                 case StackItemType.InteropInterface:
                     return new InteropInterface(json);
                 default:

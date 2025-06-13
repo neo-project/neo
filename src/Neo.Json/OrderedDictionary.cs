@@ -19,8 +19,8 @@ namespace Neo.Json
     {
         private class TItem
         {
-            public TKey Key;
-            public TValue Value;
+            public TKey Key { get; }
+            public TValue Value { get; set; }
 
             public TItem(TKey key, TValue value)
             {
@@ -37,9 +37,9 @@ namespace Neo.Json
             }
         }
 
-        private readonly InternalCollection collection = new();
+        private readonly InternalCollection _collection = new();
 
-        public int Count => collection.Count;
+        public int Count => _collection.Count;
         public bool IsReadOnly => false;
         public IReadOnlyList<TKey> Keys { get; }
         public IReadOnlyList<TValue> Values { get; }
@@ -48,19 +48,19 @@ namespace Neo.Json
 
         public OrderedDictionary()
         {
-            Keys = new KeyCollection(collection);
-            Values = new ValueCollection(collection);
+            Keys = new KeyCollection(_collection);
+            Values = new ValueCollection(_collection);
         }
 
         public TValue this[TKey key]
         {
             get
             {
-                return collection[key].Value;
+                return _collection[key].Value;
             }
             set
             {
-                if (collection.TryGetValue(key, out var entry))
+                if (_collection.TryGetValue(key, out var entry))
                     entry.Value = value;
                 else
                     Add(key, value);
@@ -71,38 +71,36 @@ namespace Neo.Json
         {
             get
             {
-                return collection[index].Value;
+                return _collection[index].Value;
             }
         }
 
         public void Add(TKey key, TValue value)
         {
-            collection.Add(new TItem(key, value));
+            _collection.Add(new TItem(key, value));
         }
 
         public bool ContainsKey(TKey key)
         {
-            return collection.Contains(key);
+            return _collection.Contains(key);
         }
 
         public bool Remove(TKey key)
         {
-            return collection.Remove(key);
+            return _collection.Remove(key);
         }
 
 #pragma warning disable CS8767
-
-        public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
+        public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue? value)
         {
-            if (collection.TryGetValue(key, out var entry))
+            if (_collection.TryGetValue(key, out var entry))
             {
                 value = entry.Value;
-                return true;
+                return value != null;
             }
             value = default;
             return false;
         }
-
 #pragma warning restore CS8767
 
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
@@ -112,33 +110,33 @@ namespace Neo.Json
 
         public void Clear()
         {
-            collection.Clear();
+            _collection.Clear();
         }
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item)
         {
-            return collection.Contains(item.Key);
+            return _collection.Contains(item.Key);
         }
 
         void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            for (int i = 0; i < collection.Count; i++)
-                array[i + arrayIndex] = new KeyValuePair<TKey, TValue>(collection[i].Key, collection[i].Value);
+            for (var i = 0; i < _collection.Count; i++)
+                array[i + arrayIndex] = new KeyValuePair<TKey, TValue>(_collection[i].Key, _collection[i].Value);
         }
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
         {
-            return collection.Remove(item.Key);
+            return _collection.Remove(item.Key);
         }
 
         IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
         {
-            return collection.Select(p => new KeyValuePair<TKey, TValue>(p.Key, p.Value)).GetEnumerator();
+            return _collection.Select(p => new KeyValuePair<TKey, TValue>(p.Key, p.Value)).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return collection.Select(p => new KeyValuePair<TKey, TValue>(p.Key, p.Value)).GetEnumerator();
+            return _collection.Select(p => new KeyValuePair<TKey, TValue>(p.Key, p.Value)).GetEnumerator();
         }
     }
 }

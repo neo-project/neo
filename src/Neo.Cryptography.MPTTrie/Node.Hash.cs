@@ -21,24 +21,23 @@ namespace Neo.Cryptography.MPTTrie
         public static Node NewHash(UInt256 hash)
         {
             ArgumentNullException.ThrowIfNull(hash);
-            var n = new Node
+            return new Node
             {
-                type = NodeType.HashNode,
-                hash = hash,
+                Type = NodeType.HashNode,
+                _hash = hash,
             };
-            return n;
         }
 
-        protected int HashSize => hash.Size;
+        protected static int HashSize => UInt256.Length;
 
         private void SerializeHash(BinaryWriter writer)
         {
-            writer.Write(hash);
+            writer.Write(_hash);
         }
 
         private void DeserializeHash(ref MemoryReader reader)
         {
-            hash = reader.ReadSerializable<UInt256>();
+            _hash = reader.ReadSerializable<UInt256>();
         }
     }
 }
