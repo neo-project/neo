@@ -10,10 +10,14 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Neo.Build.Core.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Build.Core.Tests.Helpers
 {
@@ -23,10 +27,11 @@ namespace Neo.Build.Core.Tests.Helpers
         public static readonly DevWallet Wallet;
         public static readonly ILoggerFactory FactoryLogger = LoggerFactory.Create(logging =>
         {
+            logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
             logging.AddSimpleConsole(options =>
             {
                 options.SingleLine = true;
-                options.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Disabled;
+                options.ColorBehavior = LoggerColorBehavior.Disabled;
             });
         });
 
@@ -42,8 +47,22 @@ namespace Neo.Build.Core.Tests.Helpers
         static TestNode()
         {
             var walletModel = TestObjectHelper.CreateTestWalletModel();
-            Wallet = new(walletModel, ((dynamic)walletModel.Extra!).ProtocolConfiguration.ToObject());
-            NeoSystem = new(Wallet.ProtocolSettings, new StoreProvider());
+            Wallet = new(walletModel);
+            NeoSystem = new(
+                Wallet.ProtocolSettings with
+                {
+                    StandbyCommittee = [.. Wallet.GetConsensusAccounts().Select(static s => s.GetKey().PublicKey)],
+                    ValidatorsCount = 1,
+                    Hardforks = new Dictionary<Hardfork, uint>()
+                    {
+                        { Hardfork.HF_Aspidochelone, 0u },
+                        { Hardfork.HF_Basilisk, 0u },
+                        { Hardfork.HF_Cockatrice, 0u },
+                        { Hardfork.HF_Domovoi, 0u },
+                        { Hardfork.HF_Echidna, 0u },
+                    }.ToImmutableDictionary(),
+                },
+                new StoreProvider());
         }
     }
 }

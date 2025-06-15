@@ -112,6 +112,15 @@ namespace Neo.Build.Core.Wallets
             return wa;
         }
 
+        public IEnumerable<DevWalletAccount> GetConsensusAccounts()
+        {
+            var keys = _walletAccounts
+                .Where(static w => w.Value.HasKey && w.Value.IsDefault)
+                .Select(static s => s.Value);
+
+            return keys;
+        }
+
         public override IEnumerable<WalletAccount> GetAccounts() =>
             _walletAccounts.Values;
 

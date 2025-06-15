@@ -13,7 +13,6 @@ using Neo.Build.Core.Models.Wallets;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Build.Core.Tests.Helpers
 {
@@ -29,7 +28,7 @@ namespace Neo.Build.Core.Tests.Helpers
                     new()
                     {
                         Address = "0xce45fca32b8cd071bfbc20389c20cd7025f85ff0",
-                        IsDefault = false,
+                        IsDefault = true,
                         Label = "Main Test Account",
                         Lock = false,
                         Key = new(Wallet.GetPrivateKeyFromWIF("Ky7cYncUA92kWnh7xymshpfgz7QiX46qPWCQBQPVUSv5vndE2VTR")),

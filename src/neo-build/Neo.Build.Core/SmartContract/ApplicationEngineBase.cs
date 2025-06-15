@@ -18,7 +18,6 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -32,7 +31,7 @@ namespace Neo.Build.Core.SmartContract
         protected ApplicationEngineBase(
             ProtocolSettings protocolSettings,
             DataCache snapshotCache,
-            long maxGas,
+            long maxGas = 20_00000000L,
             StorageSettings? storageSettings = null,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
@@ -86,11 +85,7 @@ namespace Neo.Build.Core.SmartContract
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _traceLogger;
 
-        private readonly UTF8Encoding _encoding = new(false, true)
-        {
-            DecoderFallback = DecoderFallback.ExceptionFallback,
-            EncoderFallback = EncoderFallback.ExceptionFallback,
-        };
+        private readonly Encoding _encoding = Encoding.GetEncoding("UTF-8", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
 
         private readonly StorageSettings _storageSettings;
         private readonly ApplicationEngineDebugSink _engineDebugSink = new();
@@ -119,7 +114,8 @@ namespace Neo.Build.Core.SmartContract
             _engineDebugSink.GasLeft = GasLeft;
             _engineDebugSink.Results = ResultStack;
 
-            var callSink = new DebugCallSink(nameof(Execute), DebugEventLog.Execute, [memoryScript], ResultStack);
+            var callSink = new DebugCallSink(nameof(Execute), DebugEventLog.Execute,
+                [System.Convert.ToBase64String(memoryScript.Span)], ResultStack);
             AddDebugSinkCallStack(callSink);
 
             _traceLogger.LogInformation(DebugEventLog.Execute,
@@ -132,9 +128,6 @@ namespace Neo.Build.Core.SmartContract
         public override void LoadContext(ExecutionContext context)
         {
             base.LoadContext(context);
-
-            var callSink = new DebugCallSink(nameof(LoadContext), DebugEventLog.Load);
-            AddDebugSinkCallStack(callSink);
 
             var contextState = context.GetState<ExecutionContextState>();
             var contractState = contextState.Contract;
@@ -155,8 +148,12 @@ namespace Neo.Build.Core.SmartContract
             }
             else
             {
-                ReadOnlyMemory<byte> memBytes = context.Script;
-                var scriptString = System.Convert.ToBase64String(memBytes.Span);
+                ReadOnlyMemory<byte> memoryScript = context.Script ?? ReadOnlyMemory<byte>.Empty;
+                var scriptString = System.Convert.ToBase64String(memoryScript.Span);
+
+                var callSink = new DebugCallSink(nameof(LoadContext), DebugEventLog.Load,
+                    [$"{context.GetScriptHash()}", $"{scriptString}",]);
+                AddDebugSinkCallStack(callSink);
 
                 _traceLogger.LogInformation(DebugEventLog.Load,
                     "Loaded script={Script}",
@@ -168,12 +165,15 @@ namespace Neo.Build.Core.SmartContract
         {
             base.OnFault(ex);
 
-            var callSink = new DebugCallSink(nameof(OnFault), DebugEventLog.Fault, [ex], ResultStack);
+            var callSink = new DebugCallSink(nameof(OnFault), DebugEventLog.Fault,
+                [$"{ex.InnerException?.Message ?? ex.Message}"], ResultStack);
             AddDebugSinkCallStack(callSink);
 
-            _traceLogger.LogError(DebugEventLog.Fault, ex,
-                "{Message}",
-                ex.InnerException?.Message ?? ex.Message);
+            _traceLogger.LogError(DebugEventLog.Fault, ex, string.Empty);
+
+            foreach (var call in _engineDebugSink.CallStack)
+                _traceLogger.LogDebug(DebugEventLog.Log,
+                    "callstack={CallStack}", call);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
@@ -182,12 +182,16 @@ namespace Neo.Build.Core.SmartContract
 
             if (State == VMState.HALT || State == VMState.FAULT)
             {
-                var callSink = new DebugCallSink(nameof(PostExecuteInstruction), DebugEventLog.Post);
+                var callSink = new DebugCallSink(nameof(PostExecuteInstruction), DebugEventLog.Post,
+                    [$"{instruction.OpCode}"]);
                 AddDebugSinkCallStack(callSink);
             }
 
-            var contractState = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
-            if (contractState != null)
+            var contextState = CurrentContext?.GetState<ExecutionContextState>();
+            var contractState = contextState?.Contract;
+
+            if (contextState?.ScriptHash is not null &&
+                contractState is not null)
             {
                 var storageItems = SnapshotCache
                     .Find(StorageKey.CreateSearchPrefix(contractState.Id, default))
@@ -201,7 +205,8 @@ namespace Neo.Build.Core.SmartContract
         {
             base.PreExecuteInstruction(instruction);
 
-            var callSink = new DebugCallSink(nameof(PreExecuteInstruction), DebugEventLog.PrePost);
+            var callSink = new DebugCallSink(nameof(PreExecuteInstruction), DebugEventLog.PrePost,
+                [$"{instruction.OpCode}"]);
             AddDebugSinkCallStack(callSink);
         }
 

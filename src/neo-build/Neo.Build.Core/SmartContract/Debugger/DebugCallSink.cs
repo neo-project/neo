@@ -9,8 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
+using Neo.Json;
 using Neo.VM.Types;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.Build.Core.SmartContract.Debugger
 {
@@ -21,7 +24,7 @@ namespace Neo.Build.Core.SmartContract.Debugger
         public DebugCallSink(
             string methodName,
             int eventId,
-            IEnumerable<object> arguments)
+            IEnumerable<string> arguments)
             : this(methodName, eventId)
         {
             Arguments = arguments;
@@ -30,31 +33,34 @@ namespace Neo.Build.Core.SmartContract.Debugger
         public DebugCallSink(
             string methodName,
             int eventId,
-            IEnumerable<object> arguments,
-            IEnumerable<StackItem> ResultStack)
+            IEnumerable<string> arguments,
+            IEnumerable<StackItem> resultStack)
             : this(methodName, eventId, arguments)
         {
-            Results = ResultStack;
+            Results = resultStack;
         }
 
         /// <summary>
         /// Gets call method name.
         /// </summary>
-        public string Name { get; set; } = methodName;
+        public string Name { get; } = methodName;
 
         /// <summary>
         /// Gets event id for the call.
         /// </summary>
-        public int EventId { get; set; } = eventId;
+        public int EventId { get; } = eventId;
 
         /// <summary>
         /// Gets arguments for the call.
         /// </summary>
-        public IEnumerable<object> Arguments { get; set; } = [];
+        public IEnumerable<string> Arguments { get; } = [];
 
         /// <summary>
         /// Gets the <see cref="StackItem"/>'s of the call.
         /// </summary>
-        public IEnumerable<StackItem> Results { get; set; } = [];
+        public IEnumerable<StackItem> Results { get; } = [];
+
+        public override string ToString() =>
+            $"{Name}[{EventId}]({string.Join(", ", Arguments)}) results={new JArray(Results.Select(static s => s.ToJson()))}";
     }
 }
