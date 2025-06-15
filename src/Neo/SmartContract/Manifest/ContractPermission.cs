@@ -101,10 +101,11 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The permission represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["contract"] = Contract.ToJson();
-            json["methods"] = Methods.ToJson(p => p);
-            return json;
+            return new JObject()
+            {
+                ["contract"] = Contract.ToJson(),
+                ["methods"] = Methods.ToJson(p => p)
+            };
         }
 
         /// <summary>

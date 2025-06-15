@@ -37,7 +37,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void Test_ScryptParameters_Default_ToJson()
         {
-            JObject json = ScryptParameters.Default.ToJson();
+            var json = ScryptParameters.Default.ToJson();
             Assert.AreEqual(ScryptParameters.Default.N, json["n"].AsNumber());
             Assert.AreEqual(ScryptParameters.Default.R, json["r"].AsNumber());
             Assert.AreEqual(ScryptParameters.Default.P, json["p"].AsNumber());
@@ -46,10 +46,12 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void Test_Default_ScryptParameters_FromJson()
         {
-            JObject json = new JObject();
-            json["n"] = 16384;
-            json["r"] = 8;
-            json["p"] = 8;
+            var json = new JObject()
+            {
+                ["n"] = 16384,
+                ["r"] = 8,
+                ["p"] = 8
+            };
 
             ScryptParameters uut2 = ScryptParameters.FromJson(json);
             Assert.AreEqual(ScryptParameters.Default.N, uut2.N);
@@ -61,7 +63,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestScryptParametersConstructor()
         {
             int n = 1, r = 2, p = 3;
-            ScryptParameters parameter = new ScryptParameters(n, r, p);
+            var parameter = new ScryptParameters(n, r, p);
             Assert.AreEqual(n, parameter.N);
             Assert.AreEqual(r, parameter.R);
             Assert.AreEqual(p, parameter.P);

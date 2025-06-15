@@ -127,11 +127,13 @@ namespace Neo.Plugins.StorageDumper
                     stateChangeArray.Add(state);
                 }
 
-                var bs_item = new JObject();
-                bs_item["block"] = blockIndex;
-                bs_item["size"] = stateChangeArray.Count;
-                bs_item["storage"] = stateChangeArray;
-                _currentBlock = bs_item;
+                var bsItem = new JObject()
+                {
+                    ["block"] = blockIndex,
+                    ["size"] = stateChangeArray.Count,
+                    ["storage"] = stateChangeArray
+                };
+                _currentBlock = bsItem;
             }
         }
 

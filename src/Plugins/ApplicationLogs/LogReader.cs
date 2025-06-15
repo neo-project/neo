@@ -322,11 +322,12 @@ namespace Neo.Plugins.ApplicationLogs
 
         private JObject EventModelToJObject(BlockchainEventModel model)
         {
-            var root = new JObject();
-            root["contract"] = model.ScriptHash.ToString();
-            root["eventname"] = model.EventName;
-            root["state"] = model.State.Select(s => s.ToJson()).ToArray();
-            return root;
+            return new JObject()
+            {
+                ["contract"] = model.ScriptHash.ToString(),
+                ["eventname"] = model.EventName,
+                ["state"] = model.State.Select(s => s.ToJson()).ToArray()
+            };
         }
 
         private JObject TransactionToJObject(UInt256 txHash)
@@ -335,14 +336,14 @@ namespace Neo.Plugins.ApplicationLogs
             if (appLog == null)
                 return null;
 
-            var raw = new JObject();
-            raw["txid"] = txHash.ToString();
-
-            var trigger = new JObject();
-            trigger["trigger"] = appLog.Trigger;
-            trigger["vmstate"] = appLog.VmState;
-            trigger["exception"] = string.IsNullOrEmpty(appLog.Exception) ? null : appLog.Exception;
-            trigger["gasconsumed"] = appLog.GasConsumed.ToString();
+            var raw = new JObject() { ["txid"] = txHash.ToString() };
+            var trigger = new JObject()
+            {
+                ["trigger"] = appLog.Trigger,
+                ["vmstate"] = appLog.VmState,
+                ["exception"] = string.IsNullOrEmpty(appLog.Exception) ? null : appLog.Exception,
+                ["gasconsumed"] = appLog.GasConsumed.ToString()
+            };
 
             try
             {
@@ -355,15 +356,19 @@ namespace Neo.Plugins.ApplicationLogs
 
             trigger["notifications"] = appLog.Notifications.Select(s =>
             {
-                var notification = new JObject();
-                notification["contract"] = s.ScriptHash.ToString();
-                notification["eventname"] = s.EventName;
+                var notification = new JObject()
+                {
+                    ["contract"] = s.ScriptHash.ToString(),
+                    ["eventname"] = s.EventName
+                };
 
                 try
                 {
-                    var state = new JObject();
-                    state["type"] = "Array";
-                    state["value"] = s.State.Select(ss => ss.ToJson()).ToArray();
+                    var state = new JObject()
+                    {
+                        ["type"] = "Array",
+                        ["value"] = s.State.Select(ss => ss.ToJson()).ToArray()
+                    };
 
                     notification["state"] = state;
                 }
@@ -379,10 +384,11 @@ namespace Neo.Plugins.ApplicationLogs
             {
                 trigger["logs"] = appLog.Logs.Select(s =>
                 {
-                    var log = new JObject();
-                    log["contract"] = s.ScriptHash.ToString();
-                    log["message"] = s.Message;
-                    return log;
+                    return new JObject()
+                    {
+                        ["contract"] = s.ScriptHash.ToString(),
+                        ["message"] = s.Message
+                    };
                 }).ToArray();
             }
 
@@ -398,8 +404,7 @@ namespace Neo.Plugins.ApplicationLogs
             if (blockOnPersist == null && blockPostPersist == null)
                 return null;
 
-            var blockJson = new JObject();
-            blockJson["blockhash"] = blockHash.ToString();
+            var blockJson = new JObject() { ["blockhash"] = blockHash.ToString() };
             var triggerList = new List<JObject>();
 
             if (blockOnPersist != null)
@@ -413,10 +418,12 @@ namespace Neo.Plugins.ApplicationLogs
 
         private JObject BlockItemToJObject(BlockchainExecutionModel blockExecutionModel)
         {
-            JObject trigger = new();
-            trigger["trigger"] = blockExecutionModel.Trigger;
-            trigger["vmstate"] = blockExecutionModel.VmState;
-            trigger["gasconsumed"] = blockExecutionModel.GasConsumed.ToString();
+            var trigger = new JObject()
+            {
+                ["trigger"] = blockExecutionModel.Trigger,
+                ["vmstate"] = blockExecutionModel.VmState,
+                ["gasconsumed"] = blockExecutionModel.GasConsumed.ToString()
+            };
             try
             {
                 trigger["stack"] = blockExecutionModel.Stack.Select(q => q.ToJson(Settings.Default.MaxStackSize)).ToArray();
@@ -425,16 +432,21 @@ namespace Neo.Plugins.ApplicationLogs
             {
                 trigger["exception"] = ex.Message;
             }
+
             trigger["notifications"] = blockExecutionModel.Notifications.Select(s =>
             {
-                JObject notification = new();
-                notification["contract"] = s.ScriptHash.ToString();
-                notification["eventname"] = s.EventName;
+                var notification = new JObject()
+                {
+                    ["contract"] = s.ScriptHash.ToString(),
+                    ["eventname"] = s.EventName
+                };
                 try
                 {
-                    var state = new JObject();
-                    state["type"] = "Array";
-                    state["value"] = s.State.Select(ss => ss.ToJson()).ToArray();
+                    var state = new JObject()
+                    {
+                        ["type"] = "Array",
+                        ["value"] = s.State.Select(ss => ss.ToJson()).ToArray()
+                    };
 
                     notification["state"] = state;
                 }
@@ -449,10 +461,11 @@ namespace Neo.Plugins.ApplicationLogs
             {
                 trigger["logs"] = blockExecutionModel.Logs.Select(s =>
                 {
-                    var log = new JObject();
-                    log["contract"] = s.ScriptHash.ToString();
-                    log["message"] = s.Message;
-                    return log;
+                    return new JObject()
+                    {
+                        ["contract"] = s.ScriptHash.ToString(),
+                        ["message"] = s.Message
+                    };
                 }).ToArray();
             }
 

@@ -69,10 +69,11 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The parameter represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["name"] = Name;
-            json["type"] = Type.ToString();
-            return json;
+            return new JObject()
+            {
+                ["name"] = Name,
+                ["type"] = Type.ToString()
+            };
         }
 
         public bool Equals(ContractParameterDefinition other)

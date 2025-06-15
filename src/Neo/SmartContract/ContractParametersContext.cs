@@ -404,9 +404,11 @@ namespace Neo.SmartContract
         /// <returns>The context represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["type"] = Verifiable.GetType().FullName;
-            json["hash"] = Verifiable.Hash.ToString();
+            var json = new JObject()
+            {
+                ["type"] = Verifiable.GetType().FullName,
+                ["hash"] = Verifiable.Hash.ToString()
+            };
 
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms, Utility.StrictUTF8))

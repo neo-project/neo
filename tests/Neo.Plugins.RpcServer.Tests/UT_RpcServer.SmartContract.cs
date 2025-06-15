@@ -49,7 +49,11 @@ namespace Neo.Plugins.RpcServer.Tests
             ["scopes"] = nameof(WitnessScope.CalledByEntry),
             ["allowedcontracts"] = new JArray([NeoToken.NEO.Hash.ToString(), GasToken.GAS.Hash.ToString()]),
             ["allowedgroups"] = new JArray([TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString()]),
-            ["rules"] = new JArray([new JObject() { ["action"] = nameof(WitnessRuleAction.Allow), ["condition"] = new JObject { ["type"] = nameof(WitnessConditionType.CalledByEntry) } }]),
+            ["rules"] = new JArray([
+                new JObject() {
+                    ["action"] = nameof(WitnessRuleAction.Allow),
+                    ["condition"] = new JObject { ["type"] = nameof(WitnessConditionType.CalledByEntry) } }
+            ]),
         }];
         static readonly JArray multisigSigner = [new JObject()
         {
