@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Extensions.Factory;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -66,13 +67,6 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(0, _unit.Count);
         }
 
-        private static long LongRandom(long min, long max, Random rand)
-        {
-            // Only returns positive random long values.
-            long longRand = (long)rand.NextBigInteger(63);
-            return longRand % (max - min) + min;
-        }
-
         private Transaction CreateTransactionWithFee(long fee)
         {
             Random random = new();
@@ -112,7 +106,7 @@ namespace Neo.UnitTests.Ledger
         {
             if (fee != -1)
                 return CreateTransactionWithFee(fee);
-            return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
+            return CreateTransactionWithFee(RandomNumberFactory.NextInt64(100000, 100000000));
         }
 
         private void AddTransactions(int count)

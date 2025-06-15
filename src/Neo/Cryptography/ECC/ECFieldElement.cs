@@ -12,6 +12,7 @@
 #nullable enable
 
 using Neo.Extensions;
+using Neo.Extensions.Factory;
 using System;
 using System.Numerics;
 
@@ -121,11 +122,10 @@ namespace Neo.Cryptography.ECC
             BigInteger U, V;
             do
             {
-                Random rand = new();
-                BigInteger P;
+                var P = BigInteger.Zero;
                 do
                 {
-                    P = rand.NextBigInteger((int)_curve.Q.GetBitLength());
+                    P = RandomNumberFactory.NextBigInteger((int)_curve.Q.GetBitLength());
                 }
                 while (P >= _curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, _curve.Q) != qMinusOne);
                 var result = FastLucasSequence(_curve.Q, P, Q, k);
