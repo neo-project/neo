@@ -18,22 +18,39 @@ namespace Neo.Plugins.SignClient
         public const string SectionName = "PluginConfiguration";
         private const string DefaultEndpoint = "http://127.0.0.1:9991";
 
+        internal const string EndpointTcp = "tcp";
+        internal const string EndpointVsock = "vsock";
+
         /// <summary>
         /// The name of the sign client(i.e. Signer).
         /// </summary>
         public readonly string Name;
 
         /// <summary>
+        /// The type of the endpoint. Default is "tcp", and "tcp" and "vsock" are supported now.
+        /// If the type is "vsock", the "Endpoint" should be "http://contextId:port" or "https://contextId:port".
+        /// </summary>
+        public readonly string EndpointType;
+
+        /// <summary>
         /// The host of the sign client(i.e. Signer).
         /// </summary>
         public readonly string Endpoint;
 
+        /// <summary>
+        /// Create a new settings instance from the configuration section.
+        /// </summary>
+        /// <param name="section">The configuration section.</param>
+        /// <exception cref="FormatException">If the endpoint type or endpoint is invalid.</exception>
         public Settings(IConfigurationSection section) : base(section)
         {
             Name = section.GetValue("Name", "SignClient");
+            EndpointType = section.GetValue("EndpointType", EndpointTcp);
+            if (EndpointType != EndpointTcp && EndpointType != EndpointVsock)
+                throw new FormatException($"Invalid endpoint type: {EndpointType}");
 
-            // Only support local host at present, so host always is "127.0.0.1" or "::1" now.
-            Endpoint = section.GetValue("Endpoint", DefaultEndpoint);
+            Endpoint = section.GetValue("Endpoint", DefaultEndpoint); // Only support local host at present
+            _ = GetVsockAddress(); // for check the endpoint is valid
         }
 
         public static Settings Default
@@ -49,6 +66,37 @@ namespace Neo.Plugins.SignClient
                     .Build()
                     .GetSection(SectionName);
                 return new Settings(section);
+            }
+        }
+
+        /// <summary>
+        /// Get the vsock address from the endpoint.
+        /// </summary>
+        /// <returns>The vsock address. If the endpoint type is not vsock, return null.</returns>
+        /// <exception cref="FormatException">If the endpoint is invalid.</exception>
+        internal VsockAddress? GetVsockAddress()
+        {
+            if (EndpointType != EndpointVsock) return null;
+
+            var endpoint = Endpoint;
+            if (Endpoint.StartsWith("http://"))
+            {
+                endpoint = endpoint.Substring("http://".Length);
+            }
+            else if (Endpoint.StartsWith("https://"))
+            {
+                endpoint = endpoint.Substring("https://".Length);
+            }
+
+            var parts = endpoint.Split(':', 2);
+            if (parts.Length != 2) throw new FormatException($"Invalid vsock endpoint: {Endpoint}");
+            try
+            {
+                return new VsockAddress(int.Parse(parts[0]), int.Parse(parts[1]));
+            }
+            catch
+            {
+                throw new FormatException($"Invalid vsock endpoint: {Endpoint}");
             }
         }
     }
