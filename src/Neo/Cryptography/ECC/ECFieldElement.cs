@@ -12,7 +12,7 @@
 #nullable enable
 
 using Neo.Extensions;
-using Neo.Extensions.Factory;
+using Neo.Extensions.Factories;
 using System;
 using System.Numerics;
 
