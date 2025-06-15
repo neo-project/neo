@@ -31,8 +31,8 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextSByteInRange()
         {
-            sbyte expectedMax = 100;
-            sbyte expectedMin = -100;
+            var expectedMax = sbyte.MaxValue;
+            var expectedMin = sbyte.MinValue;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextSByte(expectedMax, expectedMax));
 
@@ -44,8 +44,8 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextByteInRange()
         {
-            byte expectedMax = 100;
-            byte expectedMin = 0;
+            var expectedMax = byte.MaxValue;
+            var expectedMin = byte.MinValue;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextByte(expectedMax, expectedMax));
 
@@ -57,8 +57,8 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextInt16InRange()
         {
-            short expectedMax = 100;
-            short expectedMin = -100;
+            var expectedMax = short.MaxValue;
+            var expectedMin = short.MinValue;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt16(expectedMax, expectedMax));
 
@@ -70,8 +70,8 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextUInt16InRange()
         {
-            ushort expectedMax = 100;
-            ushort expectedMin = 0;
+            var expectedMax = ushort.MaxValue;
+            var expectedMin = ushort.MinValue;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextUInt16(expectedMax, expectedMax));
 
@@ -83,8 +83,8 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextInt32InRange()
         {
-            var expectedMax = 100;
-            var expectedMin = -100;
+            var expectedMax = int.MaxValue;
+            var expectedMin = int.MinValue;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt32(expectedMax, expectedMax));
 
@@ -96,8 +96,8 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextUInt32InRange()
         {
-            uint expectedMax = 100;
-            uint expectedMin = 0;
+            var expectedMax = uint.MaxValue;
+            var expectedMin = uint.MinValue;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextUInt32(expectedMax, expectedMax));
 
@@ -109,8 +109,8 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextInt64InRange()
         {
-            long expectedMax = 100;
-            long expectedMin = -100;
+            var expectedMax = long.MaxValue;
+            var expectedMin = long.MinValue;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt64(expectedMax, expectedMax));
 
@@ -122,14 +122,22 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextUInt64InRange()
         {
-            ulong expectedMax = 100;
-            ulong expectedMin = 0;
+            var expectedMax = ulong.MaxValue;
+            var expectedMin = ulong.MinValue;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextUInt64(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextUInt64(expectedMin, expectedMax);
 
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextBigInteger()
+        {
+            var actual = RandomNumberFactory.NextBigInteger(byte.MaxValue);
+            Assert.AreNotEqual(0ul, actual);
+            Assert.AreEqual(byte.MaxValue, actual.BitLength());
         }
     }
 }
