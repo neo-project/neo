@@ -17,13 +17,13 @@ namespace Neo.Cryptography.MPTTrie
     partial class Node
     {
         public const int BranchChildCount = 17;
-        public Node[] Children;
+        public Node[] Children { get; internal set; }
 
         public static Node NewBranch()
         {
             var n = new Node
             {
-                type = NodeType.BranchNode,
+                Type = NodeType.BranchNode,
                 Reference = 1,
                 Children = new Node[BranchChildCount],
             };

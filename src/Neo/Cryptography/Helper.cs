@@ -259,7 +259,7 @@ namespace Neo.Cryptography
 
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
-            if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
+            if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce), "`nonce` must be 12 bytes");
             var tag = new byte[16];
             var cipherBytes = new byte[plainData.Length];
             if (!s_isOSX)
@@ -317,16 +317,16 @@ namespace Neo.Cryptography
 
         public static byte[] ECDHDeriveKey(KeyPair local, ECPoint remote)
         {
-            ReadOnlySpan<byte> pubkey_local = local.PublicKey.EncodePoint(false);
-            ReadOnlySpan<byte> pubkey_remote = remote.EncodePoint(false);
+            ReadOnlySpan<byte> pubkeyLocal = local.PublicKey.EncodePoint(false);
+            ReadOnlySpan<byte> pubkeyRemote = remote.EncodePoint(false);
             using var ecdh1 = ECDiffieHellman.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 D = local.PrivateKey,
                 Q = new System.Security.Cryptography.ECPoint
                 {
-                    X = pubkey_local[1..][..32].ToArray(),
-                    Y = pubkey_local[1..][32..].ToArray()
+                    X = pubkeyLocal[1..][..32].ToArray(),
+                    Y = pubkeyLocal[1..][32..].ToArray()
                 }
             });
             using var ecdh2 = ECDiffieHellman.Create(new ECParameters
@@ -334,8 +334,8 @@ namespace Neo.Cryptography
                 Curve = ECCurve.NamedCurves.nistP256,
                 Q = new System.Security.Cryptography.ECPoint
                 {
-                    X = pubkey_remote[1..][..32].ToArray(),
-                    Y = pubkey_remote[1..][32..].ToArray()
+                    X = pubkeyRemote[1..][..32].ToArray(),
+                    Y = pubkeyRemote[1..][32..].ToArray()
                 }
             });
             return ecdh1.DeriveKeyMaterial(ecdh2.PublicKey).Sha256();//z = r * P = r* k * G

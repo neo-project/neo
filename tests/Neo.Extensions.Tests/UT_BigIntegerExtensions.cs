@@ -106,7 +106,7 @@ namespace Neo.Extensions.Tests
             Assert.AreNotEqual(long.MinValue % long.MaxValue, result, "Mod should always return non-negative values, unlike % operator");
 
             // Test case 5: Verifying % operator behavior
-            Assert.AreEqual((long)(minValue % maxValue), long.MinValue % long.MaxValue, "% operator should behave consistently for BigInteger and long");
+            Assert.AreEqual(long.MinValue % long.MaxValue, (long)(minValue % maxValue), "% operator should behave consistently for BigInteger and long");
 
             // Test case 6: Mod with prime numbers
             Assert.AreEqual(17, new BigInteger(17).Mod(19), "Mod with a larger prime should return the original number");
