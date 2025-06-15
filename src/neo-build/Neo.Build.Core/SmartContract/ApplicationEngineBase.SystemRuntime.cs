@@ -27,7 +27,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetPlatform();
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_Platform), result);
 
@@ -38,7 +38,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetNetwork();
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GetNetwork), result);
 
@@ -49,7 +49,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetAddressVersion();
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result=0x{Result}",
                 nameof(System_Runtime_GetAddressVersion), result.ToString("x02"));
 
@@ -60,7 +60,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = Trigger;
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GetTrigger), result.ToString());
 
@@ -71,7 +71,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetTime();
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GetTime), result);
 
@@ -82,7 +82,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetScriptContainer();
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GetScriptContainer), result.ToJson());
 
@@ -93,7 +93,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = CurrentScriptHash;
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GetExecutingScriptHash), result);
 
@@ -104,7 +104,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = CallingScriptHash;
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GetCallingScriptHash), result);
 
@@ -115,7 +115,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = EntryScriptHash;
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GetEntryScriptHash), result);
 
@@ -128,7 +128,7 @@ namespace Neo.Build.Core.SmartContract
 
             RuntimeLoadScript(script, callFlags, args);
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} script={Script}, flags={Flags}, args={Args}",
                 nameof(System_Runtime_LoadScript), scriptString, callFlags.ToString(), args.ToJson());
         }
@@ -137,7 +137,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = CheckWitness(scriptHashOrPublicKey);
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} hash=0x{Hash}, result={Result}",
                 nameof(System_Runtime_CheckWitness), scriptHashOrPublicKey.ToHexString(), result);
 
@@ -148,7 +148,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetInvocationCounter();
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GetInvocationCounter), result);
 
@@ -159,7 +159,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetRandom();
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GetRandom), result);
 
@@ -170,7 +170,7 @@ namespace Neo.Build.Core.SmartContract
         {
             RuntimeLog(state);
 
-            _traceLogger.LogInformation(VMEventLog.Log,
+            _traceLogger.LogInformation(DebugEventLog.Log,
                 "{SysCall} message={State}",
                 nameof(System_Runtime_Log), _encoding.GetString(state));
         }
@@ -179,7 +179,7 @@ namespace Neo.Build.Core.SmartContract
         {
             RuntimeNotify(eventName, state);
 
-            _traceLogger.LogInformation(VMEventLog.Notify,
+            _traceLogger.LogInformation(DebugEventLog.Notify,
                 "{SysCall} event={Event}, state={State}",
                 nameof(System_Runtime_Notify), eventName, state.ToJson());
         }
@@ -188,7 +188,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetNotifications(scriptHash);
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} contract={Hash}, result={Result}",
                 nameof(System_Runtime_GetNotifications), scriptHash, result.ToJson());
 
@@ -199,7 +199,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GasLeft;
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result={Result}",
                 nameof(System_Runtime_GasLeft), result);
 
@@ -210,7 +210,7 @@ namespace Neo.Build.Core.SmartContract
         {
             BurnGas(datoshi);
 
-            _traceLogger.LogInformation(VMEventLog.Burn,
+            _traceLogger.LogInformation(DebugEventLog.Burn,
                 "{SysCall} gas={Gas}",
                 nameof(System_Runtime_BurnGas), datoshi);
         }
@@ -221,7 +221,7 @@ namespace Neo.Build.Core.SmartContract
 
             var resultStrings = result.Select(s => s.ToJson());
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} result=[{Result}]",
                 nameof(System_Runtime_CurrentSigners), string.Join(',', resultStrings));
 

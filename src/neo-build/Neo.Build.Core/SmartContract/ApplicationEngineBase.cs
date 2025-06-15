@@ -13,13 +13,16 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Neo.Build.Core.Factories;
 using Neo.Build.Core.Logging;
+using Neo.Build.Core.SmartContract.Debugger;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Neo.Build.Core.SmartContract
@@ -90,6 +93,7 @@ namespace Neo.Build.Core.SmartContract
         };
 
         private readonly StorageSettings _storageSettings;
+        private readonly ApplicationEngineDebugSink _engineDebugSink = new();
 
         public override void Dispose()
         {
@@ -101,14 +105,25 @@ namespace Neo.Build.Core.SmartContract
             ReadOnlyMemory<byte> memoryScript = CurrentContext?.Script ?? ReadOnlyMemory<byte>.Empty;
             var scriptString = System.Convert.ToBase64String(memoryScript.Span);
 
-            _traceLogger.LogInformation(VMEventLog.Execute,
+            _traceLogger.LogInformation(DebugEventLog.Execute,
                 "Executing container={TxHash}, script={Script}",
                 ScriptContainer?.Hash, scriptString);
 
+            _engineDebugSink.Script = memoryScript;
+            _engineDebugSink.ScriptContainer = ScriptContainer;
+
             var result = base.Execute();
 
-            _traceLogger.LogInformation(VMEventLog.Execute,
-                "Executed state={VMState}, gas={Consumed}, leftover={GasLeft}, result={Result}",
+            _engineDebugSink.State = result;
+            _engineDebugSink.GasFee = FeeConsumed;
+            _engineDebugSink.GasLeft = GasLeft;
+            _engineDebugSink.Results = ResultStack;
+
+            var callSink = new DebugCallSink(nameof(Execute), DebugEventLog.Execute, [memoryScript], ResultStack);
+            AddDebugSinkCallStack(callSink);
+
+            _traceLogger.LogInformation(DebugEventLog.Execute,
+                "Executed state={VMState}, gas={Consumed}, gasleft={GasLeft}, result={Result}",
                 result, FeeConsumed, GasLeft, ResultStack.ToJson());
 
             return result;
@@ -118,20 +133,32 @@ namespace Neo.Build.Core.SmartContract
         {
             base.LoadContext(context);
 
+            var callSink = new DebugCallSink(nameof(LoadContext), DebugEventLog.Load);
+            AddDebugSinkCallStack(callSink);
+
             var contextState = context.GetState<ExecutionContextState>();
             var contractState = contextState.Contract;
 
             if (contextState.ScriptHash is not null &&
                 contractState is not null)
-                _traceLogger.LogInformation(VMEventLog.Load,
+            {
+                var storageItems = SnapshotCache
+                    .Find(StorageKey.CreateSearchPrefix(contractState.Id, default))
+                    .Select(s => new DebugStorage(s.Key, s.Value));
+                var contractSink = new DebugContractSink(contractState, storageItems);
+                AddDebugSinkContractStack(contractSink);
+
+                _traceLogger.LogInformation(DebugEventLog.Load,
                     "Loaded name={Name}, hash={ScriptHash}",
                     contractState.Manifest.Name, contextState.ScriptHash);
+
+            }
             else
             {
                 ReadOnlyMemory<byte> memBytes = context.Script;
                 var scriptString = System.Convert.ToBase64String(memBytes.Span);
 
-                _traceLogger.LogInformation(VMEventLog.Load,
+                _traceLogger.LogInformation(DebugEventLog.Load,
                     "Loaded script={Script}",
                     scriptString);
             }
@@ -141,7 +168,10 @@ namespace Neo.Build.Core.SmartContract
         {
             base.OnFault(ex);
 
-            _traceLogger.LogError(VMEventLog.Fault, ex,
+            var callSink = new DebugCallSink(nameof(OnFault), DebugEventLog.Fault, [ex], ResultStack);
+            AddDebugSinkCallStack(callSink);
+
+            _traceLogger.LogError(DebugEventLog.Fault, ex,
                 "{Message}",
                 ex.InnerException?.Message ?? ex.Message);
         }
@@ -149,11 +179,30 @@ namespace Neo.Build.Core.SmartContract
         protected override void PostExecuteInstruction(Instruction instruction)
         {
             base.PostExecuteInstruction(instruction);
+
+            if (State == VMState.HALT || State == VMState.FAULT)
+            {
+                var callSink = new DebugCallSink(nameof(PostExecuteInstruction), DebugEventLog.Post);
+                AddDebugSinkCallStack(callSink);
+            }
+
+            var contractState = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
+            if (contractState != null)
+            {
+                var storageItems = SnapshotCache
+                    .Find(StorageKey.CreateSearchPrefix(contractState.Id, default))
+                    .Select(s => new DebugStorage(s.Key, s.Value));
+                var contractSink = new DebugContractSink(contractState, storageItems);
+                AddDebugSinkPostContractStack(contractSink);
+            }
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             base.PreExecuteInstruction(instruction);
+
+            var callSink = new DebugCallSink(nameof(PreExecuteInstruction), DebugEventLog.PrePost);
+            AddDebugSinkCallStack(callSink);
         }
 
         protected override void OnSysCall(InteropDescriptor descriptor)

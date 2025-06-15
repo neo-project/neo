@@ -1,0 +1,24 @@
+// Copyright (C) 2015-2025 The Neo Project.
+//
+// DebugStorageValues.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+using Neo.SmartContract;
+
+namespace Neo.Build.Core.SmartContract.Debugger
+{
+    internal class DebugStorage(
+        StorageKey key,
+        StorageItem value)
+    {
+        public StorageKey Key { get; set; } = key;
+
+        public StorageItem Value { get; set; } = value;
+    }
+}

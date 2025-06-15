@@ -22,7 +22,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = CheckSig(publicKey, signature);
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} key=0x{Key}, signature=0x{Signature}, result={Result}",
                 nameof(System_Crypto_CheckSig), publicKey.ToHexString(), signature.ToHexString(), result);
 
@@ -35,7 +35,7 @@ namespace Neo.Build.Core.SmartContract
             var signatureStrings = signatures.Select(s => "0x" + s.ToHexString());
             var result = CheckMultisig(publicKeys, signatures);
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(DebugEventLog.Call,
                 "{SysCall} keys=[{Keys}], signatures=[{Signatures}], result={Result}",
                 nameof(System_Crypto_CheckMultisig), string.Join(',', publicKeyStrings), string.Join(',', signatureStrings), result);
 
