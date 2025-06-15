@@ -21,7 +21,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions.Factory;
+using Neo.Extensions.Factories;
 
 namespace Neo.Extensions.Tests.Factories
 {
