@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MSTest" Version="3.8.2" />
+    <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.2" />
   </ItemGroup>
 

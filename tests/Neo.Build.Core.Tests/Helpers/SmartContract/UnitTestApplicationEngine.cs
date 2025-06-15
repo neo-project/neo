@@ -18,30 +18,28 @@ using System.Collections.Generic;
 
 namespace Neo.Build.Core.Tests.Helpers.SmartContract
 {
-    internal class UnitTestApplicationEngine : ApplicationEngineBase
+    public class UnitTestApplicationEngine(
+        ProtocolSettings protocolSettings,
+        DataCache snapshotCache,
+        long maxGas = 20_0000000L,
+        StorageSettings? storageSettings = null,
+        TriggerType trigger = TriggerType.Application,
+        IVerifiable? container = null,
+        Block? persistingBlock = null,
+        IDiagnostic? diagnostic = null,
+        ILoggerFactory? loggerFactory = null,
+        IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
+        : ApplicationEngineBase(
+            protocolSettings,
+            snapshotCache,
+            maxGas,
+            storageSettings,
+            trigger,
+            container,
+            persistingBlock,
+            diagnostic,
+            loggerFactory,
+            systemCallMethods)
     {
-        public UnitTestApplicationEngine(
-            ProtocolSettings protocolSettings,
-            DataCache snapshotCache,
-            long maxGas = 20_0000000L,
-            StorageSettings? storageSettings = null,
-            TriggerType trigger = TriggerType.Application,
-            IVerifiable? container = null,
-            Block? persistingBlock = null,
-            IDiagnostic? diagnostic = null,
-            ILoggerFactory? loggerFactory = null,
-            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
-            : base(protocolSettings,
-                  snapshotCache,
-                  maxGas,
-                  storageSettings,
-                  trigger,
-                  container,
-                  persistingBlock,
-                  diagnostic,
-                  loggerFactory,
-                  systemCallMethods)
-        {
-        }
     }
 }

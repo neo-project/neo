@@ -39,7 +39,7 @@ namespace Neo.Build.Core.Tests.Helpers
 
         private class StoreProvider : IStoreProvider
         {
-            public string Name => "NeoBuildProvider";
+            public string Name => "NeoBuildTestProvider";
 
             public IStore GetStore(string path) => s_store;
         }

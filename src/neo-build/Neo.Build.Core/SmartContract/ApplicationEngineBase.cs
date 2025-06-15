@@ -85,15 +85,10 @@ namespace Neo.Build.Core.SmartContract
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _traceLogger;
 
-        private readonly Encoding _encoding = Encoding.GetEncoding("UTF-8", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
+        private readonly Encoding _encoding = Encoding.GetEncoding("utf-8", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
 
         private readonly StorageSettings _storageSettings;
         private readonly ApplicationEngineDebugSink _engineDebugSink = new();
-
-        public override void Dispose()
-        {
-            base.Dispose();
-        }
 
         public override VMState Execute()
         {

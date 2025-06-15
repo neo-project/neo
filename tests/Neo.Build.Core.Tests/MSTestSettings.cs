@@ -9,4 +9,4 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-[assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
+[assembly: Parallelize(Scope = ExecutionScope.ClassLevel)]

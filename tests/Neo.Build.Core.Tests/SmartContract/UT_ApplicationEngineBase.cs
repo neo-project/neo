@@ -24,7 +24,7 @@ namespace Neo.Build.Core.Tests.SmartContract
     public class UT_ApplicationEngineBase
     {
         [TestMethod]
-        public void Test()
+        public void TestApplicationEngineSimple()
         {
             var pb = BlockBuilder
                 .CreateNext(TestNode.NeoSystem.GenesisBlock)
