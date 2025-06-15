@@ -14,7 +14,7 @@ using System.Buffers.Binary;
 using System.Numerics;
 using System.Security.Cryptography;
 
-namespace Neo.Extensions.Factory
+namespace Neo.Extensions.Factories
 {
     public static class RandomNumberFactory
     {

@@ -1,5 +1,17 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
+// UT_RandomNumberFactory.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+
+// Copyright (C) 2015-2025 The Neo Project.
+//
 // RandomNumberFactory.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
@@ -11,7 +23,7 @@
 
 using Neo.Extensions.Factory;
 
-namespace Neo.Extensions.Tests
+namespace Neo.Extensions.Tests.Factories
 {
     [TestClass]
     public class UT_RandomNumberFactory
