@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using Neo.Build.Core.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
@@ -18,6 +16,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Net;
 
 namespace Neo.Build.Core.Tests.Helpers
 {
@@ -25,15 +24,6 @@ namespace Neo.Build.Core.Tests.Helpers
     {
         public static readonly NeoSystem NeoSystem;
         public static readonly DevWallet Wallet;
-        public static readonly ILoggerFactory FactoryLogger = LoggerFactory.Create(logging =>
-        {
-            logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-            logging.AddSimpleConsole(options =>
-            {
-                options.SingleLine = true;
-                options.ColorBehavior = LoggerColorBehavior.Disabled;
-            });
-        });
 
         private static readonly FasterDbStore s_store = new(Path.GetRandomFileName());
 
@@ -63,6 +53,16 @@ namespace Neo.Build.Core.Tests.Helpers
                     }.ToImmutableDictionary(),
                 },
                 new StoreProvider());
+
+            NeoSystem.StartNode(new()
+            {
+                MaxConnections = 40,
+                MaxConnectionsPerAddress = 10,
+                MaxKnownHashes = 1024,
+                MinDesiredConnections = 3,
+                EnableCompression = false,
+                Tcp = new(IPAddress.Loopback, 10333)
+            });
         }
     }
 }

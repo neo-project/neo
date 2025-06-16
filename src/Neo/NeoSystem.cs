@@ -152,7 +152,7 @@ namespace Neo
             TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
-            Blockchain.Ask(new Blockchain.Initialize()).Wait();
+            Blockchain.Ask(new Blockchain.Initialize()).GetAwaiter().GetResult();
         }
 
         /// <summary>

@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Build.Core.Factories;
+using Microsoft.Extensions.Logging;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -19,9 +19,15 @@ namespace Neo.Build.Core.Tests.Helpers.SmartContract
 {
     internal class UnitTestApplicationEngineProvider : IApplicationEngineProvider
     {
+        private readonly ILoggerFactory FactoryLogger = LoggerFactory.Create(logging =>
+        {
+            logging.AddDebug();
+            logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+        });
+
         public static UnitTestApplicationEngineProvider Instance => new();
 
         public ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable) =>
-            new UnitTestApplicationEngine(settings, snapshot, gas, new(), trigger, container, persistingBlock, diagnostic, TestNode.FactoryLogger, ApplicationEngineFactory.SystemCallBaseServices);
+            new UnitTestApplicationEngine(settings, snapshot, gas, new(), trigger, container, persistingBlock, diagnostic, FactoryLogger);
     }
 }
