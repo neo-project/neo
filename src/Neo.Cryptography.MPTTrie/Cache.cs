@@ -48,7 +48,7 @@ namespace Neo.Cryptography.MPTTrie
         {
             var buffer = new byte[UInt256.Length + 1];
             buffer[0] = _prefix;
-            hash.GetSpan().CopyTo(buffer.AsSpan(1));
+            hash.Serialize(buffer.AsSpan(1));
             return buffer;
         }
 
