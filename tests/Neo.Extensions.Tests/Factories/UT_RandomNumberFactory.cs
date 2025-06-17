@@ -212,7 +212,7 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextBigInteger()
         {
-            var actual = RandomNumberFactory.NextBigInteger(byte.MaxValue);
+            var actual = RandomNumberFactory.NextBigInteger(byte.MaxValue + 1);
             Assert.AreNotEqual(0ul, actual);
             Assert.AreEqual(byte.MaxValue, actual.BitLength());
         }
