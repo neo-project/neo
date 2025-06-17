@@ -205,7 +205,7 @@ namespace Neo.Extensions.Factories
             var t = ((ulong)ah) * bl + (mull >> 32);
             var tl = ((ulong)al) * bh + (uint)t;
 
-            low = tl << 32 | (uint)mull;
+            low = (tl << 32) | (uint)mull;
 
             return ((ulong)ah) * bh + (t >> 32) + (tl >> 32);
         }
