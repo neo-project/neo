@@ -21,8 +21,13 @@ namespace Neo.Extensions.Factories
         public static sbyte NextSByte() =>
             NextSByte(sbyte.MinValue, sbyte.MaxValue);
 
-        public static sbyte NextSByte(sbyte maxValue) =>
-            NextSByte(sbyte.MinValue, maxValue);
+        public static sbyte NextSByte(sbyte maxValue)
+        {
+            if (maxValue < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            return NextSByte(sbyte.MinValue, maxValue);
+        }
 
         public static sbyte NextSByte(sbyte minValue, sbyte maxValue)
         {
@@ -47,10 +52,15 @@ namespace Neo.Extensions.Factories
         }
 
         public static short NextInt16() =>
-            NextInt16(short.MinValue, short.MaxValue);
+            NextInt16(0, short.MaxValue);
 
-        public static short NextInt16(short maxValue) =>
-            NextInt16(short.MinValue, maxValue);
+        public static short NextInt16(short maxValue)
+        {
+            if (maxValue < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            return NextInt16(0, maxValue);
+        }
 
         public static short NextInt16(short minValue, short maxValue)
         {
@@ -61,10 +71,10 @@ namespace Neo.Extensions.Factories
         }
 
         public static ushort NextUInt16() =>
-            NextUInt16(ushort.MinValue, ushort.MaxValue);
+            NextUInt16(0, ushort.MaxValue);
 
         public static ushort NextUInt16(ushort maxValue) =>
-            NextUInt16(ushort.MinValue, maxValue);
+            NextUInt16(0, maxValue);
 
         public static ushort NextUInt16(ushort minValue, ushort maxValue)
         {
@@ -75,10 +85,15 @@ namespace Neo.Extensions.Factories
         }
 
         public static int NextInt32() =>
-            NextInt32(int.MinValue, int.MaxValue);
+            NextInt32(0, int.MaxValue);
 
-        public static int NextInt32(int maxValue) =>
-            NextInt32(int.MinValue, maxValue);
+        public static int NextInt32(int maxValue)
+        {
+            if (maxValue < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            return NextInt32(0, maxValue);
+        }
 
         public static int NextInt32(int minValue, int maxValue)
         {
@@ -123,10 +138,15 @@ namespace Neo.Extensions.Factories
         }
 
         public static long NextInt64() =>
-            NextInt64(long.MinValue, long.MaxValue);
+            NextInt64(0, long.MaxValue);
 
-        public static long NextInt64(long maxValue) =>
-            NextInt64(long.MinValue, maxValue);
+        public static long NextInt64(long maxValue)
+        {
+            if (maxValue < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            return NextInt64(0, maxValue);
+        }
 
         public static long NextInt64(long minValue, long maxValue)
         {
