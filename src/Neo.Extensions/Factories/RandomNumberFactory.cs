@@ -38,7 +38,7 @@ namespace Neo.Extensions.Factories
         }
 
         public static byte NextByte() =>
-            NextByte(byte.MaxValue, byte.MaxValue);
+            NextByte(byte.MinValue, byte.MaxValue);
 
         public static byte NextByte(byte maxValue) =>
             NextByte(byte.MinValue, maxValue);
