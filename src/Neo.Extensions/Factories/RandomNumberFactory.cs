@@ -74,7 +74,7 @@ namespace Neo.Extensions.Factories
             NextUInt16(0, ushort.MaxValue);
 
         public static ushort NextUInt16(ushort maxValue) =>
-            NextUInt16(0, maxValue);
+            NextUInt16(ushort.MinValue, maxValue);
 
         public static ushort NextUInt16(ushort minValue, ushort maxValue)
         {
