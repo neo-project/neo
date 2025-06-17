@@ -23,6 +23,7 @@
 
 using Neo.Extensions.Factories;
 using System;
+using System.Numerics;
 
 namespace Neo.Extensions.Tests.Factories
 {
@@ -212,9 +213,14 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextBigInteger()
         {
-            var actual = RandomNumberFactory.NextBigInteger(byte.MaxValue + 1);
-            Assert.AreNotEqual(0ul, actual);
-            Assert.AreEqual(byte.MaxValue, actual.BitLength());
+            var actualValue = RandomNumberFactory.NextBigInteger(byte.MaxValue);
+
+            Assert.IsTrue(actualValue > BigInteger.Zero);
+
+            actualValue = RandomNumberFactory.NextBigInteger(0);
+            Assert.AreEqual(BigInteger.Zero, actualValue);
+
+            Assert.ThrowsExactly<ArgumentException>(() => RandomNumberFactory.NextBigInteger(-1));
         }
     }
 }
