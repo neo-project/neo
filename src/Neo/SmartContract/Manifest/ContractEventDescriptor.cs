@@ -73,10 +73,11 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The event represented by a JSON object.</returns>
         public virtual JObject ToJson()
         {
-            var json = new JObject();
-            json["name"] = Name;
-            json["parameters"] = new JArray(Parameters.Select(u => u.ToJson()).ToArray());
-            return json;
+            return new JObject()
+            {
+                ["name"] = Name,
+                ["parameters"] = new JArray(Parameters.Select(u => u.ToJson()).ToArray())
+            };
         }
 
         public bool Equals(ContractEventDescriptor other)

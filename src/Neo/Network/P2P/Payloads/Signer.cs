@@ -207,9 +207,11 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The signer represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["account"] = Account.ToString();
-            json["scopes"] = Scopes;
+            var json = new JObject()
+            {
+                ["account"] = Account.ToString(),
+                ["scopes"] = Scopes
+            };
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
                 json["allowedcontracts"] = AllowedContracts.Select(p => (JToken)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))

@@ -80,10 +80,11 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The group represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["pubkey"] = PubKey.ToString();
-            json["signature"] = Convert.ToBase64String(Signature);
-            return json;
+            return new JObject()
+            {
+                ["pubkey"] = PubKey.ToString(),
+                ["signature"] = Convert.ToBase64String(Signature)
+            };
         }
     }
 }

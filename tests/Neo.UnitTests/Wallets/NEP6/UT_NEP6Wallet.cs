@@ -101,12 +101,14 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestChangePassword()
         {
-            var wallet = new JObject();
-            wallet["name"] = "name";
-            wallet["version"] = new Version("1.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
-            wallet["accounts"] = new JArray();
-            wallet["extra"] = new JObject();
+            var wallet = new JObject()
+            {
+                ["name"] = "name",
+                ["version"] = new Version("1.0").ToString(),
+                ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
+                ["accounts"] = new JArray(),
+                ["extra"] = new JObject()
+            };
             File.WriteAllText(wPath, wallet.ToString());
 
             uut = new NEP6Wallet(wPath, "123", TestProtocolSettings.Default);
@@ -356,12 +358,14 @@ namespace Neo.UnitTests.Wallets.NEP6
             result = uut.Contains(testScriptHash);
             Assert.IsFalse(result);
 
-            var wallet = new JObject();
-            wallet["name"] = "name";
-            wallet["version"] = new Version("1.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
-            wallet["accounts"] = new JArray();
-            wallet["extra"] = new JObject();
+            var wallet = new JObject()
+            {
+                ["name"] = "name",
+                ["version"] = new Version("1.0").ToString(),
+                ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
+                ["accounts"] = new JArray(),
+                ["extra"] = new JObject()
+            };
 
             uut = new NEP6Wallet(null, "123", ProtocolSettings.Default, wallet);
             result = uut.Contains(testScriptHash);
@@ -390,12 +394,14 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestSave()
         {
-            var wallet = new JObject();
-            wallet["name"] = "name";
-            wallet["version"] = new Version("1.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
-            wallet["accounts"] = new JArray();
-            wallet["extra"] = new JObject();
+            var wallet = new JObject()
+            {
+                ["name"] = "name",
+                ["version"] = new Version("1.0").ToString(),
+                ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
+                ["accounts"] = new JArray(),
+                ["extra"] = new JObject()
+            };
             File.WriteAllText(wPath, wallet.ToString());
 
             uut = new NEP6Wallet(wPath, "123", ProtocolSettings.Default);
@@ -432,12 +438,14 @@ namespace Neo.UnitTests.Wallets.NEP6
             uut.DeleteAccount(testScriptHash);
             Assert.IsFalse(uut.Contains(testScriptHash));
 
-            var wallet = new JObject();
-            wallet["name"] = "name";
-            wallet["version"] = new Version("1.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
-            wallet["accounts"] = new JArray();
-            wallet["extra"] = new JObject();
+            var wallet = new JObject()
+            {
+                ["name"] = "name",
+                ["version"] = new Version("1.0").ToString(),
+                ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
+                ["accounts"] = new JArray(),
+                ["extra"] = new JObject()
+            };
 
             uut = new NEP6Wallet(null, "123", ProtocolSettings.Default, wallet);
             nep2key = keyPair.Export("123", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
@@ -458,12 +466,14 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestIsDefault()
         {
-            var wallet = new JObject();
-            wallet["name"] = "name";
-            wallet["version"] = new Version("1.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
-            wallet["accounts"] = new JArray();
-            wallet["extra"] = new JObject();
+            var wallet = new JObject()
+            {
+                ["name"] = "name",
+                ["version"] = new Version("1.0").ToString(),
+                ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
+                ["accounts"] = new JArray(),
+                ["extra"] = new JObject()
+            };
 
             var w = new NEP6Wallet(null, "", ProtocolSettings.Default, wallet);
             var ac = w.CreateAccount();
