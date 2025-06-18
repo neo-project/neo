@@ -65,12 +65,14 @@ namespace Neo.UnitTests
 
         public static NEP6Wallet GenerateTestWallet(string password)
         {
-            var wallet = new JObject();
-            wallet["name"] = "noname";
-            wallet["version"] = new Version("1.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
-            wallet["accounts"] = new JArray();
-            wallet["extra"] = null;
+            var wallet = new JObject()
+            {
+                ["name"] = "noname",
+                ["version"] = new Version("1.0").ToString(),
+                ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
+                ["accounts"] = new JArray(),
+                ["extra"] = null
+            };
             Assert.AreEqual("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}", wallet.ToString());
             return new NEP6Wallet(null, password, TestProtocolSettings.Default, wallet);
         }

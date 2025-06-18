@@ -11,8 +11,10 @@
 
 using Neo.Extensions;
 using Neo.Persistence;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Policy;
 
 namespace Neo.Cryptography.MPTTrie
 {
@@ -45,12 +47,8 @@ namespace Neo.Cryptography.MPTTrie
         private byte[] Key(UInt256 hash)
         {
             var buffer = new byte[UInt256.Length + 1];
-            using (var ms = new MemoryStream(buffer, true))
-            using (var writer = new BinaryWriter(ms))
-            {
-                writer.Write(_prefix);
-                hash.Serialize(writer);
-            }
+            buffer[0] = _prefix;
+            hash.Serialize(buffer.AsSpan(1));
             return buffer;
         }
 
