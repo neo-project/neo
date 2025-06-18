@@ -19,7 +19,7 @@
     <EnableMSTestRunner>true</EnableMSTestRunner>
     <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <MSTestVersion>3.8.2</MSTestVersion>
+    <MSTestVersion>3.9.3</MSTestVersion>
     <MSTestAnalysisMode>Recommended</MSTestAnalysisMode>
   </PropertyGroup>
 
