@@ -24,7 +24,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestFromJson()
         {
-            JString jstring = new JString("*");
+            var jstring = new JString("*");
             var s = WildcardContainer<string>.FromJson(jstring, u => u.AsString());
             Assert.IsTrue(s.IsWildcard);
             Assert.AreEqual(0, s.Count);
@@ -32,14 +32,16 @@ namespace Neo.UnitTests.SmartContract.Manifest
             jstring = new JString("hello world");
             Assert.ThrowsExactly<FormatException>(() => _ = WildcardContainer<string>.FromJson(jstring, u => u.AsString()));
 
-            JObject alice = new JObject();
-            alice["name"] = "alice";
-            alice["age"] = 30;
-            JArray jarray = new JArray { alice };
-            WildcardContainer<string> r = WildcardContainer<string>.FromJson(jarray, u => u.AsString());
+            var alice = new JObject()
+            {
+                ["name"] = "alice",
+                ["age"] = 30
+            };
+            var jarray = new JArray { alice };
+            var r = WildcardContainer<string>.FromJson(jarray, u => u.AsString());
             Assert.AreEqual("{\"name\":\"alice\",\"age\":30}", r[0]);
 
-            JBoolean jbool = new JBoolean();
+            var jbool = new JBoolean();
             Assert.ThrowsExactly<FormatException>(() => _ = WildcardContainer<string>.FromJson(jbool, u => u.AsString()));
         }
 
@@ -47,7 +49,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestGetCount()
         {
             string[] s = ["hello", "world"];
-            WildcardContainer<string> container = WildcardContainer<string>.Create(s);
+            var container = WildcardContainer<string>.Create(s);
             Assert.AreEqual(2, container.Count);
 
             s = null;
@@ -87,7 +89,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestIEnumerableGetEnumerator()
         {
             string[] s = ["hello", "world"];
-            WildcardContainer<string> container = WildcardContainer<string>.Create(s);
+            var container = WildcardContainer<string>.Create(s);
             IEnumerable enumerable = container;
             var enumerator = enumerable.GetEnumerator();
             foreach (string _ in s)
