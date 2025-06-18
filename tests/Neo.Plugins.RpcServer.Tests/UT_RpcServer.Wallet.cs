@@ -608,8 +608,8 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(true, resp["stack"][0]["value"].AsBoolean());
             // invoke verify with 2 param (which does not exist); should throw Exception
-            Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }, new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]),
-                $"Invalid contract verification function - The smart contract {deployedScriptHash} haven't got verify method with 2 input parameters.");
+            Assert.ThrowsExactly<RpcException>(action: () => _ = _rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }, new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]),
+                message: $"Invalid contract verification function - The smart contract {deployedScriptHash} haven't got verify method with 2 input parameters.", []);
         }
 
         private void TestUtilOpenWallet([CallerMemberName] string callerMemberName = "")
