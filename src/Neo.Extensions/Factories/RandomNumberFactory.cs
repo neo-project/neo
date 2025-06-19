@@ -188,6 +188,23 @@ namespace Neo.Extensions.Factories
             return NextUInt64(maxValue - minValue) + minValue;
         }
 
+        public static BigInteger NextBigInteger(BigInteger maxValue)
+        {
+            if (maxValue.Sign < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            return NextBigInteger(BigInteger.Zero, maxValue);
+        }
+
+        public static BigInteger NextBigInteger(BigInteger minValue, BigInteger maxValue)
+        {
+            if (minValue > maxValue)
+                throw new ArgumentOutOfRangeException(nameof(minValue));
+
+            return minValue + (NextBigInteger(256) % (maxValue - minValue + BigInteger.One));
+        }
+
+
         public static BigInteger NextBigInteger(int sizeInBits)
         {
             if (sizeInBits < 0)

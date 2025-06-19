@@ -39,7 +39,9 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextSByte(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextSByte(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
+            actualValue = RandomNumberFactory.NextSByte(expectedMax);
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
@@ -52,14 +54,14 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextSByte(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextSByte(expectedMin, expectedMax);
-
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
-        public void CheckNextSByteMaxNegative()
+        public void CheckNextSByteExceptions()
         {
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextSByte(-1));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextSByte(-1, -2));
         }
 
         [TestMethod]
@@ -71,7 +73,9 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextByte(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextByte(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
+            actualValue = RandomNumberFactory.NextByte(expectedMax);
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
@@ -84,7 +88,9 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt16(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextInt16(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
+            actualValue = RandomNumberFactory.NextInt16(expectedMax);
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
@@ -97,14 +103,17 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt16(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextInt16(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
+            actualValue = RandomNumberFactory.NextInt16(expectedMax);
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
-        public void CheckNextInt16MaxNegative()
+        public void CheckNextInt16Exceptions()
         {
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt16(-1));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt16(-1, -2));
         }
 
         [TestMethod]
@@ -116,7 +125,9 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextUInt16(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextUInt16(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
+            actualValue = RandomNumberFactory.NextUInt16(expectedMax);
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
@@ -129,7 +140,9 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt32(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextInt32(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
+            actualValue = RandomNumberFactory.NextInt32(expectedMax);
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
@@ -142,14 +155,14 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt32(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextInt32(expectedMin, expectedMax);
-
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
-        public void CheckNextInt32MaxNegative()
+        public void CheckNextInt32Exceptions()
         {
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt32(-1));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt32(-1, -2));
         }
 
         [TestMethod]
@@ -161,7 +174,9 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextUInt32(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextUInt32(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
+            actualValue = RandomNumberFactory.NextUInt32(expectedMax);
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
@@ -174,7 +189,9 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt64(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextInt64(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
+            actualValue = RandomNumberFactory.NextInt64(expectedMax);
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
@@ -185,16 +202,16 @@ namespace Neo.Extensions.Tests.Factories
             var expectedMin = long.MinValue;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt64(expectedMax, expectedMax));
-
             var actualValue = RandomNumberFactory.NextInt64(expectedMin, expectedMax);
 
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
-        public void CheckNextInt64MaxNegative()
+        public void CheckNextInt64Exceptions()
         {
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt64(-1L));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt64(-1L, -2L));
         }
 
         [TestMethod]
@@ -206,21 +223,56 @@ namespace Neo.Extensions.Tests.Factories
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextUInt64(expectedMax, expectedMax));
 
             var actualValue = RandomNumberFactory.NextUInt64(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
+            actualValue = RandomNumberFactory.NextUInt64(expectedMax);
             Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
-        public void CheckNextBigInteger()
+        public void CheckNextBigIntegerSizeInBits()
         {
             var actualValue = RandomNumberFactory.NextBigInteger(byte.MaxValue);
-
             Assert.IsTrue(actualValue > BigInteger.Zero);
 
             actualValue = RandomNumberFactory.NextBigInteger(0);
             Assert.AreEqual(BigInteger.Zero, actualValue);
 
             Assert.ThrowsExactly<ArgumentException>(() => RandomNumberFactory.NextBigInteger(-1));
+        }
+
+        [TestMethod]
+        public void CheckNextBigIntegerInRange()
+        {
+            var expectedMax = BigInteger.Parse("100000000000000000000000");
+            var expectedMin = BigInteger.Zero;
+
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextBigInteger(expectedMax, expectedMax));
+
+            var actualValue = RandomNumberFactory.NextBigInteger(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+
+            actualValue = RandomNumberFactory.NextBigInteger(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextBigIntegerInNegative()
+        {
+            var expectedMax = BigInteger.Zero;
+            var expectedMin = BigInteger.Parse("-100000000000000000000000");
+
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextBigInteger(expectedMax, expectedMax));
+
+            var actualValue = RandomNumberFactory.NextBigInteger(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextBigIntegerMaxNegative()
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextBigInteger(BigInteger.MinusOne));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextBigInteger(BigInteger.MinusOne, -2));
         }
     }
 }
