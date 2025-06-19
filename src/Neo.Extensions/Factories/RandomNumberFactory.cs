@@ -19,14 +19,14 @@ namespace Neo.Extensions.Factories
     public static class RandomNumberFactory
     {
         public static sbyte NextSByte() =>
-            NextSByte(sbyte.MinValue, sbyte.MaxValue);
+            NextSByte(0, sbyte.MaxValue);
 
         public static sbyte NextSByte(sbyte maxValue)
         {
             if (maxValue < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
 
-            return NextSByte(sbyte.MinValue, maxValue);
+            return NextSByte(0, maxValue);
         }
 
         public static sbyte NextSByte(sbyte minValue, sbyte maxValue)
@@ -38,10 +38,10 @@ namespace Neo.Extensions.Factories
         }
 
         public static byte NextByte() =>
-            NextByte(byte.MinValue, byte.MaxValue);
+            NextByte(0, byte.MaxValue);
 
         public static byte NextByte(byte maxValue) =>
-            NextByte(byte.MinValue, maxValue);
+            NextByte(0, maxValue);
 
         public static byte NextByte(byte minValue, byte maxValue)
         {
@@ -74,7 +74,7 @@ namespace Neo.Extensions.Factories
             NextUInt16(0, ushort.MaxValue);
 
         public static ushort NextUInt16(ushort maxValue) =>
-            NextUInt16(ushort.MinValue, maxValue);
+            NextUInt16(0, maxValue);
 
         public static ushort NextUInt16(ushort minValue, ushort maxValue)
         {
