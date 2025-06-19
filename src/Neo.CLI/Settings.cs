@@ -160,7 +160,9 @@ namespace Neo
                     NeoNameService = hash;
                 }
                 else
+                {
                     throw new ArgumentException("Neo Name Service (NNS): NeoNameService hash is invalid. Check your config.json.", nameof(NeoNameService));
+                }
             }
         }
 

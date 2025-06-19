@@ -11,8 +11,10 @@
 
 using Neo.Extensions;
 using Neo.Persistence;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Policy;
 
 namespace Neo.Cryptography.MPTTrie
 {
@@ -26,10 +28,10 @@ namespace Neo.Cryptography.MPTTrie
             Deleted
         }
 
-        private class Trackable
+        private class Trackable(Node node, TrackState state)
         {
-            public Node Node;
-            public TrackState State;
+            public Node Node { get; internal set; } = node;
+            public TrackState State { get; internal set; } = state;
         }
 
         private readonly IStoreSnapshot _store;
@@ -44,13 +46,9 @@ namespace Neo.Cryptography.MPTTrie
 
         private byte[] Key(UInt256 hash)
         {
-            byte[] buffer = new byte[UInt256.Length + 1];
-            using (var ms = new MemoryStream(buffer, true))
-            using (var writer = new BinaryWriter(ms))
-            {
-                writer.Write(_prefix);
-                hash.Serialize(writer);
-            }
+            var buffer = new byte[UInt256.Length + 1];
+            buffer[0] = _prefix;
+            hash.Serialize(buffer.AsSpan(1));
             return buffer;
         }
 
@@ -65,11 +63,7 @@ namespace Neo.Cryptography.MPTTrie
 
             var n = _store.TryGet(Key(hash), out var data) ? data.AsSerializable<Node>() : null;
 
-            t = new Trackable
-            {
-                Node = n,
-                State = TrackState.None,
-            };
+            t = new Trackable(n, TrackState.None);
             _cache.Add(hash, t);
             return t;
         }

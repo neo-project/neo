@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Null => WildcardContainer<string>.CreateWildcard(),
                 Array array => WildcardContainer<string>.Create(array.Select(p => p.GetString()).ToArray()),
-                _ => throw new ArgumentException(null, nameof(stackItem))
+                _ => throw new ArgumentException("The second field(`methods`) is not a null or array", nameof(stackItem))
             };
         }
 
@@ -101,10 +101,11 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The permission represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["contract"] = Contract.ToJson();
-            json["methods"] = Methods.ToJson(p => p);
-            return json;
+            return new JObject()
+            {
+                ["contract"] = Contract.ToJson(),
+                ["methods"] = Methods.ToJson(p => p)
+            };
         }
 
         /// <summary>

@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Native
         private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state, uint end)
         {
             if (state.Balance.IsZero) return BigInteger.Zero;
-            if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance));
+            if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance), "cannot be negative");
 
             var expectEnd = Ledger.CurrentIndex(snapshot) + 1;
             if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
@@ -280,7 +280,7 @@ namespace Neo.SmartContract.Native
         private void SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
-                throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
+                throw new ArgumentOutOfRangeException(nameof(gasPerBlock), $"GasPerBlock must be between [0, {10 * GAS.Factor}]");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             var index = engine.PersistingBlock.Index + 1;
@@ -303,7 +303,7 @@ namespace Neo.SmartContract.Native
         private void SetRegisterPrice(ApplicationEngine engine, long registerPrice)
         {
             if (registerPrice <= 0)
-                throw new ArgumentOutOfRangeException(nameof(registerPrice));
+                throw new ArgumentOutOfRangeException(nameof(registerPrice), "RegisterPrice must be positive");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_registerPrice).Set(registerPrice);
         }

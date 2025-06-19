@@ -144,15 +144,25 @@ namespace Neo.SmartContract
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
             if ((options & ~FindOptions.All) != 0)
-                throw new ArgumentOutOfRangeException(nameof(options));
-            if (options.HasFlag(FindOptions.KeysOnly) && (options.HasFlag(FindOptions.ValuesOnly) || options.HasFlag(FindOptions.DeserializeValues) || options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)))
-                throw new ArgumentException(null, nameof(options));
+                throw new ArgumentOutOfRangeException(nameof(options), $"Invalid find options: {options}");
+
+            if (options.HasFlag(FindOptions.KeysOnly) &&
+                (options.HasFlag(FindOptions.ValuesOnly) ||
+                 options.HasFlag(FindOptions.DeserializeValues) ||
+                 options.HasFlag(FindOptions.PickField0) ||
+                 options.HasFlag(FindOptions.PickField1)))
+            {
+                throw new ArgumentException("`KeysOnly` cannot be used with `ValuesOnly`, `DeserializeValues`, `PickField0`, or `PickField1`", nameof(options));
+            }
+
             if (options.HasFlag(FindOptions.ValuesOnly) && (options.HasFlag(FindOptions.KeysOnly) || options.HasFlag(FindOptions.RemovePrefix)))
-                throw new ArgumentException(null, nameof(options));
+                throw new ArgumentException("`ValuesOnly` cannot be used with `KeysOnly` or `RemovePrefix`", nameof(options));
+
             if (options.HasFlag(FindOptions.PickField0) && options.HasFlag(FindOptions.PickField1))
-                throw new ArgumentException(null, nameof(options));
+                throw new ArgumentException("`PickField0` and `PickField1` cannot be used together", nameof(options));
+
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
-                throw new ArgumentException(null, nameof(options));
+                throw new ArgumentException("`PickField0` or `PickField1` requires `DeserializeValues`", nameof(options));
 
             var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
             var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
@@ -168,8 +178,10 @@ namespace Neo.SmartContract
         /// <param name="value">The value of the entry.</param>
         protected internal void Put(StorageContext context, byte[] key, byte[] value)
         {
-            if (key.Length > MaxStorageKeySize) throw new ArgumentException("Key length too big", nameof(key));
-            if (value.Length > MaxStorageValueSize) throw new ArgumentException("Value length too big", nameof(value));
+            if (key.Length > MaxStorageKeySize)
+                throw new ArgumentException($"Key length too big: {key.Length}", nameof(key));
+            if (value.Length > MaxStorageValueSize)
+                throw new ArgumentException($"Value length too big: {value.Length}", nameof(value));
             if (context.IsReadOnly) throw new ArgumentException("StorageContext is readonly", nameof(context));
 
             int newDataSize;
@@ -208,7 +220,7 @@ namespace Neo.SmartContract
         /// <param name="key">The key of the entry.</param>
         protected internal void Delete(StorageContext context, byte[] key)
         {
-            if (context.IsReadOnly) throw new ArgumentException(null, nameof(context));
+            if (context.IsReadOnly) throw new ArgumentException("StorageContext is readonly", nameof(context));
             SnapshotCache.Delete(new StorageKey
             {
                 Id = context.Id,

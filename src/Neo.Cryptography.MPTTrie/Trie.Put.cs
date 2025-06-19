@@ -19,7 +19,7 @@ namespace Neo.Cryptography.MPTTrie
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ReadOnlySpan<byte> CommonPrefix(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
         {
-            int offset = a.CommonPrefixLength(b);
+            var offset = a.CommonPrefixLength(b);
             return a[..offset];
         }
 
@@ -60,7 +60,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.StartsWith(node.Key.Span))
                         {
                             var oldHash = node.Hash;
-                            Put(ref node.Next, path[node.Key.Length..], val);
+                            Put(ref node._next, path[node.Key.Length..], val);
                             if (!_full) _cache.DeleteNode(oldHash);
                             node.SetDirty();
                             _cache.PutNode(node);
