@@ -17,16 +17,16 @@ namespace Neo.Json
     {
         class ValueCollection : ICollection<TValue>, IReadOnlyList<TValue>
         {
-            private readonly InternalCollection internalCollection;
+            private readonly InternalCollection _internalCollection;
 
             public ValueCollection(InternalCollection internalCollection)
             {
-                this.internalCollection = internalCollection;
+                _internalCollection = internalCollection;
             }
 
-            public TValue this[int index] => internalCollection[index].Value;
+            public TValue this[int index] => _internalCollection[index].Value;
 
-            public int Count => internalCollection.Count;
+            public int Count => _internalCollection.Count;
 
             public bool IsReadOnly => true;
 
@@ -34,15 +34,15 @@ namespace Neo.Json
 
             public void Clear() => throw new NotSupportedException();
 
-            public bool Contains(TValue item) => item is null ? internalCollection.Any(p => p is null) : internalCollection.Any(p => item.Equals(p.Value));
+            public bool Contains(TValue item) => item is null ? _internalCollection.Any(p => p is null) : _internalCollection.Any(p => item.Equals(p.Value));
 
             public void CopyTo(TValue[] array, int arrayIndex)
             {
-                for (int i = 0; i < internalCollection.Count && i + arrayIndex < array.Length; i++)
-                    array[i + arrayIndex] = internalCollection[i].Value;
+                for (var i = 0; i < _internalCollection.Count && i + arrayIndex < array.Length; i++)
+                    array[i + arrayIndex] = _internalCollection[i].Value;
             }
 
-            public IEnumerator<TValue> GetEnumerator() => internalCollection.Select(p => p.Value).GetEnumerator();
+            public IEnumerator<TValue> GetEnumerator() => _internalCollection.Select(p => p.Value).GetEnumerator();
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

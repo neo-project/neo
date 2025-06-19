@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
@@ -49,12 +48,11 @@ namespace Neo.Plugins.StateService.Network
         {
             get
             {
-                return new[] { Witness };
+                return [Witness];
             }
             set
             {
-                if (value is null)
-                    throw new ArgumentNullException(nameof(IVerifiable.Witnesses));
+                ArgumentNullException.ThrowIfNull(value, nameof(IVerifiable.Witnesses));
                 if (value.Length != 1)
                     throw new ArgumentException($"Expected 1 witness, got {value.Length}.", nameof(IVerifiable.Witnesses));
                 Witness = value[0];
@@ -70,12 +68,12 @@ namespace Neo.Plugins.StateService.Network
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
             DeserializeUnsigned(ref reader);
-            Witness[] witnesses = reader.ReadSerializableArray<Witness>(1);
+            var witnesses = reader.ReadSerializableArray<Witness>(1);
             Witness = witnesses.Length switch
             {
                 0 => null,
                 1 => witnesses[0],
-                _ => throw new FormatException(),
+                _ => throw new FormatException($"Expected 1 witness, got {witnesses.Length}."),
             };
         }
 
@@ -92,7 +90,7 @@ namespace Neo.Plugins.StateService.Network
             if (Witness is null)
                 writer.WriteVarInt(0);
             else
-                writer.Write(new[] { Witness });
+                writer.Write([Witness]);
         }
 
         public void SerializeUnsigned(BinaryWriter writer)
@@ -109,19 +107,20 @@ namespace Neo.Plugins.StateService.Network
 
         public UInt160[] GetScriptHashesForVerifying(DataCache snapshot)
         {
-            ECPoint[] validators = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.StateValidator, Index);
+            var validators = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.StateValidator, Index);
             if (validators.Length < 1) throw new InvalidOperationException("No script hash for state root verifying");
-            return new UInt160[] { Contract.GetBFTAddress(validators) };
+            return [Contract.GetBFTAddress(validators)];
         }
 
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["version"] = Version;
-            json["index"] = Index;
-            json["roothash"] = RootHash.ToString();
-            json["witnesses"] = Witness is null ? new JArray() : new JArray(Witness.ToJson());
-            return json;
+            return new()
+            {
+                ["version"] = Version,
+                ["index"] = Index,
+                ["roothash"] = RootHash.ToString(),
+                ["witnesses"] = Witness is null ? new JArray() : new JArray(Witness.ToJson()),
+            };
         }
     }
 }

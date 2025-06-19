@@ -49,9 +49,11 @@ namespace Neo.SmartContract.Native
         public ECPoint[] GetDesignatedByRole(DataCache snapshot, Role role, uint index)
         {
             if (!Enum.IsDefined(typeof(Role), role))
-                throw new ArgumentOutOfRangeException(nameof(role));
-            if (Ledger.CurrentIndex(snapshot) + 1 < index)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                throw new ArgumentOutOfRangeException(nameof(role), $"Invalid role: {role}");
+
+            var currentIndex = Ledger.CurrentIndex(snapshot);
+            if (currentIndex + 1 < index)
+                throw new ArgumentOutOfRangeException(nameof(index), $"The `index`({index}) greater than `current-index + 1`({currentIndex + 1})");
             var key = CreateStorageKey((byte)role, index).ToArray();
             var boundary = CreateStorageKey((byte)role).ToArray();
             return snapshot.FindRange(key, boundary, SeekDirection.Backward)
@@ -63,9 +65,9 @@ namespace Neo.SmartContract.Native
         private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
             if (nodes.Length == 0 || nodes.Length > 32)
-                throw new ArgumentException(null, nameof(nodes));
+                throw new ArgumentException($"The `nodes`({nodes.Length}) must be between [1, 32]", nameof(nodes));
             if (!Enum.IsDefined(typeof(Role), role))
-                throw new ArgumentOutOfRangeException(nameof(role));
+                throw new ArgumentOutOfRangeException(nameof(role), $"Invalid role: {role}");
             if (!CheckCommittee(engine))
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             if (engine.PersistingBlock is null)

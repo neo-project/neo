@@ -45,7 +45,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.StartsWith(node.Key.Span))
                         {
                             var oldHash = node.Hash;
-                            var result = TryDelete(ref node.Next, path[node.Key.Length..]);
+                            var result = TryDelete(ref node._next, path[node.Key.Length..]);
                             if (!result) return false;
                             if (!_full) _cache.DeleteNode(oldHash);
                             if (node.Next.IsEmpty)
@@ -79,8 +79,8 @@ namespace Neo.Cryptography.MPTTrie
                         }
                         if (!result) return false;
                         if (!_full) _cache.DeleteNode(oldHash);
-                        List<byte> childrenIndexes = new List<byte>(Node.BranchChildCount);
-                        for (int i = 0; i < Node.BranchChildCount; i++)
+                        var childrenIndexes = new List<byte>(Node.BranchChildCount);
+                        for (var i = 0; i < Node.BranchChildCount; i++)
                         {
                             if (node.Children[i].IsEmpty) continue;
                             childrenIndexes.Add((byte)i);
@@ -112,7 +112,7 @@ namespace Neo.Cryptography.MPTTrie
                             node = lastChild;
                             return true;
                         }
-                        node = Node.NewExtension(childrenIndexes.ToArray(), lastChild);
+                        node = Node.NewExtension([.. childrenIndexes], lastChild);
                         _cache.PutNode(node);
                         return true;
                     }
@@ -122,8 +122,8 @@ namespace Neo.Cryptography.MPTTrie
                     }
                 case NodeType.HashNode:
                     {
-                        var newNode = _cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt delete");
+                        var newNode = _cache.Resolve(node.Hash)
+                            ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt delete");
                         node = newNode;
                         return TryDelete(ref node, path);
                     }

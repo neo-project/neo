@@ -49,7 +49,7 @@ namespace Neo.Wallets
         public KeyPair(byte[] privateKey)
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)
-                throw new ArgumentException(null, nameof(privateKey));
+                throw new ArgumentException($"Invalid private key length: {privateKey.Length}", nameof(privateKey));
             PrivateKey = privateKey[^32..];
             if (privateKey.Length == 32)
             {

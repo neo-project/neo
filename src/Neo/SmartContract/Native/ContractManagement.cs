@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value/* In the unit of datoshi, 1 datoshi = 1e-8 GAS*/)
         {
-            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "cannot be negative");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
         }
@@ -180,8 +180,8 @@ namespace Neo.SmartContract.Native
         private IIterator GetContractHashes(IReadOnlyStore snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix;
-            var prefix_key = CreateStorageKey(Prefix_ContractHash);
-            var enumerator = snapshot.Find(prefix_key)
+            var prefixKey = CreateStorageKey(Prefix_ContractHash);
+            var enumerator = snapshot.Find(prefixKey)
                 .Select(p => (p.Key, p.Value, Id: BinaryPrimitives.ReadInt32BigEndian(p.Key.Key.Span[1..])))
                 .Where(p => p.Id >= 0)
                 .Select(p => (p.Key, p.Value))
@@ -317,12 +317,13 @@ namespace Neo.SmartContract.Native
             {
                 if (manifest.Length == 0)
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
-                ContractManifest manifest_new = ContractManifest.Parse(manifest);
-                if (manifest_new.Name != contract.Manifest.Name)
+
+                var manifestNew = ContractManifest.Parse(manifest);
+                if (manifestNew.Name != contract.Manifest.Name)
                     throw new InvalidOperationException("The name of the contract can't be changed.");
-                if (!manifest_new.IsValid(engine.Limits, contract.Hash))
+                if (!manifestNew.IsValid(engine.Limits, contract.Hash))
                     throw new InvalidOperationException($"Invalid Manifest: {contract.Hash}");
-                contract.Manifest = manifest_new;
+                contract.Manifest = manifestNew;
             }
             Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter

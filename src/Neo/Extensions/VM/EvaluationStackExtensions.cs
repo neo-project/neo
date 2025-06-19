@@ -25,7 +25,7 @@ namespace Neo.Extensions
         /// <returns>The <see cref="EvaluationStack"/> represented by a JSON object.</returns>
         public static JArray ToJson(this EvaluationStack stack, int maxSize = int.MaxValue)
         {
-            if (maxSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxSize));
+            if (maxSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxSize), "must be positive");
             maxSize -= 2/*[]*/+ Math.Max(0, (stack.Count - 1))/*,*/;
             JArray result = [];
             foreach (var item in stack)

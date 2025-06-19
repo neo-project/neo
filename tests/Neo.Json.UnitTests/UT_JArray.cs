@@ -28,26 +28,36 @@ namespace Neo.Json.UnitTests
         [TestInitialize]
         public void SetUp()
         {
-            alice = new JObject();
-            alice["name"] = "alice";
-            alice["age"] = 30;
-            alice["score"] = 100.001;
-            alice["gender"] = Foo.female;
-            alice["isMarried"] = true;
-            var pet1 = new JObject();
-            pet1["name"] = "Tom";
-            pet1["type"] = "cat";
+            alice = new JObject()
+            {
+                ["name"] = "alice",
+                ["age"] = 30,
+                ["score"] = 100.001,
+                ["gender"] = Foo.female,
+                ["isMarried"] = true,
+            };
+
+            var pet1 = new JObject()
+            {
+                ["name"] = "Tom",
+                ["type"] = "cat",
+            };
             alice["pet"] = pet1;
 
-            bob = new JObject();
-            bob["name"] = "bob";
-            bob["age"] = 100000;
-            bob["score"] = 0.001;
-            bob["gender"] = Foo.male;
-            bob["isMarried"] = false;
-            var pet2 = new JObject();
-            pet2["name"] = "Paul";
-            pet2["type"] = "dog";
+            bob = new JObject()
+            {
+                ["name"] = "bob",
+                ["age"] = 100000,
+                ["score"] = 0.001,
+                ["gender"] = Foo.male,
+                ["isMarried"] = false,
+            };
+
+            var pet2 = new JObject()
+            {
+                ["name"] = "Paul",
+                ["type"] = "dog",
+            };
             bob["pet"] = pet2;
         }
 
@@ -252,7 +262,7 @@ namespace Neo.Json.UnitTests
                 bob,
             };
             var s = jArray.AsString();
-            Assert.AreEqual(s, "[{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]");
+            Assert.AreEqual("[{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]", s);
         }
 
         [TestMethod]

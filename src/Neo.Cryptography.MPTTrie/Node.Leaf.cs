@@ -20,18 +20,17 @@ namespace Neo.Cryptography.MPTTrie
     partial class Node
     {
         public const int MaxValueLength = 3 + ApplicationEngine.MaxStorageValueSize + sizeof(bool);
-        public ReadOnlyMemory<byte> Value;
+        public ReadOnlyMemory<byte> Value { get; set; } = ReadOnlyMemory<byte>.Empty;
 
         public static Node NewLeaf(byte[] value)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
-            var n = new Node
+            ArgumentNullException.ThrowIfNull(value);
+            return new Node
             {
-                type = NodeType.LeafNode,
+                Type = NodeType.LeafNode,
                 Value = value,
                 Reference = 1,
             };
-            return n;
         }
 
         protected int LeafSize => Value.GetVarSize();

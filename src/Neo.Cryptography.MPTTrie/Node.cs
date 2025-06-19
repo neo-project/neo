@@ -18,67 +18,54 @@ namespace Neo.Cryptography.MPTTrie
 {
     public partial class Node : ISerializable
     {
-        private NodeType type;
-        private UInt256 hash;
-        public int Reference;
-        public UInt256 Hash => hash ??= new UInt256(Crypto.Hash256(ToArrayWithoutReference()));
-        public NodeType Type => type;
-        public bool IsEmpty => type == NodeType.Empty;
+        private UInt256 _hash;
+        public int Reference { get; internal set; }
+        public UInt256 Hash => _hash ??= new UInt256(Crypto.Hash256(ToArrayWithoutReference()));
+        public NodeType Type { get; internal set; }
+        public bool IsEmpty => Type == NodeType.Empty;
         public int Size
         {
             get
             {
-                int size = sizeof(NodeType);
-                switch (type)
+                var size = sizeof(NodeType);
+                return Type switch
                 {
-                    case NodeType.BranchNode:
-                        return size + BranchSize + Reference.GetVarSize();
-                    case NodeType.ExtensionNode:
-                        return size + ExtensionSize + Reference.GetVarSize();
-                    case NodeType.LeafNode:
-                        return size + LeafSize + Reference.GetVarSize();
-                    case NodeType.HashNode:
-                        return size + HashSize;
-                    case NodeType.Empty:
-                        return size;
-                    default:
-                        throw new InvalidOperationException($"{nameof(Node)} Cannt get size, unsupport type");
-                }
+                    NodeType.BranchNode => size + BranchSize + Reference.GetVarSize(),
+                    NodeType.ExtensionNode => size + ExtensionSize + Reference.GetVarSize(),
+                    NodeType.LeafNode => size + LeafSize + Reference.GetVarSize(),
+                    NodeType.HashNode => size + HashSize,
+                    NodeType.Empty => size,
+                    _ => throw new InvalidOperationException($"{nameof(Node)} Cannt get size, unsupport type"),
+                };
             }
         }
 
         public Node()
         {
-            type = NodeType.Empty;
+            Type = NodeType.Empty;
         }
 
         public void SetDirty()
         {
-            hash = null;
+            _hash = null;
         }
 
         public int SizeAsChild
         {
             get
             {
-                switch (type)
+                return Type switch
                 {
-                    case NodeType.BranchNode:
-                    case NodeType.ExtensionNode:
-                    case NodeType.LeafNode:
-                        return NewHash(Hash).Size;
-                    case NodeType.HashNode:
-                    case NodeType.Empty:
-                        return Size;
-                    default:
-                        throw new InvalidOperationException(nameof(Node));
-                }
+                    NodeType.BranchNode or NodeType.ExtensionNode or NodeType.LeafNode => NewHash(Hash).Size,
+                    NodeType.HashNode or NodeType.Empty => Size,
+                    _ => throw new InvalidOperationException(nameof(Node)),
+                };
             }
         }
 
         public void SerializeAsChild(BinaryWriter writer)
         {
-            switch (type)
+            switch (Type)
             {
                 case NodeType.BranchNode:
                 case NodeType.ExtensionNode:
@@ -97,8 +84,8 @@ namespace Neo.Cryptography.MPTTrie
 
         private void SerializeWithoutReference(BinaryWriter writer)
         {
-            writer.Write((byte)type);
-            switch (type)
+            writer.Write((byte)Type);
+            switch (Type)
             {
                 case NodeType.BranchNode:
                     SerializeBranch(writer);
@@ -122,14 +109,14 @@ namespace Neo.Cryptography.MPTTrie
         public void Serialize(BinaryWriter writer)
         {
             SerializeWithoutReference(writer);
-            if (type == NodeType.BranchNode || type == NodeType.ExtensionNode || type == NodeType.LeafNode)
+            if (Type == NodeType.BranchNode || Type == NodeType.ExtensionNode || Type == NodeType.LeafNode)
                 writer.WriteVarInt(Reference);
         }
 
         public byte[] ToArrayWithoutReference()
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms, Utility.StrictUTF8, true);
+            using var ms = new MemoryStream();
+            using var writer = new BinaryWriter(ms, Utility.StrictUTF8, true);
 
             SerializeWithoutReference(writer);
             writer.Flush();
@@ -138,8 +125,8 @@ namespace Neo.Cryptography.MPTTrie
 
         public void Deserialize(ref MemoryReader reader)
         {
-            type = (NodeType)reader.ReadByte();
-            switch (type)
+            Type = (NodeType)reader.ReadByte();
+            switch (Type)
             {
                 case NodeType.BranchNode:
                     DeserializeBranch(ref reader);
@@ -165,36 +152,30 @@ namespace Neo.Cryptography.MPTTrie
 
         private Node CloneAsChild()
         {
-            switch (type)
+            return Type switch
             {
-                case NodeType.BranchNode:
-                case NodeType.ExtensionNode:
-                case NodeType.LeafNode:
-                    return new Node
-                    {
-                        type = NodeType.HashNode,
-                        hash = Hash,
-                    };
-                case NodeType.HashNode:
-                case NodeType.Empty:
-                    return Clone();
-                default:
-                    throw new InvalidOperationException(nameof(Clone));
-            }
+                NodeType.BranchNode or NodeType.ExtensionNode or NodeType.LeafNode => new Node
+                {
+                    Type = NodeType.HashNode,
+                    _hash = Hash,
+                },
+                NodeType.HashNode or NodeType.Empty => Clone(),
+                _ => throw new InvalidOperationException(nameof(Clone)),
+            };
         }
 
         public Node Clone()
         {
-            switch (type)
+            switch (Type)
             {
                 case NodeType.BranchNode:
                     var n = new Node
                     {
-                        type = type,
+                        Type = Type,
                         Reference = Reference,
                         Children = new Node[BranchChildCount],
                     };
-                    for (int i = 0; i < BranchChildCount; i++)
+                    for (var i = 0; i < BranchChildCount; i++)
                     {
                         n.Children[i] = Children[i].CloneAsChild();
                     }
@@ -202,7 +183,7 @@ namespace Neo.Cryptography.MPTTrie
                 case NodeType.ExtensionNode:
                     return new Node
                     {
-                        type = type,
+                        Type = Type,
                         Key = Key,
                         Next = Next.CloneAsChild(),
                         Reference = Reference,
@@ -210,7 +191,7 @@ namespace Neo.Cryptography.MPTTrie
                 case NodeType.LeafNode:
                     return new Node
                     {
-                        type = type,
+                        Type = Type,
                         Value = Value,
                         Reference = Reference,
                     };

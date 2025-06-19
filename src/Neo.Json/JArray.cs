@@ -19,7 +19,7 @@ namespace Neo.Json
     /// </summary>
     public class JArray : JContainer, IList<JToken?>
     {
-        private readonly List<JToken?> items = new();
+        private readonly List<JToken?> _items = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JArray"/> class.
@@ -35,22 +35,22 @@ namespace Neo.Json
         /// <param name="items">The initial items in the array.</param>
         public JArray(IEnumerable<JToken?> items)
         {
-            this.items.AddRange(items);
+            _items.AddRange(items);
         }
 
         public override JToken? this[int index]
         {
             get
             {
-                return items[index];
+                return _items[index];
             }
             set
             {
-                items[index] = value;
+                _items[index] = value;
             }
         }
 
-        public override IReadOnlyList<JToken?> Children => items;
+        public override IReadOnlyList<JToken?> Children => _items;
 
         public bool IsReadOnly
         {
@@ -62,7 +62,7 @@ namespace Neo.Json
 
         public void Add(JToken? item)
         {
-            items.Add(item);
+            _items.Add(item);
         }
 
         public override string AsString()
@@ -72,17 +72,17 @@ namespace Neo.Json
 
         public override void Clear()
         {
-            items.Clear();
+            _items.Clear();
         }
 
         public bool Contains(JToken? item)
         {
-            return items.Contains(item);
+            return _items.Contains(item);
         }
 
         public IEnumerator<JToken?> GetEnumerator()
         {
-            return items.GetEnumerator();
+            return _items.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -92,28 +92,28 @@ namespace Neo.Json
 
         public int IndexOf(JToken? item)
         {
-            return items.IndexOf(item);
+            return _items.IndexOf(item);
         }
 
         public void Insert(int index, JToken? item)
         {
-            items.Insert(index, item);
+            _items.Insert(index, item);
         }
 
         public bool Remove(JToken? item)
         {
-            return items.Remove(item);
+            return _items.Remove(item);
         }
 
         public void RemoveAt(int index)
         {
-            items.RemoveAt(index);
+            _items.RemoveAt(index);
         }
 
         internal override void Write(Utf8JsonWriter writer)
         {
             writer.WriteStartArray();
-            foreach (JToken? item in items)
+            foreach (var item in _items)
             {
                 if (item is null)
                     writer.WriteNullValue();
@@ -127,7 +127,7 @@ namespace Neo.Json
         {
             var cloned = new JArray();
 
-            foreach (JToken? item in items)
+            foreach (var item in _items)
             {
                 cloned.Add(item?.Clone());
             }
@@ -137,7 +137,7 @@ namespace Neo.Json
 
         public static implicit operator JArray(JToken?[] value)
         {
-            return new JArray(value);
+            return [.. value];
         }
     }
 }

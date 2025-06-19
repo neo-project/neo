@@ -14,13 +14,12 @@ using Neo.Extensions;
 using Neo.Persistence.Providers;
 using System.Text;
 
-namespace Neo.Cryptography.MPTTrie.Tests
+namespace Neo.Cryptography.MPTTrie.Tests.Cryptography.MPTTrie
 {
-
     [TestClass]
     public class UT_Cache
     {
-        private readonly byte Prefix = 0xf0;
+        private const byte Prefix = 0xf0;
 
         [TestMethod]
         public void TestResolveLeaf()
@@ -56,7 +55,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestResolveExtension()
         {
-            var e = Node.NewExtension(new byte[] { 0x01 }, new Node());
+            var e = Node.NewExtension([0x01], new Node());
             var store = new MemoryStore();
             store.Put(e.Hash.ToKey(), e.ToArray());
             var snapshot = store.GetSnapshot();
@@ -95,7 +94,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestGetAndChangedExtension()
         {
-            var e = Node.NewExtension(new byte[] { 0x01 }, new Node());
+            var e = Node.NewExtension([0x01], new Node());
             var store = new MemoryStore();
             store.Put(e.Hash.ToKey(), e.ToArray());
             var snapshot = store.GetSnapshot();
@@ -159,7 +158,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestPutAndChangedExtension()
         {
-            var e = Node.NewExtension(new byte[] { 0x01 }, new Node());
+            var e = Node.NewExtension([0x01], new Node());
             var h = e.Hash;
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();

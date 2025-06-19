@@ -61,8 +61,8 @@ namespace Neo.Cryptography.MPTTrie
                     break;
                 case NodeType.HashNode:
                     {
-                        var newNode = _cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt get");
+                        var newNode = _cache.Resolve(node.Hash)
+                            ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt get");
                         node = newNode;
                         return TryGet(ref node, path, out value);
                     }
@@ -78,7 +78,7 @@ namespace Neo.Cryptography.MPTTrie
                     {
                         if (path.StartsWith(node.Key.Span))
                         {
-                            return TryGet(ref node.Next, path[node.Key.Length..], out value);
+                            return TryGet(ref node._next, path[node.Key.Length..], out value);
                         }
                         break;
                     }

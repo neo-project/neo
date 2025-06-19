@@ -46,8 +46,8 @@ namespace Neo.Cryptography.MPTTrie
                     break;
                 case NodeType.HashNode:
                     {
-                        var newNode = _cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt getproof");
+                        var newNode = _cache.Resolve(node.Hash)
+                            ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt getproof");
                         node = newNode;
                         return GetProof(ref node, path, set);
                     }
@@ -65,7 +65,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.StartsWith(node.Key.Span))
                         {
                             set.Add(node.ToArrayWithoutReference());
-                            return GetProof(ref node.Next, path[node.Key.Length..], set);
+                            return GetProof(ref node._next, path[node.Key.Length..], set);
                         }
                         break;
                     }
@@ -75,7 +75,7 @@ namespace Neo.Cryptography.MPTTrie
 
         private static byte[] Key(byte[] hash)
         {
-            byte[] buffer = new byte[hash.Length + 1];
+            var buffer = new byte[hash.Length + 1];
             buffer[0] = Prefix;
             Buffer.BlockCopy(hash, 0, buffer, 1, hash.Length);
             return buffer;
@@ -84,7 +84,7 @@ namespace Neo.Cryptography.MPTTrie
         public static byte[] VerifyProof(UInt256 root, byte[] key, HashSet<byte[]> proof)
         {
             using var memoryStore = new MemoryStore();
-            foreach (byte[] data in proof)
+            foreach (var data in proof)
                 memoryStore.Put(Key(Crypto.Hash256(data)), [.. data, .. new byte[] { 1 }]);
             using var snapshot = memoryStore.GetSnapshot();
             var trie = new Trie(snapshot, root, false);
