@@ -438,9 +438,9 @@ namespace Neo.UnitTests.SmartContract.Native
             using (var script = new ScriptBuilder())
             {
                 // Test encoding
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 100_000_000_000_00000000, 100_000_000_001_00000000);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1_00000000, 2_00000000);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1, 2);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("10000000000000000000000000000000000000000000000000000000000"));
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("100000000000000000000000"));
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1_00000000);
 
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
@@ -449,15 +449,16 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(3, engine.ResultStack.Count);
 
                 var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.AreEqual(BigInteger.One, actualValue); // This doesn't do calculation
+                Assert.IsTrue(actualValue <= 1_00000000);
+                Assert.IsTrue(actualValue > BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue <= 2_00000000);
-                Assert.IsTrue(actualValue > 1_00000000);
+                Assert.IsTrue(actualValue <= BigInteger.Parse("100000000000000000000000"));
+                Assert.IsTrue(actualValue > BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue <= 100_000_000_001_00000000);
-                Assert.IsTrue(actualValue > 100_000_000_000_00000000);
+                Assert.IsTrue(actualValue <= BigInteger.Parse("10000000000000000000000000000000000000000000000000000000000"));
+                Assert.IsTrue(actualValue > BigInteger.Zero);
             }
         }
     }
