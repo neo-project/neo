@@ -108,7 +108,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAddRange()
         {
-            string[] range = { "hello", "world" };
+            string[] range = ["hello", "world"];
             cache.AddRange(range);
             Assert.AreEqual(2, cache.Count);
             Assert.IsTrue(cache.Contains("hello"));

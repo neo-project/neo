@@ -62,7 +62,7 @@ namespace Neo.Plugins.OracleService.Tests
                     Nonce = 233,
                     ValidUntilBlock = NativeContract.Ledger.CurrentIndex(s_theNeoSystem.GetSnapshotCache()) + s_theNeoSystem.Settings.MaxValidUntilBlockIncrement,
                     Signers = [new Signer() { Account = MultisigScriptHash, Scopes = WitnessScope.CalledByEntry }],
-                    Attributes = Array.Empty<TransactionAttribute>(),
+                    Attributes = [],
                     Script = script,
                     NetworkFee = 1000_0000,
                     SystemFee = 2_0000_0000,
@@ -86,7 +86,7 @@ namespace Neo.Plugins.OracleService.Tests
                 },
                 Transactions = txs,
             };
-            block.Header.MerkleRoot ??= MerkleTree.ComputeRoot(block.Transactions.Select(t => t.Hash).ToArray());
+            block.Header.MerkleRoot ??= MerkleTree.ComputeRoot([.. block.Transactions.Select(t => t.Hash)]);
             signature = block.Sign(s_walletAccount.GetKey(), settings.Network);
             block.Header.Witness = new Witness
             {

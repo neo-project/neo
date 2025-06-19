@@ -39,8 +39,8 @@ namespace Neo.Network.RPC.Models
         {
             return new()
             {
-                Sent = ((JArray)json["sent"]).Select(p => RpcNep17Transfer.FromJson((JObject)p, protocolSettings)).ToList(),
-                Received = ((JArray)json["received"]).Select(p => RpcNep17Transfer.FromJson((JObject)p, protocolSettings)).ToList(),
+                Sent = [.. ((JArray)json["sent"]).Select(p => RpcNep17Transfer.FromJson((JObject)p, protocolSettings))],
+                Received = [.. ((JArray)json["received"]).Select(p => RpcNep17Transfer.FromJson((JObject)p, protocolSettings))],
                 UserScriptHash = json["address"].ToScriptHash(protocolSettings)
             };
         }

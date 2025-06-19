@@ -34,7 +34,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = _snapshotCache.CloneCache();
             // System.Runtime.CheckWitness: f827ec8c (price is 200)
-            byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
+            byte[] SyscallSystemRuntimeCheckWitnessHash = [0x68, 0xf8, 0x27, 0xec, 0x8c];
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
@@ -42,7 +42,7 @@ namespace Neo.UnitTests.SmartContract
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
-            byte[] SyscallSystemStorageGetContextHash = new byte[] { 0x68, 0x9b, 0xf6, 0x67, 0xce };
+            byte[] SyscallSystemStorageGetContextHash = [0x68, 0x9b, 0xf6, 0x67, 0xce];
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
@@ -50,7 +50,7 @@ namespace Neo.UnitTests.SmartContract
             }
 
             // System.Storage.Get: 925de831 (price is 100)
-            byte[] SyscallSystemStorageGetHash = new byte[] { 0x68, 0x92, 0x5d, 0xe8, 0x31 };
+            byte[] SyscallSystemStorageGetHash = [0x68, 0x92, 0x5d, 0xe8, 0x31];
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
@@ -73,7 +73,7 @@ namespace Neo.UnitTests.SmartContract
             ContractState contractState = TestUtils.GetContract(script);
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(Array.Empty<byte>());
+            StorageItem sItem = TestUtils.GetStorageItem([]);
 
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);

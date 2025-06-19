@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Builders
         public void TestAddInvocation()
         {
             var witness = WitnessBuilder.CreateEmpty()
-                .AddInvocation(new byte[] { 0x01, 0x02, 0x03 })
+                .AddInvocation([0x01, 0x02, 0x03])
                 .Build();
 
             Assert.IsNotNull(witness);
@@ -75,7 +75,7 @@ namespace Neo.UnitTests.Builders
         public void TestAddVerification()
         {
             var witness = WitnessBuilder.CreateEmpty()
-                .AddVerification(new byte[] { 0x01, 0x02, 0x03 })
+                .AddVerification([0x01, 0x02, 0x03])
                 .Build();
 
             Assert.IsNotNull(witness);

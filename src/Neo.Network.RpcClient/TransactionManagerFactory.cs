@@ -59,10 +59,10 @@ namespace Neo.Network.RPC
                 Version = 0,
                 Nonce = (uint)new Random().Next(),
                 Script = script,
-                Signers = signers ?? Array.Empty<Signer>(),
+                Signers = signers ?? [],
                 ValidUntilBlock = blockCount - 1 + rpcClient.protocolSettings.MaxValidUntilBlockIncrement,
                 SystemFee = systemFee,
-                Attributes = attributes ?? Array.Empty<TransactionAttribute>(),
+                Attributes = attributes ?? [],
             };
 
             return new TransactionManager(tx, rpcClient);

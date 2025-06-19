@@ -75,7 +75,7 @@ namespace Neo.VM.Benchmark
         public override StackItem ConvertTo(StackItemType type)
         {
             if (type == StackItemType.Array)
-                return new TestArray(ReferenceCounter, new List<StackItem>(_array));
+                return new TestArray(ReferenceCounter, [.. _array]);
             return base.ConvertTo(type);
         }
 

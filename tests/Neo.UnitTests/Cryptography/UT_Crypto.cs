@@ -186,8 +186,8 @@ namespace Neo.UnitTests.Cryptography
             Array.Copy(s, 0, signature1, 32, 32);
             signature1[64] = 27;
 
-            Console.WriteLine($"r: {Convert.ToHexString(signature1.Take(32).ToArray())}");
-            Console.WriteLine($"s: {Convert.ToHexString(signature1.Skip(32).Take(32).ToArray())}");
+            Console.WriteLine($"r: {Convert.ToHexString([.. signature1.Take(32)])}");
+            Console.WriteLine($"s: {Convert.ToHexString([.. signature1.Skip(32).Take(32)])}");
             Console.WriteLine($"yParity: {(signature1[32] & 0x80) != 0}");
 
             var recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
@@ -227,8 +227,8 @@ namespace Neo.UnitTests.Cryptography
             Array.Copy(r2, 0, signature2, 0, 32);
             Array.Copy(s2, 0, signature2, 32, 32);
 
-            Console.WriteLine($"r: {Convert.ToHexString(signature2.Take(32).ToArray())}");
-            Console.WriteLine($"s: {Convert.ToHexString(signature2.Skip(32).Take(32).ToArray())}");
+            Console.WriteLine($"r: {Convert.ToHexString([.. signature2.Take(32)])}");
+            Console.WriteLine($"s: {Convert.ToHexString([.. signature2.Skip(32).Take(32)])}");
             Console.WriteLine($"yParity: {(signature2[31] & 0x80) != 0}");
 
             var recoveredKey2 = Crypto.ECRecover(signature2, messageHash2);

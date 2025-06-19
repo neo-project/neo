@@ -32,13 +32,13 @@ namespace Neo.GUI
 
         public Contract GetContract()
         {
-            publicKeys = listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+            publicKeys = [.. listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1))];
             return Contract.CreateMultiSigContract((int)numericUpDown2.Value, publicKeys);
         }
 
         public KeyPair GetKey()
         {
-            HashSet<ECPoint> hashSet = new HashSet<ECPoint>(publicKeys);
+            HashSet<ECPoint> hashSet = [.. publicKeys];
             return Service.CurrentWallet.GetAccounts().FirstOrDefault(p => p.HasKey && hashSet.Contains(p.GetKey().PublicKey))?.GetKey();
         }
 

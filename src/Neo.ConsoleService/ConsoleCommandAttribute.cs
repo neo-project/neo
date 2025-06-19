@@ -40,7 +40,7 @@ namespace Neo.ConsoleService
         /// <param name="verbs">Verbs</param>
         public ConsoleCommandAttribute(string verbs)
         {
-            Verbs = verbs.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(u => u.ToLowerInvariant()).ToArray();
+            Verbs = [.. verbs.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(u => u.ToLowerInvariant())];
         }
     }
 }

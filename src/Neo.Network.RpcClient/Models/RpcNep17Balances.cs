@@ -36,7 +36,7 @@ namespace Neo.Network.RPC.Models
         {
             return new()
             {
-                Balances = ((JArray)json["balance"]).Select(p => RpcNep17Balance.FromJson((JObject)p, protocolSettings)).ToList(),
+                Balances = [.. ((JArray)json["balance"]).Select(p => RpcNep17Balance.FromJson((JObject)p, protocolSettings))],
                 UserScriptHash = json["address"].ToScriptHash(protocolSettings)
             };
         }

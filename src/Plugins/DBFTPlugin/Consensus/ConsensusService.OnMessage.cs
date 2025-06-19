@@ -105,7 +105,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             context.Block.Header.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
 
-            context.Transactions = new Dictionary<UInt256, Transaction>();
+            context.Transactions = [];
             context.VerificationContext = new TransactionVerificationContext();
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
                 if (context.PreparationPayloads[i] != null)
@@ -126,7 +126,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
 
             Dictionary<UInt256, Transaction> mempoolVerified = neoSystem.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
-            List<Transaction> unverified = new List<Transaction>();
+            List<Transaction> unverified = [];
             var mtb = neoSystem.GetMaxTraceableBlocks();
             foreach (UInt256 hash in context.TransactionHashes)
             {
@@ -159,7 +159,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     return;
             if (context.Transactions.Count < context.TransactionHashes.Length)
             {
-                UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
+                UInt256[] hashes = [.. context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i))];
                 taskManager.Tell(new TaskManager.RestartTasks
                 {
                     Payload = InvPayload.Create(InventoryType.TX, hashes)

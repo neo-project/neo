@@ -73,7 +73,7 @@ namespace Neo.Wallets.NEP6
                 this.name = name;
                 version = Version.Parse("1.0");
                 Scrypt = ScryptParameters.Default;
-                accounts = new Dictionary<UInt160, NEP6Account>();
+                accounts = [];
                 extra = JToken.Null;
             }
         }
@@ -147,8 +147,8 @@ namespace Neo.Wallets.NEP6
             NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
-                ParameterList = new[] { ContractParameterType.Signature },
-                ParameterNames = new[] { "signature" },
+                ParameterList = [ContractParameterType.Signature],
+                ParameterNames = ["signature"],
                 Deployed = false
             };
             NEP6Account account = new(this, contract.ScriptHash, key, password.GetClearText())
@@ -167,7 +167,7 @@ namespace Neo.Wallets.NEP6
                 {
                     Script = contract.Script,
                     ParameterList = contract.ParameterList,
-                    ParameterNames = contract.ParameterList.Select((p, i) => $"parameter{i}").ToArray(),
+                    ParameterNames = [.. contract.ParameterList.Select((p, i) => $"parameter{i}")],
                     Deployed = false
                 };
             }
@@ -243,8 +243,8 @@ namespace Neo.Wallets.NEP6
             NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
-                ParameterList = new[] { ContractParameterType.Signature },
-                ParameterNames = new[] { "signature" },
+                ParameterList = [ContractParameterType.Signature],
+                ParameterNames = ["signature"],
                 Deployed = false
             };
             NEP6Account account = new(this, contract.ScriptHash, key, password.GetClearText())
@@ -261,8 +261,8 @@ namespace Neo.Wallets.NEP6
             NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
-                ParameterList = new[] { ContractParameterType.Signature },
-                ParameterNames = new[] { "signature" },
+                ParameterList = [ContractParameterType.Signature],
+                ParameterNames = ["signature"],
                 Deployed = false
             };
             NEP6Account account = new(this, contract.ScriptHash, key, password.GetClearText())
@@ -279,8 +279,8 @@ namespace Neo.Wallets.NEP6
             NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
-                ParameterList = new[] { ContractParameterType.Signature },
-                ParameterNames = new[] { "signature" },
+                ParameterList = [ContractParameterType.Signature],
+                ParameterNames = ["signature"],
                 Deployed = false
             };
             NEP6Account account;
@@ -301,7 +301,7 @@ namespace Neo.Wallets.NEP6
             NEP6Account[] accountValues;
             lock (accounts)
             {
-                accountValues = accounts.Values.ToArray();
+                accountValues = [.. accounts.Values];
             }
 
             return new()
@@ -359,7 +359,7 @@ namespace Neo.Wallets.NEP6
             NEP6Account[] accountsValues;
             lock (accounts)
             {
-                accountsValues = accounts.Values.ToArray();
+                accountsValues = [.. accounts.Values];
             }
             Parallel.ForEach(accountsValues, (account, state) =>
             {

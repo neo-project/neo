@@ -38,8 +38,8 @@ namespace Neo.Network.RPC.Models
             return new RpcRawMemPool
             {
                 Height = uint.Parse(json["height"].AsString()),
-                Verified = ((JArray)json["verified"]).Select(p => UInt256.Parse(p.AsString())).ToList(),
-                UnVerified = ((JArray)json["unverified"]).Select(p => UInt256.Parse(p.AsString())).ToList()
+                Verified = [.. ((JArray)json["verified"]).Select(p => UInt256.Parse(p.AsString()))],
+                UnVerified = [.. ((JArray)json["unverified"]).Select(p => UInt256.Parse(p.AsString()))]
             };
         }
     }

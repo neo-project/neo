@@ -79,7 +79,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         {
             JArray expressions = (JArray)json["expressions"];
             if (expressions.Count > MaxSubitems) throw new FormatException();
-            Expressions = expressions.Select(p => FromJson((JObject)p, maxNestDepth - 1)).ToArray();
+            Expressions = [.. expressions.Select(p => FromJson((JObject)p, maxNestDepth - 1))];
             if (Expressions.Length == 0) throw new FormatException();
         }
 

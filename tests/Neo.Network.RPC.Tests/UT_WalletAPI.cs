@@ -112,9 +112,12 @@ namespace Neo.Network.RPC.Tests
             byte[] decimalsScript = NativeContract.GAS.Hash.MakeScript("decimals");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, decimalsScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(8) });
 
-            byte[] testScript = NativeContract.GAS.Hash.MakeScript("transfer", sender, UInt160.Zero, NativeContract.GAS.Factor * 100, null)
-                .Concat([(byte)OpCode.ASSERT])
-                .ToArray();
+            byte[] testScript =
+            [
+                .. NativeContract.GAS.Hash.MakeScript("transfer", sender, UInt160.Zero, NativeContract.GAS.Factor * 100, null)
+,
+                (byte)OpCode.ASSERT,
+            ];
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 
             var json = new JObject() { ["hash"] = UInt256.Zero.ToString() };
@@ -135,20 +138,23 @@ namespace Neo.Network.RPC.Tests
             byte[] decimalsScript = NativeContract.GAS.Hash.MakeScript("decimals");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, decimalsScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(8) });
 
-            byte[] testScript = NativeContract.GAS.Hash.MakeScript("transfer", multiSender, UInt160.Zero, NativeContract.GAS.Factor * 100, null)
-                .Concat(new[] { (byte)OpCode.ASSERT })
-                .ToArray();
+            byte[] testScript =
+            [
+                .. NativeContract.GAS.Hash.MakeScript("transfer", multiSender, UInt160.Zero, NativeContract.GAS.Factor * 100, null)
+,
+                .. new[] { (byte)OpCode.ASSERT },
+            ];
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 
             var json = new JObject() { ["hash"] = UInt256.Zero.ToString() };
             rpcClientMock.Setup(p => p.RpcSendAsync("sendrawtransaction", It.IsAny<JToken>())).ReturnsAsync(json);
 
-            var tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 1, new[] { keyPair1.PublicKey }, new[] { keyPair1 }, UInt160.Zero, NativeContract.GAS.Factor * 100, null, true);
+            var tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 1, [keyPair1.PublicKey], [keyPair1], UInt160.Zero, NativeContract.GAS.Factor * 100, null, true);
             Assert.AreEqual(testScript.ToHexString(), tranaction.Script.Span.ToHexString());
 
             try
             {
-                tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 2, new[] { keyPair1.PublicKey }, new[] { keyPair1 }, UInt160.Zero, NativeContract.GAS.Factor * 100, null, true);
+                tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 2, [keyPair1.PublicKey], [keyPair1], UInt160.Zero, NativeContract.GAS.Factor * 100, null, true);
                 Assert.Fail();
             }
             catch (Exception e)
@@ -156,12 +162,15 @@ namespace Neo.Network.RPC.Tests
                 Assert.AreEqual($"Need at least 2 KeyPairs for signing!", e.Message);
             }
 
-            testScript = NativeContract.GAS.Hash.MakeScript("transfer", multiSender, UInt160.Zero, NativeContract.GAS.Factor * 100, string.Empty)
-                .Concat(new[] { (byte)OpCode.ASSERT })
-                .ToArray();
+            testScript =
+            [
+                .. NativeContract.GAS.Hash.MakeScript("transfer", multiSender, UInt160.Zero, NativeContract.GAS.Factor * 100, string.Empty)
+,
+                .. new[] { (byte)OpCode.ASSERT },
+            ];
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 
-            tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 1, new[] { keyPair1.PublicKey }, new[] { keyPair1 }, UInt160.Zero, NativeContract.GAS.Factor * 100, string.Empty, true);
+            tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 1, [keyPair1.PublicKey], [keyPair1], UInt160.Zero, NativeContract.GAS.Factor * 100, string.Empty, true);
             Assert.AreEqual(testScript.ToHexString(), tranaction.Script.Span.ToHexString());
         }
 

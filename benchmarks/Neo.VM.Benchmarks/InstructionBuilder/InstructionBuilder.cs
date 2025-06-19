@@ -17,7 +17,7 @@ namespace Neo.VM.Benchmark
 {
     internal class InstructionBuilder
     {
-        internal readonly List<Instruction> _instructions = new();
+        internal readonly List<Instruction> _instructions = [];
 
         public InstructionBuilder() { }
 
@@ -238,7 +238,7 @@ namespace Neo.VM.Benchmark
             var instructions = _instructions.ToArray();
             instructions.RebuildOffsets();
             instructions.RebuildOperands();
-            return instructions.Select(p => p.ToArray()).SelectMany(p => p).ToArray();
+            return [.. instructions.Select(p => p.ToArray()).SelectMany(p => p)];
         }
     }
 }

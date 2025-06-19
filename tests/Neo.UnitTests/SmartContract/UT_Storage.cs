@@ -56,7 +56,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(keyMemory.Span.ToArray().Skip(sizeof(int)).SequenceEqual(storageKeyFromMemory.Key.Span.ToArray()));
 
             // Test CreateSearchPrefix method
-            byte[] prefix = { 0xAA };
+            byte[] prefix = [0xAA];
             var searchPrefix = StorageKey.CreateSearchPrefix(0, prefix);
             var expectedPrefix = BitConverter.GetBytes(0).Concat(prefix).ToArray();
             Assert.IsTrue(expectedPrefix.SequenceEqual(searchPrefix));

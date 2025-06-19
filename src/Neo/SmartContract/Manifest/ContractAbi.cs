@@ -40,8 +40,8 @@ namespace Neo.SmartContract.Manifest
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            Methods = ((Array)@struct[0]).Select(p => p.ToInteroperable<ContractMethodDescriptor>()).ToArray();
-            Events = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>()).ToArray();
+            Methods = [.. ((Array)@struct[0]).Select(p => p.ToInteroperable<ContractMethodDescriptor>())];
+            Events = [.. ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>())];
         }
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
@@ -105,8 +105,8 @@ namespace Neo.SmartContract.Manifest
         {
             return new JObject()
             {
-                ["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray()),
-                ["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray())
+                ["methods"] = new JArray([.. Methods.Select(u => u.ToJson())]),
+                ["events"] = new JArray([.. Events.Select(u => u.ToJson())])
             };
         }
     }

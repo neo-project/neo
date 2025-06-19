@@ -55,13 +55,13 @@ namespace Neo.Plugins.OracleService
         private Settings(IConfigurationSection section) : base(section)
         {
             Network = section.GetValue("Network", 5195086u);
-            Nodes = section.GetSection("Nodes").GetChildren().Select(p => new Uri(p.Get<string>(), UriKind.Absolute)).ToArray();
+            Nodes = [.. section.GetSection("Nodes").GetChildren().Select(p => new Uri(p.Get<string>(), UriKind.Absolute))];
             MaxTaskTimeout = TimeSpan.FromMilliseconds(section.GetValue("MaxTaskTimeout", 432000000));
             MaxOracleTimeout = TimeSpan.FromMilliseconds(section.GetValue("MaxOracleTimeout", 15000));
             AllowPrivateHost = section.GetValue("AllowPrivateHost", false);
-            AllowedContentTypes = section.GetSection("AllowedContentTypes").GetChildren().Select(p => p.Get<string>()).ToArray();
+            AllowedContentTypes = [.. section.GetSection("AllowedContentTypes").GetChildren().Select(p => p.Get<string>())];
             if (AllowedContentTypes.Count() == 0)
-                AllowedContentTypes = AllowedContentTypes.Concat("application/json").ToArray();
+                AllowedContentTypes = [.. AllowedContentTypes, "application/json"];
             Https = new HttpsSettings(section.GetSection("Https"));
             NeoFS = new NeoFSSettings(section.GetSection("NeoFS"));
             AutoStart = section.GetValue("AutoStart", false);

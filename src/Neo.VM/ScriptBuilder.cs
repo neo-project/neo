@@ -73,7 +73,7 @@ namespace Neo.VM
             if (offset < sbyte.MinValue || offset > sbyte.MaxValue)
                 return Emit(OpCode.CALL_L, BitConverter.GetBytes(offset));
             else
-                return Emit(OpCode.CALL, new[] { (byte)offset });
+                return Emit(OpCode.CALL, [(byte)offset]);
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Neo.VM
             if ((int)opcode % 2 == 0 && (offset < sbyte.MinValue || offset > sbyte.MaxValue))
                 opcode += 1;
             if ((int)opcode % 2 == 0)
-                return Emit(opcode, new[] { (byte)offset });
+                return Emit(opcode, [(byte)offset]);
             else
                 return Emit(opcode, BitConverter.GetBytes(offset));
         }

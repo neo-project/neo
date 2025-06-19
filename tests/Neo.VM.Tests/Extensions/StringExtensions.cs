@@ -52,7 +52,7 @@ namespace Neo.Test.Extensions
         public static byte[] FromHexString(this string value)
         {
             if (string.IsNullOrEmpty(value))
-                return Array.Empty<byte>();
+                return [];
             if (value.StartsWith("0x"))
                 value = value[2..];
             if (value.Length % 2 == 1)

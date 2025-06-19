@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
@@ -1274,15 +1273,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Make transaction
 
             snapshotCache.Commit();
-            tx = walletA.MakeTransaction(snapshotCache, new[]
-            {
+            tx = walletA.MakeTransaction(snapshotCache,
+            [
                     new TransferOutput()
                     {
                          AssetId = NativeContract.GAS.Hash,
                          ScriptHash = acc.ScriptHash,
                          Value = new BigDecimal(BigInteger.One,8)
                     }
-            }, acc.ScriptHash);
+            ], acc.ScriptHash);
 
             // Sign
 

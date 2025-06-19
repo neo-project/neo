@@ -155,7 +155,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(resp["stack"][0]["type"], nameof(Integer));
             Assert.AreEqual(resp["stack"][0]["value"], "100000000");
 
-            resp = (JObject)_rpcServer.InvokeScript(new JArray(NeoTransferScript));
+            resp = (JObject)_rpcServer.InvokeScript([.. NeoTransferScript]);
             Assert.AreEqual(6, resp.Count);
             Assert.AreEqual(resp["stack"][0]["type"], nameof(Boolean));
             Assert.AreEqual(resp["stack"][0]["value"], false);
@@ -186,7 +186,7 @@ namespace Neo.Plugins.RpcServer.Tests
             }
             var scriptBase64 = Convert.ToBase64String(abortScript);
 
-            var resp = (JObject)_rpcServer.InvokeScript(new JArray(scriptBase64));
+            var resp = (JObject)_rpcServer.InvokeScript([.. scriptBase64]);
 
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
@@ -212,7 +212,7 @@ namespace Neo.Plugins.RpcServer.Tests
             };
             var tempRpcServer = new RpcServer(_neoSystem, lowGasSettings);
 
-            var resp = (JObject)tempRpcServer.InvokeScript(new JArray(scriptBase64));
+            var resp = (JObject)tempRpcServer.InvokeScript([.. scriptBase64]);
 
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
@@ -300,7 +300,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             var invalidBase64Script = "ThisIsNotValidBase64***";
 
-            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeScript(new JArray(invalidBase64Script)));
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeScript([.. invalidBase64Script]));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
             StringAssert.Contains(ex.Message, RpcError.InvalidParams.Message); // Fix based on test output
         }
@@ -371,7 +371,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + _neoSystem.Settings.MaxValidUntilBlockIncrement,
                 Signers = [new Signer() { Account = ValidatorScriptHash, Scopes = WitnessScope.CalledByEntry }],
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = Convert.FromBase64String(resp["script"].AsString()),
                 Witnesses = null,
             };

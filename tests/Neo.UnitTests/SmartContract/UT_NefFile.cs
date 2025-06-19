@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract
         {
             Compiler = "".PadLeft(32, ' '),
             Source = string.Empty,
-            Tokens = Array.Empty<MethodToken>(),
+            Tokens = [],
             Script = new byte[] { 0x01, 0x02, 0x03 }
         };
 
@@ -38,7 +38,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestDeserialize()
         {
-            byte[] wrongMagic = { 0x00, 0x00, 0x00, 0x00 };
+            byte[] wrongMagic = [0x00, 0x00, 0x00, 0x00];
             using (MemoryStream ms = new(1024))
             using (BinaryWriter writer = new(ms))
             {
@@ -105,7 +105,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Compiler = "".PadLeft(32, ' '),
                 Source = string.Empty,
-                Tokens = Array.Empty<MethodToken>(),
+                Tokens = [],
                 Script = new byte[] { 0x01, 0x02, 0x03 }
             };
 
@@ -125,7 +125,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Compiler = "".PadLeft(byte.MaxValue, ' '),
                 Source = string.Empty,
-                Tokens = Array.Empty<MethodToken>(),
+                Tokens = [],
                 Script = new byte[1024 * 1024],
                 CheckSum = 0
             };

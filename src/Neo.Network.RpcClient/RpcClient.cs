@@ -274,7 +274,7 @@ namespace Neo.Network.RPC
         public async Task<ContractState[]> GetNativeContractsAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return ((JArray)result).Select(p => ContractStateFromJson((JObject)p)).ToArray();
+            return [.. ((JArray)result).Select(p => ContractStateFromJson((JObject)p))];
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace Neo.Network.RPC
         public async Task<string[]> GetRawMempoolAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return ((JArray)result).Select(p => p.AsString()).ToArray();
+            return [.. ((JArray)result).Select(p => p.AsString())];
         }
 
         /// <summary>
@@ -353,7 +353,7 @@ namespace Neo.Network.RPC
         public async Task<RpcValidator[]> GetNextBlockValidatorsAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return ((JArray)result).Select(p => RpcValidator.FromJson((JObject)p)).ToArray();
+            return [.. ((JArray)result).Select(p => RpcValidator.FromJson((JObject)p))];
         }
 
         /// <summary>
@@ -362,7 +362,7 @@ namespace Neo.Network.RPC
         public async Task<string[]> GetCommitteeAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return ((JArray)result).Select(p => p.AsString()).ToArray();
+            return [.. ((JArray)result).Select(p => p.AsString())];
         }
 
         #endregion Blockchain
@@ -432,12 +432,12 @@ namespace Neo.Network.RPC
         /// </summary>
         public async Task<RpcInvokeResult> InvokeFunctionAsync(string scriptHash, string operation, RpcStack[] stacks, params Signer[] signer)
         {
-            List<JToken> parameters = new() { scriptHash.AsScriptHash(), operation, stacks.Select(p => p.ToJson()).ToArray() };
+            List<JToken> parameters = [scriptHash.AsScriptHash(), operation, stacks.Select(p => p.ToJson()).ToArray()];
             if (signer.Length > 0)
             {
                 parameters.Add(signer.Select(p => p.ToJson()).ToArray());
             }
-            var result = await RpcSendAsync(GetRpcName(), parameters.ToArray()).ConfigureAwait(false);
+            var result = await RpcSendAsync(GetRpcName(), [.. parameters]).ConfigureAwait(false);
             return RpcInvokeResult.FromJson((JObject)result);
         }
 
@@ -447,12 +447,12 @@ namespace Neo.Network.RPC
         /// </summary>
         public async Task<RpcInvokeResult> InvokeScriptAsync(ReadOnlyMemory<byte> script, params Signer[] signers)
         {
-            List<JToken> parameters = new() { Convert.ToBase64String(script.Span) };
+            List<JToken> parameters = [Convert.ToBase64String(script.Span)];
             if (signers.Length > 0)
             {
                 parameters.Add(signers.Select(p => p.ToJson()).ToArray());
             }
-            var result = await RpcSendAsync(GetRpcName(), parameters.ToArray()).ConfigureAwait(false);
+            var result = await RpcSendAsync(GetRpcName(), [.. parameters]).ConfigureAwait(false);
             return RpcInvokeResult.FromJson((JObject)result);
         }
 
@@ -518,7 +518,7 @@ namespace Neo.Network.RPC
         public async Task<RpcPlugin[]> ListPluginsAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return ((JArray)result).Select(p => RpcPlugin.FromJson((JObject)p)).ToArray();
+            return [.. ((JArray)result).Select(p => RpcPlugin.FromJson((JObject)p))];
         }
 
         /// <summary>
@@ -598,7 +598,7 @@ namespace Neo.Network.RPC
         public async Task<List<RpcAccount>> ListAddressAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return ((JArray)result).Select(p => RpcAccount.FromJson((JObject)p)).ToList();
+            return [.. ((JArray)result).Select(p => RpcAccount.FromJson((JObject)p))];
         }
 
         /// <summary>
@@ -634,7 +634,7 @@ namespace Neo.Network.RPC
             }
             parameters.Add(outputs.Select(p => p.ToJson(protocolSettings)).ToArray());
 
-            return (JObject)await RpcSendAsync(GetRpcName(), paraArgs: parameters.ToArray()).ConfigureAwait(false);
+            return (JObject)await RpcSendAsync(GetRpcName(), paraArgs: [.. parameters]).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -653,7 +653,7 @@ namespace Neo.Network.RPC
         /// <returns>This function returns Signed Transaction JSON if successful, ContractParametersContext JSON if signing failed.</returns>
         public async Task<JObject> CancelTransactionAsync(UInt256 txId, string[] signers, string extraFee)
         {
-            JToken[] parameters = signers.Select(s => (JString)s.AsScriptHash()).ToArray();
+            JToken[] parameters = [.. signers.Select(s => (JString)s.AsScriptHash())];
             return (JObject)await RpcSendAsync(GetRpcName(), txId.ToString(), new JArray(parameters), extraFee).ConfigureAwait(false);
         }
 

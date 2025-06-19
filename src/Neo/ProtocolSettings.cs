@@ -25,7 +25,7 @@ namespace Neo
     /// </summary>
     public record ProtocolSettings
     {
-        private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
+        private static readonly IList<Hardfork> AllHardforks = [.. Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>()];
 
         /// <summary>
         /// The magic number of the NEO network.
@@ -111,7 +111,7 @@ namespace Neo
         /// <summary>
         /// The public keys of the standby validators.
         /// </summary>
-        public IReadOnlyList<ECPoint> StandbyValidators => _standbyValidators ??= StandbyCommittee.Take(ValidatorsCount).ToArray();
+        public IReadOnlyList<ECPoint> StandbyValidators => _standbyValidators ??= [.. StandbyCommittee.Take(ValidatorsCount)];
 
         /// <summary>
         /// The default protocol settings for NEO MainNet.
@@ -122,14 +122,14 @@ namespace Neo
             AddressVersion = 0x35,
             StandbyCommittee = Array.Empty<ECPoint>(),
             ValidatorsCount = 0,
-            SeedList = Array.Empty<string>(),
+            SeedList = [],
             MillisecondsPerBlock = 15000,
             MaxTransactionsPerBlock = 512,
             MaxValidUntilBlockIncrement = 86400000 / 15000,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             InitialGasDistribution = 52_000_000_00000000,
-            Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary()
+            Hardforks = EnsureOmmitedHardforks([]).ToImmutableDictionary()
         };
 
         public static ProtocolSettings Custom { get; set; }
@@ -211,11 +211,11 @@ namespace Neo
                 Network = section.GetValue("Network", Default.Network),
                 AddressVersion = section.GetValue("AddressVersion", Default.AddressVersion),
                 StandbyCommittee = section.GetSection("StandbyCommittee").Exists()
-                    ? section.GetSection("StandbyCommittee").GetChildren().Select(p => ECPoint.Parse(p.Get<string>(), ECCurve.Secp256r1)).ToArray()
+                    ? [.. section.GetSection("StandbyCommittee").GetChildren().Select(p => ECPoint.Parse(p.Get<string>(), ECCurve.Secp256r1))]
                     : Default.StandbyCommittee,
                 ValidatorsCount = section.GetValue("ValidatorsCount", Default.ValidatorsCount),
                 SeedList = section.GetSection("SeedList").Exists()
-                    ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()).ToArray()
+                    ? [.. section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>())]
                     : Default.SeedList,
                 MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),

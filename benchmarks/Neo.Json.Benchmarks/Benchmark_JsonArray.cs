@@ -55,7 +55,7 @@ namespace Neo.Json.Benchmarks
                 }
             };
 
-            _jArray = new JArray();
+            _jArray = [];
         }
 
         [Benchmark]

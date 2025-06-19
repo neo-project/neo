@@ -38,7 +38,7 @@ namespace Neo.GUI
 
         private void ElectionDialog_Load(object sender, EventArgs e)
         {
-            comboBox1.Items.AddRange(Service.CurrentWallet.GetAccounts().Where(p => !p.WatchOnly && IsSignatureContract(p.Contract.Script)).Select(p => p.GetKey().PublicKey).ToArray());
+            comboBox1.Items.AddRange([.. Service.CurrentWallet.GetAccounts().Where(p => !p.WatchOnly && IsSignatureContract(p.Contract.Script)).Select(p => p.GetKey().PublicKey)]);
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)

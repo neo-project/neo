@@ -11,7 +11,6 @@
 
 #pragma warning disable IDE0051
 
-using Akka.Dispatch;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
@@ -403,7 +402,7 @@ namespace Neo.SmartContract.Native
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (snapshot.Contains(key)) return false;
 
-            snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
+            snapshot.Add(key, new StorageItem([]));
             return true;
         }
 

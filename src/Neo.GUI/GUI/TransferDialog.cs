@@ -23,12 +23,12 @@ namespace Neo.GUI
         public TransferDialog()
         {
             InitializeComponent();
-            comboBoxFrom.Items.AddRange(Service.CurrentWallet.GetAccounts().Where(p => !p.WatchOnly).Select(p => p.Address).ToArray());
+            comboBoxFrom.Items.AddRange([.. Service.CurrentWallet.GetAccounts().Where(p => !p.WatchOnly).Select(p => p.Address)]);
         }
 
         public Transaction GetTransaction()
         {
-            TransferOutput[] outputs = txOutListBox1.Items.ToArray();
+            TransferOutput[] outputs = [.. txOutListBox1.Items];
             UInt160 from = comboBoxFrom.SelectedItem is null ? null : ((string)comboBoxFrom.SelectedItem).ToScriptHash(Service.NeoSystem.Settings.AddressVersion);
             return Service.CurrentWallet.MakeTransaction(Service.NeoSystem.StoreView, outputs, from);
         }

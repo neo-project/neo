@@ -20,7 +20,7 @@ namespace Neo.Network.RPC.Tests
 {
     internal static class TestUtils
     {
-        public readonly static List<RpcTestCase> RpcTestCases = ((JArray)JToken.Parse(File.ReadAllText("RpcTestCases.json"))).Select(p => RpcTestCase.FromJson((JObject)p)).ToList();
+        public readonly static List<RpcTestCase> RpcTestCases = [.. ((JArray)JToken.Parse(File.ReadAllText("RpcTestCases.json"))).Select(p => RpcTestCase.FromJson((JObject)p))];
 
         public static Block GetBlock(int txCount)
         {
@@ -33,7 +33,7 @@ namespace Neo.Network.RPC.Tests
                     NextConsensus = UInt160.Zero,
                     Witness = Witness.Empty,
                 },
-                Transactions = Enumerable.Range(0, txCount).Select(p => GetTransaction()).ToArray()
+                Transactions = [.. Enumerable.Range(0, txCount).Select(p => GetTransaction())]
             };
         }
 

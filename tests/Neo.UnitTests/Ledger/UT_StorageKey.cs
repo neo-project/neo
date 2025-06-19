@@ -100,7 +100,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Key_Set()
         {
-            byte[] val = new byte[] { 0x42, 0x32 };
+            byte[] val = [0x42, 0x32];
             StorageKey uut = new() { Key = val };
             Assert.AreEqual(2, uut.Key.Length);
             Assert.AreEqual(val[0], uut.Key.Span[0]);

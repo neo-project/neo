@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Manifest
         {
             Struct @struct = (Struct)stackItem;
             Name = @struct[0].GetString();
-            Parameters = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractParameterDefinition>()).ToArray();
+            Parameters = [.. ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractParameterDefinition>())];
         }
 
         public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
@@ -60,7 +60,7 @@ namespace Neo.SmartContract.Manifest
             ContractEventDescriptor descriptor = new()
             {
                 Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
+                Parameters = [.. ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u))],
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
@@ -76,7 +76,7 @@ namespace Neo.SmartContract.Manifest
             return new JObject()
             {
                 ["name"] = Name,
-                ["parameters"] = new JArray(Parameters.Select(u => u.ToJson()).ToArray())
+                ["parameters"] = new JArray([.. Parameters.Select(u => u.ToJson())])
             };
         }
 

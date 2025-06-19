@@ -324,11 +324,11 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             ContractParameter parameter = new ContractParameter(ContractParameterType.Array);
-            IList<ContractParameter> values = new List<ContractParameter>
-            {
+            IList<ContractParameter> values =
+            [
                 new ContractParameter(ContractParameterType.Integer),
                 new ContractParameter(ContractParameterType.Integer)
-            };
+            ];
             parameter.Value = values;
             sb.EmitPush(parameter);
             byte[] tempArray =
@@ -664,7 +664,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParaMeter2VMArray()
         {
-            VM.Types.Array item = new VM.Types.Array();
+            VM.Types.Array item = [];
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.Array, parameter.Type);
             Assert.AreEqual(0, ((List<ContractParameter>)parameter.Value).Count);

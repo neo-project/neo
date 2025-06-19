@@ -37,7 +37,7 @@ namespace Neo.Test
 
             using (ScriptBuilder script = new())
             {
-                script.Emit(OpCode.NOP, new byte[] { 0x66 });
+                script.Emit(OpCode.NOP, [0x66]);
                 CollectionAssert.AreEqual(new byte[] { 0x21, 0x66 }, script.ToArray());
             }
         }

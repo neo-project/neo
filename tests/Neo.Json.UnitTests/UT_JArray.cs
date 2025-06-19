@@ -293,7 +293,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestImplicitConversionFromJTokenArray()
         {
-            JToken[] jTokens = { alice, bob };
+            JToken[] jTokens = [alice, bob];
             JArray jArray = jTokens;
 
             Assert.AreEqual(2, jArray.Count);

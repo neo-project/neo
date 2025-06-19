@@ -27,7 +27,7 @@ namespace Neo.Extensions.Tests
             Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString(false));
             Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString(true));
 
-            byte[] empty = Array.Empty<byte>();
+            byte[] empty = [];
             Assert.AreEqual("", empty.ToHexString());
             Assert.AreEqual("", empty.ToHexString(false));
             Assert.AreEqual("", empty.ToHexString(true));
@@ -48,12 +48,12 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestReadOnlySpanToHexString()
         {
-            byte[] input = { 0x0F, 0xA4, 0x3B };
+            byte[] input = [0x0F, 0xA4, 0x3B];
             var span = new ReadOnlySpan<byte>(input);
             string result = span.ToHexString();
             Assert.AreEqual("0fa43b", result);
 
-            input = Array.Empty<byte>();
+            input = [];
             span = new ReadOnlySpan<byte>(input);
             result = span.ToHexString();
             Assert.AreEqual(0, result.Length);
@@ -72,7 +72,7 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestNotZero()
         {
-            Assert.IsFalse(new ReadOnlySpan<byte>(Array.Empty<byte>()).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>([]).NotZero());
             Assert.IsFalse(new ReadOnlySpan<byte>(new byte[4]).NotZero());
             Assert.IsFalse(new ReadOnlySpan<byte>(new byte[7]).NotZero());
             Assert.IsFalse(new ReadOnlySpan<byte>(new byte[8]).NotZero());

@@ -52,7 +52,7 @@ namespace Neo.Cryptography
             if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k), "cannot be negative");
             if (m <= 0) throw new ArgumentOutOfRangeException(nameof(m), "cannot be negative");
 
-            _seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            _seeds = [.. Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak)];
             _bits = new BitArray(m)
             {
                 Length = m
@@ -73,7 +73,7 @@ namespace Neo.Cryptography
             if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k), "cannot be negative");
             if (m <= 0) throw new ArgumentOutOfRangeException(nameof(m), "cannot be negative");
 
-            _seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            _seeds = [.. Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak)];
             _bits = new BitArray(elements.ToArray())
             {
                 Length = m

@@ -31,7 +31,7 @@ namespace Neo.Network.RPC.Models
                 Id = json["id"],
                 JsonRpc = json["jsonrpc"].AsString(),
                 Method = json["method"].AsString(),
-                Params = ((JArray)json["params"]).ToArray()
+                Params = [.. ((JArray)json["params"])]
             };
         }
 

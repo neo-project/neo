@@ -77,8 +77,8 @@ namespace Neo.GUI
             if (item == null)
             {
                 string groupName = account.WatchOnly ? "watchOnlyGroup" : IsSignatureContract(account.Contract.Script) ? "standardContractGroup" : "nonstandardContractGroup";
-                item = listView1.Items.Add(new ListViewItem(new[]
-                {
+                item = listView1.Items.Add(new ListViewItem(
+                [
                     new ListViewItem.ListViewSubItem
                     {
                         Name = "address",
@@ -92,7 +92,7 @@ namespace Neo.GUI
                     {
                         Name = NativeContract.GAS.Symbol
                     }
-                }, -1, listView1.Groups[groupName])
+                ], -1, listView1.Groups[groupName])
                 {
                     Name = account.Address,
                     Tag = account
@@ -200,7 +200,7 @@ namespace Neo.GUI
             if (Service.CurrentWallet is null) return;
             if (!check_nep5_balance || persistence_span < TimeSpan.FromSeconds(2)) return;
             check_nep5_balance = false;
-            UInt160[] addresses = Service.CurrentWallet.GetAccounts().Select(p => p.ScriptHash).ToArray();
+            UInt160[] addresses = [.. Service.CurrentWallet.GetAccounts().Select(p => p.ScriptHash)];
             if (addresses.Length == 0) return;
             using var snapshot = Service.NeoSystem.GetSnapshotCache();
             foreach (UInt160 assetId in NEP5Watched)
@@ -219,7 +219,7 @@ namespace Neo.GUI
                 if (engine.State.HasFlag(VMState.FAULT)) continue;
                 string name = engine.ResultStack.Pop().GetString();
                 byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
-                BigInteger[] balances = ((VMArray)engine.ResultStack.Pop()).Select(p => p.GetInteger()).ToArray();
+                BigInteger[] balances = [.. ((VMArray)engine.ResultStack.Pop()).Select(p => p.GetInteger())];
                 string symbol = null;
                 if (assetId.Equals(NativeContract.NEO.Hash))
                     symbol = NativeContract.NEO.Symbol;
@@ -241,8 +241,8 @@ namespace Neo.GUI
                 }
                 else
                 {
-                    listView2.Items.Add(new ListViewItem(new[]
-                    {
+                    listView2.Items.Add(new ListViewItem(
+                    [
                         new ListViewItem.ListViewSubItem
                         {
                             Name = "name",
@@ -264,7 +264,7 @@ namespace Neo.GUI
                             Name = "issuer",
                             Text = $"ScriptHash:{assetId}"
                         }
-                    }, -1)
+                    ], -1)
                     {
                         Name = assetId.ToString(),
                         UseItemStyleForSubItems = false
@@ -573,7 +573,7 @@ namespace Neo.GUI
         {
             if (MessageBox.Show(Strings.DeleteAddressConfirmationMessage, Strings.DeleteAddressConfirmationCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
                 return;
-            WalletAccount[] accounts = listView1.SelectedItems.OfType<ListViewItem>().Select(p => (WalletAccount)p.Tag).ToArray();
+            WalletAccount[] accounts = [.. listView1.SelectedItems.OfType<ListViewItem>().Select(p => (WalletAccount)p.Tag)];
             foreach (WalletAccount account in accounts)
             {
                 listView1.Items.RemoveByKey(account.Address);

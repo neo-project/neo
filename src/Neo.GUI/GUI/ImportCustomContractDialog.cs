@@ -22,7 +22,7 @@ namespace Neo.GUI
     {
         public Contract GetContract()
         {
-            ContractParameterType[] parameterList = textBox1.Text.HexToBytes().Select(p => (ContractParameterType)p).ToArray();
+            ContractParameterType[] parameterList = [.. textBox1.Text.HexToBytes().Select(p => (ContractParameterType)p)];
             byte[] redeemScript = textBox2.Text.HexToBytes();
             return Contract.Create(parameterList, redeemScript);
         }

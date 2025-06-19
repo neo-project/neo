@@ -20,8 +20,8 @@ namespace Neo.Plugins.RpcServer
         public override string Description => "Enables RPC for the node";
 
         private Settings settings;
-        private static readonly Dictionary<uint, RpcServer> servers = new();
-        private static readonly Dictionary<uint, List<object>> handlers = new();
+        private static readonly Dictionary<uint, RpcServer> servers = [];
+        private static readonly Dictionary<uint, List<object>> handlers = [];
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "RpcServer.json");
         protected override UnhandledExceptionPolicy ExceptionPolicy => settings.ExceptionPolicy;
@@ -79,7 +79,7 @@ namespace Neo.Plugins.RpcServer
             }
             if (!handlers.TryGetValue(network, out var list))
             {
-                list = new List<object>();
+                list = [];
                 handlers.Add(network, list);
             }
             list.Add(handler);

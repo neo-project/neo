@@ -14,7 +14,6 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
@@ -60,7 +59,7 @@ namespace Neo.Plugins.RpcServer.Tests
             exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.OpenWallet(paramsArray), "Should throw RpcException for unsupported wallet");
             File.Delete(Path);
             Assert.AreEqual(RpcError.WalletNotSupported.Code, exception.HResult);
-            var result = _rpcServer.CloseWallet(new JArray());
+            var result = _rpcServer.CloseWallet([]);
             Assert.IsTrue(result.AsBoolean());
             Assert.IsNull(_rpcServer.wallet);
 
@@ -79,7 +78,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsNotNull(account);
             var privKey = account.GetKey().Export();
             var address = account.Address;
-            var result = _rpcServer.DumpPrivKey(new JArray(address));
+            var result = _rpcServer.DumpPrivKey([.. address]);
             Assert.AreEqual(privKey, result.AsString());
             TestUtilCloseWallet();
         }
@@ -94,7 +93,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var scriptHashNotInWallet = Contract.CreateSignatureRedeemScript(key.PublicKey).ToScriptHash();
             var addressNotInWallet = scriptHashNotInWallet.ToAddress(ProtocolSettings.Default.AddressVersion);
 
-            var ex = Assert.ThrowsExactly<NullReferenceException>(() => _rpcServer.DumpPrivKey(new JArray(addressNotInWallet)));
+            var ex = Assert.ThrowsExactly<NullReferenceException>(() => _rpcServer.DumpPrivKey([.. addressNotInWallet]));
             TestUtilCloseWallet();
         }
 
@@ -103,7 +102,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             TestUtilOpenWallet();
             var invalidAddress = "NotAValidAddress";
-            var ex = Assert.ThrowsExactly<FormatException>(() => _rpcServer.DumpPrivKey(new JArray(invalidAddress)));
+            var ex = Assert.ThrowsExactly<FormatException>(() => _rpcServer.DumpPrivKey([.. invalidAddress]));
             TestUtilCloseWallet();
         }
 
@@ -445,7 +444,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestCloseWallet_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var result = _rpcServer.CloseWallet(new JArray());
+            var result = _rpcServer.CloseWallet([]);
             Assert.IsTrue(result.AsBoolean());
         }
 
@@ -453,7 +452,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestDumpPrivKey_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.DumpPrivKey(new JArray(_walletAccount.Address)), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.DumpPrivKey([.. _walletAccount.Address]), "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -461,7 +460,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetNewAddress_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetNewAddress(new JArray()), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetNewAddress([]), "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -469,7 +468,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetWalletBalance_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetWalletBalance(new JArray(NativeContract.NEO.Hash.ToString())), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetWalletBalance([.. NativeContract.NEO.Hash.ToString()]), "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -477,7 +476,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetWalletUnclaimedGas_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetWalletUnclaimedGas(new JArray()), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetWalletUnclaimedGas([]), "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -486,7 +485,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             _rpcServer.wallet = null;
             var privKey = _walletAccount.GetKey().Export();
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ImportPrivKey(new JArray(privKey)), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ImportPrivKey([.. privKey]), "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -506,7 +505,7 @@ namespace Neo.Plugins.RpcServer.Tests
             _rpcServer.wallet = null;
 
             // Attempt to call ListAddress and expect an RpcException
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ListAddress(new JArray()));
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ListAddress([]));
 
             // Verify the exception has the expected error code
             Assert.AreEqual(RpcError.NoOpenedWallet.Code, exception.HResult);
@@ -531,7 +530,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
 
             // Test with no signer
-            invalidParamsArray = new JArray(tx.Hash.ToString());
+            invalidParamsArray = [.. tx.Hash.ToString()];
             exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.CancelTransaction(invalidParamsArray), "Should throw RpcException for invalid txid");
             Assert.AreEqual(exception.HResult, RpcError.BadRequest.Code);
 
@@ -584,7 +583,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 Nonce = 233, // Restore original nonce
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + _neoSystem.Settings.MaxValidUntilBlockIncrement,
                 Signers = [new Signer() { Account = ValidatorScriptHash, Scopes = WitnessScope.CalledByEntry }],
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = Convert.FromBase64String(deployResp["script"].AsString()),
                 Witnesses = null,
             };

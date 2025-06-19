@@ -248,7 +248,7 @@ namespace Neo.UnitTests.Cryptography.ECC
 
             var input3 = s_compressedX.HexToBytes();
             Assert.AreEqual(ECCurve.Secp256k1.G, ECPoint.FromBytes(input3, ECCurve.Secp256k1));
-            Assert.AreEqual(ECCurve.Secp256k1.G, ECPoint.FromBytes(input2.Skip(1).ToArray(), ECCurve.Secp256k1));
+            Assert.AreEqual(ECCurve.Secp256k1.G, ECPoint.FromBytes([.. input2.Skip(1)], ECCurve.Secp256k1));
 
             var input4 = GeneratePrivateKey(72);
             Assert.AreEqual(

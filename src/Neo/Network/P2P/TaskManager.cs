@@ -59,9 +59,9 @@ namespace Neo.Network.P2P
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>
         private readonly HashSetCache<UInt256> _knownHashes;
-        private readonly Dictionary<UInt256, int> globalInvTasks = new();
-        private readonly Dictionary<uint, int> globalIndexTasks = new();
-        private readonly Dictionary<IActorRef, TaskSession> sessions = new();
+        private readonly Dictionary<UInt256, int> globalInvTasks = [];
+        private readonly Dictionary<uint, int> globalIndexTasks = [];
+        private readonly Dictionary<IActorRef, TaskSession> sessions = [];
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
             TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         private uint lastSeenPersistedIndex = 0;
@@ -114,7 +114,7 @@ namespace Neo.Network.P2P
                 return;
             }
 
-            HashSet<UInt256> hashes = new(payload.Hashes);
+            HashSet<UInt256> hashes = [.. payload.Hashes];
             // Remove all previously processed knownHashes from the list that is being requested
             hashes.Remove(_knownHashes);
             // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
@@ -372,7 +372,7 @@ namespace Neo.Network.P2P
                 session.AvailableTasks.Remove(_knownHashes);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
-                HashSet<UInt256> hashes = new(session.AvailableTasks);
+                HashSet<UInt256> hashes = [.. session.AvailableTasks];
                 if (hashes.Count > 0)
                 {
                     hashes.RemoveWhere(p => !IncrementGlobalTask(p));

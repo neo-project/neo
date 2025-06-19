@@ -39,7 +39,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
         [TestMethod]
         public void TestKeyAndValueAndNext()
         {
-            List<(StorageKey, StorageItem)> list = new();
+            List<(StorageKey, StorageItem)> list = [];
             StorageKey storageKey = new()
             {
                 Key = new byte[1]

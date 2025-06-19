@@ -76,7 +76,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         internal void EnsureMaxBlockLimitation(Transaction[] txs)
         {
             var hashes = new List<UInt256>();
-            Transactions = new Dictionary<UInt256, Transaction>();
+            Transactions = [];
             VerificationContext = new TransactionVerificationContext();
 
             // Expected block size
@@ -99,7 +99,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 VerificationContext.AddTransaction(tx);
             }
 
-            TransactionHashes = hashes.ToArray();
+            TransactionHashes = [.. hashes];
         }
 
         public ExtensiblePayload MakePrepareRequest()
@@ -164,7 +164,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     .ToDictionary(p => p.ValidatorIndex),
                 CommitMessages = CommitSent
                     ? CommitPayloads.Where(p => p != null).Select(p => GetCommitPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex)
-                    : new Dictionary<byte, RecoveryMessage.CommitPayloadCompact>()
+                    : []
             });
         }
 

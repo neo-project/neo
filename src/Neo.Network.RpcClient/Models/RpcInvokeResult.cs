@@ -72,7 +72,7 @@ namespace Neo.Network.RPC.Models
             };
             try
             {
-                invokeScriptResult.Stack = ((JArray)json["stack"]).Select(p => Utility.StackItemFromJson((JObject)p)).ToArray();
+                invokeScriptResult.Stack = [.. ((JArray)json["stack"]).Select(p => Utility.StackItemFromJson((JObject)p))];
             }
             catch { }
             invokeScriptResult.Tx = json["tx"]?.AsString();

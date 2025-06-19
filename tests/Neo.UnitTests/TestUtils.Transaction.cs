@@ -69,7 +69,7 @@ namespace Neo.UnitTests
                     }
                 ],
                 account);
-            tx.Attributes = conflicts.Select(conflict => new Conflicts { Hash = conflict }).ToArray();
+            tx.Attributes = [.. conflicts.Select(conflict => new Conflicts { Hash = conflict })];
             tx.Nonce = nonce;
             tx.Signers = [new Signer { Account = account, Scopes = WitnessScope.CalledByEntry }];
             var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);

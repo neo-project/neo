@@ -34,7 +34,7 @@ namespace Neo.Cryptography
 
         internal MerkleTree(UInt256[] hashes)
         {
-            _root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
+            _root = Build([.. hashes.Select(p => new MerkleTreeNode { Hash = p })]);
             if (_root is null) return;
 
             var depth = 1;

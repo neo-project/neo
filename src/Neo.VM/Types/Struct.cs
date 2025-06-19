@@ -79,7 +79,7 @@ namespace Neo.VM.Types
         public override StackItem ConvertTo(StackItemType type)
         {
             if (type == StackItemType.Array)
-                return new Array(ReferenceCounter, new List<StackItem>(_array));
+                return new Array(ReferenceCounter, [.. _array]);
             return base.ConvertTo(type);
         }
 

@@ -371,7 +371,7 @@ namespace Neo.Cryptography.BLS12_381
             (r10, carry) = Mac(r10, k, MODULUS[5], carry);
             (r11, _) = Adc(r11, carry2, carry);
 
-            ReadOnlySpan<ulong> tmp = stackalloc[] { r6, r7, r8, r9, r10, r11 };
+            ReadOnlySpan<ulong> tmp = [r6, r7, r8, r9, r10, r11];
             return MemoryMarshal.Cast<ulong, Fp>(tmp)[0].SubtractP();
         }
 

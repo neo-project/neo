@@ -112,11 +112,11 @@ namespace Neo.SmartContract.Native
         {
             if (hfChecker(Hardfork.HF_Echidna, blockHeight))
             {
-                manifest.SupportedStandards = new[] { "NEP-17", "NEP-27" };
+                manifest.SupportedStandards = ["NEP-17", "NEP-27"];
             }
             else
             {
-                manifest.SupportedStandards = new[] { "NEP-17" };
+                manifest.SupportedStandards = ["NEP-17"];
             }
         }
 
@@ -204,7 +204,7 @@ namespace Neo.SmartContract.Native
             {
                 var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
-                engine.SnapshotCache.Add(_votersCount, new StorageItem(Array.Empty<byte>()));
+                engine.SnapshotCache.Add(_votersCount, new StorageItem([]));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock, 0u), new StorageItem(5 * GAS.Factor));
                 engine.SnapshotCache.Add(_registerPrice, new StorageItem(1000 * GAS.Factor));
                 return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
@@ -471,10 +471,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
-            return GetCandidatesInternal(snapshot)
+            return [.. GetCandidatesInternal(snapshot)
                 .Select(p => (p.PublicKey, p.State.Votes))
-                .Take(256)
-                .ToArray();
+                .Take(256)];
         }
 
         /// <summary>
@@ -523,7 +522,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
         public ECPoint[] GetCommittee(IReadOnlyStore snapshot)
         {
-            return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
+            return [.. GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p)];
         }
 
         /// <summary>
@@ -564,7 +563,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The public keys of the validators.</returns>
         public ECPoint[] ComputeNextBlockValidators(DataCache snapshot, ProtocolSettings settings)
         {
-            return ComputeCommitteeMembers(snapshot, settings).Select(p => p.PublicKey).Take(settings.ValidatorsCount).OrderBy(p => p).ToArray();
+            return [.. ComputeCommitteeMembers(snapshot, settings).Select(p => p.PublicKey).Take(settings.ValidatorsCount).OrderBy(p => p)];
         }
 
         private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(DataCache snapshot, ProtocolSettings settings)
@@ -596,11 +595,10 @@ namespace Neo.SmartContract.Native
         /// <returns>The public keys of the validators.</returns>
         public ECPoint[] GetNextBlockValidators(IReadOnlyStore snapshot, int validatorsCount)
         {
-            return GetCommitteeFromCache(snapshot)
+            return [.. GetCommitteeFromCache(snapshot)
                 .Take(validatorsCount)
                 .Select(p => p.PublicKey)
-                .OrderBy(p => p)
-                .ToArray();
+                .OrderBy(p => p)];
         }
 
         /// <summary>

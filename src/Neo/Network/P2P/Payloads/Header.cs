@@ -143,7 +143,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                return new[] { Witness };
+                return [Witness];
             }
             set
             {

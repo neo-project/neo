@@ -24,7 +24,7 @@ namespace Neo
     {
         public static MainService Service = new MainService();
         public static MainForm MainForm;
-        public static UInt160[] NEP5Watched = { NativeContract.NEO.Hash, NativeContract.GAS.Hash };
+        public static UInt160[] NEP5Watched = [NativeContract.NEO.Hash, NativeContract.GAS.Hash];
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {

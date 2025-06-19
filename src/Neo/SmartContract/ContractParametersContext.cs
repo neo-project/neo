@@ -40,14 +40,14 @@ namespace Neo.SmartContract
             public ContextItem(Contract contract)
             {
                 Script = contract.Script;
-                Parameters = contract.ParameterList.Select(p => new ContractParameter { Type = p }).ToArray();
-                Signatures = new();
+                Parameters = [.. contract.ParameterList.Select(p => new ContractParameter { Type = p })];
+                Signatures = [];
             }
 
             public ContextItem(JObject json)
             {
                 Script = json["script"] is JToken.Null ? null : Convert.FromBase64String(json["script"].AsString());
-                Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray();
+                Parameters = [.. ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson((JObject)p))];
                 Signatures = ((JObject)json["signatures"]).Properties.Select(p => new
                 {
                     PublicKey = ECPoint.Parse(p.Key, ECCurve.Secp256r1),
@@ -125,7 +125,7 @@ namespace Neo.SmartContract
         {
             Verifiable = verifiable;
             SnapshotCache = snapshotCache;
-            ContextItems = new();
+            ContextItems = [];
             Network = network;
         }
 

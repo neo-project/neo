@@ -23,11 +23,11 @@ namespace Neo.UnitTests.Cryptography
         {
             int m = 7, n = 10;
             uint nTweak = 123456;
-            byte[] elements = { 0, 1, 2, 3, 4 };
+            byte[] elements = [0, 1, 2, 3, 4];
             BloomFilter filter = new BloomFilter(m, n, nTweak);
             filter.Add(elements);
             Assert.IsTrue(filter.Check(elements));
-            byte[] anotherElements = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            byte[] anotherElements = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
             Assert.IsFalse(filter.Check(anotherElements));
         }
 
@@ -52,13 +52,13 @@ namespace Neo.UnitTests.Cryptography
             Assert.AreEqual(n, filter.K);
             Assert.AreEqual(nTweak, filter.Tweak);
 
-            byte[] shorterElements = { 0, 1, 2, 3, 4 };
+            byte[] shorterElements = [0, 1, 2, 3, 4];
             filter = new BloomFilter(m, n, nTweak, shorterElements);
             Assert.AreEqual(m, filter.M);
             Assert.AreEqual(n, filter.K);
             Assert.AreEqual(nTweak, filter.Tweak);
 
-            byte[] longerElements = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            byte[] longerElements = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
             filter = new BloomFilter(m, n, nTweak, longerElements);
             Assert.AreEqual(m, filter.M);
             Assert.AreEqual(n, filter.K);
@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Cryptography
         {
             int m = 7, n = 10;
             uint nTweak = 123456;
-            byte[] elements = { 0, 1, 2, 3, 4 };
+            byte[] elements = [0, 1, 2, 3, 4];
             BloomFilter filter = new BloomFilter(m, n, nTweak);
             byte[] result = new byte[m];
             filter.GetBits(result);

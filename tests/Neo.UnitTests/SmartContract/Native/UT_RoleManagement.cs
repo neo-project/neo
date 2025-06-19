@@ -49,17 +49,15 @@ namespace Neo.UnitTests.SmartContract.Native
             var rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            ECPoint[] publicKeys = new ECPoint[2];
-            publicKeys[0] = key1.PublicKey;
-            publicKeys[1] = key2.PublicKey;
-            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            ECPoint[] publicKeys = [key1.PublicKey, key2.PublicKey];
+            publicKeys = [.. publicKeys.OrderBy(p => p)];
 
-            List<Role> roles = new List<Role>() { Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary };
+            List<Role> roles = [Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary];
             foreach (var role in roles)
             {
                 var snapshot1 = _snapshotCache.CloneCache();
                 UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
-                List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
+                List<NotifyEventArgs> notifications = [];
                 EventHandler<NotifyEventArgs> ev = (o, e) => notifications.Add(e);
                 ApplicationEngine.Notify += ev;
                 var ret = NativeContract.RoleManagement.Call(

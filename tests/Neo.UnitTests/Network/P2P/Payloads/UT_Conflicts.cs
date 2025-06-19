@@ -25,12 +25,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     public class UT_Conflicts
     {
         private const byte Prefix_Transaction = 11;
-        private static readonly UInt256 _u = new UInt256(new byte[32] {
+        private static readonly UInt256 _u = new UInt256([
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01
-            });
+            ]);
 
         private Conflicts CreateConflictsPayload()
         {

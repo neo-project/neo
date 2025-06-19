@@ -44,8 +44,8 @@ namespace Neo.VM.Collections
 
         public int Count => collection.Count;
         public bool IsReadOnly => false;
-        public ICollection<TKey> Keys => collection.Select(p => p.Key).ToArray();
-        public ICollection<TValue> Values => collection.Select(p => p.Value).ToArray();
+        public ICollection<TKey> Keys => [.. collection.Select(p => p.Key)];
+        public ICollection<TValue> Values => [.. collection.Select(p => p.Value)];
 
         public TValue this[TKey key]
         {

@@ -419,10 +419,9 @@ namespace Neo.CLI
             var snapshot = NeoSystem.StoreView;
             if (account != null)
             {
-                signers = CurrentWallet!.GetAccounts()
+                signers = [.. CurrentWallet!.GetAccounts()
                 .Where(p => !p.Lock && !p.WatchOnly && p.ScriptHash == account && NativeContract.GAS.BalanceOf(snapshot, p.ScriptHash).Sign > 0)
-                .Select(p => new Signer { Account = p.ScriptHash, Scopes = WitnessScope.CalledByEntry })
-                .ToArray();
+                .Select(p => new Signer { Account = p.ScriptHash, Scopes = WitnessScope.CalledByEntry })];
             }
 
             try
@@ -494,7 +493,7 @@ namespace Neo.CLI
             byte[] script;
             using (var scriptBuilder = new ScriptBuilder())
             {
-                scriptBuilder.EmitDynamicCall(scriptHash, operation, parameters.ToArray());
+                scriptBuilder.EmitDynamicCall(scriptHash, operation, [.. parameters]);
                 script = scriptBuilder.ToArray();
                 ConsoleHelper.Info("Invoking script with: ", $"'{script.ToBase64String()}'");
             }

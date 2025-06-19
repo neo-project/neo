@@ -114,7 +114,7 @@ namespace Neo.Plugins.SignClient.Tests
                             var signs = new AccountSigns() { Status = AccountStatus.Single, Contract = contract };
                             signs.Signs.Add(new AccountSign()
                             {
-                                PublicKey = ByteString.CopyFrom(s_publicKey.EncodePoint(false).ToArray()),
+                                PublicKey = ByteString.CopyFrom([.. s_publicKey.EncodePoint(false)]),
                                 Signature = ByteString.CopyFrom(sign)
                             });
 

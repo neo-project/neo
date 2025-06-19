@@ -46,7 +46,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Compiler = "test",
                 Source = string.Empty,
-                Tokens = Array.Empty<MethodToken>(),
+                Tokens = [],
                 Script = new byte[] { 1, 2, 3 }
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
@@ -100,7 +100,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(IsMultiSigContract(badScript)); // this overload is unlucky since it doesn't perform ECPoint decoding.
 
             // Exclude the first special point and check one more time, both methods should return true.
-            var goodScript = Contract.CreateMultiSigRedeemScript(m, pubs.Skip(1).ToArray());
+            var goodScript = Contract.CreateMultiSigRedeemScript(m, [.. pubs.Skip(1)]);
             Assert.IsTrue(IsMultiSigContract(goodScript, out _, out ECPoint[] _)); // enforce runtime point decoding by specifying ECPoint[] out variable.
             Assert.IsTrue(IsMultiSigContract(goodScript)); // this overload is unlucky since it doesn't perform ECPoint decoding.
         }
@@ -129,7 +129,7 @@ namespace Neo.UnitTests.SmartContract
 
             using ScriptBuilder invocationScript = new();
             invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, TestProtocolSettings.Default.Network));
-            tx.Witnesses = new Witness[] { new Witness() { InvocationScript = invocationScript.ToArray(), VerificationScript = contract.Script } };
+            tx.Witnesses = [new Witness() { InvocationScript = invocationScript.ToArray(), VerificationScript = contract.Script }];
 
             using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, TestProtocolSettings.Default);
             engine.LoadScript(contract.Script);

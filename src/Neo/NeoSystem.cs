@@ -94,11 +94,11 @@ namespace Neo
         /// <summary>
         /// The header cache of the <see cref="NeoSystem"/>.
         /// </summary>
-        public HeaderCache HeaderCache { get; } = new();
+        public HeaderCache HeaderCache { get; } = [];
 
         internal RelayCache RelayCache { get; } = new(100);
 
-        private ImmutableList<object> services = ImmutableList<object>.Empty;
+        private ImmutableList<object> services = [];
         private readonly IStore store;
         protected readonly IStoreProvider StorageProvider;
         private ChannelsConfig start_message = null;

@@ -90,9 +90,9 @@ namespace Neo.Plugins.OracleService
                 return GetPayload(client, objectAddr, tokenSource.Token);
             return ps[2] switch
             {
-                "range" => await GetRangeAsync(client, objectAddr, ps.Skip(3).ToArray(), tokenSource.Token),
+                "range" => await GetRangeAsync(client, objectAddr, [.. ps.Skip(3)], tokenSource.Token),
                 "header" => (OracleResponseCode.Success, await GetHeaderAsync(client, objectAddr, tokenSource.Token)),
-                "hash" => (OracleResponseCode.Success, await GetHashAsync(client, objectAddr, ps.Skip(3).ToArray(), tokenSource.Token)),
+                "hash" => (OracleResponseCode.Success, await GetHashAsync(client, objectAddr, [.. ps.Skip(3)], tokenSource.Token)),
                 _ => throw new Exception("invalid command")
             };
         }
@@ -139,7 +139,7 @@ namespace Neo.Plugins.OracleService
                 return $"\"{new UInt256(obj.PayloadChecksum.Sum.ToByteArray())}\"";
             }
             Range range = ParseRange(ps[0]);
-            List<byte[]> hashes = await client.GetObjectPayloadRangeHash(addr, new List<Range>() { range }, ChecksumType.Sha256, Array.Empty<byte>(), new CallOptions { Ttl = 2 }, cancellation);
+            List<byte[]> hashes = await client.GetObjectPayloadRangeHash(addr, [range], ChecksumType.Sha256, [], new CallOptions { Ttl = 2 }, cancellation);
             if (hashes.Count == 0) throw new Exception("empty response, object range is invalid (expected 'Offset|Length')");
             return $"\"{new UInt256(hashes[0])}\"";
         }

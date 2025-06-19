@@ -22,7 +22,7 @@ namespace Neo.GUI
 {
     internal static class Helper
     {
-        private static readonly Dictionary<Type, Form> tool_forms = new Dictionary<Type, Form>();
+        private static readonly Dictionary<Type, Form> tool_forms = [];
 
         private static void Helper_FormClosing(object sender, FormClosingEventArgs e)
         {

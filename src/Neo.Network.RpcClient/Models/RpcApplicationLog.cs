@@ -44,7 +44,7 @@ namespace Neo.Network.RPC.Models
             {
                 TxId = json["txid"] is null ? null : UInt256.Parse(json["txid"].AsString()),
                 BlockHash = json["blockhash"] is null ? null : UInt256.Parse(json["blockhash"].AsString()),
-                Executions = ((JArray)json["executions"]).Select(p => Execution.FromJson((JObject)p, protocolSettings)).ToList(),
+                Executions = [.. ((JArray)json["executions"]).Select(p => Execution.FromJson((JObject)p, protocolSettings))],
             };
         }
     }
@@ -84,8 +84,8 @@ namespace Neo.Network.RPC.Models
                 VMState = json["vmstate"].GetEnum<VMState>(),
                 GasConsumed = long.Parse(json["gasconsumed"].AsString()),
                 ExceptionMessage = json["exception"]?.AsString(),
-                Stack = ((JArray)json["stack"]).Select(p => Utility.StackItemFromJson((JObject)p)).ToList(),
-                Notifications = ((JArray)json["notifications"]).Select(p => RpcNotifyEventArgs.FromJson((JObject)p, protocolSettings)).ToList()
+                Stack = [.. ((JArray)json["stack"]).Select(p => Utility.StackItemFromJson((JObject)p))],
+                Notifications = [.. ((JArray)json["notifications"]).Select(p => RpcNotifyEventArgs.FromJson((JObject)p, protocolSettings))]
             };
         }
     }

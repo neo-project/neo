@@ -24,7 +24,7 @@ namespace Neo.Plugins.StateService.Storage
             return buffer;
         }
 
-        public static readonly byte[] CurrentLocalRootIndex = { 0x02 };
-        public static readonly byte[] CurrentValidatedRootIndex = { 0x04 };
+        public static readonly byte[] CurrentLocalRootIndex = [0x02];
+        public static readonly byte[] CurrentValidatedRootIndex = [0x04];
     }
 }

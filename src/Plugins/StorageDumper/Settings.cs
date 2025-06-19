@@ -39,7 +39,7 @@ namespace Neo.Plugins.StorageDumper
             HeightToBegin = section.GetValue("HeightToBegin", 0u);
             StoragePerFolder = section.GetValue("StoragePerFolder", 100000u);
             Exclude = section.GetSection("Exclude").Exists()
-                ? section.GetSection("Exclude").GetChildren().Select(p => int.Parse(p.Value!)).ToArray()
+                ? [.. section.GetSection("Exclude").GetChildren().Select(p => int.Parse(p.Value!))]
                 : new[] { NativeContract.Ledger.Id };
         }
 

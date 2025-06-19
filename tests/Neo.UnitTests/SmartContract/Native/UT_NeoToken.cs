@@ -44,7 +44,7 @@ namespace Neo.UnitTests.SmartContract.Native
             _persistingBlock = new Block
             {
                 Header = new Header(),
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
         }
 
@@ -869,8 +869,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Initialize block
             clonedCache.Add(CreateStorageKey(1), new StorageItem(new BigInteger(30000000)));
 
-            ECPoint[] standbyCommittee = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
-            CachedCommittee cachedCommittee = new();
+            ECPoint[] standbyCommittee = [.. TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p)];
+            CachedCommittee cachedCommittee = [];
             for (var i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount; i++)
             {
                 ECPoint member = standbyCommittee[i];
@@ -1191,7 +1191,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var result = engine.ResultStack.Pop();
             Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
 
-            return (result as VM.Types.Array).Select(u => ECPoint.DecodePoint(u.GetSpan(), ECCurve.Secp256r1)).ToArray();
+            return [.. (result as VM.Types.Array).Select(u => ECPoint.DecodePoint(u.GetSpan(), ECCurve.Secp256r1))];
         }
 
         internal static (BigInteger Value, bool State) Check_UnclaimedGas(DataCache clonedCache, byte[] address, Block persistingBlock)

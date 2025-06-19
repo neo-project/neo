@@ -11,8 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
-using System;
-using System.IO;
 
 namespace Neo.UnitTests.IO.Caching
 {

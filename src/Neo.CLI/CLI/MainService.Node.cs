@@ -123,8 +123,8 @@ namespace Neo.CLI
             {
                 _mainService = mainService;
                 DisplayState = new DisplayState();
-                LineBuffer = new Dictionary<int, string>();
-                ColorBuffer = new Dictionary<int, ConsoleColor>();
+                LineBuffer = [];
+                ColorBuffer = [];
             }
 
             public void RenderDisplay()
