@@ -205,8 +205,6 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             return messages;
         }
 
-
-
         /// <summary>
         /// Verifies that all consensus services remain operational
         /// </summary>
