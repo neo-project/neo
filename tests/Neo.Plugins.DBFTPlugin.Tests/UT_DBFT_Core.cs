@@ -151,10 +151,6 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             ExpectNoMsg(TimeSpan.FromMilliseconds(500));
         }
 
-
-
-
-
         [TestMethod]
         public void TestMultipleRounds()
         {
