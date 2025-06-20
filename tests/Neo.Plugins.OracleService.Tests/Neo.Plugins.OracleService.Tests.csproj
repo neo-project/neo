@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit" Version="1.5.36" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.43" />
     <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
   </ItemGroup>
 

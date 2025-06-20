@@ -57,7 +57,7 @@ namespace Neo.Cryptography.MPTTrie
                         }
                         if (path.StartsWith(node.Key.Span))
                         {
-                            return new([.. node.Key.Span, .. Seek(ref node.Next, path[node.Key.Length..], out start)]);
+                            return new([.. node.Key.Span, .. Seek(ref node._next, path[node.Key.Length..], out start)]);
                         }
                         if (node.Key.Span.StartsWith(path))
                         {
