@@ -21,10 +21,10 @@
     <Protobuf Include="proto/signpb.proto" GrpcServices="Client" />
     <Protobuf Include="proto/servicepb.proto" GrpcServices="Client" AdditionalImportDirs="$(ProjectDir)/proto" />
 
-    <PackageReference Include="Google.Protobuf" Version="3.30.2" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.31.1" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
     <!-- NOTE: Need install rosetta2 on macOS ARM64 -->
-    <PackageReference Include="Grpc.Tools" Version="2.70.0" PrivateAssets="all" />
+    <PackageReference Include="Grpc.Tools" Version="2.72.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
