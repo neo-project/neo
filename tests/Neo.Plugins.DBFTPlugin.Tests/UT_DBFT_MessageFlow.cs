@@ -382,6 +382,4 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             Console.WriteLine("Consensus service lifecycle test completed successfully");
         }
     }
-
-
 }
