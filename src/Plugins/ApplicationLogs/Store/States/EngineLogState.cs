@@ -49,11 +49,12 @@ namespace Neo.Plugins.ApplicationLogs.Store.States
 
         #region IEquatable
 
-        public bool Equals(EngineLogState other) =>
+        public bool Equals(EngineLogState? other) =>
+            other is not null &&
             ScriptHash == other.ScriptHash &&
             Message == other.Message;
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(this, obj)) return true;
             return Equals(obj as EngineLogState);

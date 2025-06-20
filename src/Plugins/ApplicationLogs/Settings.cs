@@ -21,7 +21,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         public bool Debug { get; }
 
-        public static Settings Default { get; private set; }
+        public static Settings Default { get; private set; } = null!;
 
         private Settings(IConfigurationSection section) : base(section)
         {

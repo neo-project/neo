@@ -44,6 +44,8 @@ namespace Neo.Plugins.ApplicationLogs
 
         public LogReader()
         {
+            _neostore = null!;
+            _neosystem = null!;
             _logEvents = new();
             Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
@@ -92,7 +94,7 @@ namespace Neo.Plugins.ApplicationLogs
         {
             if (_params == null || _params.Count == 0)
                 throw new RpcException(RpcError.InvalidParams);
-            if (UInt256.TryParse(_params[0].AsString(), out var hash))
+            if (UInt256.TryParse(_params[0]!.AsString(), out var hash))
             {
                 var raw = BlockToJObject(hash);
                 if (raw == null)
@@ -100,19 +102,22 @@ namespace Neo.Plugins.ApplicationLogs
                 if (raw == null)
                     throw new RpcException(RpcError.InvalidParams.WithData("Unknown transaction/blockhash"));
 
-                if (_params.Count >= 2 && Enum.TryParse(_params[1].AsString(), true, out TriggerType triggerType))
+                if (_params.Count >= 2 && Enum.TryParse(_params[1]!.AsString(), true, out TriggerType triggerType))
                 {
                     var executions = raw["executions"] as JArray;
-                    for (int i = 0; i < executions.Count;)
+                    if (executions != null)
                     {
-                        if (executions[i]["trigger"].AsString().Equals(triggerType.ToString(), StringComparison.OrdinalIgnoreCase) == false)
-                            executions.RemoveAt(i);
-                        else
-                            i++;
+                        for (var i = 0; i < executions.Count;)
+                        {
+                            if (executions[i]!["trigger"]?.AsString().Equals(triggerType.ToString(), StringComparison.OrdinalIgnoreCase) == false)
+                                executions.RemoveAt(i);
+                            else
+                                i++;
+                        }
                     }
                 }
 
-                return raw ?? JToken.Null;
+                return raw;
             }
             else
                 throw new RpcException(RpcError.InvalidParams);
@@ -123,7 +128,7 @@ namespace Neo.Plugins.ApplicationLogs
         #region Console Commands
 
         [ConsoleCommand("log block", Category = "ApplicationLog Commands")]
-        internal void OnGetBlockCommand(string blockHashOrIndex, string eventName = null)
+        internal void OnGetBlockCommand(string blockHashOrIndex, string? eventName = null)
         {
             UInt256 blockhash;
             if (uint.TryParse(blockHashOrIndex, out var blockIndex))
@@ -143,18 +148,27 @@ namespace Neo.Plugins.ApplicationLogs
                 _neostore.GetBlockLog(blockhash, TriggerType.PostPersist) :
                 _neostore.GetBlockLog(blockhash, TriggerType.PostPersist, eventName);
 
-            if (blockOnPersist == null)
+            if (blockOnPersist == null && blockPostPersist == null)
                 ConsoleHelper.Error($"No logs.");
             else
             {
-                PrintExecutionToConsole(blockOnPersist);
-                ConsoleHelper.Info("--------------------------------");
-                PrintExecutionToConsole(blockPostPersist);
+                if (blockOnPersist != null)
+                {
+                    PrintExecutionToConsole(blockOnPersist);
+                    if (blockPostPersist != null)
+                    {
+                        ConsoleHelper.Info("--------------------------------");
+                    }
+                }
+                if (blockPostPersist != null)
+                {
+                    PrintExecutionToConsole(blockPostPersist);
+                }
             }
         }
 
         [ConsoleCommand("log tx", Category = "ApplicationLog Commands")]
-        internal void OnGetTransactionCommand(UInt256 txhash, string eventName = null)
+        internal void OnGetTransactionCommand(UInt256 txhash, string? eventName = null)
         {
             var txApplication = string.IsNullOrEmpty(eventName) ?
                 _neostore.GetTransactionLog(txhash) :
@@ -167,7 +181,7 @@ namespace Neo.Plugins.ApplicationLogs
         }
 
         [ConsoleCommand("log contract", Category = "ApplicationLog Commands")]
-        internal void OnGetContractCommand(UInt160 scripthash, uint page = 1, uint pageSize = 1, string eventName = null)
+        internal void OnGetContractCommand(UInt160 scripthash, uint page = 1, uint pageSize = 1, string? eventName = null)
         {
             if (page == 0)
             {
@@ -330,7 +344,7 @@ namespace Neo.Plugins.ApplicationLogs
             };
         }
 
-        private JObject TransactionToJObject(UInt256 txHash)
+        private JObject? TransactionToJObject(UInt256 txHash)
         {
             var appLog = _neostore.GetTransactionLog(txHash);
             if (appLog == null)
@@ -396,7 +410,7 @@ namespace Neo.Plugins.ApplicationLogs
             return raw;
         }
 
-        private JObject BlockToJObject(UInt256 blockHash)
+        private JObject? BlockToJObject(UInt256 blockHash)
         {
             var blockOnPersist = _neostore.GetBlockLog(blockHash, TriggerType.OnPersist);
             var blockPostPersist = _neostore.GetBlockLog(blockHash, TriggerType.PostPersist);
