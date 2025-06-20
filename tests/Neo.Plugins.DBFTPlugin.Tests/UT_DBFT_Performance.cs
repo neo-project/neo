@@ -41,7 +41,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         private TestProbe blockchain;
         private TestProbe txRouter;
         private MemoryStore memoryStore;
-        private DbftSettings settings;
+        private Settings settings;
 
         [TestInitialize]
         public void Setup()

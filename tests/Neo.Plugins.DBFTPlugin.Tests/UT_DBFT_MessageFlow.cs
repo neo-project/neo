@@ -52,7 +52,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         private const int ValidatorCount = 4; // Use 4 validators for faster testing
         private NeoSystem neoSystem;
         private MemoryStore memoryStore;
-        private DbftSettings settings;
+        private Settings settings;
         private MockWallet[] testWallets;
         private IActorRef[] consensusServices;
         private ConsensusTestUtilities testHelper;
