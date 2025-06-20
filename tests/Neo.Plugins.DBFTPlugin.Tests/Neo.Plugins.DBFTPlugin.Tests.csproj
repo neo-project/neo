@@ -14,7 +14,6 @@
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
     <ProjectReference Include="..\..\src\Plugins\DBFTPlugin\DBFTPlugin.csproj" />
     <ProjectReference Include="..\Neo.UnitTests\Neo.UnitTests.csproj" />
-
   </ItemGroup>
 
 </Project>
