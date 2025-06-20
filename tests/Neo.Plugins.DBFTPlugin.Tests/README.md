@@ -2,6 +2,8 @@
 
 Comprehensive unit tests for the Neo DBFT (Delegated Byzantine Fault Tolerance) consensus plugin, ensuring robustness, security, and reliability of the consensus mechanism.
 
+> **Framework**: Uses MSTest framework with Akka.NET TestKit for professional-grade testing and seamless IDE integration.
+
 ## 🎯 Overview
 
 This test suite provides complete coverage of the DBFT consensus protocol, including normal operations, failure scenarios, recovery mechanisms, and stress testing. The tests validate that the consensus system can handle Byzantine failures, network partitions, and various edge cases while maintaining blockchain integrity.
@@ -65,7 +67,8 @@ This test suite provides complete coverage of the DBFT consensus protocol, inclu
 ### Prerequisites
 - .NET 9.0 or later
 - Neo project dependencies
-- Akka.NET TestKit
+- MSTest Framework
+- Akka.NET TestKit (MSTest version)
 
 ### Execute Tests
 ```bash
@@ -91,10 +94,11 @@ Build succeeded
 ## 🏗️ Test Architecture
 
 ### Actor System Testing
-Tests use Akka.NET TestKit for proper actor system testing:
+Tests use Akka.NET TestKit with MSTest for proper actor system testing:
 - **TestProbe**: Mock actor dependencies (blockchain, localNode, etc.)
 - **Actor Lifecycle**: Verification that actors don't crash under stress
 - **Message Flow**: Tracking and validation of consensus messages
+- **MSTest Integration**: Seamless integration with Visual Studio Test Explorer
 
 ### Consensus Message Flow
 Tests validate the complete DBFT protocol:
@@ -123,7 +127,8 @@ Comprehensive testing of Byzantine fault tolerance:
 - **Comprehensive Coverage**: All major DBFT functionality tested
 - **Clean Code**: Well-organized, documented, and maintainable
 - **No Flaky Tests**: Reliable and deterministic test execution
-- **Performance**: Tests complete efficiently (~28 seconds)
+- **Performance**: Tests complete efficiently (~33 seconds)
+- **MSTest Framework**: Production-ready testing with Visual Studio integration
 
 ### Security Validation
 - **Byzantine Resistance**: Malicious validator behavior testing
