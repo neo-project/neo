@@ -64,12 +64,12 @@ namespace Neo.VM.Benchmark
         public static void RunBenchmark()
         {
             const int iterations = 1000;
-            
+
             Console.WriteLine("=== Neo VM Jump Table Performance Benchmark ===\n");
-            
+
             // Benchmark JumpTable Construction
             Console.WriteLine("1. Jump Table Construction Performance:");
-            
+
             // Warm up
             for (int i = 0; i < 10; i++)
             {
@@ -78,11 +78,11 @@ namespace Neo.VM.Benchmark
                 var __ = new JumpTable();
                 GC.KeepAlive(__);
             }
-            
+
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
             // Reflection-based (old approach)
             var sw1 = Stopwatch.StartNew();
             for (int i = 0; i < iterations; i++)
@@ -91,11 +91,11 @@ namespace Neo.VM.Benchmark
                 GC.KeepAlive(jumpTable);
             }
             sw1.Stop();
-            
+
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
             // Pre-compiled (new approach)
             var sw2 = Stopwatch.StartNew();
             for (int i = 0; i < iterations; i++)
@@ -104,24 +104,24 @@ namespace Neo.VM.Benchmark
                 GC.KeepAlive(jumpTable);
             }
             sw2.Stop();
-            
+
             var reflectionTime = sw1.Elapsed.TotalMicroseconds;
             var precompiledTime = sw2.Elapsed.TotalMicroseconds;
             var speedup = reflectionTime / precompiledTime;
-            
-            Console.WriteLine($"   Reflection-based:  {reflectionTime:F2} μs (avg: {reflectionTime/iterations:F2} μs per table)");
-            Console.WriteLine($"   Pre-compiled:      {precompiledTime:F2} μs (avg: {precompiledTime/iterations:F2} μs per table)");
+
+            Console.WriteLine($"   Reflection-based:  {reflectionTime:F2} μs (avg: {reflectionTime / iterations:F2} μs per table)");
+            Console.WriteLine($"   Pre-compiled:      {precompiledTime:F2} μs (avg: {precompiledTime / iterations:F2} μs per table)");
             Console.WriteLine($"   Speedup:           {speedup:F1}x faster");
-            Console.WriteLine($"   Improvement:       {((speedup-1)*100):F1}% performance gain\n");
-            
+            Console.WriteLine($"   Improvement:       {((speedup - 1) * 100):F1}% performance gain\n");
+
             // Benchmark VM Initialization
             Console.WriteLine("2. VM Initialization Performance:");
             const int vmIterations = 100;
-            
+
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
             // VM with reflection-based jump table
             var sw3 = Stopwatch.StartNew();
             for (int i = 0; i < vmIterations; i++)
@@ -131,11 +131,11 @@ namespace Neo.VM.Benchmark
                 GC.KeepAlive(engine);
             }
             sw3.Stop();
-            
+
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
             // VM with pre-compiled jump table
             var sw4 = Stopwatch.StartNew();
             for (int i = 0; i < vmIterations; i++)
@@ -144,22 +144,22 @@ namespace Neo.VM.Benchmark
                 GC.KeepAlive(engine);
             }
             sw4.Stop();
-            
+
             var vmReflectionTime = sw3.Elapsed.TotalMicroseconds;
             var vmPrecompiledTime = sw4.Elapsed.TotalMicroseconds;
             var vmSpeedup = vmReflectionTime / vmPrecompiledTime;
-            
-            Console.WriteLine($"   Reflection-based:  {vmReflectionTime:F2} μs (avg: {vmReflectionTime/vmIterations:F2} μs per VM)");
-            Console.WriteLine($"   Pre-compiled:      {vmPrecompiledTime:F2} μs (avg: {vmPrecompiledTime/vmIterations:F2} μs per VM)");
+
+            Console.WriteLine($"   Reflection-based:  {vmReflectionTime:F2} μs (avg: {vmReflectionTime / vmIterations:F2} μs per VM)");
+            Console.WriteLine($"   Pre-compiled:      {vmPrecompiledTime:F2} μs (avg: {vmPrecompiledTime / vmIterations:F2} μs per VM)");
             Console.WriteLine($"   Speedup:           {vmSpeedup:F1}x faster");
-            Console.WriteLine($"   Improvement:       {((vmSpeedup-1)*100):F1}% performance gain\n");
-            
+            Console.WriteLine($"   Improvement:       {((vmSpeedup - 1) * 100):F1}% performance gain\n");
+
             // Summary
             Console.WriteLine("=== Summary ===");
             Console.WriteLine("The pre-compiled jump table eliminates expensive reflection overhead:");
             Console.WriteLine($"• Jump table construction is {speedup:F1}x faster");
             Console.WriteLine($"• VM initialization is {vmSpeedup:F1}x faster");
-            Console.WriteLine($"• Overall improvement: {((Math.Min(speedup, vmSpeedup)-1)*100):F1}% - {((Math.Max(speedup, vmSpeedup)-1)*100):F1}% performance gain");
+            Console.WriteLine($"• Overall improvement: {((Math.Min(speedup, vmSpeedup) - 1) * 100):F1}% - {((Math.Max(speedup, vmSpeedup) - 1) * 100):F1}% performance gain");
             Console.WriteLine("• Memory allocation reduced (fewer temporary objects)");
             Console.WriteLine("• Better JIT optimization potential");
         }

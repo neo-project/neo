@@ -125,7 +125,7 @@ namespace Neo.VM.Benchmark
         public void OpcodeDispatch_Reflection()
         {
             var jumpTable = new ReflectionJumpTable();
-            
+
             for (int i = 0; i < OperationsPerInvoke / 10; i++)
             {
                 var engine = new ExecutionEngine(jumpTable);
@@ -152,7 +152,7 @@ namespace Neo.VM.Benchmark
         {
             var jumpTable = new ReflectionJumpTable();
             var opcodes = new[] { VM.OpCode.PUSH1, VM.OpCode.ADD, VM.OpCode.MUL, VM.OpCode.DUP, VM.OpCode.DROP };
-            
+
             for (int i = 0; i < OperationsPerInvoke * 2; i++)
             {
                 var opcode = opcodes[i % opcodes.Length];
@@ -166,7 +166,7 @@ namespace Neo.VM.Benchmark
         {
             var jumpTable = new JumpTable();
             var opcodes = new[] { VM.OpCode.PUSH1, VM.OpCode.ADD, VM.OpCode.MUL, VM.OpCode.DUP, VM.OpCode.DROP };
-            
+
             for (int i = 0; i < OperationsPerInvoke * 2; i++)
             {
                 var opcode = opcodes[i % opcodes.Length];
@@ -182,13 +182,13 @@ namespace Neo.VM.Benchmark
         public void MultiVMInitialization_Reflection()
         {
             var engines = new ExecutionEngine[50];
-            
+
             for (int i = 0; i < 50; i++)
             {
                 var jumpTable = new ReflectionJumpTable();
                 engines[i] = new ExecutionEngine(jumpTable);
             }
-            
+
             GC.KeepAlive(engines);
         }
 
@@ -196,12 +196,12 @@ namespace Neo.VM.Benchmark
         public void MultiVMInitialization_PreCompiled()
         {
             var engines = new ExecutionEngine[50];
-            
+
             for (int i = 0; i < 50; i++)
             {
                 engines[i] = new ExecutionEngine();
             }
-            
+
             GC.KeepAlive(engines);
         }
     }
