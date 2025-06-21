@@ -24,7 +24,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
         #region Globals
 
         private readonly IStore _store;
-        private IStoreSnapshot _blocklogsnapshot;
+        private IStoreSnapshot? _blocklogsnapshot;
 
         #endregion
 
@@ -103,6 +103,8 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void PutTransactionEngineLogState(UInt256 hash, IReadOnlyList<LogEventArgs> logs)
         {
+            ArgumentNullException.ThrowIfNull(_blocklogsnapshot, nameof(_blocklogsnapshot));
+
             using var lss = new LogStorageStore(_blocklogsnapshot);
             var ids = new List<Guid>();
             foreach (var log in logs)
@@ -114,7 +116,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         #region Block
 
-        public BlockchainExecutionModel GetBlockLog(UInt256 hash, TriggerType trigger)
+        public BlockchainExecutionModel? GetBlockLog(UInt256 hash, TriggerType trigger)
         {
             using var lss = new LogStorageStore(_store.GetSnapshot());
             if (lss.TryGetExecutionBlockState(hash, trigger, out var executionBlockStateId) &&
@@ -136,7 +138,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             return null;
         }
 
-        public BlockchainExecutionModel GetBlockLog(UInt256 hash, TriggerType trigger, string eventName)
+        public BlockchainExecutionModel? GetBlockLog(UInt256 hash, TriggerType trigger, string eventName)
         {
             using var lss = new LogStorageStore(_store.GetSnapshot());
             if (lss.TryGetExecutionBlockState(hash, trigger, out var executionBlockStateId) &&
@@ -163,6 +165,8 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void PutBlockLog(Block block, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
+            ArgumentNullException.ThrowIfNull(_blocklogsnapshot, nameof(_blocklogsnapshot));
+
             foreach (var appExecution in applicationExecutedList)
             {
                 using var lss = new LogStorageStore(_blocklogsnapshot);
@@ -182,7 +186,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         #region Transaction
 
-        public BlockchainExecutionModel GetTransactionLog(UInt256 hash)
+        public BlockchainExecutionModel? GetTransactionLog(UInt256 hash)
         {
             using var lss = new LogStorageStore(_store.GetSnapshot());
             if (lss.TryGetExecutionTransactionState(hash, out var executionTransactionStateId) &&
@@ -215,7 +219,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             return null;
         }
 
-        public BlockchainExecutionModel GetTransactionLog(UInt256 hash, string eventName)
+        public BlockchainExecutionModel? GetTransactionLog(UInt256 hash, string eventName)
         {
             using var lss = new LogStorageStore(_store.GetSnapshot());
             if (lss.TryGetExecutionTransactionState(hash, out var executionTransactionStateId) &&

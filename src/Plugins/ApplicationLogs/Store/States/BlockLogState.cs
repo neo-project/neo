@@ -50,10 +50,10 @@ namespace Neo.Plugins.ApplicationLogs.Store.States
 
         #region IEquatable
 
-        public bool Equals(BlockLogState other) =>
-            NotifyLogIds.SequenceEqual(other.NotifyLogIds);
+        public bool Equals(BlockLogState? other) =>
+            other != null && NotifyLogIds.SequenceEqual(other.NotifyLogIds);
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(this, obj)) return true;
             return Equals(obj as BlockLogState);
