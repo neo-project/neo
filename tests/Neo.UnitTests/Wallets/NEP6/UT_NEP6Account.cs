@@ -30,8 +30,8 @@ namespace Neo.UnitTests.Wallets.NEP6
         [ClassInitialize]
         public static void ClassSetup(TestContext ctx)
         {
-            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            byte[] privateKey = [ 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01];
             _keyPair = new KeyPair(privateKey);
             _nep2 = _keyPair.Export("Satoshi", TestProtocolSettings.Default.AddressVersion, 2, 1, 1);
         }
@@ -40,7 +40,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestSetup()
         {
             _wallet = TestUtils.GenerateTestWallet("Satoshi");
-            byte[] array1 = { 0x01 };
+            byte[] array1 = [0x01];
             _hash = new UInt160(Crypto.Hash160(array1));
             _account = new NEP6Account(_wallet, _hash);
         }
@@ -76,7 +76,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             string password = "hello world";
             var wallet = TestUtils.GenerateTestWallet(password);
-            byte[] array1 = { 0x01 };
+            byte[] array1 = [0x01];
             var hash = new UInt160(Crypto.Hash160(array1));
             NEP6Account account = new(wallet, hash, _keyPair, password);
             Assert.AreEqual(hash, account.ScriptHash);
@@ -135,10 +135,10 @@ namespace Neo.UnitTests.Wallets.NEP6
             JObject parameters = new();
             parameters["type"] = 0x00;
             parameters["name"] = "Sig";
-            JArray array = new()
-            {
+            JArray array =
+            [
                 parameters
-            };
+            ];
             nep6contract["parameters"] = array;
             nep6contract["deployed"] = false;
             _account.Contract = NEP6Contract.FromJson(nep6contract);

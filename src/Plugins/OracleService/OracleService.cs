@@ -59,7 +59,7 @@ namespace Neo.Plugins.OracleService
         private int counter;
         private NeoSystem _system;
 
-        private readonly Dictionary<string, IOracleProtocol> protocols = new Dictionary<string, IOracleProtocol>();
+        private readonly Dictionary<string, IOracleProtocol> protocols = [];
 
         public override string Description => "Built-in oracle plugin";
 
@@ -188,8 +188,8 @@ namespace Neo.Plugins.OracleService
         {
             try
             {
-                List<ulong> outOfDate = new();
-                List<Task> tasks = new();
+                List<ulong> outOfDate = [];
+                List<Task> tasks = [];
                 foreach (var (id, task) in pendingQueue)
                 {
                     var span = TimeProvider.Current.UtcNow - task.Timestamp;
@@ -306,7 +306,7 @@ namespace Neo.Plugins.OracleService
 
                 Log($"[{req.OriginalTxid}]-({requestId}) Built response tx[[{responseTx.Hash}]], responseCode:{code}, result:{result.ToHexString()}, validUntilBlock:{responseTx.ValidUntilBlock}, backupTx:{backupTx.Hash}-{backupTx.ValidUntilBlock}");
 
-                List<Task> tasks = new List<Task>();
+                List<Task> tasks = [];
                 ECPoint[] oraclePublicKeys = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
                 foreach (var account in wallet.GetAccounts())
                 {

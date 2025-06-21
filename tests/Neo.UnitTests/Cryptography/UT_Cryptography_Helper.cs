@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Cryptography
         {
             string input = "3vQB7B6MrGQZaxCuFg4oh";
             byte[] result = input.Base58CheckDecode();
-            byte[] helloWorld = { 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 };
+            byte[] helloWorld = [104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100];
             CollectionAssert.AreEqual(helloWorld, result);
 
             input = "3v";

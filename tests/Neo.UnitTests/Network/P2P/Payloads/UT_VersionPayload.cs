@@ -24,17 +24,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void SizeAndEndPoint_Get()
         {
-            var test = new VersionPayload() { Capabilities = Array.Empty<NodeCapability>(), UserAgent = "neo3" };
+            var test = new VersionPayload() { Capabilities = [], UserAgent = "neo3" };
             Assert.AreEqual(22, test.Size);
 
-            test = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
+            test = VersionPayload.Create(123, 456, "neo3", [new ServerCapability(NodeCapabilityType.TcpServer, 22)]);
             Assert.AreEqual(25, test.Size);
         }
 
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
+            var test = VersionPayload.Create(123, 456, "neo3", [new ServerCapability(NodeCapabilityType.TcpServer, 22)]);
             var clone = test.ToArray().AsSerializable<VersionPayload>();
 
             CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
@@ -44,16 +44,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
 
             Assert.ThrowsExactly<FormatException>(() => _ = VersionPayload.Create(123, 456, "neo3",
-                new NodeCapability[] {
+                [
                     new ServerCapability(NodeCapabilityType.TcpServer, 22) ,
                     new ServerCapability(NodeCapabilityType.TcpServer, 22)
-                }).ToArray().AsSerializable<VersionPayload>());
+                ]).ToArray().AsSerializable<VersionPayload>());
 
             var buf = test.ToArray();
             buf[buf.Length - 2 - 1 - 1] += 3; // We've got 1 capability with 2 bytes, this adds three more to the array size.
-            buf = buf.Concat(new byte[] { 0xfe, 0x00 }).ToArray(); // Type = 0xfe, zero bytes of data.
-            buf = buf.Concat(new byte[] { 0xfd, 0x02, 0x00, 0x00 }).ToArray(); // Type = 0xfd, two bytes of data.
-            buf = buf.Concat(new byte[] { 0x10, 0x01, 0x00, 0x00, 0x00 }).ToArray(); // FullNode capability, 0x01 index.
+            buf = [.. buf, .. new byte[] { 0xfe, 0x00 }]; // Type = 0xfe, zero bytes of data.
+            buf = [.. buf, .. new byte[] { 0xfd, 0x02, 0x00, 0x00 }]; // Type = 0xfd, two bytes of data.
+            buf = [.. buf, .. new byte[] { 0x10, 0x01, 0x00, 0x00, 0x00 }]; // FullNode capability, 0x01 index.
 
             clone = buf.AsSerializable<VersionPayload>();
             Assert.AreEqual(4, clone.Capabilities.Length);

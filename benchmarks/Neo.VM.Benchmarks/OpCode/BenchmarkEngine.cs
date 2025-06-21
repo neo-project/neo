@@ -20,8 +20,8 @@ namespace Neo.VM.Benchmark.OpCode
     /// </summary>
     public class BenchmarkEngine : ExecutionEngine
     {
-        private readonly Dictionary<VM.OpCode, (int Count, TimeSpan TotalTime)> _opcodeStats = new();
-        private readonly Dictionary<Script, HashSet<uint>> _breakPoints = new();
+        private readonly Dictionary<VM.OpCode, (int Count, TimeSpan TotalTime)> _opcodeStats = [];
+        private readonly Dictionary<Script, HashSet<uint>> _breakPoints = [];
         private long _gasConsumed = 0;
 
         public BenchmarkEngine() : base(ComposeJumpTable()) { }

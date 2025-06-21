@@ -360,7 +360,7 @@ namespace Neo.Network.RPC.Tests
         {
             var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.InvokeFunctionAsync).ToLower());
             var result = await rpc.InvokeFunctionAsync(test.Request.Params[0].AsString(), test.Request.Params[1].AsString(),
-                ((JArray)test.Request.Params[2]).Select(p => RpcStack.FromJson((JObject)p)).ToArray());
+                [.. ((JArray)test.Request.Params[2]).Select(p => RpcStack.FromJson((JObject)p))]);
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
 
             // TODO test verify method

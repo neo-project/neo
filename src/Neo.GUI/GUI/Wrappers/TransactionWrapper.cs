@@ -32,13 +32,13 @@ namespace Neo.GUI.Wrappers
         [Category("Basic")]
         public uint ValidUntilBlock { get; set; }
         [Category("Basic")]
-        public List<TransactionAttributeWrapper> Attributes { get; set; } = new List<TransactionAttributeWrapper>();
+        public List<TransactionAttributeWrapper> Attributes { get; set; } = [];
         [Category("Basic")]
         [Editor(typeof(ScriptEditor), typeof(UITypeEditor))]
         [TypeConverter(typeof(HexConverter))]
         public byte[] Script { get; set; }
         [Category("Basic")]
-        public List<WitnessWrapper> Witnesses { get; set; } = new List<WitnessWrapper>();
+        public List<WitnessWrapper> Witnesses { get; set; } = [];
 
         public Transaction Unwrap()
         {
@@ -46,13 +46,13 @@ namespace Neo.GUI.Wrappers
             {
                 Version = Version,
                 Nonce = Nonce,
-                Signers = Signers.Select(p => p.Unwrap()).ToArray(),
+                Signers = [.. Signers.Select(p => p.Unwrap())],
                 SystemFee = SystemFee,
                 NetworkFee = NetworkFee,
                 ValidUntilBlock = ValidUntilBlock,
-                Attributes = Attributes.Select(p => p.Unwrap()).ToArray(),
+                Attributes = [.. Attributes.Select(p => p.Unwrap())],
                 Script = Script,
-                Witnesses = Witnesses.Select(p => p.Unwrap()).ToArray()
+                Witnesses = [.. Witnesses.Select(p => p.Unwrap())]
             };
         }
     }

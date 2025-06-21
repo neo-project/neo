@@ -119,7 +119,7 @@ namespace Neo.Plugins.StateService.Network
                 ["version"] = Version,
                 ["index"] = Index,
                 ["roothash"] = RootHash.ToString(),
-                ["witnesses"] = Witness is null ? new JArray() : new JArray(Witness.ToJson()),
+                ["witnesses"] = Witness is null ? [] : new JArray(Witness.ToJson()),
             };
         }
     }

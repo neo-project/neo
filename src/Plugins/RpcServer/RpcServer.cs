@@ -37,8 +37,8 @@ namespace Neo.Plugins.RpcServer
     {
         private const int MaxParamsDepth = 32;
 
-        private readonly Dictionary<string, Func<JArray, object>> methods = new();
-        private readonly Dictionary<string, Delegate> _methodsWithParams = new();
+        private readonly Dictionary<string, Func<JArray, object>> methods = [];
+        private readonly Dictionary<string, Delegate> _methodsWithParams = [];
 
         private IWebHost host;
         private RpcServerSettings settings;
@@ -425,7 +425,7 @@ namespace Neo.Plugins.RpcServer
                     var name = string.IsNullOrEmpty(attributeWithParams.Name) ? method.Name.ToLowerInvariant() : attributeWithParams.Name;
 
                     var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
-                    var delegateType = Expression.GetDelegateType(parameters.Concat([method.ReturnType]).ToArray());
+                    var delegateType = Expression.GetDelegateType([.. parameters, method.ReturnType]);
 
                     _methodsWithParams[name] = Delegate.CreateDelegate(delegateType, handler, method);
                 }

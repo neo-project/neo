@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Manifest
             Methods = @struct[1] switch
             {
                 Null => WildcardContainer<string>.CreateWildcard(),
-                Array array => WildcardContainer<string>.Create(array.Select(p => p.GetString()).ToArray()),
+                Array array => WildcardContainer<string>.Create([.. array.Select(p => p.GetString())]),
                 _ => throw new ArgumentException("The second field(`methods`) is not a null or array", nameof(stackItem))
             };
         }

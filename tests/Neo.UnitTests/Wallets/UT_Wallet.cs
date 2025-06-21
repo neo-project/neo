@@ -32,7 +32,7 @@ namespace Neo.UnitTests.Wallets
 
         public override Version Version => Version.Parse("0.0.1");
 
-        private readonly Dictionary<UInt160, WalletAccount> accounts = new();
+        private readonly Dictionary<UInt160, WalletAccount> accounts = [];
 
         public MyWallet() : base(null, TestProtocolSettings.Default) { }
 

@@ -10,9 +10,9 @@
 // modifications are permitted.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Diagnostics.CodeAnalysis;
 
 #if !NET9_0_OR_GREATER
 using System.Globalization;

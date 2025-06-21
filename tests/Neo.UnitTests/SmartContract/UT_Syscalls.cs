@@ -11,7 +11,6 @@
 
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -21,7 +20,6 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Linq;
-using Array = System.Array;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -232,9 +230,9 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitSysCall(ApplicationEngine.System_Runtime_GetInvocationCounter);
 
-                contractA = TestUtils.GetContract(new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray());
-                contractB = TestUtils.GetContract(new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray());
-                contractC = TestUtils.GetContract(new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray());
+                contractA = TestUtils.GetContract([(byte)OpCode.DROP, (byte)OpCode.DROP, .. script.ToArray()]);
+                contractB = TestUtils.GetContract([(byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, .. script.ToArray()]);
+                contractC = TestUtils.GetContract([(byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP, .. script.ToArray()]);
                 contractA.Hash = contractA.Script.Span.ToScriptHash();
                 contractB.Hash = contractB.Script.Span.ToScriptHash();
                 contractC.Hash = contractC.Script.Span.ToScriptHash();

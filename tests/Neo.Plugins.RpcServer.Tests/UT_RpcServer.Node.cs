@@ -13,14 +13,12 @@ using Akka.Actor;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Json;
-using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence.Providers;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
@@ -41,9 +39,9 @@ namespace Neo.Plugins.RpcServer.Tests
             var settings = TestProtocolSettings.SoleNode;
             var neoSystem = new NeoSystem(settings, _memoryStoreProvider);
             var localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 11332) });
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 12332) });
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 13332) });
+            localNode.AddPeers([new IPEndPoint(new IPAddress([127, 0, 0, 1]), 11332)]);
+            localNode.AddPeers([new IPEndPoint(new IPAddress([127, 0, 0, 1]), 12332)]);
+            localNode.AddPeers([new IPEndPoint(new IPAddress([127, 0, 0, 1]), 13332)]);
             var rpcServer = new RpcServer(neoSystem, RpcServerSettings.Default);
 
             var result = rpcServer.GetPeers();

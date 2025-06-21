@@ -15,7 +15,6 @@ using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;

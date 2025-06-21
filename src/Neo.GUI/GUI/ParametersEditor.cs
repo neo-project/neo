@@ -29,8 +29,8 @@ namespace Neo.GUI
         {
             InitializeComponent();
             this.parameters = parameters;
-            listView1.Items.AddRange(parameters.Select((p, i) => new ListViewItem(new[]
-            {
+            listView1.Items.AddRange([.. parameters.Select((p, i) => new ListViewItem(
+            [
                 new ListViewItem.ListViewSubItem
                 {
                     Name = "index",
@@ -46,10 +46,10 @@ namespace Neo.GUI
                     Name = "value",
                     Text = p.ToString()
                 }
-            }, -1)
+            ], -1)
             {
                 Tag = p
-            }).ToArray());
+            })]);
             panel1.Enabled = !parameters.IsReadOnly;
         }
 
@@ -166,8 +166,8 @@ namespace Neo.GUI
                 }
             }
             parameters.Add(parameter);
-            listView1.Items.Add(new ListViewItem(new[]
-            {
+            listView1.Items.Add(new ListViewItem(
+            [
                 new ListViewItem.ListViewSubItem
                 {
                     Name = "index",
@@ -183,7 +183,7 @@ namespace Neo.GUI
                     Name = "value",
                     Text = parameter.ToString()
                 }
-            }, -1)
+            ], -1)
             {
                 Tag = parameter
             });

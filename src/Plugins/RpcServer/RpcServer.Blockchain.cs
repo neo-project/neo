@@ -272,7 +272,7 @@ namespace Neo.Plugins.RpcServer
             byte[] prefix = Result.Ok_Or(() => Convert.FromBase64String(base64KeyPrefix), RpcError.InvalidParams.WithData($"Invalid Base64 string{base64KeyPrefix}"));
 
             JObject json = new();
-            JArray jarr = new();
+            JArray jarr = [];
             int pageSize = settings.FindStoragePageSize;
             int i = 0;
 
@@ -349,7 +349,7 @@ namespace Neo.Plugins.RpcServer
             try
             {
                 using var engine = ApplicationEngine.Run(script, snapshot, settings: system.Settings, gas: settings.MaxGasInvoke);
-                resultstack = engine.ResultStack.ToArray();
+                resultstack = [.. engine.ResultStack];
             }
             catch
             {
@@ -361,7 +361,7 @@ namespace Neo.Plugins.RpcServer
             {
                 if (resultstack.Length > 0)
                 {
-                    JArray jArray = new();
+                    JArray jArray = [];
                     var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, system.Settings.ValidatorsCount)
                         ?? throw new RpcException(RpcError.InternalServerError.WithData("Can't get next block validators."));
 

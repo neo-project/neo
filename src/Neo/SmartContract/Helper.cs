@@ -149,10 +149,10 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, [NotNullWhen(true)] out ECPoint[] points)
         {
-            List<ECPoint> list = new();
+            List<ECPoint> list = [];
             if (IsMultiSigContract(script, out m, out _, list))
             {
-                points = list.ToArray();
+                points = [.. list];
                 return true;
             }
             else

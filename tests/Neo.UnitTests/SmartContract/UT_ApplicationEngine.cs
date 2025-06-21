@@ -18,7 +18,6 @@ using Neo.VM;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
-using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract
@@ -37,20 +36,20 @@ namespace Neo.UnitTests.SmartContract
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
-            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
+            engine.SendNotification(UInt160.Zero, notifyEvent, []);
             Assert.AreEqual(notifyEvent, eventName);
 
             ApplicationEngine.Notify += Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
+            engine.SendNotification(UInt160.Zero, notifyEvent, []);
             Assert.IsNull(eventName);
 
             eventName = notifyEvent;
             ApplicationEngine.Notify -= Test_Notify1;
-            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
+            engine.SendNotification(UInt160.Zero, notifyEvent, []);
             Assert.IsNull(eventName);
 
             ApplicationEngine.Notify -= Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
+            engine.SendNotification(UInt160.Zero, notifyEvent, []);
             Assert.IsNull(eventName);
         }
 

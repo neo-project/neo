@@ -47,7 +47,7 @@ namespace Neo.GUI
                     }
                 }
             }
-            listBox2.Items.AddRange(context.GetParameters(hash).ToArray());
+            listBox2.Items.AddRange([.. context.GetParameters(hash)]);
             button4.Visible = context.Completed;
         }
 
@@ -75,7 +75,7 @@ namespace Neo.GUI
             listBox2.Items.Clear();
             textBox1.Clear();
             textBox2.Clear();
-            listBox1.Items.AddRange(context.ScriptHashes.Select(p => p.ToAddress(Service.NeoSystem.Settings.AddressVersion)).ToArray());
+            listBox1.Items.AddRange([.. context.ScriptHashes.Select(p => p.ToAddress(Service.NeoSystem.Settings.AddressVersion))]);
             button2.Enabled = true;
             button4.Visible = context.Completed;
         }

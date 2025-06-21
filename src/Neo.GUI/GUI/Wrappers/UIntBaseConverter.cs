@@ -34,7 +34,7 @@ namespace Neo.GUI.Wrappers
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
             if (value is string s)
-                return context.PropertyDescriptor.PropertyType.GetMethod("Parse").Invoke(null, new[] { s });
+                return context.PropertyDescriptor.PropertyType.GetMethod("Parse").Invoke(null, [s]);
             throw new NotSupportedException();
         }
 

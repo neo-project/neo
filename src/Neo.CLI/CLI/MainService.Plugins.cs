@@ -121,7 +121,7 @@ namespace Neo.CLI
             HashSet<string>? installed = null,
             bool overWrite = false)
         {
-            installed ??= new HashSet<string>();
+            installed ??= [];
             if (!installed.Add(pluginName)) return false;
             if (!overWrite && PluginExists(pluginName)) return false;
 

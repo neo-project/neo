@@ -60,7 +60,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 if (message is ExtensiblePayload payload)
                 {
                     // Broadcast the payload to all consensus services
-                    foreach (var service in consensusServices?.Where(s => s != null) ?? Array.Empty<IActorRef>())
+                    foreach (var service in consensusServices?.Where(s => s != null) ?? [])
                     {
                         service.Tell(payload);
                     }

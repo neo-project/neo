@@ -26,7 +26,7 @@ namespace Neo.GUI
 
         public byte[] GetScript()
         {
-            ECPoint[] pubkeys = textBox1.Lines.Select(p => ECPoint.Parse(p, ECCurve.Secp256r1)).ToArray();
+            ECPoint[] pubkeys = [.. textBox1.Lines.Select(p => ECPoint.Parse(p, ECCurve.Secp256r1))];
             using ScriptBuilder sb = new ScriptBuilder();
             sb.EmitDynamicCall(NativeContract.NEO.Hash, "vote", new ContractParameter
             {

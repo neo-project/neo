@@ -64,10 +64,10 @@ namespace Neo.Benchmark
                 SystemFee = 20_00000000,
                 NetworkFee = 1_00000000,
                 ValidUntilBlock = ProtocolSettings.Default.MaxTraceableBlocks,
-                Signers = Array.Empty<Signer>(),
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = [],
+                Attributes = [],
                 Script = Convert.FromBase64String(poc),
-                Witnesses = Array.Empty<Witness>()
+                Witnesses = []
             };
             using var snapshot = system.GetSnapshotCache();
             using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, system.GenesisBlock, protocol, tx.SystemFee);

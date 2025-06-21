@@ -47,9 +47,9 @@ namespace Neo.GUI
         public TxOutListBoxItem[] GetOutputs()
         {
             AssetDescriptor asset = (AssetDescriptor)comboBox1.SelectedItem;
-            return textBox1.Lines.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p =>
+            return [.. textBox1.Lines.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p =>
             {
-                string[] line = p.Split(new[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] line = p.Split([' ', '\t', ','], StringSplitOptions.RemoveEmptyEntries);
                 return new TxOutListBoxItem
                 {
                     AssetName = asset.AssetName,
@@ -57,7 +57,7 @@ namespace Neo.GUI
                     Value = BigDecimal.Parse(line[1], asset.Decimals),
                     ScriptHash = line[0].ToScriptHash(Service.NeoSystem.Settings.AddressVersion)
                 };
-            }).Where(p => p.Value.Value != 0).ToArray();
+            }).Where(p => p.Value.Value != 0)];
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)

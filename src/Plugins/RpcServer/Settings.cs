@@ -24,7 +24,7 @@ namespace Neo.Plugins.RpcServer
 
         public Settings(IConfigurationSection section) : base(section)
         {
-            Servers = section.GetSection(nameof(Servers)).GetChildren().Select(p => RpcServerSettings.Load(p)).ToArray();
+            Servers = [.. section.GetSection(nameof(Servers)).GetChildren().Select(p => RpcServerSettings.Load(p))];
         }
     }
 
@@ -63,14 +63,14 @@ namespace Neo.Plugins.RpcServer
             SslCertPassword = string.Empty,
             MaxGasInvoke = (long)new BigDecimal(10M, NativeContract.GAS.Decimals).Value,
             MaxFee = (long)new BigDecimal(0.1M, NativeContract.GAS.Decimals).Value,
-            TrustedAuthorities = Array.Empty<string>(),
+            TrustedAuthorities = [],
             EnableCors = true,
-            AllowOrigins = Array.Empty<string>(),
+            AllowOrigins = [],
             KeepAliveTimeout = 60,
             RequestHeadersTimeout = 15,
             MaxIteratorResultItems = 100,
             MaxStackSize = ushort.MaxValue,
-            DisabledMethods = Array.Empty<string>(),
+            DisabledMethods = [],
             MaxConcurrentConnections = 40,
             MaxRequestBodySize = 5 * 1024 * 1024,
             SessionEnabled = false,
@@ -85,18 +85,18 @@ namespace Neo.Plugins.RpcServer
             Port = ushort.Parse(section.GetSection("Port").Value),
             SslCert = section.GetSection("SslCert").Value,
             SslCertPassword = section.GetSection("SslCertPassword").Value,
-            TrustedAuthorities = section.GetSection("TrustedAuthorities").GetChildren().Select(p => p.Get<string>()).ToArray(),
+            TrustedAuthorities = [.. section.GetSection("TrustedAuthorities").GetChildren().Select(p => p.Get<string>())],
             RpcUser = section.GetSection("RpcUser").Value,
             RpcPass = section.GetSection("RpcPass").Value,
             EnableCors = section.GetValue(nameof(EnableCors), Default.EnableCors),
-            AllowOrigins = section.GetSection(nameof(AllowOrigins)).GetChildren().Select(p => p.Get<string>()).ToArray(),
+            AllowOrigins = [.. section.GetSection(nameof(AllowOrigins)).GetChildren().Select(p => p.Get<string>())],
             KeepAliveTimeout = section.GetValue(nameof(KeepAliveTimeout), Default.KeepAliveTimeout),
             RequestHeadersTimeout = section.GetValue(nameof(RequestHeadersTimeout), Default.RequestHeadersTimeout),
             MaxGasInvoke = (long)new BigDecimal(section.GetValue<decimal>("MaxGasInvoke", Default.MaxGasInvoke), NativeContract.GAS.Decimals).Value,
             MaxFee = (long)new BigDecimal(section.GetValue<decimal>("MaxFee", Default.MaxFee), NativeContract.GAS.Decimals).Value,
             MaxIteratorResultItems = section.GetValue("MaxIteratorResultItems", Default.MaxIteratorResultItems),
             MaxStackSize = section.GetValue("MaxStackSize", Default.MaxStackSize),
-            DisabledMethods = section.GetSection("DisabledMethods").GetChildren().Select(p => p.Get<string>()).ToArray(),
+            DisabledMethods = [.. section.GetSection("DisabledMethods").GetChildren().Select(p => p.Get<string>())],
             MaxConcurrentConnections = section.GetValue("MaxConcurrentConnections", Default.MaxConcurrentConnections),
             MaxRequestBodySize = section.GetValue("MaxRequestBodySize", Default.MaxRequestBodySize),
             SessionEnabled = section.GetValue("SessionEnabled", Default.SessionEnabled),

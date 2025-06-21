@@ -65,7 +65,7 @@ namespace Neo.VM.Benchmark
 
             foreach (StackItemType type in Enum.GetValues(typeof(StackItemType)))
             {
-                result[type] = new List<StackItem>();
+                result[type] = [];
             }
 
             result[StackItemType.Boolean].Add(StackItem.True);
@@ -93,7 +93,7 @@ namespace Neo.VM.Benchmark
             var longStruct = new Struct(referenceCounter);
             for (int i = 0; i < 10; i++) longStruct.Add(new Integer(i * 10));
             result[StackItemType.Struct].Add(longStruct);
-            result[StackItemType.Struct].Add(new Struct(referenceCounter) { StackItem.False, new Buffer(new byte[] { 6, 7, 8 }) });
+            result[StackItemType.Struct].Add(new Struct(referenceCounter) { StackItem.False, new Buffer([6, 7, 8]) });
 
             // Create a map with 10 items
             var longMap = new Map(referenceCounter);

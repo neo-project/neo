@@ -43,10 +43,9 @@ namespace Neo.GUI
             InitializeComponent();
 
             cmbFormat.SelectedIndex = 0;
-            cmbAddress.Items.AddRange(Service.CurrentWallet.GetAccounts()
+            cmbAddress.Items.AddRange([.. Service.CurrentWallet.GetAccounts()
                 .Where(u => u.HasKey)
-                .Select(u => new WalletEntry() { Account = u })
-                .ToArray());
+                .Select(u => new WalletEntry() { Account = u })]);
 
             if (cmbAddress.Items.Count > 0)
             {

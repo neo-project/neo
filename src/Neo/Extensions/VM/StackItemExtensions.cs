@@ -84,7 +84,7 @@ namespace Neo.Extensions
                         context ??= new(ReferenceEqualityComparer.Instance);
                         if (!context.Add(map)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (map.Count - 1))/*,*/;
-                        JArray a = new();
+                        JArray a = [];
                         foreach (var (k, v) in map)
                         {
                             maxSize -= 17/*{"key":,"value":}*/;

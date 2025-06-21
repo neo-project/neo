@@ -403,7 +403,7 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            notifications ??= new List<NotifyEventArgs>();
+            notifications ??= [];
             // Restrict the number of notifications for Application executions. Do not check
             // persisting triggers to avoid native persist failure. Do not check verification
             // trigger since verification context is loaded with ReadOnly flag.

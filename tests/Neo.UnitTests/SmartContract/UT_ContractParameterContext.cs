@@ -13,7 +13,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
@@ -34,7 +33,7 @@ namespace Neo.UnitTests.SmartContract
         {
             if (contract == null)
             {
-                byte[] privateKey = Enumerable.Repeat((byte)0x01, 32).ToArray();
+                byte[] privateKey = [.. Enumerable.Repeat((byte)0x01, 32)];
                 key = new KeyPair(privateKey);
                 contract = Contract.CreateSignatureContract(key.PublicKey);
             }
@@ -165,7 +164,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(context.AddSignature(contract, key.PublicKey, [0x01]));
 
             var contract1 = Contract.CreateSignatureContract(key.PublicKey);
-            contract1.ParameterList = Array.Empty<ContractParameterType>();
+            contract1.ParameterList = [];
             context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
             Assert.IsFalse(context.AddSignature(contract1, key.PublicKey, [0x01]));
 
@@ -174,7 +173,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsExactly<NotSupportedException>(action1);
 
             //multiSign
-            byte[] privateKey2 = Enumerable.Repeat((byte)0x01, 31).Append((byte)0x02).ToArray();
+            byte[] privateKey2 = [.. Enumerable.Repeat((byte)0x01, 31), (byte)0x02];
             var key2 = new KeyPair(privateKey2);
             var multiSignContract = Contract.CreateMultiSigContract(2, [key.PublicKey, key2.PublicKey]);
             var multiSender = UInt160.Parse("0xf76b51bc6605ac3cfcd188173af0930507f51210");
@@ -190,7 +189,7 @@ namespace Neo.UnitTests.SmartContract
 
             tx = TestUtils.GetTransaction(multiSender);
             context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
-            byte[] privateKey3 = Enumerable.Repeat((byte)0x01, 31).Append((byte)0x03).ToArray();
+            byte[] privateKey3 = [.. Enumerable.Repeat((byte)0x01, 31), (byte)0x03];
             var key3 = new KeyPair(privateKey3);
             Assert.IsFalse(context.AddSignature(multiSignContract, key3.PublicKey, [0x01]));
         }

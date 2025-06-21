@@ -38,11 +38,11 @@ namespace Neo.ConsoleService
         private bool _running;
         private readonly CancellationTokenSource _shutdownTokenSource = new();
         private readonly CountdownEvent _shutdownAcknowledged = new(1);
-        private readonly Dictionary<string, List<ConsoleCommandMethod>> _verbs = new();
-        private readonly Dictionary<string, object> _instances = new();
-        private readonly Dictionary<Type, Func<IList<CommandToken>, bool, object>> _handlers = new();
+        private readonly Dictionary<string, List<ConsoleCommandMethod>> _verbs = [];
+        private readonly Dictionary<string, object> _instances = [];
+        private readonly Dictionary<Type, Func<IList<CommandToken>, bool, object>> _handlers = [];
 
-        private readonly List<string> _commandHistory = new();
+        private readonly List<string> _commandHistory = [];
 
         private bool OnCommand(string commandLine)
         {

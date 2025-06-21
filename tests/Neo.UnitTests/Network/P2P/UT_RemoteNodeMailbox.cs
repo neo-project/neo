@@ -96,7 +96,7 @@ namespace Neo.UnitTests.Network.P2P
             ISerializable s = null;
             Message msg; // multiple uses
             // empty queue
-            IEnumerable<object> emptyQueue = Enumerable.Empty<object>();
+            IEnumerable<object> emptyQueue = [];
 
             // any random object (non Message) should be dropped
             object obj = null;

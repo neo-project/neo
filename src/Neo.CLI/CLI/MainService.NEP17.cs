@@ -45,8 +45,8 @@ namespace Neo.CLI
             Transaction tx;
             try
             {
-                tx = CurrentWallet!.MakeTransaction(snapshot, new[]
-                {
+                tx = CurrentWallet!.MakeTransaction(snapshot,
+                [
                     new TransferOutput
                     {
                         AssetId = tokenHash,
@@ -54,13 +54,13 @@ namespace Neo.CLI
                         ScriptHash = to,
                         Data = data
                     }
-                }, from: from, cosigners: signersAccounts?.Select(p => new Signer
+                ], from: from, cosigners: signersAccounts?.Select(p => new Signer
                 {
                     // default access for transfers should be valid only for first invocation
                     Scopes = WitnessScope.CalledByEntry,
                     Account = p
                 })
-                .ToArray() ?? Array.Empty<Signer>());
+                .ToArray() ?? []);
             }
             catch (InvalidOperationException e)
             {

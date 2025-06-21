@@ -33,7 +33,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         /// <summary>
         /// Key for saving consensus state.
         /// </summary>
-        private static readonly byte[] ConsensusStateKey = { 0xf4 };
+        private static readonly byte[] ConsensusStateKey = [0xf4];
 
         public Block Block;
         public byte ViewNumber;
@@ -135,7 +135,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 j++;
             }
             Block.Header.Witness = sc.GetWitnesses()[0];
-            Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
+            Block.Transactions = [.. TransactionHashes.Select(p => Transactions[p])];
             return Block;
         }
 
@@ -238,7 +238,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 if (ValidatorsChanged || LastSeenMessage is null)
                 {
                     var previous_last_seen_message = LastSeenMessage;
-                    LastSeenMessage = new Dictionary<ECPoint, uint>();
+                    LastSeenMessage = [];
                     foreach (var validator in Validators)
                     {
                         if (previous_last_seen_message != null && previous_last_seen_message.TryGetValue(validator, out var value))
@@ -257,7 +257,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     _myPublicKey = Validators[MyIndex];
                     break;
                 }
-                cachedMessages = new Dictionary<UInt256, ConsensusMessage>();
+                cachedMessages = [];
             }
             else
             {
@@ -321,8 +321,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             writer.Write(Block.PrimaryIndex);
             writer.Write(Block.NextConsensus ?? UInt160.Zero);
             writer.Write(ViewNumber);
-            writer.Write(TransactionHashes ?? Array.Empty<UInt256>());
-            writer.Write(Transactions?.Values.ToArray() ?? Array.Empty<Transaction>());
+            writer.Write(TransactionHashes ?? []);
+            writer.Write(Transactions?.Values.ToArray() ?? []);
             writer.WriteNullableArray(PreparationPayloads);
             writer.WriteNullableArray(CommitPayloads);
             writer.WriteNullableArray(ChangeViewPayloads);

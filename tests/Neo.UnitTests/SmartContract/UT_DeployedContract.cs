@@ -28,14 +28,14 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Abi = new ContractAbi()
                     {
-                        Methods = new ContractMethodDescriptor[]
-                         {
+                        Methods =
+                         [
                              new ContractMethodDescriptor()
                              {
                                   Name = "verify",
-                                  Parameters = Array.Empty<ContractParameterDefinition>()
+                                  Parameters = []
                              }
-                         }
+                         ]
                     }
                 },
                 Nef = new NefFile { Script = new byte[] { 1, 2, 3 } },
@@ -55,14 +55,14 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Abi = new ContractAbi()
                     {
-                        Methods = new ContractMethodDescriptor[]
-                         {
+                        Methods =
+                         [
                              new ContractMethodDescriptor()
                              {
                                   Name = "noverify",
-                                  Parameters = Array.Empty<ContractParameterDefinition>()
+                                  Parameters = []
                              }
-                         }
+                         ]
                     }
                 },
                 Nef = new NefFile { Script = new byte[] { 1, 2, 3 } }

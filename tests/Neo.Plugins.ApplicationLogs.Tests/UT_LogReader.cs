@@ -29,7 +29,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static Neo.Plugins.ApplicationsLogs.Tests.UT_LogReader;
 using Settings = Neo.Plugins.ApplicationLogs.Settings;
 
 namespace Neo.Plugins.ApplicationsLogs.Tests
@@ -79,7 +78,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                         Nonce = 233,
                         ValidUntilBlock = NativeContract.Ledger.CurrentIndex(system.GetSnapshotCache()) + system.Settings.MaxValidUntilBlockIncrement,
                         Signers = [new Signer() { Account = MultisigScriptHash, Scopes = WitnessScope.CalledByEntry }],
-                        Attributes = Array.Empty<TransactionAttribute>(),
+                        Attributes = [],
                         Script = Convert.FromBase64String(NeoTransferScript),
                         NetworkFee = 1000_0000,
                         SystemFee = 1000_0000,
@@ -104,7 +103,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                     },
                     Transactions = txs,
                 };
-                block.Header.MerkleRoot ??= MerkleTree.ComputeRoot(block.Transactions.Select(t => t.Hash).ToArray());
+                block.Header.MerkleRoot ??= MerkleTree.ComputeRoot([.. block.Transactions.Select(t => t.Hash)]);
                 signature = block.Sign(_walletAccount.GetKey(), Settings.Default.Network);
                 block.Header.Witness = new Witness
                 {
@@ -203,7 +202,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 Assert.AreEqual(log.Notifications[1].State[2], 50000000);
             }
 
-            List<(BlockchainEventModel eventLog, UInt256 txHash)> neoLogs = s_neoSystemFixture.logReader._neostore.GetContractLog(NeoToken.NEO.Hash, TriggerType.Application).ToList();
+            List<(BlockchainEventModel eventLog, UInt256 txHash)> neoLogs = [.. s_neoSystemFixture.logReader._neostore.GetContractLog(NeoToken.NEO.Hash, TriggerType.Application)];
             Assert.ContainsSingle(neoLogs);
             Assert.AreEqual(neoLogs[0].txHash, s_neoSystemFixture.txs[0].Hash);
             Assert.AreEqual("Transfer", neoLogs[0].eventLog.EventName);

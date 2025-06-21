@@ -44,9 +44,9 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         public ConsensusTestUtilities(TestProbe localNodeProbe)
         {
             this.localNodeProbe = localNodeProbe;
-            sentMessages = new List<ExtensiblePayload>();
-            messageTypeCounts = new Dictionary<ConsensusMessageType, int>();
-            actorProbes = new Dictionary<IActorRef, TestProbe>();
+            sentMessages = [];
+            messageTypeCounts = [];
+            actorProbes = [];
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 PrevHash = prevHash ?? UInt256.Zero,
                 Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 Nonce = nonce,
-                TransactionHashes = transactionHashes ?? Array.Empty<UInt256>()
+                TransactionHashes = transactionHashes ?? []
             };
         }
 
@@ -333,8 +333,8 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Send different messages to different validators
             var halfCount = consensusServices.Length / 2;
-            SendToValidators(payload1, consensusServices, Enumerable.Range(0, halfCount).ToArray());
-            SendToValidators(payload2, consensusServices, Enumerable.Range(halfCount, consensusServices.Length - halfCount).ToArray());
+            SendToValidators(payload1, consensusServices, [.. Enumerable.Range(0, halfCount)]);
+            SendToValidators(payload2, consensusServices, [.. Enumerable.Range(halfCount, consensusServices.Length - halfCount)]);
         }
 
         /// <summary>

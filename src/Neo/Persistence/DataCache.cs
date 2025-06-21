@@ -286,7 +286,7 @@ namespace Neo.Persistence
                 {
                     if (key_prefix[i] < 0xff)
                     {
-                        seek_prefix = key_prefix.Take(i + 1).ToArray();
+                        seek_prefix = [.. key_prefix.Take(i + 1)];
                         // The next key after the key_prefix.
                         seek_prefix[i]++;
                         break;
@@ -495,7 +495,7 @@ namespace Neo.Persistence
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             lock (_dictionary)
             {
-                cached = _dictionary
+                cached = [.. _dictionary
                     .Where(p => p.Value.State != TrackState.Deleted && p.Value.State != TrackState.NotFound && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
                     .Select(p =>
                     (
@@ -503,11 +503,10 @@ namespace Neo.Persistence
                         p.Key,
                         p.Value.Item
                     ))
-                    .OrderBy(p => p.KeyBytes, comparer)
-                    .ToArray();
-                cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
+                    .OrderBy(p => p.KeyBytes, comparer)];
+                cachedKeySet = [.. _dictionary.Keys];
             }
-            var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction)
+            var uncached = SeekInternal(keyOrPrefix ?? [], direction)
                 .Where(p => !cachedKeySet.Contains(p.Key))
                 .Select(p =>
                 (

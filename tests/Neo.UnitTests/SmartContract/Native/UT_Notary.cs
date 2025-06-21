@@ -212,7 +212,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Process some Notary transaction and check that some deposited funds have been withdrawn.
             var tx1 = TestUtils.GetTransaction(NativeContract.Notary.Hash, fromAddr);
-            tx1.Attributes = new TransactionAttribute[] { new NotaryAssisted() { NKeys = 4 } };
+            tx1.Attributes = [new NotaryAssisted() { NKeys = 4 }];
             tx1.NetworkFee = 1_0000_0000;
 
             // Build block to check transaction fee distribution during Gas OnPersist.
@@ -226,7 +226,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     PrevHash = UInt256.Zero,
                     Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
-                Transactions = new Transaction[] { tx1 }
+                Transactions = [tx1]
             };
             // Designate Notary node.
             byte[] privateKey1 = new byte[32];
@@ -348,7 +348,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Call_LockDepositUntil(DataCache snapshot, byte[] address, uint till, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = new Signer[] { new Signer() { Account = new UInt160(address), Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() }, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = [new Signer() { Account = new UInt160(address), Scopes = WitnessScope.Global }], Attributes = [] }, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Notary.Hash, "lockDepositUntil", address, till);
@@ -369,7 +369,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 accFrom = new UInt160(from);
             }
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = new Signer[] { new Signer() { Account = accFrom, Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() }, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = [new Signer() { Account = accFrom, Scopes = WitnessScope.Global }], Attributes = [] }, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Notary.Hash, "withdraw", from, to);
@@ -420,7 +420,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Generate one transaction with NotaryAssisted attribute with hardcoded NKeys values.
             var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
             var tx2 = TestUtils.GetTransaction(from);
-            tx2.Attributes = new TransactionAttribute[] { new NotaryAssisted() { NKeys = NKeys } };
+            tx2.Attributes = [new NotaryAssisted() { NKeys = NKeys }];
             var netFee = 1_0000_0000; // enough to cover defaultNotaryAssistedFeePerKey, but not enough to cover newNotaryAssistedFeePerKey.
             tx2.NetworkFee = netFee;
             tx2.SystemFee = 1000_0000;
@@ -439,7 +439,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     PrevHash = UInt256.Zero,
                     Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
-                Transactions = new Transaction[] { tx2 }
+                Transactions = [tx2]
             };
             var snapshot = _snapshot.CloneCache();
 
@@ -528,11 +528,11 @@ namespace Neo.UnitTests.SmartContract.Native
             // Generate two transactions with NotaryAssisted attributes with hardcoded NKeys values.
             var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
             var tx1 = TestUtils.GetTransaction(from);
-            tx1.Attributes = new TransactionAttribute[] { new NotaryAssisted() { NKeys = NKeys1 } };
+            tx1.Attributes = [new NotaryAssisted() { NKeys = NKeys1 }];
             var netFee1 = 1_0000_0000;
             tx1.NetworkFee = netFee1;
             var tx2 = TestUtils.GetTransaction(from);
-            tx2.Attributes = new TransactionAttribute[] { new NotaryAssisted() { NKeys = NKeys2 } };
+            tx2.Attributes = [new NotaryAssisted() { NKeys = NKeys2 }];
             var netFee2 = 2_0000_0000;
             tx2.NetworkFee = netFee2;
 
@@ -550,7 +550,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     PrevHash = UInt256.Zero,
                     Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
-                Transactions = new Transaction[] { tx1, tx2 }
+                Transactions = [tx1, tx2]
             };
             var snapshot = _snapshot.CloneCache();
 

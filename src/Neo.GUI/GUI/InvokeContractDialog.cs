@@ -118,7 +118,7 @@ namespace Neo.GUI
             script_hash = UInt160.Parse(abi["hash"].AsString());
             textBox8.Text = script_hash.ToString();
             comboBox1.Items.Clear();
-            comboBox1.Items.AddRange(((JArray)abi["functions"]).Select(p => p["name"].AsString()).Where(p => p != abi["entrypoint"].AsString()).ToArray());
+            comboBox1.Items.AddRange([.. ((JArray)abi["functions"]).Select(p => p["name"].AsString()).Where(p => p != abi["entrypoint"].AsString())]);
             textBox9.Clear();
             button8.Enabled = false;
         }
@@ -138,7 +138,7 @@ namespace Neo.GUI
             JArray functions = (JArray)abi["functions"];
             var function = functions.First(p => p["name"].AsString() == method);
             JArray _params = (JArray)function["parameters"];
-            parameters = _params.Select(p => new ContractParameter(p["type"].AsEnum<ContractParameterType>())).ToArray();
+            parameters = [.. _params.Select(p => new ContractParameter(p["type"].AsEnum<ContractParameterType>()))];
             textBox9.Text = string.Join(", ", _params.Select(p => p["name"].AsString()));
             button8.Enabled = parameters.Length > 0;
             UpdateScript();

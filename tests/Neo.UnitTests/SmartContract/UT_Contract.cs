@@ -56,7 +56,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestCreate()
         {
             byte[] script = new byte[32];
-            ContractParameterType[] parameterList = new ContractParameterType[] { ContractParameterType.Signature };
+            ContractParameterType[] parameterList = [ContractParameterType.Signature];
             Contract contract = Contract.Create(parameterList, script);
             Assert.AreEqual(contract.Script, script);
             Assert.AreEqual(1, contract.ParameterList.Length);
@@ -74,10 +74,8 @@ namespace Neo.UnitTests.SmartContract
             RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            ECPoint[] publicKeys = new ECPoint[2];
-            publicKeys[0] = key1.PublicKey;
-            publicKeys[1] = key2.PublicKey;
-            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            ECPoint[] publicKeys = [key1.PublicKey, key2.PublicKey];
+            publicKeys = [.. publicKeys.OrderBy(p => p)];
             Contract contract = Contract.CreateMultiSigContract(2, publicKeys);
             byte[] expectedArray = new byte[77];
             expectedArray[0] = (byte)OpCode.PUSH2;
@@ -107,10 +105,8 @@ namespace Neo.UnitTests.SmartContract
             RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            ECPoint[] publicKeys = new ECPoint[2];
-            publicKeys[0] = key1.PublicKey;
-            publicKeys[1] = key2.PublicKey;
-            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            ECPoint[] publicKeys = [key1.PublicKey, key2.PublicKey];
+            publicKeys = [.. publicKeys.OrderBy(p => p)];
             Action action = () => Contract.CreateMultiSigRedeemScript(0, publicKeys);
             Assert.ThrowsExactly<ArgumentException>(() => action());
             byte[] script = Contract.CreateMultiSigRedeemScript(2, publicKeys);
@@ -178,7 +174,7 @@ namespace Neo.UnitTests.SmartContract
             var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
-                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, snapshot, settings: TestProtocolSettings.Default))
+                new Transaction { Signers = [], Attributes = [] }, snapshot, settings: TestProtocolSettings.Default))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
@@ -198,17 +194,15 @@ namespace Neo.UnitTests.SmartContract
             RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            ECPoint[] publicKeys = new ECPoint[2];
-            publicKeys[0] = key1.PublicKey;
-            publicKeys[1] = key2.PublicKey;
-            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            ECPoint[] publicKeys = [key1.PublicKey, key2.PublicKey];
+            publicKeys = [.. publicKeys.OrderBy(p => p)];
             byte[] verification = Contract.CreateMultiSigRedeemScript(2, publicKeys);
             byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).EmitPush(UInt160.Zero).ToArray();
 
             long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
-                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, snapshot, settings: TestProtocolSettings.Default))
+                new Transaction { Signers = [], Attributes = [] }, snapshot, settings: TestProtocolSettings.Default))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();

@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native
         /// <returns></returns>
         public static TrimmedBlock Create(Block block)
         {
-            return Create(block.Header, block.Transactions.Select(p => p.Hash).ToArray());
+            return Create(block.Header, [.. block.Transactions.Select(p => p.Hash)]);
         }
 
         /// <summary>

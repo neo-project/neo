@@ -73,9 +73,9 @@ namespace Neo.VM.Types
         {
             _array = items switch
             {
-                null => new List<StackItem>(),
+                null => [],
                 List<StackItem> list => list,
-                _ => new List<StackItem>(items)
+                _ => [.. items]
             };
 
             if (referenceCounter == null) return;
@@ -121,7 +121,7 @@ namespace Neo.VM.Types
         public override StackItem ConvertTo(StackItemType type)
         {
             if (Type == StackItemType.Array && type == StackItemType.Struct)
-                return new Struct(ReferenceCounter, new List<StackItem>(_array));
+                return new Struct(ReferenceCounter, [.. _array]);
             return base.ConvertTo(type);
         }
 

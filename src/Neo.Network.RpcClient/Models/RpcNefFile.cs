@@ -24,7 +24,7 @@ namespace Neo.Network.RPC.Models
             {
                 Compiler = json["compiler"].AsString(),
                 Source = json["source"].AsString(),
-                Tokens = ((JArray)json["tokens"]).Select(p => RpcMethodToken.FromJson((JObject)p)).ToArray(),
+                Tokens = [.. ((JArray)json["tokens"]).Select(p => RpcMethodToken.FromJson((JObject)p))],
                 Script = Convert.FromBase64String(json["script"].AsString()),
                 CheckSum = (uint)json["checksum"].AsNumber()
             };

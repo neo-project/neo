@@ -27,12 +27,11 @@ namespace Neo.Network.RPC.Models
             return new RpcFoundStates
             {
                 Truncated = json["truncated"].AsBoolean(),
-                Results = ((JArray)json["results"])
+                Results = [.. ((JArray)json["results"])
                     .Select(j => (
                         Convert.FromBase64String(j["key"].AsString()),
                         Convert.FromBase64String(j["value"].AsString())
-                    ))
-                    .ToArray(),
+                    ))],
                 FirstProof = ProofFromJson((JString)json["firstProof"]),
                 LastProof = ProofFromJson((JString)json["lastProof"]),
             };

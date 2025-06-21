@@ -74,11 +74,11 @@ namespace Neo.Plugins.StorageDumper
                 prefix = BitConverter.GetBytes(contract.Id);
             }
             var states = _system.StoreView.Find(prefix);
-            JArray array = new JArray(states.Where(p => !Settings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
+            JArray array = [.. states.Where(p => !Settings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
             {
                 ["key"] = Convert.ToBase64String(p.Key.ToArray()),
                 ["value"] = Convert.ToBase64String(p.Value.ToArray())
-            }));
+            })];
             File.WriteAllText(path, array.ToString());
             ConsoleHelper.Info("States",
                 $"({array.Count})",

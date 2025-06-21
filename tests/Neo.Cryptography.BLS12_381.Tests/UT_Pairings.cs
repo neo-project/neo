@@ -26,8 +26,8 @@ namespace Neo.Cryptography.BLS12_381.Tests
         [TestMethod]
         public void TestBilinearity()
         {
-            var a = Scalar.FromRaw(new ulong[] { 1, 2, 3, 4 }).Invert().Square();
-            var b = Scalar.FromRaw(new ulong[] { 5, 6, 7, 8 }).Invert().Square();
+            var a = Scalar.FromRaw([1, 2, 3, 4]).Invert().Square();
+            var b = Scalar.FromRaw([5, 6, 7, 8]).Invert().Square();
             var c = a * b;
 
             var g = new G1Affine(G1Affine.Generator * a);

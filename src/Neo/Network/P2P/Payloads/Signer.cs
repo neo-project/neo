@@ -193,11 +193,11 @@ namespace Neo.Network.P2P.Payloads
                 Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetString())
             };
             if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
-                signer.AllowedContracts = ((JArray)json["allowedcontracts"]).Select(p => UInt160.Parse(p.GetString())).ToArray();
+                signer.AllowedContracts = [.. ((JArray)json["allowedcontracts"]).Select(p => UInt160.Parse(p.GetString()))];
             if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
-                signer.AllowedGroups = ((JArray)json["allowedgroups"]).Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1)).ToArray();
+                signer.AllowedGroups = [.. ((JArray)json["allowedgroups"]).Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1))];
             if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
-                signer.Rules = ((JArray)json["rules"]).Select(p => WitnessRule.FromJson((JObject)p)).ToArray();
+                signer.Rules = [.. ((JArray)json["rules"]).Select(p => WitnessRule.FromJson((JObject)p))];
             return signer;
         }
 

@@ -53,7 +53,7 @@ namespace Neo.VM.Benchmark
         public byte[] ToArray()
         {
             if (_operand is null) return [(byte)_opCode];
-            return _operand.Prepend((byte)_opCode).ToArray();
+            return [.. _operand.Prepend((byte)_opCode)];
         }
     }
 }

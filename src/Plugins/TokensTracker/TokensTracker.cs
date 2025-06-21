@@ -35,7 +35,7 @@ namespace Neo.Plugins
         private IStore _db;
         private UnhandledExceptionPolicy _exceptionPolicy;
         private NeoSystem neoSystem;
-        private readonly List<TrackerBase> trackers = new();
+        private readonly List<TrackerBase> trackers = [];
         protected override UnhandledExceptionPolicy ExceptionPolicy => _exceptionPolicy;
 
         public override string Description => "Enquiries balances and transaction history of accounts through RPC";
@@ -61,7 +61,7 @@ namespace Neo.Plugins
             _shouldTrackHistory = config.GetValue("TrackHistory", true);
             _maxResults = config.GetValue("MaxResults", 1000u);
             _network = config.GetValue("Network", 860833102u);
-            _enabledTrackers = config.GetSection("EnabledTrackers").GetChildren().Select(p => p.Value).ToArray();
+            _enabledTrackers = [.. config.GetSection("EnabledTrackers").GetChildren().Select(p => p.Value)];
             var policyString = config.GetValue(nameof(UnhandledExceptionPolicy), nameof(UnhandledExceptionPolicy.StopNode));
             if (Enum.TryParse(policyString, true, out UnhandledExceptionPolicy policy))
             {

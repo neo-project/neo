@@ -36,9 +36,9 @@ namespace Neo.Network.RPC.Models
         {
             return new RpcPeers
             {
-                Unconnected = ((JArray)json["unconnected"]).Select(p => RpcPeer.FromJson((JObject)p)).ToArray(),
-                Bad = ((JArray)json["bad"]).Select(p => RpcPeer.FromJson((JObject)p)).ToArray(),
-                Connected = ((JArray)json["connected"]).Select(p => RpcPeer.FromJson((JObject)p)).ToArray()
+                Unconnected = [.. ((JArray)json["unconnected"]).Select(p => RpcPeer.FromJson((JObject)p))],
+                Bad = [.. ((JArray)json["bad"]).Select(p => RpcPeer.FromJson((JObject)p))],
+                Connected = [.. ((JArray)json["connected"]).Select(p => RpcPeer.FromJson((JObject)p))]
             };
         }
     }

@@ -72,7 +72,7 @@ namespace Neo.UnitTests.Ledger
             TestUtils.TransactionAdd(snapshotCache, state1, state2);
 
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { tx1.Hash, tx2.Hash };
+            tblock.Hashes = [tx1.Hash, tx2.Hash];
             TestUtils.BlocksAdd(snapshotCache, tblock.Hash, tblock);
 
             Block block = NativeContract.Ledger.GetBlock(snapshotCache, tblock.Hash);
@@ -115,7 +115,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetSize()
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
+            tblock.Hashes = [TestUtils.GetTransaction(UInt160.Zero).Hash];
             Assert.AreEqual(146, tblock.Size); // 138 + 8
         }
 
@@ -123,7 +123,7 @@ namespace Neo.UnitTests.Ledger
         public void TestDeserialize()
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
+            tblock.Hashes = [TestUtils.GetTransaction(UInt160.Zero).Hash];
             var newBlock = new TrimmedBlock();
             using (MemoryStream ms = new(1024))
             using (BinaryWriter writer = new(ms))

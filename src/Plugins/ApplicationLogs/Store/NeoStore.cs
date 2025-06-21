@@ -109,7 +109,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             var ids = new List<Guid>();
             foreach (var log in logs)
                 ids.Add(lss.PutEngineState(EngineLogState.Create(log.ScriptHash, log.Message)));
-            lss.PutTransactionEngineState(hash, TransactionEngineLogState.Create(ids.ToArray()));
+            lss.PutTransactionEngineState(hash, TransactionEngineLogState.Create([.. ids]));
         }
 
         #endregion
@@ -131,7 +131,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                         if (lss.TryGetNotifyState(notifyLogItem, out var notifyLogState))
                             lstOfEventModel.Add(BlockchainEventModel.Create(notifyLogState, CreateStackItemArray(lss, notifyLogState.StackItemIds)));
                     }
-                    model.Notifications = lstOfEventModel.ToArray();
+                    model.Notifications = [.. lstOfEventModel];
                 }
                 return model;
             }
@@ -156,7 +156,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                                 lstOfEventModel.Add(BlockchainEventModel.Create(notifyLogState, CreateStackItemArray(lss, notifyLogState.StackItemIds)));
                         }
                     }
-                    model.Notifications = lstOfEventModel.ToArray();
+                    model.Notifications = [.. lstOfEventModel];
                 }
                 return model;
             }
@@ -201,7 +201,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                         if (lss.TryGetNotifyState(notifyLogItem, out var notifyLogState))
                             lstOfEventModel.Add(BlockchainEventModel.Create(notifyLogState, CreateStackItemArray(lss, notifyLogState.StackItemIds)));
                     }
-                    model.Notifications = lstOfEventModel.ToArray();
+                    model.Notifications = [.. lstOfEventModel];
 
                     if (lss.TryGetTransactionEngineState(hash, out var transactionEngineLogState))
                     {
@@ -211,7 +211,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                             if (lss.TryGetEngineState(logItem, out var engineLogState))
                                 lstOfLogs.Add(ApplicationEngineLogModel.Create(engineLogState));
                         }
-                        model.Logs = lstOfLogs.ToArray();
+                        model.Logs = [.. lstOfLogs];
                     }
                 }
                 return model;
@@ -237,7 +237,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                                 lstOfEventModel.Add(BlockchainEventModel.Create(notifyLogState, CreateStackItemArray(lss, notifyLogState.StackItemIds)));
                         }
                     }
-                    model.Notifications = lstOfEventModel.ToArray();
+                    model.Notifications = [.. lstOfEventModel];
 
                     if (lss.TryGetTransactionEngineState(hash, out var transactionEngineLogState))
                     {
@@ -247,7 +247,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                             if (lss.TryGetEngineState(logItem, out var engineLogState))
                                 lstOfLogs.Add(ApplicationEngineLogModel.Create(engineLogState));
                         }
-                        model.Logs = lstOfLogs.ToArray();
+                        model.Logs = [.. lstOfLogs];
                     }
                 }
                 return model;
@@ -271,9 +271,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
             }
 
             if (appExecution.Transaction != null)
-                logStore.PutTransactionState(appExecution.Transaction.Hash, TransactionLogState.Create(lstNotifyLogIds.ToArray()));
+                logStore.PutTransactionState(appExecution.Transaction.Hash, TransactionLogState.Create([.. lstNotifyLogIds]));
 
-            logStore.PutBlockState(block.Hash, appExecution.Trigger, BlockLogState.Create(lstNotifyLogIds.ToArray()));
+            logStore.PutBlockState(block.Hash, appExecution.Trigger, BlockLogState.Create([.. lstNotifyLogIds]));
         }
 
         #endregion
@@ -286,7 +286,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             foreach (var stackItemId in stackItemIds)
                 if (logStore.TryGetStackItemState(stackItemId, out var stackItem))
                     lstStackItems.Add(stackItem);
-            return lstStackItems.ToArray();
+            return [.. lstStackItems];
         }
 
         private static Guid[] CreateStackItemIdList(LogStorageStore logStore, Blockchain.ApplicationExecuted appExecution)
@@ -294,7 +294,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             var lstStackItemIds = new List<Guid>();
             foreach (var stackItem in appExecution.Stack)
                 lstStackItemIds.Add(logStore.PutStackItemState(stackItem));
-            return lstStackItemIds.ToArray();
+            return [.. lstStackItemIds];
         }
 
         private static Guid[] CreateStackItemIdList(LogStorageStore logStore, NotifyEventArgs notifyEventArgs)
@@ -302,7 +302,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             var lstStackItemIds = new List<Guid>();
             foreach (var stackItem in notifyEventArgs.State)
                 lstStackItemIds.Add(logStore.PutStackItemState(stackItem));
-            return lstStackItemIds.ToArray();
+            return [.. lstStackItemIds];
         }
 
         #endregion

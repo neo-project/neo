@@ -151,7 +151,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                         VerificationScript = new[] { (byte)OpCode.PUSH1 }
                     }
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
 
             // Act
@@ -209,7 +209,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 ViewNumber = 0,
                 Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 Nonce = 0,
-                TransactionHashes = Array.Empty<UInt256>()
+                TransactionHashes = []
             };
 
             var payload = CreateConsensusPayload(prepareRequest);

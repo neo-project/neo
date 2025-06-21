@@ -49,7 +49,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
         /// responding to the same message.
         /// </summary>
-        private readonly HashSet<UInt256> knownHashes = new();
+        private readonly HashSet<UInt256> knownHashes = [];
         /// <summary>
         /// This variable is only true during OnRecoveryMessageReceived
         /// </summary>
@@ -243,7 +243,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private bool ReverifyAndProcessPayload(ExtensiblePayload payload)
         {
-            RelayResult relayResult = blockchain.Ask<RelayResult>(new Reverify { Inventories = new IInventory[] { payload } }).Result;
+            RelayResult relayResult = blockchain.Ask<RelayResult>(new Reverify { Inventories = [payload] }).Result;
             if (relayResult.Result != VerifyResult.Succeed) return false;
             OnConsensusPayload(payload);
             return true;

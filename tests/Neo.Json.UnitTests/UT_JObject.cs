@@ -77,7 +77,7 @@ namespace Neo.Json.UnitTests
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\":\"v1\",\"k1\":\"v2\"}"));
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\",\"k1\"}"));
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\":\"v1\""));
-            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(new byte[] { 0x22, 0x01, 0x22 }));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse([0x22, 0x01, 0x22]));
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"color\":\"\\uDBFF\\u0DFFF\"}"));
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"\\uDBFF\\u0DFFF\""));

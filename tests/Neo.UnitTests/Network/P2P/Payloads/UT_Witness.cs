@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Generate multisignature
 
-            var multiSignContract = Contract.CreateMultiSigContract(m, address.Select(a => a.GetKey().PublicKey).ToArray());
+            var multiSignContract = Contract.CreateMultiSigContract(m, [.. address.Select(a => a.GetKey().PublicKey)]);
 
             for (int x = 0; x < pubKeys; x++)
             {

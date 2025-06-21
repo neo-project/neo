@@ -30,7 +30,7 @@ namespace Neo.UnitTests.IO.Caching
             queue.TrimExcess();
             Assert.AreEqual(0, queue.Count);
 
-            queue = new IndexedQueue<int>(Array.Empty<int>());
+            queue = new IndexedQueue<int>([]);
             Assert.AreEqual(0, queue.Count);
             Assert.IsFalse(queue.TryPeek(out var a));
             Assert.AreEqual(0, a);
@@ -49,7 +49,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestQueue()
         {
-            var queue = new IndexedQueue<int>(new int[] { 1, 2, 3 });
+            var queue = new IndexedQueue<int>([1, 2, 3]);
             Assert.AreEqual(3, queue.Count);
 
             queue.Enqueue(4);
@@ -76,7 +76,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestEnumerator()
         {
-            int[] arr = new int[3] { 1, 2, 3 };
+            int[] arr = [1, 2, 3];
             var queue = new IndexedQueue<int>(arr);
 
             Assert.IsTrue(arr.SequenceEqual(queue));
@@ -86,7 +86,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestCopyTo()
         {
             int[] arr = new int[3];
-            var queue = new IndexedQueue<int>(new int[] { 1, 2, 3 });
+            var queue = new IndexedQueue<int>([1, 2, 3]);
 
             Assert.ThrowsExactly<ArgumentNullException>(() => queue.CopyTo(null, 0));
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => queue.CopyTo(arr, -1));
@@ -98,7 +98,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(2, arr[1]);
             Assert.AreEqual(3, arr[2]);
 
-            arr = queue.ToArray();
+            arr = [.. queue];
 
             Assert.AreEqual(1, arr[0]);
             Assert.AreEqual(2, arr[1]);

@@ -41,12 +41,12 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask OnPersistAsync(ApplicationEngine engine)
         {
-            TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
+            TransactionState[] transactions = [.. engine.PersistingBlock.Transactions.Select(p => new TransactionState
             {
                 BlockIndex = engine.PersistingBlock.Index,
                 Transaction = p,
                 State = VMState.NONE
-            }).ToArray();
+            })];
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_BlockHash, engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, engine.PersistingBlock.Hash), new StorageItem(TrimmedBlock.Create(engine.PersistingBlock).ToArray()));
             foreach (TransactionState tx in transactions)
@@ -285,7 +285,7 @@ namespace Neo.SmartContract.Native
             return new Block
             {
                 Header = state.Header,
-                Transactions = state.Hashes.Select(p => GetTransaction(snapshot, p)).ToArray()
+                Transactions = [.. state.Hashes.Select(p => GetTransaction(snapshot, p))]
             };
         }
 

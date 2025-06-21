@@ -11,13 +11,11 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
-using System.Diagnostics.Contracts;
 
 namespace Neo.UnitTests.Ledger
 {

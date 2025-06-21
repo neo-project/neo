@@ -125,7 +125,7 @@ namespace Neo.Network.RPC
             return new Block()
             {
                 Header = HeaderFromJson(json, protocolSettings),
-                Transactions = ((JArray)json["tx"]).Select(p => TransactionFromJson((JObject)p, protocolSettings)).ToArray()
+                Transactions = [.. ((JArray)json["tx"]).Select(p => TransactionFromJson((JObject)p, protocolSettings))]
             };
         }
 
@@ -158,13 +158,13 @@ namespace Neo.Network.RPC
             {
                 Version = byte.Parse(json["version"].AsString()),
                 Nonce = uint.Parse(json["nonce"].AsString()),
-                Signers = ((JArray)json["signers"]).Select(p => SignerFromJson((JObject)p, protocolSettings)).ToArray(),
+                Signers = [.. ((JArray)json["signers"]).Select(p => SignerFromJson((JObject)p, protocolSettings))],
                 SystemFee = long.Parse(json["sysfee"].AsString()),
                 NetworkFee = long.Parse(json["netfee"].AsString()),
                 ValidUntilBlock = uint.Parse(json["validuntilblock"].AsString()),
-                Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttributeFromJson((JObject)p)).ToArray(),
+                Attributes = [.. ((JArray)json["attributes"]).Select(p => TransactionAttributeFromJson((JObject)p))],
                 Script = Convert.FromBase64String(json["script"].AsString()),
-                Witnesses = ((JArray)json["witnesses"]).Select(p => WitnessFromJson((JObject)p)).ToArray()
+                Witnesses = [.. ((JArray)json["witnesses"]).Select(p => WitnessFromJson((JObject)p))]
             };
         }
 
@@ -265,12 +265,12 @@ namespace Neo.Network.RPC
                 case StackItemType.Integer:
                     return BigInteger.Parse(json["value"].AsString());
                 case StackItemType.Array:
-                    Array array = new();
+                    Array array = [];
                     foreach (JObject item in (JArray)json["value"])
                         array.Add(StackItemFromJson(item));
                     return array;
                 case StackItemType.Struct:
-                    Struct @struct = new();
+                    Struct @struct = [];
                     foreach (JObject item in (JArray)json["value"])
                         @struct.Add(StackItemFromJson(item));
                     return @struct;

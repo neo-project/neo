@@ -339,7 +339,7 @@ namespace Neo.SmartContract.Native
             if (contract is null) return;
             engine.SnapshotCache.Delete(ckey);
             engine.SnapshotCache.Delete(CreateStorageKey(Prefix_ContractHash, contract.Id));
-            foreach (var (key, _) in engine.SnapshotCache.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
+            foreach (var (key, _) in engine.SnapshotCache.Find(StorageKey.CreateSearchPrefix(contract.Id, [])))
                 engine.SnapshotCache.Delete(key);
             // lock contract
             Policy.BlockAccount(engine.SnapshotCache, hash);

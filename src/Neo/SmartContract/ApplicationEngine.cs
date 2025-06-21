@@ -62,8 +62,8 @@ namespace Neo.SmartContract
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
-        private readonly Dictionary<UInt160, int> invocationCounter = new();
-        private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
+        private readonly Dictionary<UInt160, int> invocationCounter = [];
+        private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = [];
         internal readonly uint ExecFeeFactor;
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
@@ -84,7 +84,7 @@ namespace Neo.SmartContract
         /// </summary>
         public IDiagnostic Diagnostic { get; }
 
-        private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
+        private List<IDisposable> Disposables => disposables ??= [];
 
         /// <summary>
         /// The trigger of the execution.
@@ -167,7 +167,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The notifications sent during the execution.
         /// </summary>
-        public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
+        public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)[];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationEngine"/> class.
@@ -691,7 +691,7 @@ namespace Neo.SmartContract
                 FixedPrice = fixedPrice,
                 RequiredCallFlags = requiredCallFlags
             };
-            services ??= new Dictionary<uint, InteropDescriptor>();
+            services ??= [];
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
         }
@@ -756,7 +756,7 @@ namespace Neo.SmartContract
 
         public void SetState<T>(T state)
         {
-            states ??= new Dictionary<Type, object>();
+            states ??= [];
             states[typeof(T)] = state;
         }
 

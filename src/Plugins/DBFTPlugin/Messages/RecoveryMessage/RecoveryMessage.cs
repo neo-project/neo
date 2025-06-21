@@ -70,24 +70,24 @@ namespace Neo.Plugins.DBFTPlugin.Messages
 
         internal ExtensiblePayload[] GetChangeViewPayloads(ConsensusContext context)
         {
-            return ChangeViewMessages.Values.Select(p => context.CreatePayload(new ChangeView
+            return [.. ChangeViewMessages.Values.Select(p => context.CreatePayload(new ChangeView
             {
                 BlockIndex = BlockIndex,
                 ValidatorIndex = p.ValidatorIndex,
                 ViewNumber = p.OriginalViewNumber,
                 Timestamp = p.Timestamp
-            }, p.InvocationScript)).ToArray();
+            }, p.InvocationScript))];
         }
 
         internal ExtensiblePayload[] GetCommitPayloadsFromRecoveryMessage(ConsensusContext context)
         {
-            return CommitMessages.Values.Select(p => context.CreatePayload(new Commit
+            return [.. CommitMessages.Values.Select(p => context.CreatePayload(new Commit
             {
                 BlockIndex = BlockIndex,
                 ValidatorIndex = p.ValidatorIndex,
                 ViewNumber = p.ViewNumber,
                 Signature = p.Signature
-            }, p.InvocationScript)).ToArray();
+            }, p.InvocationScript))];
         }
 
         internal ExtensiblePayload GetPrepareRequestPayload(ConsensusContext context)
@@ -101,14 +101,14 @@ namespace Neo.Plugins.DBFTPlugin.Messages
         internal ExtensiblePayload[] GetPrepareResponsePayloads(ConsensusContext context)
         {
             UInt256 preparationHash = PreparationHash ?? context.PreparationPayloads[context.Block.PrimaryIndex]?.Hash;
-            if (preparationHash is null) return Array.Empty<ExtensiblePayload>();
-            return PreparationMessages.Values.Where(p => p.ValidatorIndex != context.Block.PrimaryIndex).Select(p => context.CreatePayload(new PrepareResponse
+            if (preparationHash is null) return [];
+            return [.. PreparationMessages.Values.Where(p => p.ValidatorIndex != context.Block.PrimaryIndex).Select(p => context.CreatePayload(new PrepareResponse
             {
                 BlockIndex = BlockIndex,
                 ValidatorIndex = p.ValidatorIndex,
                 ViewNumber = ViewNumber,
                 PreparationHash = preparationHash
-            }, p.InvocationScript)).ToArray();
+            }, p.InvocationScript))];
         }
 
         public override void Serialize(BinaryWriter writer)

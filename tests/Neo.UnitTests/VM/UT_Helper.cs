@@ -226,7 +226,7 @@ namespace Neo.UnitTests.VMT
             StackItem interopItem = new InteropInterface("test");
             Assert.AreEqual(ContractParameterType.InteropInterface, interopItem.ToParameter().Type);
 
-            StackItem arrayItem = new VM.Types.Array(new[] { byteItem, boolItem, intItem, interopItem });
+            StackItem arrayItem = new VM.Types.Array([byteItem, boolItem, intItem, interopItem]);
             Assert.AreEqual(1000, (BigInteger)(arrayItem.ToParameter().Value as List<ContractParameter>)[2].Value);
 
             StackItem mapItem = new Map { [(PrimitiveType)byteItem] = intItem };
@@ -324,11 +324,11 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             ContractParameter parameter = new ContractParameter(ContractParameterType.Array);
-            IList<ContractParameter> values = new List<ContractParameter>
-            {
+            IList<ContractParameter> values =
+            [
                 new ContractParameter(ContractParameterType.Integer),
                 new ContractParameter(ContractParameterType.Integer)
-            };
+            ];
             parameter.Value = values;
             sb.EmitPush(parameter);
             byte[] tempArray =
@@ -664,7 +664,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParaMeter2VMArray()
         {
-            VM.Types.Array item = new VM.Types.Array();
+            VM.Types.Array item = [];
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.Array, parameter.Type);
             Assert.AreEqual(0, ((List<ContractParameter>)parameter.Value).Count);

@@ -229,28 +229,28 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hash = UInt160.Zero;
             var expected = new AndCondition
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new CalledByContractCondition { Hash = hash },
                     new CalledByGroupCondition { Group = point }
-                }
+                ]
             };
 
             var actual = new AndCondition
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new CalledByContractCondition { Hash = hash },
                     new CalledByGroupCondition { Group = point }
-                }
+                ]
             };
 
             var notEqual = new AndCondition
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new CalledByContractCondition { Hash = hash },
-                }
+                ]
             };
 
             Assert.IsTrue(expected.Equals(expected));
@@ -276,28 +276,28 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hash = UInt160.Zero;
             var expected = new OrCondition
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new CalledByContractCondition { Hash = hash },
                     new CalledByGroupCondition { Group = point }
-                }
+                ]
             };
 
             var actual = new OrCondition
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new CalledByContractCondition { Hash = hash },
                     new CalledByGroupCondition { Group = point }
-                }
+                ]
             };
 
             var notEqual = new OrCondition
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new CalledByContractCondition { Hash = hash },
-                }
+                ]
             };
 
             Assert.IsTrue(expected.Equals(expected));
@@ -323,11 +323,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hash = UInt160.Zero;
             var condition = new OrCondition
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new CalledByContractCondition { Hash = hash },
                     new CalledByGroupCondition { Group = point }
-                }
+                ]
             };
             var json = condition.ToJson();
             var new_condi = WitnessCondition.FromJson(json, 2);

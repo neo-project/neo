@@ -49,9 +49,9 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             NEP6Contract nep6Contract = new()
             {
-                Script = new byte[] { 0x00, 0x01 },
-                ParameterList = new ContractParameterType[] { ContractParameterType.Boolean, ContractParameterType.Integer },
-                ParameterNames = new string[] { "param1", "param2" },
+                Script = [0x00, 0x01],
+                ParameterList = [ContractParameterType.Boolean, ContractParameterType.Integer],
+                ParameterNames = ["param1", "param2"],
                 Deployed = false
             };
 

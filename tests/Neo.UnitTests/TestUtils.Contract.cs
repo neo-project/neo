@@ -53,11 +53,11 @@ namespace Neo.UnitTests
                 new ContractMethodDescriptor()
                 {
                     Name = method,
-                    Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
+                    Parameters = [.. parameterTypes.Select((p, i) => new ContractParameterDefinition
                     {
                         Name = $"p{i}",
                         Type = p
-                    }).ToArray(),
+                    })],
                     ReturnType = returnType
                 }
             ];
@@ -79,7 +79,7 @@ namespace Neo.UnitTests
                 Id = 0x43000000,
                 Nef = nef,
                 Hash = nef.Script.Span.ToScriptHash(),
-                Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
+                Manifest = CreateManifest(method, ContractParameterType.Any, [.. Enumerable.Repeat(ContractParameterType.Any, parametersCount)])
             };
         }
 

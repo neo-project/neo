@@ -177,9 +177,7 @@ namespace Neo.SmartContract.Native
                 }
 
                 //Mint GAS for oracle nodes
-                nodes ??= RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.PersistingBlock.Index)
-                    .Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero))
-                    .ToArray();
+                nodes ??= [.. RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero))];
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);

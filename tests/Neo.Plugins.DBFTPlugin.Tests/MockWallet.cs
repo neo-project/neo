@@ -21,7 +21,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 {
     public class MockWallet : Wallet
     {
-        private readonly Dictionary<UInt160, TestWalletAccount> accounts = new();
+        private readonly Dictionary<UInt160, TestWalletAccount> accounts = [];
 
         public MockWallet(ProtocolSettings settings) : base(null, settings)
         {

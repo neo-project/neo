@@ -38,7 +38,7 @@ namespace Neo.Network.RPC.Models
             {
                 Name = json["name"].AsString(),
                 Version = json["version"].AsString(),
-                Interfaces = ((JArray)json["interfaces"]).Select(p => p.AsString()).ToArray()
+                Interfaces = [.. ((JArray)json["interfaces"]).Select(p => p.AsString())]
             };
         }
     }

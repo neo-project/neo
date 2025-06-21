@@ -58,8 +58,7 @@ namespace Neo.UnitTests.IO
             var values = new sbyte[] { 0, 1, -1, 5, -5, sbyte.MaxValue, sbyte.MinValue };
             foreach (var v in values)
             {
-                byte[] byteArray = new byte[1];
-                byteArray[0] = (byte)v;
+                byte[] byteArray = [(byte)v];
                 MemoryReader reader = new(byteArray);
                 var n = reader.ReadSByte();
                 Assert.AreEqual(v, n);
@@ -68,8 +67,7 @@ namespace Neo.UnitTests.IO
             var values2 = new long[] { (long)int.MaxValue + 1, (long)int.MinValue - 1 };
             foreach (var v in values2)
             {
-                byte[] byteArray = new byte[1];
-                byteArray[0] = (byte)v;
+                byte[] byteArray = [(byte)v];
                 MemoryReader reader = new(byteArray);
                 var n = reader.ReadSByte();
                 Assert.AreEqual((sbyte)v, n);

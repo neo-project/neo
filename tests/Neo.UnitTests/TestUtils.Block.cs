@@ -70,7 +70,7 @@ namespace Neo.UnitTests
 
             block.Header = header;
             block.Transactions = transactions;
-            header.MerkleRoot = MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray());
+            header.MerkleRoot = MerkleTree.ComputeRoot([.. block.Transactions.Select(p => p.Hash)]);
             return block;
         }
 
@@ -97,7 +97,7 @@ namespace Neo.UnitTests
             block.Header = header;
             block.Transactions = transactions;
 
-            header.MerkleRoot = MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray());
+            header.MerkleRoot = MerkleTree.ComputeRoot([.. block.Transactions.Select(p => p.Hash)]);
             var contract = Contract.CreateMultiSigContract(1, TestProtocolSettings.SoleNode.StandbyCommittee);
             var sc = new ContractParametersContext(snapshot, header, TestProtocolSettings.SoleNode.Network);
             var signature = header.Sign(account.GetKey(), TestProtocolSettings.SoleNode.Network);
@@ -196,7 +196,7 @@ namespace Neo.UnitTests
             return new TrimmedBlock
             {
                 Header = block.Header,
-                Hashes = block.Transactions.Select(p => p.Hash).ToArray()
+                Hashes = [.. block.Transactions.Select(p => p.Hash)]
             };
         }
     }

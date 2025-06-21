@@ -64,9 +64,9 @@ namespace Neo.Network.P2P
 
         private ICancelable _timer;
 
-        private static readonly HashSet<IPAddress> s_localAddresses = new();
+        private static readonly HashSet<IPAddress> s_localAddresses = [];
 
-        private readonly Dictionary<IPAddress, int> ConnectedAddresses = new();
+        private readonly Dictionary<IPAddress, int> ConnectedAddresses = [];
 
         /// <summary>
         /// A dictionary that stores the connected nodes.
@@ -77,18 +77,18 @@ namespace Neo.Network.P2P
         /// A set that stores the peers received from other nodes.
         /// If the number of desired connections is not enough, first try to connect with the peers from this set.
         /// </summary>
-        protected ImmutableHashSet<IPEndPoint> UnconnectedPeers = ImmutableHashSet<IPEndPoint>.Empty;
+        protected ImmutableHashSet<IPEndPoint> UnconnectedPeers = [];
 
         /// <summary>
         /// When a TCP connection request is sent to a peer, the peer will be added to the set.
         /// If a Tcp.Connected or a Tcp.CommandFailed (with TCP.Command of type Tcp.Connect) is received, the related peer will be removed.
         /// </summary>
-        protected ImmutableHashSet<IPEndPoint> ConnectingPeers = ImmutableHashSet<IPEndPoint>.Empty;
+        protected ImmutableHashSet<IPEndPoint> ConnectingPeers = [];
 
         /// <summary>
         /// A hash set to store the trusted nodes. A trusted node will always be connected.
         /// </summary>
-        protected HashSet<IPAddress> TrustedIpAddresses { get; } = new();
+        protected HashSet<IPAddress> TrustedIpAddresses { get; } = [];
 
         /// <summary>
         /// The port listened by the local Tcp server.

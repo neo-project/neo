@@ -30,7 +30,7 @@ namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
-        private readonly Dictionary<Guid, Session> sessions = new();
+        private readonly Dictionary<Guid, Session> sessions = [];
         private Timer timer;
 
         private void Initialize_SmartContract()
@@ -45,7 +45,7 @@ namespace Neo.Plugins.RpcServer
             Session[] toBeDestroyed;
             lock (sessions)
             {
-                toBeDestroyed = sessions.Values.ToArray();
+                toBeDestroyed = [.. sessions.Values];
                 sessions.Clear();
             }
             foreach (Session session in toBeDestroyed)
@@ -54,7 +54,7 @@ namespace Neo.Plugins.RpcServer
 
         internal void OnTimer(object state)
         {
-            List<(Guid Id, Session Session)> toBeDestroyed = new();
+            List<(Guid Id, Session Session)> toBeDestroyed = [];
             lock (sessions)
             {
                 foreach (var (id, session) in sessions)
@@ -182,9 +182,9 @@ namespace Neo.Plugins.RpcServer
             {
                 Account = AddressToScriptHash(u["account"].AsString(), settings.AddressVersion),
                 Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), u["scopes"]?.AsString()),
-                AllowedContracts = ((JArray)u["allowedcontracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray() ?? Array.Empty<UInt160>(),
-                AllowedGroups = ((JArray)u["allowedgroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray() ?? Array.Empty<ECPoint>(),
-                Rules = ((JArray)u["rules"])?.Select(r => WitnessRule.FromJson((JObject)r)).ToArray() ?? Array.Empty<WitnessRule>(),
+                AllowedContracts = ((JArray)u["allowedcontracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray() ?? [],
+                AllowedGroups = ((JArray)u["allowedgroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray() ?? [],
+                Rules = ((JArray)u["rules"])?.Select(r => WitnessRule.FromJson((JObject)r)).ToArray() ?? [],
             }).ToArray();
 
             // Validate format
@@ -201,7 +201,7 @@ namespace Neo.Plugins.RpcServer
                 throw new RpcException(RpcError.InvalidParams.WithData("Max allowed witness exceeded."));
             }
 
-            return _params.Select(u => new
+            return [.. _params.Select(u => new
             {
                 Invocation = u["invocation"]?.AsString(),
                 Verification = u["verification"]?.AsString()
@@ -209,7 +209,7 @@ namespace Neo.Plugins.RpcServer
             {
                 InvocationScript = Convert.FromBase64String(x.Invocation ?? string.Empty),
                 VerificationScript = Convert.FromBase64String(x.Verification ?? string.Empty)
-            }).ToArray();
+            })];
         }
 
         [RpcMethod]
@@ -217,7 +217,7 @@ namespace Neo.Plugins.RpcServer
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash {nameof(script_hash)}"));
             string operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
-            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : [];
+            ContractParameter[] args = _params.Count >= 3 ? [.. ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p))] : [];
             Signer[] signers = _params.Count >= 4 ? SignersFromJson((JArray)_params[3], system.Settings) : null;
             Witness[] witnesses = _params.Count >= 4 ? WitnessesFromJson((JArray)_params[3]) : null;
             bool useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
@@ -255,7 +255,7 @@ namespace Neo.Plugins.RpcServer
                 session.ResetExpiration();
             }
             IIterator iterator = Result.Ok_Or(() => session.Iterators[iid], RpcError.UnknownIterator);
-            JArray json = new();
+            JArray json = [];
             while (count-- > 0 && iterator.Next())
                 json.Add(iterator.Value(null).ToJson());
             return json;

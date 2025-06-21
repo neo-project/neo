@@ -56,15 +56,15 @@ namespace Neo.Ledger
         /// <summary>
         /// Store all verified unsorted transactions currently in the pool.
         /// </summary>
-        private readonly Dictionary<UInt256, PoolItem> _unsortedTransactions = new();
+        private readonly Dictionary<UInt256, PoolItem> _unsortedTransactions = [];
         /// <summary>
         /// Store transaction hashes that conflict with verified mempooled transactions.
         /// </summary>
-        private readonly Dictionary<UInt256, HashSet<UInt256>> _conflicts = new();
+        private readonly Dictionary<UInt256, HashSet<UInt256>> _conflicts = [];
         /// <summary>
         /// Stores the verified sorted transactions currently in the pool.
         /// </summary>
-        private readonly SortedSet<PoolItem> _sortedTransactions = new();
+        private readonly SortedSet<PoolItem> _sortedTransactions = [];
 
         /// <summary>
         /// Store the unverified transactions currently in the pool.
@@ -73,8 +73,8 @@ namespace Neo.Ledger
         /// The top ones that could make it into the next block get verified and moved into the verified data structures
         /// (_unsortedTransactions, and _sortedTransactions) after each block.
         /// </summary>
-        private readonly Dictionary<UInt256, PoolItem> _unverifiedTransactions = new();
-        private readonly SortedSet<PoolItem> _unverifiedSortedTransactions = new();
+        private readonly Dictionary<UInt256, PoolItem> _unverifiedTransactions = [];
+        private readonly SortedSet<PoolItem> _unverifiedSortedTransactions = [];
 
         // Internal methods to aid in unit testing
         internal int SortedTxCount => _sortedTransactions.Count;
@@ -204,7 +204,7 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                return _unsortedTransactions.Select(p => p.Value.Tx).ToArray();
+                return [.. _unsortedTransactions.Select(p => p.Value.Tx)];
             }
             finally
             {
@@ -223,8 +223,8 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                verifiedTransactions = _sortedTransactions.Reverse().Select(p => p.Tx).ToArray();
-                unverifiedTransactions = _unverifiedSortedTransactions.Reverse().Select(p => p.Tx).ToArray();
+                verifiedTransactions = [.. _sortedTransactions.Reverse().Select(p => p.Tx)];
+                unverifiedTransactions = [.. _unverifiedSortedTransactions.Reverse().Select(p => p.Tx)];
             }
             finally
             {
@@ -244,17 +244,15 @@ namespace Neo.Ledger
                 if (count < 0)
                 {
                     // Return all results
-                    return _sortedTransactions
+                    return [.. _sortedTransactions
                         .Reverse()
-                        .Select(p => p.Tx)
-                        .ToArray();
+                        .Select(p => p.Tx)];
                 }
 
-                return _sortedTransactions
+                return [.. _sortedTransactions
                     .Reverse()
                     .Take(count)
-                    .Select(p => p.Tx)
-                    .ToArray();
+                    .Select(p => p.Tx)];
             }
             finally
             {
@@ -329,12 +327,12 @@ namespace Neo.Ledger
                     if (TryRemoveVerified(conflict.Tx.Hash, out var _))
                         VerificationContext.RemoveTransaction(conflict.Tx);
                 }
-                removedTransactions = conflictsToBeRemoved.Select(itm => itm.Tx).ToList();
+                removedTransactions = [.. conflictsToBeRemoved.Select(itm => itm.Tx)];
                 foreach (var attr in tx.GetAttributes<Conflicts>())
                 {
                     if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
                     {
-                        pooled = new HashSet<UInt256>();
+                        pooled = [];
                     }
                     pooled.Add(tx.Hash);
                     _conflicts[attr.Hash] = pooled;
@@ -370,7 +368,7 @@ namespace Neo.Ledger
         /// <returns>True if transaction fits the pool, otherwise false.</returns>
         private bool CheckConflicts(Transaction tx, out List<PoolItem> conflictsList)
         {
-            conflictsList = new();
+            conflictsList = [];
             long conflictsFeeSum = 0;
             // Step 1: check if `tx` was in Conflicts attributes of unsorted transactions.
             if (_conflicts.TryGetValue(tx.Hash, out var conflicting))
@@ -405,7 +403,7 @@ namespace Neo.Ledger
 
         private List<Transaction> RemoveOverCapacity()
         {
-            List<Transaction> removedTransactions = new();
+            List<Transaction> removedTransactions = [];
             do
             {
                 var minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
@@ -497,7 +495,7 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                Dictionary<UInt256, List<UInt160>> conflicts = new Dictionary<UInt256, List<UInt160>>();
+                Dictionary<UInt256, List<UInt160>> conflicts = [];
                 // First remove the transactions verified in the block.
                 // No need to modify VerificationContext as it will be reset afterwards.
                 foreach (Transaction tx in block.Transactions)
@@ -511,7 +509,7 @@ namespace Neo.Ledger
                             signersList.AddRange(conflictingSigners);
                             continue;
                         }
-                        signersList = conflictingSigners.ToList();
+                        signersList = [.. conflictingSigners];
                         conflicts.Add(h, signersList);
                     }
                 }
@@ -574,7 +572,7 @@ namespace Neo.Ledger
         {
             DateTime reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new(count);
-            List<PoolItem> invalidItems = new();
+            List<PoolItem> invalidItems = [];
 
             _txRwLock.EnterWriteLock();
             try
@@ -650,7 +648,7 @@ namespace Neo.Ledger
             {
                 TransactionRemoved?.Invoke(this, new()
                 {
-                    Transactions = invalidItems.Select(p => p.Tx).ToArray(),
+                    Transactions = [.. invalidItems.Select(p => p.Tx)],
                     Reason = TransactionRemovalReason.NoLongerValid
                 });
             }

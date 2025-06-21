@@ -183,7 +183,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                             VerificationScript = new[] { (byte)OpCode.PUSH1 }
                         }
                     },
-                    Transactions = Array.Empty<Transaction>()
+                    Transactions = []
                 };
 
                 consensusService.Tell(new Blockchain.PersistCompleted { Block = block });

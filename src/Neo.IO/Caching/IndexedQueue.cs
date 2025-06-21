@@ -64,7 +64,7 @@ namespace Neo.IO.Caching
         /// <param name="collection">The collection of items to fill the queue with</param>
         public IndexedQueue(IEnumerable<T> collection)
         {
-            _array = collection.ToArray();
+            _array = [.. collection];
             _head = 0;
             _count = _array.Length;
         }

@@ -72,18 +72,18 @@ namespace Neo.SmartContract.Manifest
         {
             Struct @struct = (Struct)stackItem;
             Name = @struct[0].GetString();
-            Groups = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractGroup>()).ToArray();
+            Groups = [.. ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractGroup>())];
             if (((Map)@struct[2]).Count != 0)
                 throw new ArgumentException("The third field(`features`) is not empty", nameof(stackItem));
 
-            SupportedStandards = ((Array)@struct[3]).Select(p => p.GetString()).ToArray();
+            SupportedStandards = [.. ((Array)@struct[3]).Select(p => p.GetString())];
             Abi = @struct[4].ToInteroperable<ContractAbi>();
-            Permissions = ((Array)@struct[5]).Select(p => p.ToInteroperable<ContractPermission>()).ToArray();
+            Permissions = [.. ((Array)@struct[5]).Select(p => p.ToInteroperable<ContractPermission>())];
             Trusts = @struct[6] switch
             {
                 Null _ => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
                 // Array array when array.Any(p => ((ByteString)p).Size == 0) => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
-                Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(ContractPermissionDescriptor.Create).ToArray()),
+                Array array => WildcardContainer<ContractPermissionDescriptor>.Create([.. array.Select(ContractPermissionDescriptor.Create)]),
                 _ => throw new ArgumentException($"The seventh field(`trusts`) is not a null or array", nameof(stackItem))
             };
             Extra = (JObject)JToken.Parse(@struct[7].GetSpan());

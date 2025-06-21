@@ -23,7 +23,7 @@ namespace Neo.Plugins.RpcServer
     {
         public readonly StoreCache Snapshot;
         public readonly ApplicationEngine Engine;
-        public readonly Dictionary<Guid, IIterator> Iterators = new();
+        public readonly Dictionary<Guid, IIterator> Iterators = [];
         public DateTime StartTime;
 
         public Session(NeoSystem system, byte[] script, Signer[] signers, Witness[] witnesses, long datoshi, Diagnostic diagnostic)
@@ -36,7 +36,7 @@ namespace Neo.Plugins.RpcServer
                 Nonce = (uint)random.Next(),
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(Snapshot) + system.GetMaxValidUntilBlockIncrement(),
                 Signers = signers,
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = script,
                 Witnesses = witnesses
             };

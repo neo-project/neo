@@ -66,7 +66,7 @@ namespace Neo.SmartContract.Manifest
                     if (str.Value != "*") throw new FormatException();
                     return CreateWildcard();
                 case JArray array:
-                    return Create(array.Select(p => elementSelector(p)).ToArray());
+                    return Create([.. array.Select(p => elementSelector(p))]);
                 default:
                     throw new FormatException();
             }
@@ -74,7 +74,7 @@ namespace Neo.SmartContract.Manifest
 
         public IEnumerator<T> GetEnumerator()
         {
-            if (_data == null) return ((IReadOnlyList<T>)Array.Empty<T>()).GetEnumerator();
+            if (_data == null) return ((IReadOnlyList<T>)[]).GetEnumerator();
 
             return ((IReadOnlyList<T>)_data).GetEnumerator();
         }

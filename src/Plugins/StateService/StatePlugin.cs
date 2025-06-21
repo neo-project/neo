@@ -103,9 +103,7 @@ namespace Neo.Plugins.StateService
         {
             if (system.Settings.Network != Settings.Default.Network) return;
             StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index,
-                snapshot.GetChangeSet()
-                    .Where(p => p.Value.State != TrackState.None && p.Key.Id != NativeContract.Ledger.Id)
-                    .ToList());
+                [.. snapshot.GetChangeSet().Where(p => p.Value.State != TrackState.None && p.Key.Id != NativeContract.Ledger.Id)]);
         }
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)

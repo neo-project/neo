@@ -71,7 +71,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Create network probe to capture consensus messages
             networkProbe = CreateTestProbe("network");
-            capturedMessages = new List<ExtensiblePayload>();
+            capturedMessages = [];
 
             // Setup test wallets for validators
             testWallets = new MockWallet[ValidatorCount];

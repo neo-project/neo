@@ -19,7 +19,7 @@ namespace Neo.Extensions.Tests.Net
         [TestMethod]
         public void TestUnmapForIPAddress()
         {
-            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+            var addr = new IPAddress([127, 0, 0, 1]);
             Assert.AreEqual(addr, addr.UnMap());
 
             var addr2 = addr.MapToIPv6();
@@ -29,7 +29,7 @@ namespace Neo.Extensions.Tests.Net
         [TestMethod]
         public void TestUnmapForIPEndPoin()
         {
-            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+            var addr = new IPAddress([127, 0, 0, 1]);
             var endPoint = new IPEndPoint(addr, 8888);
             Assert.AreEqual(endPoint, endPoint.UnMap());
 

@@ -295,7 +295,7 @@ namespace Neo.Cryptography
                     // yParity is fused into the top bit of s.
 
                     r = new BigInteger(1, [.. signature.Take(32)]);
-                    var yParityAndS = new BigInteger(1, signature.Skip(32).ToArray());
+                    var yParityAndS = new BigInteger(1, [.. signature.Skip(32)]);
 
                     // Mask out top bit to get s
                     var mask = BigInteger.One.ShiftLeft(255).Subtract(BigInteger.One);

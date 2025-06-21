@@ -40,7 +40,7 @@ namespace Neo.Wallets
     /// </summary>
     public abstract class Wallet : ISigner
     {
-        private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance };
+        private static readonly List<IWalletFactory> factories = [NEP6WalletFactory.Instance];
 
         /// <summary>
         /// The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.
@@ -269,7 +269,7 @@ namespace Neo.Wallets
         /// <returns>The available balance for the specified asset.</returns>
         public BigDecimal GetAvailable(DataCache snapshot, UInt160 asset_id)
         {
-            UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
+            UInt160[] accounts = [.. GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash)];
             return GetBalance(snapshot, asset_id, accounts);
         }
 
@@ -396,17 +396,17 @@ namespace Neo.Wallets
                 if (cosigners[i].Account.Equals(sender))
                 {
                     if (i == 0) return cosigners;
-                    List<Signer> list = new(cosigners);
+                    List<Signer> list = [.. cosigners];
                     list.RemoveAt(i);
                     list.Insert(0, cosigners[i]);
-                    return list.ToArray();
+                    return [.. list];
                 }
             }
-            return cosigners.Prepend(new Signer
+            return [.. cosigners.Prepend(new Signer
             {
                 Account = sender,
                 Scopes = WitnessScope.None
-            }).ToArray();
+            })];
         }
 
         /// <summary>
@@ -477,13 +477,13 @@ namespace Neo.Wallets
             UInt160[] accounts;
             if (from is null)
             {
-                accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
+                accounts = [.. GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash)];
             }
             else
             {
-                accounts = new[] { from };
+                accounts = [from];
             }
-            Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
+            Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? [];
             byte[] script;
             List<(UInt160 Account, BigInteger Value)> balances_gas = null;
             using (ScriptBuilder sb = new())
@@ -506,7 +506,7 @@ namespace Neo.Wallets
                         throw new InvalidOperationException($"It does not have enough balance, expected: {sum} found: {sum_balance}");
                     foreach (TransferOutput output in group)
                     {
-                        balances = balances.OrderBy(p => p.Value).ToList();
+                        balances = [.. balances.OrderBy(p => p.Value)];
                         var balances_used = FindPayingAccounts(balances, output.Value.Value);
                         foreach (var (account, value) in balances_used)
                         {
@@ -533,9 +533,9 @@ namespace Neo.Wallets
                 script = sb.ToArray();
             }
             if (balances_gas is null)
-                balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
+                balances_gas = [.. accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0)];
 
-            return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), [], balances_gas, persistingBlock: persistingBlock);
+            return MakeTransaction(snapshot, script, [.. cosignerList.Values], [], balances_gas, persistingBlock: persistingBlock);
         }
 
         /// <summary>
@@ -561,11 +561,11 @@ namespace Neo.Wallets
             UInt160[] accounts;
             if (sender is null)
             {
-                accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
+                accounts = [.. GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash)];
             }
             else
             {
-                accounts = new[] { sender };
+                accounts = [sender];
             }
 
             var balancesGas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p)))

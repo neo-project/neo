@@ -58,9 +58,9 @@ namespace Neo.SmartContract.Native
                 NeedSnapshot = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(DataCache));
             }
             if (NeedApplicationEngine || NeedSnapshot)
-                Parameters = parameterInfos.Skip(1).Select(p => new InteropParameterDescriptor(p)).ToArray();
+                Parameters = [.. parameterInfos.Skip(1).Select(p => new InteropParameterDescriptor(p))];
             else
-                Parameters = parameterInfos.Select(p => new InteropParameterDescriptor(p)).ToArray();
+                Parameters = [.. parameterInfos.Select(p => new InteropParameterDescriptor(p))];
             CpuFee = attribute.CpuFee;
             StorageFee = attribute.StorageFee;
             RequiredCallFlags = attribute.RequiredCallFlags;
@@ -70,7 +70,7 @@ namespace Neo.SmartContract.Native
             {
                 Name = Name,
                 ReturnType = ToParameterType(Handler.ReturnType),
-                Parameters = Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
+                Parameters = [.. Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name })],
                 Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
             };
         }

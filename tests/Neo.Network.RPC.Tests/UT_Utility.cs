@@ -139,8 +139,8 @@ namespace Neo.Network.RPC.Tests
 
             rule.Condition = new OrCondition()
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new BooleanCondition()
                     {
                         Expression = true
@@ -149,7 +149,7 @@ namespace Neo.Network.RPC.Tests
                     {
                         Expression = false
                     }
-                }
+                ]
             };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
@@ -157,8 +157,8 @@ namespace Neo.Network.RPC.Tests
 
             rule.Condition = new AndCondition()
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new BooleanCondition()
                     {
                         Expression = true
@@ -167,7 +167,7 @@ namespace Neo.Network.RPC.Tests
                     {
                         Expression = false
                     }
-                }
+                ]
             };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();

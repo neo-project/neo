@@ -38,7 +38,7 @@ namespace Neo.Network.RPC
         /// <summary>
         /// This container stores the keys for sign the transaction
         /// </summary>
-        private readonly List<SignItem> signStore = new List<SignItem>();
+        private readonly List<SignItem> signStore = [];
 
         /// <summary>
         /// The Transaction managed by this instance
@@ -128,7 +128,7 @@ namespace Neo.Network.RPC
             SignItem item = signStore.FirstOrDefault(p => p.Contract.ScriptHash == contract.ScriptHash);
             if (item is null)
             {
-                signStore.Add(new SignItem { Contract = contract, KeyPairs = new HashSet<KeyPair> { key } });
+                signStore.Add(new SignItem { Contract = contract, KeyPairs = [key] });
             }
             else if (!item.KeyPairs.Contains(key))
             {
@@ -167,11 +167,11 @@ namespace Neo.Network.RPC
         public async Task<Transaction> SignAsync()
         {
             // Calculate NetworkFee
-            Tx.Witnesses = Tx.GetScriptHashesForVerifying(null).Select(u => new Witness()
+            Tx.Witnesses = [.. Tx.GetScriptHashesForVerifying(null).Select(u => new Witness()
             {
                 InvocationScript = ReadOnlyMemory<byte>.Empty,
                 VerificationScript = GetVerificationScript(u)
-            }).ToArray();
+            })];
             Tx.NetworkFee = await rpcClient.CalculateNetworkFeeAsync(Tx).ConfigureAwait(false);
             Tx.Witnesses = null;
 
@@ -208,7 +208,7 @@ namespace Neo.Network.RPC
                 if (item.Contract.ScriptHash == hash) return item.Contract.Script;
             }
 
-            return Array.Empty<byte>();
+            return [];
         }
     }
 }
