@@ -40,7 +40,7 @@ namespace Neo.Plugins.SignClient
             _endpoint = new VSockEndPoint(address.ContextId, address.Port);
         }
 
-        internal async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext context, CancellationToken cancellationToken)
+        internal async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext context, CancellationToken cancellation)
         {
             if (!OperatingSystem.IsLinux()) throw new PlatformNotSupportedException("Vsock is only supported on Linux.");
 
@@ -48,7 +48,7 @@ namespace Neo.Plugins.SignClient
             try
             {
                 // Have to use `Task.Run` with `Connect` to avoid some compatibility issues(if use ConnectAsync).
-                await Task.Run(() => socket.Connect(_endpoint), cancellationToken);
+                await Task.Run(() => socket.Connect(_endpoint), cancellation);
                 return new NetworkStream(socket, true);
             }
             catch

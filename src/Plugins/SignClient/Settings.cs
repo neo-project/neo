@@ -78,14 +78,16 @@ namespace Neo.Plugins.SignClient
         {
             if (EndpointType != EndpointVsock) return null;
 
+            const string httpScheme = "http://";
+            const string httpsScheme = "https://";
             var endpoint = Endpoint;
-            if (Endpoint.StartsWith("http://"))
+            if (endpoint.StartsWith(httpScheme))
             {
-                endpoint = endpoint.Substring("http://".Length);
+                endpoint = endpoint.Substring(httpScheme.Length);
             }
-            else if (Endpoint.StartsWith("https://"))
+            else if (endpoint.StartsWith(httpsScheme))
             {
-                endpoint = endpoint.Substring("https://".Length);
+                endpoint = endpoint.Substring(httpsScheme.Length);
             }
 
             var parts = endpoint.Split(':', 2);
