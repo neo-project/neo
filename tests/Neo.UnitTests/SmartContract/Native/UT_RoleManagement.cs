@@ -75,11 +75,6 @@ namespace Neo.UnitTests.SmartContract.Native
                 snapshot1.Commit();
                 ApplicationEngine.Notify -= ev;
 
-                foreach (var n in notifications)
-                {
-                    Console.WriteLine($"Notification:Role={role.ToString()}, Contract={n.ScriptHash}, Event={n.EventName}, State={n.State}");
-                }
-
                 var designationEvents = notifications
                     .Where(n => n.ScriptHash == NativeContract.RoleManagement.Hash && n.EventName == "Designation")
                     .ToList();
