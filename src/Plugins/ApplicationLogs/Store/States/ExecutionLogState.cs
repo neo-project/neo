@@ -70,7 +70,7 @@ namespace Neo.Plugins.ApplicationLogs.Store.States
         #region IEquatable
 
         public bool Equals(ExecutionLogState? other) =>
-            other is not null &&
+            other != null &&
             VmState == other.VmState && Exception == other.Exception &&
             GasConsumed == other.GasConsumed && StackItemIds.SequenceEqual(other.StackItemIds);
 

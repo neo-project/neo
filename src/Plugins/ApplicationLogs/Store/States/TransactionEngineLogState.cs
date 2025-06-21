@@ -51,7 +51,7 @@ namespace Neo.Plugins.ApplicationLogs.Store.States
         #region IEquatable
 
         public bool Equals(TransactionEngineLogState? other) =>
-            other is not null &&
+            other != null &&
             LogIds.SequenceEqual(other.LogIds);
 
         public override bool Equals(object? obj)

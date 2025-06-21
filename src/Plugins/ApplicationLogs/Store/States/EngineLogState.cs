@@ -50,7 +50,7 @@ namespace Neo.Plugins.ApplicationLogs.Store.States
         #region IEquatable
 
         public bool Equals(EngineLogState? other) =>
-            other is not null &&
+            other != null &&
             ScriptHash == other.ScriptHash &&
             Message == other.Message;
 
