@@ -31,14 +31,12 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_RoleManagement
     {
-        private DataCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()
         {
             var system = TestBlockchain.GetSystem();
             system.ResetStore();
-            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
         }
 
         [TestMethod]
@@ -60,9 +58,8 @@ namespace Neo.UnitTests.SmartContract.Native
             List<Role> roles = new List<Role>() { Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary };
             foreach (var role in roles)
             {
-                var system = TestBlockchain.GetSystem();
-                system.ResetStore();
-                var snapshot1 = system.GetTestSnapshotCache(reset: false);
+                var system = new TestBlockchain.TestNeoSystem(TestProtocolSettings.Default);
+                var snapshot1 = system.GetTestSnapshotCache(false);
 
                 UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
                 List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
@@ -81,7 +78,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(1, notifications.Count);
                 Assert.AreEqual("Designation", notifications[0].EventName);
 
-                var snapshot2 = system.GetTestSnapshotCache(reset: false);
+                var snapshot2 = system.GetTestSnapshotCache(false);
                 ret = NativeContract.RoleManagement.Call(
                     snapshot2,
                     "getDesignatedByRole",
