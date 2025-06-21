@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Neo.Plugins.ApplicationLogs
 {
-    internal class ApplicationLogsSettings : IPluginSettings
+    internal class Settings : PluginSettings
     {
         public string Path { get; }
         public uint Network { get; }
@@ -21,22 +21,19 @@ namespace Neo.Plugins.ApplicationLogs
 
         public bool Debug { get; }
 
-        public static ApplicationLogsSettings Default { get; private set; } = default!;
+        public static Settings Default { get; private set; } = default!;
 
-        public UnhandledExceptionPolicy ExceptionPolicy { get; }
-
-        private ApplicationLogsSettings(IConfigurationSection section)
+        private Settings(IConfigurationSection section) : base(section)
         {
             Path = section.GetValue("Path", "ApplicationLogs_{0}");
             Network = section.GetValue("Network", 5195086u);
             MaxStackSize = section.GetValue("MaxStackSize", (int)ushort.MaxValue);
             Debug = section.GetValue("Debug", false);
-            ExceptionPolicy = section.GetValue("UnhandledExceptionPolicy", UnhandledExceptionPolicy.Ignore);
         }
 
         public static void Load(IConfigurationSection section)
         {
-            Default = new ApplicationLogsSettings(section);
+            Default = new Settings(section);
         }
     }
 }
