@@ -201,7 +201,31 @@ namespace Neo.Extensions.Factories
             if (minValue > maxValue)
                 throw new ArgumentOutOfRangeException(nameof(minValue));
 
-            return minValue + (NextBigInteger(256) % (maxValue - minValue + BigInteger.One));
+            if (maxValue.Sign < 0 || minValue.Sign < 0)
+                (maxValue, minValue) = (BigInteger.Abs(minValue), BigInteger.Abs(maxValue));
+
+            var randomProduct = maxValue * NextBigInteger(256);
+            var randomProductBits = randomProduct.GetByteCount() * 8;
+
+            var maxValueBits = maxValue.GetByteCount() * 8;
+            var maxValueSize = BigInteger.Pow(2, maxValueBits);
+
+            var lowPart = randomProduct & maxValue;
+
+            if (lowPart < maxValue)
+            {
+                var remainder = (maxValueSize - maxValue) % maxValue;
+
+                while (lowPart < remainder)
+                {
+                    randomProduct = maxValue * NextBigInteger(256);
+                    lowPart = randomProduct & maxValue;
+                }
+            }
+
+            return maxValue.Sign > 0 ?
+                (randomProduct >> (randomProductBits - maxValueBits)) * BigInteger.MinusOne :
+                randomProduct >> (randomProductBits - maxValueBits);
         }
 
 
