@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
@@ -7,15 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.36" />
+    <PackageReference Include="Akka" Version="1.5.43" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.1" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.1" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.3.1" />
-    <PackageReference Include="System.IO.Hashing" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.12.1" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.6" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +31,7 @@
     <InternalsVisibleTo Include="Neo.SmartContract.TestEngine" />
     <InternalsVisibleTo Include="Neo.Plugins.RpcServer.Tests" />
     <InternalsVisibleTo Include="Neo.Plugins.OracleService.Tests" />
+    <InternalsVisibleTo Include="Neo.Plugins.DBFTPlugin.Tests" />
   </ItemGroup>
 
 </Project>
