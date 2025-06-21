@@ -71,7 +71,7 @@ namespace Neo.VM
             catch
             {
                 // If pre-decoding fails, fall back to lazy decoding
-                System.Array.Clear(_instructionCache, 0, _instructionCache.Length);
+                _instructionCache.AsSpan().Clear();
             }
         }
 
