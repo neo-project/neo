@@ -127,7 +127,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 PrevHash = UInt256.Zero,
                 Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 Nonce = 0,
-                TransactionHashes = Array.Empty<UInt256>()
+                TransactionHashes = []
             };
 
             var prepareRequestPayload = CreateConsensusPayload(prepareRequest, primaryIndex);
@@ -212,7 +212,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                     PrevHash = UInt256.Zero,
                     Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                     Nonce = (ulong)round,
-                    TransactionHashes = Array.Empty<UInt256>()
+                    TransactionHashes = []
                 };
 
                 var prepareRequestPayload = CreateConsensusPayload(prepareRequest, expectedPrimaryIndex);

@@ -205,7 +205,7 @@ namespace Neo.Network.P2P.Payloads
         public void Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write(new Witness[] { Witness });
+            writer.Write([Witness]);
         }
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)

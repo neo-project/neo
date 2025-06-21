@@ -144,7 +144,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestMultiSignatureContractCost()
         {
             var snapshot = _snapshotCache.CloneCache();
-            var contract = Contract.CreateMultiSigContract(1, new ECPoint[] { _key.PublicKey });
+            var contract = Contract.CreateMultiSigContract(1, [_key.PublicKey]);
 
             var tx = TestUtils.CreateRandomHashTransaction();
             tx.Signers[0].Account = contract.ScriptHash;

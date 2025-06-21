@@ -120,7 +120,7 @@ namespace Neo
         {
             Network = 0u,
             AddressVersion = 0x35,
-            StandbyCommittee = Array.Empty<ECPoint>(),
+            StandbyCommittee = [],
             ValidatorsCount = 0,
             SeedList = [],
             MillisecondsPerBlock = 15000,

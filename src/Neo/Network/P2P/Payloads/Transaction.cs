@@ -472,8 +472,8 @@ namespace Neo.Network.P2P.Payloads
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             if (_signers == null || _signers.Length == 0) throw new ArgumentException("Sender is not specified in the transaction.");
-            return new Array(referenceCounter, new StackItem[]
-            {
+            return new Array(referenceCounter,
+            [
                 // Computed properties
                 Hash.ToArray(),
 
@@ -485,7 +485,7 @@ namespace Neo.Network.P2P.Payloads
                 NetworkFee,
                 ValidUntilBlock,
                 Script,
-            });
+            ]);
         }
 
         private static bool IsMultiSignatureInvocationScript(int m, ReadOnlyMemory<byte> invocationScript,

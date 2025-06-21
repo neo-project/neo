@@ -243,7 +243,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private bool ReverifyAndProcessPayload(ExtensiblePayload payload)
         {
-            RelayResult relayResult = blockchain.Ask<RelayResult>(new Reverify { Inventories = new IInventory[] { payload } }).Result;
+            RelayResult relayResult = blockchain.Ask<RelayResult>(new Reverify { Inventories = [payload] }).Result;
             if (relayResult.Result != VerifyResult.Succeed) return false;
             OnConsensusPayload(payload);
             return true;

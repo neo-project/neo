@@ -46,7 +46,7 @@ namespace Neo.Plugins.ApplicationLogs
         {
             _neostore = default!;
             _neosystem = default!;
-            _logEvents = new();
+            _logEvents = [];
             Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }

@@ -119,7 +119,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 PrevHash = UInt256.Zero,
                 Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 Nonce = 0,
-                TransactionHashes = Array.Empty<UInt256>()
+                TransactionHashes = []
             };
 
             var prepareRequestPayload = CreateConsensusPayload(prepareRequest, 0);
@@ -176,7 +176,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 PrevHash = UInt256.Zero,
                 Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 Nonce = 0,
-                TransactionHashes = Array.Empty<UInt256>()
+                TransactionHashes = []
             };
 
             var prepareRequestPayload = CreateConsensusPayload(prepareRequest, 0);
@@ -196,7 +196,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                     PrevHash = UInt256.Parse("0x1111111111111111111111111111111111111111111111111111111111111111"),
                     Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                     Nonce = 999,
-                    TransactionHashes = Array.Empty<UInt256>()
+                    TransactionHashes = []
                 };
                 var conflictingPayload = CreateConsensusPayload(conflictingRequest, byzantineIndex);
 
@@ -251,7 +251,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                     PrevHash = UInt256.Zero,
                     Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                     Nonce = (ulong)round,
-                    TransactionHashes = Array.Empty<UInt256>(),
+                    TransactionHashes = [],
                     BlockIndex = (uint)(round + 1)
                 };
                 var prepareRequestPayload = CreateConsensusPayload(prepareRequest, round % validatorCount);

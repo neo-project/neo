@@ -70,7 +70,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestGetEnumerator()
         {
             string[] s = null;
-            IReadOnlyList<string> rs = Array.Empty<string>();
+            IReadOnlyList<string> rs = [];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             IEnumerator<string> enumerator = container.GetEnumerator();
             Assert.AreEqual(rs.GetEnumerator(), enumerator);

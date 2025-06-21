@@ -113,11 +113,11 @@ namespace Neo.Network.P2P.Payloads
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[]
-            {
+            return new Array(referenceCounter,
+            [
                 (byte)Action,
                 Condition.ToStackItem(referenceCounter)
-            });
+            ]);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

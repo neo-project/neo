@@ -189,7 +189,7 @@ namespace Neo.UnitTests.IO
         {
             MemoryStream stream = new();
             BinaryWriter writer = new(stream);
-            writer.Write(new UInt160[] { UInt160.Zero });
+            writer.Write([UInt160.Zero]);
             MemoryReader reader = new(stream.ToArray());
             UInt160[] resultArray = reader.ReadSerializableArray<UInt160>();
             Assert.AreEqual(1, resultArray.Length);
@@ -286,7 +286,7 @@ namespace Neo.UnitTests.IO
         {
             MemoryStream stream = new();
             BinaryWriter writer = new(stream);
-            writer.Write(new UInt160[] { UInt160.Zero });
+            writer.Write([UInt160.Zero]);
             stream.Seek(0, SeekOrigin.Begin);
             byte[] byteArray = new byte[stream.Length];
             stream.Read(byteArray, 0, (int)stream.Length);

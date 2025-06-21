@@ -44,7 +44,7 @@ namespace Neo.Plugins.RpcServer
             public override void Delete() { }
             public override bool DeleteAccount(UInt160 scriptHash) => false;
             public override WalletAccount GetAccount(UInt160 scriptHash) => null;
-            public override IEnumerable<WalletAccount> GetAccounts() => Array.Empty<WalletAccount>();
+            public override IEnumerable<WalletAccount> GetAccounts() => [];
             public override bool VerifyPassword(string password) => false;
             public override void Save() { }
         }

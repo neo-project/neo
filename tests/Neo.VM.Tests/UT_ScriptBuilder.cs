@@ -128,7 +128,7 @@ namespace Neo.Test
                     if ((int)op % 2 == 0)
                         CollectionAssert.AreEqual(new[] { (byte)op, (byte)offset_i8, (byte)(op + 1) }.Concat(BitConverter.GetBytes(offset_i32)).ToArray(), script.ToArray());
                     else
-                        CollectionAssert.AreEqual(new[] { (byte)op }.Concat(BitConverter.GetBytes((int)offset_i8)).Concat(new[] { (byte)op }).Concat(BitConverter.GetBytes(offset_i32)).ToArray(), script.ToArray());
+                        CollectionAssert.AreEqual(new[] { (byte)op }.Concat(BitConverter.GetBytes((int)offset_i8)).Concat([(byte)op]).Concat(BitConverter.GetBytes(offset_i32)).ToArray(), script.ToArray());
                 }
             }
 
@@ -150,7 +150,7 @@ namespace Neo.Test
                     if ((int)op % 2 == 0)
                         CollectionAssert.AreEqual(new[] { (byte)op, (byte)offset_i8, (byte)(op + 1) }.Concat(BitConverter.GetBytes(offset_i32)).ToArray(), script.ToArray());
                     else
-                        CollectionAssert.AreEqual(new[] { (byte)op }.Concat(BitConverter.GetBytes((int)offset_i8)).Concat(new[] { (byte)op }).Concat(BitConverter.GetBytes(offset_i32)).ToArray(), script.ToArray());
+                        CollectionAssert.AreEqual(new[] { (byte)op }.Concat(BitConverter.GetBytes((int)offset_i8)).Concat([(byte)op]).Concat(BitConverter.GetBytes(offset_i32)).ToArray(), script.ToArray());
                 }
             }
         }
