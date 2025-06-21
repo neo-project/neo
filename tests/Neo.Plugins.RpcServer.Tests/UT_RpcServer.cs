@@ -146,9 +146,7 @@ namespace Neo.Plugins.RpcServer.Tests
             catch (FormatException)
             {
                 // Simulate ProcessAsync behavior for malformed JSON
-                responseJson = new JObject();
-                responseJson["error"] = RpcError.BadRequest.ToJson();
-                return responseJson;
+                return new JObject() { ["error"] = RpcError.BadRequest.ToJson() };
             }
 
             if (requestJson is JObject singleRequest)
@@ -160,10 +158,12 @@ namespace Neo.Plugins.RpcServer.Tests
                 if (batchRequest.Count == 0)
                 {
                     // Simulate ProcessAsync behavior for empty batch
-                    responseJson = new JObject();
-                    responseJson["jsonrpc"] = "2.0";
-                    responseJson["id"] = null;
-                    responseJson["error"] = RpcError.InvalidRequest.ToJson();
+                    responseJson = new JObject()
+                    {
+                        ["jsonrpc"] = "2.0",
+                        ["id"] = null,
+                        ["error"] = RpcError.InvalidRequest.ToJson(),
+                    };
                 }
                 else
                 {
@@ -178,8 +178,7 @@ namespace Neo.Plugins.RpcServer.Tests
             {
                 // Should not happen with valid JSON
                 // Revert to standard assignment
-                responseJson = new JObject();
-                responseJson["error"] = RpcError.InvalidRequest.ToJson();
+                responseJson = new JObject() { ["error"] = RpcError.InvalidRequest.ToJson() };
             }
 
             return responseJson;

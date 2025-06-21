@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Sign;
@@ -664,11 +665,42 @@ namespace Neo.Wallets
             return fSuccess;
         }
 
-        /// <inheritdoc/>
-        public ReadOnlyMemory<byte> Sign(byte[] signData, ECPoint publicKey)
+        /// <summary>
+        /// Signs the specified extensible payload with the wallet.
+        /// </summary>
+        /// <param name="payload">The extensible payload to sign.</param>
+        /// <param name="snapshot">The snapshot.</param>
+        /// <param name="network">The network.</param>
+        /// <returns>The signature.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the payload is null.</exception>
+        public Witness SignExtensiblePayload(ExtensiblePayload payload, DataCache snapshot, uint network)
         {
-            if (signData is null) throw new ArgumentNullException(nameof(signData));
+            if (payload is null) throw new ArgumentNullException(nameof(payload));
+
+            var context = new ContractParametersContext(snapshot, payload, network);
+            Sign(context);
+
+            return context.GetWitnesses()[0];
+        }
+
+        /// <summary>
+        /// Signs the specified block with the specified public key.
+        /// </summary>
+        /// <param name="block">The block to sign.</param>
+        /// <param name="publicKey">The public key.</param>
+        /// <param name="network">The network.</param>
+        /// <returns>The signature.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the block or public key is null.</exception>
+        /// <exception cref="SignException">
+        /// Thrown when the account is not found, the private key is not found, the account is locked,
+        /// or the network is not matching.
+        /// </exception>
+        public ReadOnlyMemory<byte> SignBlock(Block block, ECPoint publicKey, uint network)
+        {
+            if (block is null) throw new ArgumentNullException(nameof(block));
             if (publicKey is null) throw new ArgumentNullException(nameof(publicKey));
+            if (network != ProtocolSettings.Network)
+                throw new SignException($"Network is not matching({ProtocolSettings.Network} != {network})");
 
             var account = GetAccount(publicKey);
             if (account is null)
@@ -681,10 +713,18 @@ namespace Neo.Wallets
             if (account.Lock)
                 throw new SignException("Account is locked");
 
+            var signData = block.GetSignData(network);
             return Crypto.Sign(signData, privateKey);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Checks if the wallet contains an account with the specified public key.
+        /// </summary>
+        /// <param name="publicKey">The public key.</param>
+        /// <returns>
+        /// <see langword="true"/> if the account is found and has a private key and is not locked;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
         public bool ContainsSignable(ECPoint publicKey)
         {
             var account = GetAccount(publicKey);

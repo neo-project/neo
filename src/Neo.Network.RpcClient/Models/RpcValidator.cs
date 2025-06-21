@@ -20,13 +20,7 @@ namespace Neo.Network.RPC.Models
 
         public BigInteger Votes { get; set; }
 
-        public JObject ToJson()
-        {
-            JObject json = new();
-            json["publickey"] = PublicKey;
-            json["votes"] = Votes.ToString();
-            return json;
-        }
+        public JObject ToJson() => new() { ["publickey"] = PublicKey, ["votes"] = Votes.ToString() };
 
         public static RpcValidator FromJson(JObject json)
         {

@@ -24,11 +24,12 @@ namespace Neo.Network.RPC.Models
 
         public JObject ToJson()
         {
-            JObject json = new();
-            json["name"] = Name;
-            json["version"] = Version;
-            json["interfaces"] = new JArray(Interfaces.Select(p => (JToken)p));
-            return json;
+            return new()
+            {
+                ["name"] = Name,
+                ["version"] = Version,
+                ["interfaces"] = new JArray(Interfaces.Select(p => (JToken)p))
+            };
         }
 
         public static RpcPlugin FromJson(JObject json)
