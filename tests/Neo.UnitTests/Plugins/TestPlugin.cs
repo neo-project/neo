@@ -22,13 +22,14 @@ namespace Neo.UnitTests.Plugins
 
     internal class TestPluginSettings(IConfigurationSection section) : PluginSettings(section)
     {
-        public static TestPluginSettings Default { get; private set; }
+        // Removed static Default property to avoid cross-test interference
         public static void Load(IConfigurationSection section)
         {
-            Default = new TestPluginSettings(section);
+            // Method kept for compatibility but no longer stores static state
+            _ = new TestPluginSettings(section);
         }
     }
-    internal class TestNonPlugin
+    internal class TestNonPlugin : IDisposable
     {
         public TestNonPlugin()
         {
@@ -44,6 +45,12 @@ namespace Neo.UnitTests.Plugins
         private static void OnCommitted(NeoSystem system, Block block)
         {
             throw new NotImplementedException("Test exception from OnCommitted");
+        }
+
+        public void Dispose()
+        {
+            Blockchain.Committing -= OnCommitting;
+            Blockchain.Committed -= OnCommitted;
         }
     }
 
@@ -90,6 +97,14 @@ namespace Neo.UnitTests.Plugins
         private void OnCommitted(NeoSystem system, Block block)
         {
             throw new NotImplementedException();
+        }
+
+        public override void Dispose()
+        {
+            // Ensure event handlers are unregistered
+            Blockchain.Committing -= OnCommitting;
+            Blockchain.Committed -= OnCommitted;
+            base.Dispose();
         }
     }
 }
