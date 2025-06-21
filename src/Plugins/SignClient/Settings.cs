@@ -25,15 +25,21 @@ namespace Neo.Plugins.SignClient
 
         /// <summary>
         /// The host of the sign client(i.e. Signer).
+        /// The "Endpoint" should be "vsock://contextId:port" if use vsock.
+        /// The "Endpoint" should be "http://host:port" or "https://host:port" if use tcp.
         /// </summary>
         public readonly string Endpoint;
 
+        /// <summary>
+        /// Create a new settings instance from the configuration section.
+        /// </summary>
+        /// <param name="section">The configuration section.</param>
+        /// <exception cref="FormatException">If the endpoint type or endpoint is invalid.</exception>
         public Settings(IConfigurationSection section) : base(section)
         {
             Name = section.GetValue("Name", "SignClient");
-
-            // Only support local host at present, so host always is "127.0.0.1" or "::1" now.
-            Endpoint = section.GetValue("Endpoint", DefaultEndpoint);
+            Endpoint = section.GetValue("Endpoint", DefaultEndpoint); // Only support local host at present
+            _ = GetVsockAddress(); // for check the endpoint is valid
         }
 
         public static Settings Default
@@ -49,6 +55,25 @@ namespace Neo.Plugins.SignClient
                     .Build()
                     .GetSection(SectionName);
                 return new Settings(section);
+            }
+        }
+
+        /// <summary>
+        /// Get the vsock address from the endpoint.
+        /// </summary>
+        /// <returns>The vsock address. If the endpoint type is not vsock, return null.</returns>
+        /// <exception cref="FormatException">If the endpoint is invalid.</exception>
+        internal VsockAddress? GetVsockAddress()
+        {
+            var uri = new Uri(Endpoint); // UriFormatException is a subclass of FormatException
+            if (uri.Scheme != "vsock") return null;
+            try
+            {
+                return new VsockAddress(int.Parse(uri.Host), uri.Port);
+            }
+            catch
+            {
+                throw new FormatException($"Invalid vsock endpoint: {Endpoint}");
             }
         }
     }
