@@ -269,7 +269,27 @@ namespace Neo.SmartContract.Native
         {
             if (maxValue.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue), "Value cannot be negative.");
-            return engine.GetRandom() % (maxValue + BigInteger.One);
+
+            var randomProduct = maxValue * engine.GetRandom();
+            var randomProductBits = randomProduct.GetByteCount() * 8;
+
+            var maxValueBits = maxValue.GetByteCount() * 8;
+            var maxValueSize = BigInteger.Pow(2, maxValueBits);
+
+            var lowPart = randomProduct & maxValue;
+
+            if (lowPart < maxValue)
+            {
+                var remainder = (maxValueSize - maxValue) % maxValue;
+
+                while (lowPart < remainder)
+                {
+                    randomProduct = maxValue * engine.GetRandom();
+                    lowPart = randomProduct & maxValue;
+                }
+            }
+
+            return randomProduct >> (randomProductBits - maxValueBits);
         }
     }
 }

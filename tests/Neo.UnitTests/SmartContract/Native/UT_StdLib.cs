@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Builders;
 using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -438,27 +439,36 @@ namespace Neo.UnitTests.SmartContract.Native
             using (var script = new ScriptBuilder())
             {
                 // Test encoding
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("10000000000000000000000000000000000000000000000000000000000"));
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("10000000000000000000000000000"));
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("100000000000000000000000"));
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1_00000000);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 10);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                var tx = TransactionBuilder.CreateEmpty()
+                    .Nonce((uint)Random.Shared.Next())
+                    .Build();
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(3, engine.ResultStack.Count);
+                Assert.AreEqual(4, engine.ResultStack.Count);
 
                 var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue <= 10);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
                 Assert.IsTrue(actualValue <= 1_00000000);
-                Assert.IsTrue(actualValue > BigInteger.Zero);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
                 Assert.IsTrue(actualValue <= BigInteger.Parse("100000000000000000000000"));
-                Assert.IsTrue(actualValue > BigInteger.Zero);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue <= BigInteger.Parse("10000000000000000000000000000000000000000000000000000000000"));
-                Assert.IsTrue(actualValue > BigInteger.Zero);
+                Assert.IsTrue(actualValue <= BigInteger.Parse("10000000000000000000000000000"));
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
             }
         }
     }
