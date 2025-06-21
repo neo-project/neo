@@ -121,7 +121,7 @@ namespace Neo.VM
         /// </summary>
         public void ClearCache()
         {
-            System.Array.Clear(_instructionCache, 0, _instructionCache.Length);
+            _instructionCache.AsSpan().Clear();
         }
 
         /// <summary>
