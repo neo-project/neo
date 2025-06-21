@@ -93,7 +93,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignClient", "src\Plugins\S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Plugins.SignClient.Tests", "tests\Neo.Plugins.SignClient.Tests\Neo.Plugins.SignClient.Tests.csproj", "{E2CFEAA1-45F2-4075-94ED-866862C6863F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Cryptography.MPTTrie.Benchmarks", "Neo.Cryptography.MPTTrie.Benchmarks\Neo.Cryptography.MPTTrie.Benchmarks.csproj", "{A53FE0B5-22BA-4C52-8FD4-80877DB62992}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Cryptography.MPTTrie.Benchmarks", "benchmarks\Neo.Cryptography.MPTTrie.Benchmarks\Neo.Cryptography.MPTTrie.Benchmarks.csproj", "{69B0D53B-D97A-4315-B205-CCEBB7289EA9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -261,10 +261,10 @@ Global
 		{E2CFEAA1-45F2-4075-94ED-866862C6863F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2CFEAA1-45F2-4075-94ED-866862C6863F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2CFEAA1-45F2-4075-94ED-866862C6863F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A53FE0B5-22BA-4C52-8FD4-80877DB62992}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A53FE0B5-22BA-4C52-8FD4-80877DB62992}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A53FE0B5-22BA-4C52-8FD4-80877DB62992}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A53FE0B5-22BA-4C52-8FD4-80877DB62992}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69B0D53B-D97A-4315-B205-CCEBB7289EA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69B0D53B-D97A-4315-B205-CCEBB7289EA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69B0D53B-D97A-4315-B205-CCEBB7289EA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69B0D53B-D97A-4315-B205-CCEBB7289EA9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -311,7 +311,7 @@ Global
 		{19B1CF1A-17F4-4E04-AB9C-55CE74952E11} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{CAD55942-48A3-4526-979D-7519FADF19FE} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{E2CFEAA1-45F2-4075-94ED-866862C6863F} = {7F257712-D033-47FF-B439-9D4320D06599}
-		{A53FE0B5-22BA-4C52-8FD4-80877DB62992} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
+		{69B0D53B-D97A-4315-B205-CCEBB7289EA9} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}

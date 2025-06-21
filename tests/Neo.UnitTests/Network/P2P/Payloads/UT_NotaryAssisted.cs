@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -22,13 +21,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     public class UT_NotaryAssisted
     {
         // Use the hard-coded Notary hash value from NeoGo to ensure hashes are compatible.
-        private static readonly UInt160 notaryHash = UInt160.Parse("0xc1e14f19c3e60d0b9244d06dd7ba9b113135ec3b");
+        private static readonly UInt160 s_notaryHash = UInt160.Parse("0xc1e14f19c3e60d0b9244d06dd7ba9b113135ec3b");
 
         [TestMethod]
         public void Size_Get()
         {
             var attr = new NotaryAssisted() { NKeys = 4 };
-            attr.Size.Should().Be(1 + 1);
+            Assert.AreEqual(1 + 1, attr.Size);
         }
 
         [TestMethod]
@@ -43,12 +42,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void DeserializeAndSerialize()
         {
             var attr = new NotaryAssisted() { NKeys = 4 };
-
             var clone = attr.ToArray().AsSerializable<NotaryAssisted>();
             Assert.AreEqual(clone.Type, attr.Type);
 
             // As transactionAttribute
-            byte[] buffer = attr.ToArray();
+            var buffer = attr.ToArray();
             var reader = new MemoryReader(buffer);
             clone = TransactionAttribute.DeserializeFrom(ref reader) as NotaryAssisted;
             Assert.AreEqual(clone.Type, attr.Type);
@@ -68,8 +66,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new NotaryAssisted() { NKeys = 4 };
 
             // Temporary use Notary contract hash stub for valid transaction.
-            var txGood = new Transaction { Signers = [new() { Account = notaryHash }, new() { Account = UInt160.Zero }] };
-            var txBad1 = new Transaction { Signers = [new() { Account = notaryHash }] };
+            var txGood = new Transaction { Signers = [new() { Account = s_notaryHash }, new() { Account = UInt160.Zero }] };
+            var txBad1 = new Transaction { Signers = [new() { Account = s_notaryHash }] };
             var txBad2 = new Transaction { Signers = [new() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") }] };
             var snapshot = TestBlockchain.GetTestSnapshotCache();
 
@@ -83,7 +81,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
             var attr = new NotaryAssisted() { NKeys = 4 };
-            var tx = new Transaction { Signers = [new() { Account = notaryHash }] };
+            var tx = new Transaction { Signers = [new() { Account = s_notaryHash }] };
 
             Assert.AreEqual((4 + 1) * 1000_0000, attr.CalculateNetworkFee(snapshot, tx));
         }
