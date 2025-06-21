@@ -26,7 +26,7 @@ namespace Neo.Build.Core.Builders
         {
             Header = new()
             {
-                Nonce = RandomFactory.NextUInt64(),
+                Nonce = RandomNumberFactory.NextUInt64(),
                 Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 MerkleRoot = new(),
                 NextConsensus = new(),

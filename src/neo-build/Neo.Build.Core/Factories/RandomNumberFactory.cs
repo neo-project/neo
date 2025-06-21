@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// RandomFactory.cs file belongs to the neo project and is free
+// RandomNumberFactory.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -15,13 +15,18 @@ using System.Security.Cryptography;
 
 namespace Neo.Build.Core.Factories
 {
-    public static class RandomFactory
+    public static class RandomNumberFactory
     {
         public static sbyte NextSByte() =>
-            NextSByte(sbyte.MinValue, sbyte.MaxValue);
+            NextSByte(0, sbyte.MaxValue);
 
-        public static sbyte NextSByte(sbyte maxValue) =>
-            NextSByte(sbyte.MinValue, maxValue);
+        public static sbyte NextSByte(sbyte maxValue)
+        {
+            if (maxValue < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            return NextSByte(0, maxValue);
+        }
 
         public static sbyte NextSByte(sbyte minValue, sbyte maxValue)
         {
@@ -32,10 +37,10 @@ namespace Neo.Build.Core.Factories
         }
 
         public static byte NextByte() =>
-            NextByte(byte.MaxValue, byte.MaxValue);
+            NextByte(0, byte.MaxValue);
 
         public static byte NextByte(byte maxValue) =>
-            NextByte(byte.MinValue, maxValue);
+            NextByte(0, maxValue);
 
         public static byte NextByte(byte minValue, byte maxValue)
         {
@@ -46,10 +51,15 @@ namespace Neo.Build.Core.Factories
         }
 
         public static short NextInt16() =>
-            NextInt16(short.MinValue, short.MaxValue);
+            NextInt16(0, short.MaxValue);
 
-        public static short NextInt16(short maxValue) =>
-            NextInt16(short.MinValue, maxValue);
+        public static short NextInt16(short maxValue)
+        {
+            if (maxValue < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            return NextInt16(0, maxValue);
+        }
 
         public static short NextInt16(short minValue, short maxValue)
         {
@@ -60,10 +70,10 @@ namespace Neo.Build.Core.Factories
         }
 
         public static ushort NextUInt16() =>
-            NextUInt16(ushort.MinValue, ushort.MaxValue);
+            NextUInt16(0, ushort.MaxValue);
 
         public static ushort NextUInt16(ushort maxValue) =>
-            NextUInt16(ushort.MinValue, maxValue);
+            NextUInt16(0, maxValue);
 
         public static ushort NextUInt16(ushort minValue, ushort maxValue)
         {
@@ -74,10 +84,15 @@ namespace Neo.Build.Core.Factories
         }
 
         public static int NextInt32() =>
-            NextInt32(int.MinValue, int.MaxValue);
+            NextInt32(0, int.MaxValue);
 
-        public static int NextInt32(int maxValue) =>
-            NextInt32(int.MinValue, maxValue);
+        public static int NextInt32(int maxValue)
+        {
+            if (maxValue < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            return NextInt32(0, maxValue);
+        }
 
         public static int NextInt32(int minValue, int maxValue)
         {
@@ -122,10 +137,15 @@ namespace Neo.Build.Core.Factories
         }
 
         public static long NextInt64() =>
-            NextInt64(long.MinValue, long.MaxValue);
+            NextInt64(0, long.MaxValue);
 
-        public static long NextInt64(long maxValue) =>
-            NextInt64(long.MinValue, maxValue);
+        public static long NextInt64(long maxValue)
+        {
+            if (maxValue < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            return NextInt64(0, maxValue);
+        }
 
         public static long NextInt64(long minValue, long maxValue)
         {
@@ -167,7 +187,6 @@ namespace Neo.Build.Core.Factories
             return NextUInt64(maxValue - minValue) + minValue;
         }
 
-
         private static ulong BigMul(ulong a, ulong b, out ulong low)
         {
             // Adaptation of algorithm for multiplication
@@ -186,7 +205,7 @@ namespace Neo.Build.Core.Factories
             var t = ((ulong)ah) * bl + (mull >> 32);
             var tl = ((ulong)al) * bh + (uint)t;
 
-            low = tl << 32 | (uint)mull;
+            low = (tl << 32) | (uint)mull;
 
             return ((ulong)ah) * bh + (t >> 32) + (tl >> 32);
         }

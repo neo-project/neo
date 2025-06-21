@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Factories;
+using System;
 
 namespace Neo.Build.Core.Tests.Factories
 {
@@ -19,105 +20,200 @@ namespace Neo.Build.Core.Tests.Factories
         [TestMethod]
         public void CheckNextSByteInRange()
         {
-            sbyte expectedMax = 100;
-            sbyte expectedMin = -100;
+            var expectedMax = sbyte.MaxValue;
+            sbyte expectedMin = 0;
 
-            Assert.AreEqual(expectedMax, RandomFactory.NextSByte(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextSByte(expectedMax, expectedMax));
 
-            var actualValue = RandomFactory.NextSByte(expectedMin, expectedMax);
+            var actualValue = RandomNumberFactory.NextSByte(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            actualValue = RandomNumberFactory.NextSByte(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextSByteNegative()
+        {
+            sbyte expectedMax = 0;
+            var expectedMin = sbyte.MinValue;
+
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextSByte(expectedMax, expectedMax));
+
+            var actualValue = RandomNumberFactory.NextSByte(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextSByteExceptions()
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextSByte(-1));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextSByte(-1, -2));
         }
 
         [TestMethod]
         public void CheckNextByteInRange()
         {
-            byte expectedMax = 100;
-            byte expectedMin = 0;
+            var expectedMax = byte.MaxValue;
+            var expectedMin = byte.MinValue;
 
-            Assert.AreEqual(expectedMax, RandomFactory.NextByte(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextByte(expectedMax, expectedMax));
 
-            var actualValue = RandomFactory.NextByte(expectedMin, expectedMax);
+            var actualValue = RandomNumberFactory.NextByte(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            actualValue = RandomNumberFactory.NextByte(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
         public void CheckNextInt16InRange()
         {
-            short expectedMax = 100;
-            short expectedMin = -100;
+            var expectedMax = short.MaxValue;
+            short expectedMin = 0;
 
-            Assert.AreEqual(expectedMax, RandomFactory.NextInt16(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt16(expectedMax, expectedMax));
 
-            var actualValue = RandomFactory.NextInt16(expectedMin, expectedMax);
+            var actualValue = RandomNumberFactory.NextInt16(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            actualValue = RandomNumberFactory.NextInt16(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextInt16InNegative()
+        {
+            short expectedMax = 0;
+            var expectedMin = short.MinValue;
+
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt16(expectedMax, expectedMax));
+
+            var actualValue = RandomNumberFactory.NextInt16(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+
+            actualValue = RandomNumberFactory.NextInt16(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextInt16Exceptions()
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt16(-1));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt16(-1, -2));
         }
 
         [TestMethod]
         public void CheckNextUInt16InRange()
         {
-            ushort expectedMax = 100;
-            ushort expectedMin = 0;
+            var expectedMax = ushort.MaxValue;
+            var expectedMin = ushort.MinValue;
 
-            Assert.AreEqual(expectedMax, RandomFactory.NextUInt16(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextUInt16(expectedMax, expectedMax));
 
-            var actualValue = RandomFactory.NextUInt16(expectedMin, expectedMax);
+            var actualValue = RandomNumberFactory.NextUInt16(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            actualValue = RandomNumberFactory.NextUInt16(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
         public void CheckNextInt32InRange()
         {
-            var expectedMax = 100;
-            var expectedMin = -100;
+            var expectedMax = int.MaxValue;
+            var expectedMin = 0;
 
-            Assert.AreEqual(expectedMax, RandomFactory.NextInt32(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt32(expectedMax, expectedMax));
 
-            var actualValue = RandomFactory.NextInt32(expectedMin, expectedMax);
+            var actualValue = RandomNumberFactory.NextInt32(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            actualValue = RandomNumberFactory.NextInt32(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextInt32InNegative()
+        {
+            var expectedMax = 0;
+            var expectedMin = int.MinValue;
+
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt32(expectedMax, expectedMax));
+
+            var actualValue = RandomNumberFactory.NextInt32(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextInt32Exceptions()
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt32(-1));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt32(-1, -2));
         }
 
         [TestMethod]
         public void CheckNextUInt32InRange()
         {
-            uint expectedMax = 100;
-            uint expectedMin = 0;
+            var expectedMax = uint.MaxValue;
+            var expectedMin = uint.MinValue;
 
-            Assert.AreEqual(expectedMax, RandomFactory.NextUInt32(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextUInt32(expectedMax, expectedMax));
 
-            var actualValue = RandomFactory.NextUInt32(expectedMin, expectedMax);
+            var actualValue = RandomNumberFactory.NextUInt32(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            actualValue = RandomNumberFactory.NextUInt32(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
         public void CheckNextInt64InRange()
         {
-            long expectedMax = 100;
-            long expectedMin = -100;
+            var expectedMax = long.MaxValue;
+            var expectedMin = 0L;
 
-            Assert.AreEqual(expectedMax, RandomFactory.NextInt64(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt64(expectedMax, expectedMax));
 
-            var actualValue = RandomFactory.NextInt64(expectedMin, expectedMax);
+            var actualValue = RandomNumberFactory.NextInt64(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            actualValue = RandomNumberFactory.NextInt64(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextInt64InNegative()
+        {
+            var expectedMax = 0L;
+            var expectedMin = long.MinValue;
+
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextInt64(expectedMax, expectedMax));
+            var actualValue = RandomNumberFactory.NextInt64(expectedMin, expectedMax);
+
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void CheckNextInt64Exceptions()
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt64(-1L));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => RandomNumberFactory.NextInt64(-1L, -2L));
         }
 
         [TestMethod]
         public void CheckNextUInt64InRange()
         {
-            ulong expectedMax = 100;
-            ulong expectedMin = 0;
+            var expectedMax = ulong.MaxValue;
+            var expectedMin = ulong.MinValue;
 
-            Assert.AreEqual(expectedMax, RandomFactory.NextUInt64(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomNumberFactory.NextUInt64(expectedMax, expectedMax));
 
-            var actualValue = RandomFactory.NextUInt64(expectedMin, expectedMax);
+            var actualValue = RandomNumberFactory.NextUInt64(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
 
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            actualValue = RandomNumberFactory.NextUInt64(expectedMax);
+            Assert.IsTrue(actualValue > expectedMin && actualValue <= expectedMax);
         }
     }
 }
