@@ -19,6 +19,11 @@ if (Environment.GetEnvironmentVariable("NEO_VM_BENCHMARK") != null)
 {
     BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 }
+else if (Environment.GetEnvironmentVariable("NEO_VM_JUMPTABLE_BENCHMARK") != null)
+{
+    // Run simple jump table benchmark
+    SimpleJumpTableBenchmark.RunBenchmark();
+}
 else
 {
     var benchmarkType = typeof(Benchmarks_PoCs);
