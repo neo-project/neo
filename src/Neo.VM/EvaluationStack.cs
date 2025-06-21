@@ -21,7 +21,7 @@ namespace Neo.VM
     /// <summary>
     /// Represents the evaluation stack in the VM.
     /// </summary>
-    public sealed class EvaluationStack : IReadOnlyList<StackItem>
+    public class EvaluationStack : IReadOnlyList<StackItem>
     {
         private readonly List<StackItem> innerList = [];
         private readonly IReferenceCounter referenceCounter;
