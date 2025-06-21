@@ -23,10 +23,12 @@ namespace Neo.VM
             public Slot? StaticFields;
             public readonly Dictionary<Type, object> States;
 
-            public SharedStates(Script script, IReferenceCounter referenceCounter)
+            public SharedStates(Script script, IReferenceCounter referenceCounter, bool useOptimizedStack = false)
             {
                 Script = script;
-                EvaluationStack = new EvaluationStack(referenceCounter);
+                EvaluationStack = useOptimizedStack 
+                    ? new OptimizedEvaluationStack(referenceCounter) 
+                    : new EvaluationStack(referenceCounter);
                 States = new Dictionary<Type, object>();
             }
         }
