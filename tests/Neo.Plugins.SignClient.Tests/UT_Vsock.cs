@@ -24,8 +24,7 @@ namespace Neo.Plugins.SignClient.Tests
             var section = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["PluginConfiguration:EndpointType"] = Settings.EndpointVsock,
-                    ["PluginConfiguration:Endpoint"] = $"http://{address.ContextId}:{address.Port}"
+                    ["PluginConfiguration:Endpoint"] = $"vsock://{address.ContextId}:{address.Port}"
                 })
                 .Build()
                 .GetSection("PluginConfiguration");
@@ -37,7 +36,6 @@ namespace Neo.Plugins.SignClient.Tests
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["PluginConfiguration:Endpoint"] = "http://127.0.0.1:9991",
-                    ["PluginConfiguration:EndpointType"] = Settings.EndpointTcp
                 })
                 .Build()
                 .GetSection("PluginConfiguration");
@@ -50,8 +48,7 @@ namespace Neo.Plugins.SignClient.Tests
             var section = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["PluginConfiguration:EndpointType"] = Settings.EndpointVsock,
-                    ["PluginConfiguration:Endpoint"] = "http://127.0.0.1:9991"
+                    ["PluginConfiguration:Endpoint"] = "vsock://127.0.0.1:9991"
                 })
                 .Build()
                 .GetSection("PluginConfiguration");
@@ -60,12 +57,11 @@ namespace Neo.Plugins.SignClient.Tests
             section = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["PluginConfiguration:EndpointType"] = "xyz",
-                    ["PluginConfiguration:Endpoint"] = "http://127.0.0.1:9991"
+                    ["PluginConfiguration:Endpoint"] = "vsock://127.0.0.1:xyz"
                 })
                 .Build()
                 .GetSection("PluginConfiguration");
-            Assert.ThrowsExactly<FormatException>(() => _ = new Settings(section).GetVsockAddress());
+            Assert.ThrowsExactly<UriFormatException>(() => _ = new Settings(section).GetVsockAddress());
         }
     }
 }

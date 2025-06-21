@@ -1,7 +1,6 @@
 {
   "PluginConfiguration": {
     "Name": "SignClient",
-    "EndpointType": "tcp", // "tcp" or "vsock"
-    "Endpoint": "http://127.0.0.1:9991" // tcp: "http://127.0.0.1:port", vsock: "http://contextId:port"
+    "Endpoint": "http://127.0.0.1:9991" // tcp: "http://host:port", vsock: "vsock://contextId:port"
   }
 }

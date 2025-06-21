@@ -18,22 +18,15 @@ namespace Neo.Plugins.SignClient
         public const string SectionName = "PluginConfiguration";
         private const string DefaultEndpoint = "http://127.0.0.1:9991";
 
-        internal const string EndpointTcp = "tcp";
-        internal const string EndpointVsock = "vsock";
-
         /// <summary>
         /// The name of the sign client(i.e. Signer).
         /// </summary>
         public readonly string Name;
 
         /// <summary>
-        /// The type of the endpoint. Default is "tcp", and "tcp" and "vsock" are supported now.
-        /// If the type is "vsock", the "Endpoint" should be "http://contextId:port" or "https://contextId:port".
-        /// </summary>
-        public readonly string EndpointType;
-
-        /// <summary>
         /// The host of the sign client(i.e. Signer).
+        /// The "Endpoint" should be "vsock://contextId:port" if use vsock.
+        /// The "Endpoint" should be "http://host:port" or "https://host:port" if use tcp.
         /// </summary>
         public readonly string Endpoint;
 
@@ -45,10 +38,6 @@ namespace Neo.Plugins.SignClient
         public Settings(IConfigurationSection section) : base(section)
         {
             Name = section.GetValue("Name", "SignClient");
-            EndpointType = section.GetValue("EndpointType", EndpointTcp);
-            if (EndpointType != EndpointTcp && EndpointType != EndpointVsock)
-                throw new FormatException($"Invalid endpoint type: {EndpointType}");
-
             Endpoint = section.GetValue("Endpoint", DefaultEndpoint); // Only support local host at present
             _ = GetVsockAddress(); // for check the endpoint is valid
         }
@@ -76,25 +65,11 @@ namespace Neo.Plugins.SignClient
         /// <exception cref="FormatException">If the endpoint is invalid.</exception>
         internal VsockAddress? GetVsockAddress()
         {
-            if (EndpointType != EndpointVsock) return null;
-
-            const string httpScheme = "http://";
-            const string httpsScheme = "https://";
-            var endpoint = Endpoint;
-            if (endpoint.StartsWith(httpScheme))
-            {
-                endpoint = endpoint.Substring(httpScheme.Length);
-            }
-            else if (endpoint.StartsWith(httpsScheme))
-            {
-                endpoint = endpoint.Substring(httpsScheme.Length);
-            }
-
-            var parts = endpoint.Split(':', 2);
-            if (parts.Length != 2) throw new FormatException($"Invalid vsock endpoint: {Endpoint}");
+            var uri = new Uri(Endpoint); // UriFormatException is a subclass of FormatException
+            if (uri.Scheme != "vsock") return null;
             try
             {
-                return new VsockAddress(int.Parse(parts[0]), int.Parse(parts[1]));
+                return new VsockAddress(int.Parse(uri.Host), uri.Port);
             }
             catch
             {
