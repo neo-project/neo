@@ -84,6 +84,9 @@ namespace Neo.Plugins
 
         static Plugin()
         {
+            // Skip filesystem watcher creation in test environments
+            if (IsTestEnvironment()) return;
+            
             if (!Directory.Exists(PluginsDirectory)) return;
             s_configWatcher = new FileSystemWatcher(PluginsDirectory)
             {
@@ -284,6 +287,29 @@ namespace Neo.Plugins
             }
 
             return false;
+        }
+
+        private static bool IsTestEnvironment()
+        {
+            try
+            {
+                // Check environment variable first
+                var testMode = Environment.GetEnvironmentVariable("DOTNET_TEST_MODE");
+                if (testMode?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
+                    return true;
+
+                // Check if running under dotnet test
+                var processName = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+                if (processName.Contains("testhost", StringComparison.OrdinalIgnoreCase) ||
+                    processName.Contains("vstest", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
     }

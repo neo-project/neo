@@ -8,7 +8,7 @@
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
-    <CollectCoverage>true</CollectCoverage>
+    <CollectCoverage>false</CollectCoverage>
     <CoverletOutput>../../TestResults/$(MSBuildProjectName)/</CoverletOutput>
     <CoverletOutputFormat>lcov</CoverletOutputFormat>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

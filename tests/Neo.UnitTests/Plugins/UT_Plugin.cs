@@ -70,15 +70,29 @@ namespace Neo.UnitTests.Plugins
         public void TestGetConfigFile()
         {
             var pp = new TestPlugin();
-            var file = pp.ConfigFile;
-            Assert.IsTrue(file.EndsWith("config.json"));
+            try
+            {
+                var file = pp.ConfigFile;
+                Assert.IsTrue(file.EndsWith("config.json"));
+            }
+            finally
+            {
+                pp.Dispose();
+            }
         }
 
         [TestMethod]
         public void TestGetName()
         {
             var pp = new TestPlugin();
-            Assert.AreEqual("TestPlugin", pp.Name);
+            try
+            {
+                Assert.AreEqual("TestPlugin", pp.Name);
+            }
+            finally
+            {
+                pp.Dispose();
+            }
         }
 
         [TestMethod]
@@ -93,6 +107,10 @@ namespace Neo.UnitTests.Plugins
             {
                 Assert.Fail($"Should not throw but threw {ex}");
             }
+            finally
+            {
+                pp.Dispose();
+            }
         }
 
         [TestMethod]
@@ -104,7 +122,15 @@ namespace Neo.UnitTests.Plugins
                 Assert.IsFalse(Plugin.SendMessage("hey1"));
 
                 var lp = new TestPlugin();
-                Assert.IsTrue(Plugin.SendMessage("hey2"));
+                try
+                {
+                    Assert.IsTrue(Plugin.SendMessage("hey2"));
+                }
+                finally
+                {
+                    lp.Dispose();
+                    Plugin.Plugins.Clear();
+                }
             }
         }
 
@@ -112,56 +138,79 @@ namespace Neo.UnitTests.Plugins
         public void TestGetConfiguration()
         {
             var pp = new TestPlugin();
-            Assert.AreEqual("PluginConfiguration", pp.TestGetConfiguration().Key);
+            try
+            {
+                Assert.AreEqual("PluginConfiguration", pp.TestGetConfiguration().Key);
+            }
+            finally
+            {
+                pp.Dispose();
+            }
         }
 
         [TestMethod]
         public void TestOnException()
         {
-            _ = new TestPlugin();
-            // Ensure no exception is thrown
+            var tp = new TestPlugin();
+            TestNonPlugin tnp = null;
             try
             {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
+                // Ensure no exception is thrown
+                try
+                {
+                    Blockchain.InvokeCommitting(null, null, null, null);
+                    Blockchain.InvokeCommitted(null, null);
+                }
+                catch (Exception ex)
+                {
+                    Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+                }
+
+                // Register TestNonPlugin that throws exceptions
+                tnp = new TestNonPlugin();
+
+                // Ensure exception is thrown
+                Assert.ThrowsExactly<NotImplementedException>(() =>
+               {
+                   Blockchain.InvokeCommitting(null, null, null, null);
+               });
+
+                Assert.ThrowsExactly<NotImplementedException>(() =>
+               {
+                   Blockchain.InvokeCommitted(null, null);
+               });
             }
-            catch (Exception ex)
+            finally
             {
-                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+                tp?.Dispose();
+                tnp?.Dispose();
             }
-
-            // Register TestNonPlugin that throws exceptions
-            _ = new TestNonPlugin();
-
-            // Ensure exception is thrown
-            Assert.ThrowsExactly<NotImplementedException>(() =>
-           {
-               Blockchain.InvokeCommitting(null, null, null, null);
-           });
-
-            Assert.ThrowsExactly<NotImplementedException>(() =>
-           {
-               Blockchain.InvokeCommitted(null, null);
-           });
         }
 
         [TestMethod]
         public void TestOnPluginStopped()
         {
             var pp = new TestPlugin();
-            Assert.IsFalse(pp.IsStopped);
-            // Ensure no exception is thrown
             try
             {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
-            }
+                Assert.IsFalse(pp.IsStopped);
+                // Ensure no exception is thrown
+                try
+                {
+                    Blockchain.InvokeCommitting(null, null, null, null);
+                    Blockchain.InvokeCommitted(null, null);
+                }
+                catch (Exception ex)
+                {
+                    Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+                }
 
-            Assert.IsTrue(pp.IsStopped);
+                Assert.IsTrue(pp.IsStopped);
+            }
+            finally
+            {
+                pp.Dispose();
+            }
         }
 
         [TestMethod]
@@ -169,35 +218,44 @@ namespace Neo.UnitTests.Plugins
         {
             // pp will stop on exception.
             var pp = new TestPlugin();
-            Assert.IsFalse(pp.IsStopped);
-            // Ensure no exception is thrown
+            var pp2 = (TestPlugin)null;
             try
             {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+                Assert.IsFalse(pp.IsStopped);
+                // Ensure no exception is thrown
+                try
+                {
+                    Blockchain.InvokeCommitting(null, null, null, null);
+                    Blockchain.InvokeCommitted(null, null);
+                }
+                catch (Exception ex)
+                {
+                    Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+                }
+
+                Assert.IsTrue(pp.IsStopped);
+
+                // pp2 will not stop on exception.
+                pp2 = new TestPlugin(UnhandledExceptionPolicy.Ignore);
+                Assert.IsFalse(pp2.IsStopped);
+                // Ensure no exception is thrown
+                try
+                {
+                    Blockchain.InvokeCommitting(null, null, null, null);
+                    Blockchain.InvokeCommitted(null, null);
+                }
+                catch (Exception ex)
+                {
+                    Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
             }
 
-            Assert.IsTrue(pp.IsStopped);
-
-            // pp2 will not stop on exception.
-            var pp2 = new TestPlugin(UnhandledExceptionPolicy.Ignore);
-            Assert.IsFalse(pp2.IsStopped);
-            // Ensure no exception is thrown
-            try
-            {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
+                Assert.IsFalse(pp2.IsStopped);
             }
-            catch (Exception ex)
+            finally
             {
-                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+                pp?.Dispose();
+                pp2?.Dispose();
             }
-
-            Assert.IsFalse(pp2.IsStopped);
         }
 
         [TestMethod]
@@ -205,18 +263,25 @@ namespace Neo.UnitTests.Plugins
         {
             // node will stop on pp exception.
             var pp = new TestPlugin(UnhandledExceptionPolicy.StopNode);
-            Assert.IsFalse(pp.IsStopped);
-            Assert.ThrowsExactly<NotImplementedException>(() =>
+            try
             {
-                Blockchain.InvokeCommitting(null, null, null, null);
-            });
+                Assert.IsFalse(pp.IsStopped);
+                Assert.ThrowsExactly<NotImplementedException>(() =>
+                {
+                    Blockchain.InvokeCommitting(null, null, null, null);
+                });
 
-            Assert.ThrowsExactly<NotImplementedException>(() =>
+                Assert.ThrowsExactly<NotImplementedException>(() =>
+                {
+                    Blockchain.InvokeCommitted(null, null);
+                });
+
+                Assert.IsFalse(pp.IsStopped);
+            }
+            finally
             {
-                Blockchain.InvokeCommitted(null, null);
-            });
-
-            Assert.IsFalse(pp.IsStopped);
+                pp.Dispose();
+            }
         }
     }
 }

@@ -1,0 +1,146 @@
+{
+  "ApplicationConfiguration": {
+    "PluginSecurity": {
+      "Enabled": true,
+      "DefaultPolicy": "Default",
+      "Policies": {
+        "Default": {
+          "DefaultPermissions": "ReadOnly",
+          "MaxPermissions": "NetworkPlugin",
+          "MaxMemoryBytes": 268435456,
+          "MaxCpuPercent": 25.0,
+          "MaxThreads": 10,
+          "MaxExecutionTimeSeconds": 300,
+          "ViolationAction": "Suspend",
+          "EnableDetailedMonitoring": true,
+          "StrictMode": true,
+          "RequireSignedPlugins": true,
+          "SandboxType": "AssemblyLoadContext",
+          "FileSystemAccess": {
+            "AllowFileSystemAccess": false,
+            "AllowedPaths": [],
+            "RestrictedPaths": ["/etc", "/boot", "/sys", "/proc"],
+            "MaxFileSize": 104857600,
+            "MaxTotalFiles": 1000
+          },
+          "NetworkAccess": {
+            "AllowNetworkAccess": true,
+            "AllowedEndpoints": [],
+            "BlockedEndpoints": [],
+            "AllowedPorts": [80, 443, 10332, 10333, 20332, 20333],
+            "MaxConnections": 10,
+            "RequireSSL": true
+          },
+          "ResourceMonitoring": {
+            "EnableMonitoring": true,
+            "CheckInterval": 5000,
+            "MemoryWarningThreshold": 0.8,
+            "CpuWarningThreshold": 0.7
+          }
+        },
+        "Restrictive": {
+          "DefaultPermissions": "ReadOnly",
+          "MaxPermissions": "ReadOnly",
+          "MaxMemoryBytes": 67108864,
+          "MaxCpuPercent": 10.0,
+          "MaxThreads": 5,
+          "MaxExecutionTimeSeconds": 60,
+          "ViolationAction": "Terminate",
+          "EnableDetailedMonitoring": true,
+          "StrictMode": true,
+          "RequireSignedPlugins": true,
+          "SandboxType": "Process",
+          "FileSystemAccess": {
+            "AllowFileSystemAccess": false,
+            "AllowedPaths": [],
+            "RestrictedPaths": ["/etc", "/boot", "/sys", "/proc", "C:\\Windows", "C:\\Program Files"],
+            "MaxFileSize": 10485760,
+            "MaxTotalFiles": 100
+          },
+          "NetworkAccess": {
+            "AllowNetworkAccess": false,
+            "AllowedEndpoints": [],
+            "BlockedEndpoints": ["localhost:445", "localhost:135"],
+            "AllowedPorts": [],
+            "MaxConnections": 0,
+            "RequireSSL": true
+          },
+          "ResourceMonitoring": {
+            "EnableMonitoring": true,
+            "CheckInterval": 2000,
+            "MemoryWarningThreshold": 0.9,
+            "CpuWarningThreshold": 0.8
+          }
+        },
+        "Permissive": {
+          "DefaultPermissions": "ServicePlugin",
+          "MaxPermissions": "AdminPlugin",
+          "MaxMemoryBytes": 1073741824,
+          "MaxCpuPercent": 50.0,
+          "MaxThreads": 20,
+          "MaxExecutionTimeSeconds": 600,
+          "ViolationAction": "Log",
+          "EnableDetailedMonitoring": false,
+          "StrictMode": false,
+          "RequireSignedPlugins": false,
+          "SandboxType": "AssemblyLoadContext",
+          "FileSystemAccess": {
+            "AllowFileSystemAccess": true,
+            "AllowedPaths": ["/home/neo/data", "/tmp/neo-temp"],
+            "RestrictedPaths": ["/etc", "/boot", "/sys"],
+            "MaxFileSize": 1073741824,
+            "MaxTotalFiles": 10000
+          },
+          "NetworkAccess": {
+            "AllowNetworkAccess": true,
+            "AllowedEndpoints": ["api.neo.org", "seed1.neo.org"],
+            "BlockedEndpoints": [],
+            "AllowedPorts": [80, 443, 10332, 10333, 20332, 20333, 8080, 9090],
+            "MaxConnections": 50,
+            "RequireSSL": false
+          },
+          "ResourceMonitoring": {
+            "EnableMonitoring": true,
+            "CheckInterval": 10000,
+            "MemoryWarningThreshold": 0.7,
+            "CpuWarningThreshold": 0.6
+          }
+        }
+      },
+      "PluginSpecificPolicies": {
+        "RpcServer": "Permissive",
+        "LevelDBStore": "Default",
+        "OracleService": "Default",
+        "DBFTPlugin": "Default",
+        "ApplicationLogs": "Default",
+        "StateService": "Default",
+        "TokensTracker": "Default",
+        "UntrustedPlugin": "Restrictive"
+      },
+      "AuditLogging": {
+        "Enabled": true,
+        "LogLevel": "Info",
+        "LogFile": "logs/security-audit.log",
+        "MaxLogFiles": 10,
+        "MaxLogFileSize": 10485760,
+        "EventHandlers": ["FileHandler", "ConsoleHandler"],
+        "EventFilters": {
+          "IncludeEventTypes": [
+            "PermissionViolation",
+            "ResourceViolation",
+            "SecurityException"
+          ],
+          "ExcludeEventTypes": [],
+          "MinimumSeverity": "Medium"
+        }
+      },
+      "GlobalSettings": {
+        "EnablePerformanceMode": false,
+        "PerformanceProfile": "Balanced",
+        "CrossPlatformOptimization": true,
+        "AutoSelectSandboxType": true,
+        "TestModeEnabled": false
+      }
+    }
+  }
+}

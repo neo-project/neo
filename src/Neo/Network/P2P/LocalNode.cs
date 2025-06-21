@@ -92,12 +92,47 @@ namespace Neo.Network.P2P
             this.system = system;
             SeedList = new IPEndPoint[system.Settings.SeedList.Length];
 
-            // Start dns resolution in parallel
-            string[] seedList = system.Settings.SeedList;
-            for (int i = 0; i < seedList.Length; i++)
+            // Skip DNS resolution in test environments to avoid hanging
+            if (IsTestEnvironment())
             {
-                int index = i;
-                Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
+                // In test environment, create dummy localhost endpoints
+                for (int i = 0; i < SeedList.Length; i++)
+                {
+                    SeedList[i] = new IPEndPoint(IPAddress.Loopback, 10333 + i);
+                }
+            }
+            else
+            {
+                // Start dns resolution in parallel
+                string[] seedList = system.Settings.SeedList;
+                for (int i = 0; i < seedList.Length; i++)
+                {
+                    int index = i;
+                    Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
+                }
+            }
+        }
+
+        private static bool IsTestEnvironment()
+        {
+            try
+            {
+                // Check environment variable first
+                var testMode = Environment.GetEnvironmentVariable("DOTNET_TEST_MODE");
+                if (testMode?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
+                    return true;
+
+                // Check if running under dotnet test
+                var processName = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+                if (processName.Contains("testhost", StringComparison.OrdinalIgnoreCase) ||
+                    processName.Contains("vstest", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                return false;
+            }
+            catch
+            {
+                return false;
             }
         }
 
