@@ -52,7 +52,14 @@ namespace Neo.SmartContract
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Log.
         /// </summary>
-        public static event EventHandler<LogEventArgs> Log;
+        public event EventHandler<LogEventArgs> Log;
+
+        public delegate void DelOnApplicationEngine(ApplicationEngine engine);
+
+        /// <summary>
+        /// On Application Engine
+        /// </summary>
+        public static DelOnApplicationEngine OnApplicationEngine;
 
         private static Dictionary<uint, InteropDescriptor> services;
         // Total amount of GAS spent to execute.
@@ -435,8 +442,11 @@ namespace Neo.SmartContract
             // Adjust jump table according persistingBlock
 
             var jumpTable = settings == null || settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
-            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
+            var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
+
+            OnApplicationEngine?.Invoke(engine);
+            return engine;
         }
 
         /// <summary>
