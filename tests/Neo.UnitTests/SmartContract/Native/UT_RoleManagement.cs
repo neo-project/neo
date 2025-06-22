@@ -65,8 +65,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     snapshot1,
                     new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                     new Block { Header = new Header() },
-                    "designateAsRole",
-Ev,
+                    "designateAsRole", Ev,
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Array) { Value = publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
                 );
