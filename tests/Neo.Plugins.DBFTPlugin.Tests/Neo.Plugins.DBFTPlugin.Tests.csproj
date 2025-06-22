@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.43" />
+    <PackageReference Include="Akka.TestKit.MSTest" Version="1.5.0" />
   </ItemGroup>
 
   <ItemGroup>
