@@ -129,7 +129,7 @@ namespace Neo.UnitTests.Extensions
             return Call(contract, snapshot, null, null, method, null, args);
         }
 
-        public static StackItem Call(this NativeContract contract, DataCache snapshot, string method, ApplicationEngine.DelOnNotify onNotify, params ContractParameter[] args)
+        public static StackItem Call(this NativeContract contract, DataCache snapshot, string method, ApplicationEngine.OnNotifyEvent onNotify, params ContractParameter[] args)
         {
             return Call(contract, snapshot, null, null, method, onNotify, args);
         }
@@ -144,7 +144,7 @@ namespace Neo.UnitTests.Extensions
 
         public static StackItem Call(
             this NativeContract contract, DataCache snapshot, IVerifiable container,
-            Block persistingBlock, string method, ApplicationEngine.DelOnNotify onNotify, params ContractParameter[] args
+            Block persistingBlock, string method, ApplicationEngine.OnNotifyEvent onNotify, params ContractParameter[] args
             )
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
