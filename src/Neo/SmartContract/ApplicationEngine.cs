@@ -49,7 +49,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Notify.
         /// </summary>
-        public event DelOnNotify Notify;
+        public event OnNotifyEvent Notify;
 
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Log.
