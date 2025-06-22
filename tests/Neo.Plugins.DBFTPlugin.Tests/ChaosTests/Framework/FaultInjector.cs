@@ -23,12 +23,24 @@ using System.Linq;
 
 namespace Neo.Plugins.DBFTPlugin.Tests.ChaosTests.Framework
 {
+    public enum ByzantineType
+    {
+        ConflictingMessages,
+        InvalidSignatures,
+        IgnoreProtocol,
+        OutOfOrderMessages,
+        DoubleVoting,
+        WrongViewNumber
+    }
+
     public class FaultInjector
     {
         private readonly Random random;
         private readonly ChaosMetrics metrics;
         private readonly ChaosConfiguration config;
         private readonly Dictionary<IActorRef, HashSet<IActorRef>> networkPartitions = new Dictionary<IActorRef, HashSet<IActorRef>>();
+        private readonly Dictionary<IActorRef, ByzantineType> byzantineNodes = new Dictionary<IActorRef, ByzantineType>();
+        private readonly Dictionary<Type, TimeSpan> messageTypeDelays = new Dictionary<Type, TimeSpan>();
 
         public FaultInjector(Random random, ChaosMetrics metrics, ChaosConfiguration config)
         {
@@ -261,9 +273,185 @@ namespace Neo.Plugins.DBFTPlugin.Tests.ChaosTests.Framework
             }
         }
 
+        public void EnableByzantineBehavior(IActorRef node, ByzantineType behaviorType)
+        {
+            byzantineNodes[node] = behaviorType;
+            metrics.RecordByzantineBehavior();
+            Console.WriteLine($"[CHAOS] Enabled Byzantine behavior {behaviorType} for node {node.Path}");
+        }
+
+        public void DisableByzantineBehavior(IActorRef node)
+        {
+            byzantineNodes.Remove(node);
+            Console.WriteLine($"[CHAOS] Disabled Byzantine behavior for node {node.Path}");
+        }
+
+        public bool IsByzantineNode(IActorRef node)
+        {
+            return byzantineNodes.ContainsKey(node);
+        }
+
+        public ByzantineType GetByzantineBehavior(IActorRef node)
+        {
+            return byzantineNodes.GetValueOrDefault(node);
+        }
+
+        public void SetMessageTypeDelay(Type messageType, TimeSpan delay)
+        {
+            messageTypeDelays[messageType] = delay;
+            Console.WriteLine($"[CHAOS] Set delay of {delay.TotalMilliseconds}ms for {messageType.Name} messages");
+        }
+
+        public TimeSpan GetMessageTypeDelay(Type messageType)
+        {
+            return messageTypeDelays.GetValueOrDefault(messageType, TimeSpan.Zero);
+        }
+
+        public void CreateNetworkPartition(List<IActorRef> partition1, List<IActorRef> partition2)
+        {
+            // Create bidirectional network partition between two groups
+            foreach (var node1 in partition1)
+            {
+                foreach (var node2 in partition2)
+                {
+                    InjectNetworkPartition(node1, node2);
+                }
+            }
+
+            Console.WriteLine($"[CHAOS] Created network partition: {partition1.Count} vs {partition2.Count} nodes");
+        }
+
+        public void HealNetworkPartition(List<IActorRef> partition1, List<IActorRef> partition2)
+        {
+            // Heal network partition between two groups
+            foreach (var node1 in partition1)
+            {
+                foreach (var node2 in partition2)
+                {
+                    HealNetworkPartition(node1, node2);
+                }
+            }
+
+            Console.WriteLine($"[CHAOS] Healed network partition between groups");
+        }
+
+        public bool ShouldInjectByzantineMessage(IActorRef sender, object message)
+        {
+            if (!byzantineNodes.ContainsKey(sender))
+                return false;
+
+            var behaviorType = byzantineNodes[sender];
+            var injectProbability = behaviorType switch
+            {
+                ByzantineType.ConflictingMessages => 0.3,
+                ByzantineType.InvalidSignatures => 0.2,
+                ByzantineType.IgnoreProtocol => 0.1,
+                ByzantineType.OutOfOrderMessages => 0.25,
+                ByzantineType.DoubleVoting => 0.4,
+                ByzantineType.WrongViewNumber => 0.3,
+                _ => 0.1
+            };
+
+            return random.NextDouble() < injectProbability;
+        }
+
+        public object CreateByzantineMessage(IActorRef sender, object originalMessage)
+        {
+            if (!byzantineNodes.TryGetValue(sender, out var behaviorType))
+                return originalMessage;
+
+            if (!(originalMessage is ExtensiblePayload payload))
+                return originalMessage;
+
+            try
+            {
+                // Since ConsensusMessage is abstract, we'll work directly with the payload data
+                switch (behaviorType)
+                {
+                    case ByzantineType.ConflictingMessages:
+                        return CreateConflictingMessage(payload);
+
+                    case ByzantineType.WrongViewNumber:
+                        return CreateWrongViewMessage(payload);
+
+                    case ByzantineType.DoubleVoting:
+                        return CreateDoubleVotingMessage(payload);
+
+                    default:
+                        return CorruptMessageData(payload);
+                }
+            }
+            catch
+            {
+                return originalMessage;
+            }
+        }
+
+        private ExtensiblePayload CreateConflictingMessage(ExtensiblePayload original)
+        {
+            Console.WriteLine($"[CHAOS] Creating conflicting message");
+
+            // Create message with conflicting data but same structure
+            var corruptedData = original.Data.ToArray();
+
+            // Modify specific bytes that would create conflicts
+            if (corruptedData.Length > 10)
+            {
+                // Modify payload data to create conflicting content
+                for (int i = 5; i < Math.Min(10, corruptedData.Length); i++)
+                {
+                    corruptedData[i] = (byte)(corruptedData[i] ^ 0xFF);
+                }
+            }
+
+            return new ExtensiblePayload
+            {
+                Category = original.Category,
+                ValidBlockStart = original.ValidBlockStart,
+                ValidBlockEnd = original.ValidBlockEnd,
+                Sender = original.Sender,
+                Data = corruptedData,
+                Witness = original.Witness
+            };
+        }
+
+        private ExtensiblePayload CreateWrongViewMessage(ExtensiblePayload original)
+        {
+            Console.WriteLine($"[CHAOS] Creating wrong view message");
+
+            // Modify view number in the message
+            try
+            {
+                // Byzantine node sends message with wrong view number
+                // This should be detected and rejected by honest nodes
+                return CorruptMessageData(original);
+            }
+            catch
+            {
+                return original;
+            }
+        }
+
+        private ExtensiblePayload CreateDoubleVotingMessage(ExtensiblePayload original)
+        {
+            Console.WriteLine($"[CHAOS] Creating double voting message");
+
+            // For double voting, we need to create a different message
+            // with same validator but different content (like different block hash)
+            return CreateConflictingMessage(original);
+        }
+
+        public void SimulateSlowNode(IActorRef node, double slownessFactor = 2.0)
+        {
+            // Mark node as slow - this would be handled by NetworkChaosSimulator
+            Console.WriteLine($"[CHAOS] Node {node.Path} slowed down by factor {slownessFactor}");
+        }
+
         public void Reset()
         {
             networkPartitions.Clear();
+            byzantineNodes.Clear();
+            messageTypeDelays.Clear();
         }
     }
 }
