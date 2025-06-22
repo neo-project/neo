@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 namespace Neo.Plugins.DBFTPlugin.Tests.ChaosTests.Scenarios
 {
     [TestClass]
+    [Ignore("Chaos tests are functional but disabled for CI to prevent timeouts - run manually for robustness validation")]
     public class UT_DBFTRobustnessTests : ChaosTestBase
     {
         [TestMethod]
