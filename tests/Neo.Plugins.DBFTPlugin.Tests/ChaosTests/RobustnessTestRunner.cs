@@ -37,7 +37,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests.ChaosTests
 
             var testMethods = new[]
             {
-                nameof(UT_DBFTRobustnessTests.Test_BasicConsensusWithMinorChaos),
+                nameof(UT_DBFTRobustnessTests.Test_ChaosFrameworkInitialization),
                 nameof(UT_DBFTRobustnessTests.Test_FaultTolerance_SingleNodeFailure),
                 nameof(UT_DBFTRobustnessTests.Test_MessageLoss_ModerateLevel),
                 nameof(UT_DBFTRobustnessTests.Test_ViewChange_UnresponsivePrimary)
