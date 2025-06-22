@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Types;
 using System.Runtime.CompilerServices;
 
 namespace Neo.VM
@@ -29,7 +30,7 @@ namespace Neo.VM
         public virtual void Invert(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
-            engine.Push(~x);
+            engine.Push(IntegerFactory.Create(~x));
         }
 
         /// <summary>
@@ -44,7 +45,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(x1 & x2);
+            engine.Push(IntegerFactory.Create(x1 & x2));
         }
 
         /// <summary>
@@ -59,7 +60,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(x1 | x2);
+            engine.Push(IntegerFactory.Create(x1 | x2));
         }
 
         /// <summary>
@@ -74,7 +75,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(x1 ^ x2);
+            engine.Push(IntegerFactory.Create(x1 ^ x2));
         }
 
         /// <summary>

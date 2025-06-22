@@ -31,7 +31,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PushInt8(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(new BigInteger(instruction.Operand.Span));
+            engine.Push(IntegerFactory.Create(instruction.Operand.Span));
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PushInt16(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(new BigInteger(instruction.Operand.Span));
+            engine.Push(IntegerFactory.Create(instruction.Operand.Span));
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PushInt32(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(new BigInteger(instruction.Operand.Span));
+            engine.Push(IntegerFactory.Create(instruction.Operand.Span));
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PushInt64(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(new BigInteger(instruction.Operand.Span));
+            engine.Push(IntegerFactory.Create(instruction.Operand.Span));
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PushInt128(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(new BigInteger(instruction.Operand.Span));
+            engine.Push(IntegerFactory.Create(instruction.Operand.Span));
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PushInt256(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(new BigInteger(instruction.Operand.Span));
+            engine.Push(IntegerFactory.Create(instruction.Operand.Span));
         }
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PushM1(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(-1);
+            engine.Push(IntegerFactory.Create(-1));
         }
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push0(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(0);
+            engine.Push(IntegerFactory.Create(0));
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push1(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(1);
+            engine.Push(IntegerFactory.Create(1));
         }
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push2(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(2);
+            engine.Push(IntegerFactory.Create(2));
         }
 
         /// <summary>
@@ -244,7 +244,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push3(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(3);
+            engine.Push(IntegerFactory.Create(3));
         }
 
         /// <summary>
@@ -256,7 +256,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push4(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(4);
+            engine.Push(IntegerFactory.Create(4));
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push5(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(5);
+            engine.Push(IntegerFactory.Create(5));
         }
 
         /// <summary>
@@ -280,7 +280,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push6(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(6);
+            engine.Push(IntegerFactory.Create(6));
         }
 
         /// <summary>
@@ -292,7 +292,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push7(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(7);
+            engine.Push(IntegerFactory.Create(7));
         }
 
         /// <summary>
@@ -304,7 +304,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push8(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(8);
+            engine.Push(IntegerFactory.Create(8));
         }
 
         /// <summary>
@@ -316,7 +316,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push9(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(9);
+            engine.Push(IntegerFactory.Create(9));
         }
 
         /// <summary>
@@ -328,7 +328,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push10(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(10);
+            engine.Push(IntegerFactory.Create(10));
         }
 
         /// <summary>
@@ -340,7 +340,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push11(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(11);
+            engine.Push(IntegerFactory.Create(11));
         }
 
         /// <summary>
@@ -352,7 +352,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push12(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(12);
+            engine.Push(IntegerFactory.Create(12));
         }
 
         /// <summary>
@@ -364,7 +364,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push13(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(13);
+            engine.Push(IntegerFactory.Create(13));
         }
 
         /// <summary>
@@ -376,7 +376,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push14(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(14);
+            engine.Push(IntegerFactory.Create(14));
         }
 
         /// <summary>
@@ -388,7 +388,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push15(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(15);
+            engine.Push(IntegerFactory.Create(15));
         }
 
         /// <summary>
@@ -400,7 +400,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Push16(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(16);
+            engine.Push(IntegerFactory.Create(16));
         }
     }
 }

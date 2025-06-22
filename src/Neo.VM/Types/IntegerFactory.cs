@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -31,11 +32,21 @@ namespace Neo.VM.Types
             {
                 return FastInteger.Create((long)value);
             }
-            
+
             // Fall back to original Integer for very large values
             return new Integer(value);
         }
-        
+
+        /// <summary>
+        /// Create an optimized integer from a byte array (commonly used in VM operations).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static StackItem Create(ReadOnlySpan<byte> data)
+        {
+            var value = new BigInteger(data);
+            return Create(value);
+        }
+
         /// <summary>
         /// Create an optimized integer from a long value.
         /// </summary>
@@ -44,7 +55,7 @@ namespace Neo.VM.Types
         {
             return FastInteger.Create(value);
         }
-        
+
         /// <summary>
         /// Create an optimized integer from an int value.
         /// </summary>
@@ -53,7 +64,7 @@ namespace Neo.VM.Types
         {
             return FastInteger.Create((long)value);
         }
-        
+
         /// <summary>
         /// Create an optimized integer from a uint value.
         /// </summary>
@@ -62,7 +73,7 @@ namespace Neo.VM.Types
         {
             return FastInteger.Create((long)value);
         }
-        
+
         /// <summary>
         /// Create an optimized integer from a ulong value.
         /// </summary>
@@ -73,10 +84,10 @@ namespace Neo.VM.Types
             {
                 return FastInteger.Create((long)value);
             }
-            
+
             return new Integer(new BigInteger(value));
         }
-        
+
         /// <summary>
         /// Try to perform optimized arithmetic between two integer stack items.
         /// Returns true if optimization was applied, false if fallback is needed.
@@ -97,11 +108,11 @@ namespace Neo.VM.Types
                     // Fall back to BigInteger arithmetic
                 }
             }
-            
+
             result = null!;
             return false;
         }
-        
+
         /// <summary>
         /// Try to perform optimized subtraction between two integer stack items.
         /// </summary>
@@ -121,11 +132,11 @@ namespace Neo.VM.Types
                     // Fall back to BigInteger arithmetic
                 }
             }
-            
+
             result = null!;
             return false;
         }
-        
+
         /// <summary>
         /// Try to perform optimized multiplication between two integer stack items.
         /// </summary>
@@ -160,7 +171,7 @@ namespace Neo.VM.Types
                     result = FastInteger.Create(-leftVal);
                     return true;
                 }
-                
+
                 try
                 {
                     long product = checked(leftVal * rightVal);
@@ -172,11 +183,11 @@ namespace Neo.VM.Types
                     // Fall back to BigInteger arithmetic
                 }
             }
-            
+
             result = null!;
             return false;
         }
-        
+
         /// <summary>
         /// Try to get the long value from a StackItem if it's an integer that fits in long range.
         /// </summary>
@@ -196,11 +207,11 @@ namespace Neo.VM.Types
                     return true;
                 }
             }
-            
+
             value = 0;
             return false;
         }
-        
+
         /// <summary>
         /// Try to get the int32 value from a StackItem for array indexing operations.
         /// </summary>
@@ -229,11 +240,11 @@ namespace Neo.VM.Types
                     return true;
                 }
             }
-            
+
             value = 0;
             return false;
         }
-        
+
         /// <summary>
         /// Perform optimized comparison between two integer stack items.
         /// Returns true if optimization was applied, false if fallback is needed.
@@ -246,7 +257,7 @@ namespace Neo.VM.Types
                 result = leftVal.CompareTo(rightVal);
                 return true;
             }
-            
+
             result = 0;
             return false;
         }

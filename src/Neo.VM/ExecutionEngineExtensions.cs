@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.VM.Types;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.VM
@@ -27,7 +28,16 @@ namespace Neo.VM
         {
             engine.Push(FastInteger.Create(value));
         }
-        
+
+        /// <summary>
+        /// Push an optimized integer onto the stack from BigInteger.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void PushInteger(this ExecutionEngine engine, BigInteger value)
+        {
+            engine.Push(IntegerFactory.Create(value));
+        }
+
         /// <summary>
         /// Pop an integer and try to get it as long for fast operations.
         /// </summary>
@@ -48,11 +58,11 @@ namespace Neo.VM
                     return true;
                 }
             }
-            
+
             value = 0;
             return false;
         }
-        
+
         /// <summary>
         /// Pop an integer and get it as int32 for array indexing operations.
         /// </summary>
@@ -73,7 +83,7 @@ namespace Neo.VM
                 }
                 throw new System.OverflowException("Value too large for int32");
             }
-            
+
             var bigInt = item.GetInteger();
             if (bigInt >= int.MinValue && bigInt <= int.MaxValue)
             {
@@ -81,7 +91,7 @@ namespace Neo.VM
             }
             throw new System.OverflowException("Value too large for int32");
         }
-        
+
         /// <summary>
         /// Peek at an integer and try to get it as long for fast operations.
         /// </summary>
@@ -102,7 +112,7 @@ namespace Neo.VM
                     return true;
                 }
             }
-            
+
             value = 0;
             return false;
         }

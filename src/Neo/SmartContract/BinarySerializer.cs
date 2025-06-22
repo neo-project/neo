@@ -217,6 +217,7 @@ namespace Neo.SmartContract
                         writer.Write(item.GetBoolean());
                         break;
                     case Integer _:
+                    case FastInteger _:
                     case ByteString _:
                     case Buffer _:
                         writer.WriteVarBytes(item.GetSpan());

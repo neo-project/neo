@@ -30,7 +30,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Depth(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(engine.CurrentContext!.EvaluationStack.Count);
+            engine.Push(IntegerFactory.Create(engine.CurrentContext!.EvaluationStack.Count));
         }
 
         /// <summary>

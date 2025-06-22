@@ -121,7 +121,7 @@ namespace Neo.VM
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {compound.Type}");
             }
-            engine.Push(compound.Count);
+            engine.Push(IntegerFactory.Create(compound.Count));
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Neo.VM
             var item = instruction.TokenU8 switch
             {
                 (byte)StackItemType.Boolean => StackItem.False,
-                (byte)StackItemType.Integer => Integer.Zero,
+                (byte)StackItemType.Integer => IntegerFactory.Create(0),
                 (byte)StackItemType.ByteString => ByteString.Empty,
                 _ => StackItem.Null
             };
@@ -248,13 +248,13 @@ namespace Neo.VM
             switch (x)
             {
                 case CompoundType compound:
-                    engine.Push(compound.Count);
+                    engine.Push(IntegerFactory.Create(compound.Count));
                     break;
                 case PrimitiveType primitive:
-                    engine.Push(primitive.Size);
+                    engine.Push(IntegerFactory.Create(primitive.Size));
                     break;
                 case Buffer buffer:
-                    engine.Push(buffer.Size);
+                    engine.Push(IntegerFactory.Create(buffer.Size));
                     break;
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
@@ -393,7 +393,7 @@ namespace Neo.VM
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= byteArray.Length)
                             throw new CatchableException($"The index of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length}).");
-                        engine.Push((BigInteger)byteArray[index]);
+                        engine.Push(IntegerFactory.Create((int)byteArray[index]));
                         break;
                     }
                 case Buffer buffer:
@@ -401,7 +401,7 @@ namespace Neo.VM
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
                             throw new CatchableException($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).");
-                        engine.Push((BigInteger)buffer.InnerBuffer.Span[index]);
+                        engine.Push(IntegerFactory.Create((int)buffer.InnerBuffer.Span[index]));
                         break;
                     }
                 default:

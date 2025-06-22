@@ -56,6 +56,13 @@ namespace Neo.SmartContract
                             throw new InvalidOperationException();
                         return (double)integer;
                     }
+                case FastInteger fastNum:
+                    {
+                        var integer = fastNum.GetInteger();
+                        if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
+                            throw new InvalidOperationException();
+                        return (double)integer;
+                    }
                 case Boolean boolean:
                     {
                         return boolean.GetBoolean();
@@ -119,6 +126,14 @@ namespace Neo.SmartContract
                     case Integer num:
                         {
                             var integer = num.GetInteger();
+                            if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
+                                throw new InvalidOperationException();
+                            writer.WriteNumberValue((double)integer);
+                            break;
+                        }
+                    case FastInteger fastNum:
+                        {
+                            var integer = fastNum.GetInteger();
                             if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
                                 throw new InvalidOperationException();
                             writer.WriteNumberValue((double)integer);

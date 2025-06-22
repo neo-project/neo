@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Extensions;
+using Neo.VM.Types;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -36,7 +37,7 @@ namespace Neo.VM
         public virtual void Sign(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
-            engine.Push(x.Sign);
+            engine.Push(IntegerFactory.Create(x.Sign));
         }
 
         /// <summary>
@@ -50,7 +51,7 @@ namespace Neo.VM
         public virtual void Abs(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
-            engine.Push(BigInteger.Abs(x));
+            engine.Push(IntegerFactory.Create(BigInteger.Abs(x)));
         }
 
         /// <summary>
@@ -64,7 +65,7 @@ namespace Neo.VM
         public virtual void Negate(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
-            engine.Push(-x);
+            engine.Push(IntegerFactory.Create(-x));
         }
 
         /// <summary>
@@ -78,7 +79,7 @@ namespace Neo.VM
         public virtual void Inc(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
-            engine.Push(x + 1);
+            engine.Push(IntegerFactory.Create(x + 1));
         }
 
         /// <summary>
@@ -92,7 +93,7 @@ namespace Neo.VM
         public virtual void Dec(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
-            engine.Push(x - 1);
+            engine.Push(IntegerFactory.Create(x - 1));
         }
 
         /// <summary>
@@ -107,7 +108,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(x1 + x2);
+            engine.Push(IntegerFactory.Create(x1 + x2));
         }
 
         /// <summary>
@@ -122,7 +123,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(x1 - x2);
+            engine.Push(IntegerFactory.Create(x1 - x2));
         }
 
         /// <summary>
@@ -137,7 +138,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(x1 * x2);
+            engine.Push(IntegerFactory.Create(x1 * x2));
         }
 
         /// <summary>
@@ -152,7 +153,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(x1 / x2);
+            engine.Push(IntegerFactory.Create(x1 / x2));
         }
 
         /// <summary>
@@ -167,7 +168,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(x1 % x2);
+            engine.Push(IntegerFactory.Create(x1 % x2));
         }
 
         /// <summary>
@@ -183,7 +184,7 @@ namespace Neo.VM
             var exponent = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(exponent);
             var value = engine.Pop().GetInteger();
-            engine.Push(BigInteger.Pow(value, exponent));
+            engine.Push(IntegerFactory.Create(BigInteger.Pow(value, exponent)));
         }
 
         /// <summary>
@@ -196,7 +197,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Sqrt(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(engine.Pop().GetInteger().Sqrt());
+            engine.Push(IntegerFactory.Create(engine.Pop().GetInteger().Sqrt()));
         }
 
         /// <summary>
@@ -212,7 +213,7 @@ namespace Neo.VM
             var modulus = engine.Pop().GetInteger();
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(x1 * x2 % modulus);
+            engine.Push(IntegerFactory.Create(x1 * x2 % modulus));
         }
 
         /// <summary>
@@ -231,7 +232,7 @@ namespace Neo.VM
             var result = exponent == -1
                 ? value.ModInverse(modulus)
                 : BigInteger.ModPow(value, exponent, modulus);
-            engine.Push(result);
+            engine.Push(IntegerFactory.Create(result));
         }
 
         /// <summary>
@@ -248,7 +249,7 @@ namespace Neo.VM
             engine.Limits.AssertShift(shift);
             if (shift == 0) return;
             var x = engine.Pop().GetInteger();
-            engine.Push(x << shift);
+            engine.Push(IntegerFactory.Create(x << shift));
         }
 
         /// <summary>
@@ -265,7 +266,7 @@ namespace Neo.VM
             engine.Limits.AssertShift(shift);
             if (shift == 0) return;
             var x = engine.Pop().GetInteger();
-            engine.Push(x >> shift);
+            engine.Push(IntegerFactory.Create(x >> shift));
         }
 
         /// <summary>
@@ -440,7 +441,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(BigInteger.Min(x1, x2));
+            engine.Push(IntegerFactory.Create(BigInteger.Min(x1, x2)));
         }
 
         /// <summary>
@@ -455,7 +456,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
-            engine.Push(BigInteger.Max(x1, x2));
+            engine.Push(IntegerFactory.Create(BigInteger.Max(x1, x2)));
         }
 
         /// <summary>

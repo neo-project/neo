@@ -25,16 +25,16 @@ namespace Neo.VM.Types
     public sealed class FastInteger : PrimitiveType
     {
         public const int MaxSize = 32;
-        
+
         // Cache for common integer values
         private static readonly FastInteger[] _cache = new FastInteger[513]; // -256 to 256
         private const int CacheOffset = 256;
-        
+
         // Static common values
         public static readonly FastInteger Zero;
         public static readonly FastInteger One;
         public static readonly FastInteger MinusOne;
-        
+
         static FastInteger()
         {
             // Initialize cache with common values
@@ -43,17 +43,17 @@ namespace Neo.VM.Types
                 int value = i - CacheOffset;
                 _cache[i] = new FastInteger(value, false);
             }
-            
+
             Zero = _cache[CacheOffset];
             One = _cache[CacheOffset + 1];
             MinusOne = _cache[CacheOffset - 1];
         }
-        
+
         private readonly bool _isBig;
         private readonly long _longValue;
         private readonly BigInteger _bigValue;
         private readonly int _size;
-        
+
         // Fast path constructor for long values
         private FastInteger(long value, bool checkCache = true)
         {
@@ -62,11 +62,11 @@ namespace Neo.VM.Types
                 // This should not happen during normal operation since we use Create()
                 throw new InvalidOperationException("Use Create() for cached values");
             }
-            
+
             _isBig = false;
             _longValue = value;
             _bigValue = default;
-            
+
             if (value == 0)
             {
                 _size = 0;
@@ -77,14 +77,14 @@ namespace Neo.VM.Types
                 _size = GetByteCountForLong(value);
             }
         }
-        
+
         // BigInteger constructor
         private FastInteger(BigInteger value)
         {
             _isBig = true;
             _longValue = 0;
             _bigValue = value;
-            
+
             if (value.IsZero)
             {
                 _size = 0;
@@ -96,13 +96,13 @@ namespace Neo.VM.Types
                     throw new ArgumentException($"Cannot create {nameof(FastInteger)}, MaxSize exceeded: {_size}/{MaxSize}");
             }
         }
-        
+
         public override ReadOnlyMemory<byte> Memory
         {
             get
             {
                 if (_size == 0) return ReadOnlyMemory<byte>.Empty;
-                
+
                 if (_isBig)
                 {
                     return _bigValue.ToByteArray();
@@ -114,10 +114,10 @@ namespace Neo.VM.Types
                 }
             }
         }
-        
+
         public override int Size => _size;
         public override StackItemType Type => StackItemType.Integer;
-        
+
         /// <summary>
         /// Create a FastInteger from a long value, using cache for common values.
         /// </summary>
@@ -130,7 +130,7 @@ namespace Neo.VM.Types
             }
             return new FastInteger(value, false);
         }
-        
+
         /// <summary>
         /// Create a FastInteger from a BigInteger value.
         /// </summary>
@@ -144,19 +144,19 @@ namespace Neo.VM.Types
             }
             return new FastInteger(value);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool GetBoolean()
         {
             return _isBig ? !_bigValue.IsZero : _longValue != 0;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override BigInteger GetInteger()
         {
             return _isBig ? _bigValue : new BigInteger(_longValue);
         }
-        
+
         /// <summary>
         /// Get the long value if it fits in long range, otherwise throw.
         /// </summary>
@@ -171,7 +171,7 @@ namespace Neo.VM.Types
             }
             return _longValue;
         }
-        
+
         /// <summary>
         /// Try to get the long value if it fits in long range.
         /// </summary>
@@ -191,7 +191,7 @@ namespace Neo.VM.Types
             value = _longValue;
             return true;
         }
-        
+
         /// <summary>
         /// Get int value for array indexing, with bounds checking.
         /// </summary>
@@ -204,36 +204,36 @@ namespace Neo.VM.Types
                     return (int)_bigValue;
                 throw new OverflowException("Value too large for int32");
             }
-            
+
             if (_longValue >= int.MinValue && _longValue <= int.MaxValue)
                 return (int)_longValue;
             throw new OverflowException("Value too large for int32");
         }
-        
+
         public override bool Equals(StackItem? other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (other is not FastInteger fi) return false;
-            
+
             if (_isBig && fi._isBig)
                 return _bigValue == fi._bigValue;
             if (!_isBig && !fi._isBig)
                 return _longValue == fi._longValue;
-            
+
             // Mixed comparison
             if (_isBig)
                 return _bigValue == fi._longValue;
             else
                 return _longValue == fi._bigValue;
         }
-        
+
         public override int GetHashCode()
         {
             return _isBig ? _bigValue.GetHashCode() : _longValue.GetHashCode();
         }
-        
+
         // Arithmetic operations with fast paths
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static FastInteger Add(FastInteger left, FastInteger right)
         {
@@ -251,11 +251,11 @@ namespace Neo.VM.Types
                     return Create(new BigInteger(left._longValue) + new BigInteger(right._longValue));
                 }
             }
-            
+
             // Slow path: at least one is BigInteger
             return Create(left.GetInteger() + right.GetInteger());
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static FastInteger Subtract(FastInteger left, FastInteger right)
         {
@@ -273,11 +273,11 @@ namespace Neo.VM.Types
                     return Create(new BigInteger(left._longValue) - new BigInteger(right._longValue));
                 }
             }
-            
+
             // Slow path: at least one is BigInteger
             return Create(left.GetInteger() - right.GetInteger());
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static FastInteger Multiply(FastInteger left, FastInteger right)
         {
@@ -295,11 +295,11 @@ namespace Neo.VM.Types
                     return Create(new BigInteger(left._longValue) * new BigInteger(right._longValue));
                 }
             }
-            
+
             // Slow path: at least one is BigInteger
             return Create(left.GetInteger() * right.GetInteger());
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static FastInteger Divide(FastInteger left, FastInteger right)
         {
@@ -308,15 +308,15 @@ namespace Neo.VM.Types
                 // Fast path: both are long values
                 if (right._longValue == 0)
                     throw new DivideByZeroException();
-                
+
                 long result = left._longValue / right._longValue;
                 return Create(result);
             }
-            
+
             // Slow path: at least one is BigInteger
             return Create(left.GetInteger() / right.GetInteger());
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static FastInteger Modulo(FastInteger left, FastInteger right)
         {
@@ -325,15 +325,15 @@ namespace Neo.VM.Types
                 // Fast path: both are long values
                 if (right._longValue == 0)
                     throw new DivideByZeroException();
-                
+
                 long result = left._longValue % right._longValue;
                 return Create(result);
             }
-            
+
             // Slow path: at least one is BigInteger
             return Create(left.GetInteger() % right.GetInteger());
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static FastInteger Negate(FastInteger value)
         {
@@ -347,11 +347,11 @@ namespace Neo.VM.Types
                 }
                 return Create(-value._longValue);
             }
-            
+
             // Slow path: BigInteger
             return Create(-value._bigValue);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static FastInteger Increment(FastInteger value)
         {
@@ -365,11 +365,11 @@ namespace Neo.VM.Types
                 }
                 return Create(value._longValue + 1);
             }
-            
+
             // Slow path: BigInteger
             return Create(value._bigValue + 1);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static FastInteger Decrement(FastInteger value)
         {
@@ -383,13 +383,13 @@ namespace Neo.VM.Types
                 }
                 return Create(value._longValue - 1);
             }
-            
+
             // Slow path: BigInteger
             return Create(value._bigValue - 1);
         }
-        
+
         // Comparison operations
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <(FastInteger left, FastInteger right)
         {
@@ -397,7 +397,7 @@ namespace Neo.VM.Types
                 return left._longValue < right._longValue;
             return left.GetInteger() < right.GetInteger();
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <=(FastInteger left, FastInteger right)
         {
@@ -405,7 +405,7 @@ namespace Neo.VM.Types
                 return left._longValue <= right._longValue;
             return left.GetInteger() <= right.GetInteger();
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >(FastInteger left, FastInteger right)
         {
@@ -413,7 +413,7 @@ namespace Neo.VM.Types
                 return left._longValue > right._longValue;
             return left.GetInteger() > right.GetInteger();
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >=(FastInteger left, FastInteger right)
         {
@@ -421,50 +421,50 @@ namespace Neo.VM.Types
                 return left._longValue >= right._longValue;
             return left.GetInteger() >= right.GetInteger();
         }
-        
+
         // Implicit conversions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator FastInteger(sbyte value) => Create(value);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator FastInteger(byte value) => Create(value);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator FastInteger(short value) => Create(value);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator FastInteger(ushort value) => Create(value);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator FastInteger(int value) => Create(value);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator FastInteger(uint value) => Create(value);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator FastInteger(long value) => Create(value);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator FastInteger(ulong value) => Create(value <= long.MaxValue ? (long)value : new BigInteger(value));
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator FastInteger(BigInteger value) => Create(value);
-        
+
         public override string ToString()
         {
             return _isBig ? _bigValue.ToString() : _longValue.ToString();
         }
-        
+
         private string GetDebugValue()
         {
             return ToString();
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int GetByteCountForLong(long value)
         {
             if (value == 0) return 0;
-            
+
             // Simple byte count calculation for long values
             if (value >= -128 && value <= 127) return 1;
             if (value >= -32768 && value <= 32767) return 2;

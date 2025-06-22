@@ -30,13 +30,13 @@ namespace Neo.VM
         {
             var item2 = engine.Pop();
             var item1 = engine.Pop();
-            
+
             // Fast path: both items are integers that can fit in FastInteger
             if (item1 is Integer int1 && item2 is Integer int2)
             {
                 var big1 = int1.GetInteger();
                 var big2 = int2.GetInteger();
-                
+
                 // Try fast path with long arithmetic if values fit
                 if (TryGetLong(big1, out long val1) && TryGetLong(big2, out long val2))
                 {
@@ -52,13 +52,13 @@ namespace Neo.VM
                     }
                 }
             }
-            
+
             // Fallback to original implementation
             var x2 = item2.GetInteger();
             var x1 = item1.GetInteger();
             engine.Push(x1 + x2);
         }
-        
+
         /// <summary>
         /// Optimized version of Subtract operation with fast path for small integers.
         /// </summary>
@@ -67,13 +67,13 @@ namespace Neo.VM
         {
             var item2 = engine.Pop();
             var item1 = engine.Pop();
-            
+
             // Fast path: both items are integers that can fit in FastInteger
             if (item1 is Integer int1 && item2 is Integer int2)
             {
                 var big1 = int1.GetInteger();
                 var big2 = int2.GetInteger();
-                
+
                 // Try fast path with long arithmetic if values fit
                 if (TryGetLong(big1, out long val1) && TryGetLong(big2, out long val2))
                 {
@@ -89,13 +89,13 @@ namespace Neo.VM
                     }
                 }
             }
-            
+
             // Fallback to original implementation
             var x2 = item2.GetInteger();
             var x1 = item1.GetInteger();
             engine.Push(x1 - x2);
         }
-        
+
         /// <summary>
         /// Optimized version of Multiply operation with fast path for small integers.
         /// </summary>
@@ -104,13 +104,13 @@ namespace Neo.VM
         {
             var item2 = engine.Pop();
             var item1 = engine.Pop();
-            
+
             // Fast path: both items are integers that can fit in FastInteger
             if (item1 is Integer int1 && item2 is Integer int2)
             {
                 var big1 = int1.GetInteger();
                 var big2 = int2.GetInteger();
-                
+
                 // Try fast path with long arithmetic if values fit
                 if (TryGetLong(big1, out long val1) && TryGetLong(big2, out long val2))
                 {
@@ -140,7 +140,7 @@ namespace Neo.VM
                         engine.Push(FastInteger.Create(-val1));
                         return;
                     }
-                    
+
                     try
                     {
                         long result = checked(val1 * val2);
@@ -153,13 +153,13 @@ namespace Neo.VM
                     }
                 }
             }
-            
+
             // Fallback to original implementation
             var x2 = item2.GetInteger();
             var x1 = item1.GetInteger();
             engine.Push(x1 * x2);
         }
-        
+
         /// <summary>
         /// Optimized version of Divide operation with fast path for small integers.
         /// </summary>
@@ -168,19 +168,19 @@ namespace Neo.VM
         {
             var item2 = engine.Pop();
             var item1 = engine.Pop();
-            
+
             // Fast path: both items are integers that can fit in FastInteger
             if (item1 is Integer int1 && item2 is Integer int2)
             {
                 var big1 = int1.GetInteger();
                 var big2 = int2.GetInteger();
-                
+
                 // Try fast path with long arithmetic if values fit
                 if (TryGetLong(big1, out long val1) && TryGetLong(big2, out long val2))
                 {
                     if (val2 == 0)
                         throw new System.DivideByZeroException();
-                    
+
                     // Check for division by 1, -1 (common cases)
                     if (val2 == 1)
                     {
@@ -192,19 +192,19 @@ namespace Neo.VM
                         engine.Push(FastInteger.Create(-val1));
                         return;
                     }
-                    
+
                     long result = val1 / val2;
                     engine.Push(FastInteger.Create(result));
                     return;
                 }
             }
-            
+
             // Fallback to original implementation
             var x2 = item2.GetInteger();
             var x1 = item1.GetInteger();
             engine.Push(x1 / x2);
         }
-        
+
         /// <summary>
         /// Optimized version of Modulo operation with fast path for small integers.
         /// </summary>
@@ -213,31 +213,31 @@ namespace Neo.VM
         {
             var item2 = engine.Pop();
             var item1 = engine.Pop();
-            
+
             // Fast path: both items are integers that can fit in FastInteger
             if (item1 is Integer int1 && item2 is Integer int2)
             {
                 var big1 = int1.GetInteger();
                 var big2 = int2.GetInteger();
-                
+
                 // Try fast path with long arithmetic if values fit
                 if (TryGetLong(big1, out long val1) && TryGetLong(big2, out long val2))
                 {
                     if (val2 == 0)
                         throw new System.DivideByZeroException();
-                        
+
                     long result = val1 % val2;
                     engine.Push(FastInteger.Create(result));
                     return;
                 }
             }
-            
+
             // Fallback to original implementation
             var x2 = item2.GetInteger();
             var x1 = item1.GetInteger();
             engine.Push(x1 % x2);
         }
-        
+
         /// <summary>
         /// Optimized version of Increment operation with fast path for small integers.
         /// </summary>
@@ -245,12 +245,12 @@ namespace Neo.VM
         public virtual void IncOptimized(ExecutionEngine engine, Instruction instruction)
         {
             var item = engine.Pop();
-            
+
             // Fast path: item is integer that can fit in FastInteger
             if (item is Integer intItem)
             {
                 var big = intItem.GetInteger();
-                
+
                 // Try fast path with long arithmetic if value fits
                 if (TryGetLong(big, out long val))
                 {
@@ -261,12 +261,12 @@ namespace Neo.VM
                     }
                 }
             }
-            
+
             // Fallback to original implementation
             var x = item.GetInteger();
             engine.Push(x + 1);
         }
-        
+
         /// <summary>
         /// Optimized version of Decrement operation with fast path for small integers.
         /// </summary>
@@ -274,12 +274,12 @@ namespace Neo.VM
         public virtual void DecOptimized(ExecutionEngine engine, Instruction instruction)
         {
             var item = engine.Pop();
-            
+
             // Fast path: item is integer that can fit in FastInteger
             if (item is Integer intItem)
             {
                 var big = intItem.GetInteger();
-                
+
                 // Try fast path with long arithmetic if value fits
                 if (TryGetLong(big, out long val))
                 {
@@ -290,12 +290,12 @@ namespace Neo.VM
                     }
                 }
             }
-            
+
             // Fallback to original implementation
             var x = item.GetInteger();
             engine.Push(x - 1);
         }
-        
+
         /// <summary>
         /// Optimized version of Negate operation with fast path for small integers.
         /// </summary>
@@ -303,12 +303,12 @@ namespace Neo.VM
         public virtual void NegateOptimized(ExecutionEngine engine, Instruction instruction)
         {
             var item = engine.Pop();
-            
+
             // Fast path: item is integer that can fit in FastInteger
             if (item is Integer intItem)
             {
                 var big = intItem.GetInteger();
-                
+
                 // Try fast path with long arithmetic if value fits
                 if (TryGetLong(big, out long val))
                 {
@@ -319,12 +319,12 @@ namespace Neo.VM
                     }
                 }
             }
-            
+
             // Fallback to original implementation
             var x = item.GetInteger();
             engine.Push(-x);
         }
-        
+
         /// <summary>
         /// Optimized version of comparison operations with fast path for small integers.
         /// </summary>
@@ -333,13 +333,13 @@ namespace Neo.VM
         {
             var item2 = engine.Pop();
             var item1 = engine.Pop();
-            
+
             // Fast path: both items are integers that can fit in FastInteger
             if (item1 is Integer int1 && item2 is Integer int2)
             {
                 var big1 = int1.GetInteger();
                 var big2 = int2.GetInteger();
-                
+
                 // Try fast path with long comparison if values fit
                 if (TryGetLong(big1, out long val1) && TryGetLong(big2, out long val2))
                 {
@@ -347,13 +347,13 @@ namespace Neo.VM
                     return;
                 }
             }
-            
+
             // Fallback to original implementation
             var x2 = item2.GetInteger();
             var x1 = item1.GetInteger();
             engine.Push(x1 == x2);
         }
-        
+
         /// <summary>
         /// Optimized version of less than operation with fast path for small integers.
         /// </summary>
@@ -362,19 +362,19 @@ namespace Neo.VM
         {
             var item2 = engine.Pop();
             var item1 = engine.Pop();
-            
+
             if (item1.IsNull || item2.IsNull)
             {
                 engine.Push(false);
                 return;
             }
-            
+
             // Fast path: both items are integers that can fit in FastInteger
             if (item1 is Integer int1 && item2 is Integer int2)
             {
                 var big1 = int1.GetInteger();
                 var big2 = int2.GetInteger();
-                
+
                 // Try fast path with long comparison if values fit
                 if (TryGetLong(big1, out long val1) && TryGetLong(big2, out long val2))
                 {
@@ -382,11 +382,11 @@ namespace Neo.VM
                     return;
                 }
             }
-            
+
             // Fallback to original implementation
             engine.Push(item1.GetInteger() < item2.GetInteger());
         }
-        
+
         /// <summary>
         /// Helper method to try converting BigInteger to long if it fits in range.
         /// </summary>
