@@ -44,10 +44,12 @@ namespace Neo.SmartContract
         /// </summary>
         public const long TestModeGas = 20_00000000;
 
+        public delegate void DelOnNotify(ApplicationEngine engine, NotifyEventArgs args);
+
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Notify.
         /// </summary>
-        public static event EventHandler<NotifyEventArgs> Notify;
+        public event DelOnNotify Notify;
 
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Log.
