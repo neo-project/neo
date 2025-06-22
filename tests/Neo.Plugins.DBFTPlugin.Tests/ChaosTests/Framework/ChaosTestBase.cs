@@ -142,7 +142,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests.ChaosTests.Framework
 
             // Create NeoSystem
             neoSystem = new NeoSystem(MockProtocolSettings.Default, storeProvider);
-            
+
             // Use proper settings creation like other DBFT tests
             consensusSettings = MockBlockchain.CreateDefaultSettings();
 
@@ -322,9 +322,9 @@ namespace Neo.Plugins.DBFTPlugin.Tests.ChaosTests.Framework
             {
                 totalRounds++;
                 var roundStartTime = DateTime.UtcNow;
-                
+
                 Console.WriteLine($"[CHAOS] Starting consensus round {totalRounds}...");
-                
+
                 // Use shorter timeout per round (10 seconds)
                 if (WaitForConsensusRound(TimeSpan.FromSeconds(10)))
                 {
@@ -339,14 +339,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests.ChaosTests.Framework
 
                 // Add small delay between rounds
                 Thread.Sleep(1000);
-                
+
                 // If we've been running for too long, break
                 if (DateTime.UtcNow >= endTime) break;
             }
 
             var successRate = totalRounds > 0 ? (double)successfulRounds / totalRounds : 0.0;
             var actualDuration = DateTime.UtcNow - startTime;
-            
+
             Console.WriteLine($"[CHAOS] Consensus resilience test completed:");
             Console.WriteLine($"[CHAOS]   Duration: {actualDuration.TotalSeconds:F1}s");
             Console.WriteLine($"[CHAOS]   Success rate: {successRate:P2} ({successfulRounds}/{totalRounds})");
@@ -364,12 +364,12 @@ namespace Neo.Plugins.DBFTPlugin.Tests.ChaosTests.Framework
             while (DateTime.UtcNow < deadline)
             {
                 // Look for consensus messages being sent through localNode
-                try 
+                try
                 {
                     var message = localNode.FishForMessage(
                         msg => msg is ExtensiblePayload payload && payload.Category == "dBFT",
                         TimeSpan.FromMilliseconds(500));
-                    
+
                     if (message != null)
                     {
                         consensusActivityDetected = true;
@@ -388,7 +388,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests.ChaosTests.Framework
                     var blockMessage = blockchain.FishForMessage(
                         msg => msg is Block,
                         TimeSpan.FromMilliseconds(100));
-                    
+
                     if (blockMessage != null)
                     {
                         consensusActivityDetected = true;
