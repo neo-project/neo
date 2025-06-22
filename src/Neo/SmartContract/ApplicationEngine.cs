@@ -61,7 +61,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// On Application Engine
         /// </summary>
-        public static DelOnApplicationEngine OnApplicationEngine;
+        public static DelOnApplicationEngine InstanceHandler;
 
         private static Dictionary<uint, InteropDescriptor> services;
         // Total amount of GAS spent to execute.
@@ -447,7 +447,7 @@ namespace Neo.SmartContract
             var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
 
-            OnApplicationEngine?.Invoke(engine);
+            InstanceHandler?.Invoke(engine);
             return engine;
         }
 
