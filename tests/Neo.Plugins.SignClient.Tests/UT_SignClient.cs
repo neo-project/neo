@@ -55,12 +55,12 @@ namespace Neo.Plugins.SignClient.Tests
                 var section = new ConfigurationBuilder()
                     .AddInMemoryCollection(new Dictionary<string, string?>
                     {
-                        [SignSettings.SectionName + ":Name"] = "SignClient",
-                        [SignSettings.SectionName + ":Endpoint"] = endpoint,
+                        [Settings.SectionName + ":Name"] = "SignClient",
+                        [Settings.SectionName + ":Endpoint"] = endpoint,
                     })
                     .Build()
-                    .GetSection(SignSettings.SectionName);
-                return new SignClient(new SignSettings(section));
+                    .GetSection(Settings.SectionName);
+                return new SignClient(new Settings(section));
             }
 
             var mockClient = new Mock<SecureSign.SecureSignClient>();

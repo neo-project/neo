@@ -29,7 +29,7 @@ namespace Neo.Plugins.SignClient.Tests
                 .Build()
                 .GetSection("PluginConfiguration");
 
-            var settings = new SignSettings(section);
+            var settings = new Settings(section);
             Assert.AreEqual(address, settings.GetVsockAddress());
 
             section = new ConfigurationBuilder()
@@ -39,7 +39,7 @@ namespace Neo.Plugins.SignClient.Tests
                 })
                 .Build()
                 .GetSection("PluginConfiguration");
-            Assert.IsNull(new SignSettings(section).GetVsockAddress());
+            Assert.IsNull(new Settings(section).GetVsockAddress());
         }
 
         [TestMethod]
@@ -52,7 +52,7 @@ namespace Neo.Plugins.SignClient.Tests
                 })
                 .Build()
                 .GetSection("PluginConfiguration");
-            Assert.ThrowsExactly<FormatException>(() => _ = new SignSettings(section).GetVsockAddress());
+            Assert.ThrowsExactly<FormatException>(() => _ = new Settings(section).GetVsockAddress());
 
             section = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
@@ -61,7 +61,7 @@ namespace Neo.Plugins.SignClient.Tests
                 })
                 .Build()
                 .GetSection("PluginConfiguration");
-            Assert.ThrowsExactly<UriFormatException>(() => _ = new SignSettings(section).GetVsockAddress());
+            Assert.ThrowsExactly<UriFormatException>(() => _ = new Settings(section).GetVsockAddress());
         }
     }
 }
