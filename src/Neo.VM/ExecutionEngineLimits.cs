@@ -40,7 +40,9 @@ namespace Neo.VM
         public uint MaxItemSize { get; init; } = ushort.MaxValue * 2;
 
         /// <summary>
-        /// The largest comparable size. If a <see cref="Types.ByteString"/> or <see cref="Types.Struct"/> exceeds this size, comparison operations on it cannot be performed in the VM.
+        /// The largest comparable size.
+        /// If a <see cref="Types.ByteString"/> or <see cref="Types.Struct"/> exceeds this size,
+        /// comparison operations on it cannot be performed in the VM.
         /// </summary>
         public uint MaxComparableSize { get; init; } = 65536;
 
