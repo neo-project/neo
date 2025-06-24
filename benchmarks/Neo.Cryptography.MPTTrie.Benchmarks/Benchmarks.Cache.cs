@@ -10,8 +10,6 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
-using System;
-using System.Security.Policy;
 
 namespace Neo.Cryptography.MPTTrie.Benchmarks
 {
