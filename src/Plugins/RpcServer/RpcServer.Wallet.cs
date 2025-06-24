@@ -514,7 +514,7 @@ namespace Neo.Plugins.RpcServer
 
                 invocationScript = sb.ToArray();
                 tx.Witnesses ??= new Witness[] { new() { InvocationScript = invocationScript } };
-                engine.LoadScript(new Script(invocationScript), configureState: p => p.CallFlags = CallFlags.None);
+                engine.LoadScript(new CachedScript(invocationScript, true), configureState: p => p.CallFlags = CallFlags.None);
             }
             JObject json = new();
             json["script"] = Convert.ToBase64String(invocationScript);

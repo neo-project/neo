@@ -447,7 +447,7 @@ namespace Neo.Ledger
                 TransactionState[] transactionStates;
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {
-                    engine.LoadScript(onPersistScript);
+                    engine.LoadScript(new CachedScript(onPersistScript, true));
                     if (engine.Execute() != VMState.HALT)
                     {
                         if (engine.FaultException != null)
@@ -465,7 +465,7 @@ namespace Neo.Ledger
                 {
                     Transaction tx = transactionState.Transaction;
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
-                    engine.LoadScript(tx.Script);
+                    engine.LoadScript(new CachedScript(tx.Script, true));
                     transactionState.State = engine.Execute();
                     if (transactionState.State == VMState.HALT)
                     {
@@ -481,7 +481,7 @@ namespace Neo.Ledger
                 }
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
-                    engine.LoadScript(postPersistScript);
+                    engine.LoadScript(new CachedScript(postPersistScript, true));
                     if (engine.Execute() != VMState.HALT)
                     {
                         if (engine.FaultException != null)

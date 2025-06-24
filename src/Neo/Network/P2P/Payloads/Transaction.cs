@@ -420,7 +420,7 @@ namespace Neo.Network.P2P.Payloads
             if (Size > MaxTransactionSize) return VerifyResult.OverSize;
             try
             {
-                _ = new Script(Script, true);
+                _ = new CachedScript(Script, true);
             }
             catch (BadScriptException)
             {

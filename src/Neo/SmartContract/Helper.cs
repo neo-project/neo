@@ -73,7 +73,7 @@ namespace Neo.SmartContract
         /// <param name="abi">The ABI of the contract.</param>
         public static void Check(byte[] script, ContractAbi abi)
         {
-            Check(new Script(script, true), abi);
+            Check(new CachedScript(script, true), abi);
         }
 
         /// <summary>
@@ -323,7 +323,7 @@ namespace Neo.SmartContract
             Script invocationScript;
             try
             {
-                invocationScript = new Script(witness.InvocationScript, true);
+                invocationScript = new CachedScript(witness.InvocationScript, true);
             }
             catch (BadScriptException)
             {
@@ -346,7 +346,7 @@ namespace Neo.SmartContract
                     Script verificationScript;
                     try
                     {
-                        verificationScript = new Script(witness.VerificationScript, true);
+                        verificationScript = new CachedScript(witness.VerificationScript, true);
                     }
                     catch (BadScriptException)
                     {
@@ -359,7 +359,7 @@ namespace Neo.SmartContract
                     });
                 }
 
-                engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
+                engine.LoadScript(new CachedScript(invocationScript, true), configureState: p => p.CallFlags = CallFlags.None);
 
                 if (engine.Execute() == VMState.FAULT) return false;
                 if (engine.ResultStack.Count != 1) return false;

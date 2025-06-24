@@ -532,6 +532,7 @@ namespace Neo.SmartContract
             return context;
         }
 
+
         /// <summary>
         /// Converts an <see cref="object"/> to a <see cref="StackItem"/> that used in the virtual machine.
         /// </summary>
@@ -723,7 +724,7 @@ namespace Neo.SmartContract
         {
             persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);
-            engine.LoadScript(script, initialPosition: offset);
+            engine.LoadScript(new CachedScript(script, false), initialPosition: offset);
             engine.Execute();
             return engine;
         }

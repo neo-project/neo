@@ -196,7 +196,7 @@ namespace Neo.Wallets
                         snapshot.CloneCache(), settings: settings, gas: maxExecutionCost);
 
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
-                    if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
+                    if (invocationScript != null) engine.LoadScript(new CachedScript(invocationScript, true), configureState: p => p.CallFlags = CallFlags.None);
                     if (engine.Execute() == VMState.HALT)
                     {
                         // https://github.com/neo-project/neo/issues/2805

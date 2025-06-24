@@ -484,12 +484,12 @@ namespace Neo.CLI
             catch { return null; }
             try
             {
-                script = new Script(nef.Script, true);
+                script = new CachedScript(nef.Script, true);
                 strictMode = true;
             }
             catch (BadScriptException)
             {
-                script = new Script(nef.Script, false);
+                script = new CachedScript(nef.Script, false);
             }
             catch { return null; }
             string? result = ScriptsToOpCode(Convert.ToBase64String(nef.Script.ToArray()));

@@ -229,6 +229,7 @@ namespace Neo.VM
             return context;
         }
 
+
         /// <summary>
         /// Called when an exception that cannot be caught by the VM is thrown.
         /// </summary>
