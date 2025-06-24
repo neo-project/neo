@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
 using Neo.VM.Types;
 using System;
 
@@ -27,7 +28,7 @@ namespace Neo.VM.Benchmark
         {
             referenceCounter = new ReferenceCounter();
             stack = new EvaluationStack(referenceCounter);
-            
+
             // Pre-create test items
             testItems = new StackItem[1000];
             for (int i = 0; i < testItems.Length; i++)
@@ -108,7 +109,7 @@ namespace Neo.VM.Benchmark
             {
                 stack.Push(testItems[i]);
             }
-            
+
             // Insert in middle
             for (int i = 0; i < operations; i++)
             {
@@ -143,15 +144,142 @@ namespace Neo.VM.Benchmark
         }
 
         [Benchmark(Baseline = true)]
-        public Boolean CreateNewBoolean()
+        public Types.Boolean CreateNewBoolean()
         {
-            return new Boolean(true);
+            return new Types.Boolean(true);
         }
 
         [Benchmark]
-        public Boolean GetCachedBoolean()
+        public Types.Boolean GetCachedBoolean()
         {
             return StackItemCache.GetBoolean(true);
+        }
+    }
+
+    /// <summary>
+    /// Direct comparison between old and new Pop() implementations
+    /// </summary>
+    [MemoryDiagnoser]
+    public class PopOptimizationBenchmarks
+    {
+        private IReferenceCounter referenceCounter = null!;
+        private EvaluationStackOld oldStack = null!;
+        private EvaluationStack newStack = null!;
+        private StackItem[] testItems = null!;
+
+        [GlobalSetup]
+        public void Setup()
+        {
+            referenceCounter = new ReferenceCounter();
+            oldStack = new EvaluationStackOld(referenceCounter);
+            newStack = new EvaluationStack(referenceCounter);
+
+            // Pre-create test items
+            testItems = new StackItem[1000];
+            for (int i = 0; i < testItems.Length; i++)
+            {
+                testItems[i] = new Integer(i);
+            }
+        }
+
+        [IterationSetup]
+        public void IterationSetup()
+        {
+            // Clear stacks between iterations
+            oldStack.Clear();
+            newStack.Clear();
+        }
+
+        [Benchmark(Baseline = true)]
+        [Arguments(1000)]
+        [Arguments(10000)]
+        public void OldPopImplementation(int operations)
+        {
+            // Fill stack
+            for (int i = 0; i < operations; i++)
+            {
+                oldStack.Push(testItems[i % testItems.Length]);
+            }
+
+            // Pop all items
+            for (int i = 0; i < operations; i++)
+            {
+                oldStack.Pop();
+            }
+        }
+
+        [Benchmark]
+        [Arguments(1000)]
+        [Arguments(10000)]
+        public void NewPopImplementation(int operations)
+        {
+            // Fill stack
+            for (int i = 0; i < operations; i++)
+            {
+                newStack.Push(testItems[i % testItems.Length]);
+            }
+
+            // Pop all items
+            for (int i = 0; i < operations; i++)
+            {
+                newStack.Pop();
+            }
+        }
+
+        [Benchmark]
+        [Arguments(1000)]
+        [Arguments(10000)]
+        public void OldPopGenericImplementation(int operations)
+        {
+            // Fill stack
+            for (int i = 0; i < operations; i++)
+            {
+                oldStack.Push(testItems[i % testItems.Length]);
+            }
+
+            // Pop all items with type casting
+            for (int i = 0; i < operations; i++)
+            {
+                oldStack.Pop<Integer>();
+            }
+        }
+
+        [Benchmark]
+        [Arguments(1000)]
+        [Arguments(10000)]
+        public void NewPopGenericImplementation(int operations)
+        {
+            // Fill stack
+            for (int i = 0; i < operations; i++)
+            {
+                newStack.Push(testItems[i % testItems.Length]);
+            }
+
+            // Pop all items with type casting
+            for (int i = 0; i < operations; i++)
+            {
+                newStack.Pop<Integer>();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Console runner for quick benchmark execution
+    /// </summary>
+    public class EvaluationStackBenchmarkRunner
+    {
+        public static void RunPopBenchmarks()
+        {
+            Console.WriteLine("Running Pop() optimization benchmarks...");
+            var summary = BenchmarkRunner.Run<PopOptimizationBenchmarks>();
+            Console.WriteLine(summary);
+        }
+
+        public static void RunCacheBenchmarks()
+        {
+            Console.WriteLine("Running StackItem cache benchmarks...");
+            var summary = BenchmarkRunner.Run<StackItemCacheBenchmarks>();
+            Console.WriteLine(summary);
         }
     }
 }

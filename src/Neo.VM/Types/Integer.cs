@@ -88,7 +88,7 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Integer(byte value)
         {
-            return (BigInteger)value;
+            return StackItemCache.GetInteger(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -100,7 +100,7 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Integer(ushort value)
         {
-            return (BigInteger)value;
+            return StackItemCache.GetInteger(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,25 +112,25 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Integer(uint value)
         {
-            return (BigInteger)value;
+            return StackItemCache.GetInteger(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Integer(long value)
         {
-            return (BigInteger)value;
+            return StackItemCache.GetInteger(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Integer(ulong value)
         {
-            return (BigInteger)value;
+            return StackItemCache.GetInteger(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Integer(BigInteger value)
         {
-            return new Integer(value);
+            return StackItemCache.GetInteger(value);
         }
 
         public override string ToString()

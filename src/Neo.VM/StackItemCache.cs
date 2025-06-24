@@ -22,12 +22,12 @@ namespace Neo.VM
         private const int MinCachedInteger = -8;
         private const int MaxCachedInteger = 16;
         private static readonly Integer[] CachedIntegers;
-        
+
         /// <summary>
         /// Cached Boolean.True instance.
         /// </summary>
         public static readonly Boolean True = new(true);
-        
+
         /// <summary>
         /// Cached Boolean.False instance.
         /// </summary>
