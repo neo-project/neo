@@ -44,6 +44,8 @@ namespace Neo.SmartContract
         /// </summary>
         public const long TestModeGas = 20_00000000;
 
+        public delegate void OnInstanceHandlerEvent(ApplicationEngine engine);
+        public delegate void OnLogEvent(ApplicationEngine engine, LogEventArgs args);
         public delegate void OnNotifyEvent(ApplicationEngine engine, NotifyEventArgs args);
 
         /// <summary>
@@ -54,14 +56,12 @@ namespace Neo.SmartContract
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Log.
         /// </summary>
-        public event EventHandler<LogEventArgs> Log;
-
-        public delegate void DelOnApplicationEngine(ApplicationEngine engine);
+        public event OnLogEvent Log;
 
         /// <summary>
         /// On Application Engine
         /// </summary>
-        public static DelOnApplicationEngine InstanceHandler;
+        public static OnInstanceHandlerEvent InstanceHandler;
 
         private static Dictionary<uint, InteropDescriptor> services;
         // Total amount of GAS spent to execute.

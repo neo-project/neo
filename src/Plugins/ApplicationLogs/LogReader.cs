@@ -245,7 +245,7 @@ namespace Neo.Plugins.ApplicationLogs
             _neostore.CommitBlockLog();
         }
 
-        void ILogHandler.ApplicationEngine_Log_Handler(object sender, LogEventArgs e)
+        void ILogHandler.ApplicationEngine_Log_Handler(ApplicationEngine sender, LogEventArgs e)
         {
             if (Settings.Default.Debug == false)
                 return;
