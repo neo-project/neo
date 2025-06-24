@@ -101,7 +101,7 @@ namespace Neo.VM.Benchmark
         {
             var random = new Random(42);
             var positions = new List<int> { 0 };
-            
+
             // Build valid instruction positions
             for (int ip = 0; ip < normalScript.Length;)
             {
@@ -124,7 +124,7 @@ namespace Neo.VM.Benchmark
         {
             var random = new Random(42);
             var positions = new List<int> { 0 };
-            
+
             // Build valid instruction positions
             for (int ip = 0; ip < cachedScript.Length;)
             {
@@ -217,7 +217,7 @@ namespace Neo.VM.Benchmark
 
             // Benchmark 1: Sequential Access (First Pass)
             Console.WriteLine("1. Sequential Access Performance (First Pass):");
-            
+
             var sw1 = System.Diagnostics.Stopwatch.StartNew();
             var normalScript = new Script(script);
             for (int ip = 0; ip < normalScript.Length;)

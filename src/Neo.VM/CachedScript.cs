@@ -49,7 +49,7 @@ namespace Neo.VM
         {
             _cacheThreshold = cacheThreshold;
             _instructionCache = new Instruction?[Length];
-            
+
             // Pre-decode all instructions for scripts under reasonable size
             if (Length <= _cacheThreshold)
             {
