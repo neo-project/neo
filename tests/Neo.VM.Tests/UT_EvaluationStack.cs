@@ -153,7 +153,7 @@ namespace Neo.Test
             Assert.AreEqual(2, stack.Pop());
             Assert.AreEqual(1, stack.Pop());
 
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = stack.Pop());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = stack.Pop());
 
             stack = CreateOrderedStack(3);
 
@@ -161,7 +161,7 @@ namespace Neo.Test
             Assert.IsTrue(stack.Pop<Integer>().Equals(2));
             Assert.IsTrue(stack.Pop<Integer>().Equals(1));
 
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = stack.Pop<Integer>());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = stack.Pop<Integer>());
         }
 
         [TestMethod]
@@ -186,7 +186,7 @@ namespace Neo.Test
             Assert.IsTrue(stack.Pop<Integer>().Equals(1));
             Assert.IsTrue(stack.Pop<Integer>().Equals(2));
             Assert.IsTrue(stack.Pop<Integer>().Equals(3));
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = stack.Pop<Integer>().Equals(0));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = stack.Pop<Integer>().Equals(0));
 
             stack = CreateOrderedStack(3);
 
@@ -197,7 +197,7 @@ namespace Neo.Test
             Assert.IsTrue(stack.Pop<Integer>().Equals(3));
             Assert.IsTrue(stack.Pop<Integer>().Equals(2));
             Assert.IsTrue(stack.Pop<Integer>().Equals(1));
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = stack.Pop<Integer>().Equals(0));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = stack.Pop<Integer>().Equals(0));
         }
 
         [TestMethod]

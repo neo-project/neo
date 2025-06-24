@@ -82,7 +82,7 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Integer(sbyte value)
         {
-            return (BigInteger)value;
+            return StackItemCache.GetInteger(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -94,7 +94,7 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Integer(short value)
         {
-            return (BigInteger)value;
+            return StackItemCache.GetInteger(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -106,7 +106,7 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Integer(int value)
         {
-            return (BigInteger)value;
+            return StackItemCache.GetInteger(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

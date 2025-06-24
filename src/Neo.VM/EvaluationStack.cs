@@ -130,7 +130,13 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public StackItem Pop()
         {
-            return Remove<StackItem>(0);
+            if (innerList.Count == 0)
+                throw new InvalidOperationException("Cannot pop from an empty stack.");
+            int index = innerList.Count - 1;
+            StackItem item = innerList[index];
+            innerList.RemoveAt(index);
+            referenceCounter.RemoveStackReference(item);
+            return item;
         }
 
         /// <summary>
@@ -141,7 +147,14 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Pop<T>() where T : StackItem
         {
-            return Remove<T>(0);
+            if (innerList.Count == 0)
+                throw new InvalidOperationException("Cannot pop from an empty stack.");
+            int index = innerList.Count - 1;
+            if (innerList[index] is not T item)
+                throw new InvalidCastException($"The item can't be casted to type {typeof(T)}");
+            innerList.RemoveAt(index);
+            referenceCounter.RemoveStackReference(item);
+            return item;
         }
 
         internal T Remove<T>(int index) where T : StackItem
