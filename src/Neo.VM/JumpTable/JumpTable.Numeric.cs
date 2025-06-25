@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Extensions;
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -32,6 +33,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 1, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack is empty.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Sign(ExecutionEngine engine, Instruction instruction)
         {
@@ -46,6 +48,8 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 1, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack is empty.</exception>
+        /// <exception cref="ArgumentException">If the stack top item is the Int256.MinValue.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Abs(ExecutionEngine engine, Instruction instruction)
         {
@@ -60,6 +64,8 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 1, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack is empty.</exception>
+        /// <exception cref="ArgumentException">The stack top item is the Int256.MinValue.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Negate(ExecutionEngine engine, Instruction instruction)
         {
@@ -74,6 +80,8 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 1, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack is empty.</exception>
+        /// <exception cref="ArgumentException">If the stack top item is the Int256.MaxValue.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Inc(ExecutionEngine engine, Instruction instruction)
         {
@@ -88,6 +96,8 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 1, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack is empty.</exception>
+        /// <exception cref="ArgumentException">If the stack top item is the Int256.MinValue.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Dec(ExecutionEngine engine, Instruction instruction)
         {
@@ -102,6 +112,8 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
+        /// <exception cref="ArgumentException">If the sum of stack top 2 items is out of range of Int256.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Add(ExecutionEngine engine, Instruction instruction)
         {
@@ -117,6 +129,8 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
+        /// <exception cref="ArgumentException">The difference of stack top 2 items is out of range of Int256.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Sub(ExecutionEngine engine, Instruction instruction)
         {
@@ -132,6 +146,8 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
+        /// <exception cref="ArgumentException">The product of stack top 2 items is out of range of Int256.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Mul(ExecutionEngine engine, Instruction instruction)
         {
@@ -147,6 +163,9 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
+        /// <exception cref="DivideByZeroException">If the divisor is zero.</exception>
+        /// <exception cref="ArgumentException">The dividend is the Int256.MinValue and the divisor is -1.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Div(ExecutionEngine engine, Instruction instruction)
         {
@@ -162,6 +181,8 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
+        /// <exception cref="DivideByZeroException">The divisor is zero.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Mod(ExecutionEngine engine, Instruction instruction)
         {
@@ -177,6 +198,11 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// If the exponent is negative or greater than ExecutionEngineLimits.MaxShift(the default value is 256).
+        /// </exception>
+        /// <exception cref="ArgumentException">The value.Pow(exponent) is out of range of Int256.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Pow(ExecutionEngine engine, Instruction instruction)
         {
@@ -193,6 +219,8 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 1, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack is empty.</exception>
+        /// <exception cref="InvalidOperationException">If the value is negative.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Sqrt(ExecutionEngine engine, Instruction instruction)
         {
@@ -206,6 +234,9 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 3, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 3.</exception>
+        /// <exception cref="DivideByZeroException">If the modulus is zero.</exception>
+        /// <exception cref="ArgumentException">The product of stack top 3 items is out of range of Int256.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ModMul(ExecutionEngine engine, Instruction instruction)
         {
@@ -222,6 +253,13 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 3, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 3.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">If the exponent is less than -1.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">If the exponent is -1 and the value is non-positive.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">If the exponent is -1 and the modulus is less than 2.</exception>
+        /// <exception cref="ArithmeticException">If the exponent is -1 and no modular inverse exists for the given inputs.</exception>
+        /// <exception cref="DivideByZeroException">If the exponent is non-negative and the modulus is zero.</exception>
+        /// <exception cref="ArgumentException">The product of stack top 3 items is out of range of Int256.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ModPow(ExecutionEngine engine, Instruction instruction)
         {
@@ -241,6 +279,11 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// If the shift is negative or greater than ExecutionEngineLimits.MaxShift(the default value is 256).
+        /// </exception>
+        /// <exception cref="ArgumentException">The result is out of range of Int256.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Shl(ExecutionEngine engine, Instruction instruction)
         {
@@ -258,6 +301,11 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// If the shift is negative or greater than ExecutionEngineLimits.MaxShift(the default value is 256).
+        /// </exception>
+        /// <exception cref="ArgumentException">The result is out of range of Int256.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Shr(ExecutionEngine engine, Instruction instruction)
         {
@@ -275,6 +323,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 1, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack is empty.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Not(ExecutionEngine engine, Instruction instruction)
         {
@@ -289,6 +338,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void BoolAnd(ExecutionEngine engine, Instruction instruction)
         {
@@ -304,6 +354,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void BoolOr(ExecutionEngine engine, Instruction instruction)
         {
@@ -319,6 +370,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 1, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack is empty.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Nz(ExecutionEngine engine, Instruction instruction)
         {
@@ -333,6 +385,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NumEqual(ExecutionEngine engine, Instruction instruction)
         {
@@ -348,6 +401,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NumNotEqual(ExecutionEngine engine, Instruction instruction)
         {
@@ -357,12 +411,14 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// Determines whether the two integer at the top of the stack, x1 are less than x2, and pushes the result onto the stack.
+        /// Determines whether the two integer at the top of the stack.
+        /// i.e. The second-to-top item is less than the top item, and pushes the result onto the stack.
         /// <see cref="OpCode.LT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Lt(ExecutionEngine engine, Instruction instruction)
         {
@@ -375,12 +431,14 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// Determines whether the two integer at the top of the stack, x1 are less than or equal to x2, and pushes the result onto the stack.
+        /// Determines whether the two integer at the top of the stack.
+        /// i.e. The second-to-top item is less than or equal to the top item, and pushes the result onto the stack.
         /// <see cref="OpCode.LE"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Le(ExecutionEngine engine, Instruction instruction)
         {
@@ -393,12 +451,14 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// Determines whether the two integer at the top of the stack, x1 are greater than x2, and pushes the result onto the stack.
+        /// Determines whether the two integer at the top of the stack.
+        /// i.e. The second-to-top item is greater than the top item, and pushes the result onto the stack.
         /// <see cref="OpCode.GT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Gt(ExecutionEngine engine, Instruction instruction)
         {
@@ -411,12 +471,14 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// Determines whether the two integer at the top of the stack, x1 are greater than or equal to x2, and pushes the result onto the stack.
+        /// Determines whether the two integer at the top of the stack.
+        /// i.e. The second-to-top item is greater than or equal to the top item, and pushes the result onto the stack.
         /// <see cref="OpCode.GE"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Ge(ExecutionEngine engine, Instruction instruction)
         {
@@ -435,6 +497,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Min(ExecutionEngine engine, Instruction instruction)
         {
@@ -450,6 +513,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 2, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 2.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Max(ExecutionEngine engine, Instruction instruction)
         {
@@ -466,6 +530,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 3, Push 1</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">If stack.Count is less than 3.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Within(ExecutionEngine engine, Instruction instruction)
         {
