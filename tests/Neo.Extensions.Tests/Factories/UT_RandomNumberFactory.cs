@@ -244,7 +244,7 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextBigIntegerInRange()
         {
-            var expectedMax = BigInteger.Parse("100000000000000000000000");
+            var expectedMax = BigInteger.Pow(2, 100);
             var expectedMin = BigInteger.Zero;
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextBigInteger(expectedMax, expectedMax));

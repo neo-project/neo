@@ -188,21 +188,25 @@ namespace Neo.Extensions.Factories
             return NextUInt64(maxValue - minValue) + minValue;
         }
 
-        public static BigInteger NextBigInteger(BigInteger maxValue)
-        {
-            if (maxValue.Sign < 0)
-                throw new ArgumentOutOfRangeException(nameof(maxValue));
-
-            return NextBigInteger(BigInteger.Zero, maxValue);
-        }
-
         public static BigInteger NextBigInteger(BigInteger minValue, BigInteger maxValue)
         {
             if (minValue > maxValue)
                 throw new ArgumentOutOfRangeException(nameof(minValue));
 
+            var bNegative = minValue.Sign < 0 || maxValue.Sign < 0;
+
             if (maxValue.Sign < 0 || minValue.Sign < 0)
                 (maxValue, minValue) = (BigInteger.Abs(minValue), BigInteger.Abs(maxValue));
+
+            return bNegative ?
+                (NextBigInteger(maxValue - minValue) + minValue) * BigInteger.MinusOne :
+                NextBigInteger(maxValue - minValue) + minValue;
+        }
+
+        public static BigInteger NextBigInteger(BigInteger maxValue)
+        {
+            if (maxValue.Sign < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
 
             var randomProduct = maxValue * NextBigInteger(256);
             var randomProductBits = randomProduct.GetByteCount() * 8;
@@ -210,7 +214,7 @@ namespace Neo.Extensions.Factories
             var maxValueBits = maxValue.GetByteCount() * 8;
             var maxValueSize = BigInteger.Pow(2, maxValueBits);
 
-            var lowPart = randomProduct & maxValue;
+            var lowPart = randomProduct & (maxValue - 1);
 
             if (lowPart < maxValue)
             {
@@ -223,11 +227,8 @@ namespace Neo.Extensions.Factories
                 }
             }
 
-            return maxValue.Sign > 0 ?
-                (randomProduct >> (randomProductBits - maxValueBits)) * BigInteger.MinusOne :
-                randomProduct >> (randomProductBits - maxValueBits);
+            return randomProduct >> (randomProductBits - maxValueBits);
         }
-
 
         public static BigInteger NextBigInteger(int sizeInBits)
         {
