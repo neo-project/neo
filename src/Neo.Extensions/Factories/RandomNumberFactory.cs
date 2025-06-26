@@ -198,9 +198,11 @@ namespace Neo.Extensions.Factories
             if (maxValue.Sign < 0 || minValue.Sign < 0)
                 (maxValue, minValue) = (BigInteger.Abs(minValue), BigInteger.Abs(maxValue));
 
+            var randomProduct = NextBigInteger(maxValue - minValue) + minValue;
+
             return bNegative ?
-                (NextBigInteger(maxValue - minValue) + minValue) * BigInteger.MinusOne :
-                NextBigInteger(maxValue - minValue) + minValue;
+                randomProduct * BigInteger.MinusOne :
+                randomProduct;
         }
 
         public static BigInteger NextBigInteger(BigInteger maxValue)
@@ -208,13 +210,13 @@ namespace Neo.Extensions.Factories
             if (maxValue.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
 
-            var randomProduct = maxValue * NextBigInteger(256);
-            var randomProductBits = randomProduct.GetByteCount() * 8;
-
             var maxValueBits = maxValue.GetByteCount() * 8;
             var maxValueSize = BigInteger.Pow(2, maxValueBits);
 
-            var lowPart = randomProduct & (maxValue - 1);
+            var randomProduct = maxValue * NextBigInteger(maxValueBits);
+            var randomProductBits = randomProduct.GetByteCount() * 8;
+
+            var lowPart = randomProduct & BigInteger.MinusOne;
 
             if (lowPart < maxValue)
             {
@@ -222,8 +224,9 @@ namespace Neo.Extensions.Factories
 
                 while (lowPart < remainder)
                 {
-                    randomProduct = maxValue * NextBigInteger(256);
-                    lowPart = randomProduct & maxValue;
+                    randomProduct = maxValue * NextBigInteger(maxValueBits);
+                    randomProductBits = randomProduct.GetByteCount() * 8;
+                    lowPart = randomProduct & BigInteger.MinusOne;
                 }
             }
 
