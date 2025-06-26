@@ -250,5 +250,15 @@ namespace Neo.Test
             Assert.IsTrue(a[^2].Equals(aa[^2], ExecutionEngineLimits.Default));
             Assert.AreNotSame(a[^2], aa[^2]);
         }
+
+        [TestMethod]
+        public void TestMinIntegerAbs()
+        {
+            const string minLiteral = "-57896044618658097711785492504343953926634992332820282019728792003956564819968";
+            var minInt256 = BigInteger.Parse(minLiteral);
+
+            // Throw exception because of the size of the integer is too large(33 bytes > 32 bytes)
+            Assert.ThrowsExactly<System.ArgumentException>(() => _ = new Integer(BigInteger.Abs(minInt256)));
+        }
     }
 }
