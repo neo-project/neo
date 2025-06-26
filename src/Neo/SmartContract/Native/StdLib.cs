@@ -264,19 +264,20 @@ namespace Neo.SmartContract.Native
             return count;
         }
 
-        [ContractMethod(CpuFee = 1 << 7)]
+        [ContractMethod(CpuFee = 1 << 17)]
         private static BigInteger GetRandom(ApplicationEngine engine, BigInteger maxValue)
         {
             if (maxValue.Sign < 0)
-                throw new ArgumentOutOfRangeException(nameof(maxValue), "Value cannot be negative.");
-
-            var randomProduct = maxValue * engine.GetRandom();
-            var randomProductBits = randomProduct.GetByteCount() * 8;
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
 
             var maxValueBits = maxValue.GetByteCount() * 8;
             var maxValueSize = BigInteger.Pow(2, maxValueBits);
 
-            var lowPart = randomProduct & maxValue;
+            var nthMask = (BigInteger.One << maxValueBits) - 1;
+            var randomProduct = maxValue * (engine.GetRandom() & nthMask);
+            var randomProductBits = randomProduct.GetByteCount() * 8;
+
+            var lowPart = randomProduct & BigInteger.MinusOne;
 
             if (lowPart < maxValue)
             {
@@ -284,8 +285,9 @@ namespace Neo.SmartContract.Native
 
                 while (lowPart < remainder)
                 {
-                    randomProduct = maxValue * engine.GetRandom();
-                    lowPart = randomProduct & maxValue;
+                    randomProduct = maxValue * (engine.GetRandom() & nthMask);
+                    randomProductBits = randomProduct.GetByteCount() * 8;
+                    lowPart = randomProduct & BigInteger.MinusOne;
                 }
             }
 
