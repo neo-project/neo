@@ -36,19 +36,22 @@ namespace Neo.IO
             }
         }
 
-        public class NeoMessageHandler(CountdownEvent countdown) : IMessageHandler<Message>
+        public class NeoMessageHandler(CountdownEvent countdown, int workerCount) : MessageReceiver<Message>(workerCount)
         {
             private readonly CountdownEvent _countdown = countdown;
 
-            public void OnMessage(Message message)
+            public override void OnMessage(Message message)
             {
                 _countdown.Signal();
             }
         }
 
+        [Params(1, 1000, 10000)]
+        public int MessageCount;
+
         private IActorRef _akkaActor;
         private ActorSystem _akkaSystem;
-        private MessageDispatcher _neoDispatcher;
+        private NeoMessageHandler _neoDispatcher;
         private Message[] _messages;
 
         private CountdownEvent _akkaCountdown;
@@ -57,11 +60,9 @@ namespace Neo.IO
         [GlobalSetup]
         public void Setup()
         {
-            _messages = new Message[1000];
+            _messages = new Message[MessageCount];
             for (var i = 0; i < _messages.Length; i++)
-            {
                 _messages[i] = new Message { Value = i };
-            }
 
             // Akka setup
             _akkaSystem = ActorSystem.Create("benchmark");
@@ -69,9 +70,8 @@ namespace Neo.IO
             _akkaActor = _akkaSystem.ActorOf(Props.Create(() => new AkkaMessageActor(_akkaCountdown)));
 
             // Neo dispatcher setup
-            _neoDispatcher = new MessageDispatcher(workerCount: 4);
             _neoCountdown = new CountdownEvent(_messages.Length);
-            _neoDispatcher.RegisterHandler(new NeoMessageHandler(_neoCountdown));
+            _neoDispatcher = new NeoMessageHandler(_neoCountdown, workerCount: 4);
         }
 
         [GlobalCleanup]
@@ -97,7 +97,7 @@ namespace Neo.IO
         {
             _neoCountdown.Reset();
 
-            _neoDispatcher.DispatchAll(_messages);
+            _neoDispatcher.TellAll(_messages);
 
             _neoCountdown.Wait(TimeSpan.FromSeconds(1));
         }
