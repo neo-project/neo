@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Akka.Configuration;
 using BenchmarkDotNet.Attributes;
 
 namespace Neo.IO
@@ -36,18 +37,23 @@ namespace Neo.IO
             }
         }
 
-        public class NeoMessageHandler(CountdownEvent countdown, int workerCount) : MessageReceiver<Message>(workerCount)
+        public class NeoMessageHandler(CountdownEvent countdown, int workerCount, int maxConcurrentMessages)
+            : MessageReceiver<Message>(workerCount, maxConcurrentMessages)
         {
             private readonly CountdownEvent _countdown = countdown;
 
-            public override void OnMessage(Message message)
+            public override Task OnMessageAsync(Message message)
             {
                 _countdown.Signal();
+                return Task.CompletedTask;
             }
         }
 
         [Params(1, 1000, 10000)]
-        public int MessageCount;
+        public int MessageCount { get; set; }
+
+        [Params(true, false)]
+        public bool MultiThread { get; set; }
 
         private IActorRef _akkaActor;
         private ActorSystem _akkaSystem;
@@ -65,13 +71,25 @@ namespace Neo.IO
                 _messages[i] = new Message { Value = i };
 
             // Akka setup
-            _akkaSystem = ActorSystem.Create("benchmark");
             _akkaCountdown = new CountdownEvent(_messages.Length);
+
+            var threads = MultiThread ? Environment.ProcessorCount * 2 : 1;
+
+            var config = ConfigurationFactory.ParseString($@"
+                    akka.actor.default-dispatcher {{
+                        type = Dispatcher
+                        executor = thread-pool-executor
+                        thread-pool-executor {{
+                            fixed-pool-size = {threads}
+                        }}
+                        throughput = 1
+                    }}");
+            _akkaSystem = ActorSystem.Create("AkkaMessages", config);
             _akkaActor = _akkaSystem.ActorOf(Props.Create(() => new AkkaMessageActor(_akkaCountdown)));
 
             // Neo dispatcher setup
             _neoCountdown = new CountdownEvent(_messages.Length);
-            _neoDispatcher = new NeoMessageHandler(_neoCountdown, workerCount: 4);
+            _neoDispatcher = new NeoMessageHandler(_neoCountdown, MultiThread ? threads : 1, MultiThread ? threads : 1);
         }
 
         [GlobalCleanup]

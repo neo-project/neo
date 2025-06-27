@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// MessageDispatcher.cs file belongs to the neo project and is free
+// MessageReceiver.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,16 +11,18 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.IO
 {
     public abstract class MessageReceiver<T> : IDisposable
     {
+        private readonly Task[] _workers;
         private readonly SemaphoreSlim _semaphore;
-        private readonly List<Thread> _workers = [];
         private readonly BlockingCollection<T> _queue = [];
+        private readonly CancellationTokenSource _cts = new();
 
         /// <summary>
         /// Constructor
@@ -31,14 +33,10 @@ namespace Neo.IO
         {
             _semaphore = new SemaphoreSlim(maxConcurrentMessages);
 
+            _workers = new Task[workerCount];
             for (var i = 0; i < workerCount; i++)
             {
-                var thread = new Thread(WorkerLoop)
-                {
-                    IsBackground = true
-                };
-                thread.Start();
-                _workers.Add(thread);
+                _workers[i] = Task.Run(() => WorkerLoopAsync(_cts.Token));
             }
         }
 
@@ -46,13 +44,20 @@ namespace Neo.IO
         /// Receive a message
         /// </summary>
         /// <param name="message">Message</param>
-        public abstract void OnMessage(T message);
+        public abstract Task OnMessageAsync(T message);
 
-        private void WorkerLoop()
+        private async Task WorkerLoopAsync(CancellationToken token)
         {
-            foreach (var message in _queue.GetConsumingEnumerable())
+            try
             {
-                DispatchInternal(message);
+                foreach (var message in _queue.GetConsumingEnumerable(token))
+                {
+                    await DispatchInternalAsync(message).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Graceful cancellation
             }
         }
 
@@ -77,13 +82,12 @@ namespace Neo.IO
             }
         }
 
-        private void DispatchInternal(T message)
+        private async Task DispatchInternalAsync(T message)
         {
-            _semaphore.Wait();
-
+            await _semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                OnMessage(message);
+                await OnMessageAsync(message).ConfigureAwait(false);
             }
             finally
             {
@@ -97,7 +101,20 @@ namespace Neo.IO
         public virtual void Dispose()
         {
             _queue.CompleteAdding();
+            _cts.Cancel();
+
+            try
+            {
+                Task.WaitAll(_workers);
+            }
+            catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is OperationCanceledException))
+            {
+                // Expected cancellation
+            }
+
             _semaphore.Dispose();
+            _queue.Dispose();
+            _cts.Dispose();
 
             GC.SuppressFinalize(this);
         }
