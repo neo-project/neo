@@ -104,7 +104,7 @@ namespace Neo.IO
         [Benchmark]
         public void Akka_Send()
         {
-            _akkaCountdown.Reset();
+            _akkaCountdown.Reset(MessageCount);
             foreach (var msg in _messages) _akkaActor.Tell(msg);
             _akkaCountdown.Wait(TimeSpan.FromSeconds(1));
         }
@@ -112,7 +112,7 @@ namespace Neo.IO
         [Benchmark]
         public void Neo_Dispatch()
         {
-            _neoCountdown.Reset();
+            _neoCountdown.Reset(MessageCount);
             _neoDispatcher.Tell(_messages);
             _neoCountdown.Wait(TimeSpan.FromSeconds(1));
         }
