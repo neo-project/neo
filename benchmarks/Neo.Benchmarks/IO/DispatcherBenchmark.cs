@@ -87,15 +87,15 @@ namespace Neo.IO
             foreach (var msg in _messages)
                 _akkaActor.Tell(msg);
 
-            _akkaCountdown.Wait();
+            _akkaCountdown.Wait(TimeSpan.FromSeconds(1));
         }
 
         [Benchmark]
         public void Neo_Dispatch()
         {
-            _akkaCountdown.Reset();
+            _neoCountdown.Reset();
             _neoDispatcher.DispatchAll(_messages);
-            _neoCountdown.Wait();
+            _neoCountdown.Wait(TimeSpan.FromSeconds(1));
         }
     }
 }
