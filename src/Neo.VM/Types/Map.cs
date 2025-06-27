@@ -51,14 +51,14 @@ namespace Neo.VM.Types
                 if (IsReadOnly) throw new InvalidOperationException("The map is readonly, can not set value.");
                 if (ReferenceCounter != null)
                 {
+                    if (value is CompoundType { ReferenceCounter: null })
+                        throw new InvalidOperationException("Can not set value to Map(with ReferenceCounter) without ReferenceCounter.");
+
                     if (dictionary.TryGetValue(key, out StackItem? old_value))
                         ReferenceCounter.RemoveReference(old_value, this);
                     else
                         ReferenceCounter.AddReference(key, this);
-                    if (value is CompoundType { ReferenceCounter: null })
-                    {
-                        throw new InvalidOperationException("Can not set a Map without a ReferenceCounter.");
-                    }
+
                     ReferenceCounter.AddReference(value, this);
                 }
                 dictionary[key] = value;

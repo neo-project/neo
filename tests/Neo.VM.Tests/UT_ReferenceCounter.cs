@@ -257,5 +257,22 @@ namespace Neo.Test
 
             Assert.ThrowsExactly<InvalidOperationException>(() => arr.Add(arr2));
         }
+
+        [TestMethod]
+        public void TestInvalidMapSet()
+        {
+            var reference = new ReferenceCounter();
+            var map = new Map(reference);
+            Assert.AreEqual(0, reference.Count); // map is zero-referred
+
+            map["test"] = new Array(reference);
+            Assert.AreEqual(2, reference.Count); // one key + one value
+
+            Assert.ThrowsExactly<InvalidOperationException>(() => map["test"] = new Array());
+            Assert.AreEqual(2, reference.Count); // not changed after invalid set
+
+            map["test"] = new Integer(1); // overwrite the value
+            Assert.AreEqual(2, reference.Count); // not changed after overwrite
+        }
     }
 }
