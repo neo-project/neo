@@ -12,7 +12,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.IO
@@ -21,7 +20,6 @@ namespace Neo.IO
     {
         private readonly Task[] _workers;
         private readonly BlockingCollection<T> _queue = [];
-        private readonly CancellationTokenSource _cts = new();
 
         /// <summary>
         /// Constructor
@@ -32,7 +30,7 @@ namespace Neo.IO
             _workers = new Task[workerCount];
             for (var i = 0; i < workerCount; i++)
             {
-                _workers[i] = Task.Run(() => WorkerLoopAsync(_cts.Token));
+                _workers[i] = Task.Run(WorkerLoopAsync);
             }
         }
 
@@ -42,13 +40,13 @@ namespace Neo.IO
         /// <param name="message">Message</param>
         public abstract Task OnMessageAsync(T message);
 
-        private async Task WorkerLoopAsync(CancellationToken token)
+        private async Task WorkerLoopAsync()
         {
             try
             {
-                foreach (var message in _queue.GetConsumingEnumerable(token))
+                foreach (var message in _queue.GetConsumingEnumerable())
                 {
-                    await DispatchInternalAsync(message).ConfigureAwait(false);
+                    await OnMessageAsync(message).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
@@ -70,17 +68,12 @@ namespace Neo.IO
         /// Dispatches a message to all registered handlers for the message's type.
         /// </summary>
         /// <param name="messages">Messages</param>
-        public void TellAll(params T[] messages)
+        public void Tell(params T[] messages)
         {
             foreach (var message in messages)
             {
                 Tell(message);
             }
-        }
-
-        private async Task DispatchInternalAsync(T message)
-        {
-            await OnMessageAsync(message).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -89,7 +82,6 @@ namespace Neo.IO
         public virtual void Dispose()
         {
             _queue.CompleteAdding();
-            _cts.Cancel();
 
             try
             {
@@ -101,7 +93,6 @@ namespace Neo.IO
             }
 
             _queue.Dispose();
-            _cts.Dispose();
 
             GC.SuppressFinalize(this);
         }

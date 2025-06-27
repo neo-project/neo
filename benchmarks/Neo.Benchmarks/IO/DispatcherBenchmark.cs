@@ -66,15 +66,18 @@ namespace Neo.IO
         [GlobalSetup]
         public void Setup()
         {
+            // Configs
+
             _messages = new Message[MessageCount];
-            for (var i = 0; i < _messages.Length; i++)
+            for (var i = 0; i < MessageCount; i++)
                 _messages[i] = new Message { Value = i };
 
-            // Akka setup
-            _akkaCountdown = new CountdownEvent(_messages.Length);
+            _akkaCountdown = new CountdownEvent(MessageCount);
+            _neoCountdown = new CountdownEvent(MessageCount);
 
             var threads = MultiThread ? Environment.ProcessorCount * 2 : 1;
 
+            // Akka setup
             var config = ConfigurationFactory.ParseString($@"
                     akka.actor.default-dispatcher {{
                         type = Dispatcher
@@ -88,7 +91,6 @@ namespace Neo.IO
             _akkaActor = _akkaSystem.ActorOf(Props.Create(() => new AkkaMessageActor(_akkaCountdown)));
 
             // Neo dispatcher setup
-            _neoCountdown = new CountdownEvent(_messages.Length);
             _neoDispatcher = new NeoMessageHandler(_neoCountdown, MultiThread ? threads : 1);
         }
 
@@ -103,10 +105,7 @@ namespace Neo.IO
         public void Akka_Send()
         {
             _akkaCountdown.Reset();
-
-            foreach (var msg in _messages)
-                _akkaActor.Tell(msg);
-
+            foreach (var msg in _messages) _akkaActor.Tell(msg);
             _akkaCountdown.Wait(TimeSpan.FromSeconds(1));
         }
 
@@ -114,9 +113,7 @@ namespace Neo.IO
         public void Neo_Dispatch()
         {
             _neoCountdown.Reset();
-
-            _neoDispatcher.TellAll(_messages);
-
+            _neoDispatcher.Tell(_messages);
             _neoCountdown.Wait(TimeSpan.FromSeconds(1));
         }
     }

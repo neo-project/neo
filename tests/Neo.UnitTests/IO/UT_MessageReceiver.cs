@@ -53,7 +53,7 @@ namespace Neo.UnitTests.IO
         public void TestTellAll()
         {
             using var receiver = new TestMessageReceiver(2);
-            receiver.TellAll(1, 2, 3, 4, 5);
+            receiver.Tell(1, 2, 3, 4, 5);
 
             Assert.IsTrue(receiver.Signal.Wait(1000));
             CollectionAssert.AreEquivalent(new List<int> { 1, 2, 3, 4, 5 }, receiver.ProcessedMessages);
