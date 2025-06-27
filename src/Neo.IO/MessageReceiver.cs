@@ -72,7 +72,7 @@ namespace Neo.IO
         {
             foreach (var message in messages)
             {
-                Tell(message);
+                _queue.Add(message);
             }
         }
 
