@@ -58,8 +58,10 @@ namespace Neo.IO
         public void Setup()
         {
             _messages = new Message[1000];
-            for (var i = 0; i < 1000; i++)
+            for (var i = 0; i < _messages.Length; i++)
+            {
                 _messages[i] = new Message { Value = i };
+            }
 
             // Akka setup
             _akkaSystem = ActorSystem.Create("benchmark");
@@ -67,9 +69,9 @@ namespace Neo.IO
             _akkaActor = _akkaSystem.ActorOf(Props.Create(() => new AkkaMessageActor(_akkaCountdown)));
 
             // Neo dispatcher setup
-            _neoDispatcher = new MessageDispatcher(workerCount: 2);
+            _neoDispatcher = new MessageDispatcher(workerCount: 4);
             _neoCountdown = new CountdownEvent(_messages.Length);
-            _neoDispatcher.RegisterHandler<Message>(new NeoMessageHandler(_neoCountdown));
+            _neoDispatcher.RegisterHandler(new NeoMessageHandler(_neoCountdown));
         }
 
         [GlobalCleanup]
@@ -94,7 +96,9 @@ namespace Neo.IO
         public void Neo_Dispatch()
         {
             _neoCountdown.Reset();
+
             _neoDispatcher.DispatchAll(_messages);
+
             _neoCountdown.Wait(TimeSpan.FromSeconds(1));
         }
     }
