@@ -83,10 +83,11 @@ namespace Neo.VM.Types
             foreach (var item in _array)
             {
                 if (item is CompoundType { ReferenceCounter: null })
-                {
                     throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
-                }
+            }
 
+            foreach (var item in _array)
+            {
                 referenceCounter.AddReference(item, this);
             }
         }
