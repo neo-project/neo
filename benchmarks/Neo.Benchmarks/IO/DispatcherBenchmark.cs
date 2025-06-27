@@ -37,8 +37,8 @@ namespace Neo.IO
             }
         }
 
-        public class NeoMessageHandler(CountdownEvent countdown, int workerCount, int maxConcurrentMessages)
-            : MessageReceiver<Message>(workerCount, maxConcurrentMessages)
+        public class NeoMessageHandler(CountdownEvent countdown, int workerCount)
+            : MessageReceiver<Message>(workerCount)
         {
             private readonly CountdownEvent _countdown = countdown;
 
@@ -89,7 +89,7 @@ namespace Neo.IO
 
             // Neo dispatcher setup
             _neoCountdown = new CountdownEvent(_messages.Length);
-            _neoDispatcher = new NeoMessageHandler(_neoCountdown, MultiThread ? threads : 1, MultiThread ? threads : 1);
+            _neoDispatcher = new NeoMessageHandler(_neoCountdown, MultiThread ? threads : 1);
         }
 
         [GlobalCleanup]

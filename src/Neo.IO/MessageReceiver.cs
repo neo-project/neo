@@ -20,7 +20,6 @@ namespace Neo.IO
     public abstract class MessageReceiver<T> : IDisposable
     {
         private readonly Task[] _workers;
-        private readonly SemaphoreSlim _semaphore;
         private readonly BlockingCollection<T> _queue = [];
         private readonly CancellationTokenSource _cts = new();
 
@@ -28,11 +27,8 @@ namespace Neo.IO
         /// Constructor
         /// </summary>
         /// <param name="workerCount">Workers count</param>
-        /// <param name="maxConcurrentMessages">Max Concurrent Messages</param>
-        public MessageReceiver(int workerCount, int maxConcurrentMessages = 1)
+        public MessageReceiver(int workerCount)
         {
-            _semaphore = new SemaphoreSlim(maxConcurrentMessages);
-
             _workers = new Task[workerCount];
             for (var i = 0; i < workerCount; i++)
             {
@@ -84,15 +80,7 @@ namespace Neo.IO
 
         private async Task DispatchInternalAsync(T message)
         {
-            await _semaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                await OnMessageAsync(message).ConfigureAwait(false);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
+            await OnMessageAsync(message).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -112,7 +100,6 @@ namespace Neo.IO
                 // Expected cancellation
             }
 
-            _semaphore.Dispose();
             _queue.Dispose();
             _cts.Dispose();
 

@@ -20,7 +20,7 @@ namespace Neo.UnitTests.IO
     [TestClass]
     public class UT_MessageReceiver
     {
-        private class TestMessageReceiver(int workerCount, int maxConcurrent) : MessageReceiver<int>(workerCount, maxConcurrent)
+        private class TestMessageReceiver(int workerCount) : MessageReceiver<int>(workerCount)
         {
             public readonly List<int> ProcessedMessages = [];
             public readonly ManualResetEventSlim Signal = new();
@@ -41,7 +41,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestTellAndDispose()
         {
-            using var receiver = new TestMessageReceiver(2, 2);
+            using var receiver = new TestMessageReceiver(2);
             for (var i = 0; i < 5; i++)
                 receiver.Tell(i);
 
@@ -52,7 +52,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestTellAll()
         {
-            using var receiver = new TestMessageReceiver(2, 3);
+            using var receiver = new TestMessageReceiver(2);
             receiver.TellAll(1, 2, 3, 4, 5);
 
             Assert.IsTrue(receiver.Signal.Wait(1000));
