@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
@@ -56,32 +57,26 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (var role in roles)
             {
                 var system = new TestBlockchain.TestNeoSystem(TestProtocolSettings.Default);
+
                 var snapshot1 = system.GetTestSnapshotCache(false);
-
                 var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
-                var notifications = new List<NotifyEventArgs>();
+                List<NotifyEventArgs> notifications = [];
+                void Ev(ApplicationEngine o, NotifyEventArgs e) => notifications.Add(e);
 
-                void ev(object o, NotifyEventArgs e) => notifications.Add(e);
-
-                ApplicationEngine.Notify += ev;
                 var ret = NativeContract.RoleManagement.Call(
                     snapshot1,
                     new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                     new Block { Header = new Header() },
-                    "designateAsRole",
+                    "designateAsRole", Ev,
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Array) { Value = publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
                 );
                 snapshot1.Commit();
-                ApplicationEngine.Notify -= ev;
-
-                var designationEvents = notifications
-                    .Where(n => n.ScriptHash == NativeContract.RoleManagement.Hash && n.EventName == "Designation")
-                    .ToList();
-
-                Assert.AreEqual(1, designationEvents.Count);
+                Assert.AreEqual(1, notifications.Count);
+                Assert.AreEqual("Designation", notifications[0].EventName);
 
                 var snapshot2 = system.GetTestSnapshotCache(false);
+
                 ret = NativeContract.RoleManagement.Call(
                     snapshot2,
                     "getDesignatedByRole",

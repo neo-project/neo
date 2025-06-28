@@ -55,11 +55,12 @@ namespace Neo.Plugins.ApplicationLogs.Store.States
 
         #region IEquatable
 
-        public bool Equals(ContractLogState other) =>
+        public bool Equals(ContractLogState? other) =>
+            other != null &&
             Trigger == other.Trigger && EventName == other.EventName &&
             TransactionHash == other.TransactionHash && StackItemIds.SequenceEqual(other.StackItemIds);
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(this, obj)) return true;
             return Equals(obj as ContractLogState);
