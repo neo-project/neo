@@ -38,7 +38,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         public override string Name => "ApplicationLogs";
         public override string Description => "Synchronizes smart contract VM executions and notifications (NotifyLog) on blockchain.";
-        protected override UnhandledExceptionPolicy ExceptionPolicy => ApplicationLogsSettings.Default.ExceptionPolicy;
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
 
         #region Ctor
 
@@ -61,7 +61,7 @@ namespace Neo.Plugins.ApplicationLogs
         {
             Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
-            if (ApplicationLogsSettings.Default.Debug)
+            if (Settings.Default.Debug)
                 ApplicationEngine.InstanceHandler -= ConfigureAppEngine;
             GC.SuppressFinalize(this);
         }
@@ -73,20 +73,20 @@ namespace Neo.Plugins.ApplicationLogs
 
         protected override void Configure()
         {
-            ApplicationLogsSettings.Load(GetConfiguration());
+            Settings.Load(GetConfiguration());
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
-            if (system.Settings.Network != ApplicationLogsSettings.Default.Network)
+            if (system.Settings.Network != Settings.Default.Network)
                 return;
-            string path = string.Format(ApplicationLogsSettings.Default.Path, ApplicationLogsSettings.Default.Network.ToString("X8"));
+            string path = string.Format(Settings.Default.Path, Settings.Default.Network.ToString("X8"));
             var store = system.LoadStore(GetFullPath(path));
             _neostore = new NeoStore(store);
             _neosystem = system;
-            RpcServerPlugin.RegisterMethods(this, ApplicationLogsSettings.Default.Network);
+            RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
 
-            if (ApplicationLogsSettings.Default.Debug)
+            if (Settings.Default.Debug)
                 ApplicationEngine.InstanceHandler += ConfigureAppEngine;
         }
 
@@ -217,14 +217,14 @@ namespace Neo.Plugins.ApplicationLogs
 
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
-            if (system.Settings.Network != ApplicationLogsSettings.Default.Network)
+            if (system.Settings.Network != Settings.Default.Network)
                 return;
 
             if (_neostore is null)
                 return;
             _neostore.StartBlockLogBatch();
             _neostore.PutBlockLog(block, applicationExecutedList);
-            if (ApplicationLogsSettings.Default.Debug)
+            if (Settings.Default.Debug)
             {
                 foreach (var appEng in applicationExecutedList.Where(w => w.Transaction != null))
                 {
@@ -238,7 +238,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            if (system.Settings.Network != ApplicationLogsSettings.Default.Network)
+            if (system.Settings.Network != Settings.Default.Network)
                 return;
             if (_neostore is null)
                 return;
@@ -247,10 +247,10 @@ namespace Neo.Plugins.ApplicationLogs
 
         void ILogHandler.ApplicationEngine_Log_Handler(ApplicationEngine sender, LogEventArgs e)
         {
-            if (ApplicationLogsSettings.Default.Debug == false)
+            if (Settings.Default.Debug == false)
                 return;
 
-            if (_neosystem.Settings.Network != ApplicationLogsSettings.Default.Network)
+            if (_neosystem.Settings.Network != Settings.Default.Network)
                 return;
 
             if (e.ScriptContainer == null)
@@ -296,7 +296,7 @@ namespace Neo.Plugins.ApplicationLogs
                         ConsoleHelper.Info($"    {GetMethodParameterName(notifyItem.ScriptHash, notifyItem.EventName, ncount, i)}: ", $"{notifyItem.State[i].ToJson()}");
                 }
             }
-            if (ApplicationLogsSettings.Default.Debug)
+            if (Settings.Default.Debug)
             {
                 if (model.Logs.Length == 0)
                     ConsoleHelper.Info("Logs: ", "[]");
@@ -366,7 +366,7 @@ namespace Neo.Plugins.ApplicationLogs
 
             try
             {
-                trigger["stack"] = appLog.Stack.Select(s => s.ToJson(ApplicationLogsSettings.Default.MaxStackSize)).ToArray();
+                trigger["stack"] = appLog.Stack.Select(s => s.ToJson(Settings.Default.MaxStackSize)).ToArray();
             }
             catch (Exception ex)
             {
@@ -399,7 +399,7 @@ namespace Neo.Plugins.ApplicationLogs
                 return notification;
             }).ToArray();
 
-            if (ApplicationLogsSettings.Default.Debug)
+            if (Settings.Default.Debug)
             {
                 trigger["logs"] = appLog.Logs.Select(s =>
                 {
@@ -445,7 +445,7 @@ namespace Neo.Plugins.ApplicationLogs
             };
             try
             {
-                trigger["stack"] = blockExecutionModel.Stack.Select(q => q.ToJson(ApplicationLogsSettings.Default.MaxStackSize)).ToArray();
+                trigger["stack"] = blockExecutionModel.Stack.Select(q => q.ToJson(Settings.Default.MaxStackSize)).ToArray();
             }
             catch (Exception ex)
             {
@@ -476,7 +476,7 @@ namespace Neo.Plugins.ApplicationLogs
                 return notification;
             }).ToArray();
 
-            if (ApplicationLogsSettings.Default.Debug)
+            if (Settings.Default.Debug)
             {
                 trigger["logs"] = blockExecutionModel.Logs.Select(s =>
                 {
