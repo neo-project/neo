@@ -34,22 +34,22 @@ namespace Neo.UnitTests.SmartContract
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(System.Array.Empty<byte>());
-            ApplicationEngine.Notify += Test_Notify1;
+            engine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             Assert.AreEqual(notifyEvent, eventName);
 
-            ApplicationEngine.Notify += Test_Notify2;
+            engine.Notify += Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             Assert.IsNull(eventName);
 
             eventName = notifyEvent;
-            ApplicationEngine.Notify -= Test_Notify1;
+            engine.Notify -= Test_Notify1;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             Assert.IsNull(eventName);
 
-            ApplicationEngine.Notify -= Test_Notify2;
+            engine.Notify -= Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             Assert.IsNull(eventName);
         }
