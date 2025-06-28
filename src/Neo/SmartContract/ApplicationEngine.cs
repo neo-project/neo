@@ -44,15 +44,24 @@ namespace Neo.SmartContract
         /// </summary>
         public const long TestModeGas = 20_00000000;
 
+        public delegate void OnInstanceHandlerEvent(ApplicationEngine engine);
+        public delegate void OnLogEvent(ApplicationEngine engine, LogEventArgs args);
+        public delegate void OnNotifyEvent(ApplicationEngine engine, NotifyEventArgs args);
+
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Notify.
         /// </summary>
-        public static event EventHandler<NotifyEventArgs> Notify;
+        public event OnNotifyEvent Notify;
 
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Log.
         /// </summary>
-        public static event EventHandler<LogEventArgs> Log;
+        public event OnLogEvent Log;
+
+        /// <summary>
+        /// On Application Engine
+        /// </summary>
+        public static OnInstanceHandlerEvent InstanceHandler;
 
         private static Dictionary<uint, InteropDescriptor> services;
         // Total amount of GAS spent to execute.
@@ -435,8 +444,11 @@ namespace Neo.SmartContract
             // Adjust jump table according persistingBlock
 
             var jumpTable = settings == null || settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
-            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
+            var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
+
+            InstanceHandler?.Invoke(engine);
+            return engine;
         }
 
         /// <summary>
