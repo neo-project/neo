@@ -62,8 +62,13 @@ namespace Neo.Plugins.ApplicationLogs
             Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
             if (Settings.Default.Debug)
-                ApplicationEngine.Log -= ((ILogHandler)this).ApplicationEngine_Log_Handler;
+                ApplicationEngine.InstanceHandler -= ConfigureAppEngine;
             GC.SuppressFinalize(this);
+        }
+
+        private void ConfigureAppEngine(ApplicationEngine engine)
+        {
+            engine.Log += ((ILogHandler)this).ApplicationEngine_Log_Handler;
         }
 
         protected override void Configure()
@@ -82,7 +87,7 @@ namespace Neo.Plugins.ApplicationLogs
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
 
             if (Settings.Default.Debug)
-                ApplicationEngine.Log += ((ILogHandler)this).ApplicationEngine_Log_Handler;
+                ApplicationEngine.InstanceHandler += ConfigureAppEngine;
         }
 
         #endregion
@@ -240,7 +245,7 @@ namespace Neo.Plugins.ApplicationLogs
             _neostore.CommitBlockLog();
         }
 
-        void ILogHandler.ApplicationEngine_Log_Handler(object sender, LogEventArgs e)
+        void ILogHandler.ApplicationEngine_Log_Handler(ApplicationEngine sender, LogEventArgs e)
         {
             if (Settings.Default.Debug == false)
                 return;
