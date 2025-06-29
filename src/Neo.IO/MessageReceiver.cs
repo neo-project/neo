@@ -42,9 +42,9 @@ namespace Neo.IO
         /// Receive a message
         /// </summary>
         /// <param name="message">Message</param>
-        public abstract void OnReceive(T message);
+        public abstract Task OnReceive(T message);
 
-        private void WorkerLoop()
+        private async Task WorkerLoop()
         {
             while (!_queue.IsAddingCompleted)
             {
@@ -54,7 +54,7 @@ namespace Neo.IO
                 {
                     foreach (var message in _queue.GetConsumingEnumerable())
                     {
-                        OnReceive(message);
+                        await OnReceive(message);
                     }
                 }
                 catch (Exception ex)

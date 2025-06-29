@@ -82,9 +82,10 @@ namespace Neo.IO
         {
             public Counter Counter { get; } = countdown;
 
-            public override void OnReceive(Message message)
+            public override Task OnReceive(Message message)
             {
                 Counter.Signal(message);
+                return Task.CompletedTask;
             }
         }
 
