@@ -257,7 +257,7 @@ namespace Neo.CLI
         {
             var param = new ContractParameter { Type = type };
 
-            if (value == null || value.Type == JTokenType.Null)
+            if (value == null || value == JToken.Null)
             {
                 param.Value = null;
                 return param;
@@ -303,9 +303,9 @@ namespace Neo.CLI
                     if (value is JObject map)
                     {
                         var dict = new List<KeyValuePair<ContractParameter, ContractParameter>>();
-                        foreach (var kvp in map.Properties())
+                        foreach (var kvp in map.Properties)
                         {
-                            var key = new ContractParameter { Type = ContractParameterType.String, Value = kvp.Name };
+                            var key = new ContractParameter { Type = ContractParameterType.String, Value = kvp.Key };
                             var val = ParseParameterFromAbi(ContractParameterType.Any, kvp.Value);
                             dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, val));
                         }
@@ -320,18 +320,21 @@ namespace Neo.CLI
                     throw new NotSupportedException("InteropInterface type cannot be parsed from JSON");
                 case ContractParameterType.Any:
                     // Try to infer the type from the value
-                    if (value.Type == JTokenType.Boolean)
-                        return ParseParameterFromAbi(ContractParameterType.Boolean, value);
-                    else if (value.Type == JTokenType.Integer)
-                        return ParseParameterFromAbi(ContractParameterType.Integer, value);
-                    else if (value.Type == JTokenType.String)
-                        return ParseParameterFromAbi(ContractParameterType.String, value);
-                    else if (value.Type == JTokenType.Array)
-                        return ParseParameterFromAbi(ContractParameterType.Array, value);
-                    else if (value.Type == JTokenType.Object)
-                        return ParseParameterFromAbi(ContractParameterType.Map, value);
-                    else
-                        throw new ArgumentException($"Cannot infer type for value: {value}");
+                    switch (value)
+                    {
+                        case JBoolean:
+                            return ParseParameterFromAbi(ContractParameterType.Boolean, value);
+                        case JNumber:
+                            return ParseParameterFromAbi(ContractParameterType.Integer, value);
+                        case JString:
+                            return ParseParameterFromAbi(ContractParameterType.String, value);
+                        case JArray:
+                            return ParseParameterFromAbi(ContractParameterType.Array, value);
+                        case JObject:
+                            return ParseParameterFromAbi(ContractParameterType.Map, value);
+                        default:
+                            throw new ArgumentException($"Cannot infer type for value: {value}");
+                    }
                 default:
                     throw new ArgumentException($"Unsupported parameter type: {type}");
             }
