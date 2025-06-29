@@ -58,20 +58,18 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (var role in roles)
             {
                 var snapshot1 = _snapshotCache.CloneCache();
-                UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
-                List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
-                EventHandler<NotifyEventArgs> ev = (o, e) => notifications.Add(e);
-                ApplicationEngine.Notify += ev;
+                var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
+                List<NotifyEventArgs> notifications = [];
+                void Ev(ApplicationEngine o, NotifyEventArgs e) => notifications.Add(e);
                 var ret = NativeContract.RoleManagement.Call(
                     snapshot1,
                     new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                     new Block { Header = new Header() },
-                    "designateAsRole",
+                    "designateAsRole", Ev,
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Array) { Value = publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
                 );
                 snapshot1.Commit();
-                ApplicationEngine.Notify -= ev;
                 Assert.AreEqual(1, notifications.Count);
                 Assert.AreEqual("Designation", notifications[0].EventName);
                 var snapshot2 = _snapshotCache.CloneCache();
