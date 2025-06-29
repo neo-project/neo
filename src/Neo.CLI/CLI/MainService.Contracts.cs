@@ -209,11 +209,11 @@ namespace Neo.CLI
                 return;
             }
 
-            // Find the method in the ABI
-            var method = contract.Manifest.Abi.GetMethod(operation, args?.Count ?? 0);
+            // Find the method in the ABI by name only
+            var method = contract.Manifest.Abi.GetMethod(operation, -1);
             if (method == null)
             {
-                ConsoleHelper.Error($"Method '{operation}' with {args?.Count ?? 0} parameters does not exist in this contract.");
+                ConsoleHelper.Error($"Method '{operation}' does not exist in this contract.");
                 return;
             }
 

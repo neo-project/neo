@@ -59,8 +59,10 @@ namespace Neo.CLI.Tests
             _mainService = new MainService();
 
             // Set NeoSystem using reflection
-            var neoSystemField = typeof(MainService).GetField("NeoSystem", BindingFlags.NonPublic | BindingFlags.Static);
-            neoSystemField?.SetValue(null, _neoSystem);
+            var neoSystemField = typeof(MainService).GetField("_neoSystem", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (neoSystemField == null)
+                Assert.Fail("_neoSystem field not found");
+            neoSystemField.SetValue(_mainService, _neoSystem);
 
             // Setup mock wallet
             _mockWallet = new Mock<Wallet>();
@@ -163,10 +165,24 @@ namespace Neo.CLI.Tests
             sb.Emit(OpCode.RET);
             var script = sb.ToArray();
 
-            // Create the contract using TestUtils
-            _contractState = TestUtils.GetContract(script, manifest);
-            _contractState.Id = 1;
-            _contractState.Hash = _contractHash;
+            // Create NefFile
+            var nef = new NefFile
+            {
+                Compiler = "",
+                Source = "",
+                Tokens = Array.Empty<MethodToken>(),
+                Script = script
+            };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
+
+            // Create the contract state manually
+            _contractState = new ContractState
+            {
+                Id = 1,
+                Hash = _contractHash,
+                Nef = nef,
+                Manifest = manifest
+            };
 
             // Properly add the contract to the test snapshot using the extension method
             var snapshot = _neoSystem.GetSnapshotCache();
@@ -390,7 +406,7 @@ namespace Neo.CLI.Tests
 
             // Assert
             var output = _consoleOutput.ToString();
-            Assert.IsTrue(output.Contains("Method 'nonExistentMethod' with 0 parameters does not exist"));
+            Assert.IsTrue(output.Contains("Method 'nonExistentMethod' does not exist"));
         }
 
         [TestMethod]
@@ -406,7 +422,7 @@ namespace Neo.CLI.Tests
 
             // Assert
             var output = _consoleOutput.ToString();
-            Assert.IsTrue(output.Contains("Method 'testBoolean' with 2 parameters does not exist"));
+            Assert.IsTrue(output.Contains("Too many arguments. Method 'testBoolean' expects 1 parameters"));
         }
 
         [TestMethod]
