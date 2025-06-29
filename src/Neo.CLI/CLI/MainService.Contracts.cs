@@ -320,27 +320,28 @@ namespace Neo.CLI
                 case ContractParameterType.InteropInterface:
                     throw new NotSupportedException("InteropInterface type cannot be parsed from JSON");
                 case ContractParameterType.Any:
-                    // Try to infer the type from the value
-                    switch (value)
-                    {
-                        case JBoolean:
-                            return ParseParameterFromAbi(ContractParameterType.Boolean, value);
-                        case JNumber:
-                            return ParseParameterFromAbi(ContractParameterType.Integer, value);
-                        case JString:
-                            return ParseParameterFromAbi(ContractParameterType.String, value);
-                        case JArray:
-                            return ParseParameterFromAbi(ContractParameterType.Array, value);
-                        case JObject:
-                            return ParseParameterFromAbi(ContractParameterType.Map, value);
-                        default:
-                            throw new ArgumentException($"Cannot infer type for value: {value}");
-                    }
+                    return InferParameterFromToken(value);
                 default:
                     throw new ArgumentException($"Unsupported parameter type: {type}");
             }
 
             return param;
+        }
+
+        /// <summary>
+        /// Infers the parameter type from a JToken and parses it accordingly
+        /// </summary>
+        private ContractParameter InferParameterFromToken(JToken value)
+        {
+            return value switch
+            {
+                JBoolean => ParseParameterFromAbi(ContractParameterType.Boolean, value),
+                JNumber => ParseParameterFromAbi(ContractParameterType.Integer, value),
+                JString => ParseParameterFromAbi(ContractParameterType.String, value),
+                JArray => ParseParameterFromAbi(ContractParameterType.Array, value),
+                JObject => ParseParameterFromAbi(ContractParameterType.Map, value),
+                _ => throw new ArgumentException($"Cannot infer type for value: {value}")
+            };
         }
     }
 }
