@@ -221,15 +221,16 @@ namespace Neo.CLI
             JArray? contractParameters = null;
             if (args != null && args.Count > 0)
             {
+                // Check if too many arguments before processing
+                if (args.Count > method.Parameters.Length)
+                {
+                    ConsoleHelper.Error($"Too many arguments. Method '{operation}' expects {method.Parameters.Length} parameters.");
+                    return;
+                }
+
                 contractParameters = new JArray();
                 for (int i = 0; i < args.Count; i++)
                 {
-                    if (i >= method.Parameters.Length)
-                    {
-                        ConsoleHelper.Error($"Too many arguments. Method '{operation}' expects {method.Parameters.Length} parameters.");
-                        return;
-                    }
-
                     var paramDef = method.Parameters[i];
                     var paramValue = args[i];
                     

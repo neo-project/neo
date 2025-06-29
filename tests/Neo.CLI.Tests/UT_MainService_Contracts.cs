@@ -85,12 +85,8 @@ namespace Neo.CLI.Tests
 
         private void SetupTestContract()
         {
-            // Create a test contract with ABI
-            var manifest = new ContractManifest
-            {
-                Name = "TestContract",
-                Abi = new ContractAbi()
-            };
+            // Create a test contract with ABI using TestUtils
+            var manifest = TestUtils.CreateDefaultManifest();
 
             // Add test methods with different parameter types
             var methods = new List<ContractMethodDescriptor>
@@ -167,19 +163,10 @@ namespace Neo.CLI.Tests
             sb.Emit(OpCode.RET);
             var script = sb.ToArray();
 
-            _contractState = new ContractState
-            {
-                Id = 1,
-                Hash = _contractHash,
-                Nef = new NefFile 
-                { 
-                    Script = script,
-                    Compiler = "Unit Test",
-                    Source = "Unit Test",
-                    Tokens = []
-                },
-                Manifest = manifest
-            };
+            // Create the contract using TestUtils
+            _contractState = TestUtils.GetContract(script, manifest);
+            _contractState.Id = 1;
+            _contractState.Hash = _contractHash;
 
             // Properly add the contract to the test snapshot using the extension method
             var snapshot = _neoSystem.GetSnapshotCache();
@@ -342,7 +329,7 @@ namespace Neo.CLI.Tests
             var method = GetPrivateMethod("ParseParameterFromAbi");
 
             // This should throw because "abc" is not a valid integer
-            Assert.ThrowsException<TargetInvocationException>(() =>
+            Assert.ThrowsExactly<TargetInvocationException>(() =>
                 method.Invoke(_mainService, new object[] { ContractParameterType.Integer, JToken.Parse("\"abc\"") }));
         }
 
@@ -352,7 +339,7 @@ namespace Neo.CLI.Tests
             var method = GetPrivateMethod("ParseParameterFromAbi");
 
             // This should throw because the hash is invalid
-            Assert.ThrowsException<TargetInvocationException>(() =>
+            Assert.ThrowsExactly<TargetInvocationException>(() =>
                 method.Invoke(_mainService, new object[] { ContractParameterType.Hash160, JToken.Parse("\"invalid_hash\"") }));
         }
 
@@ -362,7 +349,7 @@ namespace Neo.CLI.Tests
             var method = GetPrivateMethod("ParseParameterFromAbi");
 
             // InteropInterface is not supported for JSON parsing
-            Assert.ThrowsException<TargetInvocationException>(() =>
+            Assert.ThrowsExactly<TargetInvocationException>(() =>
                 method.Invoke(_mainService, new object[] { ContractParameterType.InteropInterface, JToken.Parse("\"test\"") }));
         }
 
@@ -461,15 +448,8 @@ namespace Neo.CLI.Tests
             _consoleOutput.GetStringBuilder().Clear();
             var args = new JArray(true);
 
-            // Mock the OnInvokeCommand to capture the parsed parameters
-            var invokeCommandCalled = false;
-            JArray capturedParams = null;
-            
-            var onInvokeCommandMethod = GetPrivateMethod("OnInvokeCommand");
-            var originalOnInvokeCommand = Delegate.CreateDelegate(
-                typeof(Action<UInt160, string, JArray, UInt160, UInt160[], decimal>), 
-                _mainService, 
-                onInvokeCommandMethod);
+            // Note: We can't easily intercept the OnInvokeCommand call in this test setup
+            // The test verifies that parameter parsing works correctly by checking no errors occur
 
             // Act
             var invokeAbiMethod = GetPrivateMethod("OnInvokeAbiCommand");
@@ -494,7 +474,14 @@ namespace Neo.CLI.Tests
             _consoleOutput.GetStringBuilder().Clear();
             
             // Test with array parameter
-            var arrayArgs = new JArray(new JArray(1, 2, 3, "test", true));
+            var innerArray = new JArray();
+            innerArray.Add(1);
+            innerArray.Add(2);
+            innerArray.Add(3);
+            innerArray.Add("test");
+            innerArray.Add(true);
+            var arrayArgs = new JArray();
+            arrayArgs.Add(innerArray);
             
             // Act & Assert - Array type
             var invokeAbiMethod = GetPrivateMethod("OnInvokeAbiCommand");
