@@ -11,6 +11,7 @@
 
 using Neo.Json;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -24,21 +25,56 @@ namespace Neo.Extensions.Tests
         {
             var big1 = new BigInteger(0);
             Assert.AreEqual(-1, big1.GetLowestSetBit());
+            Assert.AreEqual(32, BigInteger.TrailingZeroCount(big1)); // NOTE: 32 if zero in standard library
 
             var big2 = new BigInteger(512);
             Assert.AreEqual(9, big2.GetLowestSetBit());
+            Assert.AreEqual(9, BigInteger.TrailingZeroCount(big2));
 
             var big3 = new BigInteger(int.MinValue);
             Assert.AreEqual(31, big3.GetLowestSetBit());
+            Assert.AreEqual(31, BigInteger.TrailingZeroCount(big3));
 
             var big4 = new BigInteger(long.MinValue);
             Assert.AreEqual(63, big4.GetLowestSetBit());
+            Assert.AreEqual(63, BigInteger.TrailingZeroCount(big4));
 
             var big5 = new BigInteger(-18);
             Assert.AreEqual(1, big5.GetLowestSetBit());
+            Assert.AreEqual(1, BigInteger.TrailingZeroCount(big5));
 
             var big6 = BigInteger.Pow(2, 1000);
             Assert.AreEqual(1000, big6.GetLowestSetBit());
+            Assert.AreEqual(1000, BigInteger.TrailingZeroCount(big6));
+
+            for (var i = 0; i < 64; i++)
+            {
+                var b = new BigInteger(1ul << i);
+                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+                Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
+            }
+
+            var random = new Random();
+            for (var i = 0; i < 128; i++)
+            {
+                var buffer = new byte[16];
+                BinaryPrimitives.WriteInt128LittleEndian(buffer, Int128.One << i);
+
+                var b = new BigInteger(buffer, isUnsigned: false);
+                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+                Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
+
+                BinaryPrimitives.WriteUInt128LittleEndian(buffer, UInt128.One << i);
+                b = new BigInteger(buffer, isUnsigned: true);
+                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+                Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
+
+                buffer = new byte[32]; // 256bit
+                random.NextBytes(buffer);
+                b = new BigInteger(buffer, isUnsigned: true);
+                var zeroCount = BigInteger.TrailingZeroCount(b);
+                if (!b.IsZero) Assert.AreEqual(zeroCount, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+            }
         }
 
         [TestMethod]
