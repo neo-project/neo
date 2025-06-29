@@ -185,7 +185,7 @@ namespace Neo.CLI
 
             // Read nef
             info = new FileInfo(nefFilePath);
-            if (!info.Exists) 
+            if (!info.Exists)
                 throw new ArgumentException($"Contract NEF file not found at path: {nefFilePath}. Please ensure the NEF file exists and the path is correct.", nameof(nefFilePath));
             if (info.Length >= Transaction.MaxTransactionSize)
                 throw new ArgumentException($"Contract NEF file size ({info.Length} bytes) exceeds the maximum allowed transaction size ({Transaction.MaxTransactionSize} bytes). Please check the file size and ensure it's within limits.", nameof(nefFilePath));
