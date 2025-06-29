@@ -30,12 +30,18 @@ namespace Neo.IO
 
             public void Signal(Message msg)
             {
-                if (!_hashSet.Add(msg.Value))
+                lock (_hashSet)
                 {
-                    throw new InvalidOperationException($"Duplicate message value: {msg.Value}");
+                    if (_hashSet.Add(msg.Value))
+                    {
+                        CountDown.Signal();
+                    }
+                    else
+                    {
+                        // Note: AKKa send duplicate messages
+                        // throw new InvalidOperationException($"Duplicate message value: {msg.Value}");
+                    }
                 }
-
-                CountDown.Signal();
             }
 
             public void Dispose()
