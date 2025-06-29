@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Akka.Configuration;
 using BenchmarkDotNet.Attributes;
+using System.Collections.Concurrent;
 
 namespace Neo.IO
 {
@@ -34,30 +35,27 @@ namespace Neo.IO
 
         public class Counter(int count) : IDisposable
         {
-            private readonly HashSet<int> _hashSet = [];
+            private readonly ConcurrentDictionary<int, bool> _set = [];
 
             public CountdownEvent CountDown { get; } = new CountdownEvent(count);
 
             public void Signal(Message msg)
             {
-                lock (_hashSet)
+                if (_set.TryAdd(msg.Value, true))
                 {
-                    if (_hashSet.Add(msg.Value))
-                    {
-                        CountDown.Signal();
-                    }
-                    else
-                    {
-                        // Note: AKKa send duplicate messages
-                        // throw new InvalidOperationException($"Duplicate message value: {msg.Value}");
-                    }
+                    CountDown.Signal();
+                }
+                else
+                {
+                    // Note: AKKa send duplicate messages
+                    // throw new InvalidOperationException($"Duplicate message value: {msg.Value}");
                 }
             }
 
             public void Reset(int messageCount)
             {
                 CountDown.Reset(messageCount);
-                _hashSet.Clear();
+                _set.Clear();
             }
 
             public void Dispose()
