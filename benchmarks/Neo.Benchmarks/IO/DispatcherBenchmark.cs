@@ -80,10 +80,9 @@ namespace Neo.IO
         {
             public Counter Counter { get; } = countdown;
 
-            public override Task OnReceive(Message message)
+            public override void OnReceive(Message message)
             {
                 Counter.Signal(message);
-                return Task.CompletedTask;
             }
         }
 
@@ -144,7 +143,7 @@ namespace Neo.IO
         }
 
         [Benchmark]
-        public void Akka_Send()
+        public void Akka()
         {
             _akkaCountdown.Reset(MessageCount);
             foreach (var msg in _messages) _akkaActor.Tell(msg);
@@ -152,7 +151,7 @@ namespace Neo.IO
         }
 
         [Benchmark]
-        public void Neo_Dispatch()
+        public void MessageReceiver()
         {
             _neoCountdown.Reset(MessageCount);
             _neoDispatcher.Tell(_messages);

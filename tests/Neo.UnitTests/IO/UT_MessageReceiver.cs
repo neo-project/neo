@@ -25,7 +25,7 @@ namespace Neo.UnitTests.IO
             public readonly List<int> ProcessedMessages = [];
             public readonly ManualResetEventSlim Signal = new();
 
-            public override Task OnReceive(int message)
+            public override void OnReceive(int message)
             {
                 lock (ProcessedMessages)
                 {
@@ -34,7 +34,7 @@ namespace Neo.UnitTests.IO
                         Signal.Set();
                 }
 
-                return Task.Delay(10);
+                // return Task.Delay(10);
             }
         }
 

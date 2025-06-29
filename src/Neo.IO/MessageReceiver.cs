@@ -1,17 +1,7 @@
-// Copyright (C) 2015-2025 The Neo Project.
-//
-// MessageReceiver.cs file belongs to the neo project and is free
-// software distributed under the MIT software license, see the
-// accompanying file LICENSE in the main directory of the
-// repository or http://www.opensource.org/licenses/mit-license.php
-// for more details.
-//
-// Redistribution and use in source and binary forms with or without
-// modifications are permitted.
-
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.IO
@@ -23,12 +13,10 @@ namespace Neo.IO
     public abstract class MessageReceiver<T> : IDisposable
     {
         private readonly Task[] _workers;
-        private readonly BlockingCollection<T> _queue = [];
+        private readonly Queue<T> _queue = new();
+        private readonly SemaphoreSlim _semaphore = new(0);
+        private volatile bool _disposed;
 
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="workerCount">Workers count</param>
         public MessageReceiver(int workerCount)
         {
             _workers = new Task[workerCount];
@@ -38,86 +26,86 @@ namespace Neo.IO
             }
         }
 
-        /// <summary>
-        /// Receive a message
-        /// </summary>
-        /// <param name="message">Message</param>
-        public abstract Task OnReceive(T message);
+        public abstract void OnReceive(T message);
 
         private async Task WorkerLoop()
         {
-            while (!_queue.IsAddingCompleted)
-            {
-                // Avoid create try context per iterations
+            T? message;
 
-                try
+start:
+            try
+            {
+                while (!_disposed)
                 {
-                    foreach (var message in _queue.GetConsumingEnumerable())
+                    await _semaphore.WaitAsync();
+
+                    lock (_queue)
                     {
-                        await OnReceive(message);
+                        if (!_queue.TryDequeue(out message))
+                        {
+                            // This should happen only during Dispose
+                            break;
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    OnMessageError(ex);
+
+                    OnReceive(message);
                 }
             }
+            catch (Exception ex)
+            {
+                OnMessageError(ex);
+            }
+
+            // If the receiver is disposed, exit the loop.
+
+            if (!_disposed) goto start;
         }
 
-        /// <summary>
-        /// Process a message error
-        /// </summary>
-        /// <param name="exception">Exception</param>
         protected virtual void OnMessageError(Exception exception)
         {
             Console.Error.WriteLine(exception.ToString());
         }
 
-        /// <summary>
-        /// Dispatches a message to all registered handlers for the message's type.
-        /// </summary>
-        /// <param name="message">Message</param>
-        public void Tell(T message) => _queue.Add(message);
+        public void Tell(T message)
+        {
+            lock (_queue)
+            {
+                _queue.Enqueue(message);
+            }
 
-        /// <summary>
-        /// Dispatches a message to all registered handlers for the message's type.
-        /// </summary>
-        /// <param name="messages">Messages</param>
+            _semaphore.Release();
+        }
+
         public void Tell(params T[] messages)
         {
-            if (messages.Length <= 2)
+            lock (_queue)
             {
                 foreach (var message in messages)
                 {
-                    _queue.Add(message);
+                    _queue.Enqueue(message);
                 }
             }
-            else
-            {
-                // Use parallel to improve the adding
 
-                Parallel.ForEach(messages, _queue.Add);
-            }
+            _semaphore.Release(messages.Length);
         }
 
-        /// <summary>
-        /// Releases all resources used by the message dispatcher.
-        /// </summary>
         public virtual void Dispose()
         {
-            _queue.CompleteAdding();
+            _disposed = true;
+
+            for (var i = 0; i < _workers.Length; i++)
+            {
+                _semaphore.Release();
+            }
 
             try
             {
                 Task.WaitAll(_workers);
             }
-            catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is OperationCanceledException))
-            {
-                // Expected cancellation
-            }
+            catch (OperationCanceledException) { }
+            catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is OperationCanceledException)) { }
 
-            _queue.Dispose();
-
+            _semaphore.Dispose();
             GC.SuppressFinalize(this);
         }
     }
