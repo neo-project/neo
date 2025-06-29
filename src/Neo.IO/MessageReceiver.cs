@@ -46,11 +46,16 @@ namespace Neo.IO
 
         private void WorkerLoop()
         {
-            foreach (var message in _queue.GetConsumingEnumerable())
+            while (!_queue.IsAddingCompleted)
             {
+                // Avoid create try context per iterations
+
                 try
                 {
-                    OnReceive(message);
+                    foreach (var message in _queue.GetConsumingEnumerable())
+                    {
+                        OnReceive(message);
+                    }
                 }
                 catch (Exception ex)
                 {
