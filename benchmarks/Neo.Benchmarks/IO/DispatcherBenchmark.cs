@@ -15,11 +15,21 @@ using BenchmarkDotNet.Attributes;
 
 namespace Neo.IO
 {
+    //public class DebugConfig : ManualConfig
+    //{
+    //    public DebugConfig()
+    //    {
+    //        AddJob(Job.InProcess);
+    //        WithOptions(ConfigOptions.DisableOptimizationsValidator);
+    //    }
+    //}
+
+    //[Config(typeof(DebugConfig))]
     public class DispatcherBenchmark
     {
-        public class Message
+        public class Message(int value)
         {
-            public int Value { get; set; }
+            public int Value { get; } = value;
         }
 
         public class Counter(int count) : IDisposable
@@ -42,6 +52,12 @@ namespace Neo.IO
                         // throw new InvalidOperationException($"Duplicate message value: {msg.Value}");
                     }
                 }
+            }
+
+            public void Reset(int messageCount)
+            {
+                CountDown.Reset(messageCount);
+                _hashSet.Clear();
             }
 
             public void Dispose()
@@ -92,12 +108,14 @@ namespace Neo.IO
 
             _messages = new Message[MessageCount];
             for (var i = 0; i < MessageCount; i++)
-                _messages[i] = new Message { Value = i };
+                _messages[i] = new Message(i);
 
             var threads = MultiThread ? Environment.ProcessorCount * 2 : 1;
 
             // Akka setup
-            var config = ConfigurationFactory.ParseString($@"
+
+            {
+                var config = ConfigurationFactory.ParseString($@"
                     akka.actor.default-dispatcher {{
                         type = Dispatcher
                         executor = thread-pool-executor
@@ -106,13 +124,17 @@ namespace Neo.IO
                         }}
                         throughput = 1
                     }}");
-            _akkaSystem = ActorSystem.Create("AkkaMessages", config);
-            _akkaCountdown = new Counter(MessageCount);
-            _akkaActor = _akkaSystem.ActorOf(Props.Create(() => new AkkaMessageActor(_akkaCountdown)));
+                _akkaSystem = ActorSystem.Create("AkkaMessages", config);
+                _akkaCountdown = new Counter(MessageCount);
+                _akkaActor = _akkaSystem.ActorOf(Props.Create(() => new AkkaMessageActor(_akkaCountdown)));
+            }
 
             // Neo dispatcher setup
-            _neoCountdown = new Counter(MessageCount);
-            _neoDispatcher = new NeoMessageHandler(_neoCountdown, MultiThread ? threads : 1);
+
+            {
+                _neoCountdown = new Counter(MessageCount);
+                _neoDispatcher = new NeoMessageHandler(_neoCountdown, MultiThread ? threads : 1);
+            }
         }
 
         [GlobalCleanup]
@@ -125,17 +147,17 @@ namespace Neo.IO
         [Benchmark]
         public void Akka_Send()
         {
-            _akkaCountdown.CountDown.Reset(MessageCount);
+            _akkaCountdown.Reset(MessageCount);
             foreach (var msg in _messages) _akkaActor.Tell(msg);
-            _akkaCountdown.CountDown.Wait(TimeSpan.FromSeconds(1));
+            _akkaCountdown.CountDown.Wait(TimeSpan.FromSeconds(500));
         }
 
         [Benchmark]
         public void Neo_Dispatch()
         {
-            _neoCountdown.CountDown.Reset(MessageCount);
+            _neoCountdown.Reset(MessageCount);
             _neoDispatcher.Tell(_messages);
-            _neoCountdown.CountDown.Wait(TimeSpan.FromSeconds(1));
+            _neoCountdown.CountDown.Wait(TimeSpan.FromMilliseconds(500));
         }
     }
 }
