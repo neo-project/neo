@@ -51,10 +51,10 @@ namespace Neo.CLI.Tests
 
             // Initialize TestBlockchain
             _neoSystem = TestBlockchain.GetSystem();
-            
+
             // Create MainService instance
             _mainService = new MainService();
-            
+
             // Set NeoSystem using reflection
             var neoSystemField = typeof(MainService).GetField("NeoSystem", BindingFlags.NonPublic | BindingFlags.Static);
             neoSystemField?.SetValue(null, _neoSystem);
@@ -63,7 +63,7 @@ namespace Neo.CLI.Tests
             _mockWallet = new Mock<Wallet>();
             var mockAccount = new Mock<WalletAccount>(UInt160.Zero, null);
             _mockWallet.Setup(w => w.GetDefaultAccount()).Returns(mockAccount.Object);
-            
+
             // Set CurrentWallet using reflection
             var walletField = typeof(MainService).GetField("CurrentWallet", BindingFlags.NonPublic | BindingFlags.Instance);
             walletField?.SetValue(_mainService, _mockWallet.Object);
@@ -169,7 +169,7 @@ namespace Neo.CLI.Tests
             // Mock ContractManagement to return our test contract
             var snapshot = _neoSystem.StoreView;
             var contractManagement = new Mock<ContractManagement>();
-            
+
             // This is a simplified approach - in reality you might need more complex mocking
             // For the purpose of this test, we'll use reflection to access the private methods
         }
@@ -178,7 +178,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_Boolean()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             // Test true value
             var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Boolean, JToken.Parse("true") });
             Assert.AreEqual(ContractParameterType.Boolean, result.Type);
@@ -194,7 +194,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_Integer()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             // Test positive integer
             var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Integer, JToken.Parse("\"123\"") });
             Assert.AreEqual(ContractParameterType.Integer, result.Type);
@@ -215,7 +215,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_String()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.String, JToken.Parse("\"Hello, World!\"") });
             Assert.AreEqual(ContractParameterType.String, result.Type);
             Assert.AreEqual("Hello, World!", result.Value);
@@ -230,7 +230,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_Hash160()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             var hash160 = "0x1234567890abcdef1234567890abcdef12345678";
             var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Hash160, JToken.Parse($"\"{hash160}\"") });
             Assert.AreEqual(ContractParameterType.Hash160, result.Type);
@@ -241,7 +241,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_ByteArray()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             var base64 = Convert.ToBase64String(new byte[] { 0x01, 0x02, 0x03, 0x04 });
             var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.ByteArray, JToken.Parse($"\"{base64}\"") });
             Assert.AreEqual(ContractParameterType.ByteArray, result.Type);
@@ -252,11 +252,11 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_Array()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             var arrayJson = "[1, \"hello\", true]";
             var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Array, JToken.Parse(arrayJson) });
             Assert.AreEqual(ContractParameterType.Array, result.Type);
-            
+
             var array = (ContractParameter[])result.Value;
             Assert.AreEqual(3, array.Length);
             Assert.AreEqual(ContractParameterType.Integer, array[0].Type);
@@ -268,11 +268,11 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_Map()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             var mapJson = "{\"key1\": \"value1\", \"key2\": 123}";
             var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Map, JToken.Parse(mapJson) });
             Assert.AreEqual(ContractParameterType.Map, result.Type);
-            
+
             var map = (List<KeyValuePair<ContractParameter, ContractParameter>>)result.Value;
             Assert.AreEqual(2, map.Count);
             Assert.AreEqual("key1", map[0].Key.Value);
@@ -285,7 +285,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_Any()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             // Test Any with boolean
             var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Any, JToken.Parse("true") });
             Assert.AreEqual(ContractParameterType.Boolean, result.Type);
@@ -311,7 +311,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_Null()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.String, null });
             Assert.AreEqual(ContractParameterType.String, result.Type);
             Assert.IsNull(result.Value);
@@ -325,7 +325,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_InvalidInteger()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             // This should throw because "abc" is not a valid integer
             Assert.ThrowsException<TargetInvocationException>(() =>
                 method.Invoke(_mainService, new object[] { ContractParameterType.Integer, JToken.Parse("\"abc\"") }));
@@ -335,7 +335,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_InvalidHash160()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             // This should throw because the hash is invalid
             Assert.ThrowsException<TargetInvocationException>(() =>
                 method.Invoke(_mainService, new object[] { ContractParameterType.Hash160, JToken.Parse("\"invalid_hash\"") }));
@@ -345,7 +345,7 @@ namespace Neo.CLI.Tests
         public void TestParseParameterFromAbi_UnsupportedType()
         {
             var method = GetPrivateMethod("ParseParameterFromAbi");
-            
+
             // InteropInterface is not supported for JSON parsing
             Assert.ThrowsException<TargetInvocationException>(() =>
                 method.Invoke(_mainService, new object[] { ContractParameterType.InteropInterface, JToken.Parse("\"test\"") }));
