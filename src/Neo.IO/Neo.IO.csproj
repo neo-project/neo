@@ -19,8 +19,4 @@
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Network\" />
-  </ItemGroup>
-
 </Project>
