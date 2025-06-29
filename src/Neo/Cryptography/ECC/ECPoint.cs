@@ -247,102 +247,86 @@ namespace Neo.Cryptography.ECC
             if (m < 13)
             {
                 width = 2;
-                reqPreCompLen = 4;
+                reqPreCompLen = 1;
             }
             else if (m < 41)
             {
                 width = 3;
-                reqPreCompLen = 8;
+                reqPreCompLen = 2;
             }
             else if (m < 121)
             {
                 width = 4;
-                reqPreCompLen = 16;
+                reqPreCompLen = 4;
             }
             else if (m < 337)
             {
                 width = 5;
+                reqPreCompLen = 8;
+            }
+            else if (m < 897)
+            {
+                width = 6;
+                reqPreCompLen = 16;
+            }
+            else if (m < 2305)
+            {
+                width = 7;
                 reqPreCompLen = 32;
             }
             else
             {
-                width = 6;
-                reqPreCompLen = 64;
+                width = 8;
+                reqPreCompLen = 127;
             }
 
             // The length of the precomputing array
-            var preCompLen = 1 << (width - 2);
-
-            // The precomputing array
-            var preComp = new ECPoint[preCompLen];
-            preComp[0] = p;
-
-            if (preCompLen == 1)
-            {
-                return WindowNafMul(width, preComp, k);
-            }
-
-            // Do precomputing
+            var preCompLen = 1;
+            var preComp = new ECPoint[] { p };
             var twiceP = p.Twice();
-            preComp[1] = twiceP;
-            for (var i = 2; i < preCompLen; i++)
+
+            if (preCompLen < reqPreCompLen)
             {
-                preComp[i] = preComp[i - 1] + twiceP;
+                // Precomputing array must be made bigger, copy existing preComp
+                // array into the larger new preComp array
+                var oldPreComp = preComp;
+                preComp = new ECPoint[reqPreCompLen];
+                Array.Copy(oldPreComp, 0, preComp, 0, preCompLen);
+
+                for (var i = preCompLen; i < reqPreCompLen; i++)
+                {
+                    // Compute the new ECPoints for the precomputing array.
+                    // The values 1, 3, 5, ..., 2^(width-1)-1 times p are
+                    // computed
+                    preComp[i] = twiceP + preComp[i - 1];
+                }
             }
 
-            return WindowNafMul(width, preComp, k);
-        }
-
-        private static ECPoint WindowNafMul(sbyte width, ECPoint[] preComp, BigInteger k)
-        {
+            // Compute the Window NAF of the desired width
             var wnaf = WindowNaf(width, k);
-            var p = ECPoint.Infinity;
-            for (var i = wnaf.Length - 1; i >= 0; i--)
+            var l = wnaf.Length;
+
+            // Apply the Window NAF to p using the precomputed ECPoint values.
+            var q = p.Curve.Infinity;
+            for (var i = l - 1; i >= 0; i--)
             {
-                p = p.Twice();
+                q = q.Twice();
+
                 if (wnaf[i] != 0)
                 {
                     if (wnaf[i] > 0)
                     {
-                        p += preComp[(wnaf[i] - 1) >> 1];
+                        q += preComp[(wnaf[i] - 1) / 2];
                     }
                     else
                     {
-                        p -= preComp[(-wnaf[i] - 1) >> 1];
+                        // wnaf[i] < 0
+                        q -= preComp[(-wnaf[i] - 1) / 2];
                     }
                 }
             }
-            return p;
-        }
 
-        private static sbyte[] WindowNaf(sbyte width, BigInteger k)
-        {
-            var t = k.GetBitLength();
-            var result = new sbyte[t + 1];
-            var pow2wBm1 = BigInteger.One << (width - 1);
-            var pow2w = BigInteger.One << width;
-            var i = 0;
-
-            while (k.Sign > 0)
-            {
-                if (!k.IsEven)
-                {
-                    var remainder = k % pow2w;
-                    if (remainder > pow2wBm1)
-                    {
-                        remainder -= pow2w;
-                    }
-                    result[i] = (sbyte)remainder;
-                    k -= remainder;
-                }
-                else
-                {
-                    result[i] = 0;
-                }
-                k >>= 1;
-                i++;
-            }
-            return result;
+            return q;
         }
 
         /// <summary>
@@ -411,47 +395,81 @@ namespace Neo.Cryptography.ECC
             return new ECPoint(x3, y3, Curve);
         }
 
-        public static ECPoint operator +(ECPoint left, ECPoint right)
+        private static sbyte[] WindowNaf(sbyte width, BigInteger k)
         {
-            if (left.IsInfinity) return right;
-            if (right.IsInfinity) return left;
-
-            if (left.X!.Equals(right.X))
+            var wnaf = new sbyte[k.GetBitLength() + 1];
+            var pow2wB = (short)(1 << width);
+            var i = 0;
+            var length = 0;
+            while (k.Sign > 0)
             {
-                if (left.Y!.Equals(right.Y))
+                if (!k.IsEven)
                 {
-                    return left.Twice();
+                    var remainder = k % pow2wB;
+                    if (remainder.TestBit(width - 1))
+                    {
+                        wnaf[i] = (sbyte)(remainder - pow2wB);
+                    }
+                    else
+                    {
+                        wnaf[i] = (sbyte)remainder;
+                    }
+                    k -= wnaf[i];
+                    length = i;
                 }
-                return ECPoint.Infinity;
+                else
+                {
+                    wnaf[i] = 0;
+                }
+                k >>= 1;
+                i++;
             }
-
-            var slope = (right.Y! - left.Y!) / (right.X! - left.X!);
-            var x3 = slope.Square() - left.X! - right.X!;
-            var y3 = slope * (left.X! - x3) - left.Y!;
-
-            return new ECPoint(x3, y3, left.Curve);
+            length++;
+            var wnafShort = new sbyte[length];
+            Array.Copy(wnaf, 0, wnafShort, 0, length);
+            return wnafShort;
         }
 
-        public static ECPoint operator -(ECPoint left, ECPoint right)
+        public static ECPoint operator -(ECPoint x)
         {
-            return left + (-right);
+            return new ECPoint(x.X, -x.Y!, x.Curve);
         }
 
-        public static ECPoint operator -(ECPoint point)
+        public static ECPoint operator *(ECPoint p, byte[] n)
         {
-            if (point.IsInfinity) return point;
-            return new ECPoint(point.X!, -point.Y!, point.Curve);
+            if (n.Length != 32)
+                throw new ArgumentException($"Invalid byte array length for ECPoint multiplication: {n.Length} bytes. The scalar must be exactly 32 bytes.", nameof(n));
+            if (p.IsInfinity)
+                return p;
+            var k = new BigInteger(n, isUnsigned: true, isBigEndian: true);
+            if (k.Sign == 0)
+                return p.Curve.Infinity;
+            return Multiply(p, k);
         }
 
-        public static ECPoint operator *(ECPoint point, BigInteger k)
+        public static ECPoint operator +(ECPoint x, ECPoint y)
         {
-            if (k.Sign < 0) throw new ArgumentException($"Invalid scalar for ECPoint multiplication: {k}. The scalar must be non-negative.");
-            return Multiply(point, k);
+            if (x.IsInfinity)
+                return y;
+            if (y.IsInfinity)
+                return x;
+            if (x.X!.Equals(y.X))
+            {
+                if (x.Y!.Equals(y.Y))
+                    return x.Twice();
+                return x.Curve.Infinity;
+            }
+            var gamma = (y.Y! - x.Y!) / (y.X! - x.X!);
+            var x3 = gamma.Square() - x.X! - y.X!;
+            var y3 = gamma * (x.X! - x3) - x.Y!;
+            return new ECPoint(x3, y3, x.Curve);
         }
 
-        public static ECPoint operator *(BigInteger k, ECPoint point)
+        public static ECPoint operator -(ECPoint x, ECPoint y)
         {
-            return point * k;
+            if (y.IsInfinity)
+                return x;
+            return x + (-y);
         }
     }
 }
