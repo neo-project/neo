@@ -17,11 +17,11 @@ using System.Threading.Tasks;
 
 namespace Neo.IO
 {
-    public abstract class MessageReceiver(int workerCount)
+    internal abstract class MessageReceiver(int workerCount)
         : MessageReceiver<object>(workerCount)
     { }
 
-    public abstract class MessageReceiver<T> : IDisposable
+    internal abstract class MessageReceiver<T> : IDisposable
     {
         private readonly Task[] _workers;
         private readonly Queue<T> _queue = new();
