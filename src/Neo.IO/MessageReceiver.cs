@@ -16,6 +16,10 @@ using System.Threading.Tasks;
 
 namespace Neo.IO
 {
+    public abstract class MessageReceiver(int workerCount)
+        : MessageReceiver<object>(workerCount)
+    { }
+
     public abstract class MessageReceiver<T> : IDisposable
     {
         private readonly Task[] _workers;
@@ -30,7 +34,7 @@ namespace Neo.IO
             _workers = new Task[workerCount];
             for (var i = 0; i < workerCount; i++)
             {
-                _workers[i] = Task.Run(WorkerLoopAsync);
+                _workers[i] = Task.Run(WorkerLoop);
             }
         }
 
@@ -38,31 +42,37 @@ namespace Neo.IO
         /// Receive a message
         /// </summary>
         /// <param name="message">Message</param>
-        public abstract Task OnMessageAsync(T message);
+        public abstract void OnReceive(T message);
 
-        private async Task WorkerLoopAsync()
+        private void WorkerLoop()
         {
-            try
+            foreach (var message in _queue.GetConsumingEnumerable())
             {
-                foreach (var message in _queue.GetConsumingEnumerable())
+                try
                 {
-                    await OnMessageAsync(message).ConfigureAwait(false);
+                    OnReceive(message);
+                }
+                catch (Exception ex)
+                {
+                    OnMessageError(ex);
                 }
             }
-            catch (OperationCanceledException)
-            {
-                // Graceful cancellation
-            }
+        }
+
+        /// <summary>
+        /// Process a message error
+        /// </summary>
+        /// <param name="exception">Exception</param>
+        protected virtual void OnMessageError(Exception exception)
+        {
+            Console.Error.WriteLine(exception.ToString());
         }
 
         /// <summary>
         /// Dispatches a message to all registered handlers for the message's type.
         /// </summary>
         /// <param name="message">Message</param>
-        public void Tell(T message)
-        {
-            _queue.Add(message);
-        }
+        public void Tell(T message) => _queue.Add(message);
 
         /// <summary>
         /// Dispatches a message to all registered handlers for the message's type.

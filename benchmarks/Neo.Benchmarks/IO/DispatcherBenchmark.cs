@@ -22,30 +22,47 @@ namespace Neo.IO
             public int Value { get; set; }
         }
 
-        public class AkkaMessageActor : ReceiveActor
+        public class Counter(int count) : IDisposable
         {
-            private readonly CountdownEvent _countdown;
+            private readonly HashSet<int> _hashSet = [];
 
-            public AkkaMessageActor(CountdownEvent countdown)
+            public CountdownEvent CountDown { get; } = new CountdownEvent(count);
+
+            public void Signal(Message msg)
             {
-                _countdown = countdown;
-
-                Receive<Message>(_ =>
+                if (!_hashSet.Add(msg.Value))
                 {
-                    _countdown.Signal();
-                });
+                    throw new InvalidOperationException($"Duplicate message value: {msg.Value}");
+                }
+
+                CountDown.Signal();
+            }
+
+            public void Dispose()
+            {
+                CountDown.Dispose();
+                GC.SuppressFinalize(this);
             }
         }
 
-        public class NeoMessageHandler(CountdownEvent countdown, int workerCount)
+        public class AkkaMessageActor(Counter countdown) : UntypedActor
+        {
+            public Counter Counter { get; } = countdown;
+
+            protected override void OnReceive(object message)
+            {
+                Counter.Signal((Message)message);
+            }
+        }
+
+        public class NeoMessageHandler(Counter countdown, int workerCount)
             : MessageReceiver<Message>(workerCount)
         {
-            private readonly CountdownEvent _countdown = countdown;
+            public Counter Counter { get; } = countdown;
 
-            public override Task OnMessageAsync(Message message)
+            public override void OnReceive(Message message)
             {
-                _countdown.Signal();
-                return Task.CompletedTask;
+                Counter.Signal(message);
             }
         }
 
@@ -59,9 +76,8 @@ namespace Neo.IO
         private ActorSystem _akkaSystem;
         private NeoMessageHandler _neoDispatcher;
         private Message[] _messages;
-
-        private CountdownEvent _akkaCountdown;
-        private CountdownEvent _neoCountdown;
+        private Counter _akkaCountdown;
+        private Counter _neoCountdown;
 
         [GlobalSetup]
         public void Setup()
@@ -71,9 +87,6 @@ namespace Neo.IO
             _messages = new Message[MessageCount];
             for (var i = 0; i < MessageCount; i++)
                 _messages[i] = new Message { Value = i };
-
-            _akkaCountdown = new CountdownEvent(MessageCount);
-            _neoCountdown = new CountdownEvent(MessageCount);
 
             var threads = MultiThread ? Environment.ProcessorCount * 2 : 1;
 
@@ -88,9 +101,11 @@ namespace Neo.IO
                         throughput = 1
                     }}");
             _akkaSystem = ActorSystem.Create("AkkaMessages", config);
+            _akkaCountdown = new Counter(MessageCount);
             _akkaActor = _akkaSystem.ActorOf(Props.Create(() => new AkkaMessageActor(_akkaCountdown)));
 
             // Neo dispatcher setup
+            _neoCountdown = new Counter(MessageCount);
             _neoDispatcher = new NeoMessageHandler(_neoCountdown, MultiThread ? threads : 1);
         }
 
@@ -104,17 +119,15 @@ namespace Neo.IO
         [Benchmark]
         public void Akka_Send()
         {
-            _akkaCountdown.Reset(MessageCount);
             foreach (var msg in _messages) _akkaActor.Tell(msg);
-            _akkaCountdown.Wait(TimeSpan.FromSeconds(1));
+            _akkaCountdown.CountDown.Wait(TimeSpan.FromSeconds(1));
         }
 
         [Benchmark]
         public void Neo_Dispatch()
         {
-            _neoCountdown.Reset(MessageCount);
             _neoDispatcher.Tell(_messages);
-            _neoCountdown.Wait(TimeSpan.FromSeconds(1));
+            _neoCountdown.CountDown.Wait(TimeSpan.FromSeconds(1));
         }
     }
 }

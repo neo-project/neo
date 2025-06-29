@@ -13,7 +13,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neo.UnitTests.IO
 {
@@ -25,7 +24,7 @@ namespace Neo.UnitTests.IO
             public readonly List<int> ProcessedMessages = [];
             public readonly ManualResetEventSlim Signal = new();
 
-            public override Task OnMessageAsync(int message)
+            public override void OnReceive(int message)
             {
                 lock (ProcessedMessages)
                 {
@@ -33,8 +32,6 @@ namespace Neo.UnitTests.IO
                     if (ProcessedMessages.Count >= 5)
                         Signal.Set();
                 }
-
-                return Task.Delay(100); // Simulate work
             }
         }
 
