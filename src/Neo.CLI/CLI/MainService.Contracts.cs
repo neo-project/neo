@@ -233,7 +233,7 @@ namespace Neo.CLI
                 {
                     var paramDef = method.Parameters[i];
                     var paramValue = args[i];
-                    
+
                     try
                     {
                         var contractParam = ParseParameterFromAbi(paramDef.Type, paramValue);

@@ -171,7 +171,7 @@ namespace Neo.CLI.Tests
             // Properly add the contract to the test snapshot using the extension method
             var snapshot = _neoSystem.GetSnapshotCache();
             snapshot.AddContract(_contractHash, _contractState);
-            
+
             // Commit the changes to make them available for subsequent operations
             snapshot.Commit();
         }
@@ -472,17 +472,21 @@ namespace Neo.CLI.Tests
         {
             // Arrange
             _consoleOutput.GetStringBuilder().Clear();
-            
+
             // Test with array parameter
-            var innerArray = new JArray();
-            innerArray.Add(1);
-            innerArray.Add(2);
-            innerArray.Add(3);
-            innerArray.Add("test");
-            innerArray.Add(true);
-            var arrayArgs = new JArray();
-            arrayArgs.Add(innerArray);
-            
+            var innerArray = new JArray
+            {
+                1,
+                2,
+                3,
+                "test",
+                true
+            };
+            var arrayArgs = new JArray
+            {
+                innerArray
+            };
+
             // Act & Assert - Array type
             var invokeAbiMethod = GetPrivateMethod("OnInvokeAbiCommand");
             try
@@ -493,7 +497,7 @@ namespace Neo.CLI.Tests
             {
                 // Expected - we're testing parameter parsing, not full execution
             }
-            
+
             // The fact that we don't get a parsing error means the array was parsed successfully
             var output = _consoleOutput.ToString();
             Assert.IsFalse(output.Contains("Failed to parse parameter"));
