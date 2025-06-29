@@ -24,7 +24,7 @@ namespace Neo.IO.Network
 {
     internal class NeoNetConnection : IAsyncDisposable, IDisposable
     {
-        internal const int MinAllocBufferSize = 4096;
+        internal const int MinAllocBufferSize = 1024 * 1024; // 1MB
 
         private readonly Channel<Message> _messageQueue; // queue for messages
 
