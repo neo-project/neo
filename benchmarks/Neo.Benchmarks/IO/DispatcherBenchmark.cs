@@ -100,7 +100,8 @@ namespace Neo.IO
         [Params(1, 1_000, 10_000)]
         public int MessageCount { get; set; }
 
-        [Params(true, false)]
+        // [Params(true, false)]
+        [Params(false)]
         public bool MultiThread { get; set; }
 
         private IActorRef _akkaActor;
