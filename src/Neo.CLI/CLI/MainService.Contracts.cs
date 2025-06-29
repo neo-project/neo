@@ -10,11 +10,13 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Cryptography.ECC;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -185,6 +187,156 @@ namespace Neo.CLI
                 return;
             }
             SignAndSendTx(NeoSystem.StoreView, tx);
+        }
+
+        /// <summary>
+        /// Process "invokeabi" command - invokes a contract method with parameters parsed according to the contract's ABI
+        /// </summary>
+        /// <param name="scriptHash">Script hash</param>
+        /// <param name="operation">Operation</param>
+        /// <param name="args">Arguments as an array of values that will be parsed according to the ABI</param>
+        /// <param name="sender">Transaction's sender</param>
+        /// <param name="signerAccounts">Signer's accounts</param>
+        /// <param name="maxGas">Max fee for running the script, in the unit of GAS</param>
+        [ConsoleCommand("invokeabi", Category = "Contract Commands")]
+        private void OnInvokeAbiCommand(UInt160 scriptHash, string operation, JArray? args = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
+        {
+            // Get the contract from storage
+            var contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
+            if (contract == null)
+            {
+                ConsoleHelper.Error("Contract does not exist.");
+                return;
+            }
+
+            // Find the method in the ABI
+            var method = contract.Manifest.Abi.GetMethod(operation, args?.Count ?? 0);
+            if (method == null)
+            {
+                ConsoleHelper.Error($"Method '{operation}' with {args?.Count ?? 0} parameters does not exist in this contract.");
+                return;
+            }
+
+            // Parse parameters according to the ABI
+            JArray? contractParameters = null;
+            if (args != null && args.Count > 0)
+            {
+                contractParameters = new JArray();
+                for (int i = 0; i < args.Count; i++)
+                {
+                    if (i >= method.Parameters.Length)
+                    {
+                        ConsoleHelper.Error($"Too many arguments. Method '{operation}' expects {method.Parameters.Length} parameters.");
+                        return;
+                    }
+
+                    var paramDef = method.Parameters[i];
+                    var paramValue = args[i];
+                    
+                    try
+                    {
+                        var contractParam = ParseParameterFromAbi(paramDef.Type, paramValue);
+                        contractParameters.Add(contractParam.ToJson());
+                    }
+                    catch (Exception ex)
+                    {
+                        ConsoleHelper.Error($"Failed to parse parameter '{paramDef.Name}' at index {i}: {ex.Message}");
+                        return;
+                    }
+                }
+            }
+
+            // Call the original invoke command with the parsed parameters
+            OnInvokeCommand(scriptHash, operation, contractParameters, sender, signerAccounts, maxGas);
+        }
+
+        /// <summary>
+        /// Parse a parameter value according to its ABI type
+        /// </summary>
+        private ContractParameter ParseParameterFromAbi(ContractParameterType type, JToken? value)
+        {
+            var param = new ContractParameter { Type = type };
+
+            if (value == null || value.Type == JTokenType.Null)
+            {
+                param.Value = null;
+                return param;
+            }
+
+            switch (type)
+            {
+                case ContractParameterType.Boolean:
+                    param.Value = value.AsBoolean();
+                    break;
+                case ContractParameterType.Integer:
+                    param.Value = BigInteger.Parse(value.AsString());
+                    break;
+                case ContractParameterType.ByteArray:
+                    param.Value = Convert.FromBase64String(value.AsString());
+                    break;
+                case ContractParameterType.String:
+                    param.Value = value.AsString();
+                    break;
+                case ContractParameterType.Hash160:
+                    param.Value = UInt160.Parse(value.AsString());
+                    break;
+                case ContractParameterType.Hash256:
+                    param.Value = UInt256.Parse(value.AsString());
+                    break;
+                case ContractParameterType.PublicKey:
+                    param.Value = ECPoint.Parse(value.AsString(), ECCurve.Secp256r1);
+                    break;
+                case ContractParameterType.Signature:
+                    param.Value = Convert.FromBase64String(value.AsString());
+                    break;
+                case ContractParameterType.Array:
+                    if (value is JArray array)
+                    {
+                        param.Value = array.Select(v => ParseParameterFromAbi(ContractParameterType.Any, v)).ToArray();
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Expected array value for Array parameter type");
+                    }
+                    break;
+                case ContractParameterType.Map:
+                    if (value is JObject map)
+                    {
+                        var dict = new List<KeyValuePair<ContractParameter, ContractParameter>>();
+                        foreach (var kvp in map.Properties())
+                        {
+                            var key = new ContractParameter { Type = ContractParameterType.String, Value = kvp.Name };
+                            var val = ParseParameterFromAbi(ContractParameterType.Any, kvp.Value);
+                            dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, val));
+                        }
+                        param.Value = dict;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Expected object value for Map parameter type");
+                    }
+                    break;
+                case ContractParameterType.InteropInterface:
+                    throw new NotSupportedException("InteropInterface type cannot be parsed from JSON");
+                case ContractParameterType.Any:
+                    // Try to infer the type from the value
+                    if (value.Type == JTokenType.Boolean)
+                        return ParseParameterFromAbi(ContractParameterType.Boolean, value);
+                    else if (value.Type == JTokenType.Integer)
+                        return ParseParameterFromAbi(ContractParameterType.Integer, value);
+                    else if (value.Type == JTokenType.String)
+                        return ParseParameterFromAbi(ContractParameterType.String, value);
+                    else if (value.Type == JTokenType.Array)
+                        return ParseParameterFromAbi(ContractParameterType.Array, value);
+                    else if (value.Type == JTokenType.Object)
+                        return ParseParameterFromAbi(ContractParameterType.Map, value);
+                    else
+                        throw new ArgumentException($"Cannot infer type for value: {value}");
+                default:
+                    throw new ArgumentException($"Unsupported parameter type: {type}");
+            }
+
+            return param;
         }
     }
 }
