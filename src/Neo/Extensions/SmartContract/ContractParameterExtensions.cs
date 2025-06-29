@@ -87,7 +87,7 @@ namespace Neo.Extensions
                     stackItem = (string)parameter.Value;
                     break;
                 default:
-                    throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported to StackItem.");
+                    throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported for conversion to StackItem. This parameter type cannot be processed by the virtual machine.", nameof(parameter));
             }
             return stackItem;
         }

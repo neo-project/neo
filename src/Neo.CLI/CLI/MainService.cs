@@ -177,17 +177,18 @@ namespace Neo.CLI
             // Read manifest
             var info = new FileInfo(manifestFilePath);
             if (!info.Exists)
-                throw new ArgumentException("Manifest file not found", nameof(manifestFilePath));
+                throw new ArgumentException($"Contract manifest file not found at path: {manifestFilePath}. Please ensure the manifest file exists and the path is correct.", nameof(manifestFilePath));
             if (info.Length >= Transaction.MaxTransactionSize)
-                throw new ArgumentException("Manifest file is too large", nameof(manifestFilePath));
+                throw new ArgumentException($"Contract manifest file size ({info.Length} bytes) exceeds the maximum allowed transaction size ({Transaction.MaxTransactionSize} bytes). Please check the file size and ensure it's within limits.", nameof(manifestFilePath));
 
             manifest = ContractManifest.Parse(File.ReadAllBytes(manifestFilePath));
 
             // Read nef
             info = new FileInfo(nefFilePath);
-            if (!info.Exists) throw new ArgumentException("Nef file not found", nameof(nefFilePath));
+            if (!info.Exists) 
+                throw new ArgumentException($"Contract NEF file not found at path: {nefFilePath}. Please ensure the NEF file exists and the path is correct.", nameof(nefFilePath));
             if (info.Length >= Transaction.MaxTransactionSize)
-                throw new ArgumentException("Nef file is too large", nameof(nefFilePath));
+                throw new ArgumentException($"Contract NEF file size ({info.Length} bytes) exceeds the maximum allowed transaction size ({Transaction.MaxTransactionSize} bytes). Please check the file size and ensure it's within limits.", nameof(nefFilePath));
 
             nef = File.ReadAllBytes(nefFilePath).AsSerializable<NefFile>();
 
@@ -202,7 +203,7 @@ namespace Neo.CLI
                 }
                 catch (Exception ex)
                 {
-                    throw new FormatException("invalid data", ex);
+                    throw new FormatException($"Invalid contract deployment data format. The provided JSON data could not be parsed as valid contract parameters. Original error: {ex.Message}", ex);
                 }
             }
 
@@ -259,12 +260,12 @@ namespace Neo.CLI
         {
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException($"Wallet file \"{path}\" not found.");
+                throw new FileNotFoundException($"Wallet file not found at path: {path}. Please verify the file path is correct and the wallet file exists.", path);
             }
 
             if (CurrentWallet is not null) SignerManager.UnregisterSigner(CurrentWallet.Name);
 
-            CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
+            CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException($"Failed to open wallet at path: {path}. The wallet format may not be supported or the password may be incorrect. Please verify the wallet file integrity and password.");
             SignerManager.RegisterSigner(CurrentWallet.Name, CurrentWallet);
         }
 
@@ -537,7 +538,7 @@ namespace Neo.CLI
         public UInt160? ResolveNeoNameServiceAddress(string domain)
         {
             if (Settings.Default.Contracts.NeoNameService == UInt160.Zero)
-                throw new Exception("Neo Name Service (NNS): is disabled on this network.");
+                throw new Exception($"Neo Name Service (NNS) is not available on the current network. The NNS contract is not configured for network: {NeoSystem.Settings.Network}. Please ensure you are connected to a network that supports NNS functionality.");
 
             using var sb = new ScriptBuilder();
             sb.EmitDynamicCall(Settings.Default.Contracts.NeoNameService, "resolve", CallFlags.ReadOnly, domain, 16);
@@ -560,18 +561,18 @@ namespace Neo.CLI
                 }
                 else if (data is Null)
                 {
-                    throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
+                    throw new Exception($"Neo Name Service (NNS): Domain '{domain}' was not found in the NNS registry. Please verify the domain name is correct and has been registered in the NNS system.");
                 }
-                throw new Exception("Neo Name Service (NNS): Record invalid address format.");
+                throw new Exception($"Neo Name Service (NNS): The resolved record for domain '{domain}' contains an invalid address format. The NNS record exists but the address data is not in the expected format.");
             }
             else
             {
                 if (appEng.FaultException is not null)
                 {
-                    throw new Exception($"Neo Name Service (NNS): \"{appEng.FaultException.Message}\".");
+                    throw new Exception($"Neo Name Service (NNS): Failed to resolve domain '{domain}' due to contract execution error: {appEng.FaultException.Message}. Please verify the domain exists and try again.");
                 }
             }
-            throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
+            throw new Exception($"Neo Name Service (NNS): Domain '{domain}' was not found in the NNS registry. The resolution operation completed but no valid record was returned. Please verify the domain name is correct and has been registered.");
         }
     }
 }

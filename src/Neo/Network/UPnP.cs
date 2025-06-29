@@ -126,7 +126,7 @@ namespace Neo.Network
         public static void ForwardPort(int port, ProtocolType protocol, string description)
         {
             if (string.IsNullOrEmpty(s_serviceUrl))
-                throw new Exception("No UPnP service available or Discover() has not been called");
+                throw new InvalidOperationException("UPnP service is not available. Please call UPnP.Discover() and ensure a UPnP device is detected on the network before attempting to forward ports.");
             SOAPRequest(s_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
                 "<NewRemoteHost></NewRemoteHost><NewExternalPort>" + port.ToString() + "</NewExternalPort><NewProtocol>" + protocol.ToString().ToUpper() + "</NewProtocol>" +
                 "<NewInternalPort>" + port.ToString() + "</NewInternalPort><NewInternalClient>" + Dns.GetHostAddresses(Dns.GetHostName()).First(p => p.AddressFamily == AddressFamily.InterNetwork).ToString() +
@@ -142,7 +142,7 @@ namespace Neo.Network
         public static void DeleteForwardingRule(int port, ProtocolType protocol)
         {
             if (string.IsNullOrEmpty(s_serviceUrl))
-                throw new Exception("No UPnP service available or Discover() has not been called");
+                throw new InvalidOperationException("UPnP service is not available. Please call UPnP.Discover() and ensure a UPnP device is detected on the network before attempting to delete port forwarding rules.");
             SOAPRequest(s_serviceUrl,
             "<u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
             "<NewRemoteHost>" +
@@ -159,7 +159,7 @@ namespace Neo.Network
         public static IPAddress GetExternalIP()
         {
             if (string.IsNullOrEmpty(s_serviceUrl))
-                throw new Exception("No UPnP service available or Discover() has not been called");
+                throw new InvalidOperationException("UPnP service is not available. Please call UPnP.Discover() and ensure a UPnP device is detected on the network before attempting to retrieve the external IP address.");
             var xdoc = SOAPRequest(s_serviceUrl, "<u:GetExternalIPAddress xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
             "</u:GetExternalIPAddress>", "GetExternalIPAddress");
             var nsMgr = new XmlNamespaceManager(xdoc.NameTable);
