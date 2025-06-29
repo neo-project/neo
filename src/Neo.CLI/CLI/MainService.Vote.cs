@@ -24,6 +24,16 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.CLI
 {
+    public static class VoteMethods
+    {
+        public const string Register = "registerCandidate";
+        public const string Unregister = "unregisterCandidate";
+        public const string Vote = "vote";
+        public const string GetAccountState = "getAccountState";
+        public const string GetCandidates = "getCandidates";
+        public const string GetCommittee = "getCommittee";
+        public const string GetNextBlockValidators = "getNextBlockValidators";
+    }
     partial class MainService
     {
         /// <summary>
@@ -35,30 +45,12 @@ namespace Neo.CLI
         {
             var testGas = NativeContract.NEO.GetRegisterPrice(NeoSystem.StoreView) + (BigInteger)Math.Pow(10, NativeContract.GAS.Decimals) * 10;
             if (NoWallet()) return;
-            WalletAccount currentAccount = CurrentWallet!.GetAccount(account);
 
-            if (currentAccount == null)
-            {
-                ConsoleHelper.Warning("This address isn't in your wallet!");
-                return;
-            }
-            else
-            {
-                if (currentAccount.Lock || currentAccount.WatchOnly)
-                {
-                    ConsoleHelper.Warning("Locked or WatchOnly address.");
-                    return;
-                }
-            }
+            var currentAccount = GetValidAccountOrWarn(account);
+            if (currentAccount == null) return;
 
-            ECPoint? publicKey = currentAccount.GetKey()?.PublicKey;
-            byte[] script;
-            using (ScriptBuilder scriptBuilder = new())
-            {
-                scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "registerCandidate", publicKey);
-                script = scriptBuilder.ToArray();
-            }
-
+            var publicKey = currentAccount.GetKey()?.PublicKey;
+            var script = BuildNativeScript(VoteMethods.Register, publicKey);
             SendTransaction(script, account, (long)testGas);
         }
 
@@ -70,30 +62,12 @@ namespace Neo.CLI
         private void OnUnregisterCandidateCommand(UInt160 account)
         {
             if (NoWallet()) return;
-            WalletAccount currentAccount = CurrentWallet!.GetAccount(account);
 
-            if (currentAccount == null)
-            {
-                ConsoleHelper.Warning("This address isn't in your wallet!");
-                return;
-            }
-            else
-            {
-                if (currentAccount.Lock || currentAccount.WatchOnly)
-                {
-                    ConsoleHelper.Warning("Locked or WatchOnly address.");
-                    return;
-                }
-            }
+            var currentAccount = GetValidAccountOrWarn(account);
+            if (currentAccount == null) return;
 
-            ECPoint? publicKey = currentAccount?.GetKey()?.PublicKey;
-            byte[] script;
-            using (ScriptBuilder scriptBuilder = new())
-            {
-                scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "unregisterCandidate", publicKey);
-                script = scriptBuilder.ToArray();
-            }
-
+            var publicKey = currentAccount?.GetKey()?.PublicKey;
+            var script = BuildNativeScript(VoteMethods.Unregister, publicKey);
             SendTransaction(script, account);
         }
 
@@ -106,13 +80,8 @@ namespace Neo.CLI
         private void OnVoteCommand(UInt160 senderAccount, ECPoint publicKey)
         {
             if (NoWallet()) return;
-            byte[] script;
-            using (ScriptBuilder scriptBuilder = new())
-            {
-                scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "vote", senderAccount, publicKey);
-                script = scriptBuilder.ToArray();
-            }
 
+            var script = BuildNativeScript(VoteMethods.Vote, senderAccount, publicKey);
             SendTransaction(script, senderAccount);
         }
 
@@ -124,13 +93,8 @@ namespace Neo.CLI
         private void OnUnvoteCommand(UInt160 senderAccount)
         {
             if (NoWallet()) return;
-            byte[] script;
-            using (ScriptBuilder scriptBuilder = new())
-            {
-                scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "vote", senderAccount, null);
-                script = scriptBuilder.ToArray();
-            }
 
+            var script = BuildNativeScript(VoteMethods.Vote, senderAccount);
             SendTransaction(script, senderAccount);
         }
 
@@ -140,7 +104,7 @@ namespace Neo.CLI
         [ConsoleCommand("get candidates", Category = "Vote Commands")]
         private void OnGetCandidatesCommand()
         {
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCandidates", out StackItem result, null, null, false)) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, VoteMethods.GetCandidates, out var result, null, null, false)) return;
 
             var resJArray = (Array)result;
 
@@ -166,7 +130,7 @@ namespace Neo.CLI
         [ConsoleCommand("get committee", Category = "Vote Commands")]
         private void OnGetCommitteeCommand()
         {
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCommittee", out StackItem result, null, null, false)) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, VoteMethods.GetCommittee, out StackItem result, null, null, false)) return;
 
             var resJArray = (Array)result;
 
@@ -188,7 +152,7 @@ namespace Neo.CLI
         [ConsoleCommand("get next validators", Category = "Vote Commands")]
         private void OnGetNextBlockValidatorsCommand()
         {
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getNextBlockValidators", out StackItem result, null, null, false)) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, VoteMethods.GetNextBlockValidators, out var result, null, null, false)) return;
 
             var resJArray = (Array)result;
 
@@ -210,24 +174,24 @@ namespace Neo.CLI
         [ConsoleCommand("get accountstate", Category = "Vote Commands")]
         private void OnGetAccountState(UInt160 address)
         {
-            const string notice = "No vote record!";
+            const string Notice = "No vote record!";
             var arg = new JObject
             {
                 ["type"] = "Hash160",
                 ["value"] = address.ToString()
             };
 
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getAccountState", out var result, null, new JArray(arg))) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, VoteMethods.GetAccountState, out var result, null, new JArray(arg))) return;
             Console.WriteLine();
             if (result.IsNull)
             {
-                ConsoleHelper.Warning(notice);
+                ConsoleHelper.Warning(Notice);
                 return;
             }
             var resJArray = (Array)result;
             if (resJArray is null)
             {
-                ConsoleHelper.Warning(notice);
+                ConsoleHelper.Warning(Notice);
                 return;
             }
 
@@ -235,7 +199,7 @@ namespace Neo.CLI
             {
                 if (value.IsNull)
                 {
-                    ConsoleHelper.Warning(notice);
+                    ConsoleHelper.Warning(Notice);
                     return;
                 }
             }
@@ -258,5 +222,33 @@ namespace Neo.CLI
                 ConsoleHelper.Error("Error parsing the result");
             }
         }
+        /// <summary>
+        /// Get account or log a warm
+        /// </summary>
+        /// <param name="account"></param>
+        /// <returns>account or null</returns>
+        private WalletAccount? GetValidAccountOrWarn(UInt160 account)
+        {
+            var acct = CurrentWallet?.GetAccount(account);
+            if (acct == null)
+            {
+                ConsoleHelper.Warning("This address isn't in your wallet!");
+                return null;
+            }
+            if (acct.Lock || acct.WatchOnly)
+            {
+                ConsoleHelper.Warning("Locked or WatchOnly address.");
+                return null;
+            }
+            return acct;
+        }
+
+        private byte[] BuildNativeScript(string method, params object?[] args)
+        {
+            using var sb = new ScriptBuilder();
+            sb.EmitDynamicCall(NativeContract.NEO.Hash, method, args);
+            return sb.ToArray();
+        }
+
     }
 }
