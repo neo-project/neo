@@ -85,9 +85,18 @@ namespace Neo.IO
         /// <param name="messages">Messages</param>
         public void Tell(params T[] messages)
         {
-            foreach (var message in messages)
+            if (messages.Length <= 2)
             {
-                _queue.Add(message);
+                foreach (var message in messages)
+                {
+                    _queue.Add(message);
+                }
+            }
+            else
+            {
+                // Use parallel to improve the adding
+
+                Parallel.ForEach(messages, _queue.Add);
             }
         }
 
