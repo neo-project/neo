@@ -66,6 +66,7 @@ dotnet_diagnostic.IDE0251.severity = warning
 dotnet_diagnostic.IDE0044.severity = warning
 
 dotnet_diagnostic.CS1591.severity = silent
+dotnet_diagnostic.IDE0290.severity = silent
 
 # Sort using and Import directives with System.* appearing first
 dotnet_sort_system_directives_first = false
