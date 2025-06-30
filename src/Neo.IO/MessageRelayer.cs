@@ -85,7 +85,6 @@ namespace Neo.IO
         {
             object? message;
 
-start:
             while (!_disposed)
             {
                 await _semaphore.WaitAsync();
@@ -106,7 +105,7 @@ start:
                         if (!_queue.TryDequeue(out message))
                         {
                             // This should happen only during Dispose
-                            break;
+                            continue;
                         }
                     }
                 }
@@ -115,10 +114,6 @@ start:
 
                 ProcessMessage(message);
             }
-
-            // If the receiver is disposed, exit the loop.
-
-            if (!_disposed) goto start;
         }
 
         private void ProcessMessage(object message)
