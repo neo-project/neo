@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Neo.Extensions;
+using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -59,6 +60,32 @@ namespace Neo
         public Block GenesisBlock { get; }
 
         /// <summary>
+        /// Message relayer used to send messages between actors.
+        /// </summary>
+        public MessageRelayer MessageRelayer { get; } = new();
+
+#if NO_AKKA
+        /// <summary>
+        /// The <see cref="Ledger.Blockchain"/> actor of the <see cref="NeoSystem"/>.
+        /// </summary>
+        public Blockchain Blockchain { get; }
+
+        /// <summary>
+        /// The <see cref="Network.P2P.LocalNode"/> actor of the <see cref="NeoSystem"/>.
+        /// </summary>
+        public LocalNode LocalNode { get; }
+
+        /// <summary>
+        /// The <see cref="Network.P2P.TaskManager"/> actor of the <see cref="NeoSystem"/>.
+        /// </summary>
+        public TaskManager TaskManager { get; }
+
+        /// <summary>
+        /// The transaction router actor of the <see cref="NeoSystem"/>.
+        /// </summary>
+        public TransactionRouter TxRouter { get; }
+#else
+        /// <summary>
         /// The <see cref="Ledger.Blockchain"/> actor of the <see cref="NeoSystem"/>.
         /// </summary>
         public IActorRef Blockchain { get; }
@@ -76,7 +103,8 @@ namespace Neo
         /// <summary>
         /// The transaction router actor of the <see cref="NeoSystem"/>.
         /// </summary>
-        public IActorRef TxRouter;
+        public IActorRef TxRouter { get; }
+#endif
 
         /// <summary>
         /// A readonly view of the store.
@@ -146,10 +174,18 @@ namespace Neo
             StorageProvider = storageProvider;
             store = storageProvider.GetStore(storagePath);
             MemPool = new MemoryPool(this);
+
+#if NO_AKKA
+            Blockchain = new Blockchain(this));
+            LocalNode = new LocalNode(this));
+            TaskManager = new TaskManager(this));
+            TxRouter = new TransactionRouter(this));
+#else
             Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
+#endif
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
             Blockchain.Ask(new Blockchain.Initialize()).ConfigureAwait(false).GetAwaiter().GetResult();

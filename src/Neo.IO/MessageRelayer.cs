@@ -47,7 +47,7 @@ namespace Neo.IO
         /// Constructs a new message relayer with a specified number of worker threads.
         /// </summary>
         /// <param name="workerCount">Number of workers or less than zero to use one per processor.</param>
-        public MessageRelayer(int workerCount)
+        public MessageRelayer(int workerCount = 0)
         {
             if (workerCount <= 0) workerCount = Environment.ProcessorCount;
 
