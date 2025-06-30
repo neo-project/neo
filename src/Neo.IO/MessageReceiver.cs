@@ -10,114 +10,55 @@
 // modifications are permitted.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neo.IO
 {
-    public abstract class MessageReceiver(int workerCount)
-        : MessageReceiver<object>(workerCount)
+    public abstract class MessageReceiver<T>(MessageRelayer relayer)
+        : MessageReceiver(relayer, typeof(T))
     { }
 
-    public abstract class MessageReceiver<T> : IDisposable
+    public abstract class MessageReceiver
     {
-        private readonly Task[] _workers;
-        private readonly Queue<T> _queue = new();
-        private readonly SemaphoreSlim _semaphore = new(0);
-        private volatile bool _disposed;
+        /// <summary>
+        /// Accepted message types that this receiver can handle.
+        /// </summary>
+        public Type[] AcceptedMessages { get; }
 
-        public MessageReceiver(int workerCount)
+        /// <summary>
+        /// Relayer used to send messages to this receiver.
+        /// </summary>
+        public MessageRelayer Relayer { get; }
+
+        /// <summary>
+        /// Constructs a new message receiver.
+        /// </summary>
+        /// <param name="relayer">Relayer</param>
+        /// <param name="acceptedTypes">Accepted types</param>
+        public MessageReceiver(MessageRelayer relayer, params Type[] acceptedTypes)
         {
-            _workers = new Task[workerCount];
-            for (var i = 0; i < workerCount; i++)
-            {
-                _workers[i] = Task.Run(WorkerLoop);
-            }
+            Relayer = relayer;
+            AcceptedMessages = acceptedTypes;
+            Relayer.Subscribe(this, acceptedTypes);
         }
 
-        protected abstract void OnReceive(T message);
+        public abstract void OnReceive(object message);
 
-        private async Task WorkerLoop()
-        {
-            T? message;
+        #region Redrected Methods
 
-start:
-            try
-            {
-                while (!_disposed)
-                {
-                    await _semaphore.WaitAsync();
+        #region Single Entry
 
-                    lock (_queue)
-                    {
-                        if (!_queue.TryDequeue(out message))
-                        {
-                            // This should happen only during Dispose
-                            break;
-                        }
-                    }
+        public void Tell(object message) => Relayer.Tell(message);
+        public void TellPriorty(object message) => Relayer.TellPriorty(message);
 
-                    OnReceive(message);
-                }
-            }
-            catch (Exception ex)
-            {
-                OnMessageError(ex);
-            }
+        #endregion
 
-            // If the receiver is disposed, exit the loop.
+        #region Multiple Entries
 
-            if (!_disposed) goto start;
-        }
+        public void Tell(params object[] messages) => Relayer.Tell(messages);
+        public void TellPriority(params object[] messages) => Relayer.TellPriority(messages);
 
-        protected virtual void OnMessageError(Exception exception)
-        {
-            Console.Error.WriteLine(exception.ToString());
-        }
+        #endregion
 
-        public void Tell(T message)
-        {
-            lock (_queue)
-            {
-                _queue.Enqueue(message);
-            }
-
-            _semaphore.Release();
-        }
-
-        public void Tell(params T[] messages)
-        {
-            lock (_queue)
-            {
-                foreach (var message in messages)
-                {
-                    _queue.Enqueue(message);
-                }
-            }
-
-            _semaphore.Release(messages.Length);
-        }
-
-        public virtual void Dispose()
-        {
-            _disposed = true;
-
-            for (var i = 0; i < _workers.Length; i++)
-            {
-                _semaphore.Release();
-            }
-
-            try
-            {
-                Task.WaitAll(_workers);
-            }
-            catch (OperationCanceledException) { }
-            catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is OperationCanceledException)) { }
-
-            _semaphore.Dispose();
-            GC.SuppressFinalize(this);
-        }
+        #endregion
     }
 }

@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -19,16 +20,20 @@ namespace Neo.UnitTests.IO
     [TestClass]
     public class UT_MessageReceiver
     {
-        private class TestMessageReceiver(int workerCount) : MessageReceiver<int>(workerCount)
+        private class TestMessageReceiver(int workerCount) :
+            MessageReceiver<int>(new MessageRelayer(workerCount))
         {
             public readonly List<int> ProcessedMessages = [];
             public readonly ManualResetEventSlim Signal = new();
 
-            protected override void OnReceive(int message)
+            public override void OnReceive(object message)
             {
+                if (message is not int imsg)
+                    throw new InvalidCastException("Expected message of type int.");
+
                 lock (ProcessedMessages)
                 {
-                    ProcessedMessages.Add(message);
+                    ProcessedMessages.Add(imsg);
                     if (ProcessedMessages.Count >= 5)
                         Signal.Set();
                 }
@@ -40,22 +45,24 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestTellAndDispose()
         {
-            using var receiver = new TestMessageReceiver(2);
+            var receiver = new TestMessageReceiver(2);
             for (var i = 0; i < 5; i++)
                 receiver.Tell(i);
 
             Assert.IsTrue(receiver.Signal.Wait(1000));
             Assert.AreEqual(5, receiver.ProcessedMessages.Count);
+            receiver.Relayer.Dispose();
         }
 
         [TestMethod]
         public void TestTellAll()
         {
-            using var receiver = new TestMessageReceiver(2);
+            var receiver = new TestMessageReceiver(2);
             receiver.Tell(1, 2, 3, 4, 5);
 
             Assert.IsTrue(receiver.Signal.Wait(1000));
             CollectionAssert.AreEquivalent(new List<int> { 1, 2, 3, 4, 5 }, receiver.ProcessedMessages);
+            receiver.Relayer.Dispose();
         }
     }
 }

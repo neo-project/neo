@@ -75,14 +75,14 @@ namespace Neo.IO
             }
         }
 
-        internal class NeoMessageHandler(Counter countdown, int workerCount)
-            : MessageReceiver<Message>(workerCount)
+        internal class NeoMessageHandler(Counter countdown, MessageRelayer relayer)
+            : MessageReceiver<Message>(relayer)
         {
             public Counter Counter { get; } = countdown;
 
-            protected override void OnReceive(Message message)
+            public override void OnReceive(object message)
             {
-                Counter.Signal(message);
+                Counter.Signal((Message)message);
             }
         }
 
@@ -100,8 +100,7 @@ namespace Neo.IO
         [Params(1, 1_000, 10_000)]
         public int MessageCount { get; set; }
 
-        // [Params(true, false)]
-        [Params(false)]
+        [Params(true, false)]
         public bool MultiThread { get; set; }
 
         private IActorRef _akkaActor;
@@ -145,7 +144,9 @@ namespace Neo.IO
 
             {
                 _neoCountdown = new Counter(MessageCount);
-                _neoDispatcher = new NeoMessageHandler(_neoCountdown, MultiThread ? threads : 1);
+
+                var relayer = new MessageRelayer(MultiThread ? threads : 1);
+                _neoDispatcher = new NeoMessageHandler(_neoCountdown, relayer);
 
                 _neoCountdown2 = new Counter(MessageCount);
                 _neoDispatcher2 = new NeoMessageHandler2(_neoCountdown2);
@@ -155,7 +156,7 @@ namespace Neo.IO
         [GlobalCleanup]
         public async Task Cleanup()
         {
-            _neoDispatcher.Dispose();
+            _neoDispatcher.Relayer.Dispose();
             await _akkaSystem.Terminate();
         }
 
@@ -175,7 +176,7 @@ namespace Neo.IO
             _neoCountdown.CountDown.Wait(TimeSpan.FromMilliseconds(500));
         }
 
-        [Benchmark]
+        // [Benchmark]
         public async Task MessageReceiver2()
         {
             _neoCountdown2.Reset(MessageCount);
