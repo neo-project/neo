@@ -385,12 +385,32 @@ namespace Neo.CLI
                 case ContractParameterType.Map:
                     if (value is JObject map)
                     {
+                        // For Map type parameters, we don't know the key/value types from ABI
+                        // Check if this is a ContractParameter format map
+                        if (map.ContainsProperty("type") && map["type"]?.AsString() == "Map" && map.ContainsProperty("value"))
+                        {
+                            // This is already in ContractParameter format, use FromJson
+                            return ContractParameter.FromJson(map);
+                        }
+
+                        // Otherwise, parse as a regular map with inferred types
                         var dict = new List<KeyValuePair<ContractParameter, ContractParameter>>();
                         foreach (var kvp in map.Properties)
                         {
+                            // Keys are always strings in JSON
                             var key = new ContractParameter { Type = ContractParameterType.String, Value = kvp.Key };
-                            var val = ParseParameterFromAbi(ContractParameterType.Any, kvp.Value);
-                            dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, val));
+
+                            // For values, check if they are ContractParameter format
+                            var val = kvp.Value;
+                            if (val is JObject valObj && valObj.ContainsProperty("type") && valObj.ContainsProperty("value"))
+                            {
+                                dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, ContractParameter.FromJson(valObj)));
+                            }
+                            else
+                            {
+                                var valueParam = val != null ? InferParameterFromToken(val) : new ContractParameter { Type = ContractParameterType.Any, Value = null };
+                                dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, valueParam));
+                            }
                         }
                         param.Value = dict;
                     }

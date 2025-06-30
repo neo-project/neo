@@ -693,6 +693,71 @@ namespace Neo.CLI.Tests
         }
 
         [TestMethod]
+        public void TestParseParameterFromAbi_MapWithContractParameterFormat()
+        {
+            var method = GetPrivateMethod("ParseParameterFromAbi");
+
+            // Test map with ContractParameter format values
+            var mapWithContractParams = JToken.Parse(@"{
+                ""key1"": {""type"": ""Integer"", ""value"": ""123""},
+                ""key2"": {""type"": ""Hash160"", ""value"": ""0x1234567890abcdef1234567890abcdef12345678""},
+                ""key3"": ""simple string""
+            }");
+
+            var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Map, mapWithContractParams });
+            Assert.AreEqual(ContractParameterType.Map, result.Type);
+
+            var map = (List<KeyValuePair<ContractParameter, ContractParameter>>)result.Value;
+            Assert.AreEqual(3, map.Count);
+
+            // Check each key-value pair
+            Assert.AreEqual("key1", map[0].Key.Value);
+            Assert.AreEqual(ContractParameterType.Integer, map[0].Value.Type);
+            Assert.AreEqual(new BigInteger(123), map[0].Value.Value);
+
+            Assert.AreEqual("key2", map[1].Key.Value);
+            Assert.AreEqual(ContractParameterType.Hash160, map[1].Value.Type);
+            Assert.AreEqual(UInt160.Parse("0x1234567890abcdef1234567890abcdef12345678"), map[1].Value.Value);
+
+            Assert.AreEqual("key3", map[2].Key.Value);
+            Assert.AreEqual(ContractParameterType.String, map[2].Value.Type);
+            Assert.AreEqual("simple string", map[2].Value.Value);
+        }
+
+        [TestMethod]
+        public void TestParseParameterFromAbi_CompleteContractParameterMap()
+        {
+            var method = GetPrivateMethod("ParseParameterFromAbi");
+
+            // Test complete ContractParameter format map (like from invoke command)
+            var completeMapFormat = JToken.Parse(@"{
+                ""type"": ""Map"",
+                ""value"": [
+                    {
+                        ""key"": {""type"": ""String"", ""value"": ""name""},
+                        ""value"": {""type"": ""String"", ""value"": ""Alice""}
+                    },
+                    {
+                        ""key"": {""type"": ""String"", ""value"": ""age""},
+                        ""value"": {""type"": ""Integer"", ""value"": ""30""}
+                    }
+                ]
+            }");
+
+            var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Map, completeMapFormat });
+            Assert.AreEqual(ContractParameterType.Map, result.Type);
+
+            var map = (List<KeyValuePair<ContractParameter, ContractParameter>>)result.Value;
+            Assert.AreEqual(2, map.Count);
+
+            Assert.AreEqual("name", map[0].Key.Value);
+            Assert.AreEqual("Alice", map[0].Value.Value);
+
+            Assert.AreEqual("age", map[1].Key.Value);
+            Assert.AreEqual(new BigInteger(30), map[1].Value.Value);
+        }
+
+        [TestMethod]
         public void TestInvokeAbiCommand_MethodOverloading()
         {
             // Test that the method correctly finds the right overload based on parameter count
