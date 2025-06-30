@@ -277,7 +277,7 @@ namespace Neo.Cryptography.BLS12_381
         {
             int length = a.Length;
             if (length != b.Length)
-                throw new ArgumentException("The lengths of the two arrays must be the same.");
+                throw new ArgumentException("Arrays must have the same length.");
 
             Fp result;
             ReadOnlySpan<ulong> au = MemoryMarshal.Cast<Fp, ulong>(a);

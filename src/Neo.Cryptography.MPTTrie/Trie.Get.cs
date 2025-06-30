@@ -22,9 +22,9 @@ namespace Neo.Cryptography.MPTTrie
             {
                 var path = ToNibbles(key);
                 if (path.Length == 0)
-                    throw new ArgumentException("could not be empty", nameof(key));
+                    throw new ArgumentException("The key cannot be empty. A valid key must contain at least one nibble.", nameof(key));
                 if (path.Length > Node.MaxKeyLength)
-                    throw new ArgumentException("exceeds limit", nameof(key));
+                    throw new ArgumentException($"Key length {path.Length} exceeds the maximum allowed length of {Node.MaxKeyLength} nibbles.", nameof(key));
                 var result = TryGet(ref _root, path, out var value);
                 return result ? value.ToArray() : throw new KeyNotFoundException();
             }
@@ -35,9 +35,9 @@ namespace Neo.Cryptography.MPTTrie
             value = default;
             var path = ToNibbles(key);
             if (path.Length == 0)
-                throw new ArgumentException("could not be empty", nameof(key));
+                throw new ArgumentException("The key cannot be empty. A valid key must contain at least one nibble.", nameof(key));
             if (path.Length > Node.MaxKeyLength)
-                throw new ArgumentException("exceeds limit", nameof(key));
+                throw new ArgumentException($"Key length {path.Length} exceeds the maximum allowed length of {Node.MaxKeyLength} nibbles.", nameof(key));
             var result = TryGet(ref _root, path, out var val);
             if (result)
                 value = val.ToArray();
