@@ -421,7 +421,7 @@ namespace Neo.CLI.Tests
 
             // Assert
             var output = _consoleOutput.ToString();
-            Assert.IsTrue(output.Contains("Too many arguments. Method 'testBoolean' expects 1 parameters"));
+            Assert.IsTrue(output.Contains("Method 'testBoolean' exists but expects 1 parameters, not 2"));
         }
 
         [TestMethod]
@@ -437,7 +437,38 @@ namespace Neo.CLI.Tests
 
             // Assert
             var output = _consoleOutput.ToString();
-            Assert.IsTrue(output.Contains("Too many arguments. Method 'testMultipleParams' expects 3 parameters"));
+            Assert.IsTrue(output.Contains("Method 'testMultipleParams' exists but expects 3 parameters, not 4"));
+        }
+
+        [TestMethod]
+        public void TestInvokeAbiCommand_TooFewArguments()
+        {
+            // Arrange
+            _consoleOutput.GetStringBuilder().Clear();
+            var args = new JArray("0x1234567890abcdef1234567890abcdef12345678"); // testMultipleParams expects 3 parameters, not 1
+
+            // Act
+            var invokeAbiMethod = GetPrivateMethod("OnInvokeAbiCommand");
+            invokeAbiMethod.Invoke(_mainService, new object[] { _contractHash, "testMultipleParams", args, null, null, 20m });
+
+            // Assert
+            var output = _consoleOutput.ToString();
+            Assert.IsTrue(output.Contains("Method 'testMultipleParams' exists but expects 3 parameters, not 1"));
+        }
+
+        [TestMethod]
+        public void TestInvokeAbiCommand_NoArgumentsForMethodExpectingParameters()
+        {
+            // Arrange
+            _consoleOutput.GetStringBuilder().Clear();
+
+            // Act - calling testBoolean with no arguments when it expects 1
+            var invokeAbiMethod = GetPrivateMethod("OnInvokeAbiCommand");
+            invokeAbiMethod.Invoke(_mainService, new object[] { _contractHash, "testBoolean", null, null, null, 20m });
+
+            // Assert
+            var output = _consoleOutput.ToString();
+            Assert.IsTrue(output.Contains("Method 'testBoolean' exists but expects 1 parameters, not 0"));
         }
 
         [TestMethod]
@@ -453,7 +484,7 @@ namespace Neo.CLI.Tests
 
             // Assert
             var output = _consoleOutput.ToString();
-            Assert.IsTrue(output.Contains("Failed to parse parameter 'value' at index 0"));
+            Assert.IsTrue(output.Contains("Failed to parse parameter 'value' (index 0)"));
         }
 
         [TestMethod]
@@ -568,6 +599,121 @@ namespace Neo.CLI.Tests
             // Assert - parameters should be parsed without error
             var output = _consoleOutput.ToString();
             Assert.IsFalse(output.Contains("Failed to parse parameter"));
+        }
+
+        [TestMethod]
+        public void TestParseParameterFromAbi_ImprovedErrorMessages()
+        {
+            var method = GetPrivateMethod("ParseParameterFromAbi");
+
+            // Test invalid integer format with helpful error
+            try
+            {
+                method.Invoke(_mainService, new object[] { ContractParameterType.Integer, JToken.Parse("\"abc\"") });
+                Assert.Fail("Expected exception for invalid integer");
+            }
+            catch (TargetInvocationException ex)
+            {
+                Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentException));
+                Assert.IsTrue(ex.InnerException.Message.Contains("Invalid integer format"));
+                Assert.IsTrue(ex.InnerException.Message.Contains("Expected a numeric string"));
+            }
+
+            // Test invalid Hash160 format with helpful error
+            try
+            {
+                method.Invoke(_mainService, new object[] { ContractParameterType.Hash160, JToken.Parse("\"invalid\"") });
+                Assert.Fail("Expected exception for invalid Hash160");
+            }
+            catch (TargetInvocationException ex)
+            {
+                Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentException));
+                Assert.IsTrue(ex.InnerException.Message.Contains("Invalid Hash160 format"));
+                Assert.IsTrue(ex.InnerException.Message.Contains("0x"));
+                Assert.IsTrue(ex.InnerException.Message.Contains("40 hex characters"));
+            }
+
+            // Test invalid Base64 format with helpful error
+            try
+            {
+                method.Invoke(_mainService, new object[] { ContractParameterType.ByteArray, JToken.Parse("\"not-base64!@#$\"") });
+                Assert.Fail("Expected exception for invalid Base64");
+            }
+            catch (TargetInvocationException ex)
+            {
+                Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentException));
+                Assert.IsTrue(ex.InnerException.Message.Contains("Invalid ByteArray format"));
+                Assert.IsTrue(ex.InnerException.Message.Contains("Base64 encoded string"));
+            }
+        }
+
+        [TestMethod]
+        public void TestInvokeAbiCommand_MethodOverloading()
+        {
+            // Test that the method correctly finds the right overload based on parameter count
+            // Setup a contract with overloaded methods
+            var manifest = TestUtils.CreateDefaultManifest();
+            
+            // Add overloaded methods with same name but different parameter counts
+            manifest.Abi.Methods = new[]
+            {
+                new ContractMethodDescriptor
+                {
+                    Name = "transfer",
+                    Parameters = new[]
+                    {
+                        new ContractParameterDefinition { Name = "to", Type = ContractParameterType.Hash160 },
+                        new ContractParameterDefinition { Name = "amount", Type = ContractParameterType.Integer }
+                    },
+                    ReturnType = ContractParameterType.Boolean,
+                    Safe = false
+                },
+                new ContractMethodDescriptor
+                {
+                    Name = "transfer",
+                    Parameters = new[]
+                    {
+                        new ContractParameterDefinition { Name = "from", Type = ContractParameterType.Hash160 },
+                        new ContractParameterDefinition { Name = "to", Type = ContractParameterType.Hash160 },
+                        new ContractParameterDefinition { Name = "amount", Type = ContractParameterType.Integer }
+                    },
+                    ReturnType = ContractParameterType.Boolean,
+                    Safe = false
+                }
+            };
+
+            // Update the contract with overloaded methods
+            _contractState.Manifest = manifest;
+            var snapshot = _neoSystem.GetSnapshotCache();
+            snapshot.AddContract(_contractHash, _contractState);
+            snapshot.Commit();
+
+            // Test calling the 2-parameter version
+            _consoleOutput.GetStringBuilder().Clear();
+            var args2 = new JArray("0x1234567890abcdef1234567890abcdef12345678", 100);
+            var invokeAbiMethod = GetPrivateMethod("OnInvokeAbiCommand");
+            
+            try
+            {
+                invokeAbiMethod.Invoke(_mainService, new object[] { _contractHash, "transfer", args2, null, null, 20m });
+            }
+            catch (TargetInvocationException)
+            {
+                // Expected - we're testing parameter parsing
+            }
+            
+            // Should not have any method selection errors
+            var output = _consoleOutput.ToString();
+            Assert.IsFalse(output.Contains("Method 'transfer' exists but expects"));
+            
+            // Test calling with wrong parameter count should give helpful error
+            _consoleOutput.GetStringBuilder().Clear();
+            var args4 = new JArray("0x1234567890abcdef1234567890abcdef12345678", "0xabcdef1234567890abcdef1234567890abcdef12", 100, "extra");
+            
+            invokeAbiMethod.Invoke(_mainService, new object[] { _contractHash, "transfer", args4, null, null, 20m });
+            
+            output = _consoleOutput.ToString();
+            Assert.IsTrue(output.Contains("Method 'transfer' exists but expects") || output.Contains("expects exactly"));
         }
 
         #endregion

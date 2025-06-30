@@ -210,11 +210,40 @@ namespace Neo.CLI
                 return;
             }
 
-            // Find the method in the ABI by name only
-            var method = contract.Manifest.Abi.GetMethod(operation, -1);
+            // Check if contract has valid ABI
+            if (contract.Manifest?.Abi == null)
+            {
+                ConsoleHelper.Error("Contract ABI is not available.");
+                return;
+            }
+
+            // Find the method in the ABI with matching parameter count
+            var paramCount = args?.Count ?? 0;
+            var method = contract.Manifest.Abi.GetMethod(operation, paramCount);
             if (method == null)
             {
-                ConsoleHelper.Error($"Method '{operation}' does not exist in this contract.");
+                // Try to find any method with that name for a better error message
+                var anyMethod = contract.Manifest.Abi.GetMethod(operation, -1);
+                if (anyMethod != null)
+                {
+                    ConsoleHelper.Error($"Method '{operation}' exists but expects {anyMethod.Parameters.Length} parameters, not {paramCount}.");
+                }
+                else
+                {
+                    ConsoleHelper.Error($"Method '{operation}' does not exist in this contract.");
+                }
+                return;
+            }
+
+            // Validate parameter count
+            if (args != null && args.Count != method.Parameters.Length)
+            {
+                ConsoleHelper.Error($"Method '{operation}' expects exactly {method.Parameters.Length} parameters but {args.Count} were provided.");
+                return;
+            }
+            else if (args == null && method.Parameters.Length > 0)
+            {
+                ConsoleHelper.Error($"Method '{operation}' expects {method.Parameters.Length} parameters but none were provided.");
                 return;
             }
 
@@ -222,13 +251,6 @@ namespace Neo.CLI
             JArray? contractParameters = null;
             if (args != null && args.Count > 0)
             {
-                // Check if too many arguments before processing
-                if (args.Count > method.Parameters.Length)
-                {
-                    ConsoleHelper.Error($"Too many arguments. Method '{operation}' expects {method.Parameters.Length} parameters.");
-                    return;
-                }
-
                 contractParameters = new JArray();
                 for (int i = 0; i < args.Count; i++)
                 {
@@ -242,7 +264,7 @@ namespace Neo.CLI
                     }
                     catch (Exception ex)
                     {
-                        ConsoleHelper.Error($"Failed to parse parameter '{paramDef.Name}' at index {i}: {ex.Message}");
+                        ConsoleHelper.Error($"Failed to parse parameter '{paramDef.Name ?? $"at index {i}"}' (index {i}): {ex.Message}");
                         return;
                     }
                 }
@@ -271,34 +293,81 @@ namespace Neo.CLI
                     param.Value = value.AsBoolean();
                     break;
                 case ContractParameterType.Integer:
-                    param.Value = BigInteger.Parse(value.AsString());
+                    try
+                    {
+                        param.Value = BigInteger.Parse(value.AsString());
+                    }
+                    catch (FormatException)
+                    {
+                        throw new ArgumentException($"Invalid integer format. Expected a numeric string, got: '{value.AsString()}'");
+                    }
                     break;
                 case ContractParameterType.ByteArray:
-                    param.Value = Convert.FromBase64String(value.AsString());
+                    try
+                    {
+                        param.Value = Convert.FromBase64String(value.AsString());
+                    }
+                    catch (FormatException)
+                    {
+                        throw new ArgumentException($"Invalid ByteArray format. Expected a Base64 encoded string, got: '{value.AsString()}'");
+                    }
                     break;
                 case ContractParameterType.String:
                     param.Value = value.AsString();
                     break;
                 case ContractParameterType.Hash160:
-                    param.Value = UInt160.Parse(value.AsString());
+                    try
+                    {
+                        param.Value = UInt160.Parse(value.AsString());
+                    }
+                    catch (FormatException)
+                    {
+                        throw new ArgumentException($"Invalid Hash160 format. Expected format: '0x' followed by 40 hex characters (e.g., '0x1234...abcd'), got: '{value.AsString()}'");
+                    }
                     break;
                 case ContractParameterType.Hash256:
-                    param.Value = UInt256.Parse(value.AsString());
+                    try
+                    {
+                        param.Value = UInt256.Parse(value.AsString());
+                    }
+                    catch (FormatException)
+                    {
+                        throw new ArgumentException($"Invalid Hash256 format. Expected format: '0x' followed by 64 hex characters, got: '{value.AsString()}'");
+                    }
                     break;
                 case ContractParameterType.PublicKey:
-                    param.Value = ECPoint.Parse(value.AsString(), ECCurve.Secp256r1);
+                    try
+                    {
+                        param.Value = ECPoint.Parse(value.AsString(), ECCurve.Secp256r1);
+                    }
+                    catch (FormatException)
+                    {
+                        throw new ArgumentException($"Invalid PublicKey format. Expected a hex string starting with '02' or '03' (33 bytes) or '04' (65 bytes), got: '{value.AsString()}'");
+                    }
                     break;
                 case ContractParameterType.Signature:
-                    param.Value = Convert.FromBase64String(value.AsString());
+                    try
+                    {
+                        param.Value = Convert.FromBase64String(value.AsString());
+                    }
+                    catch (FormatException)
+                    {
+                        throw new ArgumentException($"Invalid Signature format. Expected a Base64 encoded string, got: '{value.AsString()}'");
+                    }
                     break;
                 case ContractParameterType.Array:
                     if (value is JArray array)
                     {
-                        param.Value = array.Select(v => ParseParameterFromAbi(ContractParameterType.Any, v)).ToArray();
+                        var items = new ContractParameter[array.Count];
+                        for (int j = 0; j < array.Count; j++)
+                        {
+                            items[j] = ParseParameterFromAbi(ContractParameterType.Any, array[j]);
+                        }
+                        param.Value = items;
                     }
                     else
                     {
-                        throw new ArgumentException("Expected array value for Array parameter type");
+                        throw new ArgumentException($"Expected array value for Array parameter type, got: {value.GetType().Name}");
                     }
                     break;
                 case ContractParameterType.Map:
