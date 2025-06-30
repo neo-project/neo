@@ -34,6 +34,7 @@ namespace Neo.CLI
         public const string GetCommittee = "getCommittee";
         public const string GetNextBlockValidators = "getNextBlockValidators";
     }
+
     partial class MainService
     {
         /// <summary>
