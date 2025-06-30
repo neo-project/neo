@@ -22,13 +22,11 @@ namespace Neo.IO
         private volatile bool _disposed;
 
         private readonly Task[] _workers;
-        private readonly
 #if NET9_0_OR_GREATER
-            Lock
+        private readonly Lock _lock = new();
 #else
-            object
+        private readonly object _lock = new();
 #endif
-            _lock = new();
         private readonly
 #if NET9_0_OR_GREATER
             Lock
