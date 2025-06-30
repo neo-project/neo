@@ -199,7 +199,8 @@ namespace Neo.CLI
         /// <param name="signerAccounts">Signer's accounts</param>
         /// <param name="maxGas">Max fee for running the script, in the unit of GAS</param>
         [ConsoleCommand("invokeabi", Category = "Contract Commands")]
-        private void OnInvokeAbiCommand(UInt160 scriptHash, string operation, JArray? args = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
+        private void OnInvokeAbiCommand(UInt160 scriptHash, string operation,
+            JArray? args = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
         {
             // Get the contract from storage
             var contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
