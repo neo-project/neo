@@ -176,10 +176,10 @@ namespace Neo
             MemPool = new MemoryPool(this);
 
 #if NO_AKKA
-            Blockchain = new Blockchain(this));
-            LocalNode = new LocalNode(this));
-            TaskManager = new TaskManager(this));
-            TxRouter = new TransactionRouter(this));
+            Blockchain = new Blockchain(this);
+            LocalNode = new LocalNode(this);
+            TaskManager = new TaskManager(this);
+            TxRouter = new TransactionRouter(this);
 #else
             Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
