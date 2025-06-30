@@ -29,6 +29,13 @@ namespace Neo.IO
             object
 #endif
             _lock = new();
+        private readonly
+#if NET9_0_OR_GREATER
+            Lock
+#else
+            object
+#endif
+            _lockPriority = new();
         private readonly Queue<object> _queue = new();
         private readonly Queue<object> _queuePriority = new();
         private readonly SemaphoreSlim _semaphore = new(0);
@@ -72,17 +79,18 @@ start:
             {
                 await _semaphore.WaitAsync();
 
-                lock (_lock)
+                // Check for priority messages first
+
+                lock (_lockPriority)
                 {
-                    if (_queuePriority.Count != 0)
-                    {
-                        if (!_queuePriority.TryDequeue(out message))
-                        {
-                            // This should happen only during Dispose
-                            break;
-                        }
-                    }
-                    else
+                    _queuePriority.TryDequeue(out message);
+                }
+
+                if (message == null)
+                {
+                    // If no priority messages, try to get a normal message
+
+                    lock (_lock)
                     {
                         if (!_queue.TryDequeue(out message))
                         {
@@ -94,25 +102,32 @@ start:
 
                 // Iterate handlers
 
-                if (_handlers.TryGetValue(message.GetType(), out var handlers))
-                {
-                    foreach (var handler in handlers)
-                    {
-                        try
-                        {
-                            handler(message);
-                        }
-                        catch (Exception ex)
-                        {
-                            OnMessageError(ex);
-                        }
-                    }
-                }
+                ProcessMessage(message);
             }
 
             // If the receiver is disposed, exit the loop.
 
             if (!_disposed) goto start;
+        }
+
+        private void ProcessMessage(object message)
+        {
+            // Iterate handlers
+
+            if (_handlers.TryGetValue(message.GetType(), out var handlers))
+            {
+                foreach (var handler in handlers)
+                {
+                    try
+                    {
+                        handler(message);
+                    }
+                    catch (Exception ex)
+                    {
+                        OnMessageError(ex);
+                    }
+                }
+            }
         }
 
         protected virtual void OnMessageError(Exception exception)
@@ -134,7 +149,7 @@ start:
 
         public void TellPriorty(object message)
         {
-            lock (_lock)
+            lock (_lockPriority)
             {
                 _queuePriority.Enqueue(message);
             }
@@ -161,7 +176,7 @@ start:
 
         public void TellPriority(params object[] messages)
         {
-            lock (_lock)
+            lock (_lockPriority)
             {
                 foreach (var message in messages)
                 {
