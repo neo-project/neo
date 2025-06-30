@@ -54,7 +54,7 @@ namespace Neo
         public UInt160(ReadOnlySpan<byte> value)
         {
             if (value.Length != Length)
-                throw new FormatException($"Invalid length: {value.Length}");
+                throw new FormatException($"Invalid UInt160 length: expected {Length} bytes, but got {value.Length} bytes. UInt160 values must be exactly 20 bytes long.");
 
             var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
             value.CopyTo(span);
@@ -138,7 +138,7 @@ namespace Neo
         {
             // Avoid partial write and keep the same Exception as before if the buffer is too small
             if (destination.Length < Length)
-                throw new ArgumentException($"buffer({destination.Length}) is too small", nameof(destination));
+                throw new ArgumentException($"Destination buffer size ({destination.Length} bytes) is too small to serialize UInt160. Required size is {Length} bytes.", nameof(destination));
 
             const int IxValue2 = sizeof(ulong);
             const int IxValue3 = sizeof(ulong) * 2;
@@ -194,7 +194,7 @@ namespace Neo
         {
             var data = value.AsSpan().TrimStartIgnoreCase("0x");
             if (data.Length != Length * 2)
-                throw new FormatException($"value.Length({data.Length}) != {Length * 2}");
+                throw new FormatException($"Invalid UInt160 string format: expected {Length * 2} hexadecimal characters, but got {data.Length}. UInt160 values must be represented as 40 hexadecimal characters (with or without '0x' prefix).");
             return new UInt160(data.HexToBytesReversed());
         }
 

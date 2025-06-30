@@ -21,7 +21,8 @@ namespace Neo.VM
     /// </summary>
     public class ExecutionEngine : IDisposable
     {
-        private VMState state = VMState.BREAK;
+        private VMState _state = VMState.BREAK;
+
         internal bool isJumping = false;
 
         public JumpTable JumpTable { get; }
@@ -39,7 +40,7 @@ namespace Neo.VM
         /// <summary>
         /// The invocation stack of the VM.
         /// </summary>
-        public Stack<ExecutionContext> InvocationStack { get; } = new Stack<ExecutionContext>();
+        public Stack<ExecutionContext> InvocationStack { get; } = new();
 
         /// <summary>
         /// The top frame of the invocation stack.
@@ -68,13 +69,13 @@ namespace Neo.VM
         {
             get
             {
-                return state;
+                return _state;
             }
             protected internal set
             {
-                if (state != value)
+                if (_state != value)
                 {
-                    state = value;
+                    _state = value;
                     OnStateChanged();
                 }
             }
@@ -84,12 +85,12 @@ namespace Neo.VM
         /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
         /// </summary>
         /// <param name="jumpTable">The jump table to be used.</param>
-        public ExecutionEngine(JumpTable? jumpTable = null) : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
-        {
-        }
+        public ExecutionEngine(JumpTable? jumpTable = null)
+            : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default) { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExecutionEngine"/> class with the specified <see cref="VM.IReferenceCounter"/> and <see cref="ExecutionEngineLimits"/>.
+        /// Initializes a new instance of the <see cref="ExecutionEngine"/> class
+        /// with the specified <see cref="VM.IReferenceCounter"/> and <see cref="ExecutionEngineLimits"/>.
         /// </summary>
         /// <param name="jumpTable">The jump table to be used.</param>
         /// <param name="referenceCounter">The reference counter to be used.</param>
@@ -99,7 +100,7 @@ namespace Neo.VM
             JumpTable = jumpTable ?? JumpTable.Default;
             Limits = limits;
             ReferenceCounter = referenceCounter;
-            ResultStack = new EvaluationStack(referenceCounter);
+            ResultStack = new(referenceCounter);
         }
 
         public virtual void Dispose()
@@ -224,7 +225,7 @@ namespace Neo.VM
         /// <returns>The created context.</returns>
         public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0)
         {
-            ExecutionContext context = CreateContext(script, rvcount, initialPosition);
+            var context = CreateContext(script, rvcount, initialPosition);
             LoadContext(context);
             return context;
         }

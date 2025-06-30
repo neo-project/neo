@@ -217,7 +217,7 @@ namespace Neo.Extensions
                         }
                         break;
                     default:
-                        throw new ArgumentException($"Unsupported parameter type: {parameter.Type}", nameof(parameter));
+                        throw new ArgumentException($"Unsupported parameter type: {parameter.Type}. This parameter type cannot be converted to a stack item for script execution.", nameof(parameter));
                 }
             return builder;
         }
@@ -284,7 +284,7 @@ namespace Neo.Extensions
                     builder.Emit(OpCode.PUSHNULL);
                     break;
                 default:
-                    throw new ArgumentException($"Unsupported object type: {obj.GetType()}", nameof(obj));
+                    throw new ArgumentException($"Unsupported object type: {obj.GetType()}. This object type cannot be converted to a stack item for script execution.", nameof(obj));
             }
             return builder;
         }

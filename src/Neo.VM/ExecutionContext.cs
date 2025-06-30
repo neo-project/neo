@@ -22,8 +22,8 @@ namespace Neo.VM
     [DebuggerDisplay("InstructionPointer={InstructionPointer}")]
     public sealed partial class ExecutionContext
     {
-        private readonly SharedStates shared_states;
-        private int instructionPointer;
+        private readonly SharedStates _sharedStates;
+        private int _instructionPointer;
 
         /// <summary>
         /// Indicates the number of values that the context should return when it is unloaded.
@@ -33,20 +33,20 @@ namespace Neo.VM
         /// <summary>
         /// The script to run in this context.
         /// </summary>
-        public Script Script => shared_states.Script;
+        public Script Script => _sharedStates.Script;
 
         /// <summary>
         /// The evaluation stack for this context.
         /// </summary>
-        public EvaluationStack EvaluationStack => shared_states.EvaluationStack;
+        public EvaluationStack EvaluationStack => _sharedStates.EvaluationStack;
 
         /// <summary>
         /// The slot used to store the static fields.
         /// </summary>
         public Slot? StaticFields
         {
-            get => shared_states.StaticFields;
-            internal set => shared_states.StaticFields = value;
+            get => _sharedStates.StaticFields;
+            internal set => _sharedStates.StaticFields = value;
         }
 
         /// <summary>
@@ -71,13 +71,13 @@ namespace Neo.VM
         {
             get
             {
-                return instructionPointer;
+                return _instructionPointer;
             }
             internal set
             {
                 if (value < 0 || value > Script.Length)
-                    throw new ArgumentOutOfRangeException(nameof(value));
-                instructionPointer = value;
+                    throw new ArgumentOutOfRangeException(nameof(value), $"Out of script bounds: {value}/{Script.Length}");
+                _instructionPointer = value;
             }
         }
 
@@ -101,7 +101,7 @@ namespace Neo.VM
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                Instruction? current = CurrentInstruction;
+                var current = CurrentInstruction;
                 if (current is null) return null;
                 return GetInstruction(InstructionPointer + current.Size);
             }
@@ -112,11 +112,11 @@ namespace Neo.VM
         {
         }
 
-        private ExecutionContext(SharedStates shared_states, int rvcount, int initialPosition)
+        private ExecutionContext(SharedStates sharedStates, int rvcount, int initialPosition)
         {
             if (rvcount < -1 || rvcount > ushort.MaxValue)
-                throw new ArgumentOutOfRangeException(nameof(rvcount));
-            this.shared_states = shared_states;
+                throw new ArgumentOutOfRangeException(nameof(rvcount), $"Out of range: {rvcount}");
+            _sharedStates = sharedStates;
             RVCount = rvcount;
             InstructionPointer = initialPosition;
         }
@@ -137,7 +137,7 @@ namespace Neo.VM
         /// <returns>The cloned context.</returns>
         public ExecutionContext Clone(int initialPosition)
         {
-            return new ExecutionContext(shared_states, 0, initialPosition);
+            return new ExecutionContext(_sharedStates, 0, initialPosition);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -151,17 +151,17 @@ namespace Neo.VM
         /// <returns>The custom data of the specified type.</returns>
         public T GetState<T>(Func<T>? factory = null) where T : class, new()
         {
-            if (!shared_states.States.TryGetValue(typeof(T), out object? value))
+            if (!_sharedStates.States.TryGetValue(typeof(T), out var value))
             {
                 value = factory is null ? new T() : factory();
-                shared_states.States[typeof(T)] = value;
+                _sharedStates.States[typeof(T)] = value;
             }
             return (T)value;
         }
 
         internal bool MoveNext()
         {
-            Instruction? current = CurrentInstruction;
+            var current = CurrentInstruction;
             if (current is null) return false;
             InstructionPointer += current.Size;
             return InstructionPointer < Script.Length;
