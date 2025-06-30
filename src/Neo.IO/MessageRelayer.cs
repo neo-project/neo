@@ -39,8 +39,9 @@ namespace Neo.IO
         private readonly Queue<object> _queue = new();
         private readonly Queue<object> _queuePriority = new();
         private readonly SemaphoreSlim _semaphore = new(0);
-        private delegate void OnReceiveDelegate(object message);
         private readonly Dictionary<Type, OnReceiveDelegate[]> _handlers = [];
+
+        public delegate void OnReceiveDelegate(object message);
 
         /// <summary>
         /// Constructs a new message relayer with a specified number of worker threads.
@@ -57,20 +58,25 @@ namespace Neo.IO
             }
         }
 
-        internal void Subscribe(MessageReceiver receiver, params Type[] types)
+        /// <summary>
+        /// Subscribe a delegate to receive messages of specified types.
+        /// </summary>
+        /// <param name="delegate">Delegate</param>
+        /// <param name="types">Types</param>
+        public void Subscribe(OnReceiveDelegate @delegate, params Type[] types)
         {
             foreach (var type in types)
             {
                 if (_handlers.TryGetValue(type, out var handlers))
                 {
                     Array.Resize(ref handlers, handlers.Length + 1);
-                    handlers[^1] = new OnReceiveDelegate(receiver.OnReceive);
+                    handlers[^1] = @delegate;
 
                     _handlers[type] = handlers;
                 }
                 else
                 {
-                    handlers = [receiver.OnReceive];
+                    handlers = [@delegate];
                     _handlers[type] = handlers;
                 }
             }

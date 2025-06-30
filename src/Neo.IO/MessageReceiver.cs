@@ -38,7 +38,7 @@ namespace Neo.IO
         {
             Relayer = relayer;
             AcceptedMessages = acceptedTypes;
-            Relayer.Subscribe(this, acceptedTypes);
+            Relayer.Subscribe(OnReceive, acceptedTypes);
         }
 
         public abstract void OnReceive(object message);
