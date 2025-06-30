@@ -50,11 +50,13 @@ namespace Neo.Extensions
 
         /// <summary>
         /// Computes the remainder of the division of the specified value by the modulus.
+        /// It's different from the `%` operator(see `BigInteger.Remainder`) if the dividend is negative.
+        /// It always returns a non-negative value even if the dividend is negative.
         /// </summary>
-        /// <param name="x">The value to compute the remainder of.</param>
-        /// <param name="y">The modulus.</param>
+        /// <param name="x">The value to compute the remainder of(i.e. dividend).</param>
+        /// <param name="y">The modulus(i.e. divisor).</param>
         /// <returns>The remainder of the division of the specified value by the modulus.</returns>
-        /// <exception cref="DivideByZeroException">Thrown when the modulus is zero.</exception>
+        /// <exception cref="DivideByZeroException">Thrown when the divisor is zero.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static BigInteger Mod(this BigInteger x, BigInteger y)
         {
@@ -96,15 +98,19 @@ namespace Neo.Extensions
 
         /// <summary>
         /// Tests whether the specified bit is set in the specified value.
+        /// If the value is negative and index exceeds the bit length, it returns true.
+        /// If the value is positive and index exceeds the bit length, it returns false.
+        /// If index is negative, it returns false always.
+        /// NOTE: the `value` is represented in sign-magnitude format,
+        /// so it's different from the bit value in two's complement format(int, long).
         /// </summary>
         /// <param name="value">The value to test.</param>
         /// <param name="index">The index of the bit to test.</param>
         /// <returns>True if the specified bit is set in the specified value, otherwise false.</returns>
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TestBit(this BigInteger value, int index)
         {
-            return (value & (BigInteger.One << index)) > BigInteger.Zero;
+            return !(value & (BigInteger.One << index)).IsZero;
         }
 
         /// <summary>
@@ -121,6 +127,7 @@ namespace Neo.Extensions
 
         /// <summary>
         /// Converts a <see cref="BigInteger"/> to byte array in little-endian and eliminates all the leading zeros.
+        /// If the value is zero, it returns an empty byte array.
         /// </summary>
         /// <param name="value">The <see cref="BigInteger"/> to convert.</param>
         /// <returns>The converted byte array.</returns>
