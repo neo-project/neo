@@ -313,7 +313,7 @@ namespace Neo.Cryptography.BLS12_381
         {
             int length = p.Length;
             if (length != q.Length)
-                throw new ArgumentException($"{nameof(p)} and {nameof(q)} must have the same length.");
+                throw new ArgumentException($"Arrays {nameof(p)} and {nameof(q)} must have the same length.");
 
             Span<Fp2> x = stackalloc Fp2[length];
             Fp2 acc = Fp2.One;

@@ -268,7 +268,7 @@ namespace Neo
 
                 // If they aren't consecutive, return false.
                 if (nextIndex - currentIndex > 1)
-                    throw new ArgumentException("Hardfork configuration is not continuous.");
+                    throw new ArgumentException($"Hardfork configuration is not continuous. There is a gap between {sortedHardforks[i]} and {sortedHardforks[i + 1]}. All hardforks must be configured in sequential order without gaps.");
             }
             // Check that block numbers are not higher in earlier hardforks than in later ones
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
@@ -276,7 +276,7 @@ namespace Neo
                 if (settings.Hardforks[sortedHardforks[i]] > settings.Hardforks[sortedHardforks[i + 1]])
                 {
                     // This means the block number for the current hardfork is greater than the next one, which should not be allowed.
-                    throw new ArgumentException($"The Hardfork configuration for {sortedHardforks[i]} is greater than for {sortedHardforks[i + 1]}");
+                    throw new ArgumentException($"Invalid hardfork configuration: {sortedHardforks[i]} is configured to activate at block {settings.Hardforks[sortedHardforks[i]]}, which is greater than {sortedHardforks[i + 1]} at block {settings.Hardforks[sortedHardforks[i + 1]]}. Earlier hardforks must activate at lower block numbers than later hardforks.");
                 }
             }
         }

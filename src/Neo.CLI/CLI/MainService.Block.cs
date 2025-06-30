@@ -83,7 +83,7 @@ namespace Neo.CLI
             {
                 var size = r.ReadInt32();
                 if (size > Message.PayloadMaxSize)
-                    throw new ArgumentException($"Block {height} exceeds the maximum allowed size");
+                    throw new ArgumentException($"Block at height {height} has a size of {size} bytes, which exceeds the maximum allowed payload size of {Message.PayloadMaxSize} bytes. This block cannot be processed due to size constraints.");
 
                 byte[] array = r.ReadBytes(size);
                 if (height > currentHeight)
