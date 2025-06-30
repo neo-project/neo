@@ -106,10 +106,9 @@ namespace Neo.CLI.Tests
                 new ContractMethodDescriptor
                 {
                     Name = "testInteger",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition { Name = "value", Type = ContractParameterType.Integer }
-                    },
+                    Parameters = [
+                        new() { Name = "value", Type = ContractParameterType.Integer }
+                    ],
                     ReturnType = ContractParameterType.Integer,
                     Safe = true
                 },
