@@ -653,7 +653,7 @@ namespace Neo.CLI.Tests
             // Test that the method correctly finds the right overload based on parameter count
             // Setup a contract with overloaded methods
             var manifest = TestUtils.CreateDefaultManifest();
-            
+
             // Add overloaded methods with same name but different parameter counts
             manifest.Abi.Methods = new[]
             {
@@ -692,7 +692,7 @@ namespace Neo.CLI.Tests
             _consoleOutput.GetStringBuilder().Clear();
             var args2 = new JArray("0x1234567890abcdef1234567890abcdef12345678", 100);
             var invokeAbiMethod = GetPrivateMethod("OnInvokeAbiCommand");
-            
+
             try
             {
                 invokeAbiMethod.Invoke(_mainService, new object[] { _contractHash, "transfer", args2, null, null, 20m });
@@ -701,17 +701,17 @@ namespace Neo.CLI.Tests
             {
                 // Expected - we're testing parameter parsing
             }
-            
+
             // Should not have any method selection errors
             var output = _consoleOutput.ToString();
             Assert.IsFalse(output.Contains("Method 'transfer' exists but expects"));
-            
+
             // Test calling with wrong parameter count should give helpful error
             _consoleOutput.GetStringBuilder().Clear();
             var args4 = new JArray("0x1234567890abcdef1234567890abcdef12345678", "0xabcdef1234567890abcdef1234567890abcdef12", 100, "extra");
-            
+
             invokeAbiMethod.Invoke(_mainService, new object[] { _contractHash, "transfer", args4, null, null, 20m });
-            
+
             output = _consoleOutput.ToString();
             Assert.IsTrue(output.Contains("Method 'transfer' exists but expects") || output.Contains("expects exactly"));
         }
