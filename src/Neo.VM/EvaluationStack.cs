@@ -33,28 +33,6 @@ namespace Neo.VM
             _referenceCounter = referenceCounter;
         }
 
-        public StackItem this[int index]
-        {
-            get => Peek(index);
-        }
-
-        public IReadOnlyList<StackItem> this[Range range]
-        {
-            get
-            {
-                var start = range.Start.GetOffset(_innerList.Count);
-                var end = range.End.GetOffset(_innerList.Count);
-
-                if (start > end)
-                    throw new ArgumentOutOfRangeException("Range start must be less than or equal to end.");
-
-                StackItem[] copyList = [.. _innerList];
-                List<StackItem> reverseList = [.. copyList.Reverse()];
-
-                return reverseList.GetRange(start, end - start);
-            }
-        }
-
         /// <summary>
         /// Gets the number of items on the stack.
         /// </summary>
