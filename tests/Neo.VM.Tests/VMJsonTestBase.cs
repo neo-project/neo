@@ -37,8 +37,8 @@ namespace Neo.Test
             {
                 Assert.IsFalse(string.IsNullOrEmpty(test.Name), "Name is required");
 
-                using TestEngine engine = new();
-                Debugger debugger = new(engine);
+                using var engine = new TestEngine();
+                var debugger = new Debugger(engine);
 
                 if (test.Script.Length > 0)
                 {
@@ -139,7 +139,9 @@ namespace Neo.Test
 
             for (int x = 0, max = stack.Count; x < max; x++)
             {
-                AssertAreEqual(ItemToJson(stack.Peek(x)).ToString(Formatting.None), PrepareJsonItem(result[x]).ToString(Formatting.None), message + "Stack item is different");
+                var expected = ItemToJson(stack.Peek(x)).ToString(Formatting.None);
+                var actual = PrepareJsonItem(result[x]).ToString(Formatting.None);
+                AssertAreEqual(expected, actual, message + "Stack item is different");
             }
         }
 
@@ -155,7 +157,9 @@ namespace Neo.Test
 
             for (int x = 0, max = slot == null ? 0 : slot.Count; x < max; x++)
             {
-                AssertAreEqual(ItemToJson(slot[x]).ToString(Formatting.None), PrepareJsonItem(result[x]).ToString(Formatting.None), message + "Stack item is different");
+                var expected = ItemToJson(slot[x]).ToString(Formatting.None);
+                var actual = PrepareJsonItem(result[x]).ToString(Formatting.None);
+                AssertAreEqual(expected, actual, message + "Stack item is different");
             }
         }
 
@@ -239,8 +243,7 @@ namespace Neo.Test
             if (item == null) return null;
 
             JToken value;
-            string type = item.GetType().Name;
-
+            var type = item.GetType().Name;
             switch (item)
             {
                 case Null _:

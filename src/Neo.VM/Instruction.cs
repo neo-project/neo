@@ -197,9 +197,9 @@ namespace Neo.VM
 
         internal Instruction(ReadOnlyMemory<byte> script, int ip) : this((OpCode)script.Span[ip++])
         {
-            ReadOnlySpan<byte> span = script.Span;
-            int operandSizePrefix = OperandSizePrefixTable[(byte)OpCode];
-            int operandSize = 0;
+            var span = script.Span;
+            var operandSizePrefix = OperandSizePrefixTable[(byte)OpCode];
+            var operandSize = 0;
             switch (operandSizePrefix)
             {
                 case 0:
