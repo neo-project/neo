@@ -72,7 +72,7 @@ namespace Neo.SmartContract
         /// <param name="args">The arguments to be used.</param>
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
-            if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
+            if (method.StartsWith('_')) throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 

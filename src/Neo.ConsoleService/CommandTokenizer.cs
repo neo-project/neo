@@ -62,7 +62,7 @@ namespace Neo.ConsoleService
                 if (ch == '\\')
                 {
                     index++;
-                    if (index >= commandLine.Length) throw new ArgumentException("Unexpected end of command line");
+                    if (index >= commandLine.Length) throw new ArgumentException("Unexpected end of command line while processing escape sequence. The command line ends with a backslash character.");
                     token.Append(EscapedChar(commandLine[index]));
                 }
                 else if (quoteChar != CommandToken.NoQuoteChar)
