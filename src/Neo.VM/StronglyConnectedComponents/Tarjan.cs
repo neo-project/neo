@@ -17,32 +17,32 @@ namespace Neo.VM.StronglyConnectedComponents
 {
     class Tarjan
     {
-        private readonly IEnumerable<T> vertexs;
-        private readonly LinkedList<HashSet<T>> components = new();
-        private readonly Stack<T> stack = new();
-        private int index = 0;
+        private readonly IEnumerable<T> _vertexs;
+        private readonly LinkedList<HashSet<T>> _components = new();
+        private readonly Stack<T> _stack = new();
+        private int _index = 0;
 
         public Tarjan(IEnumerable<T> vertexs)
         {
-            this.vertexs = vertexs;
+            _vertexs = vertexs;
         }
 
         public LinkedList<HashSet<T>> Invoke()
         {
-            foreach (var v in vertexs)
+            foreach (var v in _vertexs)
             {
                 if (v.DFN < 0)
                 {
                     StrongConnectNonRecursive(v);
                 }
             }
-            return components;
+            return _components;
         }
 
         private void StrongConnect(T v)
         {
-            v.DFN = v.LowLink = ++index;
-            stack.Push(v);
+            v.DFN = v.LowLink = ++_index;
+            _stack.Push(v);
             v.OnStack = true;
 
             foreach (T w in v.Successors)
@@ -60,21 +60,21 @@ namespace Neo.VM.StronglyConnectedComponents
 
             if (v.LowLink == v.DFN)
             {
-                HashSet<T> scc = new(ReferenceEqualityComparer.Instance);
+                var scc = new HashSet<T>(ReferenceEqualityComparer.Instance);
                 T w;
                 do
                 {
-                    w = stack.Pop();
+                    w = _stack.Pop();
                     w.OnStack = false;
                     scc.Add(w);
                 } while (v != w);
-                components.AddLast(scc);
+                _components.AddLast(scc);
             }
         }
 
         private void StrongConnectNonRecursive(T v)
         {
-            Stack<(T node, T?, IEnumerator<T>?, int)> sstack = new();
+            var sstack = new Stack<(T node, T?, IEnumerator<T>?, int)>();
             sstack.Push((v, null, null, 0));
             while (sstack.TryPop(out var state))
             {
@@ -83,8 +83,8 @@ namespace Neo.VM.StronglyConnectedComponents
                 switch (n)
                 {
                     case 0:
-                        v.DFN = v.LowLink = ++index;
-                        stack.Push(v);
+                        v.DFN = v.LowLink = ++_index;
+                        _stack.Push(v);
                         v.OnStack = true;
                         s = v.Successors.GetEnumerator();
                         goto case 2;
@@ -108,14 +108,14 @@ namespace Neo.VM.StronglyConnectedComponents
                         }
                         if (v.LowLink == v.DFN)
                         {
-                            HashSet<T> scc = new(ReferenceEqualityComparer.Instance);
+                            var scc = new HashSet<T>(ReferenceEqualityComparer.Instance);
                             do
                             {
-                                w = stack.Pop();
+                                w = _stack.Pop();
                                 w.OnStack = false;
                                 scc.Add(w);
                             } while (v != w);
-                            components.AddLast(scc);
+                            _components.AddLast(scc);
                         }
                         break;
                 }
