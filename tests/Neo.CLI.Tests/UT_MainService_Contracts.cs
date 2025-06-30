@@ -648,6 +648,51 @@ namespace Neo.CLI.Tests
         }
 
         [TestMethod]
+        public void TestParseParameterFromAbi_ContractParameterObjects()
+        {
+            var method = GetPrivateMethod("ParseParameterFromAbi");
+
+            // Test parsing an array with ContractParameter objects (the issue from superboyiii)
+            var arrayWithContractParam = JToken.Parse(@"[4, [{""type"":""PublicKey"",""value"":""0244d12f3e6b8eba7d0bc0cf0c176d9df545141f4d3447f8463c1b16afb90b1ea8""}]]");
+            var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Array, arrayWithContractParam });
+
+            Assert.AreEqual(ContractParameterType.Array, result.Type);
+            var array = (ContractParameter[])result.Value;
+            Assert.AreEqual(2, array.Length);
+
+            // First element should be Integer
+            Assert.AreEqual(ContractParameterType.Integer, array[0].Type);
+            Assert.AreEqual(new BigInteger(4), array[0].Value);
+
+            // Second element should be Array containing a PublicKey
+            Assert.AreEqual(ContractParameterType.Array, array[1].Type);
+            var innerArray = (ContractParameter[])array[1].Value;
+            Assert.AreEqual(1, innerArray.Length);
+            Assert.AreEqual(ContractParameterType.PublicKey, innerArray[0].Type);
+
+            // Verify the PublicKey value
+            var expectedPubKey = ECPoint.Parse("0244d12f3e6b8eba7d0bc0cf0c176d9df545141f4d3447f8463c1b16afb90b1ea8", ECCurve.Secp256r1);
+            Assert.AreEqual(expectedPubKey, innerArray[0].Value);
+        }
+
+        [TestMethod]
+        public void TestParseParameterFromAbi_RegularMapVsContractParameter()
+        {
+            var method = GetPrivateMethod("ParseParameterFromAbi");
+
+            // Test regular map (should be treated as Map)
+            var regularMap = JToken.Parse(@"{""key1"": ""value1"", ""key2"": 123}");
+            var mapResult = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Any, regularMap });
+            Assert.AreEqual(ContractParameterType.Map, mapResult.Type);
+
+            // Test ContractParameter object (should be treated as the specified type)
+            var contractParamObj = JToken.Parse(@"{""type"": ""String"", ""value"": ""test""}");
+            var paramResult = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Any, contractParamObj });
+            Assert.AreEqual(ContractParameterType.String, paramResult.Type);
+            Assert.AreEqual("test", paramResult.Value);
+        }
+
+        [TestMethod]
         public void TestInvokeAbiCommand_MethodOverloading()
         {
             // Test that the method correctly finds the right overload based on parameter count

@@ -409,9 +409,30 @@ namespace Neo.CLI
                 JNumber => ParseParameterFromAbi(ContractParameterType.Integer, value),
                 JString => ParseParameterFromAbi(ContractParameterType.String, value),
                 JArray => ParseParameterFromAbi(ContractParameterType.Array, value),
-                JObject => ParseParameterFromAbi(ContractParameterType.Map, value),
+                JObject obj => ParseContractParameterObject(obj),
                 _ => throw new ArgumentException($"Cannot infer type for value: {value}")
             };
+        }
+
+        /// <summary>
+        /// Parses a JObject that could be either a ContractParameter format or a regular Map
+        /// </summary>
+        private ContractParameter ParseContractParameterObject(JObject obj)
+        {
+            // Check if this is a ContractParameter format: {"type": "...", "value": "..."}
+            if (obj.ContainsProperty("type") && obj.ContainsProperty("value"))
+            {
+                var typeStr = obj["type"]?.AsString();
+                var valueToken = obj["value"];
+
+                if (Enum.TryParse<ContractParameterType>(typeStr, true, out var paramType))
+                {
+                    return ParseParameterFromAbi(paramType, valueToken);
+                }
+            }
+
+            // Otherwise, treat as a regular Map
+            return ParseParameterFromAbi(ContractParameterType.Map, obj);
         }
     }
 }
