@@ -197,7 +197,7 @@ namespace Neo.CLI.Tests
             var method = GetPrivateMethod("ParseParameterFromAbi");
 
             // Test true value
-            var result = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Boolean, JToken.Parse("true") });
+            var result = (ContractParameter)method.Invoke(_mainService, [ContractParameterType.Boolean, JToken.Parse("true")]);
             Assert.AreEqual(ContractParameterType.Boolean, result.Type);
             Assert.AreEqual(true, result.Value);
 
