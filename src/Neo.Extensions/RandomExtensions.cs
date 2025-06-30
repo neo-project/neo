@@ -19,7 +19,7 @@ namespace Neo.Extensions
         public static BigInteger NextBigInteger(this Random rand, int sizeInBits)
         {
             if (sizeInBits < 0)
-                throw new ArgumentException("sizeInBits must be non-negative");
+                throw new ArgumentException($"sizeInBits must be non-negative, but received {sizeInBits}.", nameof(sizeInBits));
             if (sizeInBits == 0)
                 return 0;
             Span<byte> b = stackalloc byte[sizeInBits / 8 + 1];

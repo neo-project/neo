@@ -66,9 +66,9 @@ namespace Neo.SmartContract
         {
             var message = ScriptContainer.GetSignData(ProtocolSettings.Network);
             int m = signatures.Length, n = pubkeys.Length;
-            if (n == 0) throw new ArgumentException("The pubkeys.Length cannot be zero.");
-            if (m == 0) throw new ArgumentException("The signatures.Length cannot be zero.");
-            if (m > n) throw new ArgumentException($"The signatures.Length({m}) cannot be greater than the pubkeys.Length({n}).");
+            if (n == 0) throw new ArgumentException("pubkeys array cannot be empty.");
+            if (m == 0) throw new ArgumentException("signatures array cannot be empty.");
+            if (m > n) throw new ArgumentException($"signatures count ({m}) cannot be greater than pubkeys count ({n}).");
             AddFee(CheckSigPrice * n * ExecFeeFactor);
             try
             {

@@ -239,7 +239,7 @@ namespace Neo.SmartContract.Native
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) ||
                 (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
             {
-                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
+                throw new InvalidOperationException($"Attribute type {attributeType} is not supported.");
             }
 
             var key = CreateStorageKey(Prefix_AttributeFee, attributeType);
@@ -269,8 +269,8 @@ namespace Neo.SmartContract.Native
         public void SetMillisecondsPerBlock(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxMillisecondsPerBlock)
-                throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock value should be between 1 and {MaxMillisecondsPerBlock}, got {value}");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException("invalid committee signature");
+                throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock must be between 1 and {MaxMillisecondsPerBlock}, got {value}");
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
             var oldTime = GetMillisecondsPerBlock(engine.SnapshotCache);
             engine.SnapshotCache.GetAndChange(_millisecondsPerBlock).Set(value);
@@ -319,7 +319,7 @@ namespace Neo.SmartContract.Native
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) ||
                 (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
             {
-                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
+                throw new InvalidOperationException($"Attribute type {attributeType} is not supported.");
             }
 
             if (value > MaxAttributeFee)
