@@ -18,7 +18,6 @@ namespace Neo.Extensions
 {
     public static class BigIntegerExtensions
     {
-
         internal static int TrailingZeroCount(byte[] b)
         {
             var w = 0;
