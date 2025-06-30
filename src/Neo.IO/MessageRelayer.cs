@@ -42,8 +42,14 @@ namespace Neo.IO
         private delegate void OnReceiveDelegate(object message);
         private readonly Dictionary<Type, OnReceiveDelegate[]> _handlers = [];
 
+        /// <summary>
+        /// Constructs a new message relayer with a specified number of worker threads.
+        /// </summary>
+        /// <param name="workerCount">Number of workers or less than zero to use one per processor.</param>
         public MessageRelayer(int workerCount)
         {
+            if (workerCount <= 0) workerCount = Environment.ProcessorCount;
+
             _workers = new Task[workerCount];
             for (var i = 0; i < workerCount; i++)
             {
