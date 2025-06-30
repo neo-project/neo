@@ -358,10 +358,22 @@ namespace Neo.CLI
                 case ContractParameterType.Array:
                     if (value is JArray array)
                     {
+                        // For Array type parameters, we don't know the element types from ABI
+                        // So we need to preserve the original JSON format with explicit types
                         var items = new ContractParameter[array.Count];
                         for (int j = 0; j < array.Count; j++)
                         {
-                            items[j] = ParseParameterFromAbi(ContractParameterType.Any, array[j]);
+                            var element = array[j];
+                            // Check if this is already a ContractParameter format
+                            if (element is JObject obj && obj.ContainsProperty("type") && obj.ContainsProperty("value"))
+                            {
+                                items[j] = ContractParameter.FromJson((JObject)element);
+                            }
+                            else
+                            {
+                                // Otherwise, infer the type
+                                items[j] = element != null ? InferParameterFromToken(element) : new ContractParameter { Type = ContractParameterType.Any, Value = null };
+                            }
                         }
                         param.Value = items;
                     }
@@ -409,30 +421,9 @@ namespace Neo.CLI
                 JNumber => ParseParameterFromAbi(ContractParameterType.Integer, value),
                 JString => ParseParameterFromAbi(ContractParameterType.String, value),
                 JArray => ParseParameterFromAbi(ContractParameterType.Array, value),
-                JObject obj => ParseContractParameterObject(obj),
+                JObject => ParseParameterFromAbi(ContractParameterType.Map, value),
                 _ => throw new ArgumentException($"Cannot infer type for value: {value}")
             };
-        }
-
-        /// <summary>
-        /// Parses a JObject that could be either a ContractParameter format or a regular Map
-        /// </summary>
-        private ContractParameter ParseContractParameterObject(JObject obj)
-        {
-            // Check if this is a ContractParameter format: {"type": "...", "value": "..."}
-            if (obj.ContainsProperty("type") && obj.ContainsProperty("value"))
-            {
-                var typeStr = obj["type"]?.AsString();
-                var valueToken = obj["value"];
-
-                if (Enum.TryParse<ContractParameterType>(typeStr, true, out var paramType))
-                {
-                    return ParseParameterFromAbi(paramType, valueToken);
-                }
-            }
-
-            // Otherwise, treat as a regular Map
-            return ParseParameterFromAbi(ContractParameterType.Map, obj);
         }
     }
 }

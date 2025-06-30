@@ -685,11 +685,11 @@ namespace Neo.CLI.Tests
             var mapResult = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Any, regularMap });
             Assert.AreEqual(ContractParameterType.Map, mapResult.Type);
 
-            // Test ContractParameter object (should be treated as the specified type)
+            // Test ContractParameter object with Any type - should be treated as Map since we only parse 
+            // ContractParameter format inside arrays
             var contractParamObj = JToken.Parse(@"{""type"": ""String"", ""value"": ""test""}");
             var paramResult = (ContractParameter)method.Invoke(_mainService, new object[] { ContractParameterType.Any, contractParamObj });
-            Assert.AreEqual(ContractParameterType.String, paramResult.Type);
-            Assert.AreEqual("test", paramResult.Value);
+            Assert.AreEqual(ContractParameterType.Map, paramResult.Type);
         }
 
         [TestMethod]
