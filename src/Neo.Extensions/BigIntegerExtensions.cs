@@ -18,24 +18,33 @@ namespace Neo.Extensions
 {
     public static class BigIntegerExtensions
     {
+        internal static int TrailingZeroCount(byte[] b)
+        {
+            var w = 0;
+            while (b[w] == 0) w++;
+            for (var x = 0; x < 8; x++)
+            {
+                if ((b[w] & 1 << x) > 0)
+                    return x + w * 8; // cannot greater than 2Gib
+            }
+            return -1; // unreachable, because returned earlier if value is zero
+        }
+
         /// <summary>
-        /// Finds the lowest set bit in the specified value.
+        /// Finds the lowest set bit in the specified value. If value is zero, returns -1.
         /// </summary>
-        /// <param name="value">The value to find the lowest set bit in.</param>
+        /// <param name="value">The value to find the lowest set bit in. The value.GetBitLength cannot greater than 2Gib.</param>
         /// <returns>The lowest set bit in the specified value.</returns>
-        /// <exception cref="Exception">Thrown when the value is zero.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetLowestSetBit(this BigInteger value)
         {
-            if (value.Sign == 0)
-                return -1;
-            var b = value.ToByteArray();
-            var w = 0;
-            while (b[w] == 0)
-                w++;
-            for (var x = 0; x < 8; x++)
-                if ((b[w] & 1 << x) > 0)
-                    return x + w * 8;
-            throw new Exception("The value is zero.");
+            if (value.Sign == 0) return -1; // special case for zero. TrailingZeroCount returns 32 in standard library.
+
+#if NET7_0_OR_GREATER
+            return (int)BigInteger.TrailingZeroCount(value);
+#else
+            return TrailingZeroCount(value.ToByteArray());
+#endif
         }
 
         /// <summary>
@@ -97,7 +106,6 @@ namespace Neo.Extensions
         /// <param name="value">The value to test.</param>
         /// <param name="index">The index of the bit to test.</param>
         /// <returns>True if the specified bit is set in the specified value, otherwise false.</returns>
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TestBit(this BigInteger value, int index)
         {
@@ -117,7 +125,7 @@ namespace Neo.Extensions
         }
 
         /// <summary>
-        /// Converts a <see cref="BigInteger"/> to byte array and eliminates all the leading zeros.
+        /// Converts a <see cref="BigInteger"/> to byte array in little-endian and eliminates all the leading zeros.
         /// If the value is zero, it returns an empty byte array.
         /// </summary>
         /// <param name="value">The <see cref="BigInteger"/> to convert.</param>
