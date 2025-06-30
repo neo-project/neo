@@ -53,7 +53,7 @@ namespace Neo.VM.Types
             else
             {
                 Size = value.GetByteCount();
-                if (Size > MaxSize) 
+                if (Size > MaxSize)
                     throw new ArgumentException($"Integer size {Size} bytes exceeds maximum allowed size of {MaxSize} bytes.", nameof(value));
             }
             this.value = value;
