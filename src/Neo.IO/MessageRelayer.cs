@@ -71,14 +71,13 @@ namespace Neo.IO
                 {
                     Array.Resize(ref handlers, handlers.Length + 1);
                     handlers[^1] = @delegate;
-
-                    _handlers[type] = handlers;
                 }
                 else
                 {
                     handlers = [@delegate];
-                    _handlers[type] = handlers;
                 }
+
+                _handlers[type] = handlers;
             }
         }
 
