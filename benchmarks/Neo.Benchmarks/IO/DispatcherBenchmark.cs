@@ -80,7 +80,7 @@ namespace Neo.IO
         {
             public Counter Counter { get; } = countdown;
 
-            public override void OnReceive(Message message)
+            protected override void OnReceive(Message message)
             {
                 Counter.Signal(message);
             }

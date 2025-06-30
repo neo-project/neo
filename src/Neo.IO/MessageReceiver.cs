@@ -17,11 +17,11 @@ using System.Threading.Tasks;
 
 namespace Neo.IO
 {
-    internal abstract class MessageReceiver(int workerCount)
+    public abstract class MessageReceiver(int workerCount)
         : MessageReceiver<object>(workerCount)
     { }
 
-    internal abstract class MessageReceiver<T> : IDisposable
+    public abstract class MessageReceiver<T> : IDisposable
     {
         private readonly Task[] _workers;
         private readonly Queue<T> _queue = new();
@@ -37,7 +37,7 @@ namespace Neo.IO
             }
         }
 
-        public abstract void OnReceive(T message);
+        protected abstract void OnReceive(T message);
 
         private async Task WorkerLoop()
         {
