@@ -25,10 +25,7 @@ namespace Neo.VM.Types
         /// Create a structure with the specified fields.
         /// </summary>
         /// <param name="fields">The fields to be included in the structure.</param>
-        public Struct(IEnumerable<StackItem>? fields = null)
-            : this(null, fields)
-        {
-        }
+        public Struct(IEnumerable<StackItem>? fields = null) : this(null, fields) { }
 
         /// <summary>
         /// Create a structure with the specified fields. And make the structure use the specified <see cref="IReferenceCounter"/>.
@@ -36,9 +33,7 @@ namespace Neo.VM.Types
         /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> to be used by this structure.</param>
         /// <param name="fields">The fields to be included in the structure.</param>
         public Struct(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? fields = null)
-            : base(referenceCounter, fields)
-        {
-        }
+            : base(referenceCounter, fields) { }
 
         /// <summary>
         /// Create a new structure with the same content as this structure. All nested structures will be copied by value.
@@ -48,21 +43,21 @@ namespace Neo.VM.Types
         public Struct Clone(ExecutionEngineLimits limits)
         {
             int count = (int)(limits.MaxStackSize - 1);
-            Struct result = new(ReferenceCounter);
-            Queue<Struct> queue = new();
+            var result = new Struct(ReferenceCounter);
+            var queue = new Queue<Struct>();
             queue.Enqueue(result);
             queue.Enqueue(this);
             while (queue.Count > 0)
             {
-                Struct a = queue.Dequeue();
-                Struct b = queue.Dequeue();
-                foreach (StackItem item in b)
+                var a = queue.Dequeue();
+                var b = queue.Dequeue();
+                foreach (var item in b)
                 {
                     count--;
                     if (count < 0) throw new InvalidOperationException("Beyond struct subitem clone limits!");
                     if (item is Struct sb)
                     {
-                        Struct sa = new(ReferenceCounter);
+                        var sa = new Struct(ReferenceCounter);
                         a.Add(sa);
                         queue.Enqueue(sa);
                         queue.Enqueue(sb);
@@ -91,8 +86,8 @@ namespace Neo.VM.Types
         internal override bool Equals(StackItem? other, ExecutionEngineLimits limits)
         {
             if (other is not Struct s) return false;
-            Stack<StackItem> stack1 = new();
-            Stack<StackItem> stack2 = new();
+            var stack1 = new Stack<StackItem>();
+            var stack2 = new Stack<StackItem>();
             stack1.Push(this);
             stack2.Push(s);
             uint count = limits.MaxStackSize;
@@ -101,8 +96,8 @@ namespace Neo.VM.Types
             {
                 if (count-- == 0)
                     throw new InvalidOperationException("Too many struct items to compare in struct comparison.");
-                StackItem a = stack1.Pop();
-                StackItem b = stack2.Pop();
+                var a = stack1.Pop();
+                var b = stack2.Pop();
                 if (a is ByteString byteString)
                 {
                     if (!byteString.Equals(b, ref maxComparableSize)) return false;
@@ -117,9 +112,9 @@ namespace Neo.VM.Types
                         if (ReferenceEquals(a, b)) continue;
                         if (b is not Struct sb) return false;
                         if (sa.Count != sb.Count) return false;
-                        foreach (StackItem item in sa)
+                        foreach (var item in sa)
                             stack1.Push(item);
-                        foreach (StackItem item in sb)
+                        foreach (var item in sb)
                             stack2.Push(item);
                     }
                     else

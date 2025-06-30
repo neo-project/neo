@@ -153,11 +153,24 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestBit()
         {
-            var bigInteger = new BigInteger(5); // Binary: 101
-            Assert.IsTrue(bigInteger.TestBit(2)); // Bit at index 2 is set (1)
+            var value = new BigInteger(5); // Binary: 101
+            Assert.IsTrue(value.TestBit(2)); // Bit at index 2 is set (1)
 
-            bigInteger = new BigInteger(5); // Binary: 101
-            Assert.IsFalse(bigInteger.TestBit(1)); // Bit at index 1 is not set (0)
+            value = new BigInteger(5); // Binary: 101
+            Assert.IsFalse(value.TestBit(1)); // Bit at index 1 is not set (0)
+            Assert.IsFalse(value.TestBit(10)); // Bit at index 10 is not set (0)
+
+            value = new BigInteger(-3);
+            Assert.AreEqual(2, value.GetBitLength()); // 2, without sign bit
+            Assert.IsTrue(value.TestBit(255)); // Bit at index 255 is set (1)
+
+            value = new BigInteger(3); // Binary: 11
+            Assert.AreEqual(2, value.GetBitLength()); // 2, without sign bit
+            Assert.IsFalse(value.TestBit(255)); // Bit at index 255 is not set (0)
+            Assert.IsTrue(value.TestBit(0)); // Bit at index 0 is set (1)
+            Assert.IsTrue(value.TestBit(1)); // Bit at index 1 is set (0)
+            Assert.IsFalse(value.TestBit(2)); // Bit at index 2 is not set (0)
+            Assert.IsFalse(value.TestBit(-1)); // Bit at index -1 is not set (0)
         }
 
         [TestMethod]

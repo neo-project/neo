@@ -31,10 +31,13 @@ namespace Neo.VM.Types
         /// Represents the number 0.
         /// </summary>
         public static readonly Integer Zero = 0;
+
         private readonly BigInteger value;
 
         public override ReadOnlyMemory<byte> Memory => value.IsZero ? ReadOnlyMemory<byte>.Empty : value.ToByteArray();
+
         public override int Size { get; }
+
         public override StackItemType Type => StackItemType.Integer;
 
         /// <summary>
@@ -50,7 +53,8 @@ namespace Neo.VM.Types
             else
             {
                 Size = value.GetByteCount();
-                if (Size > MaxSize) throw new ArgumentException($"Integer size {Size} bytes exceeds maximum allowed size of {MaxSize} bytes.", nameof(value));
+                if (Size > MaxSize) 
+                    throw new ArgumentException($"Integer size {Size} bytes exceeds maximum allowed size of {MaxSize} bytes.", nameof(value));
             }
             this.value = value;
         }

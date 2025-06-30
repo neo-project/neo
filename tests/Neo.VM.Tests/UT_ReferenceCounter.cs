@@ -23,8 +23,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestCircularReferences()
         {
-            using ScriptBuilder sb = new();
-            sb.Emit(OpCode.INITSSLOT, new byte[] { 1 }); //{}|{null}:1
+            using var sb = new ScriptBuilder();
+            sb.Emit(OpCode.INITSSLOT, [1]); //{}|{null}:1
             sb.EmitPush(0); //{0}|{null}:2
             sb.Emit(OpCode.NEWARRAY); //{A[]}|{null}:2
             sb.Emit(OpCode.DUP); //{A[],A[]}|{null}:3
@@ -55,8 +55,8 @@ namespace Neo.Test
             sb.Emit(OpCode.STSFLD0); //{}|{A[A]}:2
             sb.Emit(OpCode.RET); //{}:0
 
-            using ExecutionEngine engine = new();
-            Debugger debugger = new(engine);
+            using var engine = new ExecutionEngine();
+            var debugger = new Debugger(engine);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
             Assert.AreEqual(1, engine.ReferenceCounter.Count);
@@ -123,8 +123,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestRemoveReferrer()
         {
-            using ScriptBuilder sb = new();
-            sb.Emit(OpCode.INITSSLOT, new byte[] { 1 }); //{}|{null}:1
+            using var sb = new ScriptBuilder();
+            sb.Emit(OpCode.INITSSLOT, [1]); //{}|{null}:1
             sb.EmitPush(0); //{0}|{null}:2
             sb.Emit(OpCode.NEWARRAY); //{A[]}|{null}:2
             sb.Emit(OpCode.DUP); //{A[],A[]}|{null}:3
@@ -136,8 +136,8 @@ namespace Neo.Test
             sb.Emit(OpCode.DROP); //{}|{B[]}:1
             sb.Emit(OpCode.RET); //{}:0
 
-            using ExecutionEngine engine = new();
-            Debugger debugger = new(engine);
+            using var engine = new ExecutionEngine();
+            var debugger = new Debugger(engine);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
             Assert.AreEqual(1, engine.ReferenceCounter.Count);
@@ -166,14 +166,13 @@ namespace Neo.Test
         [TestMethod]
         public void TestCheckZeroReferredWithArray()
         {
-            using ScriptBuilder sb = new();
-
+            using var sb = new ScriptBuilder();
             sb.EmitPush(ExecutionEngineLimits.Default.MaxStackSize - 1);
             sb.Emit(OpCode.NEWARRAY);
 
             // Good with MaxStackSize
 
-            using (ExecutionEngine engine = new())
+            using (var engine = new ExecutionEngine())
             {
                 engine.LoadScript(sb.ToArray());
                 Assert.AreEqual(0, engine.ReferenceCounter.Count);
@@ -186,7 +185,7 @@ namespace Neo.Test
 
             sb.Emit(OpCode.PUSH1);
 
-            using (ExecutionEngine engine = new())
+            using (var engine = new ExecutionEngine())
             {
                 engine.LoadScript(sb.ToArray());
                 Assert.AreEqual(0, engine.ReferenceCounter.Count);
@@ -199,14 +198,14 @@ namespace Neo.Test
         [TestMethod]
         public void TestCheckZeroReferred()
         {
-            using ScriptBuilder sb = new();
+            using var sb = new ScriptBuilder();
 
             for (int x = 0; x < ExecutionEngineLimits.Default.MaxStackSize; x++)
                 sb.Emit(OpCode.PUSH1);
 
             // Good with MaxStackSize
 
-            using (ExecutionEngine engine = new())
+            using (var engine = new ExecutionEngine())
             {
                 engine.LoadScript(sb.ToArray());
                 Assert.AreEqual(0, engine.ReferenceCounter.Count);
@@ -219,7 +218,7 @@ namespace Neo.Test
 
             sb.Emit(OpCode.PUSH1);
 
-            using (ExecutionEngine engine = new())
+            using (var engine = new ExecutionEngine())
             {
                 engine.LoadScript(sb.ToArray());
                 Assert.AreEqual(0, engine.ReferenceCounter.Count);
@@ -232,12 +231,12 @@ namespace Neo.Test
         [TestMethod]
         public void TestArrayNoPush()
         {
-            using ScriptBuilder sb = new();
+            using var sb = new ScriptBuilder();
             sb.Emit(OpCode.RET);
-            using ExecutionEngine engine = new();
+            using var engine = new ExecutionEngine();
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(0, engine.ReferenceCounter.Count);
-            Array array = new(engine.ReferenceCounter, new StackItem[] { 1, 2, 3, 4 });
+            var array = new Array(engine.ReferenceCounter, [1, 2, 3, 4]);
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
@@ -249,7 +248,6 @@ namespace Neo.Test
             var reference = new ReferenceCounter();
             var arr = new Array(reference);
             var arr2 = new Array();
-
             for (var i = 0; i < 10; i++)
             {
                 arr2.Add(i);
