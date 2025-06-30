@@ -243,7 +243,7 @@ namespace Neo.CLI
             return acct;
         }
 
-        private byte[] BuildNativeScript(string method, params object?[] args) 
+        private byte[] BuildNativeScript(string method, params object?[] args)
             => NativeContract.NEO.Hash.MakeScript(method, args);
 
     }
