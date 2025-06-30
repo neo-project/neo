@@ -15,50 +15,60 @@ namespace Neo.Extensions.Exceptions
 {
     internal static class TryCatchExtensions
     {
-        public static void TryCatch(this object _, Action action)
+        public static TSource TryCatch<TSource>(this TSource obj, Action<TSource?> action)
+            where TSource : class?
         {
             try
             {
-                action();
+                action(obj);
             }
             catch
             {
             }
+
+            return obj;
         }
 
-        public static void TryCatch<TException>(this object _, Action action, Action<TException> onError)
+        public static TSource TryCatch<TSource, TException>(this TSource obj, Action<TSource?> action, Action<TSource?, TException> onError)
+            where TSource : class?
             where TException : Exception
         {
             try
             {
-                action();
+                action(obj);
             }
             catch (TException ex)
             {
-                onError?.Invoke(ex);
+                onError?.Invoke(obj, ex);
             }
+
+            return obj;
         }
 
-        public static TResult? TryCatch<TException, TResult>(this object _, Func<TResult?> func, Func<TException, TResult?> onError)
+        public static TResult? TryCatch<TSource, TException, TResult>(this TSource obj, Func<TSource?, TResult?> func, Func<TSource?, TException, TResult?> onError)
+            where TSource : class?
             where TException : Exception
             where TResult : class?
         {
             try
             {
-                return func();
+                return func(obj);
             }
             catch (TException ex)
             {
-                return onError?.Invoke(ex);
+                return onError?.Invoke(obj, ex);
             }
         }
 
-        public static void TryCatchThrow<TException>(this object _, Action action)
+        public static TSource TryCatchThrow<TSource, TException>(this TSource obj, Action<TSource?> action)
+            where TSource : class?
             where TException : Exception
         {
             try
             {
-                action();
+                action(obj);
+
+                return obj;
             }
             catch (TException)
             {
@@ -66,13 +76,14 @@ namespace Neo.Extensions.Exceptions
             }
         }
 
-        public static TResult? TryCatchThrow<TException, TResult>(this object _, Func<TResult?> func)
+        public static TResult? TryCatchThrow<TSource, TException, TResult>(this TSource obj, Func<TSource?, TResult?> func)
+            where TSource : class?
             where TException : Exception
             where TResult : class?
         {
             try
             {
-                return func();
+                return func(obj);
             }
             catch (TException)
             {
@@ -80,12 +91,15 @@ namespace Neo.Extensions.Exceptions
             }
         }
 
-        public static void TryCatchThrow<TException>(this object _, Action action, string? errorMessage = default)
+        public static TSource TryCatchThrow<TSource, TException>(this TSource obj, Action<TSource?> action, string? errorMessage = default)
+            where TSource : class?
             where TException : Exception, new()
         {
             try
             {
-                action();
+                action(obj);
+
+                return obj;
             }
             catch (TException innerException)
             {
@@ -102,13 +116,14 @@ namespace Neo.Extensions.Exceptions
             }
         }
 
-        public static TResult? TryCatchThrow<TException, TResult>(this object _, Func<TResult?> func, string? errorMessage = default)
+        public static TResult? TryCatchThrow<TSource, TException, TResult>(this TSource obj, Func<TSource?, TResult?> func, string? errorMessage = default)
+            where TSource : class?
             where TException : Exception
             where TResult : class?
         {
             try
             {
-                return func();
+                return func(obj);
             }
             catch (TException innerException)
             {

@@ -23,19 +23,19 @@ namespace Neo.Extensions.Tests.Exceptions
             var actualObject = new object();
 
             // action
-            actualObject.TryCatch(() => actualObject = null);
+            actualObject.TryCatch(a => actualObject = a = null);
             Assert.IsNull(actualObject);
 
             // action
-            actualObject.TryCatch<ArgumentException>(() => throw new ArgumentException(), (ex) => actualObject = ex);
+            actualObject.TryCatch<object, ArgumentException>(a => throw new ArgumentException(), (_, ex) => actualObject = ex);
             Assert.IsInstanceOfType<ArgumentException>(actualObject);
 
             var expectedObject = new object();
 
             // func
-            actualObject = expectedObject.TryCatch<ArgumentException, object>(
-                () => throw new ArgumentException(),
-                (ex) => ex);
+            actualObject = expectedObject.TryCatch<object, ArgumentException, ArgumentException>(
+                a => throw new ArgumentException(),
+                (_, ex) => ex);
             Assert.IsInstanceOfType<ArgumentException>(actualObject);
         }
 
@@ -46,10 +46,10 @@ namespace Neo.Extensions.Tests.Exceptions
 
             //action
             Assert.ThrowsExactly<ArgumentException>(
-                () => actualObject.TryCatchThrow<ArgumentException>(() => throw new ArgumentException()));
+                () => actualObject.TryCatchThrow<object, ArgumentException>(a => throw new ArgumentException()));
 
             Assert.ThrowsExactly<ArgumentException>(
-                () => actualObject.TryCatchThrow<ArgumentException, object>(() =>
+                () => actualObject.TryCatchThrow<object, ArgumentException, object>(a =>
                 {
                     throw new ArgumentException();
                 }));
@@ -58,7 +58,7 @@ namespace Neo.Extensions.Tests.Exceptions
 
             try
             {
-                actualObject.TryCatchThrow<ArgumentException>(() => throw new ArgumentException(), expectedMessage);
+                actualObject.TryCatchThrow<object, ArgumentException>(a => throw new ArgumentException(), expectedMessage);
             }
             catch (ArgumentException actualException)
             {
@@ -67,7 +67,7 @@ namespace Neo.Extensions.Tests.Exceptions
 
             try
             {
-                actualObject.TryCatchThrow<ArgumentException, object>(() => throw new ArgumentException(), expectedMessage);
+                actualObject.TryCatchThrow<object, ArgumentException, ArgumentException>(a => throw new ArgumentException(), expectedMessage);
             }
             catch (ArgumentException actualException)
             {
