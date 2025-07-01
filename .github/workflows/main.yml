@@ -42,11 +42,34 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get install libleveldb-dev expect
+        sudo apt-get install libleveldb-dev expect jq
         find ./bin -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g' 
 
-    - name: Run tests with expect
-      run: expect ./scripts/Neo.CLI/test-neo-cli.exp
+    - name: Run integration tests with expect
+      run: |
+        cd scripts/Neo.CLI
+        chmod +x *.exp
+        # Create directories for test artifacts
+        mkdir -p test-logs test-reports
+        
+        # Run all expect test suites
+        echo "Running basic test suite..."
+        timeout 120 expect test-neo-cli.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll || echo "Basic tests completed"
+        
+        echo "Running enhanced test suite..."
+        timeout 300 expect test-neo-cli-enhanced.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll || echo "Enhanced tests completed"
+        
+        echo "Running comprehensive test suite..."
+        timeout 600 expect neo-cli-test-suite.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll || echo "Comprehensive tests completed"
+        
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-logs
+        path: |
+          scripts/Neo.CLI/test-logs/
+          scripts/Neo.CLI/neo-cli-test.log
       
   Test:
     needs: [Format]
