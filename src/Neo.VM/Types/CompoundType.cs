@@ -82,7 +82,7 @@ namespace Neo.VM.Types
                 }
                 else
                 {
-                    h.Add(item.GetHashCode());
+                    h.Add(item?.GetHashCode() ?? 0);
                 }
             }
             return h.ToHashCode();

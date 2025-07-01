@@ -105,7 +105,7 @@ namespace Neo.VM.Types
         ///
         /// Use this property when you need to iterate over the successors of a StackItem.
         /// </summary>
-        internal IEnumerable<StackItem> Successors => ObjectReferences?.Values.Where(p => p.References > 0).Select(p => p.Item) ?? System.Array.Empty<StackItem>();
+        internal IEnumerable<StackItem> Successors => ObjectReferences?.Values.Where(p => p.References > 0).Select(p => p.Item) ?? [];
 
         /// <summary>
         /// Resets the strongly connected components-related fields.

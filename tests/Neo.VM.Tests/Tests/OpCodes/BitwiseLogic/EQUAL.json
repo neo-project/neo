@@ -342,7 +342,7 @@
       ]
     },
     {
-      "name": "Real test [Array,Array]=true",
+      "name": "Real test [Array,Array]=true with clone",
       "script": [
         "PUSH0",
         "NEWARRAY",
@@ -413,7 +413,7 @@
       ]
     },
     {
-      "name": "Real test [Array,Array]=false",
+      "name": "Real test [Array,Array]=true without clone",
       "script": [
         "PUSH0",
         "NEWARRAY",
@@ -462,7 +462,7 @@
                 "evaluationStack": [
                   {
                     "type": "Boolean",
-                    "value": false
+                    "value": true
                   }
                 ]
               }
@@ -478,7 +478,7 @@
             "resultStack": [
               {
                 "type": "Boolean",
-                "value": false
+                "value": true
               }
             ]
           }
@@ -707,7 +707,7 @@
       ]
     },
     {
-      "name": "Real test [Map,Map]=true",
+      "name": "Real test [Map,Map]=true with clone",
       "script": [
         "NEWMAP",
         "DUP",
@@ -776,7 +776,7 @@
       ]
     },
     {
-      "name": "Real test [Map,Map]=false",
+      "name": "Real test [Map,Map]=true without clone",
       "script": [
         "NEWMAP",
         "NEWMAP",
@@ -821,7 +821,7 @@
                 "evaluationStack": [
                   {
                     "type": "Boolean",
-                    "value": false
+                    "value": true
                   }
                 ]
               }
@@ -837,7 +837,7 @@
             "resultStack": [
               {
                 "type": "Boolean",
-                "value": false
+                "value": true
               }
             ]
           }
@@ -1334,7 +1334,7 @@
       ]
     },
     {
-      "name": "Real test [Buffer,Buffer]=false",
+      "name": "Real test [Buffer,Buffer]=true without clone",
       "script": [
         "PUSHDATA1",
         "0x01AA",
@@ -1383,7 +1383,7 @@
             "resultStack": [
               {
                 "type": "Boolean",
-                "value": false
+                "value": true
               }
             ]
           }
@@ -1391,7 +1391,7 @@
       ]
     },
     {
-      "name": "Real test [Buffer,Buffer]=true",
+      "name": "Real test [Buffer,Buffer]=true with clone",
       "script": [
         "PUSHDATA1",
         "0x01AA",

@@ -273,6 +273,7 @@ namespace Neo.Test
             var expectedStruct = new Struct { 1, 2, 3 };
             var expectedArray = new Array
             {
+                null,
                 true,
                 1,
                 new byte[] { 1 },
@@ -302,6 +303,7 @@ namespace Neo.Test
 
             var actualArrayOne = new Array
             {
+                null,
                 true,
                 1,
                 new byte[] { 1 },
@@ -320,6 +322,7 @@ namespace Neo.Test
                 new byte[] { 1 },
                 1,
                 true,
+                null,
             };
 
             Assert.AreEqual(true, actualBooleanOne);
