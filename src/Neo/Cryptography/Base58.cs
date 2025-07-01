@@ -51,10 +51,10 @@ namespace Neo.Cryptography
         {
             if (input is null) throw new ArgumentNullException(nameof(input));
             byte[] buffer = Decode(input);
-            if (buffer.Length < 4) throw new FormatException();
+            if (buffer.Length < 4) throw new FormatException($"Invalid Base58Check format: decoded data length ({buffer.Length} bytes) is too short. Base58Check requires at least 4 bytes for the checksum.");
             byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
             if (!buffer.AsSpan(^4).SequenceEqual(checksum.AsSpan(..4)))
-                throw new FormatException();
+                throw new FormatException($"Invalid Base58Check checksum: the provided checksum does not match the calculated checksum. The data may be corrupted or the Base58Check string is invalid.");
             var ret = buffer[..^4];
             Array.Clear(buffer, 0, buffer.Length);
             return ret;

@@ -257,7 +257,7 @@ namespace Neo.Cryptography.BLS12_381
         public Scalar Pow(ulong[] by)
         {
             if (by.Length != SizeL)
-                throw new ArgumentException($"The length of the parameter `{nameof(by)}` must be {SizeL}.");
+                throw new ArgumentException($"Parameter {nameof(by)} must have length {SizeL}.", nameof(by));
 
             var res = One;
             for (int j = by.Length - 1; j >= 0; j--)

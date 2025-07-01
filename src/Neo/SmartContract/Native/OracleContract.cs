@@ -78,9 +78,9 @@ namespace Neo.SmartContract.Native
             if (engine.GetInvocationCounter() != 1) throw new InvalidOperationException();
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.GetAttribute<OracleResponse>();
-            if (response == null) throw new ArgumentException("Oracle response was not found");
+            if (response == null) throw new ArgumentException("Oracle response not found");
             OracleRequest request = GetRequest(engine.SnapshotCache, response.Id);
-            if (request == null) throw new ArgumentException("Oracle request was not found");
+            if (request == null) throw new ArgumentException("Oracle request not found");
             engine.SendNotification(Hash, "OracleResponse", new Array(engine.ReferenceCounter) { response.Id, request.OriginalTxid.ToArray() });
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits, engine.ReferenceCounter);
             return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
@@ -202,21 +202,21 @@ namespace Neo.SmartContract.Native
         {
             var urlSize = url.GetStrictUtf8ByteCount();
             if (urlSize > MaxUrlLength)
-                throw new ArgumentException($"The url bytes size({urlSize}) cannot be greater than {MaxUrlLength}.");
+                throw new ArgumentException($"URL size {urlSize} bytes exceeds maximum allowed size of {MaxUrlLength} bytes.");
 
             var filterSize = filter is null ? 0 : filter.GetStrictUtf8ByteCount();
             if (filterSize > MaxFilterLength)
-                throw new ArgumentException($"The filter bytes size({filterSize}) cannot be greater than {MaxFilterLength}.");
+                throw new ArgumentException($"Filter size {filterSize} bytes exceeds maximum allowed size of {MaxFilterLength} bytes.");
 
             var callbackSize = callback is null ? 0 : callback.GetStrictUtf8ByteCount();
             if (callbackSize > MaxCallbackLength)
-                throw new ArgumentException($"The callback bytes size({callbackSize}) cannot be greater than {MaxCallbackLength}.");
+                throw new ArgumentException($"Callback size {callbackSize} bytes exceeds maximum allowed size of {MaxCallbackLength} bytes.");
 
             if (callback.StartsWith('_'))
-                throw new ArgumentException($"The callback cannot start with '_'.");
+                throw new ArgumentException("Callback cannot start with underscore.");
 
             if (gasForResponse < 0_10000000)
-                throw new ArgumentException($"The gasForResponse({gasForResponse}) must be greater than or equal to 0.1 datoshi.");
+                throw new ArgumentException($"gasForResponse {gasForResponse} must be at least 0.1 datoshi.");
 
             engine.AddFee(GetPrice(engine.SnapshotCache));
 
