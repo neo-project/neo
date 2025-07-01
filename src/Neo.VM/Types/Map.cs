@@ -89,6 +89,9 @@ namespace Neo.VM.Types
         /// <param name="referenceCounter">The reference counter to be used.</param>
         public Map(IReferenceCounter? referenceCounter = null) : base(referenceCounter) { }
 
+        public override bool Equals(StackItem? other) =>
+            ReferenceEquals(this, other);
+
         public override void Clear()
         {
             if (IsReadOnly) throw new InvalidOperationException("The map is readonly, can not clear.");

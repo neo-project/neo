@@ -62,6 +62,9 @@ namespace Neo.VM.Types
             data.CopyTo(InnerBuffer.Span);
         }
 
+        public override bool Equals(StackItem? other) =>
+            ReferenceEquals(this, other);
+
         internal override void Cleanup()
         {
             if (!_keepAlive)

@@ -109,6 +109,9 @@ namespace Neo.VM.Types
             ReferenceCounter.AddReference(item, this);
         }
 
+        public override bool Equals(StackItem? other) =>
+            ReferenceEquals(this, other);
+
         public override void Clear()
         {
             if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not clear.");

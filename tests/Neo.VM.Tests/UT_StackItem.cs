@@ -292,26 +292,16 @@ namespace Neo.Test
             ByteString actualByteStringOne = new byte[] { 1, };
             ByteString actualByteStringTwo = new byte[] { 2, };
 
-            var actualBufferOne = new Buffer([1,]);
+            var actualBufferOne = expectedBuffer;
             var actualBufferTwo = new Buffer([2,]);
 
-            var actualMapOne = new Map { [0] = 1, [2] = 3, };
+            var actualMapOne = expectedMap;
             var actualMapTwo = new Map { [4] = 5, [6] = 7, };
 
             var actualStructOne = new Struct { 1, 2, 3, };
             var actualStructTwo = new Struct { 4, 5, 6, };
 
-            var actualArrayOne = new Array
-            {
-                null,
-                true,
-                1,
-                new byte[] { 1 },
-                StackItem.Null,
-                new Buffer([1]),
-                new Map { [0] = 1, [2] = 3 },
-                new Struct { 1, 2, 3 },
-            };
+            var actualArrayOne = expectedArray;
 
             var actualArrayTwo = new Array
             {
