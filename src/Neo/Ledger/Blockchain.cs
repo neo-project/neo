@@ -129,8 +129,8 @@ namespace Neo.Ledger
         private static readonly Script s_onPersistScript, s_postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private readonly NeoSystem _system;
-        private readonly Dictionary<UInt256, Block> _block_cache = [];
-        private readonly Dictionary<uint, UnverifiedBlocksList> _block_cache_unverified = [];
+        private readonly Dictionary<UInt256, Block> _blockCache = [];
+        private readonly Dictionary<uint, UnverifiedBlocksList> _blockCacheUnverified = [];
         private ImmutableHashSet<UInt160> _extensibleWitnessWhiteList;
 
         static Blockchain()
@@ -175,11 +175,11 @@ namespace Neo.Ledger
         private void AddUnverifiedBlockToCache(Block block)
         {
             // Check if any block proposal for height `block.Index` exists
-            if (!_block_cache_unverified.TryGetValue(block.Index, out var list))
+            if (!_blockCacheUnverified.TryGetValue(block.Index, out var list))
             {
                 // There are no blocks, a new UnverifiedBlocksList is created and, consequently, the current block is added to the list
                 list = new UnverifiedBlocksList();
-                _block_cache_unverified.Add(block.Index, list);
+                _blockCacheUnverified.Add(block.Index, list);
             }
             else
             {
@@ -274,7 +274,7 @@ namespace Neo.Ledger
                 if (header == null || !blockHash.Equals(header.Hash))
                     return VerifyResult.Invalid;
             }
-            _block_cache.TryAdd(blockHash, block);
+            _blockCache.TryAdd(blockHash, block);
             if (block.Index == currentHeight + 1)
             {
                 var block_persist = block;
@@ -285,7 +285,7 @@ namespace Neo.Ledger
                     if (block_persist.Index + 1 > headerHeight) break;
                     var header = _system.HeaderCache[block_persist.Index + 1];
                     if (header == null) break;
-                    if (!_block_cache.TryGetValue(header.Hash, out block_persist)) break;
+                    if (!_blockCache.TryGetValue(header.Hash, out block_persist)) break;
                 }
 
                 var blocksPersisted = 0;
@@ -295,7 +295,7 @@ namespace Neo.Ledger
                     : 0;
                 foreach (var blockToPersist in blocksToPersistList)
                 {
-                    _block_cache_unverified.Remove(blockToPersist.Index);
+                    _blockCacheUnverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
                     if (blocksPersisted++ < blocksToPersistList.Count - (2 + extraRelayingBlocks)) continue;
@@ -305,11 +305,11 @@ namespace Neo.Ledger
                     if (blockToPersist.Index + 99 >= headerHeight)
                         _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
                 }
-                if (_block_cache_unverified.TryGetValue(currentHeight + 1, out var unverifiedBlocks))
+                if (_blockCacheUnverified.TryGetValue(currentHeight + 1, out var unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    _block_cache_unverified.Remove(block.Index + 1);
+                    _blockCacheUnverified.Remove(block.Index + 1);
                 }
             }
             else
@@ -498,7 +498,7 @@ namespace Neo.Ledger
             InvokeCommitted(_system, block);
             _system.MemPool.UpdatePoolForBlockPersisted(block, _system.StoreView);
             _extensibleWitnessWhiteList = null;
-            _block_cache.Remove(block.PrevHash);
+            _blockCache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
             if (_system.HeaderCache.TryRemoveFirst(out var header))
                 Debug.Assert(header.Index == block.Index);

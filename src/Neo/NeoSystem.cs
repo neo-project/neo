@@ -101,7 +101,7 @@ namespace Neo
 
         private ImmutableList<object> _services = ImmutableList<object>.Empty;
         private readonly IStore _store;
-        private ChannelsConfig _start_message = null;
+        private ChannelsConfig _startMessage = null;
         private int _suspend = 0;
 
         static NeoSystem()
@@ -255,10 +255,10 @@ namespace Neo
         {
             if (Interlocked.Decrement(ref _suspend) != 0)
                 return false;
-            if (_start_message != null)
+            if (_startMessage != null)
             {
-                LocalNode.Tell(_start_message);
-                _start_message = null;
+                LocalNode.Tell(_startMessage);
+                _startMessage = null;
             }
             return true;
         }
@@ -269,12 +269,12 @@ namespace Neo
         /// <param name="config">The configuration used to start the <see cref="LocalNode"/>.</param>
         public void StartNode(ChannelsConfig config)
         {
-            _start_message = config;
+            _startMessage = config;
 
             if (_suspend == 0)
             {
-                LocalNode.Tell(_start_message);
-                _start_message = null;
+                LocalNode.Tell(_startMessage);
+                _startMessage = null;
             }
         }
 
