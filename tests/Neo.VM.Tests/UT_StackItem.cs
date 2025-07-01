@@ -260,5 +260,93 @@ namespace Neo.Test
             // Throw exception because of the size of the integer is too large(33 bytes > 32 bytes)
             Assert.ThrowsExactly<System.ArgumentException>(() => _ = new Integer(BigInteger.Abs(minInt256)));
         }
+
+        [TestMethod]
+        public void TestIEquatable()
+        {
+            StackItem expectedBoolean = true;
+            StackItem expectedInteger = 1;
+            StackItem expectedByteString = new byte[] { 1 };
+
+            var expectedBuffer = new Buffer([1]);
+            var expectedMap = new Map { [0] = 1, [2] = 3 };
+            var expectedStruct = new Struct { 1, 2, 3 };
+            var expectedArray = new Array
+            {
+                true,
+                1,
+                new byte[] { 1 },
+                StackItem.Null,
+                new Buffer([1]),
+                new Map { [0] = 1, [2] = 3 },
+                new Struct { 1, 2, 3 }
+            };
+
+            Boolean actualBooleanOne = true;
+            Boolean actualBooleanTwo = false;
+
+            Integer actualIntegerOne = 1;
+            Integer actualIntegerTwo = 2;
+
+            ByteString actualByteStringOne = new byte[] { 1, };
+            ByteString actualByteStringTwo = new byte[] { 2, };
+
+            var actualBufferOne = new Buffer([1,]);
+            var actualBufferTwo = new Buffer([2,]);
+
+            var actualMapOne = new Map { [0] = 1, [2] = 3, };
+            var actualMapTwo = new Map { [4] = 5, [6] = 7, };
+
+            var actualStructOne = new Struct { 1, 2, 3, };
+            var actualStructTwo = new Struct { 4, 5, 6, };
+
+            var actualArrayOne = new Array
+            {
+                true,
+                1,
+                new byte[] { 1 },
+                StackItem.Null,
+                new Buffer([1]),
+                new Map { [0] = 1, [2] = 3 },
+                new Struct { 1, 2, 3 },
+            };
+
+            var actualArrayTwo = new Array
+            {
+                new Struct { 1, 2, 3 },
+                new Map { [0] = 1, [2] = 3 },
+                new Buffer([1]),
+                StackItem.Null,
+                new byte[] { 1 },
+                1,
+                true,
+            };
+
+            Assert.AreEqual(true, actualBooleanOne);
+            Assert.AreEqual(1, actualIntegerOne);
+            Assert.AreEqual(new byte[] { 1 }, actualByteStringOne);
+
+            Assert.AreEqual(expectedBoolean, actualBooleanOne);
+            Assert.AreEqual(expectedInteger, actualIntegerOne);
+            Assert.AreEqual(expectedByteString, actualByteStringOne);
+
+            Assert.AreEqual(expectedBuffer, actualBufferOne);
+            Assert.AreEqual(expectedMap, actualMapOne);
+            Assert.AreEqual(expectedStruct, actualStructOne);
+            Assert.AreEqual(expectedArray, actualArrayOne);
+
+            Assert.AreNotEqual(true, actualBooleanTwo);
+            Assert.AreNotEqual(1, actualIntegerTwo);
+            Assert.AreNotEqual(new byte[] { 1 }, actualByteStringTwo);
+
+            Assert.AreNotEqual(expectedBoolean, actualBooleanTwo);
+            Assert.AreNotEqual(expectedInteger, actualIntegerTwo);
+            Assert.AreNotEqual(expectedByteString, actualByteStringTwo);
+
+            Assert.AreNotEqual(expectedBuffer, actualBufferTwo);
+            Assert.AreNotEqual(expectedMap, actualMapTwo);
+            Assert.AreNotEqual(expectedStruct, actualStructTwo);
+            Assert.AreNotEqual(expectedArray, actualArrayTwo);
+        }
     }
 }

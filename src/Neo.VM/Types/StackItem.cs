@@ -110,14 +110,15 @@ namespace Neo.VM.Types
 
         public sealed override bool Equals(object? obj)
         {
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj is StackItem item) return Equals(item);
-            return false;
+            if (ReferenceEquals(obj, this)) return true;
+            return Equals(obj as StackItem);
         }
 
         public virtual bool Equals(StackItem? other)
         {
-            return ReferenceEquals(this, other);
+            if (other == null) return false;
+            if (Type != other.Type) return false;
+            return GetHashCode() == other.GetHashCode();
         }
 
         internal virtual bool Equals(StackItem? other, ExecutionEngineLimits limits)

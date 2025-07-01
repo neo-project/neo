@@ -78,11 +78,6 @@ namespace Neo.VM.Types
             return base.ConvertTo(type);
         }
 
-        public override bool Equals(StackItem? other)
-        {
-            throw new NotSupportedException();
-        }
-
         internal override bool Equals(StackItem? other, ExecutionEngineLimits limits)
         {
             if (other is not Struct s) return false;
