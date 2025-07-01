@@ -116,9 +116,8 @@ namespace Neo.VM.Types
 
         public virtual bool Equals(StackItem? other)
         {
-            if (other == null) return false;
-            if (Type != other.Type) return false;
-            return GetHashCode() == other.GetHashCode();
+            if (other == null) return true;
+            return GetHashCode() == other.GetHashCode() && ReferenceEquals(this, other);
         }
 
         internal virtual bool Equals(StackItem? other, ExecutionEngineLimits limits)
