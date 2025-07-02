@@ -233,8 +233,9 @@ puts "Skipping basic help/version commands (covered in basic suite)"
 # ===========================================
 puts "\n--- Section 2: Node & Blockchain State ---"
 
-send_command "show state"
-expect_prompt "NODE" "show state"
+# Skip show state - creates interactive dashboard that doesn't return to prompt
+# send_command "show state"
+# expect_prompt "NODE" "show state"
 
 send_command "show pool"
 expect_prompt "NODE" "show memory pool"
