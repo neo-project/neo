@@ -1,9 +1,14 @@
 #!/usr/bin/expect -f
 #
-# This script uses expect to test neo-cli
+# Basic Neo CLI Integration Tests
+# This script tests core wallet functionality
 #
 set timeout 10
-exp_internal true
+
+# Test counters
+set tests_total 0
+set tests_passed 0 
+set tests_failed 0
 
 # Set terminal size to ensure Neo CLI requirements (minimum 70x23)
 if {[info exists env(COLUMNS)]} {
@@ -13,6 +18,33 @@ if {[info exists env(LINES)]} {
     stty rows $env(LINES)
 }
 
+# Test helper procedures
+proc test_step {name} {
+    global tests_total
+    incr tests_total
+    puts "→ Testing: $name"
+}
+
+proc test_pass {name} {
+    global tests_passed
+    incr tests_passed
+    puts "  ✓ PASS: $name"
+}
+
+proc test_fail {name reason} {
+    global tests_failed
+    incr tests_failed
+    puts "  ✗ FAIL: $name - $reason"
+    print_summary
+    exit 1
+}
+
+proc print_summary {} {
+    global tests_total tests_passed tests_failed
+    puts "\n=== Test Summary ==="
+    puts "Total: $tests_total, Passed: $tests_passed, Failed: $tests_failed"
+}
+
 # Get neo-cli path from command line or use default
 if {[info exists argv] && [llength $argv] > 0} {
     set neo_cli_path [lindex $argv 0]
@@ -20,86 +52,141 @@ if {[info exists argv] && [llength $argv] > 0} {
     set neo_cli_path "../../bin/Neo.CLI/net9.0/neo-cli.dll"
 }
 
+puts "=== Basic Neo CLI Integration Tests ==="
+puts "Starting neo-cli: $neo_cli_path\n"
+
 # Start neo-cli
+test_step "CLI startup"
 spawn dotnet $neo_cli_path
 
 # Expect the main input prompt
 expect {
-    "neo> " { }
-    "Console window too small" { 
-        puts "Console window size error detected"
-        exit 3 
+    "neo> " { 
+        test_pass "CLI startup"
     }
-    "error" { exit 2 }
-    timeout { exit 1 }
+    "Console window too small" { 
+        test_fail "CLI startup" "Console window too small (need 70x23)"
+    }
+    "error" { 
+        test_fail "CLI startup" "CLI returned error"
+    }
+    timeout { 
+        test_fail "CLI startup" "Timeout waiting for prompt"
+    }
 }
 
-#
-# Test 'create wallet'
-#
+# Test wallet creation
+test_step "Create wallet with random key"
 send "create wallet ./test-wallet1.json\n"
 
 expect {
     "password:" { send "asd\n" }
-    "error" { exit 2 }
-    timeout { exit 1 }
+    "error" { 
+        test_fail "Create wallet with random key" "CLI returned error"
+    }
+    timeout { 
+        test_fail "Create wallet with random key" "Timeout waiting for password prompt"
+    }
 }
 
 expect {
     "password:" { send "asd\n" }
-    "error" { exit 2 }
-    timeout { exit 1 }
+    "error" { 
+        test_fail "Create wallet with random key" "CLI returned error on repeat password"
+    }
+    timeout { 
+        test_fail "Create wallet with random key" "Timeout waiting for repeat password"
+    }
 }
 
 expect {
-    "   Address:" { }
-    "error" { exit 2 }
-    timeout { exit 1 }
+    "   Address:" { 
+        test_pass "Create wallet with random key"
+    }
+    "error" { 
+        test_fail "Create wallet with random key" "CLI returned error after password"
+    }
+    timeout { 
+        test_fail "Create wallet with random key" "Timeout waiting for address"
+    }
 }
 
 
-#
-# Test 'create wallet'
-#
+# Test wallet creation with private key
+test_step "Create wallet with private key"
 send "create wallet ./test-wallet2.json L2ArHTuiDL4FHu4nfyhamrG8XVYB4QyRbmhj7vD6hFMB5iAMSTf6\n"
 
 expect {
     "password:" { send "abcd\n" }
-    "error" { exit 2 }
-    timeout { exit 1 }
+    "error" { 
+        test_fail "Create wallet with private key" "CLI returned error"
+    }
+    timeout { 
+        test_fail "Create wallet with private key" "Timeout waiting for password prompt"
+    }
 }
 
 expect {
     "password:" { send "abcd\n" }
-    "error" { exit 2 }
-    timeout { exit 1 }
+    "error" { 
+        test_fail "Create wallet with private key" "CLI returned error on repeat password"
+    }
+    timeout { 
+        test_fail "Create wallet with private key" "Timeout waiting for repeat password"
+    }
 }
 
 expect {
-    "NUj249PQg9EMJfAuxKizdJwMG7GSBzYX2Y" { }
-    "error" { exit 2 }
-    timeout { exit 1 }
+    "NUj249PQg9EMJfAuxKizdJwMG7GSBzYX2Y" { 
+        test_pass "Create wallet with private key"
+    }
+    "error" { 
+        test_fail "Create wallet with private key" "CLI returned error after password"
+    }
+    timeout { 
+        test_fail "Create wallet with private key" "Timeout waiting for expected address"
+    }
 }
 
-#
-# Test 'list address'
-#
+# Test address listing  
+test_step "List addresses"
 send "list address\n"
 
 expect {
-    "neo> " { }
-    "error" { exit 2 }
-    timeout { exit 1 }
+    "neo> " { 
+        test_pass "List addresses"
+    }
+    "error" { 
+        test_fail "List addresses" "CLI returned error"
+    }
+    timeout { 
+        test_fail "List addresses" "Timeout waiting for prompt"
+    }
 }
 
-#
-# Test 'create address'
-#
+# Test address creation
+test_step "Create new address"
 send "create address\n"
 
 expect {
-    "neo> " { }
-    "error" { exit 2 }
-    timeout { exit 1 }
+    "neo> " { 
+        test_pass "Create new address"
+    }
+    "error" { 
+        test_fail "Create new address" "CLI returned error"
+    }
+    timeout { 
+        test_fail "Create new address" "Timeout waiting for prompt"
+    }
 }
-exit 0
+
+# Print final summary
+print_summary
+
+if {$tests_failed > 0} {
+    puts "\n❌ BASIC TESTS FAILED"
+    exit 1
+} else {
+    puts "\n✅ ALL BASIC TESTS PASSED"
+    exit 0
+}
