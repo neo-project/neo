@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native
                 G2Affine p => p.ToCompressed(),
                 G2Projective p => new G2Affine(p).ToCompressed(),
                 Gt p => p.ToArray(),
-                _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+                _ => throw new ArgumentException("BLS12-381 type mismatch")
             };
         }
 
@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Native
                 48 => new InteropInterface(G1Affine.FromCompressed(data)),
                 96 => new InteropInterface(G2Affine.FromCompressed(data)),
                 576 => new InteropInterface(Gt.FromBytes(data)),
-                _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:valid point length"),
+                _ => throw new ArgumentException("Invalid BLS12-381 point length"),
             };
         }
 
@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native
                 (G2Affine p1, G2Affine p2) => p1.Equals(p2),
                 (G2Projective p1, G2Projective p2) => p1.Equals(p2),
                 (Gt p1, Gt p2) => p1.Equals(p2),
-                _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+                _ => throw new ArgumentException("BLS12-381 type mismatch")
             };
         }
 
@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native
                 (G2Projective p1, G2Affine p2) => new(p1 + p2),
                 (G2Projective p1, G2Projective p2) => new(p1 + p2),
                 (Gt p1, Gt p2) => new(p1 + p2),
-                _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+                _ => throw new ArgumentException("BLS12-381 type mismatch")
             };
         }
 
@@ -115,7 +115,7 @@ namespace Neo.SmartContract.Native
                 G2Affine p => new(p * X),
                 G2Projective p => new(p * X),
                 Gt p => new(p * X),
-                _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+                _ => throw new ArgumentException("BLS12-381 type mismatch")
             };
         }
 
@@ -132,13 +132,13 @@ namespace Neo.SmartContract.Native
             {
                 G1Affine g => g,
                 G1Projective g => new(g),
-                _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+                _ => throw new ArgumentException("BLS12-381 type mismatch")
             };
             G2Affine g2a = g2.GetInterface<object>() switch
             {
                 G2Affine g => g,
                 G2Projective g => new(g),
-                _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+                _ => throw new ArgumentException("BLS12-381 type mismatch")
             };
             return new(Bls12.Pairing(in g1a, in g2a));
         }

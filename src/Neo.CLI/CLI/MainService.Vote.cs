@@ -34,6 +34,7 @@ namespace Neo.CLI
         public const string GetCommittee = "getCommittee";
         public const string GetNextBlockValidators = "getNextBlockValidators";
     }
+
     partial class MainService
     {
         /// <summary>
@@ -244,11 +245,6 @@ namespace Neo.CLI
         }
 
         private byte[] BuildNeoScript(string method, params object?[] args)
-        {
-            using var sb = new ScriptBuilder();
-            sb.EmitDynamicCall(NativeContract.NEO.Hash, method, args);
-            return sb.ToArray();
-        }
-
+            => NativeContract.NEO.Hash.MakeScript(method, args);
     }
 }
