@@ -14,6 +14,7 @@ namespace Neo.ConsoleService
     public readonly struct CommandToken(int offset, string value, char quoteChar)
     {
         public const char NoQuoteChar = '\0';
+        public const char NoEscapedChar = '`';
 
         /// <summary>
         /// The start offset of the token in the command line
