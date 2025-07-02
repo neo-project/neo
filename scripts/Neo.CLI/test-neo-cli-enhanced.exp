@@ -137,10 +137,12 @@ proc expect_text {text category test_name} {
     expect {
         -re $text { 
             test_result $category $test_name 1
+            expect "neo> "
             return 1
         }
         -re "Error:|error:" { 
             test_result $category $test_name 0 "Unexpected error"
+            expect "neo> "
             return 0
         }
         timeout { 
@@ -378,7 +380,7 @@ expect_prompt "NATIVE" "show Oracle contract"
 
 # NEP17 Token Commands
 send_command "name $neo_contract"
-expect_text "NEO" "NEP17" "NEO token name"
+expect_text "NeoToken" "NEP17" "NEO token name"
 
 send_command "decimals $neo_contract"
 expect_text "0" "NEP17" "NEO token decimals"
@@ -387,7 +389,7 @@ send_command "totalSupply $neo_contract"
 expect_prompt "NEP17" "NEO total supply"
 
 send_command "name $gas_contract"
-expect_text "GAS" "NEP17" "GAS token name"
+expect_text "GasToken" "NEP17" "GAS token name"
 
 send_command "decimals $gas_contract"
 expect_text "8" "NEP17" "GAS token decimals"
