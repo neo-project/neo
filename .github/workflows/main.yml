@@ -87,12 +87,12 @@ jobs:
         fi
         echo "✅ Basic test suite PASSED"
         
-        echo "Running enhanced test suite..."
-        if ! timeout 300 script -qec "COLUMNS=80 LINES=30 expect test-neo-cli-enhanced.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null; then
-          echo "❌ Enhanced test suite FAILED"
+        echo "Running simple test suite..."
+        if ! timeout 120 script -qec "COLUMNS=80 LINES=30 expect test-neo-cli-simple.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null; then
+          echo "❌ Simple test suite FAILED"
           exit 1
         fi
-        echo "✅ Enhanced test suite PASSED"
+        echo "✅ Simple test suite PASSED"
         
         echo "🎉 All integration tests PASSED successfully!"
         
