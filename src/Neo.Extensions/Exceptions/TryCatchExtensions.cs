@@ -29,7 +29,7 @@ namespace Neo.Extensions.Exceptions
             return obj;
         }
 
-        public static TSource TryCatch<TSource, TException>(this TSource obj, Action<TSource?> action, Action<TSource?, TException> onError)
+        public static TSource TryCatch<TSource, TException>(this TSource obj, Action<TSource?> action, Action<TSource?, TException>? onError = default)
             where TSource : class?
             where TException : Exception
         {
@@ -45,7 +45,7 @@ namespace Neo.Extensions.Exceptions
             return obj;
         }
 
-        public static TResult? TryCatch<TSource, TException, TResult>(this TSource obj, Func<TSource?, TResult?> func, Func<TSource?, TException, TResult?> onError)
+        public static TResult? TryCatch<TSource, TException, TResult>(this TSource obj, Func<TSource?, TResult?> func, Func<TSource?, TException, TResult?>? onError = default)
             where TSource : class?
             where TException : Exception
             where TResult : class?
