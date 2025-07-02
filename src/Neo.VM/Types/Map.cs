@@ -89,7 +89,7 @@ namespace Neo.VM.Types
         /// <param name="referenceCounter">The reference counter to be used.</param>
         public Map(IReferenceCounter? referenceCounter = null) : base(referenceCounter) { }
 
-        public override bool Equals(StackItem? other) =>
+        internal override bool Equals(StackItem? other, ExecutionEngineLimits limits) =>
             ReferenceEquals(this, other);
 
         public override void Clear()

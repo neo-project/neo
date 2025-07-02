@@ -62,7 +62,7 @@ namespace Neo.VM.Types
             data.CopyTo(InnerBuffer.Span);
         }
 
-        public override bool Equals(StackItem? other) =>
+        internal override bool Equals(StackItem? other, ExecutionEngineLimits limits) =>
             ReferenceEquals(this, other);
 
         internal override void Cleanup()

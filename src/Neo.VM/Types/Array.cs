@@ -109,7 +109,7 @@ namespace Neo.VM.Types
             ReferenceCounter.AddReference(item, this);
         }
 
-        public override bool Equals(StackItem? other) =>
+        internal override bool Equals(StackItem? other, ExecutionEngineLimits limits) =>
             ReferenceEquals(this, other);
 
         public override void Clear()
