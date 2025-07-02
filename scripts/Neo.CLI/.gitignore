@@ -1,0 +1,7 @@
+# Test artifacts
+*.json
+*.log
+*.bak
+
+# LevelDB files
+Data_LevelDB_*/

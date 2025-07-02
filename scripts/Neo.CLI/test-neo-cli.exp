@@ -1,4 +1,4 @@
-#!/usr/bin/expect -d -f
+#!/usr/bin/expect -f
 #
 # This script uses expect to test neo-cli
 #
@@ -13,8 +13,15 @@ if {[info exists env(LINES)]} {
     stty rows $env(LINES)
 }
 
+# Get neo-cli path from command line or use default
+if {[info exists argv] && [llength $argv] > 0} {
+    set neo_cli_path [lindex $argv 0]
+} else {
+    set neo_cli_path "../../bin/Neo.CLI/net9.0/neo-cli.dll"
+}
+
 # Start neo-cli
-spawn dotnet ./bin/Neo.CLI/net9.0/neo-cli.dll
+spawn dotnet $neo_cli_path
 
 # Expect the main input prompt
 expect {
@@ -30,7 +37,7 @@ expect {
 #
 # Test 'create wallet'
 #
-send "create wallet ./bin/Neo.CLI/test-wallet1.json\n"
+send "create wallet ./test-wallet1.json\n"
 
 expect {
     "password:" { send "asd\n" }
@@ -54,7 +61,7 @@ expect {
 #
 # Test 'create wallet'
 #
-send "create wallet ./bin/Neo.CLI/test-wallet2.json L2ArHTuiDL4FHu4nfyhamrG8XVYB4QyRbmhj7vD6hFMB5iAMSTf6\n"
+send "create wallet ./test-wallet2.json L2ArHTuiDL4FHu4nfyhamrG8XVYB4QyRbmhj7vD6hFMB5iAMSTf6\n"
 
 expect {
     "password:" { send "abcd\n" }
