@@ -245,7 +245,7 @@ namespace Neo.Test
             };
             a.Add(a);
             var aa = (Array)a.DeepCopy();
-            Assert.AreNotEqual(a, aa);
+            Assert.IsFalse(a.Equals(aa, ExecutionEngineLimits.Default));
             Assert.AreSame(aa, aa[^1]);
             Assert.IsTrue(a[^2].Equals(aa[^2], ExecutionEngineLimits.Default));
             Assert.AreNotSame(a[^2], aa[^2]);
