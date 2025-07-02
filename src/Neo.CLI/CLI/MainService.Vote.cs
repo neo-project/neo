@@ -50,7 +50,7 @@ namespace Neo.CLI
             if (currentAccount == null) return;
 
             var publicKey = currentAccount.GetKey()?.PublicKey;
-            var script = BuildNativeScript(VoteMethods.Register, publicKey);
+            var script = BuildNeoScript(VoteMethods.Register, publicKey);
             SendTransaction(script, account, (long)testGas);
         }
 
@@ -67,7 +67,7 @@ namespace Neo.CLI
             if (currentAccount == null) return;
 
             var publicKey = currentAccount?.GetKey()?.PublicKey;
-            var script = BuildNativeScript(VoteMethods.Unregister, publicKey);
+            var script = BuildNeoScript(VoteMethods.Unregister, publicKey);
             SendTransaction(script, account);
         }
 
@@ -81,7 +81,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
 
-            var script = BuildNativeScript(VoteMethods.Vote, senderAccount, publicKey);
+            var script = BuildNeoScript(VoteMethods.Vote, senderAccount, publicKey);
             SendTransaction(script, senderAccount);
         }
 
@@ -94,7 +94,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
 
-            var script = BuildNativeScript(VoteMethods.Vote, senderAccount);
+            var script = BuildNeoScript(VoteMethods.Vote, senderAccount, null);
             SendTransaction(script, senderAccount);
         }
 
@@ -243,7 +243,7 @@ namespace Neo.CLI
             return acct;
         }
 
-        private byte[] BuildNativeScript(string method, params object?[] args)
+        private byte[] BuildNeoScript(string method, params object?[] args)
         {
             using var sb = new ScriptBuilder();
             sb.EmitDynamicCall(NativeContract.NEO.Hash, method, args);
