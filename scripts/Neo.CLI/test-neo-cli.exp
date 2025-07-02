@@ -5,12 +5,24 @@
 set timeout 10
 exp_internal true
 
+# Set terminal size to ensure Neo CLI requirements (minimum 70x23)
+if {[info exists env(COLUMNS)]} {
+    stty columns $env(COLUMNS)
+}
+if {[info exists env(LINES)]} {
+    stty rows $env(LINES)
+}
+
 # Start neo-cli
 spawn dotnet ./bin/Neo.CLI/net9.0/neo-cli.dll
 
 # Expect the main input prompt
 expect {
     "neo> " { }
+    "Console window too small" { 
+        puts "Console window size error detected"
+        exit 3 
+    }
     "error" { exit 2 }
     timeout { exit 1 }
 }

@@ -45,6 +45,16 @@ namespace eval ::TestConfig {
         }
     }
     
+    # Terminal setup for Neo CLI requirements
+    proc setup_terminal {} {
+        if {[info exists ::env(COLUMNS)]} {
+            stty columns $::env(COLUMNS)
+        }
+        if {[info exists ::env(LINES)]} {
+            stty rows $::env(LINES)
+        }
+    }
+    
     # Performance thresholds
     variable max_command_time 5000  ;# milliseconds
     variable max_total_time 300     ;# seconds
@@ -286,6 +296,9 @@ namespace eval ::TestEngine {
         
         ::Logger::log "INFO" "ENGINE" "Starting Neo CLI..."
         
+        # Set up terminal before spawning
+        ::TestConfig::setup_terminal
+        
         # Set larger buffer size for expect
         match_max 100000
         
@@ -303,6 +316,10 @@ namespace eval ::TestEngine {
             "neo> " {
                 ::Logger::log "INFO" "ENGINE" "Neo CLI started successfully"
                 return 1
+            }
+            "Console window too small" {
+                ::Logger::log "ERROR" "ENGINE" "Console window size error - terminal too small (need 70x23)"
+                return 0
             }
             timeout {
                 ::Logger::log "ERROR" "ENGINE" "Timeout waiting for Neo CLI prompt"

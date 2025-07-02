@@ -19,6 +19,14 @@ if {[info exists env(CI)] && $env(CI) == "true"} {
     set timeout 120
 }
 
+# Set terminal size to ensure Neo CLI requirements (minimum 70x23)
+if {[info exists env(COLUMNS)]} {
+    stty columns $env(COLUMNS)
+}
+if {[info exists env(LINES)]} {
+    stty rows $env(LINES)
+}
+
 # Test counters
 set test_passed 0
 set test_failed 0
@@ -187,6 +195,11 @@ expect {
     "neo> " {
         log_message "INFO" "Neo CLI prompt ready"
         test_result "INIT" "CLI startup" 1
+    }
+    "Console window too small" {
+        log_message "ERROR" "Console window size error - terminal too small"
+        test_result "INIT" "CLI startup" 0 "Console window too small (need 70x23)"
+        exit 3
     }
     -re "Error:|error:|ERROR:|Exception" {
         log_message "ERROR" "Neo CLI startup failed with error"
