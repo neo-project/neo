@@ -244,7 +244,8 @@ namespace Neo.Test
                 new Struct { 1, 2, 3 }
             };
             a.Add(a);
-            var aa = (Array)a.DeepCopy();
+            var aa = a.DeepCopy() as Array;
+            Assert.IsNotNull(aa);
             Assert.IsFalse(a.Equals(aa, ExecutionEngineLimits.Default));
             Assert.AreSame(aa, aa[^1]);
             Assert.IsTrue(a[^2].Equals(aa[^2], ExecutionEngineLimits.Default));
