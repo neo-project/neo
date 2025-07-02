@@ -72,14 +72,29 @@ jobs:
         export LINES=30
         
         # Run all expect test suites with proper terminal setup
+        # Each test must pass for CI to succeed
         echo "Running basic test suite..."
-        timeout 120 script -qec "COLUMNS=80 LINES=30 expect test-neo-cli.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null || echo "Basic tests completed"
+        if ! timeout 120 script -qec "COLUMNS=80 LINES=30 expect test-neo-cli.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null; then
+          echo "❌ Basic test suite FAILED"
+          exit 1
+        fi
+        echo "✅ Basic test suite PASSED"
         
         echo "Running enhanced test suite..."
-        timeout 300 script -qec "COLUMNS=80 LINES=30 expect test-neo-cli-enhanced.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null || echo "Enhanced tests completed"
+        if ! timeout 300 script -qec "COLUMNS=80 LINES=30 expect test-neo-cli-enhanced.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null; then
+          echo "❌ Enhanced test suite FAILED"
+          exit 1
+        fi
+        echo "✅ Enhanced test suite PASSED"
         
         echo "Running comprehensive test suite..."
-        timeout 600 script -qec "COLUMNS=80 LINES=30 expect neo-cli-test-suite.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null || echo "Comprehensive tests completed"
+        if ! timeout 600 script -qec "COLUMNS=80 LINES=30 expect neo-cli-test-suite.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null; then
+          echo "❌ Comprehensive test suite FAILED"
+          exit 1
+        fi
+        echo "✅ Comprehensive test suite PASSED"
+        
+        echo "🎉 All integration tests PASSED successfully!"
         
     - name: Upload test artifacts
       uses: actions/upload-artifact@v4
