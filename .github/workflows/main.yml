@@ -73,13 +73,6 @@ jobs:
         
         # Run test suites to complete under 10 minutes total
         # Each test must pass for CI to succeed
-        echo "Running quick test suite..."
-        if ! timeout 60 script -qec "COLUMNS=80 LINES=30 expect test-quick.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null; then
-          echo "❌ Quick test suite FAILED"
-          exit 1
-        fi
-        echo "✅ Quick test suite PASSED"
-        
         echo "Running basic test suite..."
         if ! timeout 120 script -qec "COLUMNS=80 LINES=30 expect test-neo-cli.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null; then
           echo "❌ Basic test suite FAILED"
@@ -93,6 +86,13 @@ jobs:
           exit 1
         fi
         echo "✅ Simple test suite PASSED"
+        
+        echo "Running enhanced test suite..."
+        if ! timeout 300 script -qec "COLUMNS=80 LINES=30 expect test-neo-cli-enhanced.exp ../../bin/Neo.CLI/net9.0/neo-cli.dll" /dev/null; then
+          echo "❌ Enhanced test suite FAILED"
+          exit 1
+        fi
+        echo "✅ Enhanced test suite PASSED"
         
         echo "🎉 All integration tests PASSED successfully!"
         

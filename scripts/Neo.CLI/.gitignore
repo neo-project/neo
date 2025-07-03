@@ -2,6 +2,15 @@
 *.json
 *.log
 *.bak
+test-logs/
+test-reports/
 
 # LevelDB files
 Data_LevelDB_*/
+
+# Plugin binaries
+Plugins/
+
+# Chain files
+*.acc
+chain.*
