@@ -61,7 +61,7 @@ jobs:
 
     - name: Run integration tests with expect
       run: |
-        cd scripts/Neo.CLI
+        cd ./scripts/Neo.CLI
         chmod +x *.exp
         # Create directories for test artifacts
         mkdir -p test-logs test-reports
