@@ -188,7 +188,7 @@ namespace Neo.ConsoleService
                     Console.Write($"\t{command.Key}");
                     Console.WriteLine(" " + string.Join(' ',
                         command.Method.GetParameters()
-                        .Select(u => u.HasDefaultValue ? $"[{u.Name}={(u.DefaultValue == null ? "null" : u.DefaultValue.ToString())}]" : $"<{u.Name}>"))
+                        .Select(u => u.HasDefaultValue ? $"[{u.Name}={u.DefaultValue?.ToString() ?? "null"}]" : $"<{u.Name}>"))
                     );
                 }
             }
@@ -395,65 +395,51 @@ namespace Neo.ConsoleService
             }
         }
 
+        private void OnScCommand(string action)
+        {
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            {
+                ConsoleHelper.Warning("Only support for installing/uninstalling services on Windows.");
+                return;
+            }
+
+            string arguments;
+            if (action == "/install")
+            {
+                var fileName = Process.GetCurrentProcess().MainModule!.FileName;
+                arguments = $"create {ServiceName} start= auto binPath= \"{fileName}\"";
+            }
+            else
+            {
+                arguments = $"delete {ServiceName}";
+                if (!string.IsNullOrEmpty(Depends)) arguments += $" depend= {Depends}";
+            }
+
+            var process = Process.Start(new ProcessStartInfo
+            {
+                Arguments = arguments,
+                FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
+                RedirectStandardOutput = true,
+                UseShellExecute = false
+            });
+            if (process is null)
+            {
+                ConsoleHelper.Error($"Error {action}ing the service with sc.exe.");
+            }
+            else
+            {
+                process.WaitForExit();
+                Console.Write(process.StandardOutput.ReadToEnd());
+            }
+        }
+
         public void Run(string[] args)
         {
             if (Environment.UserInteractive)
             {
-                if (args.Length == 1 && args[0] == "/install")
+                if (args.Length == 1 && (args[0] == "/install" || args[0] == "/uninstall"))
                 {
-                    if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-                    {
-                        ConsoleHelper.Warning("Only support for installing services on Windows.");
-                        return;
-                    }
-
-                    var fileName = Process.GetCurrentProcess().MainModule!.FileName;
-                    var arguments = $"create {ServiceName} start= auto binPath= \"{fileName}\"";
-                    if (!string.IsNullOrEmpty(Depends))
-                    {
-                        arguments += $" depend= {Depends}";
-                    }
-
-                    Process? process = Process.Start(new ProcessStartInfo
-                    {
-                        Arguments = arguments,
-                        FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false
-                    });
-                    if (process is null)
-                    {
-                        ConsoleHelper.Error("Error installing the service with sc.exe.");
-                    }
-                    else
-                    {
-                        process.WaitForExit();
-                        Console.Write(process.StandardOutput.ReadToEnd());
-                    }
-                }
-                else if (args.Length == 1 && args[0] == "/uninstall")
-                {
-                    if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-                    {
-                        ConsoleHelper.Warning("Only support for installing services on Windows.");
-                        return;
-                    }
-                    Process? process = Process.Start(new ProcessStartInfo
-                    {
-                        Arguments = string.Format("delete {0}", ServiceName),
-                        FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false
-                    });
-                    if (process is null)
-                    {
-                        ConsoleHelper.Error("Error installing the service with sc.exe.");
-                    }
-                    else
-                    {
-                        process.WaitForExit();
-                        Console.Write(process.StandardOutput.ReadToEnd());
-                    }
+                    OnScCommand(args[0]);
                 }
                 else
                 {
