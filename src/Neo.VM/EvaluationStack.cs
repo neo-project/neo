@@ -46,7 +46,11 @@ namespace Neo.VM
                 var end = range.End.GetOffset(_innerList.Count);
                 if (start > end)
                     throw new ArgumentOutOfRangeException("Range start must be less than or equal to end.");
-                return _innerList.ToArray().Reverse().ToList().GetRange(start, end - start);
+
+                StackItem[] copyList = [.. _innerList];
+                List<StackItem> reverseList = [.. copyList.Reverse()];
+
+                return reverseList.GetRange(start, end - start);
             }
         }
 
