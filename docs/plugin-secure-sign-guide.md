@@ -24,7 +24,7 @@ The .Net SDK needs to be installed before compiling it.
 
 1. **Clone the Repository**: 
    ```bash
-   git clone https://github.com/neo-project/neo.git
+   git clone https://github.com/neo-project/neo
    cd neo
    donet build
    ```
