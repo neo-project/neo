@@ -54,10 +54,10 @@ namespace Neo.Build.Core.Extensions.SmartContract
             where T : class
         {
             var contractState = engine.GetContractState<T>();
-            var prefix = StorageKey.CreateSearchPrefix(contractState.Id, []);
+            var key = StorageKey.CreateSearchPrefix(contractState.Id, []);
             var snapshot = engine.SnapshotCache;
 
-            return [.. snapshot.Find(prefix).Select(static s => new DebugStorage(s.Key, s.Value))];
+            return [.. snapshot.Find(key).Select(static s => new DebugStorage(s.Key, s.Value))];
         }
 
         private static string ExtractContractName(Type type)
