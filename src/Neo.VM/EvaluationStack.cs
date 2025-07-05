@@ -35,7 +35,19 @@ namespace Neo.VM
 
         public StackItem this[int index]
         {
-            get => _innerList[index];
+            get => Peek(index);
+        }
+
+        public IReadOnlyList<StackItem> this[Range range]
+        {
+            get
+            {
+                var start = range.Start.GetOffset(_innerList.Count);
+                var end = range.End.GetOffset(_innerList.Count);
+                if (start > end)
+                    throw new ArgumentOutOfRangeException("Range start must be less than or equal to end.");
+                return _innerList.ToArray().Reverse().ToList().GetRange(Math.Abs(start), end - start);
+            }
         }
 
         /// <summary>
