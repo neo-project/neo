@@ -31,7 +31,7 @@ The .Net SDK needs to be installed before compiling it.
 
 2. **Copy to `neo-cli` folder**: Copy the built plugin to the `neo-cli` binary directory.
 - Step 0. Find the `.dll` files. For example:
-  - The `neo-cli` compile products should exist in `./bin/Neo.CLI/net{dotnet-version}/`(i.e. `neo-cli` binary directory, ./bin/Neo.CLI/net9.0/).
+  - The `neo-cli` compile products should exist in `./bin/Neo.CLI/net{dotnet-version}/`(_i.e. `neo-cli` binary directory, `./bin/Neo.CLI/net9.0/`_).
   - The plugin `SignClient` should exist in `./bin/Neo.Plugins.SignClient/{dotnet-version}/`(i.e. `SignClient` binary directory, ./bin/Neo.Network.RpcClient/9.0/).
 - Step 1. Copy files `Google.Protobuf.dll Grpc.Core.Api.dll Grpc.Net.Client.dll Grpc.Net.Common.dll `(These files should exist in folder `Neo.Plugins.SignClient`) to the `neo-cli` binary directory.
 - Step 2. `mkdir -p Plugins/SignClient` in the `neo-cli` binary directory. Then copy file `SignClient.dll` from the plugin `SignClient` binary directory to `Plugins/SignClient`.
