@@ -21,7 +21,6 @@ namespace Neo.Build.Core
             public const int InternalException = ModuleBaseErrorCode;
 
             public const int ContractNotFound = ModuleBaseErrorCode + 1;
-            public const int MissingScriptHashAttribute = ModuleBaseErrorCode + 2;
 
             private Contracts() { }
         }

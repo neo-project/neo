@@ -10,13 +10,13 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Exceptions;
+using Neo.Build.Core.Helpers;
 using Neo.Build.Core.SmartContract.Debugger;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 
 namespace Neo.Build.Core.Extensions.SmartContract
@@ -32,8 +32,14 @@ namespace Neo.Build.Core.Extensions.SmartContract
         public static ContractState GetContractState<T>(this ApplicationEngine engine)
             where T : class
         {
-            var contractName = ExtractContractName(typeof(T));
-            return engine.GetContractState(contractName);
+            var scriptHash = NeoBuildAttributeHelper.ExtractContractScriptHash(typeof(T));
+            if (scriptHash != UInt160.Zero)
+                return engine.GetContractState(scriptHash);
+            else
+            {
+                var contractName = NeoBuildAttributeHelper.ExtractContractName(typeof(T));
+                return engine.GetContractState(contractName);
+            }
         }
 
         public static ContractState GetContractState(this ApplicationEngine engine, string contractName)
@@ -50,23 +56,44 @@ namespace Neo.Build.Core.Extensions.SmartContract
             throw new NeoBuildException($"Contract '{contractName}' not found.", NeoBuildErrorCodes.Contracts.ContractNotFound);
         }
 
-        public static HashSet<DebugStorage> GetContractStorages<T>(this ApplicationEngine engine)
-            where T : class
+        public static ContractState GetContractState(this ApplicationEngine engine, int id)
         {
-            var contractState = engine.GetContractState<T>();
-            var key = StorageKey.CreateSearchPrefix(contractState.Id, []);
             var snapshot = engine.SnapshotCache;
 
-            return [.. snapshot.Find(key).Select(static s => new DebugStorage(s.Key, s.Value))];
+            foreach (var contractState in NativeContract.ContractManagement.ListContracts(snapshot))
+            {
+                if (contractState.Id == id)
+                    return contractState;
+            }
+
+            // TODO: Make this exception it own class
+            throw new NeoBuildException($"Contract with Id '{id}' not found.", NeoBuildErrorCodes.Contracts.ContractNotFound);
         }
 
-        private static string ExtractContractName(Type type)
+        public static ContractState GetContractState(this ApplicationEngine engine, UInt160 scriptHash)
         {
-            var displayNameAttr = Attribute.GetCustomAttribute(type, typeof(DisplayNameAttribute)) as DisplayNameAttribute;
-            if (displayNameAttr is not null)
-                return displayNameAttr.DisplayName;
+            var snapshot = engine.SnapshotCache;
 
-            return type.Name; // Class Name
+            foreach (var contractState in NativeContract.ContractManagement.ListContracts(snapshot))
+            {
+                if (contractState.Hash == scriptHash)
+                    return contractState;
+            }
+
+            // TODO: Make this exception it own class
+            throw new NeoBuildException($"Contract '{scriptHash}' was not found.", NeoBuildErrorCodes.Contracts.ContractNotFound);
+        }
+
+        public static HashSet<DebugStorage> GetContractStorage<T>(this ApplicationEngine engine, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward)
+            where T : class
+        {
+            prefix ??= [];
+
+            var contractState = engine.GetContractState<T>();
+            var key = StorageKey.CreateSearchPrefix(contractState.Id, prefix);
+            var snapshot = engine.SnapshotCache;
+
+            return [.. snapshot.Find(key, seekDirection).Select(static s => new DebugStorage(s.Key, s.Value))];
         }
     }
 }

@@ -9,8 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Build.Core.Attributes;
-using Neo.Build.Core.Exceptions;
+using Neo.Build.Core.Helpers;
 using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.VM;
@@ -25,7 +24,7 @@ namespace Neo.Build.Core.Extensions
         {
             var methodCallBody = (MethodCallExpression)expression.Body;
             var methodName = methodCallBody.Method.Name;
-            var scriptHash = ExtractContractScriptHash(typeof(T));
+            var scriptHash = NeoBuildAttributeHelper.ExtractContractScriptHash(typeof(T));
 
             if (char.IsLower(methodName[0]) == false)
             {
@@ -48,18 +47,6 @@ namespace Neo.Build.Core.Extensions
             sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
             return sb;
-        }
-
-        private static UInt160 ExtractContractScriptHash(Type type)
-        {
-            var displayNameAttr = Attribute.GetCustomAttribute(type, typeof(ContractScriptHashAttribute)) as ContractScriptHashAttribute;
-            if (displayNameAttr is not null)
-                return displayNameAttr.ScriptHash;
-
-            // TODO: Make this exception it own class
-            throw new NeoBuildException(
-                $"Contract '{nameof(ContractScriptHashAttribute)}' not found.",
-                NeoBuildErrorCodes.Contracts.MissingScriptHashAttribute);
         }
     }
 }

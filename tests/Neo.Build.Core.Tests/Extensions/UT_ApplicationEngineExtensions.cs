@@ -48,7 +48,7 @@ namespace Neo.Build.Core.Tests.Extensions
                 TestNode.NeoSystem.StoreView,
                 settings: TestNode.NeoSystem.Settings);
 
-            var actualContractStorages = appEngine.GetContractStorages<NeoToken>();
+            var actualContractStorages = appEngine.GetContractStorage<NeoToken>();
             Assert.IsNotNull(actualContractStorages);
             Assert.AreEqual(6, actualContractStorages.Count);
         }
