@@ -15,7 +15,7 @@ Users can enable plugin `SignClient` by installing it or compiling it manually.
 
 1. **Start the Signing Service**: Ensure, your sign service is running and accessible. You can select a sign service implementation or implement a sign service on your own.
 2. **Download the Plugin**: The SignClient plugin should be installed. You can run `neo-cli` then execute `help install` to get help abort how to install plugin.
-3. **Configure the Plugin**: Create or modify the `SignClient.json` configuration file in the `neo-cli` binary directory
+3. **Configure the Plugin**: Create or modify the `SignClient.json` configuration file in the `neo-cli` binary directory (_`Plugins/SignClient`_).
 4. **Start `neo-cli`**: Start/Restart `neo-cli` if needed.
 
 ### Compile Manually
