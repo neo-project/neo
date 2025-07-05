@@ -31,13 +31,13 @@ namespace Neo.Build.Core.Tests.SmartContract
         });
 
         [TestMethod]
-        public void TestApplicationEngineSimple()
+        public void TestUnitTestApplicationEngineSimple()
         {
             var pb = BlockBuilder
                 .CreateNext(TestNode.NeoSystem.GenesisBlock)
                 .Build();
 
-            var appEngine = new UnitTestApplicationEngine(
+            using var appEngine = new UnitTestApplicationEngine(
                 TestNode.NeoSystem.Settings,
                 TestNode.NeoSystem.StoreView,
                 persistingBlock: pb,
@@ -57,7 +57,7 @@ namespace Neo.Build.Core.Tests.SmartContract
         }
 
         [TestMethod]
-        public void Test()
+        public void TestApplicationEngineSimple()
         {
             ApplicationEngine.Provider = UnitTestApplicationEngineProvider.Instance;
 
@@ -65,7 +65,7 @@ namespace Neo.Build.Core.Tests.SmartContract
                 .CreateNext(TestNode.NeoSystem.GenesisBlock)
                 .Build();
 
-            var appEngine = ApplicationEngine.Create(
+            using var appEngine = ApplicationEngine.Create(
                 TriggerType.Application,
                 TransactionBuilder.CreateEmpty().Build(),
                 TestNode.NeoSystem.StoreView,

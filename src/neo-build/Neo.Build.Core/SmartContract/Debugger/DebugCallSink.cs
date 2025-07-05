@@ -17,7 +17,7 @@ using System.Linq;
 
 namespace Neo.Build.Core.SmartContract.Debugger
 {
-    internal class DebugCallSink(
+    public class DebugCallSink(
         string methodName,
         int eventId)
     {

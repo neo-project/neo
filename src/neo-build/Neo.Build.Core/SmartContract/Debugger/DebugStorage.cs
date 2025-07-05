@@ -9,16 +9,29 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.SmartContract;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Neo.Build.Core.SmartContract.Debugger
 {
-    internal class DebugStorage(
+    [DebuggerDisplay("{ToString()}")]
+    public class DebugStorage(
         StorageKey key,
         StorageItem value)
     {
         public StorageKey Key { get; set; } = key;
 
         public StorageItem Value { get; set; } = value;
+
+        public override int GetHashCode() =>
+            Key.ToArray().XxHash3_32();
+
+        public override string ToString() =>
+            string.Format("{{{0} {{Id = {1:d}, Key = [{2}]}}}}",
+                nameof(StorageKey),
+                Key.Id,
+                string.Join(", ", Key.ToArray()[4..].Select(s => $"0x{s:x02}")));
     }
 }

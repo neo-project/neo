@@ -14,7 +14,7 @@ using System.Collections.Generic;
 
 namespace Neo.Build.Core.SmartContract.Debugger
 {
-    internal class DebugContractSink(
+    public class DebugContractSink(
         ContractState contractState,
         IEnumerable<DebugStorage> storageItems)
     {
