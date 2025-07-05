@@ -236,6 +236,7 @@ namespace Neo.Test
             Assert.AreEqual(true, stack[^1]);
             Assert.AreEqual(true, stack[^1..].First());
             Assert.AreEqual(1, stack[^3..^2].First());
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => stack[^1..0]);
         }
     }
 }

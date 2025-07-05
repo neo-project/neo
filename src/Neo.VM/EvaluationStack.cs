@@ -46,7 +46,7 @@ namespace Neo.VM
                 var end = range.End.GetOffset(_innerList.Count);
                 if (start > end)
                     throw new ArgumentOutOfRangeException("Range start must be less than or equal to end.");
-                return _innerList.ToArray().Reverse().ToList().GetRange(Math.Abs(start), end - start);
+                return _innerList.ToArray().Reverse().ToList().GetRange(start, end - start);
             }
         }
 
