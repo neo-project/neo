@@ -33,6 +33,11 @@ namespace Neo.VM
             _referenceCounter = referenceCounter;
         }
 
+        public StackItem this[int index]
+        {
+            get => _innerList[index];
+        }
+
         /// <summary>
         /// Gets the number of items on the stack.
         /// </summary>
