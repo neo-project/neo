@@ -232,7 +232,7 @@ namespace Neo.Test
             stack.Insert(3, true);
 
             Assert.AreEqual(3, stack[0]);
-            Assert.AreEqual(3, stack[0..1].First());
+            Assert.AreEqual(3, stack[0..1][0]);
             Assert.AreEqual(true, stack[^1]);
             Assert.AreEqual(true, stack[^1..][0]);
             Assert.AreEqual(1, stack[^3..^2][0]);
