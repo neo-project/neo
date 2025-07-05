@@ -16,7 +16,6 @@ using Neo.Build.Core.Tests.Helpers.SmartContract;
 using Neo.Builders;
 using Neo.SmartContract;
 using Neo.VM;
-using Neo.VM.Types;
 using System.Numerics;
 
 namespace Neo.Build.Core.Tests.SmartContract
@@ -52,7 +51,7 @@ namespace Neo.Build.Core.Tests.SmartContract
             Assert.AreEqual(VMState.HALT, appEngine.Execute());
             Assert.AreEqual(1, appEngine.ResultStack.Count);
 
-            var actualRandomNumber = appEngine.ResultStack.Pop<Integer>().GetInteger();
+            var actualRandomNumber = appEngine.ResultStack[0].GetInteger();
             Assert.IsTrue(BigInteger.Zero < actualRandomNumber);
         }
 
@@ -80,7 +79,7 @@ namespace Neo.Build.Core.Tests.SmartContract
             Assert.AreEqual(VMState.HALT, appEngine.Execute());
             Assert.AreEqual(1, appEngine.ResultStack.Count);
 
-            var actualRandomNumber = appEngine.ResultStack.Pop<Integer>().GetInteger();
+            var actualRandomNumber = appEngine.ResultStack[0].GetInteger();
             Assert.IsTrue(BigInteger.Zero < actualRandomNumber);
         }
     }
