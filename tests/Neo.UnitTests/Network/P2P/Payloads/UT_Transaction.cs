@@ -872,9 +872,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Transaction_Serialize_Deserialize_DistinctCosigners()
         {
-            // cosigners must be distinct (regarding account)
-
-            Transaction txDoubleCosigners = new()
+            // the `Signers` must be distinct (regarding account)
+            var txDoubleSigners = new Transaction
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
@@ -899,14 +898,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Witnesses = [Witness.Empty]
             };
 
-            var sTx = txDoubleCosigners.ToArray();
+            var sTx = txDoubleSigners.ToArray();
 
             // no need for detailed hexstring here (see basic tests for it)
             var expected = "000403020100e1f50500000000010000000000000004030201020908070605040302010009080706050403020" +
                 "10080090807060504030201000908070605040302010001000111010000";
             Assert.AreEqual(expected, sTx.ToHexString());
 
-            // back to transaction (should fail, due to non-distinct cosigners)
+            // back to transaction (should fail, due to non-distinct signers)
             Transaction tx2 = null;
             Assert.ThrowsExactly<FormatException>(() => _ = tx2 = sTx.AsSerializable<Transaction>());
             Assert.IsNull(tx2);
@@ -916,27 +915,25 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Transaction_Serialize_Deserialize_MaxSizeCosigners()
         {
-            // cosigners must respect count
-
-            int maxCosigners = 16;
+            // the `Signers` must respect count
+            int maxSigners = 16;
 
             // --------------------------------------
             // this should pass (respecting max size)
-
-            var cosigners1 = new Signer[maxCosigners];
-            for (int i = 0; i < cosigners1.Length; i++)
+            var signers1 = new Signer[maxSigners];
+            for (int i = 0; i < signers1.Length; i++)
             {
                 string hex = i.ToString("X4");
                 while (hex.Length < 40)
                     hex = hex.Insert(0, "0");
-                cosigners1[i] = new Signer
+                signers1[i] = new Signer
                 {
                     Account = UInt160.Parse(hex),
                     Scopes = WitnessScope.CalledByEntry
                 };
             }
 
-            Transaction txCosigners1 = new()
+            var txSigners1 = new Transaction
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
@@ -944,32 +941,32 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = [],
-                Signers = cosigners1, // max + 1 (should fail)
+                Signers = signers1, // max + 1 (should fail)
                 Script = new[] { (byte)OpCode.PUSH1 },
                 Witnesses = [Witness.Empty]
             };
 
-            byte[] sTx1 = txCosigners1.ToArray();
+            var sTx1 = txSigners1.ToArray();
 
-            // back to transaction (should fail, due to non-distinct cosigners)
+            // back to transaction (should fail, due to non-distinct signers)
             Assert.ThrowsExactly<FormatException>(() => _ = sTx1.AsSerializable<Transaction>());
 
             // ----------------------------
             // this should fail (max + 1)
 
-            var cosigners = new Signer[maxCosigners + 1];
-            for (var i = 0; i < maxCosigners + 1; i++)
+            var signers = new Signer[maxSigners + 1];
+            for (var i = 0; i < maxSigners + 1; i++)
             {
                 var hex = i.ToString("X4");
                 while (hex.Length < 40)
                     hex = hex.Insert(0, "0");
-                cosigners[i] = new Signer
+                signers[i] = new Signer
                 {
                     Account = UInt160.Parse(hex)
                 };
             }
 
-            Transaction txCosigners = new()
+            var txSigners = new Transaction
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
@@ -977,17 +974,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = [],
-                Signers = cosigners, // max + 1 (should fail)
+                Signers = signers, // max + 1 (should fail)
                 Script = new[] { (byte)OpCode.PUSH1 },
                 Witnesses = [Witness.Empty]
             };
 
-            byte[] sTx2 = txCosigners.ToArray();
+            var sTx2 = txSigners.ToArray();
 
-            // back to transaction (should fail, due to non-distinct cosigners)
+            // back to transaction (should fail, due to non-distinct signers)
             Transaction tx2 = null;
-            Assert.ThrowsExactly<FormatException>(() => _ = tx2 = sTx2.AsSerializable<Transaction>()
-            );
+            Assert.ThrowsExactly<FormatException>(() => _ = tx2 = sTx2.AsSerializable<Transaction>());
             Assert.IsNull(tx2);
         }
 
@@ -995,20 +991,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void FeeIsSignatureContract_TestScope_FeeOnly_Default()
         {
             // Global is supposed to be default
-
-            Signer cosigner = new();
-            Assert.AreEqual(WitnessScope.None, cosigner.Scopes);
+            var signer = new Signer();
+            Assert.AreEqual(WitnessScope.None, signer.Scopes);
 
             var wallet = TestUtils.GenerateTestWallet("");
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var acc = wallet.CreateAccount();
 
             // Fake balance
-
             var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-
             var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
-
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
             snapshotCache.Commit();
@@ -1017,7 +1009,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Manually creating script
 
             byte[] script;
-            using (ScriptBuilder sb = new())
+            using (var sb = new ScriptBuilder())
             {
                 // self-transfer of 1e-8 GAS
                 BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
