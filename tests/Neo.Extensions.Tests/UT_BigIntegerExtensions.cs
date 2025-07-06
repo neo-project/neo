@@ -11,6 +11,7 @@
 
 using Neo.Json;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -24,21 +25,56 @@ namespace Neo.Extensions.Tests
         {
             var big1 = new BigInteger(0);
             Assert.AreEqual(-1, big1.GetLowestSetBit());
+            Assert.AreEqual(32, BigInteger.TrailingZeroCount(big1)); // NOTE: 32 if zero in standard library
 
             var big2 = new BigInteger(512);
             Assert.AreEqual(9, big2.GetLowestSetBit());
+            Assert.AreEqual(9, BigInteger.TrailingZeroCount(big2));
 
             var big3 = new BigInteger(int.MinValue);
             Assert.AreEqual(31, big3.GetLowestSetBit());
+            Assert.AreEqual(31, BigInteger.TrailingZeroCount(big3));
 
             var big4 = new BigInteger(long.MinValue);
             Assert.AreEqual(63, big4.GetLowestSetBit());
+            Assert.AreEqual(63, BigInteger.TrailingZeroCount(big4));
 
             var big5 = new BigInteger(-18);
             Assert.AreEqual(1, big5.GetLowestSetBit());
+            Assert.AreEqual(1, BigInteger.TrailingZeroCount(big5));
 
             var big6 = BigInteger.Pow(2, 1000);
             Assert.AreEqual(1000, big6.GetLowestSetBit());
+            Assert.AreEqual(1000, BigInteger.TrailingZeroCount(big6));
+
+            for (var i = 0; i < 64; i++)
+            {
+                var b = new BigInteger(1ul << i);
+                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+                Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
+            }
+
+            var random = new Random();
+            for (var i = 0; i < 128; i++)
+            {
+                var buffer = new byte[16];
+                BinaryPrimitives.WriteInt128LittleEndian(buffer, Int128.One << i);
+
+                var b = new BigInteger(buffer, isUnsigned: false);
+                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+                Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
+
+                BinaryPrimitives.WriteUInt128LittleEndian(buffer, UInt128.One << i);
+                b = new BigInteger(buffer, isUnsigned: true);
+                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+                Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
+
+                buffer = new byte[32]; // 256bit
+                random.NextBytes(buffer);
+                b = new BigInteger(buffer, isUnsigned: true);
+                var zeroCount = BigInteger.TrailingZeroCount(b);
+                if (!b.IsZero) Assert.AreEqual(zeroCount, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+            }
         }
 
         [TestMethod]
@@ -153,11 +189,24 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestBit()
         {
-            var bigInteger = new BigInteger(5); // Binary: 101
-            Assert.IsTrue(bigInteger.TestBit(2)); // Bit at index 2 is set (1)
+            var value = new BigInteger(5); // Binary: 101
+            Assert.IsTrue(value.TestBit(2)); // Bit at index 2 is set (1)
 
-            bigInteger = new BigInteger(5); // Binary: 101
-            Assert.IsFalse(bigInteger.TestBit(1)); // Bit at index 1 is not set (0)
+            value = new BigInteger(5); // Binary: 101
+            Assert.IsFalse(value.TestBit(1)); // Bit at index 1 is not set (0)
+            Assert.IsFalse(value.TestBit(10)); // Bit at index 10 is not set (0)
+
+            value = new BigInteger(-3);
+            Assert.AreEqual(2, value.GetBitLength()); // 2, without sign bit
+            Assert.IsTrue(value.TestBit(255)); // Bit at index 255 is set (1)
+
+            value = new BigInteger(3); // Binary: 11
+            Assert.AreEqual(2, value.GetBitLength()); // 2, without sign bit
+            Assert.IsFalse(value.TestBit(255)); // Bit at index 255 is not set (0)
+            Assert.IsTrue(value.TestBit(0)); // Bit at index 0 is set (1)
+            Assert.IsTrue(value.TestBit(1)); // Bit at index 1 is set (0)
+            Assert.IsFalse(value.TestBit(2)); // Bit at index 2 is not set (0)
+            Assert.IsFalse(value.TestBit(-1)); // Bit at index -1 is not set (0)
         }
 
         [TestMethod]

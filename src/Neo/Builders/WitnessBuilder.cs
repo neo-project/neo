@@ -30,7 +30,7 @@ namespace Neo.Builders
         public WitnessBuilder AddInvocation(Action<ScriptBuilder> config)
         {
             if (_invocationScript.Length > 0)
-                throw new InvalidOperationException("Invocation script already exists.");
+                throw new InvalidOperationException("Invocation script already exists in the witness builder. Only one invocation script can be added per witness.");
 
             using var sb = new ScriptBuilder();
             config(sb);
@@ -41,7 +41,7 @@ namespace Neo.Builders
         public WitnessBuilder AddInvocation(byte[] bytes)
         {
             if (_invocationScript.Length > 0)
-                throw new InvalidOperationException("Invocation script already exists.");
+                throw new InvalidOperationException("Invocation script already exists in the witness builder. Only one invocation script can be added per witness.");
 
             _invocationScript = bytes;
             return this;
@@ -50,7 +50,7 @@ namespace Neo.Builders
         public WitnessBuilder AddVerification(Action<ScriptBuilder> config)
         {
             if (_verificationScript.Length > 0)
-                throw new InvalidOperationException("Verification script already exists.");
+                throw new InvalidOperationException("Verification script already exists in the witness builder. Only one verification script can be added per witness.");
 
             using var sb = new ScriptBuilder();
             config(sb);
@@ -61,7 +61,7 @@ namespace Neo.Builders
         public WitnessBuilder AddVerification(byte[] bytes)
         {
             if (_verificationScript.Length > 0)
-                throw new InvalidOperationException("Verification script already exists.");
+                throw new InvalidOperationException("Verification script already exists in the witness builder. Only one verification script can be added per witness.");
 
             _verificationScript = bytes;
             return this;

@@ -35,7 +35,7 @@ namespace Neo.CLI
             }
             catch (Exception e)
             {
-                throw new FormatException($"Bad Script or Manifest Format: {e.Message}");
+                throw new FormatException($"Contract script validation failed. The provided script or manifest format is invalid and cannot be processed. Please verify the script bytecode and manifest are correctly formatted and compatible. Original error: {e.Message}", e);
             }
         }
     }

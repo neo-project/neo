@@ -241,7 +241,7 @@ namespace Neo.SmartContract
             {
                 20 => new UInt160(hashOrPubkey),
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
-                _ => throw new ArgumentException("Invalid hashOrPubkey.", nameof(hashOrPubkey))
+                _ => throw new ArgumentException("Invalid hashOrPubkey length", nameof(hashOrPubkey))
             };
             return CheckWitnessInternal(hash);
         }
@@ -334,7 +334,7 @@ namespace Neo.SmartContract
         protected internal void RuntimeLog(byte[] state)
         {
             if (state.Length > MaxNotificationSize)
-                throw new ArgumentException($"Too long notification: {state.Length} > {MaxNotificationSize}", nameof(state));
+                throw new ArgumentException($"Notification size {state.Length} exceeds maximum allowed size of {MaxNotificationSize} bytes", nameof(state));
             try
             {
                 string message = state.ToStrictUtf8String();
@@ -342,7 +342,7 @@ namespace Neo.SmartContract
             }
             catch
             {
-                throw new ArgumentException("Failed to convert byte array to string: Invalid or non-printable UTF-8 sequence detected.", nameof(state));
+                throw new ArgumentException("Failed to convert byte array to string: Invalid UTF-8 sequence", nameof(state));
             }
         }
 
@@ -360,7 +360,7 @@ namespace Neo.SmartContract
                 return;
             }
             if (eventName.Length > MaxEventName)
-                throw new ArgumentException($"Too long `eventName`: {eventName.Length} > {MaxEventName}", nameof(eventName));
+                throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
 
             string name = eventName.ToStrictUtf8String();
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
@@ -386,7 +386,7 @@ namespace Neo.SmartContract
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName)
-                throw new ArgumentException($"Too long `eventName`: {eventName.Length} > {MaxEventName}", nameof(eventName));
+                throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
             if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);

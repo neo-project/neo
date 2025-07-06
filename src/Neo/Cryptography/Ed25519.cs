@@ -44,7 +44,7 @@ namespace Neo.Cryptography
         public static byte[] GetPublicKey(byte[] privateKey)
         {
             if (privateKey.Length != PrivateKeySize)
-                throw new ArgumentException("Invalid private key size", nameof(privateKey));
+                throw new ArgumentException($"Invalid Ed25519 private key size: expected {PrivateKeySize} bytes, but got {privateKey.Length} bytes.", nameof(privateKey));
 
             var privateKeyParams = new Ed25519PrivateKeyParameters(privateKey, 0);
             return privateKeyParams.GeneratePublicKey().GetEncoded();
@@ -63,7 +63,7 @@ namespace Neo.Cryptography
         public static byte[] Sign(byte[] privateKey, byte[] message)
         {
             if (privateKey.Length != PrivateKeySize)
-                throw new ArgumentException("Invalid private key size", nameof(privateKey));
+                throw new ArgumentException($"Invalid Ed25519 private key size: expected {PrivateKeySize} bytes, but got {privateKey.Length} bytes.", nameof(privateKey));
 
             var signer = new Ed25519Signer();
             signer.Init(true, new Ed25519PrivateKeyParameters(privateKey, 0));
@@ -85,10 +85,10 @@ namespace Neo.Cryptography
         public static bool Verify(byte[] publicKey, byte[] message, byte[] signature)
         {
             if (signature.Length != SignatureSize)
-                throw new ArgumentException("Invalid signature size", nameof(signature));
+                throw new ArgumentException($"Invalid Ed25519 signature size: expected {SignatureSize} bytes, but got {signature.Length} bytes.", nameof(signature));
 
             if (publicKey.Length != PublicKeySize)
-                throw new ArgumentException("Invalid public key size", nameof(publicKey));
+                throw new ArgumentException($"Invalid Ed25519 public key size: expected {PublicKeySize} bytes, but got {publicKey.Length} bytes.", nameof(publicKey));
 
             var verifier = new Ed25519Signer();
             verifier.Init(false, new Ed25519PublicKeyParameters(publicKey, 0));

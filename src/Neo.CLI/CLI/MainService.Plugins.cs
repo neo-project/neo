@@ -80,29 +80,28 @@ namespace Neo.CLI
         /// <returns>Downloaded content</returns>
         private static async Task<Stream> DownloadPluginAsync(string pluginName, Version pluginVersion, string? customDownloadUrl = null, bool prerelease = false)
         {
-            ConsoleHelper.Info($"Downloading {pluginName} {pluginVersion}...");
             using var httpClient = new HttpClient();
 
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
             var url = customDownloadUrl == null ? Settings.Default.Plugins.DownloadUrl : new Uri(customDownloadUrl);
-            var json = await httpClient.GetFromJsonAsync<JsonArray>(url) ?? throw new HttpRequestException($"Failed: {url}");
+            var json = await httpClient.GetFromJsonAsync<JsonArray>(url) ?? throw new HttpRequestException($"Failed to retrieve plugin catalog from URL: {url}. Please check your network connection and verify the plugin repository is accessible.");
             var jsonRelease = json.AsArray()
                 .SingleOrDefault(s =>
                     s != null &&
                     s["tag_name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
-                    s["prerelease"]!.GetValue<bool>() == prerelease) ?? throw new Exception($"Could not find Release {pluginVersion}");
+                    s["prerelease"]!.GetValue<bool>() == prerelease) ?? throw new Exception($"Plugin release version {pluginVersion} (prerelease: {prerelease}) was not found in the plugin repository. Please verify the version number or check if the release is available.");
 
             var jsonAssets = jsonRelease
                 .AsObject()
-                .SingleOrDefault(s => s.Key == "assets").Value ?? throw new Exception("Could not find any Plugins");
+                .SingleOrDefault(s => s.Key == "assets").Value ?? throw new Exception($"No plugin assets found for release version {pluginVersion}. The plugin release may be incomplete or corrupted in the repository.");
 
             var jsonPlugin = jsonAssets
                 .AsArray()
                 .SingleOrDefault(s =>
                     Path.GetFileNameWithoutExtension(
                         s!["name"]!.GetValue<string>()).Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
-                ?? throw new Exception($"Could not find {pluginName}");
+                ?? throw new Exception($"Plugin '{pluginName}' was not found in the available assets for version {pluginVersion}. Please verify the plugin name is correct and the plugin is available for this version.");
 
             var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
             return await httpClient.GetStreamAsync(downloadUrl);
@@ -270,7 +269,7 @@ namespace Neo.CLI
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
             var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl)
-                ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
+                ?? throw new HttpRequestException($"Failed to retrieve plugin catalog from URL: {Settings.Default.Plugins.DownloadUrl}. Please check your network connection and verify the plugin repository is accessible.");
             return json.AsArray()
                 .Where(w =>
                     w != null &&
