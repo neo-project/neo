@@ -59,7 +59,7 @@ Create a `SignClient.json` file in `Plugins/SignClient` directory:
 - **Name**: The name of the sign client (default: "SignClient")
 - **Endpoint**: The endpoint of the sign service
   - TCP: `http://host:port` or `https://host:port`
-  - VSock: `vsock://contextId:port` (Linux only, for AWS Nitro Enclaves)
+  - VSock: `vsock://contextId:port`
 
 ### Connection Types
 
@@ -73,7 +73,7 @@ Create a `SignClient.json` file in `Plugins/SignClient` directory:
 }
 ```
 
-#### VSock Connection (AWS Nitro Enclaves)
+#### VSock Connection
 ```json
 {
   "PluginConfiguration": {
