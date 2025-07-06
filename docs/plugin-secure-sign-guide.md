@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Secure Sign Plugin (SignClient) is a Neo blockchain plugin that provides secure ExtensiblePayload and Block signing capabilities through a gRPC-based sign service. This plugin enables:
+The Secure Sign Plugin (SignClient) is a Neo blockchain plugin that provides secure `ExtensiblePayload` and `Block` signing capabilities through a gRPC-based sign service. This plugin enables:
 
 - **Secure Key Management**: Private keys are stored and managed by a separate sign service, not within the Neo node itself. The private keys should be protected by some mechanisms(like Intel SGX or AWS Nitro Enclave)
 - **Multi Transport Layers Support**: Supports both TCP and Vsock connections for different deployment scenarios
@@ -15,7 +15,7 @@ Users can enable plugin `SignClient` by installing it or compiling it manually.
 
 1. **Start the Signing Service**: Ensure, your sign service is running and accessible. You can select a sign service implementation or implement a sign service on your own.
 2. **Download the Plugin**: The SignClient plugin should be installed. You can run `neo-cli` then execute `help install` to get help abort how to install plugin.
-3. **Configure the Plugin**: Create or modify the `SignClient.json` configuration file in the `neo-cli` binary directory (_`Plugins/SignClient`_).
+3. **Configure the Plugin**: Create or modify the `SignClient.json` configuration file in the `neo-cli` binary directory (`Plugins/SignClient`).
 4. **Start `neo-cli`**: Start/Restart `neo-cli` if needed.
 
 ### Compile Manually
@@ -31,8 +31,8 @@ The .Net SDK needs to be installed before compiling it.
 
 2. **Copy to `neo-cli` folder**: Copy the built plugin to the `neo-cli` binary directory.
 - Step 0. Find the `.dll` files. For example:
-  - The `neo-cli` compile products should exist in `./bin/Neo.CLI/net{dotnet-version}/`(_i.e. `neo-cli` binary directory, `./bin/Neo.CLI/net9.0/`_).
-  - The plugin `SignClient` should exist in `./bin/Neo.Plugins.SignClient/{dotnet-version}/`(_i.e. `SignClient` binary directory, `./bin/Neo.Network.RpcClient/9.0/`_).
+  - The `neo-cli` compile products should exist in `./bin/Neo.CLI/net{dotnet-version}/`(i.e. `neo-cli` binary directory, `./bin/Neo.CLI/net9.0/`).
+  - The plugin `SignClient` should exist in `./bin/Neo.Plugins.SignClient/{dotnet-version}/`(i.e. `SignClient` binary directory, `./bin/Neo.Network.RpcClient/9.0/`).
 - Step 1. Copy files `Google.Protobuf.dll Grpc.Core.Api.dll Grpc.Net.Client.dll Grpc.Net.Common.dll `(These files should exist in folder `Neo.Plugins.SignClient`) to the `neo-cli` binary directory.
 - Step 2. `mkdir -p Plugins/SignClient` in the `neo-cli` binary directory. Then copy file `SignClient.dll` from the plugin `SignClient` binary directory to `Plugins/SignClient`.
 - Step 3. Create a `SignClient.json` file `Plugins/SignClient` directory according to the next section.
@@ -116,8 +116,8 @@ Signs extensible payloads for the specified script hashes.
 - The service should check if it has private keys for the requested script hashes.
 - For multi-signature accounts, return all available signatures.
 - Return appropriate account status for each script hash.
-- If a feature not support(for example, multi-signature account), it should return grpc error code `Unimplemented`.
-- If the `payload` or `script_hashes` is not provided or invalid, it should return grpc error code `InvalidArgument`.
+- If a feature not support(for example, multi-signature account), it should return gRPC error code `Unimplemented`.
+- If the `payload` or `script_hashes` is not provided or invalid, it should return gRPC error code `InvalidArgument`.
 
 #### SignBlock
 
@@ -134,7 +134,7 @@ Signs a block with the specified public key.
 **Implementation Notes**:
 - The service should verify it has the private key corresponding to the public key.
 - Sign the block header data according to Neo's block signing specification.
-- If the `block` or `public_key` is not provided or invalid, it should return grpc error code `InvalidArgument`.
+- If the `block` or `public_key` is not provided or invalid, it should return gRPC error code `InvalidArgument`.
 
 #### GetAccountStatus
 
@@ -147,7 +147,7 @@ Retrieves the status of an account for the specified public key.
 - `status`: Account status enum value
 
 **Implementation Notes**:
-- If the `public_key` is not provided or invalid, it should return grpc error code `InvalidArgument`.
+- If the `public_key` is not provided or invalid, it should return gRPC error code `InvalidArgument`.
 
 **Account Status Values**:
 - `NoSuchAccount`: Account doesn't exist
