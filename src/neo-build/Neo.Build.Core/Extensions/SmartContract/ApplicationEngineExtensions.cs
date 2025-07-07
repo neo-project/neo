@@ -16,8 +16,10 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Neo.Build.Core.Extensions.SmartContract
 {
@@ -27,6 +29,21 @@ namespace Neo.Build.Core.Extensions.SmartContract
         {
             engine.LoadScript(script);
             return engine.Execute();
+        }
+
+        public static VMState ExecuteScript<T>(this ApplicationEngine engine, Expression<Action<T>> expression)
+            where T : class
+        {
+            engine.LoadScript(expression);
+            return engine.Execute();
+        }
+
+        public static void LoadScript<T>(this ApplicationEngine engine, Expression<Action<T>> expression)
+            where T : class
+        {
+            using var sb = new ScriptBuilder()
+                .EmitContractCall(expression);
+            engine.LoadScript(sb.ToArray());
         }
 
         public static ContractState GetContractState<T>(this ApplicationEngine engine)

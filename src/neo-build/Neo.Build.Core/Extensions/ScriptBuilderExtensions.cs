@@ -18,9 +18,10 @@ using System.Linq.Expressions;
 
 namespace Neo.Build.Core.Extensions
 {
-    internal static class ScriptBuilderExtensions
+    public static class ScriptBuilderExtensions
     {
-        public static ScriptBuilder EmitContractCall<T>(this ScriptBuilder sb, Expression<Action<T>> expression)
+        public static ScriptBuilder EmitContractCall<T>(this ScriptBuilder builder, Expression<Action<T>> expression)
+            where T : class
         {
             var methodCallBody = (MethodCallExpression)expression.Body;
             var methodName = methodCallBody.Method.Name;
@@ -36,17 +37,17 @@ namespace Neo.Build.Core.Extensions
                 var argumentValue = Expression.Lambda(methodCallBody.Arguments[i])
                     .Compile()
                     .DynamicInvoke();
-                sb.EmitPush(argumentValue);
+                builder.EmitPush(argumentValue);
             }
 
-            sb.EmitPush(methodCallBody.Arguments.Count);
-            sb.Emit(OpCode.PACK);
-            sb.EmitPush(CallFlags.All);
-            sb.EmitPush(methodName);
-            sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            builder.EmitPush(methodCallBody.Arguments.Count);
+            builder.Emit(OpCode.PACK);
+            builder.EmitPush(CallFlags.All);
+            builder.EmitPush(methodName);
+            builder.EmitPush(scriptHash);
+            builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
-            return sb;
+            return builder;
         }
     }
 }
