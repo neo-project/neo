@@ -113,5 +113,33 @@ namespace Neo.ConsoleService.Tests
             Assert.AreEqual("x'y'", args[2].Value);
             Assert.AreEqual("x'y'", args[2].RawValue);
         }
+
+        [TestMethod]
+        public void TestBackQuote()
+        {
+            var cmd = "show `x`";
+            var args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("x", args[2].Value);
+            Assert.AreEqual("`x`", args[2].RawValue);
+
+            cmd = "show `{\"a\": \"b\"}`";
+            args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("{\"a\": \"b\"}", args[2].Value);
+            Assert.AreEqual("`{\"a\": \"b\"}`", args[2].RawValue);
+
+            cmd = "show `123\"456`"; // Donot quoted twice if the input uses backquote.
+            args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("123\"456", args[2].Value);
+            Assert.AreEqual("`123\"456`", args[2].RawValue);
+        }
     }
 }
