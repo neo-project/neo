@@ -3628,7 +3628,7 @@
         "netfee": "1272390",
         "validuntilblock": 2105487,
         "attributes": [],
-        "signers": [
+        "cosigners": [
           {
             "account": "0xcadb3dc2faa3ef14a13b619c9a43124755aa2569",
             "scopes": "CalledByEntry"
@@ -3679,7 +3679,7 @@
         "netfee": "2483780",
         "validuntilblock": 2105494,
         "attributes": [],
-        "signers": [
+        "cosigners": [
           {
             "account": "0x36d6200fb4c9737c7b552d2b5530ab43605c5869",
             "scopes": "CalledByEntry"
@@ -3724,7 +3724,7 @@
         "netfee": "2381780",
         "validuntilblock": 2105500,
         "attributes": [],
-        "signers": [
+        "cosigners": [
           {
             "account": "0xcadb3dc2faa3ef14a13b619c9a43124755aa2569",
             "scopes": "CalledByEntry"
