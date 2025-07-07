@@ -9,18 +9,26 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.Attributes;
 using Neo.Build.Core.Extensions.SmartContract;
 using Neo.Build.Core.Tests.Helpers;
 using Neo.Builders;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using System.Numerics;
 
 namespace Neo.Build.Core.Tests.Extensions
 {
     [TestClass]
     public class UT_ApplicationEngineExtensions
     {
+        [ContractScriptHash("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5")]
+        private interface INeoToken
+        {
+            public BigInteger BalanceOf(UInt160 owner);
+        }
+
         [TestMethod]
         public void TestGetContractState()
         {
@@ -48,7 +56,7 @@ namespace Neo.Build.Core.Tests.Extensions
                 TestNode.NeoSystem.StoreView,
                 settings: TestNode.NeoSystem.Settings);
 
-            var actualContractStorages = appEngine.GetContractStorage<NeoToken>();
+            var actualContractStorages = appEngine.GetContractStorage<INeoToken>();
             Assert.IsNotNull(actualContractStorages);
             Assert.AreEqual(6, actualContractStorages.Count);
         }
@@ -59,16 +67,47 @@ namespace Neo.Build.Core.Tests.Extensions
             using var sb = new ScriptBuilder()
                 .Emit(OpCode.PUSHT);
 
+            using (var appEngine = ApplicationEngine.Create(
+                TriggerType.Application,
+                TransactionBuilder.CreateEmpty().Build(),
+                TestNode.NeoSystem.StoreView,
+                settings: TestNode.NeoSystem.Settings))
+            {
+                var actualVMState = appEngine.ExecuteScript(sb.ToArray());
+                Assert.AreEqual(VMState.HALT, actualVMState);
+                Assert.AreEqual(1, appEngine.ResultStack.Count);
+                Assert.IsTrue(appEngine.ResultStack[0].GetBoolean());
+            }
+
+            using (var appEngine = ApplicationEngine.Create(
+                TriggerType.Application,
+                TransactionBuilder.CreateEmpty().Build(),
+                TestNode.NeoSystem.StoreView,
+                settings: TestNode.NeoSystem.Settings))
+            {
+                var actualVMState = appEngine.ExecuteScript<INeoToken>(n => n.BalanceOf(UInt160.Zero));
+                Assert.AreEqual(VMState.HALT, actualVMState);
+                Assert.AreEqual(1, appEngine.ResultStack.Count);
+                Assert.AreEqual(BigInteger.Zero, appEngine.ResultStack[0].GetInteger());
+            }
+        }
+
+        [TestMethod]
+        public void TestLoadScript()
+        {
             using var appEngine = ApplicationEngine.Create(
                 TriggerType.Application,
                 TransactionBuilder.CreateEmpty().Build(),
                 TestNode.NeoSystem.StoreView,
                 settings: TestNode.NeoSystem.Settings);
 
-            var actualVMState = appEngine.ExecuteScript(sb.ToArray());
+
+            appEngine.LoadScript<INeoToken>(n => n.BalanceOf(UInt160.Zero));
+
+            var actualVMState = appEngine.Execute();
             Assert.AreEqual(VMState.HALT, actualVMState);
             Assert.AreEqual(1, appEngine.ResultStack.Count);
-            Assert.IsTrue(appEngine.ResultStack[0].GetBoolean());
+            Assert.AreEqual(BigInteger.Zero, appEngine.ResultStack[0].GetInteger());
         }
     }
 }

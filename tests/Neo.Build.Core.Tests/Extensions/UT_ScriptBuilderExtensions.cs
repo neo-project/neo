@@ -20,7 +20,7 @@ namespace Neo.Build.Core.Tests.Extensions
     [TestClass]
     public class UT_ScriptBuilderExtensions
     {
-        [ContractScriptHash("0xf0385a6ee70ff7c86ab6287a63697d6d445efba9")]
+        [ContractScriptHash("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5")]
         private interface INeoToken
         {
             public BigInteger BalanceOf(UInt160 owner);
@@ -29,7 +29,7 @@ namespace Neo.Build.Core.Tests.Extensions
         [TestMethod]
         public void TestEmitContractCall()
         {
-            UInt160 expectedScriptHash = "0xf0385a6ee70ff7c86ab6287a63697d6d445efba9";
+            UInt160 expectedScriptHash = "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5";
             using var expectedScriptBuilder = new ScriptBuilder()
                 .EmitDynamicCall(expectedScriptHash, "balanceOf", UInt160.Zero);
             var expectedRawData = expectedScriptBuilder.ToArray();
