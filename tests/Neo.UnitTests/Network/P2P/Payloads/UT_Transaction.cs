@@ -870,7 +870,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Transaction_Serialize_Deserialize_DistinctCosigners()
+        public void Transaction_Serialize_Deserialize_DistinctSigners()
         {
             // the `Signers` must be distinct (regarding account)
             var txDoubleSigners = new Transaction
@@ -913,7 +913,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
 
         [TestMethod]
-        public void Transaction_Serialize_Deserialize_MaxSizeCosigners()
+        public void Transaction_Serialize_Deserialize_MaxSizeSigners()
         {
             // the `Signers` must respect count
             int maxSigners = 16;
