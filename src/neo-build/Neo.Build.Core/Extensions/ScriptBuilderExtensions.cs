@@ -28,9 +28,7 @@ namespace Neo.Build.Core.Extensions
             var scriptHash = NeoBuildAttributeHelper.ExtractContractScriptHash(typeof(T));
 
             if (char.IsLower(methodName[0]) == false)
-            {
                 methodName = char.ToLower(methodName[0]) + methodName[1..];
-            }
 
             for (var i = methodCallBody.Arguments.Count - 1; i >= 0; i--)
             {

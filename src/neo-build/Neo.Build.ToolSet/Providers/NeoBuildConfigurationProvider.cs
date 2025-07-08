@@ -52,7 +52,7 @@ namespace Neo.Build.ToolSet.Providers
 
             // Node Network Configuration
             Data.Add(NeoSystemConfigurationNames.ListenKey, $"{IPAddress.Loopback}");
-            Data.Add(NeoSystemConfigurationNames.PortKey, $"{RandomFactory.NextUInt16()}");
+            Data.Add(NeoSystemConfigurationNames.PortKey, $"{Random.Shared.Next(ushort.MaxValue)}");
             Data.Add(NeoSystemConfigurationNames.MinDesiredConnectionsKey, "10");
             Data.Add(NeoSystemConfigurationNames.MaxConnectionsKey, "40");
             Data.Add(NeoSystemConfigurationNames.MaxConnectionsPerAddressKey, "3");

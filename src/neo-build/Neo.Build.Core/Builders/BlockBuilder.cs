@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Build.Core.Factories;
 using Neo.Builders;
 using Neo.Cryptography;
 using Neo.Network.P2P.Payloads;
@@ -20,13 +19,15 @@ namespace Neo.Build.Core.Builders
 {
     public class BlockBuilder
     {
+        private static readonly Random s_random = new();
+
         private BlockBuilder() { }
 
         private readonly Block _block = new()
         {
             Header = new()
             {
-                Nonce = RandomFactory.NextUInt64(),
+                Nonce = (ulong)(s_random.Next() ^ s_random.Next()),
                 Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 MerkleRoot = new(),
                 NextConsensus = new(),
