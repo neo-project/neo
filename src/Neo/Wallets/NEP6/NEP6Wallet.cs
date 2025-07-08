@@ -99,7 +99,7 @@ namespace Neo.Wallets.NEP6
             accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JObject)p, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
             if (!VerifyPasswordInternal(password.GetClearText()))
-                throw new InvalidOperationException("Wrong password.");
+                throw new InvalidOperationException("Incorrect password provided for NEP6 wallet. Please verify the password and try again.");
         }
 
         private void AddAccount(NEP6Account account)
@@ -143,7 +143,7 @@ namespace Neo.Wallets.NEP6
         {
             if (privateKey is null) throw new ArgumentNullException(nameof(privateKey));
             KeyPair key = new(privateKey);
-            if (key.PublicKey.IsInfinity) throw new ArgumentException("Invalid private key", nameof(privateKey));
+            if (key.PublicKey.IsInfinity) throw new ArgumentException("Invalid private key provided. The private key does not correspond to a valid public key on the elliptic curve.", nameof(privateKey));
             NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),

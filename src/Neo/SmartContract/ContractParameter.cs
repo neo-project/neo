@@ -60,7 +60,7 @@ namespace Neo.SmartContract
                 ContractParameterType.String => "",
                 ContractParameterType.Array => new List<ContractParameter>(),
                 ContractParameterType.Map => new List<KeyValuePair<ContractParameter, ContractParameter>>(),
-                _ => throw new ArgumentException($"Unsupported parameter type: {type}", nameof(type)),
+                _ => throw new ArgumentException($"Parameter type '{type}' is not supported.", nameof(type)),
             };
         }
 
@@ -87,7 +87,7 @@ namespace Neo.SmartContract
                     ContractParameterType.String => json["value"].AsString(),
                     ContractParameterType.Array => ((JArray)json["value"]).Select(p => FromJson((JObject)p)).ToList(),
                     ContractParameterType.Map => ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson((JObject)p["key"]), FromJson((JObject)p["value"]))).ToList(),
-                    _ => throw new ArgumentException($"Unsupported parameter type: {parameter.Type}", nameof(json)),
+                    _ => throw new ArgumentException($"Parameter type '{parameter.Type}' is not supported.", nameof(json)),
                 };
             return parameter;
         }
@@ -127,7 +127,7 @@ namespace Neo.SmartContract
                     Value = text;
                     break;
                 default:
-                    throw new ArgumentException($"The ContractParameterType '{Type}' is not supported.");
+                    throw new ArgumentException($"Parameter type '{Type}' is not supported for value setting.");
             }
         }
 

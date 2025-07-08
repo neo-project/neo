@@ -28,9 +28,9 @@ namespace Neo.Cryptography.MPTTrie
             var path = ToNibbles(key);
             var val = value;
             if (path.Length == 0 || path.Length > Node.MaxKeyLength)
-                throw new ArgumentException("invalid", nameof(key));
+                throw new ArgumentException($"Invalid key length: {path.Length}. The key length must be between 1 and {Node.MaxKeyLength} nibbles.", nameof(key));
             if (val.Length > Node.MaxValueLength)
-                throw new ArgumentException("exceed limit", nameof(value));
+                throw new ArgumentException($"Value length {val.Length} exceeds the maximum allowed length of {Node.MaxValueLength} bytes.", nameof(value));
             var n = Node.NewLeaf(val);
             Put(ref _root, path, n);
         }

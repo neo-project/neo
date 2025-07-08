@@ -175,7 +175,7 @@ namespace Neo.Plugins.RpcServer
             {
                 throw new RpcException(RpcError.InvalidParams.WithData("Params array is empty, need a raw transaction."));
             }
-            var tx = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid tx: {_params[0]}")); ;
+            var tx = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid tx: {_params[0]}"));
 
             JObject account = new();
             var networkfee = Helper.CalculateNetworkFee(tx.AsSerializable<Transaction>(), system.StoreView, system.Settings, wallet);

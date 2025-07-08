@@ -59,10 +59,14 @@ namespace Neo.ConsoleService
             for (var index = 0; index < commandLine.Length; index++)
             {
                 var ch = commandLine[index];
-                if (ch == '\\')
+                if (ch == '\\' && quoteChar != CommandToken.NoEscapedChar)
                 {
                     index++;
-                    if (index >= commandLine.Length) throw new ArgumentException("Unexpected end of command line");
+                    if (index >= commandLine.Length)
+                    {
+                        throw new ArgumentException("Unexpected end of command line while processing escape sequence." +
+                            " The command line ends with a backslash character.");
+                    }
                     token.Append(EscapedChar(commandLine[index]));
                 }
                 else if (quoteChar != CommandToken.NoQuoteChar)
@@ -77,7 +81,7 @@ namespace Neo.ConsoleService
                         token.Append(ch);
                     }
                 }
-                else if (ch == '"' || ch == '\'')
+                else if (ch == '"' || ch == '\'' || ch == CommandToken.NoEscapedChar)
                 {
                     if (token.Length == 0) // If ch is the first char. To keep consistency with legacy behavior
                     {

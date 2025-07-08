@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native
 
         public ContractMethodAttribute(bool isDeprecated, Hardfork deprecatedIn)
         {
-            if (!isDeprecated) throw new ArgumentException("isDeprecated must be true", nameof(isDeprecated));
+            if (!isDeprecated) throw new ArgumentException("isDeprecated parameter must be true", nameof(isDeprecated));
             DeprecatedIn = deprecatedIn;
         }
     }

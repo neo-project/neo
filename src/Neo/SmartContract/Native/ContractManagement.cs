@@ -236,9 +236,9 @@ namespace Neo.SmartContract.Native
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
             if (nefFile.Length == 0)
-                throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
+                throw new ArgumentException($"NEF file length cannot be zero.");
             if (manifest.Length == 0)
-                throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
+                throw new ArgumentException($"Manifest length cannot be zero.");
 
             engine.AddFee(Math.Max(
                 engine.StoragePrice * (nefFile.Length + manifest.Length),
@@ -292,7 +292,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Cannot call Update with the flag {state.CallFlags}.");
             }
             if (nefFile is null && manifest is null)
-                throw new ArgumentException("The nefFile and manifest cannot be null at the same time.");
+                throw new ArgumentException("NEF file and manifest cannot both be null.");
 
             engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
@@ -308,7 +308,7 @@ namespace Neo.SmartContract.Native
             if (nefFile != null)
             {
                 if (nefFile.Length == 0)
-                    throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
+                    throw new ArgumentException($"NEF file length cannot be zero.");
 
                 // Update nef
                 contract.Nef = nefFile.AsSerializable<NefFile>();
@@ -316,7 +316,7 @@ namespace Neo.SmartContract.Native
             if (manifest != null)
             {
                 if (manifest.Length == 0)
-                    throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
+                    throw new ArgumentException($"Manifest length cannot be zero.");
 
                 var manifestNew = ContractManifest.Parse(manifest);
                 if (manifestNew.Name != contract.Manifest.Name)
