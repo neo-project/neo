@@ -458,23 +458,23 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(5, engine.ResultStack.Count);
 
                 var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue <= 10);
+                Assert.IsTrue(actualValue < 10);
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue <= 1_00000000);
+                Assert.IsTrue(actualValue < 1_00000000);
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue <= BigInteger.Parse("100000000000000000000000"));
+                Assert.IsTrue(actualValue < BigInteger.Parse("100000000000000000000000"));
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue <= BigInteger.Parse("10000000000000000000000000000"));
+                Assert.IsTrue(actualValue < BigInteger.Parse("10000000000000000000000000000"));
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue <= BigInteger.Parse("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber));
+                Assert.IsTrue(actualValue < BigInteger.Parse("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber));
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
             }
         }
