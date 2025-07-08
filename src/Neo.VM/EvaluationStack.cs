@@ -45,9 +45,6 @@ namespace Neo.VM
                 var start = range.Start.GetOffset(_innerList.Count);
                 var end = range.End.GetOffset(_innerList.Count);
 
-                if (start >= _innerList.Count || end >= _innerList.Count)
-                    throw new ArgumentOutOfRangeException("Range is out of bounds.");
-
                 if (start > end)
                     throw new ArgumentOutOfRangeException("Range start must be less than or equal to end.");
 
