@@ -13,6 +13,7 @@
 
 using Microsoft.IdentityModel.Tokens;
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM.Types;
 using System;
@@ -264,7 +265,7 @@ namespace Neo.SmartContract.Native
             return count;
         }
 
-        [ContractMethod(CpuFee = 1 << 17)]
+        [ContractMethod(CpuFee = 1 << 1)]
         private static BigInteger GetRandom(ApplicationEngine engine, BigInteger maxValue)
         {
             if (maxValue.Sign < 0)
@@ -273,25 +274,32 @@ namespace Neo.SmartContract.Native
             var maxValueBits = maxValue.GetByteCount() * 8;
             var maxValueSize = BigInteger.Pow(2, maxValueBits);
 
-            var nthMask = (BigInteger.One << maxValueBits) - 1;
-            var randomProduct = maxValue * (engine.GetRandom() & nthMask);
-            var randomProductBits = randomProduct.GetByteCount() * 8;
+            var candidate = maxValue;
 
-            var lowPart = randomProduct & BigInteger.MinusOne;
-
-            if (lowPart < maxValue)
+            do
             {
-                var remainder = (maxValueSize - maxValue) % maxValue;
+                var randomProduct = maxValue * engine.GetRandom().GetLowPart(maxValueBits);
+                var randomProductBits = randomProduct.GetByteCount() * 8;
 
-                while (lowPart < remainder)
+                var lowPart = randomProduct.GetLowPart(maxValueBits);
+
+                if (lowPart < maxValue)
                 {
-                    randomProduct = maxValue * (engine.GetRandom() & nthMask);
-                    randomProductBits = randomProduct.GetByteCount() * 8;
-                    lowPart = randomProduct & BigInteger.MinusOne;
-                }
-            }
+                    var remainder = (maxValueSize - maxValue) % maxValue;
 
-            return randomProduct >> (randomProductBits - maxValueBits);
+                    while (lowPart < remainder)
+                    {
+                        randomProduct = maxValue * engine.GetRandom().GetLowPart(maxValueBits);
+                        randomProductBits = randomProduct.GetByteCount() * 8;
+                        lowPart = randomProduct.GetLowPart(maxValueBits);
+                    }
+                }
+
+                candidate = (randomProduct >> (randomProductBits - maxValueBits)).GetLowPart(maxValueBits) + BigInteger.One;
+
+            } while (candidate > maxValue);
+
+            return candidate;
         }
     }
 }

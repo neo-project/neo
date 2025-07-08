@@ -18,6 +18,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Numerics;
 using Array = System.Array;
 
@@ -436,9 +437,11 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestGetRandomRanges()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
             using (var script = new ScriptBuilder())
             {
                 // Test encoding
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber));
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("10000000000000000000000000000"));
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("100000000000000000000000"));
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1_00000000);
@@ -452,7 +455,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(4, engine.ResultStack.Count);
+                Assert.AreEqual(5, engine.ResultStack.Count);
 
                 var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
                 Assert.IsTrue(actualValue <= 10);
@@ -468,6 +471,10 @@ namespace Neo.UnitTests.SmartContract.Native
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
                 Assert.IsTrue(actualValue <= BigInteger.Parse("10000000000000000000000000000"));
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue <= BigInteger.Parse("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber));
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
             }
         }
