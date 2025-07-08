@@ -130,7 +130,7 @@ namespace Neo.SmartContract
             Tokens = reader.ReadSerializableArray<MethodToken>(128);
             if (reader.ReadUInt16() != 0) throw new FormatException("Reserved bytes must be 0");
             Script = reader.ReadVarMemory((int)ExecutionEngineLimits.Default.MaxItemSize);
-            if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
+            if (Script.Length == 0) throw new ArgumentException("Script cannot be empty.");
             CheckSum = reader.ReadUInt32();
             if (verify)
             {

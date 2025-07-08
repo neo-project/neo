@@ -185,7 +185,7 @@ namespace Neo.Network.P2P
                 payloadIndex += 8;
             }
 
-            if (length > PayloadMaxSize) throw new FormatException($"Invalid payload length: {length}.");
+            if (length > PayloadMaxSize) throw new FormatException($"Invalid payload length: {length}. The payload size exceeds the maximum allowed size of {PayloadMaxSize} bytes.");
 
             if (data.Count < (int)length + payloadIndex) return 0;
 

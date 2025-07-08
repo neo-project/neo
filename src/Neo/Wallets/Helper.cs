@@ -67,9 +67,9 @@ namespace Neo.Wallets
         {
             var data = address.Base58CheckDecode();
             if (data.Length != 21)
-                throw new FormatException();
+                throw new FormatException($"Invalid address format: expected 21 bytes after Base58Check decoding, but got {data.Length} bytes. The address may be corrupted or in an invalid format.");
             if (data[0] != version)
-                throw new FormatException();
+                throw new FormatException($"Invalid address version: expected version {version}, but got {data[0]}. The address may be for a different network.");
             return new UInt160(data.AsSpan(1));
         }
 

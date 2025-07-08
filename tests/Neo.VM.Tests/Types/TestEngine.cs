@@ -23,8 +23,10 @@ namespace Neo.Test.Types
 
         private static JumpTable ComposeJumpTable()
         {
-            JumpTable jumpTable = new JumpTable();
-            jumpTable[OpCode.SYSCALL] = OnSysCall;
+            var jumpTable = new JumpTable
+            {
+                [OpCode.SYSCALL] = OnSysCall
+            };
             return jumpTable;
         }
 

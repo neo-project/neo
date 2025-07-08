@@ -54,11 +54,11 @@ namespace Neo.Extensions
         {
             if (value == null) throw new ArgumentNullException(nameof(value));
             if (value.Length > length)
-                throw new ArgumentException($"`value` is too long: {value.Length} > {length}", nameof(value));
+                throw new ArgumentException($"The string value length ({value.Length} characters) exceeds the maximum allowed length of {length} characters.", nameof(value));
 
             var bytes = value.ToStrictUtf8Bytes();
             if (bytes.Length > length)
-                throw new ArgumentException($"utf8-decoded `value` is too long: {bytes.Length} > {length}", nameof(value));
+                throw new ArgumentException($"The UTF-8 encoded string length ({bytes.Length} bytes) exceeds the maximum allowed length of {length} bytes.", nameof(value));
             writer.Write(bytes);
             if (bytes.Length < length)
                 writer.Write(stackalloc byte[length - bytes.Length]);
