@@ -297,7 +297,7 @@ namespace Neo.SmartContract.Native
 
                 candidate = (randomProduct >> (randomProductBits - maxValueBits)).GetLowPart(maxValueBits);
 
-            } while (candidate > maxValue);
+            } while (candidate >= maxValue);
 
             return candidate;
         }
