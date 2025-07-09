@@ -9,14 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging;
+using Neo.Build.Core.Models;
 using Neo.Build.Core.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
-using System.Net;
 
 namespace Neo.Build.Core.Tests.Helpers
 {
@@ -24,12 +22,20 @@ namespace Neo.Build.Core.Tests.Helpers
     {
         public static readonly NeoSystem NeoSystem;
         public static readonly DevWallet Wallet;
+        public static readonly ILoggerFactory FactoryLogger = LoggerFactory.Create(logging =>
+        {
+            logging.AddSimpleConsole(options =>
+            {
+                options.SingleLine = true;
+                options.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Disabled;
+            });
+        });
 
         private static readonly FasterDbStore s_store = new(Path.GetRandomFileName());
 
         private class StoreProvider : IStoreProvider
         {
-            public string Name => "NeoBuildTestProvider";
+            public string Name => "NeoBuildProvider";
 
             public IStore GetStore(string path) => s_store;
         }
@@ -37,32 +43,8 @@ namespace Neo.Build.Core.Tests.Helpers
         static TestNode()
         {
             var walletModel = TestObjectHelper.CreateTestWalletModel();
-            Wallet = new(walletModel);
-            NeoSystem = new(
-                Wallet.ProtocolSettings with
-                {
-                    StandbyCommittee = [.. Wallet.GetConsensusAccounts().Select(static s => s.GetKey().PublicKey)],
-                    ValidatorsCount = 1,
-                    Hardforks = new Dictionary<Hardfork, uint>()
-                    {
-                        { Hardfork.HF_Aspidochelone, 0u },
-                        { Hardfork.HF_Basilisk, 0u },
-                        { Hardfork.HF_Cockatrice, 0u },
-                        { Hardfork.HF_Domovoi, 0u },
-                        { Hardfork.HF_Echidna, 0u },
-                    }.ToImmutableDictionary(),
-                },
-                new StoreProvider());
-
-            NeoSystem.StartNode(new()
-            {
-                MaxConnections = 40,
-                MaxConnectionsPerAddress = 10,
-                MaxKnownHashes = 1024,
-                MinDesiredConnections = 3,
-                EnableCompression = false,
-                Tcp = new(IPAddress.Loopback, 10333)
-            });
+            Wallet = new(walletModel, ((ProtocolOptionsModel)walletModel.Extra!).ToObject());
+            NeoSystem = new(Wallet.ProtocolSettings, new StoreProvider());
         }
     }
 }

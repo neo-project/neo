@@ -11,6 +11,7 @@
 
 using Neo.Build.Core.Models;
 using Neo.Build.Core.Tests.Helpers;
+using Neo.Cryptography.ECC;
 
 namespace Neo.Build.Core.Tests.Models
 {
@@ -20,8 +21,7 @@ namespace Neo.Build.Core.Tests.Models
         [TestMethod]
         public void CheckPropertyValues()
         {
-            var jsonTestString = "{\"network\":810960196,\"addressVersion\":53,\"millisecondsPerBlock\":1000,\"maxTransactionsPerBlock\":512,\"memoryPoolMaxTransactions\":50000,\"maxTraceableBlocks\":2102400,\"initialGasDistribution\":5200000000000000}";
-
+            var jsonTestString = "{\"network\":810960196,\"addressVersion\":53,\"millisecondsPerBlock\":1000,\"maxTransactionsPerBlock\":512,\"memoryPoolMaxTransactions\":50000,\"maxTraceableBlocks\":2102400,\"hardforks\":{\"HF_Aspidochelone\":0},\"initialGasDistribution\":5200000000000000,\"validatorsCount\":1,\"standbyCommittee\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"],\"seedList\":[\"seed1.neo.org:10333\"]}";
             var actualProtocolOptionsModel = JsonModel.FromJson<ProtocolOptionsModel>(jsonTestString, TestDefaults.JsonDefaultSerializerOptions);
 
             Assert.IsNotNull(actualProtocolOptionsModel);
@@ -33,6 +33,16 @@ namespace Neo.Build.Core.Tests.Models
             Assert.AreEqual(50_000, actualProtocolOptionsModel.MemoryPoolMaxTransactions);
             Assert.AreEqual(2_102_400u, actualProtocolOptionsModel.MaxTraceableBlocks);
             Assert.AreEqual(5_200_000_000_000_000uL, actualProtocolOptionsModel.InitialGasDistribution);
+            Assert.AreEqual(1, actualProtocolOptionsModel.ValidatorsCount);
+
+            Assert.IsNotNull(actualProtocolOptionsModel.Hardforks);
+            Assert.AreEqual(0u, actualProtocolOptionsModel.Hardforks[Hardfork.HF_Aspidochelone]);
+
+            Assert.IsNotNull(actualProtocolOptionsModel.StandbyCommittee);
+            Assert.AreEqual(ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1), actualProtocolOptionsModel.StandbyCommittee[0]);
+
+            Assert.IsNotNull(actualProtocolOptionsModel.SeedList);
+            Assert.AreEqual("seed1.neo.org:10333", actualProtocolOptionsModel.SeedList[0]);
         }
     }
 }

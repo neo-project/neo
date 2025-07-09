@@ -42,7 +42,7 @@ namespace Neo.Build.Core.Tests.Models.Wallets
             Assert.AreEqual(expectedTestWalletModel.Scrypt!.P, actualTestWalletModel.Scrypt.P);
 
             Assert.IsNotNull(actualTestWalletModel.Accounts);
-            Assert.AreEqual(1, actualTestWalletModel.Accounts.Count);
+            Assert.AreEqual(1, actualTestWalletModel.Accounts.Length);
 
             var expectedTestWalletAccountModel = expectedTestWalletModel.Accounts!.Single();
             var actualTestWalletAccountModel = actualTestWalletModel.Accounts.SingleOrDefault();
@@ -66,7 +66,7 @@ namespace Neo.Build.Core.Tests.Models.Wallets
             CollectionAssert.AreEqual(expectedTestWalletAccountModel.Contract!.Script, actualTestWalletAccountModel.Contract.Script);
 
             Assert.IsNotNull(actualTestWalletAccountModel.Contract.Parameters);
-            Assert.AreEqual(1, actualTestWalletAccountModel.Contract.Parameters.Count);
+            Assert.AreEqual(1, actualTestWalletAccountModel.Contract.Parameters.Length);
 
             var expectedContractParametersModel = expectedTestWalletAccountModel.Contract.Parameters!.Single();
             var actualContractParametersModel = actualTestWalletAccountModel.Contract.Parameters.SingleOrDefault();
