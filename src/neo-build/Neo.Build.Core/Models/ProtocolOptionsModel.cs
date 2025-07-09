@@ -10,6 +10,10 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Interfaces;
+using Neo.Cryptography.ECC;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace Neo.Build.Core.Models
 {
@@ -29,6 +33,14 @@ namespace Neo.Build.Core.Models
 
         public ulong InitialGasDistribution { get; set; }
 
+        public int ValidatorsCount { get; set; }
+
+        public string[]? SeedList { get; set; }
+
+        public IDictionary<Hardfork, uint>? Hardforks { get; set; }
+
+        public ECPoint[]? StandbyCommittee { get; set; }
+
         public ProtocolSettings ToObject() =>
             ProtocolSettings.Default with
             {
@@ -39,6 +51,10 @@ namespace Neo.Build.Core.Models
                 MemoryPoolMaxTransactions = MemoryPoolMaxTransactions,
                 MaxTraceableBlocks = MaxTraceableBlocks,
                 InitialGasDistribution = InitialGasDistribution,
+                ValidatorsCount = ValidatorsCount,
+                SeedList = SeedList ?? [],
+                Hardforks = Hardforks?.ToImmutableDictionary() ?? ImmutableDictionary<Hardfork, uint>.Empty,
+                StandbyCommittee = StandbyCommittee?.ToList() ?? [],
             };
     }
 }
