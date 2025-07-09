@@ -12,7 +12,6 @@
 using Neo.Build.Core.Interfaces;
 using Neo.Build.Core.Json.Converters;
 using Neo.SmartContract;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
@@ -23,7 +22,7 @@ namespace Neo.Build.Core.Models.Wallets
         [JsonConverter(typeof(JsonStringHexFormatConverter))]
         public byte[]? Script { get; set; }
 
-        public ICollection<ContractParameterModel>? Parameters { get; set; }
+        public ContractParameterModel[]? Parameters { get; set; }
 
         public bool Deployed { get; set; }
 

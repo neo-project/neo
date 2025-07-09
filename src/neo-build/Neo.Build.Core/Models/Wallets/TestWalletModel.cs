@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Build.Core.Models.Wallets
 {
@@ -22,7 +21,7 @@ namespace Neo.Build.Core.Models.Wallets
 
         public SCryptModel? Scrypt { get; set; }
 
-        public ICollection<TestWalletAccountModel>? Accounts { get; set; }
+        public TestWalletAccountModel[]? Accounts { get; set; }
 
         public object? Extra { get; set; }
     }
