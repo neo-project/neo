@@ -36,7 +36,7 @@ namespace Neo.Build.ToolSet.Commands
             private readonly NeoProtocolOptions _protocolOptions = protocolOptions;
 
             public int Invoke(InvocationContext context) =>
-                InvokeAsync(context).GetAwaiter().GetResult();
+                InvokeAsync(context).ConfigureAwait(false).GetAwaiter().GetResult();
 
             public Task<int> InvokeAsync(InvocationContext context)
             {

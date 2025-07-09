@@ -22,7 +22,7 @@ namespace Neo.Build.Core.Tests.Models.Wallets
         [TestMethod]
         public void CheckPropertyValues()
         {
-            var jsonTestString = "{\"name\":\"Unit Test Wallet\",\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NhpxKrsHrFCizcupug2pTNkM7TnhyMzwEa\",\"label\":\"Main Test Account\",\"isDefault\":false,\"lock\":false,\"key\":\"3889c6201680d433ffdccb94a6b01c09863f5dc83aa85a003ae4dfe9460cf33f\",\"contract\":{\"script\":\"0c21028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a84156e7b327\",\"parameters\":[{\"name\":\"Signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}";
+            var jsonTestString = "{\"name\":\"Unit Test Wallet\",\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NhpxKrsHrFCizcupug2pTNkM7TnhyMzwEa\",\"label\":\"Main Test Account\",\"isDefault\":true,\"lock\":false,\"key\":\"3889c6201680d433ffdccb94a6b01c09863f5dc83aa85a003ae4dfe9460cf33f\",\"contract\":{\"script\":\"0c21028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a84156e7b327\",\"parameters\":[{\"name\":\"Signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}";
 
             var expectedTestWalletModel = TestObjectHelper.CreateTestWalletModel();
 
@@ -42,7 +42,7 @@ namespace Neo.Build.Core.Tests.Models.Wallets
             Assert.AreEqual(expectedTestWalletModel.Scrypt!.P, actualTestWalletModel.Scrypt.P);
 
             Assert.IsNotNull(actualTestWalletModel.Accounts);
-            Assert.AreEqual(1, actualTestWalletModel.Accounts.Count);
+            Assert.AreEqual(1, actualTestWalletModel.Accounts.Length);
 
             var expectedTestWalletAccountModel = expectedTestWalletModel.Accounts!.Single();
             var actualTestWalletAccountModel = actualTestWalletModel.Accounts.SingleOrDefault();
@@ -66,7 +66,7 @@ namespace Neo.Build.Core.Tests.Models.Wallets
             CollectionAssert.AreEqual(expectedTestWalletAccountModel.Contract!.Script, actualTestWalletAccountModel.Contract.Script);
 
             Assert.IsNotNull(actualTestWalletAccountModel.Contract.Parameters);
-            Assert.AreEqual(1, actualTestWalletAccountModel.Contract.Parameters.Count);
+            Assert.AreEqual(1, actualTestWalletAccountModel.Contract.Parameters.Length);
 
             var expectedContractParametersModel = expectedTestWalletAccountModel.Contract.Parameters!.Single();
             var actualContractParametersModel = actualTestWalletAccountModel.Contract.Parameters.SingleOrDefault();
