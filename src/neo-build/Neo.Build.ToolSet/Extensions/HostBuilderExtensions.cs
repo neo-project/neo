@@ -24,7 +24,7 @@ namespace Neo.Build.ToolSet.Extensions
 {
     internal static class HostBuilderExtensions
     {
-        public static IHostBuilder UseNeoBuildConfiguration(this IHostBuilder hostBuilder)
+        public static IHostBuilder UseNeoBuildGlobalConfiguration(this IHostBuilder hostBuilder)
         {
             // Host Configuration
             hostBuilder.ConfigureHostConfiguration(config =>
@@ -47,7 +47,7 @@ namespace Neo.Build.ToolSet.Extensions
                 config.SetBasePath(contentRoot);
                 config.AddJsonFile($"config.{environmentName}.json", optional: true);   // App settings file
                 config.AddJsonFile($"system.{environmentName}.json", optional: true);   // NeoSystem settings file
-                config.AddJsonFile($"protocol.{environmentName}.json", optional: true); // ProtocolSettings file
+                config.AddJsonFile($"protocol.{environmentName}.json", optional: true); // Protocol options file (Overwrites wallet configurations)
                 config.AddJsonFile($"vm.{environmentName}.json", optional: true);       // ApplicationEngine settings file
             });
 
@@ -88,31 +88,25 @@ namespace Neo.Build.ToolSet.Extensions
                 var appEngineSection = context.Configuration.GetSection("VM");
                 var appEngineOptions = appEngineSection.Get<AppEngineOptions>()!;
 
+                var protocolSection = context.Configuration.GetSection("Protocol");
+                var protocolOptions = protocolSection.Get<ProtocolOptions>()!;
+
+                var neoSystemSection = context.Configuration.GetSection("NeoSystem");
+                var neoSystemOptions = neoSystemSection.Get<NeoSystemOptions>()!;
+
+                var dbftSection = context.Configuration.GetSection("DBFT");
+                var dbftOptions = dbftSection.Get<DBFTOptions>()!;
+
                 services.AddSingleton(appEngineOptions);
+                services.AddSingleton(neoSystemOptions);
+                services.AddSingleton(protocolOptions);
+                services.AddSingleton(dbftOptions);
 
                 // Add default services here
             });
 
             // Register TypeConverters for IConfiguration.Get<T>()
             TypeDescriptor.AddAttributes(typeof(IPAddress), new TypeConverterAttribute(typeof(IPAddressTypeConverter)));
-
-            return hostBuilder;
-        }
-
-        public static IHostBuilder UseNeoSystem(this IHostBuilder hostBuilder)
-        {
-            hostBuilder.ConfigureServices((context, services) =>
-            {
-                var protocolSection = context.Configuration.GetSection("Protocol");
-                var neoSystemSection = context.Configuration.GetSection("NeoSystem");
-                var neoSystemOptions = neoSystemSection.Get<NeoSystemOptions>()!;
-                var protocolOptions = protocolSection.Get<NeoProtocolOptions>()!;
-
-                services.AddSingleton(neoSystemOptions);
-                services.AddSingleton(protocolOptions);
-
-                // Implement NeoSystem here and inject service
-            });
 
             return hostBuilder;
         }

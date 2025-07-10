@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// ProtocolSettingsConfigurationNames.cs file belongs to the neo project and is free
+// ProtocolOptionsConfigurationNames.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,7 +11,7 @@
 
 namespace Neo.Build.ToolSet.Configuration
 {
-    internal class ProtocolSettingsConfigurationNames
+    internal class ProtocolOptionsConfigurationNames
     {
         public static readonly string NetworkKey = "PROTOCOL:NETWORK";
         public static readonly string AddressVersionKey = "PROTOCOL:ADDRESSVERSION";
