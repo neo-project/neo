@@ -66,8 +66,7 @@ namespace Neo.Build.ToolSet
 
         private static IHostBuilder DefaultNeoBuildHostFactory(string[] args) =>
             new HostBuilder()
-            .UseNeoBuildConfiguration()
-            .UseNeoSystem();
+            .UseNeoBuildGlobalConfiguration();
     }
 
 }

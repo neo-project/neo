@@ -59,16 +59,25 @@ namespace Neo.Build.ToolSet.Providers
             Data.Add(NeoSystemConfigurationNames.EnableCompressionKey, bool.FalseString);
 
             // Protocol Configuration
-            Data.Add(ProtocolSettingsConfigurationNames.NetworkKey, $"{protocolNetwork}");
-            Data.Add(ProtocolSettingsConfigurationNames.AddressVersionKey, "53");
-            Data.Add(ProtocolSettingsConfigurationNames.MillisecondsPerBlockKey, "1000");
-            Data.Add(ProtocolSettingsConfigurationNames.MaxTransactionsPerBlockKey, "512");
-            Data.Add(ProtocolSettingsConfigurationNames.MemoryPoolMaxTransactionsKey, "50000");
-            Data.Add(ProtocolSettingsConfigurationNames.MaxTraceableBlocksKey, "2102400");
-            Data.Add(ProtocolSettingsConfigurationNames.InitialGasDistributionKey, "5200000000000000");
+            Data.Add(ProtocolOptionsConfigurationNames.NetworkKey, $"{protocolNetwork}");
+            Data.Add(ProtocolOptionsConfigurationNames.AddressVersionKey, "53");
+            Data.Add(ProtocolOptionsConfigurationNames.MillisecondsPerBlockKey, "1000");
+            Data.Add(ProtocolOptionsConfigurationNames.MaxTransactionsPerBlockKey, "512");
+            Data.Add(ProtocolOptionsConfigurationNames.MemoryPoolMaxTransactionsKey, "50000");
+            Data.Add(ProtocolOptionsConfigurationNames.MaxTraceableBlocksKey, "2102400");
+            Data.Add(ProtocolOptionsConfigurationNames.InitialGasDistributionKey, "5200000000000000");
 
             // Application Engine Configuration
             Data.Add(AppEngineConfigurationNames.MaxGasKey, "2000000000");
+
+            // DBFT Plugin Configuration
+            var dbftRoot = Path.Combine(Environment.CurrentDirectory, $"DBFT_{protocolNetwork:X08}");
+
+            Data.Add(DBFTConfigurationNames.RecoveryLogsStoreKey, dbftRoot);
+            Data.Add(DBFTConfigurationNames.IgnoreRecoveryLogsKey, bool.TrueString);
+            Data.Add(DBFTConfigurationNames.MaxBlockSizeKey, "2097152");
+            Data.Add(DBFTConfigurationNames.MaxBlockSystemFeeKey, "150000000000");
+            Data.Add(DBFTConfigurationNames.ExceptionPolicyKey, "StopNode");
 
             // Other default configurations here
 
