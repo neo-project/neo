@@ -227,7 +227,6 @@ namespace Neo.ConsoleService
             }
 
             // Sort and show
-
             withHelp.Sort((a, b) =>
             {
                 var cate = string.Compare(a.HelpCategory, b.HelpCategory, StringComparison.Ordinal);
@@ -238,6 +237,9 @@ namespace Neo.ConsoleService
                 return cate;
             });
 
+            var guide = (ParameterInfo parameterInfo) => parameterInfo.HasDefaultValue
+                    ? $"[ --{parameterInfo.Name} {parameterInfo.DefaultValue?.ToString() ?? ""}]"
+                    : $"--{parameterInfo.Name}";
             if (string.IsNullOrEmpty(key) || key.Equals("help", StringComparison.InvariantCultureIgnoreCase))
             {
                 string? last = null;
@@ -250,16 +252,12 @@ namespace Neo.ConsoleService
                     }
 
                     Console.Write($"\t{command.Key}");
-                    Console.WriteLine(" " + string.Join(' ',
-                        command.Method.GetParameters()
-                        .Select(u => u.HasDefaultValue ? $"[{u.Name}={(u.DefaultValue == null ? "null" : u.DefaultValue.ToString())}]" : $"<{u.Name}>"))
-                    );
+                    Console.WriteLine(" " + string.Join(' ', command.Method.GetParameters().Select(guide)));
                 }
             }
             else
             {
                 // Show help for this specific command
-
                 string? last = null;
                 string? lastKey = null;
                 bool found = false;
@@ -267,7 +265,6 @@ namespace Neo.ConsoleService
                 foreach (var command in withHelp.Where(u => u.Key == key))
                 {
                     found = true;
-
                     if (last != command.HelpMessage)
                     {
                         Console.WriteLine($"{command.HelpMessage}");
@@ -281,10 +278,7 @@ namespace Neo.ConsoleService
                     }
 
                     Console.Write($"\t{command.Key}");
-                    Console.WriteLine(" " + string.Join(' ',
-                        command.Method.GetParameters()
-                        .Select(u => u.HasDefaultValue ? $"[{u.Name}={u.DefaultValue?.ToString() ?? "null"}]" : $"<{u.Name}>"))
-                    );
+                    Console.WriteLine(" " + string.Join(' ', command.Method.GetParameters().Select(guide)));
                 }
 
                 if (!found)
