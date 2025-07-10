@@ -101,9 +101,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.Core", "src\neo-b
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.ToolSet", "src\neo-build\Neo.Build.ToolSet\Neo.Build.ToolSet.csproj", "{15915AC1-E944-0A29-CCAE-95D02B0C9345}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Network.RpcClient", "src\Neo.Network.RpcClient\Neo.Network.RpcClient.csproj", "{1262D920-9A73-0FD0-5291-0D682697560D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Network.RpcClient", "src\RpcClient\RpcClient.csproj", "{1262D920-9A73-0FD0-5291-0D682697560D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Network.RPC.Tests", "tests\Neo.Network.RPC.Tests\Neo.Network.RPC.Tests.csproj", "{60E16A49-06EB-6F80-7228-21A7793B8250}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Network.RPC.Tests", "tests\Neo.Network.RPC.RpcClient.Tests\Neo.Network.RPC.Tests.csproj", "{60E16A49-06EB-6F80-7228-21A7793B8250}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
