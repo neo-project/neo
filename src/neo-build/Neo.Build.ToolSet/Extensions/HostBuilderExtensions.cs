@@ -43,12 +43,14 @@ namespace Neo.Build.ToolSet.Extensions
                 config.SetBasePath(AppContext.BaseDirectory);
                 config.AddJsonFile("config.json", optional: false); // default app settings file
 
+                // JSON files overwrite environment variables
                 var contentRoot = context.Configuration[HostDefaults.ContentRootKey]!;
                 config.SetBasePath(contentRoot);
                 config.AddJsonFile($"config.{environmentName}.json", optional: true);   // App settings file
                 config.AddJsonFile($"system.{environmentName}.json", optional: true);   // NeoSystem settings file
                 config.AddJsonFile($"protocol.{environmentName}.json", optional: true); // Protocol options file (Overwrites wallet configurations)
                 config.AddJsonFile($"vm.{environmentName}.json", optional: true);       // ApplicationEngine settings file
+                config.AddJsonFile($"dbft.{environmentName}.json", optional: true);     // DBFT plugin settings file
             });
 
             // Logging Configuration
@@ -91,15 +93,19 @@ namespace Neo.Build.ToolSet.Extensions
                 var protocolSection = context.Configuration.GetSection("Protocol");
                 var protocolOptions = protocolSection.Get<ProtocolOptions>()!;
 
-                var neoSystemSection = context.Configuration.GetSection("NeoSystem");
-                var neoSystemOptions = neoSystemSection.Get<NeoSystemOptions>()!;
+                var networkSection = context.Configuration.GetSection("Network");
+                var neoSystemNetworkOptions = networkSection.Get<NeoSystemNetworkOptions>()!;
+
+                var storageSection = context.Configuration.GetSection("Storage");
+                var neoSystemStorageOptions = storageSection.Get<NeoSystemStorageOptions>()!;
 
                 var dbftSection = context.Configuration.GetSection("DBFT");
                 var dbftOptions = dbftSection.Get<DBFTOptions>()!;
 
                 services.AddSingleton(appEngineOptions);
-                services.AddSingleton(neoSystemOptions);
                 services.AddSingleton(protocolOptions);
+                services.AddSingleton(neoSystemNetworkOptions);
+                services.AddSingleton(neoSystemStorageOptions);
                 services.AddSingleton(dbftOptions);
 
                 // Add default services here

@@ -13,12 +13,6 @@ using System.Net;
 
 namespace Neo.Build.ToolSet.Options
 {
-    internal sealed class NeoSystemOptions
-    {
-        public required NeoSystemNetworkOptions Network { get; set; }
-        public required NeoSystemStorageOptions Storage { get; set; }
-    }
-
     internal sealed class NeoSystemNetworkOptions
     {
         public required IPAddress Listen { get; set; }

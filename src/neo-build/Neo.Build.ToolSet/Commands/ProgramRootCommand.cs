@@ -26,13 +26,15 @@ namespace Neo.Build.ToolSet.Commands
 
         public new sealed class Handler(
             IHostEnvironment env,
-            NeoSystemOptions neoSystemOptions,
+            NeoSystemNetworkOptions neoSystemNetworkOptions,
+            NeoSystemStorageOptions neoSystemStorageOptions,
             AppEngineOptions appEngineOptions,
             ProtocolOptions protocolOptions,
             DBFTOptions dBFTOptions) : ICommandHandler
         {
             private readonly IHostEnvironment _env = env;
-            private readonly NeoSystemOptions _neoSystemOptions = neoSystemOptions;
+            private readonly NeoSystemNetworkOptions _neoSystemNetworkOptions = neoSystemNetworkOptions;
+            private readonly NeoSystemStorageOptions _neoSystemStorageOptions = neoSystemStorageOptions;
             private readonly AppEngineOptions _appEngineOptions = appEngineOptions;
             private readonly ProtocolOptions _protocolOptions = protocolOptions;
             private readonly DBFTOptions _dBFTOptions = dBFTOptions;
@@ -46,13 +48,13 @@ namespace Neo.Build.ToolSet.Commands
                 context.Console.WriteLine();
                 context.Console.WriteLine("        Environment: {0}", _env.EnvironmentName);
                 context.Console.WriteLine("       Content Root: {0}", _env.ContentRootPath);
-                context.Console.WriteLine("         Store Root: {0}", _neoSystemOptions.Storage.StoreRoot);
-                context.Console.WriteLine("    Checkpoint Root: {0}", _neoSystemOptions.Storage.CheckPointRoot);
-                context.Console.WriteLine("             Listen: {0}", _neoSystemOptions.Network.Listen);
-                context.Console.WriteLine("               Port: {0}", _neoSystemOptions.Network.Port);
-                context.Console.WriteLine("    Max Connections: {0}", _neoSystemOptions.Network.MaxConnections);
-                context.Console.WriteLine("    Min Connections: {0}", _neoSystemOptions.Network.MinDesiredConnections);
-                context.Console.WriteLine("        Max Address: {0}", _neoSystemOptions.Network.MaxConnectionsPerAddress);
+                context.Console.WriteLine("         Store Root: {0}", _neoSystemStorageOptions.StoreRoot);
+                context.Console.WriteLine("    Checkpoint Root: {0}", _neoSystemStorageOptions.CheckPointRoot);
+                context.Console.WriteLine("             Listen: {0}", _neoSystemNetworkOptions.Listen);
+                context.Console.WriteLine("               Port: {0}", _neoSystemNetworkOptions.Port);
+                context.Console.WriteLine("    Max Connections: {0}", _neoSystemNetworkOptions.MaxConnections);
+                context.Console.WriteLine("    Min Connections: {0}", _neoSystemNetworkOptions.MinDesiredConnections);
+                context.Console.WriteLine("        Max Address: {0}", _neoSystemNetworkOptions.MaxConnectionsPerAddress);
                 context.Console.WriteLine("            Max Gas: {0}", _appEngineOptions.MaxGas);
                 context.Console.WriteLine("            Network: {0}", _protocolOptions.Network);
                 context.Console.WriteLine("    Address Version: {0}", _protocolOptions.AddressVersion);
