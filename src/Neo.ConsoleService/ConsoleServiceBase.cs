@@ -225,7 +225,7 @@ namespace Neo.ConsoleService
 
                 if (!found)
                 {
-                    throw new ArgumentException("Command not found.");
+                    throw new ArgumentException($"Command '{key}' not found. Use 'help' to see available commands.");
                 }
             }
         }

@@ -21,6 +21,13 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key         : ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: ${{ runner.os }}-nuget-
+
     - name: Check Format (*.cs)
       run: dotnet format --verify-no-changes --verbosity diagnostic
 
@@ -36,6 +43,13 @@ jobs:
       uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }} 
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key         : ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: ${{ runner.os }}-nuget-
 
     - name: Build (Everything)
       run: dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
@@ -64,6 +78,13 @@ jobs:
       uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key         : ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: ${{ runner.os }}-nuget-
 
     - name: Test (MacOS)
       if: matrix.os == 'macos-latest'

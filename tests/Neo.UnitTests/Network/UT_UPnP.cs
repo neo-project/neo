@@ -28,9 +28,9 @@ namespace Neo.UnitTests.Network
         [TestMethod]
         public void NoService()
         {
-            Assert.ThrowsExactly<Exception>(() => UPnP.ForwardPort(1, ProtocolType.Tcp, ""));
-            Assert.ThrowsExactly<Exception>(() => UPnP.DeleteForwardingRule(1, ProtocolType.Tcp));
-            Assert.ThrowsExactly<Exception>(() => _ = UPnP.GetExternalIP());
+            Assert.ThrowsExactly<InvalidOperationException>(() => UPnP.ForwardPort(1, ProtocolType.Tcp, ""));
+            Assert.ThrowsExactly<InvalidOperationException>(() => UPnP.DeleteForwardingRule(1, ProtocolType.Tcp));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = UPnP.GetExternalIP());
         }
     }
 }
