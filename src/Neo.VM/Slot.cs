@@ -21,8 +21,8 @@ namespace Neo.VM
     /// </summary>
     public class Slot : IReadOnlyList<StackItem>
     {
-        private readonly IReferenceCounter referenceCounter;
-        private readonly StackItem[] items;
+        private readonly IReferenceCounter _referenceCounter;
+        private readonly StackItem[] _items;
 
         /// <summary>
         /// Gets the item at the specified index in the slot.
@@ -33,21 +33,21 @@ namespace Neo.VM
         {
             get
             {
-                return items[index];
+                return _items[index];
             }
             internal set
             {
-                ref var oldValue = ref items[index];
-                referenceCounter.RemoveStackReference(oldValue);
+                ref var oldValue = ref _items[index];
+                _referenceCounter.RemoveStackReference(oldValue);
                 oldValue = value;
-                referenceCounter.AddStackReference(value);
+                _referenceCounter.AddStackReference(value);
             }
         }
 
         /// <summary>
         /// Gets the number of items in the slot.
         /// </summary>
-        public int Count => items.Length;
+        public int Count => _items.Length;
 
         /// <summary>
         /// Creates a slot containing the specified items.
@@ -56,8 +56,8 @@ namespace Neo.VM
         /// <param name="referenceCounter">The reference counter to be used.</param>
         public Slot(StackItem[] items, IReferenceCounter referenceCounter)
         {
-            this.referenceCounter = referenceCounter;
-            this.items = items;
+            _referenceCounter = referenceCounter;
+            _items = items;
             foreach (StackItem item in items)
                 referenceCounter.AddStackReference(item);
         }
@@ -69,26 +69,26 @@ namespace Neo.VM
         /// <param name="referenceCounter">The reference counter to be used.</param>
         public Slot(int count, IReferenceCounter referenceCounter)
         {
-            this.referenceCounter = referenceCounter;
-            items = new StackItem[count];
-            Array.Fill(items, StackItem.Null);
+            _referenceCounter = referenceCounter;
+            _items = new StackItem[count];
+            Array.Fill(_items, StackItem.Null);
             referenceCounter.AddStackReference(StackItem.Null, count);
         }
 
         internal void ClearReferences()
         {
-            foreach (StackItem item in items)
-                referenceCounter.RemoveStackReference(item);
+            foreach (StackItem item in _items)
+                _referenceCounter.RemoveStackReference(item);
         }
 
         IEnumerator<StackItem> IEnumerable<StackItem>.GetEnumerator()
         {
-            foreach (StackItem item in items) yield return item;
+            foreach (StackItem item in _items) yield return item;
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return items.GetEnumerator();
+            return _items.GetEnumerator();
         }
     }
 }

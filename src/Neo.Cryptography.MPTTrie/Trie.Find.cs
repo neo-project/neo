@@ -83,7 +83,7 @@ namespace Neo.Cryptography.MPTTrie
                 from = ToNibbles(from.AsSpan());
             }
             if (path.Length > Node.MaxKeyLength || from.Length > Node.MaxKeyLength)
-                throw new ArgumentException("exceeds limit");
+                throw new ArgumentException($"Key length exceeds the maximum allowed length of {Node.MaxKeyLength} nibbles. Path length: {path.Length}, from length: {from.Length}.");
             path = Seek(ref _root, path, out var start).ToArray();
             if (from.Length > 0)
             {
