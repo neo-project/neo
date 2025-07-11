@@ -101,7 +101,7 @@ namespace Neo.Cryptography
             var curve =
                 ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
                 ecCurve == ECC.ECCurve.Secp256k1 ? s_secP256k1 :
-                throw new NotSupportedException();
+                throw new NotSupportedException($"The elliptic curve {ecCurve} is not supported. Only Secp256r1 and Secp256k1 curves are supported for ECDSA signing operations.");
 
             using var ecdsa = ECDsa.Create(new ECParameters
             {
@@ -178,7 +178,7 @@ namespace Neo.Cryptography
             var curve =
                 pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
                 pubkey.Curve == ECC.ECCurve.Secp256k1 ? s_secP256k1 :
-                throw new NotSupportedException();
+                throw new NotSupportedException($"The elliptic curve {pubkey.Curve} is not supported for ECDsa creation. Only Secp256r1 and Secp256k1 curves are supported.");
             var buffer = pubkey.EncodePoint(false);
             var ecdsa = ECDsa.Create(new ECParameters
             {
@@ -260,7 +260,7 @@ namespace Neo.Cryptography
         /// Recovers the public key from a signature and message hash.
         /// </summary>
         /// <param name="signature">Signature, either 65 bytes (r[32] || s[32] || v[1]) or
-        ///                         64 bytes in “compact” form (r[32] || yParityAndS[32]).</param>
+        ///                         64 bytes in "compact" form (r[32] || yParityAndS[32]).</param>
         /// <param name="hash">32-byte message hash</param>
         /// <returns>The recovered public key</returns>
         /// <exception cref="ArgumentException">Thrown if signature or hash is invalid</exception>
@@ -287,11 +287,11 @@ namespace Neo.Cryptography
                     var v = signature[64];
                     recId = v >= 27 ? v - 27 : v;  // normalize
                     if (recId < 0 || recId > 3)
-                        throw new ArgumentException("Recovery value must be in [0..3] after normalization.", nameof(signature));
+                        throw new ArgumentException("Recovery value must be in range [0..3] after normalization", nameof(signature));
                 }
                 else
                 {
-                    // 64 bytes “compact” format: r[32] || yParityAndS[32]
+                    // 64 bytes "compact" format: r[32] || yParityAndS[32]
                     // yParity is fused into the top bit of s.
 
                     r = new BigInteger(1, [.. signature.Take(32)]);
@@ -304,7 +304,7 @@ namespace Neo.Cryptography
                     // Extract yParity (0 or 1)
                     var yParity = yParityAndS.TestBit(255);
 
-                    // For “compact,” map parity to recId in [0..1].
+                    // For "compact," map parity to recId in [0..1].
                     // For typical usage, recId in {0,1} is enough:
                     recId = yParity ? 1 : 0;
                 }
@@ -330,13 +330,13 @@ namespace Neo.Cryptography
                 var x = r.Add(BigInteger.ValueOf(iPart).Multiply(n));
                 // Verify x is within the curve prime
                 if (x.CompareTo(s_prime) >= 0)
-                    throw new ArgumentException("x is out of range of the secp256k1 prime.", nameof(signature));
+                    throw new ArgumentException("X coordinate is out of range for secp256k1 curve", nameof(signature));
 
                 // Decompress to get R
                 var decompressedRKey = DecompressKey(ECC.ECCurve.Secp256k1.BouncyCastleCurve.Curve, x, yBit);
                 // Check that R is on curve
                 if (!decompressedRKey.Multiply(n).IsInfinity)
-                    throw new ArgumentException("R point is not valid on this curve.", nameof(signature));
+                    throw new ArgumentException("R point is not valid on this curve", nameof(signature));
 
                 // Q = (eInv * G) + (srInv * R)
                 var q = Org.BouncyCastle.Math.EC.ECAlgorithms.SumOfTwoMultiplies(

@@ -497,13 +497,13 @@ namespace Neo.Wallets
                         sb2.EmitDynamicCall(assetId, "balanceOf", CallFlags.ReadOnly, account);
                         using ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings, persistingBlock: persistingBlock);
                         if (engine.State != VMState.HALT)
-                            throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}' fault");
+                            throw new InvalidOperationException($"Failed to execute balanceOf method for asset {assetId} on account {account}. The smart contract execution faulted with state: {engine.State}.");
                         BigInteger value = engine.ResultStack.Pop().GetInteger();
                         if (value.Sign > 0) balances.Add((account, value));
                     }
                     BigInteger sum_balance = balances.Select(p => p.Value).Sum();
                     if (sum_balance < sum)
-                        throw new InvalidOperationException($"It does not have enough balance, expected: {sum} found: {sum_balance}");
+                        throw new InvalidOperationException($"Insufficient balance for transfer: required {sum} units, but only {sum_balance} units are available across all accounts. Please ensure sufficient balance before attempting the transfer.");
                     foreach (TransferOutput output in group)
                     {
                         balances = balances.OrderBy(p => p.Value).ToList();
@@ -597,7 +597,7 @@ namespace Neo.Wallets
                 {
                     if (engine.State == VMState.FAULT)
                     {
-                        throw new InvalidOperationException($"Failed execution for '{Convert.ToBase64String(script.Span)}'", engine.FaultException);
+                        throw new InvalidOperationException($"Smart contract execution failed for script '{Convert.ToBase64String(script.Span)}'. The execution faulted and cannot be completed.", engine.FaultException);
                     }
                     tx.SystemFee = engine.FeeConsumed;
                 }
@@ -605,7 +605,7 @@ namespace Neo.Wallets
                 tx.NetworkFee = tx.CalculateNetworkFee(snapshot, ProtocolSettings, this, maxGas);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
-            throw new InvalidOperationException("Insufficient GAS");
+            throw new InvalidOperationException("Insufficient GAS balance to cover system and network fees. Please ensure your account has enough GAS to pay for transaction fees.");
         }
 
         /// <summary>

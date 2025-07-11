@@ -149,7 +149,7 @@ namespace Neo.VM
             if (!_instructions.TryGetValue(ip, out var instruction))
             {
                 if (ip >= Length) throw new ArgumentOutOfRangeException(nameof(ip));
-                if (_strictMode) throw new ArgumentException($"ip not found with strict mode", nameof(ip));
+                if (_strictMode) throw new ArgumentException($"Instruction not found at position {ip} in strict mode.", nameof(ip));
                 instruction = new Instruction(_value, ip);
                 _instructions.Add(ip, instruction);
             }
