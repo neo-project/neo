@@ -59,7 +59,7 @@ namespace Neo.Plugins.SignClient
             }
         }
 
-        public UnhandledExceptionPolicy ExceptionPolicy { get; } = UnhandledExceptionPolicy.Ignore;
+        public UnhandledExceptionPolicy ExceptionPolicy { get; }
 
         /// <summary>
         /// Get the vsock address from the endpoint.
