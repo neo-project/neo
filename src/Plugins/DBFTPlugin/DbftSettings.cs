@@ -24,7 +24,15 @@ namespace Neo.Plugins.DBFTPlugin
 
         public UnhandledExceptionPolicy ExceptionPolicy { get; }
 
-        public DbftSettings() { }
+        public DbftSettings()
+        {
+            RecoveryLogs = "ConsensusState";
+            IgnoreRecoveryLogs = false;
+            AutoStart = false;
+            Network = 5195086u;
+            MaxBlockSystemFee = 150000000000L;
+            ExceptionPolicy = UnhandledExceptionPolicy.StopNode;
+        }
 
         public DbftSettings(IConfigurationSection section)
         {
