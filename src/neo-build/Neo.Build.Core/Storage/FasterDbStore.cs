@@ -57,9 +57,9 @@ namespace Neo.Build.Core.Storage
             _store.CheckpointManager.PurgeAll();
             _store.TryInitiateFullCheckpoint(out _, CheckpointType.Snapshot);
             _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
-            _store.Log.FlushAndEvict(true);
+            _store.Log.Flush(true);
+            //_sessionPool.Dispose(); // This hangs for some reason **Maybe a Bug**
             _store.Dispose();
-            _sessionPool.Dispose();
             GC.SuppressFinalize(this);
         }
 
@@ -86,7 +86,6 @@ namespace Neo.Build.Core.Storage
         {
             _store.TryInitiateFullCheckpoint(out var snapshotId, CheckpointType.Snapshot);
             _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
-            _store.Log.FlushAndEvict(true);
 
             var snapshot = new FasterDbSnapshot(this, _checkpointSettings, snapshotId);
             OnNewSnapshot?.Invoke(this, snapshot);

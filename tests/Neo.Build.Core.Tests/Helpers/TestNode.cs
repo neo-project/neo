@@ -30,7 +30,7 @@ namespace Neo.Build.Core.Tests.Helpers
             });
         });
 
-        private static readonly FasterDbStore s_store = new(Path.GetRandomFileName());
+        private static readonly FasterDbStore s_store = new(Path.GetRandomFileName(), Path.GetRandomFileName());
 
         private class StoreProvider : IStoreProvider
         {

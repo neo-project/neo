@@ -38,13 +38,7 @@
     "seedList": [
       "127.0.0.1:25485"
     ],
-    "hardforks": {
-      "hF_Aspidochelone": 0,
-      "hF_Basilisk": 0,
-      "hF_Cockatrice": 0,
-      "hF_Domovoi": 0,
-      "hF_Echidna": 0
-    },
+    "hardforks": null,
     "standbyCommittee": [
       "028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a8"
     ]

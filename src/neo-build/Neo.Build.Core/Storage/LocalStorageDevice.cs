@@ -41,7 +41,8 @@ namespace Neo.Build.Core.Storage
                     keySerializer = () => new ByteArraySerializer(),
                     valueSerializer = () => new ByteArraySerializer(),
                 },
-                new ByteArrayFasterEqualityComparer()
+                new ByteArrayFasterEqualityComparer(),
+                tryRecoverLatest: true
             );
     }
 }
