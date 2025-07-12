@@ -58,7 +58,7 @@ namespace Neo.Build.Core.Tests.Factories
             actualFileInfo = FunctionFactory.ResolveFileName(expectedFileNameWithPath, string.Empty);
             Assert.AreEqual(expectedFileNameWithPath, actualFileInfo.FullName);
 
-            actualFileInfo = FunctionFactory.ResolveFileName(expectedFileName, ".\\");
+            actualFileInfo = FunctionFactory.ResolveFileName(expectedFileName, $".{Path.DirectorySeparatorChar}");
             Assert.AreEqual(expectedFileNameWithCurrentDirectory, actualFileInfo.FullName);
         }
     }
