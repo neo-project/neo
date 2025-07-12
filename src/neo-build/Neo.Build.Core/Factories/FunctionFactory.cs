@@ -12,12 +12,14 @@
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System.IO;
+using System.Threading;
 
 namespace Neo.Build.Core.Factories
 {
     public static class FunctionFactory
     {
         private static readonly uint s_networkSeed = 810960196u; // DEV0 Magic Code
+        private static readonly string s_GlobalString = "Global\\";
 
         public static uint GetDevNetwork(uint index) =>
             (uint)(s_networkSeed & ~(0xf << 24) | (index << 24));
@@ -37,6 +39,13 @@ namespace Neo.Build.Core.Factories
             if (Path.IsPathRooted(rootPath) == false)
                 rootPath = Path.GetFullPath(rootPath);
             return new(Path.Combine(rootPath, filename));
+        }
+
+        public static Mutex CreateMutex(string? name = null)
+        {
+            if (string.IsNullOrEmpty(name))
+                name = Path.Combine(s_GlobalString, Path.GetRandomFileName());
+            return new(initiallyOwned: true, name);
         }
     }
 }

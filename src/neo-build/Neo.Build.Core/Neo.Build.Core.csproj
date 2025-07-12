@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="$(RootNamespace).Tests" />
+    <InternalsVisibleTo Include="nebuild" />
   </ItemGroup>
 
   <ItemGroup>
