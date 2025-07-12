@@ -15,10 +15,10 @@ namespace Neo.Build.ToolSet.Options
 {
     internal sealed class DBFTOptions
     {
-        public required string StoreRoot { get; set; }
-        public required bool IgnoreRecoveryLogs { get; set; }
-        public required uint MaxBlockSize { get; set; }
-        public required long MaxBlockSystemFee { get; set; }
-        public required UnhandledExceptionPolicy ExceptionPolicy { get; set; }
+        public string StoreRoot { get; set; } = string.Empty;
+        public bool IgnoreRecoveryLogs { get; set; }
+        public uint MaxBlockSize { get; set; }
+        public long MaxBlockSystemFee { get; set; }
+        public UnhandledExceptionPolicy ExceptionPolicy { get; set; } = UnhandledExceptionPolicy.StopNode;
     }
 }

@@ -11,8 +11,8 @@
 
 namespace Neo.Build.ToolSet.Options
 {
-    internal class AppEngineOptions
+    internal class ApplicationEngineOptions
     {
-        public required long MaxGas { get; set; }
+        public long MaxGas { get; set; } = 20_00000000L;
     }
 }

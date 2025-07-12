@@ -26,7 +26,7 @@ namespace Neo.Build.Core.Wallets
     /// <summary>
     /// Developer wallet.
     /// </summary>
-    public class DevWallet : Wallet, IConvertToObject<TestWalletModel>
+    public class DevWallet : Wallet, IConvertToObject<WalletModel>
     {
         /// <summary>
         /// Creates a new developer wallet.
@@ -35,7 +35,7 @@ namespace Neo.Build.Core.Wallets
         /// <param name="protocolSettings"><see cref="ProtocolSettings"/> to be used with this wallet.</param>
         /// <exception cref="NeoBuildInvalidVersionFormatException"></exception>
         public DevWallet(
-            TestWalletModel walletModel,
+            WalletModel walletModel,
             ProtocolSettings protocolSettings)
             : base(string.Empty, protocolSettings)
         {
@@ -56,7 +56,7 @@ namespace Neo.Build.Core.Wallets
             }
         }
 
-        public DevWallet(TestWalletModel walletModel) : this(walletModel, ProtocolSettings.Default) { }
+        public DevWallet(WalletModel walletModel) : this(walletModel, ProtocolSettings.Default) { }
 
         private readonly ConcurrentDictionary<UInt160, DevWalletAccount> _walletAccounts = new();
 
@@ -130,7 +130,7 @@ namespace Neo.Build.Core.Wallets
         /// Converts to a <see cref="JsonModel"/>.
         /// </summary>
         /// <returns>A <see cref="JsonModel"/> that can be serialized to a JSON string.</returns>
-        public TestWalletModel ToObject() =>
+        public WalletModel ToObject() =>
             new()
             {
                 Name = Name,

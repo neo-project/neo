@@ -15,7 +15,7 @@ using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Models.Wallets
 {
-    public class TestWalletAccountModel : JsonModel
+    public class WalletAccountModel : JsonModel
     {
         [JsonConverter(typeof(JsonStringAddressConverter))]
         public UInt160? Address { get; set; }

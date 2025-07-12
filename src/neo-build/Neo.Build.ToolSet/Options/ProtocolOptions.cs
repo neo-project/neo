@@ -15,19 +15,19 @@ namespace Neo.Build.ToolSet.Options
 {
     internal class ProtocolOptions : IConvertToObject<ProtocolSettings>
     {
-        public required uint Network { get; set; }
+        public uint Network { get; set; }
 
-        public required byte AddressVersion { get; set; }
+        public byte AddressVersion { get; set; }
 
-        public required uint MillisecondsPerBlock { get; set; }
+        public uint MillisecondsPerBlock { get; set; }
 
-        public required uint MaxTransactionsPerBlock { get; set; }
+        public uint MaxTransactionsPerBlock { get; set; }
 
-        public required int MemoryPoolMaxTransactions { get; set; }
+        public int MemoryPoolMaxTransactions { get; set; }
 
-        public required uint MaxTraceableBlocks { get; set; }
+        public uint MaxTraceableBlocks { get; set; }
 
-        public required ulong InitialGasDistribution { get; set; }
+        public ulong InitialGasDistribution { get; set; }
 
         public ProtocolSettings ToObject() =>
             ProtocolSettings.Custom with

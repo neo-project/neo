@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Factories;
+using System;
+using System.IO;
 
 namespace Neo.Build.Core.Tests.Factories
 {
@@ -40,6 +42,24 @@ namespace Neo.Build.Core.Tests.Factories
             Assert.AreEqual(expectedNetworkDev7, FunctionFactory.GetDevNetwork(7));
             Assert.AreEqual(expectedNetworkDev8, FunctionFactory.GetDevNetwork(8));
             Assert.AreEqual(expectedNetworkDev9, FunctionFactory.GetDevNetwork(9));
+        }
+
+        [TestMethod]
+        public void TestResolveFileName()
+        {
+            var expectedFileName = "filename.json";
+            var expectedFileNameWithPath = $"C:\\{expectedFileName}";
+            var expectedFileNameWithCurrentDirectory = Path.Combine(Environment.CurrentDirectory, expectedFileName);
+
+            var actualFileInfo = FunctionFactory.ResolveFileName(expectedFileName, "C:\\");
+
+            Assert.AreEqual(expectedFileNameWithPath, actualFileInfo.FullName);
+
+            actualFileInfo = FunctionFactory.ResolveFileName(expectedFileNameWithPath, string.Empty);
+            Assert.AreEqual(expectedFileNameWithPath, actualFileInfo.FullName);
+
+            actualFileInfo = FunctionFactory.ResolveFileName(expectedFileName, ".\\");
+            Assert.AreEqual(expectedFileNameWithCurrentDirectory, actualFileInfo.FullName);
         }
     }
 }

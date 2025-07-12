@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
-using Neo.Build.Core.Models;
 using Neo.Build.Core.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
@@ -43,7 +42,7 @@ namespace Neo.Build.Core.Tests.Helpers
         static TestNode()
         {
             var walletModel = TestObjectHelper.CreateTestWalletModel();
-            Wallet = new(walletModel, ((ProtocolOptionsModel)walletModel.Extra!).ToObject());
+            Wallet = new(walletModel, walletModel.Extra!.ToObject());
             NeoSystem = new(Wallet.ProtocolSettings, new StoreProvider());
         }
     }

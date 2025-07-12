@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// UT_TestWalletModel.cs file belongs to the neo project and is free
+// UT_WalletModel.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -17,7 +17,7 @@ using System.Linq;
 namespace Neo.Build.Core.Tests.Models.Wallets
 {
     [TestClass]
-    public class UT_TestWalletModel
+    public class UT_WalletModel
     {
         [TestMethod]
         public void CheckPropertyValues()
@@ -26,7 +26,7 @@ namespace Neo.Build.Core.Tests.Models.Wallets
 
             var expectedTestWalletModel = TestObjectHelper.CreateTestWalletModel();
 
-            var actualTestWalletModel = JsonModel.FromJson<TestWalletModel>(jsonTestString, TestDefaults.JsonDefaultSerializerOptions);
+            var actualTestWalletModel = JsonModel.FromJson<WalletModel>(jsonTestString, TestDefaults.JsonDefaultSerializerOptions);
 
             Assert.IsNotNull(actualTestWalletModel);
 

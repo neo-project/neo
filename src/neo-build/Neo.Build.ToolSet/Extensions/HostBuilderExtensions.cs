@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.EventLog;
+using Neo.Build.ToolSet.Configuration;
 using Neo.Build.ToolSet.Configuration.Converters;
 using Neo.Build.ToolSet.Options;
 using System;
@@ -85,10 +86,26 @@ namespace Neo.Build.ToolSet.Extensions
                 options.ValidateOnBuild = isDevelopment;
             });
 
+            // Neo Hosting Options
+            hostBuilder.AddNeoHostingOptions();
+
+            hostBuilder.ConfigureServices((context, services) =>
+            {
+                // Add default services here
+            });
+
+            // Register TypeConverters for IConfiguration.Get<T>()
+            TypeDescriptor.AddAttributes(typeof(IPAddress), new TypeConverterAttribute(typeof(IPAddressTypeConverter)));
+
+            return hostBuilder;
+        }
+
+        public static IHostBuilder AddNeoHostingOptions(this IHostBuilder hostBuilder)
+        {
             hostBuilder.ConfigureServices((context, services) =>
             {
                 var appEngineSection = context.Configuration.GetSection("VM");
-                var appEngineOptions = appEngineSection.Get<AppEngineOptions>()!;
+                var appEngineOptions = appEngineSection.Get<ApplicationEngineOptions>()!;
 
                 var protocolSection = context.Configuration.GetSection("Protocol");
                 var protocolOptions = protocolSection.Get<ProtocolOptions>()!;
@@ -102,17 +119,17 @@ namespace Neo.Build.ToolSet.Extensions
                 var dbftSection = context.Configuration.GetSection("DBFT");
                 var dbftOptions = dbftSection.Get<DBFTOptions>()!;
 
-                services.AddSingleton(appEngineOptions);
-                services.AddSingleton(protocolOptions);
-                services.AddSingleton(neoSystemNetworkOptions);
-                services.AddSingleton(neoSystemStorageOptions);
-                services.AddSingleton(dbftOptions);
+                var neoHostingOptions = new NeoConfigurationOptions()
+                {
+                    ApplicationEngineOptions = appEngineOptions,
+                    ProtocolOptions = protocolOptions,
+                    NetworkOptions = neoSystemNetworkOptions,
+                    StorageOptions = neoSystemStorageOptions,
+                    DBFTOptions = dbftOptions,
+                };
 
-                // Add default services here
+                services.AddSingleton<INeoConfigurationOptions>(neoHostingOptions);
             });
-
-            // Register TypeConverters for IConfiguration.Get<T>()
-            TypeDescriptor.AddAttributes(typeof(IPAddress), new TypeConverterAttribute(typeof(IPAddressTypeConverter)));
 
             return hostBuilder;
         }
