@@ -30,7 +30,7 @@ namespace Neo.Plugins.RpcServer.Tests
     public partial class UT_RpcServer
     {
         private NeoSystem _neoSystem;
-        private ServerSettings _rpcServerSettings;
+        private RpcServersSettings _rpcServerSettings;
         private RpcServer _rpcServer;
         private TestMemoryStoreProvider _memoryStoreProvider;
         private MemoryStore _memoryStore;
@@ -46,7 +46,7 @@ namespace Neo.Plugins.RpcServer.Tests
             _memoryStore = new MemoryStore();
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
             _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
-            _rpcServerSettings = ServerSettings.Default with
+            _rpcServerSettings = RpcServersSettings.Default with
             {
                 SessionEnabled = true,
                 SessionExpirationTime = TimeSpan.FromSeconds(0.3),
@@ -92,7 +92,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             var memoryStoreProvider = new TestMemoryStoreProvider(new MemoryStore());
             var neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, memoryStoreProvider);
-            var rpcServerSettings = ServerSettings.Default with
+            var rpcServerSettings = RpcServersSettings.Default with
             {
                 SessionEnabled = true,
                 SessionExpirationTime = TimeSpan.FromSeconds(0.3),

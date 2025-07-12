@@ -20,18 +20,18 @@ namespace Neo.Plugins.RpcServer
 {
     class RpcServerSettings : IPluginSettings
     {
-        public IReadOnlyList<ServerSettings> Servers { get; init; }
+        public IReadOnlyList<RpcServersSettings> Servers { get; init; }
 
         public UnhandledExceptionPolicy ExceptionPolicy { get; }
 
         public RpcServerSettings(IConfigurationSection section)
         {
-            Servers = [.. section.GetSection(nameof(Servers)).GetChildren().Select(ServerSettings.Load)];
+            Servers = [.. section.GetSection(nameof(Servers)).GetChildren().Select(RpcServersSettings.Load)];
             ExceptionPolicy = section.GetValue("UnhandledExceptionPolicy", UnhandledExceptionPolicy.Ignore);
         }
     }
 
-    public record ServerSettings
+    public record RpcServersSettings
     {
         public uint Network { get; init; }
         public IPAddress BindAddress { get; init; }
@@ -58,7 +58,7 @@ namespace Neo.Plugins.RpcServer
         public TimeSpan SessionExpirationTime { get; init; }
         public int FindStoragePageSize { get; init; }
 
-        public static ServerSettings Default { get; } = new ServerSettings
+        public static RpcServersSettings Default { get; } = new RpcServersSettings
         {
             Network = 5195086u,
             BindAddress = IPAddress.None,
@@ -81,7 +81,7 @@ namespace Neo.Plugins.RpcServer
             FindStoragePageSize = 50
         };
 
-        public static ServerSettings Load(IConfigurationSection section) => new()
+        public static RpcServersSettings Load(IConfigurationSection section) => new()
         {
             Network = section.GetValue("Network", Default.Network),
             BindAddress = IPAddress.Parse(section.GetSection("BindAddress").Value),

@@ -41,7 +41,7 @@ namespace Neo.Plugins.RpcServer
         private readonly Dictionary<string, Delegate> _methodsWithParams = new();
 
         private IWebHost host;
-        private ServerSettings settings;
+        private RpcServersSettings settings;
         private readonly NeoSystem system;
         private readonly LocalNode localNode;
 
@@ -49,7 +49,7 @@ namespace Neo.Plugins.RpcServer
         private readonly byte[] _rpcUser;
         private readonly byte[] _rpcPass;
 
-        public RpcServer(NeoSystem system, ServerSettings settings)
+        public RpcServer(NeoSystem system, RpcServersSettings settings)
         {
             this.system = system;
             this.settings = settings;
@@ -225,7 +225,7 @@ namespace Neo.Plugins.RpcServer
             host.Start();
         }
 
-        internal void UpdateSettings(ServerSettings settings)
+        internal void UpdateSettings(RpcServersSettings settings)
         {
             this.settings = settings;
         }
