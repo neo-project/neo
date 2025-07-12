@@ -76,7 +76,7 @@ namespace Neo.Build.Core.Tests.Extensions
                 var actualVMState = appEngine.ExecuteScript(sb.ToArray());
                 Assert.AreEqual(VMState.HALT, actualVMState);
                 Assert.AreEqual(1, appEngine.ResultStack.Count);
-                Assert.IsTrue(appEngine.ResultStack[0].GetBoolean());
+                Assert.IsTrue(appEngine.ResultStack.Pop().GetBoolean());
             }
 
             using (var appEngine = ApplicationEngine.Create(
@@ -88,7 +88,7 @@ namespace Neo.Build.Core.Tests.Extensions
                 var actualVMState = appEngine.ExecuteScript<INeoToken>(n => n.BalanceOf(UInt160.Zero));
                 Assert.AreEqual(VMState.HALT, actualVMState);
                 Assert.AreEqual(1, appEngine.ResultStack.Count);
-                Assert.AreEqual(BigInteger.Zero, appEngine.ResultStack[0].GetInteger());
+                Assert.AreEqual(BigInteger.Zero, appEngine.ResultStack.Pop().GetInteger());
             }
         }
 
@@ -107,7 +107,7 @@ namespace Neo.Build.Core.Tests.Extensions
             var actualVMState = appEngine.Execute();
             Assert.AreEqual(VMState.HALT, actualVMState);
             Assert.AreEqual(1, appEngine.ResultStack.Count);
-            Assert.AreEqual(BigInteger.Zero, appEngine.ResultStack[0].GetInteger());
+            Assert.AreEqual(BigInteger.Zero, appEngine.ResultStack.Pop().GetInteger());
         }
     }
 }
