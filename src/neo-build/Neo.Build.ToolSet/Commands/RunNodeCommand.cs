@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Neo.Build.Core;
 using Neo.Build.Core.Exceptions;
@@ -19,9 +20,11 @@ using Neo.Build.Core.Models.Wallets;
 using Neo.Build.Core.Providers.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Build.ToolSet.Configuration;
+using Neo.Build.ToolSet.Extensions;
 using Neo.Build.ToolSet.Plugins;
 using Neo.Persistence;
 using Neo.Plugins.DBFTPlugin;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Linq;
@@ -77,19 +80,48 @@ namespace Neo.Build.ToolSet.Commands
                 var walletModel = JsonModel.FromJson<WalletModel>(walletFileInfo) ??
                     throw new NeoBuildInvalidFileFormatException(walletFileInfo.FullName);
 
-                var wallet = new DevWallet(walletModel, _neoConfiguration.ProtocolOptions.ToObject());
+                var globalProtocolOptions = _neoConfiguration.ProtocolOptions.ToObject();
+                var wallet = new DevWallet(walletModel, walletModel.Extra!.ToObject());
                 var defaultMultiSigWalletAccount = wallet.GetMultiSigAccounts().SingleOrDefault() ??
+                    wallet.GetDefaultAccount() ??
                     // TODO: Create new exception class for this exception
                     throw new NeoBuildException("No Multi-Sig Address", NeoBuildErrorCodes.Wallet.AccountNotFoundException);
 
-                using var mutex = FunctionFactory.CreateMutex(defaultMultiSigWalletAccount.Address);
-                using var logPlugin = new LoggerPlugin(context.Console);
-                using var dbftPlugin = new DBFTPlugin();
-                var storeProvider = new FasterDbStoreProvider();
-
+                var storeProvider = new FasterDbStoreProvider(_neoConfiguration.StorageOptions.CheckPointRoot);
                 StoreFactory.RegisterProvider(storeProvider);
 
+                var dbftSettings = GetConsensusSettings(wallet.ProtocolSettings);
+
+                using var mutex = FunctionFactory.CreateMutex(defaultMultiSigWalletAccount.Address);
+                using var logPlugin = new LoggerPlugin(context.Console);
+                using var dbftPlugin = new DBFTPlugin(dbftSettings);
+                using var neoSystem = new NeoSystem(wallet.ProtocolSettings with { MillisecondsPerBlock = SecondsPerBlock }, storeProvider, _neoConfiguration.StorageOptions.StoreRoot);
+
+                neoSystem.StartNode(new()
+                {
+                    Tcp = new(_neoConfiguration.NetworkOptions.Listen, _neoConfiguration.NetworkOptions.Port)
+                });
+                dbftPlugin.Start(wallet);
+
+                context.Console.InfoMessage("Node Running...");
+
+                var ctn = context.GetCancellationToken();
+
+                ctn.WaitHandle.WaitOne();
+
                 return Task.FromResult(0);
+            }
+
+            private Settings GetConsensusSettings(ProtocolSettings protocolSettings)
+            {
+                var settings = new Dictionary<string, string>()
+                {
+                    { "PluginConfiguration:Network", $"{protocolSettings.Network}" },
+                    { "PluginConfiguration:IgnoreRecoveryLogs", "true" }
+                };
+
+                var config = new ConfigurationBuilder().AddInMemoryCollection(settings!).Build();
+                return new Settings(config.GetSection("PluginConfiguration"));
             }
         }
     }

@@ -17,7 +17,7 @@ namespace Neo.Build.Core.Storage
 {
     internal class LocalStorageDevice
     {
-        public static FasterKV<byte[], byte[]> Create(string basePath, [NotNull] out LogSettings logSettings, [NotNull] out CheckpointSettings checkpointSettings) =>
+        public static FasterKV<byte[], byte[]> Create(string basePath, string checkpointPath, [NotNull] out LogSettings logSettings, [NotNull] out CheckpointSettings checkpointSettings) =>
             new(
                 1L << 20,
                 logSettings = new LogSettings()
@@ -33,7 +33,7 @@ namespace Neo.Build.Core.Storage
                 {
                     CheckpointManager = new DeviceLogCommitCheckpointManager(
                         new LocalStorageNamedDeviceFactory(),
-                        new NeoCheckPointNamingScheme(basePath),
+                        new NeoCheckPointNamingScheme(checkpointPath),
                         removeOutdated: false),
                 },
                 new SerializerSettings<byte[], byte[]>()

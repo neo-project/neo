@@ -30,7 +30,7 @@ namespace Neo.Build.ToolSet.Options
         public ulong InitialGasDistribution { get; set; }
 
         public ProtocolSettings ToObject() =>
-            ProtocolSettings.Custom with
+            ProtocolSettings.Default with
             {
                 Network = Network,
                 AddressVersion = AddressVersion,
