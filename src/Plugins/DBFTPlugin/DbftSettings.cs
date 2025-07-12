@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// Settings.cs file belongs to the neo project and is free
+// DbftSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Neo.Plugins.DBFTPlugin
 {
-    public class Settings : PluginSettings
+    public class DbftSettings : IPluginSettings
     {
         public string RecoveryLogs { get; }
         public bool IgnoreRecoveryLogs { get; }
@@ -22,7 +22,11 @@ namespace Neo.Plugins.DBFTPlugin
         public uint MaxBlockSize { get; }
         public long MaxBlockSystemFee { get; }
 
-        public Settings(IConfigurationSection section) : base(section)
+        public UnhandledExceptionPolicy ExceptionPolicy { get; }
+
+        public DbftSettings() { }
+
+        public DbftSettings(IConfigurationSection section)
         {
             RecoveryLogs = section.GetValue("RecoveryLogs", "ConsensusState");
             IgnoreRecoveryLogs = section.GetValue("IgnoreRecoveryLogs", false);
@@ -30,6 +34,7 @@ namespace Neo.Plugins.DBFTPlugin
             Network = section.GetValue("Network", 5195086u);
             MaxBlockSize = section.GetValue("MaxBlockSize", 262144u);
             MaxBlockSystemFee = section.GetValue("MaxBlockSystemFee", 150000000000L);
+            ExceptionPolicy = section.GetValue("UnhandledExceptionPolicy", UnhandledExceptionPolicy.StopNode);
         }
     }
 }

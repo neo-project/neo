@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// Settings.cs file belongs to the neo project and is free
+// RcpServerSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -18,17 +18,20 @@ using System.Net;
 
 namespace Neo.Plugins.RpcServer
 {
-    class Settings : PluginSettings
+    class RpcServerSettings : IPluginSettings
     {
-        public IReadOnlyList<RpcServerSettings> Servers { get; init; }
+        public IReadOnlyList<ServerSettings> Servers { get; init; }
 
-        public Settings(IConfigurationSection section) : base(section)
+        public UnhandledExceptionPolicy ExceptionPolicy { get; }
+
+        public RpcServerSettings(IConfigurationSection section)
         {
-            Servers = section.GetSection(nameof(Servers)).GetChildren().Select(p => RpcServerSettings.Load(p)).ToArray();
+            Servers = [.. section.GetSection(nameof(Servers)).GetChildren().Select(ServerSettings.Load)];
+            ExceptionPolicy = section.GetValue("UnhandledExceptionPolicy", UnhandledExceptionPolicy.Ignore);
         }
     }
 
-    public record RpcServerSettings
+    public record ServerSettings
     {
         public uint Network { get; init; }
         public IPAddress BindAddress { get; init; }
@@ -55,7 +58,7 @@ namespace Neo.Plugins.RpcServer
         public TimeSpan SessionExpirationTime { get; init; }
         public int FindStoragePageSize { get; init; }
 
-        public static RpcServerSettings Default { get; } = new RpcServerSettings
+        public static ServerSettings Default { get; } = new ServerSettings
         {
             Network = 5195086u,
             BindAddress = IPAddress.None,
@@ -78,7 +81,7 @@ namespace Neo.Plugins.RpcServer
             FindStoragePageSize = 50
         };
 
-        public static RpcServerSettings Load(IConfigurationSection section) => new()
+        public static ServerSettings Load(IConfigurationSection section) => new()
         {
             Network = section.GetValue("Network", Default.Network),
             BindAddress = IPAddress.Parse(section.GetSection("BindAddress").Value),

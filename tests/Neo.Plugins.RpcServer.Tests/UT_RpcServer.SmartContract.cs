@@ -206,7 +206,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var scriptBase64 = Convert.ToBase64String(loopScript);
 
             // Use a temporary RpcServer with a very low MaxGasInvoke setting
-            var lowGasSettings = RpcServerSettings.Default with
+            var lowGasSettings = ServerSettings.Default with
             {
                 MaxGasInvoke = 1_000_000 // Low gas limit (1 GAS = 100,000,000 datoshi)
             };
@@ -432,7 +432,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestIteratorMethods_SessionsDisabled()
         {
             // Use a temporary RpcServer with sessions disabled
-            var sessionsDisabledSettings = RpcServerSettings.Default with { SessionEnabled = false };
+            var sessionsDisabledSettings = ServerSettings.Default with { SessionEnabled = false };
             var tempRpcServer = new RpcServer(_neoSystem, sessionsDisabledSettings);
 
             var randomSessionId = Guid.NewGuid().ToString();
