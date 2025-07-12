@@ -48,15 +48,10 @@ namespace Neo.Build.Core.Tests.Factories
         public void TestResolveFileName()
         {
             var expectedFileName = "filename.json";
-            var expectedFileNameWithPath = $"C:\\{expectedFileName}";
             var expectedFileNameWithCurrentDirectory = Path.Combine(Environment.CurrentDirectory, expectedFileName);
 
-            var actualFileInfo = FunctionFactory.ResolveFileName(expectedFileName, "C:\\");
-
-            Assert.AreEqual(expectedFileNameWithPath, actualFileInfo.FullName);
-
-            actualFileInfo = FunctionFactory.ResolveFileName(expectedFileNameWithPath, string.Empty);
-            Assert.AreEqual(expectedFileNameWithPath, actualFileInfo.FullName);
+            var actualFileInfo = FunctionFactory.ResolveFileName(expectedFileName, Environment.CurrentDirectory);
+            Assert.AreEqual(expectedFileNameWithCurrentDirectory, actualFileInfo.FullName);
 
             actualFileInfo = FunctionFactory.ResolveFileName(expectedFileName, $".{Path.DirectorySeparatorChar}");
             Assert.AreEqual(expectedFileNameWithCurrentDirectory, actualFileInfo.FullName);
