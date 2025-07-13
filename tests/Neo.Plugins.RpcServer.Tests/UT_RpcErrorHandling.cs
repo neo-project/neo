@@ -44,7 +44,7 @@ namespace Neo.Plugins.RpcServer.Tests
             _memoryStore = new MemoryStore();
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
             _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
-            _rpcServer = new RpcServer(_neoSystem, RpcServerSettings.Default);
+            _rpcServer = new RpcServer(_neoSystem, RpcServersSettings.Default);
             _wallet = TestUtils.GenerateTestWallet("test-wallet.json");
             _walletAccount = _wallet.CreateAccount();
 

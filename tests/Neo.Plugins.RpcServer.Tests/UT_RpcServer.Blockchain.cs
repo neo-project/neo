@@ -442,7 +442,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 .ForEach(i => TestUtils.StorageItemAdd(snapshot, contractState.Id, [0x01, (byte)i], [0x02]));
             snapshot.Commit();
             var result4 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(new byte[] { 0x01 }), 0);
-            Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, result4["next"].AsNumber());
+            Assert.AreEqual(RpcServersSettings.Default.FindStoragePageSize, result4["next"].AsNumber());
             Assert.IsTrue(result4["truncated"].AsBoolean());
         }
 
@@ -453,7 +453,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var contractState = TestUtils.GetContract();
             snapshot.AddContract(contractState.Hash, contractState);
             var prefix = new byte[] { 0xAA };
-            int totalItems = RpcServerSettings.Default.FindStoragePageSize + 5;
+            int totalItems = RpcServersSettings.Default.FindStoragePageSize + 5;
 
             for (int i = 0; i < totalItems; i++)
             {
@@ -466,9 +466,9 @@ namespace Neo.Plugins.RpcServer.Tests
             // Get first page
             var resultPage1 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), 0);
             Assert.IsTrue(resultPage1["truncated"].AsBoolean());
-            Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, ((JArray)resultPage1["results"]).Count);
+            Assert.AreEqual(RpcServersSettings.Default.FindStoragePageSize, ((JArray)resultPage1["results"]).Count);
             int nextIndex = (int)resultPage1["next"].AsNumber();
-            Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, nextIndex);
+            Assert.AreEqual(RpcServersSettings.Default.FindStoragePageSize, nextIndex);
 
             // Get second page
             var resultPage2 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
