@@ -718,11 +718,18 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken InvokeContractVerify(JArray _params)
         {
-            UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[0]}"));
-            ContractParameter[] args = _params.Count >= 2 ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : Array.Empty<ContractParameter>();
-            Signer[] signers = _params.Count >= 3 ? SignersFromJson((JArray)_params[2], system.Settings) : null;
-            Witness[] witnesses = _params.Count >= 3 ? WitnessesFromJson((JArray)_params[2]) : null;
-            return GetVerificationResult(script_hash, args, signers, witnesses);
+            var scriptHash = Result.Ok_Or(
+                () => UInt160.Parse(_params[0].AsString()),
+                RpcError.InvalidParams.WithData($"Invalid script hash: {_params[0]}"));
+
+            var args = _params.Count >= 2 ?
+                ((JArray)_params[1]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray()
+                : [];
+
+            var signers = _params.Count >= 3 ? SignersFromJson((JArray)_params[2], system.Settings) : null;
+            var witnesses = _params.Count >= 4 ? WitnessesFromJson((JArray)_params[3]) : null;
+
+            return GetVerificationResult(scriptHash, args, signers, witnesses);
         }
 
         /// <summary>
