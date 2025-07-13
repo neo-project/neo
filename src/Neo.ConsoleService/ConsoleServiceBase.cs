@@ -399,7 +399,7 @@ namespace Neo.ConsoleService
         {
             if (Environment.OSVersion.Platform != PlatformID.Win32NT)
             {
-                ConsoleHelper.Warning("Only support for installing/uninstalling services on Windows.");
+                ConsoleHelper.Warning("Only services support on Windows.");
                 return;
             }
 
