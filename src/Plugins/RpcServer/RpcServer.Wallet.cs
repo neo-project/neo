@@ -91,8 +91,8 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken DumpPrivKey(JArray _params)
         {
             CheckWallet();
-            var scriptHash = _params[0].AsString().AddressToScriptHash(system.Settings.AddressVersion);
-            var account = wallet.GetAccount(scriptHash);
+            UInt160 scriptHash = AddressToScriptHash(_params[0].AsString(), system.Settings.AddressVersion);
+            WalletAccount account = wallet.GetAccount(scriptHash);
             return account.GetKey().Export();
         }
 
@@ -377,33 +377,29 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken SendFrom(JArray _params)
         {
             CheckWallet();
-            var assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
-            var from = _params[1].AsString().AddressToScriptHash(system.Settings.AddressVersion);
-            var to = _params[2].AsString().AddressToScriptHash(system.Settings.AddressVersion);
-
+            UInt160 assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
+            UInt160 from = AddressToScriptHash(_params[1].AsString(), system.Settings.AddressVersion);
+            UInt160 to = AddressToScriptHash(_params[2].AsString(), system.Settings.AddressVersion);
             using var snapshot = system.GetSnapshotCache();
-            var descriptor = new AssetDescriptor(snapshot, system.Settings, assetId);
-            var amount = new BigDecimal(BigInteger.Parse(_params[3].AsString()), descriptor.Decimals);
+            AssetDescriptor descriptor = new(snapshot, system.Settings, assetId);
+            BigDecimal amount = new(BigInteger.Parse(_params[3].AsString()), descriptor.Decimals);
             (amount.Sign > 0).True_Or(RpcErrorFactory.InvalidParams("Amount can't be negative."));
-            var signers = _params.Count >= 5
-                ? ((JArray)_params[4]).Select(p => new Signer() { Account = p.AsString().AddressToScriptHash(system.Settings.AddressVersion), Scopes = WitnessScope.CalledByEntry }).ToArray()
-                : null;
+            Signer[] signers = _params.Count >= 5 ? ((JArray)_params[4]).Select(p => new Signer() { Account = AddressToScriptHash(p.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.CalledByEntry }).ToArray() : null;
 
-            var tx = Result.Ok_Or(() => wallet.MakeTransaction(snapshot,
-            [
+            Transaction tx = Result.Ok_Or(() => wallet.MakeTransaction(snapshot, new[]
+            {
                 new TransferOutput
                 {
                     AssetId = assetId,
                     Value = amount,
                     ScriptHash = to
                 }
-            ], from, signers), RpcError.InvalidRequest.WithData("Can not process this request.")).NotNull_Or(RpcError.InsufficientFunds);
+            }, from, signers), RpcError.InvalidRequest.WithData("Can not process this request.")).NotNull_Or(RpcError.InsufficientFunds);
 
-            var transContext = new ContractParametersContext(snapshot, tx, settings.Network);
+            ContractParametersContext transContext = new(snapshot, tx, settings.Network);
             wallet.Sign(transContext);
             if (!transContext.Completed)
                 return transContext.ToJson();
-
             tx.Witnesses = transContext.GetWitnesses();
             if (tx.Size > 1024)
             {
@@ -482,16 +478,12 @@ namespace Neo.Plugins.RpcServer
             UInt160 from = null;
             if (_params[0] is JString)
             {
-                from = _params[0].AsString().AddressToScriptHash(system.Settings.AddressVersion);
+                from = AddressToScriptHash(_params[0].AsString(), system.Settings.AddressVersion);
                 to_start = 1;
             }
-
             JArray to = Result.Ok_Or(() => (JArray)_params[to_start], RpcError.InvalidParams.WithData($"Invalid 'to' parameter: {_params[to_start]}"));
             (to.Count != 0).True_Or(RpcErrorFactory.InvalidParams("Argument 'to' can't be empty."));
-
-            var signers = _params.Count >= to_start + 2
-                ? ((JArray)_params[to_start + 1]).Select(p => new Signer() { Account = p.AsString().AddressToScriptHash(system.Settings.AddressVersion), Scopes = WitnessScope.CalledByEntry }).ToArray()
-                : null;
+            Signer[] signers = _params.Count >= to_start + 2 ? ((JArray)_params[to_start + 1]).Select(p => new Signer() { Account = AddressToScriptHash(p.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.CalledByEntry }).ToArray() : null;
 
             TransferOutput[] outputs = new TransferOutput[to.Count];
             using var snapshot = system.GetSnapshotCache();
@@ -503,7 +495,7 @@ namespace Neo.Plugins.RpcServer
                 {
                     AssetId = asset_id,
                     Value = new BigDecimal(BigInteger.Parse(to[i]["value"].AsString()), descriptor.Decimals),
-                    ScriptHash = to[i]["address"].AsString().AddressToScriptHash(system.Settings.AddressVersion)
+                    ScriptHash = AddressToScriptHash(to[i]["address"].AsString(), system.Settings.AddressVersion)
                 };
                 (outputs[i].Value.Sign > 0).True_Or(RpcErrorFactory.InvalidParams($"Amount of '{asset_id}' can't be negative."));
             }
@@ -565,29 +557,26 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken SendToAddress(JArray _params)
         {
             CheckWallet();
-            var assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()),
-                RpcError.InvalidParams.WithData($"Invalid asset hash: {_params[0]}"));
-            var to = _params[1].AsString().AddressToScriptHash(system.Settings.AddressVersion);
-
+            UInt160 assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset hash: {_params[0]}"));
+            UInt160 to = AddressToScriptHash(_params[1].AsString(), system.Settings.AddressVersion);
             using var snapshot = system.GetSnapshotCache();
-            var descriptor = new AssetDescriptor(snapshot, system.Settings, assetId);
-            var amount = new BigDecimal(BigInteger.Parse(_params[2].AsString()), descriptor.Decimals);
+            AssetDescriptor descriptor = new(snapshot, system.Settings, assetId);
+            BigDecimal amount = new(BigInteger.Parse(_params[2].AsString()), descriptor.Decimals);
             (amount.Sign > 0).True_Or(RpcError.InvalidParams);
-            var tx = wallet.MakeTransaction(snapshot,
-            [
+            Transaction tx = wallet.MakeTransaction(snapshot, new[]
+            {
                 new TransferOutput
                 {
                     AssetId = assetId,
                     Value = amount,
                     ScriptHash = to
                 }
-            ]).NotNull_Or(RpcError.InsufficientFunds);
+            }).NotNull_Or(RpcError.InsufficientFunds);
 
-            var transContext = new ContractParametersContext(snapshot, tx, settings.Network);
+            ContractParametersContext transContext = new(snapshot, tx, settings.Network);
             wallet.Sign(transContext);
             if (!transContext.Completed)
                 return transContext.ToJson();
-
             tx.Witnesses = transContext.GetWitnesses();
             if (tx.Size > 1024)
             {
@@ -650,9 +639,7 @@ namespace Neo.Plugins.RpcServer
             NativeContract.Ledger.GetTransactionState(system.StoreView, txid).Null_Or(RpcErrorFactory.AlreadyExists("This tx is already confirmed, can't be cancelled."));
 
             var conflict = new TransactionAttribute[] { new Conflicts() { Hash = txid } };
-            var signers = _params.Count >= 2
-                ? ((JArray)_params[1]).Select(j => new Signer() { Account = j.AsString().AddressToScriptHash(system.Settings.AddressVersion), Scopes = WitnessScope.None }).ToArray()
-                : [];
+            Signer[] signers = _params.Count >= 2 ? ((JArray)_params[1]).Select(j => new Signer() { Account = AddressToScriptHash(j.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.None }).ToArray() : Array.Empty<Signer>();
             signers.Any().True_Or(RpcErrorFactory.BadRequest("No signer."));
             Transaction tx = new Transaction
             {
@@ -688,20 +675,20 @@ namespace Neo.Plugins.RpcServer
         ///   "params": [
         ///     "The script hash(UInt160)",
         ///     [
-        ///      { "type": "The type of the parameter", "value": "The value of the parameter" }
+        ///      {
+        ///       "type": "The type of the parameter",
+        ///       "value": "The value of the parameter"
+        ///      }
         ///      // ...
         ///     ], // The arguments as an array of ContractParameter JSON objects
         ///     [{
-        ///       // The part of the Signer
-        ///       "account": "An UInt160 or Base58Check address", // The account of the signer, required
-        ///       "scopes": "WitnessScope", // WitnessScope, required
+        ///       "account": "An UInt160 or Base58Check address",
+        ///       "scopes": "WitnessScope", // WitnessScope
         ///       "allowedcontracts": ["UInt160 address"], // optional
         ///       "allowedgroups": ["PublicKey"], // ECPoint, i.e. ECC PublicKey, optional
-        ///       "rules": [{"action": "WitnessRuleAction", "condition": {/*A json of WitnessCondition*/}}], // WitnessRule
-        ///        // The part of the Witness, optional
-        ///       "invocation": "A Base64-encoded string",
-        ///       "verification": "A Base64-encoded string"
-        ///     }], // A JSON array of signers and witnesses, optional
+        ///       "rules": [{"action": "WitnessRuleAction", "condition": {/*A json of WitnessCondition*/}}] // WitnessRule
+        ///     }], // A Signer array, optional
+        ///     [{"invocation": "A Base64-encoded string","verification": "A Base64-encoded string"}] // A Witness array, optional
         ///   ]
         /// }</code>
         /// <para>Response format:</para>
@@ -721,7 +708,8 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the following elements:
         /// [0]: The script hash as a string.
         /// [1]: The arguments as an array of strings.
-        /// [2]: The JSON array of signers and witnesses<see cref="ParameterConverter.ToSignersAndWitnesses"/>. Optional.
+        /// [2]: The signers as an array of strings. Optional.
+        /// [3]: The witnesses as an array of strings. Optional.
         /// </param>
         /// <returns>A JSON object containing the result of the verification.</returns>
         /// <exception cref="RpcException">
@@ -730,17 +718,11 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken InvokeContractVerify(JArray _params)
         {
-            var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()),
-                RpcError.InvalidParams.WithData($"Invalid script hash: {_params[0]}"));
-
-            var args = _params.Count >= 2
-                ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray()
-                : [];
-
-            var (signers, witnesses) = _params.Count >= 3
-                ? ((JArray)_params[2]).ToSignersAndWitnesses(system.Settings.AddressVersion)
-                : (null, null);
-            return GetVerificationResult(scriptHash, args, signers, witnesses);
+            UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[0]}"));
+            ContractParameter[] args = _params.Count >= 2 ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : Array.Empty<ContractParameter>();
+            Signer[] signers = _params.Count >= 3 ? SignersFromJson((JArray)_params[2], system.Settings) : null;
+            Witness[] witnesses = _params.Count >= 3 ? WitnessesFromJson((JArray)_params[2]) : null;
+            return GetVerificationResult(script_hash, args, signers, witnesses);
         }
 
         /// <summary>
@@ -815,6 +797,22 @@ namespace Neo.Plugins.RpcServer
             {
                 return context.ToJson();
             }
+        }
+
+        /// <summary>
+        /// Converts an address to a script hash.
+        /// </summary>
+        /// <param name="address">The address to convert.</param>
+        /// <param name="version">The address version.</param>
+        /// <returns>The script hash corresponding to the address.</returns>
+        internal static UInt160 AddressToScriptHash(string address, byte version)
+        {
+            if (UInt160.TryParse(address, out var scriptHash))
+            {
+                return scriptHash;
+            }
+
+            return address.ToScriptHash(version);
         }
     }
 }
