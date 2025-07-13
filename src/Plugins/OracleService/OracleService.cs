@@ -63,7 +63,7 @@ namespace Neo.Plugins.OracleService
 
         public override string Description => "Built-in oracle plugin";
 
-        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
+        protected override UnhandledExceptionPolicy ExceptionPolicy => OracleSettings.Default.ExceptionPolicy;
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "OracleService.json");
 
@@ -74,17 +74,17 @@ namespace Neo.Plugins.OracleService
 
         protected override void Configure()
         {
-            Settings.Load(GetConfiguration());
+            OracleSettings.Load(GetConfiguration());
             foreach (var (_, p) in protocols)
                 p.Configure();
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
-            if (system.Settings.Network != Settings.Default.Network) return;
+            if (system.Settings.Network != OracleSettings.Default.Network) return;
             _system = system;
             _system.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
-            RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
+            RpcServerPlugin.RegisterMethods(this, OracleSettings.Default.Network);
         }
 
 
@@ -94,7 +94,7 @@ namespace Neo.Plugins.OracleService
             {
                 walletProvider = service as IWalletProvider;
                 _system.ServiceAdded -= ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
-                if (Settings.Default.AutoStart)
+                if (OracleSettings.Default.AutoStart)
                 {
                     walletProvider.WalletChanged += ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
                 }
@@ -173,9 +173,9 @@ namespace Neo.Plugins.OracleService
 
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
-            if (system.Settings.Network != Settings.Default.Network) return;
+            if (system.Settings.Network != OracleSettings.Default.Network) return;
 
-            if (Settings.Default.AutoStart && status == OracleStatus.Unstarted)
+            if (OracleSettings.Default.AutoStart && status == OracleStatus.Unstarted)
             {
                 OnStart();
             }
@@ -193,7 +193,7 @@ namespace Neo.Plugins.OracleService
                 foreach (var (id, task) in pendingQueue)
                 {
                     var span = TimeProvider.Current.UtcNow - task.Timestamp;
-                    if (span > Settings.Default.MaxTaskTimeout)
+                    if (span > OracleSettings.Default.MaxTaskTimeout)
                     {
                         outOfDate.Add(id);
                         continue;
@@ -270,7 +270,7 @@ namespace Neo.Plugins.OracleService
             var param = "\"" + Convert.ToBase64String(keyPair.PublicKey.ToArray()) + "\", " + requestId + ", \"" + Convert.ToBase64String(txSign) + "\",\"" + Convert.ToBase64String(sign) + "\"";
             var content = "{\"id\":" + Interlocked.Increment(ref counter) + ",\"jsonrpc\":\"2.0\",\"method\":\"submitoracleresponse\",\"params\":[" + param + "]}";
 
-            var tasks = Settings.Default.Nodes.Select(p => SendContentAsync(p, content));
+            var tasks = OracleSettings.Default.Nodes.Select(p => SendContentAsync(p, content));
             await Task.WhenAll(tasks);
         }
 
@@ -364,7 +364,7 @@ namespace Neo.Plugins.OracleService
             if (!protocols.TryGetValue(uri.Scheme, out IOracleProtocol protocol))
                 return (OracleResponseCode.ProtocolNotSupported, $"Invalid Protocol:<{url}>");
 
-            using CancellationTokenSource ctsTimeout = new(Settings.Default.MaxOracleTimeout);
+            using CancellationTokenSource ctsTimeout = new(OracleSettings.Default.MaxOracleTimeout);
             using CancellationTokenSource ctsLinked = CancellationTokenSource.CreateLinkedTokenSource(cancelSource.Token, ctsTimeout.Token);
 
             try
