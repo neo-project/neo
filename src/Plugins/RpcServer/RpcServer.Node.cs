@@ -208,8 +208,10 @@ namespace Neo.Plugins.RpcServer
         [RpcMethodWithParams]
         protected internal virtual JToken SendRawTransaction(string base64Tx)
         {
-            Transaction tx = Result.Ok_Or(() => Convert.FromBase64String(base64Tx).AsSerializable<Transaction>(), RpcError.InvalidParams.WithData($"Invalid Transaction Format: {base64Tx}"));
-            RelayResult reason = system.Blockchain.Ask<RelayResult>(tx).Result;
+            var tx = Result.Ok_Or(
+                () => Convert.FromBase64String(base64Tx).AsSerializable<Transaction>(),
+                RpcError.InvalidParams.WithData($"Invalid Transaction Format: {base64Tx}"));
+            var reason = system.Blockchain.Ask<RelayResult>(tx).Result;
             return GetRelayResult(reason.Result, tx.Hash);
         }
 
@@ -226,8 +228,10 @@ namespace Neo.Plugins.RpcServer
         [RpcMethodWithParams]
         protected internal virtual JToken SubmitBlock(string base64Block)
         {
-            Block block = Result.Ok_Or(() => Convert.FromBase64String(base64Block).AsSerializable<Block>(), RpcError.InvalidParams.WithData($"Invalid Block Format: {base64Block}"));
-            RelayResult reason = system.Blockchain.Ask<RelayResult>(block).Result;
+            var block = Result.Ok_Or(
+                () => Convert.FromBase64String(base64Block).AsSerializable<Block>(),
+                RpcError.InvalidParams.WithData($"Invalid Block Format: {base64Block}"));
+            var reason = system.Blockchain.Ask<RelayResult>(block).Result;
             return GetRelayResult(reason.Result, block.Hash);
         }
     }
