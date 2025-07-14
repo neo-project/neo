@@ -222,7 +222,7 @@ namespace Neo.Extensions.Factories
             var randomProduct = maxValue * NextBigInteger(maxValueBits);
             var randomProductBits = randomProduct.GetByteCount() * 8;
 
-            var lowPart = randomProduct & BigInteger.MinusOne;
+            var lowPart = randomProduct.GetLowPart(maxValueBits);
 
             if (lowPart < maxValue)
             {
@@ -232,11 +232,18 @@ namespace Neo.Extensions.Factories
                 {
                     randomProduct = maxValue * NextBigInteger(maxValueBits);
                     randomProductBits = randomProduct.GetByteCount() * 8;
-                    lowPart = randomProduct & BigInteger.MinusOne;
+                    lowPart = randomProduct.GetLowPart(maxValueBits);
                 }
             }
 
-            return randomProduct >> (randomProductBits - maxValueBits);
+            var result = randomProduct >> (randomProductBits - maxValueBits);
+
+            // Since BigInteger doesn't have a max value or bit size
+            // anything over 'maxValue' return zero
+            if (result >= maxValue)
+                return BigInteger.Zero;
+
+            return result;
         }
 
         public static BigInteger NextBigInteger(int sizeInBits)
