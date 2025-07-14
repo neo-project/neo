@@ -274,32 +274,31 @@ namespace Neo.SmartContract.Native
             var maxValueBits = maxValue.GetByteCount() * 8;
             var maxValueSize = BigInteger.Pow(2, maxValueBits);
 
-            var candidate = maxValue;
+            var randomProduct = maxValue * engine.GetRandom();
+            var randomProductBits = randomProduct.GetByteCount() * 8;
 
-            do
+            var lowPart = randomProduct.GetLowPart(maxValueBits);
+
+            if (lowPart < maxValue)
             {
-                var randomProduct = maxValue * engine.GetRandom().GetLowPart(maxValueBits);
-                var randomProductBits = randomProduct.GetByteCount() * 8;
+                var remainder = (maxValueSize - maxValue) % maxValue;
 
-                var lowPart = randomProduct.GetLowPart(maxValueBits);
-
-                if (lowPart < maxValue)
+                while (lowPart < remainder)
                 {
-                    var remainder = (maxValueSize - maxValue) % maxValue;
-
-                    while (lowPart < remainder)
-                    {
-                        randomProduct = maxValue * engine.GetRandom().GetLowPart(maxValueBits);
-                        randomProductBits = randomProduct.GetByteCount() * 8;
-                        lowPart = randomProduct.GetLowPart(maxValueBits);
-                    }
+                    randomProduct = maxValue * engine.GetRandom();
+                    randomProductBits = randomProduct.GetByteCount() * 8;
+                    lowPart = randomProduct.GetLowPart(maxValueBits);
                 }
+            }
 
-                candidate = (randomProduct >> (randomProductBits - maxValueBits)).GetLowPart(maxValueBits);
+            var result = randomProduct >> (randomProductBits - maxValueBits);
 
-            } while (candidate >= maxValue);
+            // Since BigInteger doesn't have a max value or bit size
+            // anything over 'maxValue' return zero
+            if (result >= maxValue)
+                return BigInteger.Zero;
 
-            return candidate;
+            return result;
         }
     }
 }
