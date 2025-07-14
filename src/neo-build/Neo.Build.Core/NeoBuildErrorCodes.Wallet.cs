@@ -20,11 +20,12 @@ namespace Neo.Build.Core
 
             public const int InternalException = ModuleBaseErrorCode;
 
-            public const int VersionException = ModuleBaseErrorCode + 1;
-            public const int AccountNotFoundException = ModuleBaseErrorCode + 2;
-            public const int AccountLockedException = ModuleBaseErrorCode + 3;
-            public const int PrivateKeyNotFoundException = ModuleBaseErrorCode + 4;
-            public const int PasswordException = ModuleBaseErrorCode + 5;
+            public const int InvalidVersion = ModuleBaseErrorCode + 1;
+            public const int AccountNotFound = ModuleBaseErrorCode + 2;
+            public const int AccountLocked = ModuleBaseErrorCode + 3;
+            public const int PrivateKeyNotFound = ModuleBaseErrorCode + 4;
+            public const int InvalidPassword = ModuleBaseErrorCode + 5;
+            public const int InvalidFileFormat = ModuleBaseErrorCode + 6;
 
             private Wallet() { }
         }
