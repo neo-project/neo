@@ -13,6 +13,9 @@ using System;
 
 namespace Neo.Plugins.RpcServer
 {
+    /// <summary>
+    /// Indicates that the method is an RPC method with parameters.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class RpcMethodWithParamsAttribute : Attribute
     {

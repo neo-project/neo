@@ -17,6 +17,21 @@ namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
+        /// <summary>
+        /// Lists all plugins.
+        /// <para>Request format:</para>
+        /// <code>{"jsonrpc": "2.0", "id": 1, "method": "listplugins"}</code>
+        /// <para>Response format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "result": [
+        ///     {"name": "The plugin name", "version": "The plugin version", "interfaces": ["The plugin method name"]}
+        ///   ]
+        /// }</code>
+        /// </summary>
+        /// <param name="_params">A empty array.</param>
+        /// <returns>A JSON array containing the plugin information.</returns>
         [RpcMethod]
         protected internal virtual JToken ListPlugins(JArray _params)
         {
@@ -33,6 +48,19 @@ namespace Neo.Plugins.RpcServer
                 }));
         }
 
+        /// <summary>
+        /// Validates an address.
+        /// <para>Request format:</para>
+        /// <code>{"jsonrpc": "2.0", "id": 1, "method": "validateaddress", "params": ["The Base58Check address"]}</code>
+        /// <para>Response format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "result": {"address": "The Base58Check address", "isvalid": true}
+        /// }</code>
+        /// </summary>
+        /// <param name="_params">A 1-element array containing the address as a string.</param>
+        /// <returns>A JSON object containing the address and whether it is valid.</returns>
         [RpcMethod]
         protected internal virtual JToken ValidateAddress(JArray _params)
         {
