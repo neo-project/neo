@@ -44,6 +44,83 @@ namespace Neo.ConsoleService
 
         private readonly List<string> _commandHistory = new();
 
+        /// <summary>
+        /// Parse sequential arguments.
+        /// For example, if a method defined as `void Method(string arg1, int arg2, bool arg3)`,
+        /// the arguments will be parsed as `"arg1" 2 true`.
+        /// </summary>
+        /// <param name="method">Method</param>
+        /// <param name="args">Arguments</param>
+        /// <returns>Arguments</returns>
+        /// <exception cref="ArgumentException">Missing argument</exception>
+        internal object?[] ParseSequentialArguments(MethodInfo method, IList<CommandToken> args)
+        {
+            var parameters = method.GetParameters();
+            var arguments = new List<object?>();
+            foreach (var parameter in parameters)
+            {
+                if (TryProcessValue(parameter.ParameterType, args, parameter == parameters.Last(), out var value))
+                {
+                    arguments.Add(value);
+                }
+                else
+                {
+                    if (!parameter.HasDefaultValue)
+                        throw new ArgumentException($"Missing value for parameter: {parameter.Name}");
+                    arguments.Add(parameter.DefaultValue);
+                }
+            }
+            return arguments.ToArray();
+        }
+
+        /// <summary>
+        /// Parse indicator arguments.
+        /// For example, if a method defined as `void Method(string arg1, int arg2, bool arg3)`,
+        /// the arguments will be parsed as `Method --arg1 "arg1" --arg2 2 --arg3`.
+        /// </summary>
+        /// <param name="method">Method</param>
+        /// <param name="args">Arguments</param>
+        internal object?[] ParseIndicatorArguments(MethodInfo method, IList<CommandToken> args)
+        {
+            var parameters = method.GetParameters();
+            if (parameters is null || parameters.Length == 0) return [];
+
+            var arguments = parameters.Select(p => p.HasDefaultValue ? p.DefaultValue : null).ToArray();
+            var noValues = parameters.Where(p => !p.HasDefaultValue).Select(p => p.Name).ToHashSet();
+            for (int i = 0; i < args.Count; i++)
+            {
+                var token = args[i];
+                if (!token.IsIndicator) continue;
+
+                var paramName = token.Value.Substring(2); // Remove "--"
+                var parameter = parameters.FirstOrDefault(p => string.Equals(p.Name, paramName));
+                if (parameter == null) throw new ArgumentException($"Unknown parameter: {paramName}");
+
+                var paramIndex = Array.IndexOf(parameters, parameter);
+                if (i + 1 < args.Count && args[i + 1].IsWhiteSpace) i += 1; // Skip the white space token
+                if (i + 1 < args.Count && !args[i + 1].IsIndicator) // Check if next token is a value (not an indicator)
+                {
+                    var valueToken = args[i + 1]; // Next token is the value for this parameter
+                    if (!TryProcessValue(parameter.ParameterType, [args[i + 1]], false, out var value))
+                        throw new ArgumentException($"Cannot parse value for parameter {paramName}: {valueToken.Value}");
+                    arguments[paramIndex] = value;
+                    noValues.Remove(paramName);
+                    i += 1; // Skip the value token in next iteration
+                }
+                else
+                {
+                    if (parameter.ParameterType != typeof(bool)) // If parameter is not a bool and no value is provided
+                        throw new ArgumentException($"Missing value for parameter: {paramName}");
+                    arguments[paramIndex] = true;
+                    noValues.Remove(paramName);
+                }
+            }
+
+            if (noValues.Count > 0)
+                throw new ArgumentException($"Missing value for parameters: {string.Join(',', noValues)}");
+            return arguments;
+        }
+
         private bool OnCommand(string commandLine)
         {
             if (string.IsNullOrEmpty(commandLine)) return true;
@@ -58,26 +135,13 @@ namespace Neo.ConsoleService
                     var consumed = command.IsThisCommand(tokens);
                     if (consumed <= 0) continue;
 
-                    var arguments = new List<object?>();
                     var args = tokens.Skip(consumed).ToList().Trim();
                     try
                     {
-                        var parameters = command.Method.GetParameters();
-                        foreach (var arg in parameters)
-                        {
-                            // Parse argument
-                            if (TryProcessValue(arg.ParameterType, args, arg == parameters.Last(), out var value))
-                            {
-                                arguments.Add(value);
-                            }
-                            else
-                            {
-                                if (!arg.HasDefaultValue) throw new ArgumentException($"Missing argument: {arg.Name}");
-                                arguments.Add(arg.DefaultValue);
-                            }
-                        }
-
-                        availableCommands.Add((command, arguments.ToArray()));
+                        if (args.Any(u => u.IsIndicator))
+                            availableCommands.Add((command, ParseIndicatorArguments(command.Method, args)));
+                        else
+                            availableCommands.Add((command, ParseSequentialArguments(command.Method, args)));
                     }
                     catch (Exception ex)
                     {
@@ -163,7 +227,6 @@ namespace Neo.ConsoleService
             }
 
             // Sort and show
-
             withHelp.Sort((a, b) =>
             {
                 var cate = string.Compare(a.HelpCategory, b.HelpCategory, StringComparison.Ordinal);
@@ -174,6 +237,9 @@ namespace Neo.ConsoleService
                 return cate;
             });
 
+            var guide = (ParameterInfo parameterInfo) => parameterInfo.HasDefaultValue
+                    ? $"[ --{parameterInfo.Name} {parameterInfo.DefaultValue?.ToString() ?? ""}]"
+                    : $"--{parameterInfo.Name}";
             if (string.IsNullOrEmpty(key) || key.Equals("help", StringComparison.InvariantCultureIgnoreCase))
             {
                 string? last = null;
@@ -186,16 +252,12 @@ namespace Neo.ConsoleService
                     }
 
                     Console.Write($"\t{command.Key}");
-                    Console.WriteLine(" " + string.Join(' ',
-                        command.Method.GetParameters()
-                        .Select(u => u.HasDefaultValue ? $"[{u.Name}={(u.DefaultValue == null ? "null" : u.DefaultValue.ToString())}]" : $"<{u.Name}>"))
-                    );
+                    Console.WriteLine(" " + string.Join(' ', command.Method.GetParameters().Select(guide)));
                 }
             }
             else
             {
                 // Show help for this specific command
-
                 string? last = null;
                 string? lastKey = null;
                 bool found = false;
@@ -203,7 +265,6 @@ namespace Neo.ConsoleService
                 foreach (var command in withHelp.Where(u => u.Key == key))
                 {
                     found = true;
-
                     if (last != command.HelpMessage)
                     {
                         Console.WriteLine($"{command.HelpMessage}");
@@ -217,10 +278,7 @@ namespace Neo.ConsoleService
                     }
 
                     Console.Write($"\t{command.Key}");
-                    Console.WriteLine(" " + string.Join(' ',
-                        command.Method.GetParameters()
-                        .Select(u => u.HasDefaultValue ? $"[{u.Name}={u.DefaultValue?.ToString() ?? "null"}]" : $"<{u.Name}>"))
-                    );
+                    Console.WriteLine(" " + string.Join(' ', command.Method.GetParameters().Select(guide)));
                 }
 
                 if (!found)
