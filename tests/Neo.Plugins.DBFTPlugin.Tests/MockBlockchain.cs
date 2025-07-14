@@ -46,7 +46,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
-        internal static Settings CreateDefaultSettings()
+        internal static DbftSettings CreateDefaultSettings()
         {
             var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string>
@@ -60,7 +60,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 })
                 .Build();
 
-            return new Settings(config.GetSection("ApplicationConfiguration:DBFTPlugin"));
+            return new DbftSettings(config.GetSection("ApplicationConfiguration:DBFTPlugin"));
         }
 
         internal static DataCache GetTestSnapshot()

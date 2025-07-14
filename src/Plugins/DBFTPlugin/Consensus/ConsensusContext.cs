@@ -59,7 +59,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private ECPoint _myPublicKey;
         private int _witnessSize;
         private readonly NeoSystem neoSystem;
-        private readonly Settings dbftSettings;
+        private readonly DbftSettings dbftSettings;
         private readonly ISigner _signer;
         private readonly IStore store;
         private Dictionary<UInt256, ConsensusMessage> cachedMessages;
@@ -113,7 +113,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public int Size => throw new NotImplementedException();
 
-        public ConsensusContext(NeoSystem neoSystem, Settings settings, ISigner signer)
+        public ConsensusContext(NeoSystem neoSystem, DbftSettings settings, ISigner signer)
         {
             _signer = signer;
             this.neoSystem = neoSystem;

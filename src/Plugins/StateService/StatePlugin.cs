@@ -39,7 +39,7 @@ namespace Neo.Plugins.StateService
         public override string Description => "Enables MPT for the node";
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "StateService.json");
 
-        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
+        protected override UnhandledExceptionPolicy ExceptionPolicy => StateServiceSettings.Default.ExceptionPolicy;
 
         internal IActorRef Store;
         internal IActorRef Verifier;
@@ -58,16 +58,16 @@ namespace Neo.Plugins.StateService
 
         protected override void Configure()
         {
-            Settings.Load(GetConfiguration());
+            StateServiceSettings.Load(GetConfiguration());
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
-            if (system.Settings.Network != Settings.Default.Network) return;
+            if (system.Settings.Network != StateServiceSettings.Default.Network) return;
             _system = system;
-            Store = _system.ActorSystem.ActorOf(StateStore.Props(this, string.Format(Settings.Default.Path, system.Settings.Network.ToString("X8"))));
+            Store = _system.ActorSystem.ActorOf(StateStore.Props(this, string.Format(StateServiceSettings.Default.Path, system.Settings.Network.ToString("X8"))));
             _system.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
-            RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
+            RpcServerPlugin.RegisterMethods(this, StateServiceSettings.Default.Network);
         }
 
         void IServiceAddedHandler.NeoSystem_ServiceAdded_Handler(object sender, object service)
@@ -76,7 +76,7 @@ namespace Neo.Plugins.StateService
             {
                 walletProvider = service as IWalletProvider;
                 _system.ServiceAdded -= ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
-                if (Settings.Default.AutoVerify)
+                if (StateServiceSettings.Default.AutoVerify)
                 {
                     walletProvider.WalletChanged += ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
                 }
@@ -101,7 +101,7 @@ namespace Neo.Plugins.StateService
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot,
             IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
-            if (system.Settings.Network != Settings.Default.Network) return;
+            if (system.Settings.Network != StateServiceSettings.Default.Network) return;
             StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index,
                 snapshot.GetChangeSet()
                     .Where(p => p.Value.State != TrackState.None && p.Key.Id != NativeContract.Ledger.Id)
@@ -110,13 +110,13 @@ namespace Neo.Plugins.StateService
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            if (system.Settings.Network != Settings.Default.Network) return;
+            if (system.Settings.Network != StateServiceSettings.Default.Network) return;
             StateStore.Singleton.UpdateLocalStateRoot(block.Index);
         }
 
         private void CheckNetwork()
         {
-            var network = Settings.Default.Network;
+            var network = StateServiceSettings.Default.Network;
             if (_system is null || _system.Settings.Network != network)
                 throw new InvalidOperationException($"Network doesn't match: {_system?.Settings.Network} != {network}");
         }
@@ -170,7 +170,7 @@ namespace Neo.Plugins.StateService
         [ConsoleCommand("get proof", Category = "StateService", Description = "Get proof of key and contract hash")]
         private void OnGetProof(UInt256 rootHash, UInt160 scriptHash, string key)
         {
-            if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
+            if (_system is null || _system.Settings.Network != StateServiceSettings.Default.Network) throw new InvalidOperationException("Network doesn't match");
             try
             {
                 ConsoleHelper.Info("Proof: ", GetProof(rootHash, scriptHash, Convert.FromBase64String(key)));
@@ -233,7 +233,7 @@ namespace Neo.Plugins.StateService
 
         private string GetProof(UInt256 rootHash, UInt160 scriptHash, byte[] key)
         {
-            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != rootHash).False_Or(RpcError.UnsupportedState);
+            (!StateServiceSettings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != rootHash).False_Or(RpcError.UnsupportedState);
 
             using var store = StateStore.Singleton.GetStoreSnapshot();
             var trie = new Trie(store, rootHash);
@@ -306,7 +306,7 @@ namespace Neo.Plugins.StateService
         public JToken FindStates(JArray _params)
         {
             var rootHash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != rootHash).False_Or(RpcError.UnsupportedState);
+            (!StateServiceSettings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != rootHash).False_Or(RpcError.UnsupportedState);
 
             var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
             var prefix = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid prefix: {_params[2]}"));
@@ -314,11 +314,11 @@ namespace Neo.Plugins.StateService
             if (3 < _params.Count)
                 key = Result.Ok_Or(() => Convert.FromBase64String(_params[3].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[3]}"));
 
-            int count = Settings.Default.MaxFindResultItems;
+            int count = StateServiceSettings.Default.MaxFindResultItems;
             if (4 < _params.Count)
                 count = Result.Ok_Or(() => int.Parse(_params[4].AsString()), RpcError.InvalidParams.WithData($"Invalid count: {_params[4]}"));
-            if (Settings.Default.MaxFindResultItems < count)
-                count = Settings.Default.MaxFindResultItems;
+            if (StateServiceSettings.Default.MaxFindResultItems < count)
+                count = StateServiceSettings.Default.MaxFindResultItems;
 
             using var store = StateStore.Singleton.GetStoreSnapshot();
             var trie = new Trie(store, rootHash);
@@ -367,7 +367,7 @@ namespace Neo.Plugins.StateService
         public JToken GetState(JArray _params)
         {
             var rootHash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != rootHash).False_Or(RpcError.UnsupportedState);
+            (!StateServiceSettings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != rootHash).False_Or(RpcError.UnsupportedState);
 
             var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
             var key = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[2]}"));
