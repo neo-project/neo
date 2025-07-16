@@ -15,6 +15,7 @@ using Neo.Build.Core.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
 using System.IO;
+using System.Net;
 
 namespace Neo.Build.Core.Tests.Helpers
 {
@@ -45,6 +46,11 @@ namespace Neo.Build.Core.Tests.Helpers
             var walletModel = TestObjectHelper.CreateTestWalletModel();
             Wallet = new(walletModel, ((ProtocolOptionsModel)walletModel.Extra!).ToObject());
             NeoSystem = new(Wallet.ProtocolSettings, new StoreProvider());
+
+            NeoSystem.StartNode(new()
+            {
+                Tcp = new(IPAddress.Loopback, 33)
+            });
         }
     }
 }

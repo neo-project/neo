@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Exceptions;
+using Neo.Build.Core.Exceptions.Wallet;
 using Neo.Build.Core.Interfaces;
 using Neo.Build.Core.Models;
 using Neo.Build.Core.Models.Wallets;
@@ -39,8 +40,11 @@ namespace Neo.Build.Core.Wallets
             ProtocolSettings protocolSettings)
             : base(string.Empty, protocolSettings)
         {
+            if (walletModel.Version is null)
+                throw new NeoBuildWalletInvalidVersionException(string.Empty);
+
             if (walletModel.Version != Version)
-                throw new NeoBuildInvalidVersionFormatException();
+                throw new NeoBuildWalletInvalidVersionException(walletModel.Version);
 
             _walletName = walletModel.Name;
             _sCryptParameters = walletModel.Scrypt ?? SCryptModel.Default;
@@ -73,29 +77,38 @@ namespace Neo.Build.Core.Wallets
         public override bool Contains(UInt160 scriptHash) =>
             _walletAccounts.ContainsKey(scriptHash);
 
-        public override WalletAccount CreateAccount(byte[] privateKey)
+        public override WalletAccount CreateAccount(byte[] privateKey) =>
+            CreateAccount(privateKey, null);
+
+        public WalletAccount CreateAccount(byte[] privateKey, string? name = null)
         {
             var kp = new KeyPair(privateKey);
             var c = Contract.CreateSignatureContract(kp.PublicKey);
-            var wa = new DevWalletAccount(c, ProtocolSettings, kp);
+            var wa = new DevWalletAccount(c, ProtocolSettings, kp, name);
 
             _ = _walletAccounts.TryAdd(wa.ScriptHash, wa);
 
             return wa;
         }
 
-        public override WalletAccount CreateAccount(Contract contract, KeyPair? key = null)
+        public override WalletAccount CreateAccount(Contract contract, KeyPair? key = null) =>
+            CreateAccount(contract, key, null);
+
+        public WalletAccount CreateAccount(Contract contract, KeyPair? key = null, string? name = null)
         {
-            var wa = new DevWalletAccount(contract, ProtocolSettings, key);
+            var wa = new DevWalletAccount(contract, ProtocolSettings, key, name);
 
             _ = _walletAccounts.TryAdd(wa.ScriptHash, wa);
 
             return wa;
         }
 
-        public override WalletAccount CreateAccount(UInt160 scriptHash)
+        public override WalletAccount CreateAccount(UInt160 scriptHash) =>
+            CreateAccount(scriptHash, null);
+
+        public WalletAccount CreateAccount(UInt160 scriptHash, string? name = null)
         {
-            var wa = new DevWalletAccount(scriptHash, ProtocolSettings);
+            var wa = new DevWalletAccount(scriptHash, ProtocolSettings, name);
 
             _ = _walletAccounts.TryAdd(wa.ScriptHash, wa);
 
@@ -105,12 +118,26 @@ namespace Neo.Build.Core.Wallets
         public override bool DeleteAccount(UInt160 scriptHash) =>
             _ = _walletAccounts.TryRemove(scriptHash, out _);
 
+        public bool DeleteAccount(string name)
+        {
+            var account = GetAccount(name);
+
+            if (account is null)
+                return false;
+
+            return DeleteAccount(account.ScriptHash);
+        }
+
         public override WalletAccount? GetAccount(UInt160 scriptHash)
         {
             _ = _walletAccounts.TryGetValue(scriptHash, out var wa);
 
             return wa;
         }
+
+        public WalletAccount? GetAccount(string name) =>
+            _walletAccounts.Values.Where(w => w.Label.Equals(name))
+                .FirstOrDefault();
 
         public override IEnumerable<WalletAccount> GetAccounts() =>
             _walletAccounts.Values;
