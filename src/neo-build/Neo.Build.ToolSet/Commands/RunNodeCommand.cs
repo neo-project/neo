@@ -85,7 +85,7 @@ namespace Neo.Build.ToolSet.Commands
                 var defaultMultiSigWalletAccount = wallet.GetMultiSigAccounts().SingleOrDefault() ??
                     wallet.GetDefaultAccount() ??
                     // TODO: Create new exception class for this exception
-                    throw new NeoBuildException("No Multi-Sig Address", NeoBuildErrorCodes.Wallet.AccountNotFoundException);
+                    throw new NeoBuildException("No Multi-Sig Address", NeoBuildErrorCodes.Wallet.AccountNotFound);
 
                 var storeProvider = new FasterDbStoreProvider(_neoConfiguration.StorageOptions.CheckPointRoot);
                 StoreFactory.RegisterProvider(storeProvider);
