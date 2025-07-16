@@ -22,7 +22,7 @@ namespace Neo.Build.Core.Tests.Storage
         [TestMethod]
         public void TestPutAndTryGet()
         {
-            using var store = new FasterDbStore(Path.GetRandomFileName());
+            using var store = new FasterDbStore(Path.GetRandomFileName(), Path.GetRandomFileName());
 
             store.Put([0x01, 0x00], [0x00]);
             store.Put([0x01, 0x01], [0x01]);
@@ -36,7 +36,7 @@ namespace Neo.Build.Core.Tests.Storage
         [TestMethod]
         public void TestDelete()
         {
-            using var store = new FasterDbStore(Path.GetRandomFileName());
+            using var store = new FasterDbStore(Path.GetRandomFileName(), Path.GetRandomFileName());
 
             store.Put([0x01, 0x00], [0x00]);
             store.Put([0x01, 0x01], [0x01]);
@@ -52,7 +52,7 @@ namespace Neo.Build.Core.Tests.Storage
         [TestMethod]
         public void TestSeek()
         {
-            using var store = new FasterDbStore(Path.GetRandomFileName());
+            using var store = new FasterDbStore(Path.GetRandomFileName(), Path.GetRandomFileName());
 
             store.Put([0x01, 0x02], [0x02]);
             store.Put([0x02, 0x01], [0x11]);
