@@ -24,16 +24,20 @@ namespace Neo.Build.Core.Storage
     public class FasterDbStore : IStore, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         public FasterDbStore(
-            string dirPath)
+            string dirPath,
+            string checkpointPath)
         {
             _storePath = Path.GetFullPath(dirPath);
-            _store = LocalStorageDevice.Create(_storePath, out _logSettings, out _checkpointSettings);
+            _checkpointPath = Path.GetFullPath(checkpointPath);
+            _store = LocalStorageDevice.Create(_storePath, _checkpointPath, out _logSettings, out _checkpointSettings);
             _sessionPool = new(
                 _logSettings.LogDevice.ThrottleLimit,
                 () => _store.For(new ByteArrayFunctions()).NewSession<ByteArrayFunctions>());
         }
 
         private readonly string _storePath;
+        private readonly string _checkpointPath;
+
         private readonly FasterKV<byte[], byte[]> _store;
         private readonly CheckpointSettings _checkpointSettings;
         private readonly LogSettings _logSettings;
@@ -53,9 +57,9 @@ namespace Neo.Build.Core.Storage
             _store.CheckpointManager.PurgeAll();
             _store.TryInitiateFullCheckpoint(out _, CheckpointType.Snapshot);
             _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
-            _store.Log.FlushAndEvict(true);
+            _store.Log.Flush(true);
+            //_sessionPool.Dispose(); // This hangs for some reason **Maybe a Bug**
             _store.Dispose();
-            _sessionPool.Dispose();
             GC.SuppressFinalize(this);
         }
 
@@ -82,7 +86,6 @@ namespace Neo.Build.Core.Storage
         {
             _store.TryInitiateFullCheckpoint(out var snapshotId, CheckpointType.Snapshot);
             _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
-            _store.Log.FlushAndEvict(true);
 
             var snapshot = new FasterDbSnapshot(this, _checkpointSettings, snapshotId);
             OnNewSnapshot?.Invoke(this, snapshot);

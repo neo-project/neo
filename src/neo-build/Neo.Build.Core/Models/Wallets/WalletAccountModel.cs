@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// TestWalletAccountModel.cs file belongs to the neo project and is free
+// WalletAccountModel.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -15,7 +15,7 @@ using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Models.Wallets
 {
-    public class TestWalletAccountModel : JsonModel
+    public class WalletAccountModel : JsonModel
     {
         [JsonConverter(typeof(JsonStringAddressConverter))]
         public UInt160? Address { get; set; }

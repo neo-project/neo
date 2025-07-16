@@ -23,7 +23,7 @@ namespace Neo.Build.Core.Wallets
     /// <summary>
     /// Developer wallet account.
     /// </summary>
-    public class DevWalletAccount : WalletAccount, IConvertToObject<TestWalletAccountModel>
+    public class DevWalletAccount : WalletAccount, IConvertToObject<WalletAccountModel>
     {
         /// <summary>
         /// Creates a new developer wallet account.
@@ -31,7 +31,7 @@ namespace Neo.Build.Core.Wallets
         /// <param name="walletAccountModel">Wallet account <see cref="JsonModel"/>.</param>
         /// <param name="protocolSettings"><see cref="ProtocolSettings"/> to be used with this account.</param>
         public DevWalletAccount(
-            TestWalletAccountModel walletAccountModel,
+            WalletAccountModel walletAccountModel,
             ProtocolSettings protocolSettings)
             : base(walletAccountModel.Address, protocolSettings)
         {
@@ -120,7 +120,7 @@ namespace Neo.Build.Core.Wallets
         /// Converts to a <see cref="JsonModel"/>.
         /// </summary>
         /// <returns>A <see cref="JsonModel"/> that can be serialized to a JSON string.</returns>
-        public TestWalletAccountModel ToObject() =>
+        public WalletAccountModel ToObject() =>
             new()
             {
                 Label = Label,
