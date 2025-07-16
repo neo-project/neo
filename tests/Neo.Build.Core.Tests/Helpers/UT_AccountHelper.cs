@@ -20,9 +20,18 @@ namespace Neo.Build.Core.Tests.Helpers
         [TestMethod]
         public void TestGetBalance()
         {
-            var balance = AccountHelper.GetBalance(TestNode.NeoSystem.StoreView, NativeContract.NEO.Hash, TestNode.Wallet.GetDefaultAccount().ScriptHash);
+            var expectedAccount = TestNode.Wallet.GetDefaultAccount();
 
-            Assert.AreNotEqual(0, balance.balance);
+            var actualAccountBalance = AccountHelper.GetBalance(
+                TestNode.NeoSystem,
+                NativeContract.GAS.Hash,
+                expectedAccount.ScriptHash);
+
+            Assert.AreEqual(expectedAccount.ScriptHash, actualAccountBalance.AccountHash);
+            Assert.AreEqual(NativeContract.GAS.Hash, actualAccountBalance.ContractHash);
+            Assert.AreEqual(NativeContract.GAS.Symbol, actualAccountBalance.Symbol);
+            Assert.AreEqual(50000000, actualAccountBalance.Balance);
+            Assert.AreEqual(8, actualAccountBalance.Decimals);
         }
     }
 }

@@ -10,11 +10,11 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Exceptions;
+using Neo.Build.Core.Models.Wallets;
+using Neo.Builders;
 using Neo.Extensions;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
-using System.Numerics;
 
 namespace Neo.Build.Core.Helpers
 {
@@ -29,11 +29,16 @@ namespace Neo.Build.Core.Helpers
             return sb.ToArray();
         }
 
-        public static (BigInteger balance, string symbol, BigInteger decimals) GetBalance(DataCache snapshot, UInt160 contractHash, UInt160 accountHash)
+        public static AccountBalanceModel GetBalance(NeoSystem neoSystem, UInt160 contractHash, UInt160 accountHash)
         {
             var script = CreateBalanceScript(contractHash, accountHash);
 
-            using var app = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var app = ApplicationEngine.Create(
+                TriggerType.Application,
+                TransactionBuilder.CreateEmpty().Build(),
+                neoSystem.StoreView,
+                settings: neoSystem.Settings);
+
             app.LoadScript(script);
 
             var appResult = app.Execute();
@@ -52,7 +57,14 @@ namespace Neo.Build.Core.Helpers
             var symbol = appStackResults.Pop().GetString();
             var balance = appStackResults.Pop().GetInteger();
 
-            return (balance, symbol!, decimals);
+            return new()
+            {
+                ContractHash = contractHash,
+                AccountHash = accountHash,
+                Balance = balance,
+                Symbol = symbol,
+                Decimals = decimals,
+            };
         }
     }
 }
