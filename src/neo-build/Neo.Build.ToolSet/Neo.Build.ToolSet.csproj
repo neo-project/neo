@@ -19,6 +19,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="wallet1.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="wallet1.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1" />
     <PackageReference Include="System.CommandLine.Rendering" Version="0.4.0-alpha.22272.1" />
@@ -29,6 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Plugins\DBFTPlugin\DBFTPlugin.csproj" />
     <ProjectReference Include="..\Neo.Build.Core\Neo.Build.Core.csproj" />
   </ItemGroup>
 

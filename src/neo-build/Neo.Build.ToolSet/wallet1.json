@@ -1,0 +1,46 @@
+{
+  "name": "Unit Test Wallet",
+  "version": "1.0",
+  "scrypt": {
+    "n": 16384,
+    "r": 8,
+    "p": 8
+  },
+  "accounts": [
+    {
+      "address": "NhpxKrsHrFCizcupug2pTNkM7TnhyMzwEa",
+      "label": "Main Test Account",
+      "isDefault": true,
+      "lock": false,
+      "key": "3889c6201680d433ffdccb94a6b01c09863f5dc83aa85a003ae4dfe9460cf33f",
+      "contract": {
+        "script": "0c21028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a84156e7b327",
+        "parameters": [
+          {
+            "name": "Signature",
+            "type": "Signature"
+          }
+        ],
+        "deployed": false
+      },
+      "extra": null
+    }
+  ],
+  "extra": {
+    "network": 810960196,
+    "addressVersion": 53,
+    "millisecondsPerBlock": 1000,
+    "maxTransactionsPerBlock": 512,
+    "memoryPoolMaxTransactions": 50000,
+    "maxTraceableBlocks": 2102400,
+    "initialGasDistribution": 5200000000000000,
+    "validatorsCount": 1,
+    "seedList": [
+      "127.0.0.1:25485"
+    ],
+    "hardforks": null,
+    "standbyCommittee": [
+      "028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a8"
+    ]
+  }
+}

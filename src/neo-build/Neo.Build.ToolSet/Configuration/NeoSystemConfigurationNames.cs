@@ -14,15 +14,15 @@ namespace Neo.Build.ToolSet.Configuration
     internal static class NeoSystemConfigurationNames
     {
         // Peer to Peer Configuration
-        public static readonly string ListenKey = "NEOSYSTEM:NETWORK:LISTEN";
-        public static readonly string PortKey = "NEOSYSTEM:NETWORK:PORT";
-        public static readonly string MinDesiredConnectionsKey = "NEOSYSTEM:NETWORK:MINDESIREDCONNECTIONS";
-        public static readonly string MaxConnectionsKey = "NEOSYSTEM:NETWORK:MAXCONNECTIONS";
-        public static readonly string MaxConnectionsPerAddressKey = "NEOSYSTEM:NETWORK:MAXCONNECTIONSPERADDRESS";
-        public static readonly string EnableCompressionKey = "NEOSYSTEM:NETWORK:ENABLECOMPRESSION";
+        public static readonly string ListenKey = "NETWORK:LISTEN";
+        public static readonly string PortKey = "NETWORK:PORT";
+        public static readonly string MinDesiredConnectionsKey = "NETWORK:MINDESIREDCONNECTIONS";
+        public static readonly string MaxConnectionsKey = "NETWORK:MAXCONNECTIONS";
+        public static readonly string MaxConnectionsPerAddressKey = "NETWORK:MAXCONNECTIONSPERADDRESS";
+        public static readonly string EnableCompressionKey = "NETWORK:ENABLECOMPRESSION";
 
         // Storage Configuration
-        public static readonly string StoreRootKey = "NEOSYSTEM:STORAGE:STOREROOT";
-        public static readonly string CheckpointRootKey = "NEOSYSTEM:STORAGE:CHECKPOINTROOT";
+        public static readonly string StoreRootKey = "STORAGE:STOREROOT";
+        public static readonly string CheckpointRootKey = "STORAGE:CHECKPOINTROOT";
     }
 }

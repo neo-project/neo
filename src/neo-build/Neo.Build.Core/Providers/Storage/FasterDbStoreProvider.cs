@@ -14,10 +14,15 @@ using Neo.Persistence;
 
 namespace Neo.Build.Core.Providers.Storage
 {
-    internal class FasterDbStoreProvider : IStoreProvider
+    internal class FasterDbStoreProvider(
+        string checkpointPath)
+        : IStoreProvider
     {
+        private readonly string _checkpointPath = checkpointPath;
+
         public string Name => nameof(FasterDbStore);
 
-        public IStore GetStore(string path) => new FasterDbStore(path);
+        public IStore GetStore(string path) =>
+            new FasterDbStore(path, _checkpointPath);
     }
 }
