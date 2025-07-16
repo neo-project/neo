@@ -20,6 +20,7 @@ using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Neo.Build.Core.Wallets
@@ -60,13 +61,48 @@ namespace Neo.Build.Core.Wallets
             }
         }
 
-        public DevWallet(WalletModel walletModel) : this(walletModel, ProtocolSettings.Default) { }
+        public DevWallet(
+            string filename,
+            ProtocolSettings protocolSettings)
+            : base(filename, protocolSettings)
+        {
+            _fileInfo = new FileInfo(filename);
+
+            if (_fileInfo.Exists == false) return;
+
+            var walletModel = JsonModel.FromJson<WalletModel>(_fileInfo);
+
+            if (walletModel is null) return;
+
+            if (walletModel.Version is null)
+                throw new NeoBuildWalletInvalidVersionException(string.Empty);
+
+            if (walletModel.Version != Version)
+                throw new NeoBuildWalletInvalidVersionException(walletModel.Version);
+
+            _walletName = walletModel.Name;
+            _sCryptParameters = walletModel.Scrypt ?? SCryptModel.Default;
+
+            if (walletModel.Accounts != null)
+            {
+                foreach (var account in walletModel.Accounts)
+                {
+                    if (account is null) continue;
+                    if (account.Address is null) continue;
+                    _walletAccounts[account.Address] = new(account, ProtocolSettings);
+                }
+            }
+        }
+
+        public DevWallet(WalletModel walletModel) : this(walletModel, walletModel.Extra?.ToObject() ?? ProtocolSettings.Default) { }
+        public DevWallet() : base(string.Empty, ProtocolSettings.Default) { }
+        public DevWallet(ProtocolSettings protocolSettings) : base(string.Empty, protocolSettings) { }
 
         private readonly ConcurrentDictionary<UInt160, DevWalletAccount> _walletAccounts = new();
-
         private readonly string? _walletName;
+        private readonly SCryptModel _sCryptParameters = SCryptModel.Default;
 
-        private readonly SCryptModel _sCryptParameters;
+        private FileInfo? _fileInfo;
 
         public ScryptParameters SCryptParameters => _sCryptParameters.ToObject();
 
@@ -116,7 +152,7 @@ namespace Neo.Build.Core.Wallets
         }
 
         public override bool DeleteAccount(UInt160 scriptHash) =>
-            _ = _walletAccounts.TryRemove(scriptHash, out _);
+            _walletAccounts.TryRemove(scriptHash, out _);
 
         public bool DeleteAccount(string name)
         {
@@ -142,10 +178,29 @@ namespace Neo.Build.Core.Wallets
         public override IEnumerable<WalletAccount> GetAccounts() =>
             _walletAccounts.Values;
 
-        public override void Delete() { }
+        public override void Delete()
+        {
+            if (_fileInfo is null)
+                // TODO: Add its own exception class
+                throw new NeoBuildException("Memory only wallet!", NeoBuildErrorCodes.General.PathNotFound);
 
-        public override void Save() =>
-            throw new NotImplementedException();
+            _fileInfo.Delete();
+        }
+
+        public override void Save()
+        {
+            if (_fileInfo is null)
+                // TODO: Add its own exception class
+                throw new NeoBuildException("Memory only wallet!", NeoBuildErrorCodes.General.PathNotFound);
+
+            File.WriteAllText(_fileInfo.FullName, ToString());
+        }
+
+        public void Save(string filename)
+        {
+            _fileInfo = new(filename);
+            File.WriteAllText(_fileInfo.FullName, ToString());
+        }
 
         public override bool ChangePassword(string oldPassword, string newPassword) =>
             throw new NotImplementedException();
@@ -163,7 +218,21 @@ namespace Neo.Build.Core.Wallets
                 Name = Name,
                 Version = Version,
                 Scrypt = _sCryptParameters,
-                Accounts = [.. _walletAccounts.Values.Select(s => s.ToObject())]
+                Accounts = [.. _walletAccounts.Values.Select(s => s.ToObject())],
+                Extra = new ProtocolOptionsModel()
+                {
+                    Network = ProtocolSettings.Network,
+                    AddressVersion = ProtocolSettings.AddressVersion,
+                    MillisecondsPerBlock = ProtocolSettings.MillisecondsPerBlock,
+                    MaxTransactionsPerBlock = ProtocolSettings.MaxTransactionsPerBlock,
+                    MemoryPoolMaxTransactions = ProtocolSettings.MemoryPoolMaxTransactions,
+                    MaxTraceableBlocks = ProtocolSettings.MaxTraceableBlocks,
+                    InitialGasDistribution = ProtocolSettings.InitialGasDistribution,
+                    ValidatorsCount = ProtocolSettings.ValidatorsCount,
+                    SeedList = ProtocolSettings.SeedList,
+                    Hardforks = ProtocolSettings.Hardforks,
+                    StandbyCommittee = [.. ProtocolSettings.StandbyCommittee],
+                }
             };
 
         /// <summary>

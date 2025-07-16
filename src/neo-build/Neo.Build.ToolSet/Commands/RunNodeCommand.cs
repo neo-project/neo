@@ -81,7 +81,7 @@ namespace Neo.Build.ToolSet.Commands
                     throw new NeoBuildInvalidFileFormatException(walletFileInfo.FullName);
 
                 var globalProtocolOptions = _neoConfiguration.ProtocolOptions.ToObject();
-                var wallet = new DevWallet(walletModel, walletModel.Extra!.ToObject());
+                var wallet = new DevWallet(walletModel);
                 var defaultMultiSigWalletAccount = wallet.GetMultiSigAccounts().SingleOrDefault() ??
                     wallet.GetDefaultAccount() ??
                     // TODO: Create new exception class for this exception
