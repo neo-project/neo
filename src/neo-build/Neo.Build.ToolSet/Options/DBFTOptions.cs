@@ -9,16 +9,23 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.Interfaces;
 using Neo.Plugins;
+using Neo.Plugins.DBFTPlugin;
 
 namespace Neo.Build.ToolSet.Options
 {
-    internal sealed class DBFTOptions
+    internal sealed class DBFTOptions() : IConvertToObject<Settings>
     {
-        public required string StoreRoot { get; set; }
-        public required bool IgnoreRecoveryLogs { get; set; }
-        public required uint MaxBlockSize { get; set; }
-        public required long MaxBlockSystemFee { get; set; }
-        public required UnhandledExceptionPolicy ExceptionPolicy { get; set; }
+        public string StoreRoot { get; set; } = string.Empty;
+        public bool IgnoreRecoveryLogs { get; set; }
+        public uint MaxBlockSize { get; set; }
+        public long MaxBlockSystemFee { get; set; }
+        public UnhandledExceptionPolicy ExceptionPolicy { get; set; } = UnhandledExceptionPolicy.StopNode;
+
+        public Settings ToObject()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

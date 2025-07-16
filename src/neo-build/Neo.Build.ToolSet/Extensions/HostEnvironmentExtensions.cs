@@ -19,25 +19,25 @@ namespace Neo.Build.ToolSet.Extensions
         public static bool IsLocalnet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(HostingEnvironments.Localnet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.Localnet);
         }
 
         public static bool IsTestnet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(HostingEnvironments.Testnet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.Testnet);
         }
 
         public static bool IsMainnet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(HostingEnvironments.Mainnet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.Mainnet);
         }
 
         public static bool IsPrivatenet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(HostingEnvironments.Privatenet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.Privatenet);
         }
     }
 }

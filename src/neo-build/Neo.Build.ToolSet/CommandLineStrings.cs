@@ -15,7 +15,12 @@ namespace Neo.Build.ToolSet
     {
         internal static class Program
         {
-            public const string RootDescription = "Neo Build Command-line Tool";
+            public const string RootDescription = "Neo Build Engine Command-line Tool";
+        }
+
+        internal static class Node
+        {
+            public const string RunDescription = "Run Neo instance node";
         }
     }
 }
