@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// TestWalletModel.cs file belongs to the neo project and is free
+// WalletModel.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -13,7 +13,7 @@ using System;
 
 namespace Neo.Build.Core.Models.Wallets
 {
-    public class TestWalletModel : JsonModel
+    public class WalletModel : JsonModel
     {
         public string? Name { get; set; }
 
@@ -21,8 +21,8 @@ namespace Neo.Build.Core.Models.Wallets
 
         public SCryptModel? Scrypt { get; set; }
 
-        public TestWalletAccountModel[]? Accounts { get; set; }
+        public WalletAccountModel[]? Accounts { get; set; }
 
-        public object? Extra { get; set; }
+        public ProtocolOptionsModel? Extra { get; set; }
     }
 }

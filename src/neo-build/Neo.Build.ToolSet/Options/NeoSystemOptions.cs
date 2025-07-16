@@ -13,25 +13,19 @@ using System.Net;
 
 namespace Neo.Build.ToolSet.Options
 {
-    internal sealed class NeoSystemOptions
-    {
-        public required NeoSystemNetworkOptions Network { get; set; }
-        public required NeoSystemStorageOptions Storage { get; set; }
-    }
-
     internal sealed class NeoSystemNetworkOptions
     {
-        public required IPAddress Listen { get; set; }
-        public required ushort Port { get; set; }
-        public required int MinDesiredConnections { get; set; }
-        public required int MaxConnections { get; set; }
-        public required int MaxConnectionsPerAddress { get; set; }
-        public required bool EnableCompression { get; set; }
+        public IPAddress Listen { get; set; } = IPAddress.Loopback;
+        public ushort Port { get; set; }
+        public int MinDesiredConnections { get; set; }
+        public int MaxConnections { get; set; }
+        public int MaxConnectionsPerAddress { get; set; }
+        public bool EnableCompression { get; set; }
     }
 
     internal sealed class NeoSystemStorageOptions
     {
-        public required string StoreRoot { get; set; }
-        public required string CheckPointRoot { get; set; }
+        public string StoreRoot { get; set; } = string.Empty;
+        public string CheckPointRoot { get; set; } = string.Empty;
     }
 }
