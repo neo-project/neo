@@ -11,6 +11,7 @@
 
 using Neo.Build.Core.Tests.Helpers;
 using Neo.Build.Core.Wallets;
+using Neo.SmartContract;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -81,6 +82,23 @@ namespace Neo.Build.Core.Tests.Wallets
             Assert.AreEqual(expectedWalletAccount.ScriptHash, actualWalletAccount.ScriptHash);
 
             Assert.IsTrue(expectedWallet.DeleteAccount(expectedAccountName));
+        }
+
+        [TestMethod]
+        public void TestCreateMultiSigAccount()
+        {
+            var expectedWallet = new DevWallet();
+            var expectedPrivateKey = RandomNumberGenerator.GetBytes(32);
+            var expectedAccountName = "bob";
+
+            var expectedWalletAccount = expectedWallet.CreateAccount(expectedPrivateKey, expectedAccountName);
+            var expectedAccountKey = expectedWalletAccount.GetKey();
+            var actualMultiSigAccount = expectedWallet.CreateMultiSigAccount([expectedAccountKey.PublicKey]);
+
+            Assert.IsNotNull(actualMultiSigAccount);
+            Assert.AreNotEqual(expectedWalletAccount.ScriptHash, actualMultiSigAccount.ScriptHash);
+            Assert.AreEqual(expectedAccountKey.PublicKey, actualMultiSigAccount.GetKey().PublicKey);
+            Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount.Contract.Script));
         }
 
         // TODO: Add more tests for this class
