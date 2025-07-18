@@ -122,8 +122,9 @@ namespace Neo.Build.Core.Wallets
                     f.HasKey &&
                     f.Lock == false &&
                     publicKeys.Contains(f.GetKey().PublicKey));
+            var accountKey = account?.GetKey();
 
-            var newAccount = CreateAccount(contract, account?.GetKey(), name);
+            var newAccount = CreateAccount(contract, accountKey, name);
             newAccount.IsDefault = isDefaultAccount;
 
             return newAccount;
