@@ -14,7 +14,6 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
@@ -663,6 +662,50 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.Add(storageKey, storageItem);
             snapshot.Commit();
             return state.Hash;
+        }
+
+        [TestMethod]
+        public void TestWalletsToFewArguments()
+        {
+            // DumpPrivKey
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.DumpPrivKey(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // GetWalletBalance
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetWalletBalance(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // ImportPrivKey
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.ImportPrivKey(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // CalculateNetworkFee
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.CalculateNetworkFee(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // OpenWallet
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.OpenWallet(new JArray("path/to/wallet.json")));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // SendFrom
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendFrom(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // SendMany
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendMany(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // SendToAddress
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendToAddress(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // CancelTransaction
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.CancelTransaction(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // InvokeContractVerify
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeContractVerify(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
         }
     }
 }

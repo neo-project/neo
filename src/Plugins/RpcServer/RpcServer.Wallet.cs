@@ -90,7 +90,9 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken DumpPrivKey(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // Address
             CheckWallet();
+
             var scriptHash = _params[0].AsString().AddressToScriptHash(system.Settings.AddressVersion);
             var account = wallet.GetAccount(scriptHash);
             return account.GetKey().Export();
@@ -133,7 +135,9 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetWalletBalance(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // AssetId
             CheckWallet();
+
             UInt160 asset_id = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
             JObject json = new();
             json["balance"] = wallet.GetAvailable(system.StoreView, asset_id).Value.ToString();
@@ -186,7 +190,9 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken ImportPrivKey(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // PrivateKey
             CheckWallet();
+
             string privkey = _params[0].AsString();
             WalletAccount account = wallet.Import(privkey);
             if (wallet is NEP6Wallet nep6wallet)
@@ -215,10 +221,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken CalculateNetworkFee(JArray _params)
         {
-            if (_params.Count == 0)
-            {
-                throw new RpcException(RpcError.InvalidParams.WithData("Params array is empty, need a raw transaction."));
-            }
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // Tx
+
             var tx = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid tx: {_params[0]}"));
 
             JObject account = new();
@@ -275,6 +279,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken OpenWallet(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 2, RpcError.InvalidParams); // Path, Password
+
             string path = _params[0].AsString();
             string password = _params[1].AsString();
             File.Exists(path).True_Or(RpcError.WalletNotFound);
@@ -376,7 +382,9 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken SendFrom(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 4, RpcError.InvalidParams); // AssetId, From, To, Amount
             CheckWallet();
+
             var assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
             var from = _params[1].AsString().AddressToScriptHash(system.Settings.AddressVersion);
             var to = _params[2].AsString().AddressToScriptHash(system.Settings.AddressVersion);
@@ -477,7 +485,9 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken SendMany(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // From
             CheckWallet();
+
             int to_start = 0;
             UInt160 from = null;
             if (_params[0] is JString)
@@ -564,7 +574,9 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken SendToAddress(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 3, RpcError.InvalidParams); // AssetId, To, Amount
             CheckWallet();
+
             var assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()),
                 RpcError.InvalidParams.WithData($"Invalid asset hash: {_params[0]}"));
             var to = _params[1].AsString().AddressToScriptHash(system.Settings.AddressVersion);
@@ -645,6 +657,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken CancelTransaction(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // Txid
             CheckWallet();
             var txid = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid txid: {_params[0]}"));
             NativeContract.Ledger.GetTransactionState(system.StoreView, txid).Null_Or(RpcErrorFactory.AlreadyExists("This tx is already confirmed, can't be cancelled."));
@@ -730,6 +743,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken InvokeContractVerify(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // ScriptHash
+
             var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()),
                 RpcError.InvalidParams.WithData($"Invalid script hash: {_params[0]}"));
 

@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Json;
 using System;
 
 namespace Neo.Plugins.RpcServer
@@ -38,6 +39,18 @@ namespace Neo.Plugins.RpcServer
         public static void ThrowIfNull<T>(T value, string paramName, RpcError error)
         {
             if (value is null) throw new RpcException(error.WithData($"Parameter '{paramName}' is null"));
+        }
+
+        /// <summary>
+        /// Throws an exception if the number of parameters is less than the required number.
+        /// </summary>
+        /// <param name="params">The parameters to check.</param>
+        /// <param name="requiredArgs">The required number of parameters.</param>
+        /// <param name="error">The error code to throw.</param>
+        public static void ThrowIfTooFew(JArray @params, int requiredArgs, RpcError error)
+        {
+            if ((@params is null && requiredArgs > 0) || (@params is not null && @params.Count < requiredArgs))
+                throw new RpcException(error.WithData($"Too few arguments. Expected at least {requiredArgs} but got {@params?.Count ?? 0}."));
         }
     }
 }

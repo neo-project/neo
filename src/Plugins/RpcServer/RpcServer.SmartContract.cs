@@ -236,6 +236,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken InvokeFunction(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 2, RpcError.InvalidParams); // ScriptHash, Operation
+
             var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()),
                 RpcError.InvalidParams.WithData($"Invalid script hash `{_params[0]}`"));
 
@@ -327,6 +329,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken InvokeScript(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // Script
+
             var script = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams);
             var (signers, witnesses) = _params.Count >= 2
                 ? ((JArray)_params[1]).ToSignersAndWitnesses(system.Settings.AddressVersion)
@@ -360,6 +364,8 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken TraverseIterator(JArray _params)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
+            RpcException.ThrowIfTooFew(_params, 3, RpcError.InvalidParams); // SessionId, IteratorId, Count
+
             Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData($"Invalid session id {nameof(sid)}"));
             Guid iid = Result.Ok_Or(() => Guid.Parse(_params[1].GetString()), RpcError.InvalidParams.WithData($"Invliad iterator id {nameof(iid)}"));
             int count = _params[2].GetInt32();
@@ -400,8 +406,9 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken TerminateSession(JArray _params)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
-            Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData("Invalid session id"));
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // SessionId
 
+            var sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData("Invalid session id"));
             Session session = null;
             bool result;
             lock (sessions)
@@ -438,6 +445,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetUnclaimedGas(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // Address
+
             var address = Result.Ok_Or(() => _params[0].AsString(),
                 RpcError.InvalidParams.WithData($"Invalid address `{_params[0]}`"));
             var json = new JObject();

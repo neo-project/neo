@@ -495,5 +495,32 @@ namespace Neo.Plugins.RpcServer.Tests
             // The underlying error is likely FormatException during AddressToScriptHash
             StringAssert.Contains(ex.Message, RpcError.InvalidParams.Message); // Fix based on test output
         }
+
+        [TestMethod]
+        public void TestSmartContractToFewArguments()
+        {
+            // InvokeFunction
+            var ex = Assert.ThrowsExactly<RpcException>(
+                () => _rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString())));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+
+            // InvokeScript
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeScript(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // TraverseIterator
+            ex = Assert.ThrowsExactly<RpcException>(
+                () => _rpcServer.TraverseIterator(new JArray(Guid.NewGuid().ToString(), Guid.NewGuid().ToString())));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // TerminateSession
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.TerminateSession(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // GetUnclaimedGas
+            ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetUnclaimedGas(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+        }
     }
 }

@@ -64,6 +64,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken ValidateAddress(JArray _params)
         {
+            RpcException.ThrowIfTooFew(_params, 1, RpcError.InvalidParams); // Address
+
             string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invlid address format: {_params[0]}"));
             UInt160 scriptHash;
             try

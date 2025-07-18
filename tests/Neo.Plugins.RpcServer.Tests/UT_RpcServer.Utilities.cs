@@ -76,5 +76,12 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(resp["address"], longAddr);
             Assert.AreEqual(resp["isvalid"], false);
         }
+
+        [TestMethod]
+        public void TestUtilitiesToFewArguments()
+        {
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.ValidateAddress(new JArray()));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+        }
     }
 }

@@ -37,9 +37,6 @@ namespace Neo.Plugins.RpcServer.Tests
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
 
-        const byte NativePrefixAccount = 20;
-        const byte NativePrefixTotalSupply = 11;
-
         [TestInitialize]
         public void TestSetup()
         {
