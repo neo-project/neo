@@ -36,6 +36,7 @@ namespace Neo.Build.ToolSet.Commands
             var defaultAccountNameOption = new Option<string>(["--name", "-n"], "Name of default account [default: name{number}]");
             var stdOutOption = new Option<bool>(["--stdout"], "Print wallet to stdout");
             var passwordOption = new Option<string>(["--password", "-p"], "Password for production wallet");
+            var overWriteOption = new Option<bool>(["--over-write"], "Overwrite existing file");
 
             AddOption(isProdWalletOption);
             AddOption(walletFilenameOption);
@@ -44,6 +45,7 @@ namespace Neo.Build.ToolSet.Commands
             AddOption(defaultAccountNameOption);
             AddOption(stdOutOption);
             AddOption(passwordOption);
+            AddOption(overWriteOption);
         }
 
         public enum PrivateKeyFormat : byte
@@ -71,6 +73,7 @@ namespace Neo.Build.ToolSet.Commands
             public bool IsProduction { get; set; } = GetDefaultIsProductionWallet();
             public bool StdOut { get; set; } = false;
             public string? Name { get; set; }
+            public bool OverWrite { get; set; } = false;
 
             private readonly INeoConfigurationOptions _neoConfiguration = neoConfiguration;
 
@@ -106,10 +109,20 @@ namespace Neo.Build.ToolSet.Commands
 
                 Wallet wallet;
 
-                if (IsProduction)
-                    wallet = CreateProductionWallet(privateKey);
+                var fileInfo = new FileInfo(Filename);
+
+                if (OverWrite && fileInfo.Exists)
+                    File.Delete(fileInfo.FullName);
                 else
-                    wallet = CreateDevelopmentWallet(privateKey);
+                {
+                    context.Console.ErrorMessage("File '{0}' already exists.", fileInfo.FullName);
+                    return Task.FromResult(NeoBuildErrorCodes.General.FileAccessDenied * -1);
+                }
+
+                if (IsProduction)
+                    wallet = CreateProductionWallet(privateKey, fileInfo);
+                else
+                    wallet = CreateDevelopmentWallet(privateKey, fileInfo);
 
                 if (StdOut == false)
                 {
@@ -138,9 +151,8 @@ namespace Neo.Build.ToolSet.Commands
                 return Task.FromResult(0);
             }
 
-            private Wallet CreateProductionWallet(KeyPair privateKey)
+            private Wallet CreateProductionWallet(KeyPair privateKey, FileInfo fileInfo)
             {
-                var fileInfo = new FileInfo(Filename);
                 var wallet = new NEP6Wallet(fileInfo.FullName, Password, ProtocolSettings.Default);
                 var walletAccount = wallet.CreateAccount(privateKey.PrivateKey);
                 var walletKey = walletAccount.GetKey();
@@ -149,7 +161,7 @@ namespace Neo.Build.ToolSet.Commands
                 return wallet;
             }
 
-            private Wallet CreateDevelopmentWallet(KeyPair privateKey)
+            private Wallet CreateDevelopmentWallet(KeyPair privateKey, FileInfo fileInfo)
             {
                 var protocolSettings = ProtocolSettings.Default with
                 {
@@ -165,8 +177,7 @@ namespace Neo.Build.ToolSet.Commands
                     SeedList = [$"{_neoConfiguration.NetworkOptions.Listen}:{_neoConfiguration.NetworkOptions.Port}"]
                 };
 
-                var fileInfo = new FileInfo(Filename);
-                var wallet = new DevWallet(fileInfo.FullName, protocolSettings);
+                var wallet = StdOut ? new DevWallet(protocolSettings) : new DevWallet(fileInfo.FullName, protocolSettings);
                 var walletAccount = wallet.CreateAccount(privateKey.PrivateKey, Name);
                 var walletKey = walletAccount.GetKey();
 
