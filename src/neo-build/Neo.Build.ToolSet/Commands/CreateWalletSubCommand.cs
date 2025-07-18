@@ -113,7 +113,7 @@ namespace Neo.Build.ToolSet.Commands
 
                 if (OverWrite && fileInfo.Exists)
                     File.Delete(fileInfo.FullName);
-                else
+                else if (fileInfo.Exists)
                 {
                     context.Console.ErrorMessage("File '{0}' already exists.", fileInfo.FullName);
                     return Task.FromResult(NeoBuildErrorCodes.General.FileAccessDenied * -1);
