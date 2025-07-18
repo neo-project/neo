@@ -155,7 +155,6 @@ namespace Neo.Build.ToolSet.Commands
             {
                 var wallet = new NEP6Wallet(fileInfo.FullName, Password, ProtocolSettings.Default);
                 var walletAccount = wallet.CreateAccount(privateKey.PrivateKey);
-                var walletKey = walletAccount.GetKey();
 
                 walletAccount.Label = Name;
                 return wallet;
