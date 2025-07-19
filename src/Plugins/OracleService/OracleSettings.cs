@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// Settings.cs file belongs to the neo project and is free
+// OracleSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -38,7 +38,7 @@ namespace Neo.Plugins.OracleService
         }
     }
 
-    class Settings : PluginSettings
+    class OracleSettings : IPluginSettings
     {
         public uint Network { get; }
         public Uri[] Nodes { get; }
@@ -50,9 +50,11 @@ namespace Neo.Plugins.OracleService
         public NeoFSSettings NeoFS { get; }
         public bool AutoStart { get; }
 
-        public static Settings Default { get; private set; }
+        public static OracleSettings Default { get; private set; }
 
-        private Settings(IConfigurationSection section) : base(section)
+        public UnhandledExceptionPolicy ExceptionPolicy { get; }
+
+        private OracleSettings(IConfigurationSection section)
         {
             Network = section.GetValue("Network", 5195086u);
             Nodes = section.GetSection("Nodes").GetChildren().Select(p => new Uri(p.Get<string>(), UriKind.Absolute)).ToArray();
@@ -60,6 +62,7 @@ namespace Neo.Plugins.OracleService
             MaxOracleTimeout = TimeSpan.FromMilliseconds(section.GetValue("MaxOracleTimeout", 15000));
             AllowPrivateHost = section.GetValue("AllowPrivateHost", false);
             AllowedContentTypes = section.GetSection("AllowedContentTypes").GetChildren().Select(p => p.Get<string>()).ToArray();
+            ExceptionPolicy = section.GetValue("UnhandledExceptionPolicy", UnhandledExceptionPolicy.Ignore);
             if (AllowedContentTypes.Count() == 0)
                 AllowedContentTypes = AllowedContentTypes.Concat("application/json").ToArray();
             Https = new HttpsSettings(section.GetSection("Https"));
@@ -69,7 +72,7 @@ namespace Neo.Plugins.OracleService
 
         public static void Load(IConfigurationSection section)
         {
-            Default = new Settings(section);
+            Default = new OracleSettings(section);
         }
     }
 }
