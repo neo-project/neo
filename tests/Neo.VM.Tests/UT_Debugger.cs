@@ -20,8 +20,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestBreakPoint()
         {
-            using ExecutionEngine engine = new();
-            using ScriptBuilder script = new();
+            using var engine = new ExecutionEngine();
+            using var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
             script.Emit(OpCode.NOP);
             script.Emit(OpCode.NOP);
@@ -29,10 +29,8 @@ namespace Neo.Test
 
             engine.LoadScript(script.ToArray());
 
-            Debugger debugger = new(engine);
-
+            var debugger = new Debugger(engine);
             Assert.IsFalse(debugger.RemoveBreakPoint(engine.CurrentContext.Script, 3));
-
             Assert.AreEqual(OpCode.NOP, engine.CurrentContext.NextInstruction.OpCode);
 
             debugger.AddBreakPoint(engine.CurrentContext.Script, 2);
@@ -53,8 +51,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestWithoutBreakPoints()
         {
-            using ExecutionEngine engine = new();
-            using ScriptBuilder script = new();
+            using var engine = new ExecutionEngine();
+            using var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
             script.Emit(OpCode.NOP);
             script.Emit(OpCode.NOP);
@@ -62,8 +60,7 @@ namespace Neo.Test
 
             engine.LoadScript(script.ToArray());
 
-            Debugger debugger = new(engine);
-
+            var debugger = new Debugger(engine);
             Assert.AreEqual(OpCode.NOP, engine.CurrentContext.NextInstruction.OpCode);
 
             debugger.Execute();
@@ -75,8 +72,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestWithoutDebugger()
         {
-            using ExecutionEngine engine = new();
-            using ScriptBuilder script = new();
+            using var engine = new ExecutionEngine();
+            using var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
             script.Emit(OpCode.NOP);
             script.Emit(OpCode.NOP);
@@ -95,8 +92,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestStepOver()
         {
-            using ExecutionEngine engine = new();
-            using ScriptBuilder script = new();
+            using var engine = new ExecutionEngine();
+            using var script = new ScriptBuilder();
             /* ┌     CALL
                │  ┌> NOT
                │  │  RET
@@ -110,8 +107,7 @@ namespace Neo.Test
 
             engine.LoadScript(script.ToArray());
 
-            Debugger debugger = new(engine);
-
+            var debugger = new Debugger(engine);
             Assert.AreEqual(OpCode.NOT, engine.CurrentContext.NextInstruction.OpCode);
             Assert.AreEqual(VMState.BREAK, debugger.StepOver());
             Assert.AreEqual(2, engine.CurrentContext.InstructionPointer);
@@ -132,8 +128,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestStepInto()
         {
-            using ExecutionEngine engine = new();
-            using ScriptBuilder script = new();
+            using var engine = new ExecutionEngine();
+            using var script = new ScriptBuilder();
             /* ┌     CALL
                │  ┌> NOT
                │  │  RET
@@ -147,10 +143,8 @@ namespace Neo.Test
 
             engine.LoadScript(script.ToArray());
 
-            Debugger debugger = new(engine);
-
+            var debugger = new Debugger(engine);
             var context = engine.CurrentContext;
-
             Assert.AreEqual(context, engine.CurrentContext);
             Assert.AreEqual(context, engine.EntryContext);
             Assert.AreEqual(OpCode.NOT, engine.CurrentContext.NextInstruction.OpCode);
@@ -183,8 +177,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestBreakPointStepOver()
         {
-            using ExecutionEngine engine = new();
-            using ScriptBuilder script = new();
+            using var engine = new ExecutionEngine();
+            using var script = new ScriptBuilder();
             /* ┌     CALL
                │  ┌> NOT
                │  │  RET
@@ -198,8 +192,7 @@ namespace Neo.Test
 
             engine.LoadScript(script.ToArray());
 
-            Debugger debugger = new(engine);
-
+            var debugger = new Debugger(engine);
             Assert.AreEqual(OpCode.NOT, engine.CurrentContext.NextInstruction.OpCode);
 
             debugger.AddBreakPoint(engine.CurrentContext.Script, 5);

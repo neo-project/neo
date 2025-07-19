@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Neo.Network.RpcClient\Neo.Network.RpcClient.csproj" />
     <ProjectReference Include="..\..\src\Plugins\RpcServer\RpcServer.csproj" />
+    <ProjectReference Include="..\..\src\RpcClient\RpcClient.csproj" />
   </ItemGroup>
 
   <ItemGroup>

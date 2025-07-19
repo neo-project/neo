@@ -113,7 +113,7 @@ namespace Neo.Network.RPC
             var (numerator, denominator) = Fraction(amount);
             if (factor < denominator)
             {
-                throw new ArgumentException("The decimal places is too long.");
+                throw new ArgumentException($"The decimal places in the value '{amount}' exceed the allowed precision of {decimals} decimals for this token.");
             }
 
             BigInteger res = factor * numerator / denominator;

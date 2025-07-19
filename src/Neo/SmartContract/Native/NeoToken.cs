@@ -348,15 +348,15 @@ namespace Neo.SmartContract.Native
         private async ContractTask OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
         {
             if (engine.CallingScriptHash != GAS.Hash)
-                throw new InvalidOperationException("only GAS is accepted");
+                throw new InvalidOperationException("Only GAS contract can call this method");
 
             if ((long)amount != GetRegisterPrice(engine.SnapshotCache))
-                throw new ArgumentException("incorrect GAS amount for registration");
+                throw new ArgumentException($"Incorrect GAS amount. Expected {GetRegisterPrice(engine.SnapshotCache)} GAS, but received {amount} GAS.");
 
             var pubkey = ECPoint.DecodePoint(data.GetSpan(), ECCurve.Secp256r1);
 
             if (!RegisterInternal(engine, pubkey))
-                throw new InvalidOperationException("failed to register candidate");
+                throw new InvalidOperationException("Failed to register candidate");
 
             await GAS.Burn(engine, Hash, amount);
         }

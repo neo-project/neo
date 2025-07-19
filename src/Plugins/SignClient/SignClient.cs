@@ -46,7 +46,7 @@ namespace Neo.Plugins.SignClient
 
         public SignClient() { }
 
-        public SignClient(Settings settings)
+        public SignClient(SignSettings settings)
         {
             Reset(settings);
         }
@@ -66,7 +66,7 @@ namespace Neo.Plugins.SignClient
             if (!string.IsNullOrEmpty(_name)) SignerManager.RegisterSigner(_name, this);
         }
 
-        private ServiceConfig GetServiceConfig(Settings settings)
+        private ServiceConfig GetServiceConfig(SignSettings settings)
         {
             var methodConfig = new MethodConfig
             {
@@ -93,7 +93,7 @@ namespace Neo.Plugins.SignClient
             return new ServiceConfig { MethodConfigs = { methodConfig } };
         }
 
-        private void Reset(Settings settings)
+        private void Reset(SignSettings settings)
         {
             // _settings = settings;
             var serviceConfig = GetServiceConfig(settings);
@@ -332,7 +332,7 @@ namespace Neo.Plugins.SignClient
         protected override void Configure()
         {
             var config = GetConfiguration();
-            if (config is not null) Reset(new Settings(config));
+            if (config is not null) Reset(new SignSettings(config));
         }
 
         /// <inheritdoc/>

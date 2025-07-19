@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// Settings.cs file belongs to the neo project and is free
+// StorageSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,7 +14,7 @@ using Neo.SmartContract.Native;
 
 namespace Neo.Plugins.StorageDumper
 {
-    internal class Settings : PluginSettings
+    internal class StorageSettings : IPluginSettings
     {
         /// <summary>
         /// Amount of storages states (heights) to be dump in a given json file
@@ -30,9 +30,11 @@ namespace Neo.Plugins.StorageDumper
         public uint StoragePerFolder { get; }
         public IReadOnlyList<int> Exclude { get; }
 
-        public static Settings? Default { get; private set; }
+        public static StorageSettings? Default { get; private set; }
 
-        private Settings(IConfigurationSection section) : base(section)
+        public UnhandledExceptionPolicy ExceptionPolicy { get; }
+
+        private StorageSettings(IConfigurationSection section)
         {
             // Geting settings for storage changes state dumper
             BlockCacheSize = section.GetValue("BlockCacheSize", 1000u);
@@ -41,11 +43,12 @@ namespace Neo.Plugins.StorageDumper
             Exclude = section.GetSection("Exclude").Exists()
                 ? section.GetSection("Exclude").GetChildren().Select(p => int.Parse(p.Value!)).ToArray()
                 : new[] { NativeContract.Ledger.Id };
+            ExceptionPolicy = section.GetValue("UnhandledExceptionPolicy", UnhandledExceptionPolicy.Ignore);
         }
 
         public static void Load(IConfigurationSection section)
         {
-            Default = new Settings(section);
+            Default = new StorageSettings(section);
         }
     }
 }
