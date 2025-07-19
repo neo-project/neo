@@ -25,7 +25,7 @@ namespace Neo.Plugins.StateService.Storage
         public StateSnapshot(IStore store)
         {
             _snapshot = store.GetSnapshot();
-            Trie = new Trie(_snapshot, CurrentLocalRootHash(), Settings.Default.FullState);
+            Trie = new Trie(_snapshot, CurrentLocalRootHash(), StateServiceSettings.Default.FullState);
         }
 
         public StateRoot GetStateRoot(uint index)
