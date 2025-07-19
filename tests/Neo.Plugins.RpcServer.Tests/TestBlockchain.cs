@@ -40,7 +40,7 @@ namespace Neo.Plugins.RpcServer.Tests
         internal static void ResetStore()
         {
             Store.Reset();
-            TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
+            TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         internal static DataCache GetTestSnapshot()

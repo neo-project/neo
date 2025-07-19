@@ -14,8 +14,6 @@ using Microsoft.Extensions.Configuration;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.Persistence.Providers;
-using Neo.Plugins.DBFTPlugin;
-using Neo.UnitTests;
 using System;
 using System.Collections.Generic;
 
@@ -43,7 +41,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         internal static void ResetStore()
         {
             Store.Reset();
-            TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
+            TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         internal static DbftSettings CreateDefaultSettings()
