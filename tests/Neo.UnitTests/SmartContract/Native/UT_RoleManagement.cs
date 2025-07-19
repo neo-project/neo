@@ -30,37 +30,39 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_RoleManagement
     {
-        private DataCache _snapshotCache;
-
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var system = TestBlockchain.GetSystem();
+            system.ResetStore();
         }
 
         [TestMethod]
         public void TestSetAndGet()
         {
-            byte[] privateKey1 = new byte[32];
+            var privateKey1 = new byte[32];
             var rng1 = RandomNumberGenerator.Create();
             rng1.GetBytes(privateKey1);
-            KeyPair key1 = new KeyPair(privateKey1);
-            byte[] privateKey2 = new byte[32];
+            var key1 = new KeyPair(privateKey1);
+            var privateKey2 = new byte[32];
             var rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
-            KeyPair key2 = new KeyPair(privateKey2);
-            ECPoint[] publicKeys = new ECPoint[2];
+            var key2 = new KeyPair(privateKey2);
+            var publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
-            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            publicKeys = [.. publicKeys.OrderBy(p => p)];
 
-            List<Role> roles = new List<Role>() { Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary };
+            List<Role> roles = [Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary];
             foreach (var role in roles)
             {
-                var snapshot1 = _snapshotCache.CloneCache();
+                var system = new TestBlockchain.TestNeoSystem(TestProtocolSettings.Default);
+
+                var snapshot1 = system.GetTestSnapshotCache(false);
                 var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
                 List<NotifyEventArgs> notifications = [];
                 void Ev(ApplicationEngine o, NotifyEventArgs e) => notifications.Add(e);
+
                 var ret = NativeContract.RoleManagement.Call(
                     snapshot1,
                     new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
@@ -72,14 +74,16 @@ namespace Neo.UnitTests.SmartContract.Native
                 snapshot1.Commit();
                 Assert.AreEqual(1, notifications.Count);
                 Assert.AreEqual("Designation", notifications[0].EventName);
-                var snapshot2 = _snapshotCache.CloneCache();
+
+                var snapshot2 = system.GetTestSnapshotCache(false);
+
                 ret = NativeContract.RoleManagement.Call(
                     snapshot2,
                     "getDesignatedByRole",
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(1u) }
                 );
-                Assert.IsInstanceOfType(ret, typeof(Array));
+                Assert.IsInstanceOfType<Array>(ret);
                 Assert.AreEqual(2, (ret as Array).Count);
                 Assert.AreEqual(publicKeys[0].ToArray().ToHexString(), (ret as Array)[0].GetSpan().ToHexString());
                 Assert.AreEqual(publicKeys[1].ToArray().ToHexString(), (ret as Array)[1].GetSpan().ToHexString());
@@ -90,7 +94,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(0) }
                 );
-                Assert.IsInstanceOfType(ret, typeof(Array));
+                Assert.IsInstanceOfType<Array>(ret);
                 Assert.AreEqual(0, (ret as Array).Count);
             }
         }
