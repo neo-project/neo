@@ -32,7 +32,7 @@ namespace Neo.UnitTests
             public void ResetStore()
             {
                 (StorageProvider as TestStoreProvider).Store.Reset();
-                Blockchain.Ask(new Blockchain.Initialize()).Wait();
+                Blockchain.Ask(new Blockchain.Initialize()).ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
             public StoreCache GetTestSnapshotCache(bool reset = true)
