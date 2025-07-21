@@ -31,6 +31,24 @@ jobs:
     - name: Check Format (*.cs)
       run: dotnet format --verify-no-changes --verbosity diagnostic
 
+  Check-Vulnerable:
+    name: Scan for Vulnerable Dependencies
+    needs: [Format]
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.2.2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4.3.1
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Scan for Vulnerable Dependencies
+      run: dotnet list package --vulnerable --include-transitive
+
   Test-Everything:
     needs: [Format]
     timeout-minutes: 15
