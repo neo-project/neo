@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/" # Adjust if your .csproj or packages.config is in a subfolder
+    schedule:
+      interval: "daily" # Options: daily, weekly, monthly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    labels:
+      - "Dependencies"
+      - "Security"
+

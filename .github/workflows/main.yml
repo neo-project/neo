@@ -31,14 +31,6 @@ jobs:
     - name: Check Format (*.cs)
       run: dotnet format --verify-no-changes --verbosity diagnostic
 
-  Check-Vulnerables:
-    needs: [format]
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-    - name: Scan for Vulnerable Dependencies
-      run: dotnet list neo.sln package --vulnerable --include-transitive
-
   Test-Everything:
     needs: [Format]
     timeout-minutes: 15
