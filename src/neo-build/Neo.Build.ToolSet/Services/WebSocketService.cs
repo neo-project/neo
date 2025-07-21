@@ -148,7 +148,7 @@ namespace Neo.Build.ToolSet.Services
                     try
                     {
                         var request = JsonSerializer.Deserialize<JsonRpcRequest<object>>(jsonString);
-                        var response = await s_dispatcher.DispatchAsync(request);
+                        var response = await JsonRpcDispatcher.DispatchAsync(request);
 
                         await SendJson(webSocket, response);
 
