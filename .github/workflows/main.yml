@@ -37,7 +37,7 @@ jobs:
     continue-on-error: true
     steps:
     - name: Scan for Vulnerable Dependencies
-      run: dotnet list package --vulnerable --include-transitive
+      run: dotnet list neo.sln package --vulnerable --include-transitive
 
   Test-Everything:
     needs: [Format]
