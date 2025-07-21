@@ -46,6 +46,9 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
+    - name: Restore
+      run: dotnet restore
+
     - name: Scan for Vulnerable Dependencies
       run: dotnet list package --vulnerable --include-transitive
 
