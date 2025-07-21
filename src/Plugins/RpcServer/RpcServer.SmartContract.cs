@@ -246,7 +246,7 @@ namespace Neo.Plugins.RpcServer
 
             var (signers, witnesses) = _params.Count >= 4
                 ? ((JArray)_params[3]).ToSignersAndWitnesses(system.Settings.AddressVersion)
-                : (null, null);
+                : default;
 
             var useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
 
@@ -330,7 +330,7 @@ namespace Neo.Plugins.RpcServer
             var script = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams);
             var (signers, witnesses) = _params.Count >= 2
                 ? ((JArray)_params[1]).ToSignersAndWitnesses(system.Settings.AddressVersion)
-                : (null, null);
+                : default;
             var useDiagnostic = _params.Count >= 3 && _params[2].GetBoolean();
             return GetInvokeResult(script, signers, witnesses, useDiagnostic);
         }
@@ -441,9 +441,7 @@ namespace Neo.Plugins.RpcServer
             var address = Result.Ok_Or(() => _params[0].AsString(),
                 RpcError.InvalidParams.WithData($"Invalid address `{_params[0]}`"));
             var json = new JObject();
-            var scriptHash = Result.Ok_Or(
-                () => address.AddressToScriptHash(system.Settings.AddressVersion),
-                RpcError.InvalidParams.WithData($"Invalid address `{address}`"));
+            var scriptHash = address.AddressToScriptHash(system.Settings.AddressVersion);
 
             var snapshot = system.StoreView;
             json["unclaimed"] = NativeContract.NEO.UnclaimedGas(snapshot, scriptHash, NativeContract.Ledger.CurrentIndex(snapshot) + 1).ToString();

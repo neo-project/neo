@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Neo.Json;
 using Neo.Network.P2P;
+using Neo.Plugins.RpcServer.Model;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,6 +31,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Address = Neo.Plugins.RpcServer.Model.Address;
 
 namespace Neo.Plugins.RpcServer
 {
@@ -56,6 +58,13 @@ namespace Neo.Plugins.RpcServer
 
             _rpcUser = settings.RpcUser is not null ? Encoding.UTF8.GetBytes(settings.RpcUser) : [];
             _rpcPass = settings.RpcPass is not null ? Encoding.UTF8.GetBytes(settings.RpcPass) : [];
+
+            var addressVersion = system.Settings.AddressVersion;
+            ParameterConverter.RegisterConversion<SignersAndWitnesses>(token => token.ToSignersAndWitnesses(addressVersion));
+
+            // An address can be either UInt160 or Base58Check format.
+            // If only UInt160 format is allowed, use UInt160 as parameter type.
+            ParameterConverter.RegisterConversion<Address>(token => token.ToAddress(addressVersion));
 
             localNode = system.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
             RegisterMethods(this);
@@ -330,16 +339,7 @@ namespace Neo.Plugins.RpcServer
                         {
                             try
                             {
-                                if (param.ParameterType == typeof(UInt160))
-                                {
-                                    args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i],
-                                        system.Settings.AddressVersion);
-                                }
-                                else
-                                {
-                                    args[i] = ParameterConverter.ConvertParameter(jsonParameters[i],
-                                        param.ParameterType);
-                                }
+                                args[i] = ParameterConverter.AsParameter(jsonParameters[i], param.ParameterType);
                             }
                             catch (Exception e) when (e is not RpcException)
                             {
