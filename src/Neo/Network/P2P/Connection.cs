@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Akka.IO;
+using Neo.Extensions.Exceptions;
 using System;
 using System.Net;
 
@@ -117,14 +118,7 @@ namespace Neo.Network.P2P
         {
             timer.CancelIfNotNull();
             timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimit), Self, new Close { Abort = true }, ActorRefs.NoSender);
-            try
-            {
-                OnData(data);
-            }
-            catch
-            {
-                Disconnect(true);
-            }
+            data.TryCatch<ByteString, Exception>(OnData, (_, _) => Disconnect(true));
         }
 
         protected override void PostStop()

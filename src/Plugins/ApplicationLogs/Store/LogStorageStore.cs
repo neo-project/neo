@@ -160,14 +160,14 @@ namespace Neo.Plugins.ApplicationLogs.Store
             {
                 _snapshot.Put(key, BinarySerializer.Serialize(stackItem, ExecutionEngineLimits.Default with
                 {
-                    MaxItemSize = (uint)Settings.Default.MaxStackSize
+                    MaxItemSize = (uint)ApplicationLogsSettings.Default.MaxStackSize
                 }));
             }
             catch
             {
                 _snapshot.Put(key, BinarySerializer.Serialize(StackItem.Null, ExecutionEngineLimits.Default with
                 {
-                    MaxItemSize = (uint)Settings.Default.MaxStackSize
+                    MaxItemSize = (uint)ApplicationLogsSettings.Default.MaxStackSize
                 }));
             }
             return id;

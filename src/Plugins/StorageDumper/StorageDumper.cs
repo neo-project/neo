@@ -30,7 +30,7 @@ namespace Neo.Plugins.StorageDumper
         /// </summary>
         private JObject? _currentBlock;
         private string? _lastCreateDirectory;
-        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default?.ExceptionPolicy ?? UnhandledExceptionPolicy.Ignore;
+        protected override UnhandledExceptionPolicy ExceptionPolicy => StorageSettings.Default?.ExceptionPolicy ?? UnhandledExceptionPolicy.Ignore;
 
         public override string Description => "Exports Neo-CLI status data";
 
@@ -50,7 +50,7 @@ namespace Neo.Plugins.StorageDumper
 
         protected override void Configure()
         {
-            Settings.Load(GetConfiguration());
+            StorageSettings.Load(GetConfiguration());
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
@@ -74,7 +74,7 @@ namespace Neo.Plugins.StorageDumper
                 prefix = BitConverter.GetBytes(contract.Id);
             }
             var states = _system.StoreView.Find(prefix);
-            JArray array = new JArray(states.Where(p => !Settings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
+            JArray array = new JArray(states.Where(p => !StorageSettings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
             {
                 ["key"] = Convert.ToBase64String(p.Key.ToArray()),
                 ["value"] = Convert.ToBase64String(p.Value.ToArray())
@@ -95,13 +95,13 @@ namespace Neo.Plugins.StorageDumper
         private void OnPersistStorage(uint network, DataCache snapshot)
         {
             var blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (blockIndex >= Settings.Default!.HeightToBegin)
+            if (blockIndex >= StorageSettings.Default!.HeightToBegin)
             {
                 var stateChangeArray = new JArray();
 
                 foreach (var trackable in snapshot.GetChangeSet())
                 {
-                    if (Settings.Default.Exclude.Contains(trackable.Key.Id))
+                    if (StorageSettings.Default.Exclude.Contains(trackable.Key.Id))
                         continue;
                     var state = new JObject();
                     switch (trackable.Value.State)
@@ -156,10 +156,10 @@ namespace Neo.Plugins.StorageDumper
         {
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (_writer == null
-                || blockIndex % Settings.Default!.BlockCacheSize == 0)
+                || blockIndex % StorageSettings.Default!.BlockCacheSize == 0)
             {
                 string path = GetOrCreateDirectory(network, blockIndex);
-                var filepart = (blockIndex / Settings.Default!.BlockCacheSize) * Settings.Default.BlockCacheSize;
+                var filepart = (blockIndex / StorageSettings.Default!.BlockCacheSize) * StorageSettings.Default.BlockCacheSize;
                 path = $"{path}/dump-block-{filepart}.dump";
                 if (_writer != null)
                 {
@@ -182,7 +182,7 @@ namespace Neo.Plugins.StorageDumper
 
         private string GetDirectoryPath(uint network, uint blockIndex)
         {
-            uint folder = (blockIndex / Settings.Default!.StoragePerFolder) * Settings.Default.StoragePerFolder;
+            uint folder = (blockIndex / StorageSettings.Default!.StoragePerFolder) * StorageSettings.Default.StoragePerFolder;
             return $"./StorageDumper_{network}/BlockStorage_{folder}";
         }
 
