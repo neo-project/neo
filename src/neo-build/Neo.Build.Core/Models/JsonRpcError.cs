@@ -23,5 +23,16 @@ namespace Neo.Build.Core.Models
 
         [JsonPropertyName("data")]
         public object? Data { get; set; }
+
+        public static JsonRpcErrorResponse CreateResponse(int code, string message) =>
+            new()
+            {
+                Id = null,
+                Error = new()
+                {
+                    Code = code,
+                    Message = message,
+                },
+            };
     }
 }

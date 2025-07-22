@@ -32,7 +32,7 @@ namespace Neo.Build.ToolSet.Commands
             var isProdWalletOption = new Option<bool>(["--is-production", "-P"], GetDefaultIsProductionWallet, "Make wallet for development");
             var walletFilenameOption = new Option<string>(["--filename", "-f"], GetDefaultWalletFilename, "Wallet filename");
             var privateKeyOption = new Option<string>(["--private-key", "-Pk"], "Private key to use for the default account");
-            var privateKeyFormatOption = new Option<PrivateKeyFormat>(["--key-format", "-Kf"], GetPrivateKeyFormat, "Format of the private key");
+            var privateKeyFormatOption = new Option<PrivateKeyFormat>(["--key-format", "-Kf"], GetDefaultPrivateKeyFormat, "Format of the private key");
             var defaultAccountNameOption = new Option<string>(["--name", "-n"], "Name of default account [default: name{number}]");
             var stdOutOption = new Option<bool>(["--stdout"], "Print wallet to stdout");
             var passwordOption = new Option<string>(["--password", "-p"], "Password for production wallet");
@@ -60,7 +60,7 @@ namespace Neo.Build.ToolSet.Commands
         private static string GetDefaultWalletFilename() =>
             FileNameDefaults.WalletName;
 
-        private static PrivateKeyFormat GetPrivateKeyFormat() =>
+        private static PrivateKeyFormat GetDefaultPrivateKeyFormat() =>
             PrivateKeyFormat.HexString;
 
         public new sealed class Handler(
@@ -68,7 +68,7 @@ namespace Neo.Build.ToolSet.Commands
         {
             public string? PrivateKey { get; set; }
             public string? Password { get; set; }
-            public PrivateKeyFormat KeyFormat { get; set; } = GetPrivateKeyFormat();
+            public PrivateKeyFormat KeyFormat { get; set; } = GetDefaultPrivateKeyFormat();
             public string Filename { get; set; } = GetDefaultWalletFilename();
             public bool IsProduction { get; set; } = GetDefaultIsProductionWallet();
             public bool StdOut { get; set; } = false;
