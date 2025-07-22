@@ -31,6 +31,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageOutputPath>../../../pkgs/</PackageOutputPath>
 
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
   </PropertyGroup>

@@ -101,9 +101,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.Core", "src\neo-b
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.ToolSet", "src\neo-build\Neo.Build.ToolSet\Neo.Build.ToolSet.csproj", "{15915AC1-E944-0A29-CCAE-95D02B0C9345}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Network.RpcClient", "src\RpcClient\RpcClient.csproj", "{1262D920-9A73-0FD0-5291-0D682697560D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RpcClient", "src\RpcClient\RpcClient.csproj", "{1262D920-9A73-0FD0-5291-0D682697560D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Network.RPC.Tests", "tests\Neo.Network.RPC.RpcClient.Tests\Neo.Network.RPC.Tests.csproj", "{60E16A49-06EB-6F80-7228-21A7793B8250}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.Utilities.Core", "src\neo-build\Neo.Build.Utilities.Core\Neo.Build.Utilities.Core.csproj", "{C890AB1A-ACF2-48A8-8376-34FF9E2F0325}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -287,6 +289,10 @@ Global
 		{60E16A49-06EB-6F80-7228-21A7793B8250}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60E16A49-06EB-6F80-7228-21A7793B8250}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60E16A49-06EB-6F80-7228-21A7793B8250}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C890AB1A-ACF2-48A8-8376-34FF9E2F0325}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C890AB1A-ACF2-48A8-8376-34FF9E2F0325}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C890AB1A-ACF2-48A8-8376-34FF9E2F0325}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C890AB1A-ACF2-48A8-8376-34FF9E2F0325}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -338,6 +344,7 @@ Global
 		{15915AC1-E944-0A29-CCAE-95D02B0C9345} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{1262D920-9A73-0FD0-5291-0D682697560D} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 		{60E16A49-06EB-6F80-7228-21A7793B8250} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
+		{C890AB1A-ACF2-48A8-8376-34FF9E2F0325} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
