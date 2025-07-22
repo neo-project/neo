@@ -150,7 +150,7 @@ jobs:
           ${{ github.workspace }}/TestResults/Neo.VM.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Json.UnitTests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Cryptography.MPTTrie.Tests/coverage.info
-          ${{ github.workspace }}/TestResults/Neo.Network.RPC.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.RpcClient.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Plugins.DBFTPlugin.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Plugins.OracleService.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Plugins.RpcServer.Tests/coverage.info
