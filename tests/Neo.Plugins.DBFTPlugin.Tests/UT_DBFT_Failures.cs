@@ -44,7 +44,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         private MockWallet[] testWallets;
         private IActorRef[] consensusServices;
         private MemoryStore memoryStore;
-        private Settings settings;
+        private DbftSettings settings;
 
         [TestInitialize]
         public void Setup()
