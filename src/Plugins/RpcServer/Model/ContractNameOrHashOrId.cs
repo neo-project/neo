@@ -27,6 +27,14 @@ namespace Neo.Plugins.RpcServer.Model
             _value = hash;
         }
 
+        /// <summary>
+        ///  The name is one of the native contract names:
+        ///  ContractManagement, StdLib, CryptoLib, LedgerContract, NeoToken, GasToken, PolicyContract, RoleManagement, OracleContract, Notary
+        /// <para>
+        ///  Or use `list nativecontract` in neo-cli to get the native contract names.
+        /// </para>
+        /// </summary>
+        /// <param name="name"></param>
         public ContractNameOrHashOrId(string name)
         {
             _value = name;
