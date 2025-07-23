@@ -19,7 +19,7 @@ namespace Neo.Build.Core.Factories
     public static class FunctionFactory
     {
         private static readonly uint s_networkSeed = 810960196u; // DEV0 Magic Code
-        private static readonly string s_GlobalString = "Global\\";
+        private static readonly string s_globalString = "Global\\";
 
         public static uint GetDevNetwork(uint index) =>
             (uint)(s_networkSeed & ~(0xf << 24) | (index << 24));
@@ -44,7 +44,7 @@ namespace Neo.Build.Core.Factories
         public static Mutex CreateMutex(string? name = null)
         {
             if (string.IsNullOrEmpty(name))
-                name = Path.Combine(s_GlobalString, Path.GetRandomFileName());
+                name = Path.Combine(s_globalString, Path.GetRandomFileName());
             return new(initiallyOwned: true, name);
         }
     }

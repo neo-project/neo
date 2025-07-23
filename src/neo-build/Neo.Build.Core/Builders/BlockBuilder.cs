@@ -105,6 +105,13 @@ namespace Neo.Build.Core.Builders
             return this;
         }
 
+        public BlockBuilder AddTimestamp(DateTimeOffset timestamp)
+        {
+            _block.Header.Timestamp = (ulong)timestamp.ToUnixTimeMilliseconds();
+
+            return this;
+        }
+
         public BlockBuilder AddVersion(uint version)
         {
             _block.Header.Version = version;
@@ -114,7 +121,6 @@ namespace Neo.Build.Core.Builders
 
         public BlockBuilder AddWitness(Action<WitnessBuilder> config)
         {
-
             var wb = WitnessBuilder.CreateEmpty();
             config(wb);
             _block.Header.Witness = wb.Build();
