@@ -1,0 +1,49 @@
+{
+  "PluginConfiguration": {
+    "Enabled": true,
+    "ServiceName": "neo-node",
+    "ServiceVersion": "3.8.1",
+    "InstanceId": "",
+    "Metrics": {
+      "Enabled": true,
+      "Interval": 10000,
+      "PrometheusExporter": {
+        "Enabled": true,
+        "Port": 9090,
+        "Path": "/metrics"
+      },
+      "ConsoleExporter": {
+        "Enabled": false
+      }
+    },
+    "Tracing": {
+      "Enabled": true,
+      "SamplingRatio": 0.1,
+      "ConsoleExporter": {
+        "Enabled": false
+      }
+    },
+    "Logging": {
+      "Enabled": true,
+      "IncludeScopes": true,
+      "IncludeFormattedMessage": true,
+      "ConsoleExporter": {
+        "Enabled": false
+      }
+    },
+    "OtlpExporter": {
+      "Enabled": true,
+      "Endpoint": "http://localhost:4317",
+      "Protocol": "grpc",
+      "Headers": "",
+      "Timeout": 10000,
+      "ExportMetrics": true,
+      "ExportTraces": true,
+      "ExportLogs": true
+    },
+    "ResourceAttributes": {
+      "deployment.environment": "production",
+      "service.namespace": "blockchain"
+    }
+  }
+}
