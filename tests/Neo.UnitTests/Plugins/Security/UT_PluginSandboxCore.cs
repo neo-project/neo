@@ -249,7 +249,7 @@ namespace Neo.UnitTests.Plugins.Security
             try
             {
                 var result = await sandbox.ExecuteAsync(() => null);
-                
+
                 // If we get a result, it should have these properties
                 if (result != null)
                 {
