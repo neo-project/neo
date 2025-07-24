@@ -235,15 +235,13 @@ namespace Neo.CLI
                 return;
             }
 
-            // Validate parameter count
-            if (args != null && args.Count != method.Parameters.Length)
+            // Validate parameter count - moved outside parsing loop for better performance
+            var expectedParamCount = method.Parameters.Length;
+            var actualParamCount = args?.Count ?? 0;
+            
+            if (actualParamCount != expectedParamCount)
             {
-                ConsoleHelper.Error($"Method '{operation}' expects exactly {method.Parameters.Length} parameters but {args.Count} were provided.");
-                return;
-            }
-            else if (args == null && method.Parameters.Length > 0)
-            {
-                ConsoleHelper.Error($"Method '{operation}' expects {method.Parameters.Length} parameters but none were provided.");
+                ConsoleHelper.Error($"Method '{operation}' expects exactly {expectedParamCount} parameters but {actualParamCount} were provided.");
                 return;
             }
 
@@ -279,155 +277,177 @@ namespace Neo.CLI
         /// </summary>
         private ContractParameter ParseParameterFromAbi(ContractParameterType type, JToken? value)
         {
-            var param = new ContractParameter { Type = type };
-
             if (value == null || value == JToken.Null)
+                return new ContractParameter { Type = type, Value = null };
+
+            return type switch
             {
-                param.Value = null;
-                return param;
+                ContractParameterType.Boolean => new ContractParameter { Type = type, Value = value.AsBoolean() },
+                ContractParameterType.Integer => ParseIntegerParameter(value),
+                ContractParameterType.ByteArray => ParseByteArrayParameter(value),
+                ContractParameterType.String => new ContractParameter { Type = type, Value = value.AsString() },
+                ContractParameterType.Hash160 => ParseHash160Parameter(value),
+                ContractParameterType.Hash256 => ParseHash256Parameter(value),
+                ContractParameterType.PublicKey => ParsePublicKeyParameter(value),
+                ContractParameterType.Signature => ParseSignatureParameter(value),
+                ContractParameterType.Array => ParseArrayParameter(value),
+                ContractParameterType.Map => ParseMapParameter(value),
+                ContractParameterType.Any => InferParameterFromToken(value),
+                ContractParameterType.InteropInterface => throw new NotSupportedException("InteropInterface type cannot be parsed from JSON"),
+                _ => throw new ArgumentException($"Unsupported parameter type: {type}")
+            };
+        }
+
+        /// <summary>
+        /// Parse integer parameter with error handling
+        /// </summary>
+        private ContractParameter ParseIntegerParameter(JToken value)
+        {
+            try
+            {
+                return new ContractParameter { Type = ContractParameterType.Integer, Value = BigInteger.Parse(value.AsString()) };
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException($"Invalid integer format. Expected a numeric string, got: '{value.AsString()}'");
+            }
+        }
+
+        /// <summary>
+        /// Parse byte array parameter with error handling
+        /// </summary>
+        private ContractParameter ParseByteArrayParameter(JToken value)
+        {
+            try
+            {
+                return new ContractParameter { Type = ContractParameterType.ByteArray, Value = Convert.FromBase64String(value.AsString()) };
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException($"Invalid ByteArray format. Expected a Base64 encoded string, got: '{value.AsString()}'");
+            }
+        }
+
+        /// <summary>
+        /// Parse Hash160 parameter with error handling
+        /// </summary>
+        private ContractParameter ParseHash160Parameter(JToken value)
+        {
+            try
+            {
+                return new ContractParameter { Type = ContractParameterType.Hash160, Value = UInt160.Parse(value.AsString()) };
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException($"Invalid Hash160 format. Expected format: '0x' followed by 40 hex characters (e.g., '0x1234...abcd'), got: '{value.AsString()}'");
+            }
+        }
+
+        /// <summary>
+        /// Parse Hash256 parameter with error handling
+        /// </summary>
+        private ContractParameter ParseHash256Parameter(JToken value)
+        {
+            try
+            {
+                return new ContractParameter { Type = ContractParameterType.Hash256, Value = UInt256.Parse(value.AsString()) };
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException($"Invalid Hash256 format. Expected format: '0x' followed by 64 hex characters, got: '{value.AsString()}'");
+            }
+        }
+
+        /// <summary>
+        /// Parse PublicKey parameter with error handling
+        /// </summary>
+        private ContractParameter ParsePublicKeyParameter(JToken value)
+        {
+            try
+            {
+                return new ContractParameter { Type = ContractParameterType.PublicKey, Value = ECPoint.Parse(value.AsString(), ECCurve.Secp256r1) };
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException($"Invalid PublicKey format. Expected a hex string starting with '02' or '03' (33 bytes) or '04' (65 bytes), got: '{value.AsString()}'");
+            }
+        }
+
+        /// <summary>
+        /// Parse Signature parameter with error handling
+        /// </summary>
+        private ContractParameter ParseSignatureParameter(JToken value)
+        {
+            try
+            {
+                return new ContractParameter { Type = ContractParameterType.Signature, Value = Convert.FromBase64String(value.AsString()) };
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException($"Invalid Signature format. Expected a Base64 encoded string, got: '{value.AsString()}'");
+            }
+        }
+
+        /// <summary>
+        /// Parse Array parameter with type inference
+        /// </summary>
+        private ContractParameter ParseArrayParameter(JToken value)
+        {
+            if (value is not JArray array)
+                throw new ArgumentException($"Expected array value for Array parameter type, got: {value.GetType().Name}");
+
+            var items = new ContractParameter[array.Count];
+            for (int j = 0; j < array.Count; j++)
+            {
+                var element = array[j];
+                // Check if this is already a ContractParameter format
+                if (element is JObject obj && obj.ContainsProperty("type") && obj.ContainsProperty("value"))
+                {
+                    items[j] = ContractParameter.FromJson(obj);
+                }
+                else
+                {
+                    // Otherwise, infer the type
+                    items[j] = element != null ? InferParameterFromToken(element) : new ContractParameter { Type = ContractParameterType.Any, Value = null };
+                }
+            }
+            return new ContractParameter { Type = ContractParameterType.Array, Value = items };
+        }
+
+        /// <summary>
+        /// Parse Map parameter with type inference
+        /// </summary>
+        private ContractParameter ParseMapParameter(JToken value)
+        {
+            if (value is not JObject map)
+                throw new ArgumentException("Expected object value for Map parameter type");
+
+            // Check if this is a ContractParameter format map
+            if (map.ContainsProperty("type") && map["type"]?.AsString() == "Map" && map.ContainsProperty("value"))
+            {
+                return ContractParameter.FromJson(map);
             }
 
-            switch (type)
+            // Otherwise, parse as a regular map with inferred types
+            var dict = new List<KeyValuePair<ContractParameter, ContractParameter>>();
+            foreach (var kvp in map.Properties)
             {
-                case ContractParameterType.Boolean:
-                    param.Value = value.AsBoolean();
-                    break;
-                case ContractParameterType.Integer:
-                    try
-                    {
-                        param.Value = BigInteger.Parse(value.AsString());
-                    }
-                    catch (FormatException)
-                    {
-                        throw new ArgumentException($"Invalid integer format. Expected a numeric string, got: '{value.AsString()}'");
-                    }
-                    break;
-                case ContractParameterType.ByteArray:
-                    try
-                    {
-                        param.Value = Convert.FromBase64String(value.AsString());
-                    }
-                    catch (FormatException)
-                    {
-                        throw new ArgumentException($"Invalid ByteArray format. Expected a Base64 encoded string, got: '{value.AsString()}'");
-                    }
-                    break;
-                case ContractParameterType.String:
-                    param.Value = value.AsString();
-                    break;
-                case ContractParameterType.Hash160:
-                    try
-                    {
-                        param.Value = UInt160.Parse(value.AsString());
-                    }
-                    catch (FormatException)
-                    {
-                        throw new ArgumentException($"Invalid Hash160 format. Expected format: '0x' followed by 40 hex characters (e.g., '0x1234...abcd'), got: '{value.AsString()}'");
-                    }
-                    break;
-                case ContractParameterType.Hash256:
-                    try
-                    {
-                        param.Value = UInt256.Parse(value.AsString());
-                    }
-                    catch (FormatException)
-                    {
-                        throw new ArgumentException($"Invalid Hash256 format. Expected format: '0x' followed by 64 hex characters, got: '{value.AsString()}'");
-                    }
-                    break;
-                case ContractParameterType.PublicKey:
-                    try
-                    {
-                        param.Value = ECPoint.Parse(value.AsString(), ECCurve.Secp256r1);
-                    }
-                    catch (FormatException)
-                    {
-                        throw new ArgumentException($"Invalid PublicKey format. Expected a hex string starting with '02' or '03' (33 bytes) or '04' (65 bytes), got: '{value.AsString()}'");
-                    }
-                    break;
-                case ContractParameterType.Signature:
-                    try
-                    {
-                        param.Value = Convert.FromBase64String(value.AsString());
-                    }
-                    catch (FormatException)
-                    {
-                        throw new ArgumentException($"Invalid Signature format. Expected a Base64 encoded string, got: '{value.AsString()}'");
-                    }
-                    break;
-                case ContractParameterType.Array:
-                    if (value is JArray array)
-                    {
-                        // For Array type parameters, we don't know the element types from ABI
-                        // So we need to preserve the original JSON format with explicit types
-                        var items = new ContractParameter[array.Count];
-                        for (int j = 0; j < array.Count; j++)
-                        {
-                            var element = array[j];
-                            // Check if this is already a ContractParameter format
-                            if (element is JObject obj && obj.ContainsProperty("type") && obj.ContainsProperty("value"))
-                            {
-                                items[j] = ContractParameter.FromJson((JObject)element);
-                            }
-                            else
-                            {
-                                // Otherwise, infer the type
-                                items[j] = element != null ? InferParameterFromToken(element) : new ContractParameter { Type = ContractParameterType.Any, Value = null };
-                            }
-                        }
-                        param.Value = items;
-                    }
-                    else
-                    {
-                        throw new ArgumentException($"Expected array value for Array parameter type, got: {value.GetType().Name}");
-                    }
-                    break;
-                case ContractParameterType.Map:
-                    if (value is JObject map)
-                    {
-                        // For Map type parameters, we don't know the key/value types from ABI
-                        // Check if this is a ContractParameter format map
-                        if (map.ContainsProperty("type") && map["type"]?.AsString() == "Map" && map.ContainsProperty("value"))
-                        {
-                            // This is already in ContractParameter format, use FromJson
-                            return ContractParameter.FromJson(map);
-                        }
+                // Keys are always strings in JSON
+                var key = new ContractParameter { Type = ContractParameterType.String, Value = kvp.Key };
 
-                        // Otherwise, parse as a regular map with inferred types
-                        var dict = new List<KeyValuePair<ContractParameter, ContractParameter>>();
-                        foreach (var kvp in map.Properties)
-                        {
-                            // Keys are always strings in JSON
-                            var key = new ContractParameter { Type = ContractParameterType.String, Value = kvp.Key };
-
-                            // For values, check if they are ContractParameter format
-                            var val = kvp.Value;
-                            if (val is JObject valObj && valObj.ContainsProperty("type") && valObj.ContainsProperty("value"))
-                            {
-                                dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, ContractParameter.FromJson(valObj)));
-                            }
-                            else
-                            {
-                                var valueParam = val != null ? InferParameterFromToken(val) : new ContractParameter { Type = ContractParameterType.Any, Value = null };
-                                dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, valueParam));
-                            }
-                        }
-                        param.Value = dict;
-                    }
-                    else
-                    {
-                        throw new ArgumentException("Expected object value for Map parameter type");
-                    }
-                    break;
-                case ContractParameterType.InteropInterface:
-                    throw new NotSupportedException("InteropInterface type cannot be parsed from JSON");
-                case ContractParameterType.Any:
-                    return InferParameterFromToken(value);
-                default:
-                    throw new ArgumentException($"Unsupported parameter type: {type}");
+                // For values, check if they are ContractParameter format
+                var val = kvp.Value;
+                if (val is JObject valObj && valObj.ContainsProperty("type") && valObj.ContainsProperty("value"))
+                {
+                    dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, ContractParameter.FromJson(valObj)));
+                }
+                else
+                {
+                    var valueParam = val != null ? InferParameterFromToken(val) : new ContractParameter { Type = ContractParameterType.Any, Value = null };
+                    dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, valueParam));
+                }
             }
-
-            return param;
+            return new ContractParameter { Type = ContractParameterType.Map, Value = dict };
         }
 
         /// <summary>
