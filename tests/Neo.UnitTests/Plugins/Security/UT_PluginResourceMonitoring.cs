@@ -41,14 +41,14 @@ namespace Neo.UnitTests.Plugins.Security
             {
                 // Allocate some memory
                 var data = new byte[1024 * 100]; // 100KB
-                
+
                 // Do some computation
                 var sum = 0;
                 for (int i = 0; i < 10000; i++)
                 {
                     sum += i;
                 }
-                
+
                 return sum;
             });
 
@@ -81,7 +81,7 @@ namespace Neo.UnitTests.Plugins.Security
             // Assert
             Assert.IsTrue(result.Success);
             Assert.AreEqual("completed", result.Result);
-            
+
             // Execution time should be at least as long as sleep time
             Assert.IsTrue(result.ResourceUsage.ExecutionTime >= sleepTime);
         }
@@ -217,15 +217,15 @@ namespace Neo.UnitTests.Plugins.Security
             for (int i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
-                
+
                 var result = await sandbox.ExecuteAsync(() =>
                 {
                     return i * 2;
                 });
-                
+
                 stopwatch.Stop();
                 totalTime += stopwatch.ElapsedMilliseconds;
-                
+
                 Assert.IsTrue(result.Success);
                 Assert.AreEqual(i * 2, result.Result);
             }
