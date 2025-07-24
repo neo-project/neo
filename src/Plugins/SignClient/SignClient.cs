@@ -22,6 +22,7 @@ using Neo.Sign;
 using Neo.SmartContract;
 using Servicepb;
 using Signpb;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using static Neo.SmartContract.Helper;
 
@@ -43,6 +44,67 @@ namespace Neo.Plugins.SignClient
         public override string Description => "Signer plugin for signer service.";
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "SignClient.json");
+
+        /// <summary>
+        /// Checks if the current platform is macOS ARM64
+        /// </summary>
+        private static bool IsRunningOnMacOSArm64 =>
+            OperatingSystem.IsMacOS() &&
+            System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64;
+
+        /// <summary>
+        /// Checks if Rosetta 2 is installed on macOS ARM64
+        /// </summary>
+        private static bool IsRosettaInstalled()
+        {
+            if (!IsRunningOnMacOSArm64) return false;
+
+            try
+            {
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = "/usr/bin/pgrep",
+                    Arguments = "oahd",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var process = Process.Start(processStartInfo);
+                if (process == null) return false;
+
+                process.WaitForExit();
+                return process.ExitCode == 0;
+            }
+            catch
+            {
+                // Fallback: check if Rosetta binary exists
+                return File.Exists("/Library/Apple/usr/share/rosetta/rosetta");
+            }
+        }
+
+        /// <summary>
+        /// Gets the appropriate error message for macOS ARM64 compatibility issues
+        /// </summary>
+        private static string GetMacOSArm64ErrorMessage()
+        {
+            if (!IsRunningOnMacOSArm64)
+                return "SignClient is not supported on macOS ARM64 due to gRPC Tools compatibility issues.";
+
+            if (IsRosettaInstalled())
+            {
+                return "SignClient requires Rosetta 2 on macOS ARM64. Please run this application under Rosetta 2:\n" +
+                       "  arch -x86_64 dotnet run\n" +
+                       "Or build and run the x64 version of the application.";
+            }
+
+            return "SignClient is not supported on macOS ARM64 due to gRPC Tools compatibility issues.\n" +
+                   "Please install Rosetta 2 and run under x86_64 emulation:\n" +
+                   "  sudo softwareupdate --install-rosetta --agree-to-license\n" +
+                   "  arch -x86_64 dotnet run\n" +
+                   "Or build and run the x64 version of the application.";
+        }
 
         public SignClient() { }
 
@@ -95,6 +157,13 @@ namespace Neo.Plugins.SignClient
 
         private void Reset(SignSettings settings)
         {
+            // Check for ARM64 macOS
+            if (IsRunningOnMacOSArm64)
+            {
+                ConsoleHelper.Error(GetMacOSArm64ErrorMessage());
+                return;
+            }
+
             // _settings = settings;
             var serviceConfig = GetServiceConfig(settings);
             var vsockAddress = settings.GetVsockAddress();
@@ -121,6 +190,12 @@ namespace Neo.Plugins.SignClient
         [ConsoleCommand("get account status", Category = "Signer Commands", Description = "Get account status")]
         public void AccountStatusCommand(string hexPublicKey)
         {
+            if (IsRunningOnMacOSArm64)
+            {
+                ConsoleHelper.Error(GetMacOSArm64ErrorMessage());
+                return;
+            }
+
             if (_client is null)
             {
                 ConsoleHelper.Error("No signer service is connected");
@@ -175,6 +250,11 @@ namespace Neo.Plugins.SignClient
         /// <exception cref="SignException">If no signer service is available, or other rpc error occurs.</exception>
         public bool ContainsSignable(ECPoint publicKey)
         {
+            if (IsRunningOnMacOSArm64)
+            {
+                throw new SignException(GetMacOSArm64ErrorMessage());
+            }
+
             var status = GetAccountStatus(publicKey);
             return status == AccountStatus.Single || status == AccountStatus.Multiple;
         }
@@ -252,6 +332,11 @@ namespace Neo.Plugins.SignClient
         /// <exception cref="SignException">If no signer service is available, or other rpc error occurs.</exception>
         public Witness SignExtensiblePayload(ExtensiblePayload payload, DataCache dataCache, uint network)
         {
+            if (IsRunningOnMacOSArm64)
+            {
+                throw new SignException(GetMacOSArm64ErrorMessage());
+            }
+
             if (_client is null) throw new SignException("No signer service is connected");
 
             try
@@ -295,6 +380,11 @@ namespace Neo.Plugins.SignClient
         /// <exception cref="SignException">If no signer service is available, or other rpc error occurs.</exception>
         public ReadOnlyMemory<byte> SignBlock(Block block, ECPoint publicKey, uint network)
         {
+            if (IsRunningOnMacOSArm64)
+            {
+                throw new SignException(GetMacOSArm64ErrorMessage());
+            }
+
             if (_client is null) throw new SignException("No signer service is connected");
 
             try
