@@ -37,12 +37,14 @@ namespace Neo.Plugins.Security
             {
                 if (_permissionCacheManager == null)
                 {
+                    // Always use test implementation in test environments to avoid circular dependencies
                     if (_isTestMode || IsTestEnvironment())
                     {
                         _permissionCacheManager = new TestPermissionCacheManager();
                     }
                     else
                     {
+                        // Only access production singleton when definitely not in test mode
                         _permissionCacheManager = Neo.Plugins.Security.PermissionCacheManager.Instance;
                     }
                 }
@@ -59,12 +61,14 @@ namespace Neo.Plugins.Security
             {
                 if (_threadSafeStateManager == null)
                 {
+                    // Always use test implementation in test environments to avoid circular dependencies
                     if (_isTestMode || IsTestEnvironment())
                     {
                         _threadSafeStateManager = new TestThreadSafeStateManager();
                     }
                     else
                     {
+                        // Only access production singleton when definitely not in test mode
                         _threadSafeStateManager = Neo.Plugins.Security.ThreadSafeStateManager.Instance;
                     }
                 }

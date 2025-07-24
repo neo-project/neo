@@ -221,7 +221,28 @@ namespace Neo.Plugins.Security
         /// <summary>
         /// Gets or sets the monitoring check interval in milliseconds.
         /// </summary>
-        public int CheckInterval { get; set; } = 5000;
+        public int CheckInterval { get; set; }
+
+        public ResourceMonitoringPolicy()
+        {
+            // Use faster check interval in test environments
+            CheckInterval = IsTestEnvironment() ? 100 : 5000;
+        }
+
+        private static bool IsTestEnvironment()
+        {
+            try
+            {
+                var processName = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+                return processName.Contains("testhost", StringComparison.OrdinalIgnoreCase) ||
+                       processName.Contains("vstest", StringComparison.OrdinalIgnoreCase) ||
+                       Environment.GetEnvironmentVariable("DOTNET_TEST_MODE")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the memory warning threshold (0.0 to 1.0).
