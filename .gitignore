@@ -267,3 +267,6 @@ launchSettings.json
 # Benchmarks
 **/BenchmarkDotNet.Artifacts/
 /src/Neo.CLI/neo-cli/
+
+# Claude
+.claude/
