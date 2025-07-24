@@ -20,6 +20,7 @@ A production-ready OpenTelemetry plugin for Neo blockchain nodes that provides c
 
 ## Metrics Collected
 
+### Blockchain Metrics
 | Metric Name | Type | Description | Labels |
 |------------|------|-------------|---------|
 | `neo.blocks.processed_total` | Counter | Total number of blocks processed | - |
@@ -27,8 +28,35 @@ A production-ready OpenTelemetry plugin for Neo blockchain nodes that provides c
 | `neo.contracts.invocations_total` | Counter | Total number of contract invocations | - |
 | `neo.block.processing_time` | Histogram | Time taken to process a block (ms) | - |
 | `neo.blockchain.height` | Gauge | Current blockchain height | - |
-| `neo.mempool.size` | Gauge | Current number of transactions in mempool | - |
+| `neo.blockchain.is_syncing` | Gauge | Whether node is syncing (1=yes, 0=no) | - |
+
+### Network Metrics
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
 | `neo.p2p.connected_peers` | Gauge | Number of connected P2P peers | - |
+| `neo.p2p.unconnected_peers` | Gauge | Number of known but unconnected peers | - |
+| `neo.p2p.bytes_sent_total` | Counter | Total bytes sent to peers | - |
+| `neo.p2p.bytes_received_total` | Counter | Total bytes received from peers | - |
+
+### MemPool Metrics
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
+| `neo.mempool.size` | Gauge | Current number of transactions in mempool | - |
+| `neo.mempool.verified_count` | Gauge | Number of verified transactions | - |
+| `neo.mempool.unverified_count` | Gauge | Number of unverified transactions | - |
+| `neo.mempool.memory_bytes` | Gauge | Total memory used by mempool | - |
+
+### System Metrics
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
+| `process_cpu_usage` | Gauge | Process CPU usage percentage | - |
+| `system_cpu_usage` | Gauge | System CPU usage percentage | - |
+| `process_memory_working_set` | Gauge | Process working set memory (bytes) | - |
+| `process_memory_virtual` | Gauge | Process virtual memory (bytes) | - |
+| `dotnet_gc_heap_size` | Gauge | .NET GC heap size (bytes) | - |
+| `process_thread_count` | Gauge | Number of process threads | - |
+| `neo_node_start_time` | Gauge | Node start time (Unix timestamp) | - |
+| `neo_network_id` | Gauge | Network ID (0=TestNet, 1=MainNet) | - |
 
 ## Configuration
 
@@ -120,9 +148,20 @@ scrape_configs:
    - Transaction throughput: `rate(neo_transactions_processed_total[5m])`
    - Average block time: `rate(neo_block_processing_time_sum[5m]) / rate(neo_block_processing_time_count[5m])`
 
-### Grafana Dashboard
+### Grafana Dashboards
 
-Import the provided Grafana dashboard from `docs/dashboards/neo-opentelemetry.json` for a complete monitoring view.
+Pre-configured dashboards are available in the `grafana/` directory:
+- `neo-node-overview-dashboard.json` - Comprehensive overview with system metrics, network status, and blockchain data
+- `neo-complete-dashboard.json` - Detailed metrics dashboard with performance analysis  
+- `neo-node-health-dashboard.json` - Focused health monitoring dashboard
+
+The overview dashboard includes:
+- **Node Information**: Block height, peer count, network type, sync status, uptime
+- **System Resources**: CPU usage, memory consumption, disk usage, thread count
+- **Network Activity**: Bandwidth usage, peer connections over time
+- **Blockchain Activity**: Block height progress, processing times, transaction statistics
+
+Import these dashboards into your Grafana instance for instant visualization.
 
 ### OTLP Collector
 

@@ -19,6 +19,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract.Native;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
@@ -76,6 +77,17 @@ namespace Neo.Plugins.OpenTelemetry
         private Counter<long>? _networkErrorsCounter;
         private Counter<long>? _storageErrorsCounter;
 
+        // System metrics
+        private ObservableGauge<double>? _cpuUsageGauge;
+        private ObservableGauge<double>? _systemCpuUsageGauge;
+        private ObservableGauge<long>? _memoryWorkingSetGauge;
+        private ObservableGauge<long>? _memoryVirtualGauge;
+        private ObservableGauge<long>? _gcHeapSizeGauge;
+        private ObservableGauge<long>? _threadCountGauge;
+        private ObservableGauge<long>? _nodeStartTimeGauge;
+        private ObservableGauge<int>? _networkIdGauge;
+        private ObservableGauge<int>? _isSyncingGauge;
+
         // State tracking
         private readonly object _metricsLock = new object();
         private Stopwatch? _blockProcessingStopwatch;
@@ -84,6 +96,10 @@ namespace Neo.Plugins.OpenTelemetry
         private readonly DateTime _lastBlockTime = DateTime.UtcNow;
         private readonly Queue<(DateTime time, uint height)> _blockHistory = new Queue<(DateTime, uint)>();
         private long _lastMemPoolMemoryBytes = 0;
+        private readonly DateTime _nodeStartTime = DateTime.UtcNow;
+        private Process? _currentProcess;
+        private DateTime _lastCpuCheck = DateTime.UtcNow;
+        private TimeSpan _lastProcessorTime = TimeSpan.Zero;
 
         public override string Name => "OpenTelemetry";
         public override string Description => "Provides observability for Neo blockchain node using OpenTelemetry";
@@ -303,6 +319,63 @@ namespace Neo.Plugins.OpenTelemetry
                 "neo.errors.storage_total",
                 "errors",
                 "Total number of storage errors");
+
+            // System metrics
+            _currentProcess = Process.GetCurrentProcess();
+            
+            _cpuUsageGauge = _meter.CreateObservableGauge<double>(
+                "process_cpu_usage",
+                () => GetProcessCpuUsage(),
+                "percent",
+                "Process CPU usage percentage");
+                
+            _systemCpuUsageGauge = _meter.CreateObservableGauge<double>(
+                "system_cpu_usage",
+                () => GetSystemCpuUsage(),
+                "percent",
+                "System CPU usage percentage");
+                
+            _memoryWorkingSetGauge = _meter.CreateObservableGauge<long>(
+                "process_memory_working_set",
+                () => _currentProcess?.WorkingSet64 ?? 0,
+                "bytes",
+                "Process working set memory");
+                
+            _memoryVirtualGauge = _meter.CreateObservableGauge<long>(
+                "process_memory_virtual",
+                () => _currentProcess?.VirtualMemorySize64 ?? 0,
+                "bytes",
+                "Process virtual memory");
+                
+            _gcHeapSizeGauge = _meter.CreateObservableGauge<long>(
+                "dotnet_gc_heap_size",
+                () => GC.GetTotalMemory(false),
+                "bytes",
+                "GC heap size");
+                
+            _threadCountGauge = _meter.CreateObservableGauge<long>(
+                "process_thread_count",
+                () => _currentProcess?.Threads.Count ?? 0,
+                "threads",
+                "Process thread count");
+                
+            _nodeStartTimeGauge = _meter.CreateObservableGauge<long>(
+                "neo_node_start_time",
+                () => new DateTimeOffset(_nodeStartTime).ToUnixTimeSeconds(),
+                "unixtime",
+                "Node start time in Unix timestamp");
+                
+            _networkIdGauge = _meter.CreateObservableGauge<int>(
+                "neo_network_id",
+                () => (int)(_neoSystem?.Settings.Network ?? 0),
+                "id",
+                "Network ID (0=TestNet, 1=MainNet)");
+                
+            _isSyncingGauge = _meter.CreateObservableGauge<int>(
+                "neo_blockchain_is_syncing",
+                () => _neoSystem != null && IsNodeSyncing() ? 1 : 0,
+                "bool",
+                "Whether the node is currently syncing (1=syncing, 0=synced)");
 
             // Initialize OpenTelemetry
             var config = GetConfiguration();
@@ -563,6 +636,88 @@ namespace Neo.Plugins.OpenTelemetry
 
                 var blockDiff = newest.height - oldest.height;
                 return blockDiff / timeDiff;
+            }
+        }
+
+        private double GetProcessCpuUsage()
+        {
+            try
+            {
+                _currentProcess?.Refresh();
+                if (_currentProcess != null)
+                {
+                    var currentTime = DateTime.UtcNow;
+                    var currentProcessorTime = _currentProcess.TotalProcessorTime;
+                    
+                    if (_lastProcessorTime != TimeSpan.Zero)
+                    {
+                        var timeDiff = (currentTime - _lastCpuCheck).TotalMilliseconds;
+                        var cpuDiff = (currentProcessorTime - _lastProcessorTime).TotalMilliseconds;
+                        
+                        if (timeDiff > 0)
+                        {
+                            var cpuUsage = (cpuDiff / timeDiff) * 100.0 / Environment.ProcessorCount;
+                            _lastCpuCheck = currentTime;
+                            _lastProcessorTime = currentProcessorTime;
+                            return Math.Min(100.0, Math.Max(0.0, cpuUsage));
+                        }
+                    }
+                    else
+                    {
+                        _lastCpuCheck = currentTime;
+                        _lastProcessorTime = currentProcessorTime;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore errors in CPU calculation
+            }
+            return 0;
+        }
+
+        private double GetSystemCpuUsage()
+        {
+            try
+            {
+                // Use process idle time to calculate system CPU usage
+                using (var process = Process.GetProcessesByName("Idle").FirstOrDefault())
+                {
+                    if (process != null)
+                    {
+                        var idleTime = process.TotalProcessorTime.TotalMilliseconds;
+                        var totalTime = Environment.TickCount;
+                        if (totalTime > 0)
+                        {
+                            var usage = 100.0 - (idleTime / totalTime * 100.0 / Environment.ProcessorCount);
+                            return Math.Min(100.0, Math.Max(0.0, usage));
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback to process CPU if system CPU cannot be determined
+                return GetProcessCpuUsage();
+            }
+            return 0;
+        }
+
+        private bool IsNodeSyncing()
+        {
+            if (_neoSystem == null) return false;
+            
+            try
+            {
+                // Consider the node as syncing if it's more than 10 blocks behind
+                var currentHeight = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
+                var headerHeight = _neoSystem.HeaderCache.Count > 0 ? _neoSystem.HeaderCache.Last?.Index ?? currentHeight : currentHeight;
+                
+                return headerHeight - currentHeight > 10;
+            }
+            catch
+            {
+                return false;
             }
         }
     }

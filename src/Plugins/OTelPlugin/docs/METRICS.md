@@ -2,6 +2,51 @@
 
 This document describes all metrics collected by the OpenTelemetry plugin for Neo blockchain nodes.
 
+## System Metrics
+
+### CPU and Memory
+- **process_cpu_usage** (Gauge)
+  - Description: Process CPU usage percentage
+  - Use Case: Monitor node resource consumption
+  - Alert: If > 80% for extended periods
+
+- **system_cpu_usage** (Gauge)
+  - Description: System-wide CPU usage percentage
+  - Use Case: Monitor overall system health
+  - Alert: If > 90% affecting node performance
+
+- **process_memory_working_set** (Gauge)
+  - Description: Process working set memory in bytes
+  - Use Case: Track memory usage trends
+  - Alert: If approaching system memory limits
+
+- **process_memory_virtual** (Gauge)
+  - Description: Process virtual memory in bytes
+  - Use Case: Monitor total memory allocation
+
+- **dotnet_gc_heap_size** (Gauge)
+  - Description: .NET GC heap size in bytes
+  - Use Case: Monitor managed memory usage
+  - Alert: If excessive GC pressure detected
+
+- **process_thread_count** (Gauge)
+  - Description: Number of threads in the process
+  - Use Case: Detect thread leaks or excessive threading
+
+### Node Information
+- **neo_node_start_time** (Gauge)
+  - Description: Node start time as Unix timestamp
+  - Use Case: Calculate node uptime
+
+- **neo_network_id** (Gauge)
+  - Description: Network ID (0=TestNet, 1=MainNet)
+  - Use Case: Identify which network the node is connected to
+
+- **neo_blockchain_is_syncing** (Gauge)
+  - Description: Whether the node is syncing (1=syncing, 0=synced)
+  - Use Case: Monitor sync status
+  - Alert: If syncing for too long
+
 ## Metrics Categories
 
 ### 1. Blockchain Core Metrics
