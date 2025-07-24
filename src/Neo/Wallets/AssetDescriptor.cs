@@ -52,7 +52,7 @@ namespace Neo.Wallets
         public AssetDescriptor(DataCache snapshot, ProtocolSettings settings, UInt160 assetId)
         {
             var contract = NativeContract.ContractManagement.GetContract(snapshot, assetId);
-            if (contract is null) throw new ArgumentException("No such asset", nameof(assetId));
+            if (contract is null) throw new ArgumentException($"No asset contract found for assetId {assetId}. Please ensure the assetId is correct and the asset is deployed on the blockchain.", nameof(assetId));
 
             byte[] script;
             using (ScriptBuilder sb = new())
@@ -63,7 +63,7 @@ namespace Neo.Wallets
             }
 
             using var engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_30000000L);
-            if (engine.State != VMState.HALT) throw new ArgumentException("Run failed for asset", nameof(assetId));
+            if (engine.State != VMState.HALT) throw new ArgumentException($"Failed to execute 'decimals' or 'symbol' method for asset {assetId}. The contract execution did not complete successfully (VM state: {engine.State}).", nameof(assetId));
             AssetId = assetId;
             AssetName = contract.Manifest.Name;
             Symbol = engine.ResultStack.Pop().GetString();

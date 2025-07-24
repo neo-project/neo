@@ -119,18 +119,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestNextBigIntegerForRandom()
-        {
-            Random ran = new();
-            Action action1 = () => ran.NextBigInteger(-1);
-            Assert.ThrowsExactly<ArgumentException>(() => action1());
-
-            Assert.AreEqual(0, ran.NextBigInteger(0));
-            Assert.IsNotNull(ran.NextBigInteger(8));
-            Assert.IsNotNull(ran.NextBigInteger(9));
-        }
-
-        [TestMethod]
         public void TestUnmapForIPAddress()
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });

@@ -91,7 +91,7 @@ namespace Neo
         /// <summary>
         /// The transaction router actor of the <see cref="NeoSystem"/>.
         /// </summary>
-        public IActorRef TxRouter;
+        public IActorRef TxRouter { get; }
 
         /// <summary>
         /// A readonly view of the store.
@@ -99,7 +99,7 @@ namespace Neo
         /// <remarks>
         /// It doesn't need to be disposed because the <see cref="IStoreSnapshot"/> inside it is null.
         /// </remarks>
-        public StoreCache StoreView => new(store);
+        public StoreCache StoreView => new(_store);
 
         /// <summary>
         /// The memory pool of the <see cref="NeoSystem"/>.
@@ -109,15 +109,15 @@ namespace Neo
         /// <summary>
         /// The header cache of the <see cref="NeoSystem"/>.
         /// </summary>
-        public HeaderCache HeaderCache { get; } = new();
+        public HeaderCache HeaderCache { get; } = [];
 
         internal RelayCache RelayCache { get; } = new(100);
+        protected IStoreProvider StorageProvider { get; }
 
-        private ImmutableList<object> services = ImmutableList<object>.Empty;
-        private readonly IStore store;
-        protected readonly IStoreProvider StorageProvider;
-        private ChannelsConfig start_message = null;
-        private int suspend = 0;
+        private ImmutableList<object> _services = ImmutableList<object>.Empty;
+        private readonly IStore _store;
+        private ChannelsConfig _startMessage = null;
+        private int _suspend = 0;
 
         static NeoSystem()
         {
@@ -187,7 +187,7 @@ namespace Neo
             Settings = settings;
             GenesisBlock = CreateGenesisBlock(settings);
             StorageProvider = storageProvider;
-            store = storageProvider.GetStore(storagePath);
+            _store = storageProvider.GetStore(storagePath);
             MemPool = new MemoryPool(this);
             // Create actors with appropriate mailboxes for environment
             if (IsTestEnvironment())
@@ -270,7 +270,8 @@ namespace Neo
             ActorSystem.Dispose();
             ActorSystem.WhenTerminated.Wait();
             HeaderCache.Dispose();
-            store.Dispose();
+            _store.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -279,7 +280,7 @@ namespace Neo
         /// <param name="service">The service object to be added.</param>
         public void AddService(object service)
         {
-            ImmutableInterlocked.Update(ref services, p => p.Add(service));
+            ImmutableInterlocked.Update(ref _services, p => p.Add(service));
             ServiceAdded?.Invoke(this, service);
         }
 
@@ -293,7 +294,7 @@ namespace Neo
         /// <returns>The service object found.</returns>
         public T GetService<T>(Func<T, bool> filter = null)
         {
-            IEnumerable<T> result = services.OfType<T>();
+            var result = _services.OfType<T>();
             if (filter is null)
                 return result.FirstOrDefault();
             return result.FirstOrDefault(filter);
@@ -305,7 +306,7 @@ namespace Neo
         /// <param name="actor">The actor to wait.</param>
         public void EnsureStopped(IActorRef actor)
         {
-            using Inbox inbox = Inbox.Create(ActorSystem);
+            using var inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
             inbox.Receive(TimeSpan.FromSeconds(30));
@@ -327,12 +328,12 @@ namespace Neo
         /// <returns><see langword="true"/> if the startup process is resumed; otherwise, <see langword="false"/>. </returns>
         public bool ResumeNodeStartup()
         {
-            if (Interlocked.Decrement(ref suspend) != 0)
+            if (Interlocked.Decrement(ref _suspend) != 0)
                 return false;
-            if (start_message != null)
+            if (_startMessage != null)
             {
-                LocalNode.Tell(start_message);
-                start_message = null;
+                LocalNode.Tell(_startMessage);
+                _startMessage = null;
             }
             return true;
         }
@@ -343,12 +344,12 @@ namespace Neo
         /// <param name="config">The configuration used to start the <see cref="LocalNode"/>.</param>
         public void StartNode(ChannelsConfig config)
         {
-            start_message = config;
+            _startMessage = config;
 
-            if (suspend == 0)
+            if (_suspend == 0)
             {
-                LocalNode.Tell(start_message);
-                start_message = null;
+                LocalNode.Tell(_startMessage);
+                _startMessage = null;
             }
         }
 
@@ -357,7 +358,7 @@ namespace Neo
         /// </summary>
         public void SuspendNodeStartup()
         {
-            Interlocked.Increment(ref suspend);
+            Interlocked.Increment(ref _suspend);
         }
 
         /// <summary>
@@ -367,7 +368,7 @@ namespace Neo
         [Obsolete("This method is obsolete, use GetSnapshotCache instead.")]
         public StoreCache GetSnapshot()
         {
-            return new StoreCache(store.GetSnapshot());
+            return new StoreCache(_store.GetSnapshot());
         }
 
         /// <summary>
@@ -378,7 +379,7 @@ namespace Neo
         /// <returns>An instance of <see cref="StoreCache"/></returns>
         public StoreCache GetSnapshotCache()
         {
-            return new StoreCache(store.GetSnapshot());
+            return new StoreCache(_store.GetSnapshot());
         }
 
         /// <summary>

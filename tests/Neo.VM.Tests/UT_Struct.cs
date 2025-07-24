@@ -31,8 +31,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestClone()
         {
-            Struct s1 = new() { 1, new Struct { 2 } };
-            Struct s2 = s1.Clone(ExecutionEngineLimits.Default);
+            var s1 = new Struct { 1, new Struct { 2 } };
+            var s2 = s1.Clone(ExecutionEngineLimits.Default);
             s1[0] = 3;
             Assert.AreEqual(1, s2[0]);
             ((Struct)s1[1])[0] = 3;
@@ -43,31 +43,33 @@ namespace Neo.Test
         [TestMethod]
         public void TestEquals()
         {
-            Struct s1 = new() { 1, new Struct { 2 } };
-            Struct s2 = new() { 1, new Struct { 2 } };
+            var s1 = new Struct { 1, new Struct { 2 } };
+            var s2 = new Struct { 1, new Struct { 2 } };
             Assert.IsTrue(s1.Equals(s2, ExecutionEngineLimits.Default));
-            Struct s3 = new() { 1, new Struct { 3 } };
+
+            var s3 = new Struct { 1, new Struct { 3 } };
             Assert.IsFalse(s1.Equals(s3, ExecutionEngineLimits.Default));
-            Assert.ThrowsExactly<InvalidOperationException>(() => _ = @struct.Equals(@struct.Clone(ExecutionEngineLimits.Default), ExecutionEngineLimits.Default));
+            Assert.ThrowsExactly<InvalidOperationException>(
+                () => _ = @struct.Equals(@struct.Clone(ExecutionEngineLimits.Default), ExecutionEngineLimits.Default));
         }
 
         [TestMethod]
         public void TestEqualsDos()
         {
-            string payloadStr = new string('h', 65535);
-            Struct s1 = new();
-            Struct s2 = new();
+            var payload = new string('h', 65535);
+            var s1 = new Struct();
+            var s2 = new Struct();
             for (int i = 0; i < 2; i++)
             {
-                s1.Add(payloadStr);
-                s2.Add(payloadStr);
+                s1.Add(payload);
+                s2.Add(payload);
             }
             Assert.ThrowsExactly<InvalidOperationException>(() => _ = s1.Equals(s2, ExecutionEngineLimits.Default));
 
             for (int i = 0; i < 1000; i++)
             {
-                s1.Add(payloadStr);
-                s2.Add(payloadStr);
+                s1.Add(payload);
+                s2.Add(payload);
             }
             Assert.ThrowsExactly<InvalidOperationException>(() => _ = s1.Equals(s2, ExecutionEngineLimits.Default));
         }

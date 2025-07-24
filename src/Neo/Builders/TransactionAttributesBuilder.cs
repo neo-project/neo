@@ -45,7 +45,7 @@ namespace Neo.Builders
         public TransactionAttributesBuilder AddHighPriority()
         {
             if (_attributes.Any(a => a is HighPriorityAttribute))
-                throw new InvalidOperationException("HighPriority already exists in the attributes.");
+                throw new InvalidOperationException("HighPriority attribute already exists in the transaction attributes. Only one HighPriority attribute is allowed per transaction.");
 
             var highPriority = new HighPriorityAttribute();
             _attributes = [.. _attributes, highPriority];
@@ -55,7 +55,7 @@ namespace Neo.Builders
         public TransactionAttributesBuilder AddNotValidBefore(uint block)
         {
             if (_attributes.Any(a => a is NotValidBefore b && b.Height == block))
-                throw new InvalidOperationException($"Block {block} already exists in the attributes.");
+                throw new InvalidOperationException($"NotValidBefore attribute for block {block} already exists in the transaction attributes. Each block height can only be specified once.");
 
             var validUntilBlock = new NotValidBefore()
             {

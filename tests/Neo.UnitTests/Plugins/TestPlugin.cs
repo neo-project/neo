@@ -20,13 +20,15 @@ using System.Collections.Generic;
 namespace Neo.UnitTests.Plugins
 {
 
-    internal class TestPluginSettings(IConfigurationSection section) : PluginSettings(section)
+    internal class TestPluginSettings : IPluginSettings
     {
-        // Removed static Default property to avoid cross-test interference
+        public static TestPluginSettings Default { get; private set; }
+
+        public UnhandledExceptionPolicy ExceptionPolicy => UnhandledExceptionPolicy.Ignore;
+
         public static void Load(IConfigurationSection section)
         {
-            // Method kept for compatibility but no longer stores static state
-            _ = new TestPluginSettings(section);
+            Default = new TestPluginSettings();
         }
     }
     internal class TestNonPlugin : IDisposable

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Neo.Extensions.Exceptions;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
@@ -104,10 +105,10 @@ namespace Neo.Network.P2P
             else
             {
                 // Start dns resolution in parallel
-                string[] seedList = system.Settings.SeedList;
-                for (int i = 0; i < seedList.Length; i++)
+                var seedList = system.Settings.SeedList;
+                for (var i = 0; i < seedList.Length; i++)
                 {
-                    int index = i;
+                    var index = i;
                     Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
                 }
             }
@@ -168,17 +169,9 @@ namespace Neo.Network.P2P
         {
             if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
                 return new IPEndPoint(ipAddress, port);
-            IPHostEntry entry;
-            try
-            {
-                entry = Dns.GetHostEntry(hostNameOrAddress);
-            }
-            catch (SocketException)
-            {
-                return null;
-            }
+            var entry = hostNameOrAddress.TryCatchThrow<string, SocketException, IPHostEntry>(Dns.GetHostEntry);
             ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo);
-            if (ipAddress == null) return null;
+            if (ipAddress == null) throw new ArgumentException("Can not resolve DNS name or IP address.");
             return new IPEndPoint(ipAddress, port);
         }
 
@@ -186,14 +179,9 @@ namespace Neo.Network.P2P
         {
             if (string.IsNullOrEmpty(hostAndPort)) return null;
 
-            try
-            {
-                string[] p = hostAndPort.Split(':');
-                return GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
-            }
-            catch { }
-
-            return null;
+            return hostAndPort.Split(':')
+                .TryCatch<IList<string>, Exception, IPEndPoint>(
+                    t => GetIPEndpointFromHostPort(t[0], int.Parse(t[1])), static (_, _) => null);
         }
 
         /// <summary>
