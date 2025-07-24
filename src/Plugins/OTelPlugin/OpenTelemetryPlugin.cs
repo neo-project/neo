@@ -322,55 +322,55 @@ namespace Neo.Plugins.OpenTelemetry
 
             // System metrics
             _currentProcess = Process.GetCurrentProcess();
-            
+
             _cpuUsageGauge = _meter.CreateObservableGauge<double>(
                 "process_cpu_usage",
                 () => GetProcessCpuUsage(),
                 "percent",
                 "Process CPU usage percentage");
-                
+
             _systemCpuUsageGauge = _meter.CreateObservableGauge<double>(
                 "system_cpu_usage",
                 () => GetSystemCpuUsage(),
                 "percent",
                 "System CPU usage percentage");
-                
+
             _memoryWorkingSetGauge = _meter.CreateObservableGauge<long>(
                 "process_memory_working_set",
                 () => _currentProcess?.WorkingSet64 ?? 0,
                 "bytes",
                 "Process working set memory");
-                
+
             _memoryVirtualGauge = _meter.CreateObservableGauge<long>(
                 "process_memory_virtual",
                 () => _currentProcess?.VirtualMemorySize64 ?? 0,
                 "bytes",
                 "Process virtual memory");
-                
+
             _gcHeapSizeGauge = _meter.CreateObservableGauge<long>(
                 "dotnet_gc_heap_size",
                 () => GC.GetTotalMemory(false),
                 "bytes",
                 "GC heap size");
-                
+
             _threadCountGauge = _meter.CreateObservableGauge<long>(
                 "process_thread_count",
                 () => _currentProcess?.Threads.Count ?? 0,
                 "threads",
                 "Process thread count");
-                
+
             _nodeStartTimeGauge = _meter.CreateObservableGauge<long>(
                 "neo_node_start_time",
                 () => new DateTimeOffset(_nodeStartTime).ToUnixTimeSeconds(),
                 "unixtime",
                 "Node start time in Unix timestamp");
-                
+
             _networkIdGauge = _meter.CreateObservableGauge<int>(
                 "neo_network_id",
                 () => (int)(_neoSystem?.Settings.Network ?? 0),
                 "id",
                 "Network ID (0=TestNet, 1=MainNet)");
-                
+
             _isSyncingGauge = _meter.CreateObservableGauge<int>(
                 "neo_blockchain_is_syncing",
                 () => _neoSystem != null && IsNodeSyncing() ? 1 : 0,
@@ -648,12 +648,12 @@ namespace Neo.Plugins.OpenTelemetry
                 {
                     var currentTime = DateTime.UtcNow;
                     var currentProcessorTime = _currentProcess.TotalProcessorTime;
-                    
+
                     if (_lastProcessorTime != TimeSpan.Zero)
                     {
                         var timeDiff = (currentTime - _lastCpuCheck).TotalMilliseconds;
                         var cpuDiff = (currentProcessorTime - _lastProcessorTime).TotalMilliseconds;
-                        
+
                         if (timeDiff > 0)
                         {
                             var cpuUsage = (cpuDiff / timeDiff) * 100.0 / Environment.ProcessorCount;
@@ -706,13 +706,13 @@ namespace Neo.Plugins.OpenTelemetry
         private bool IsNodeSyncing()
         {
             if (_neoSystem == null) return false;
-            
+
             try
             {
                 // Consider the node as syncing if it's more than 10 blocks behind
                 var currentHeight = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
                 var headerHeight = _neoSystem.HeaderCache.Count > 0 ? _neoSystem.HeaderCache.Last?.Index ?? currentHeight : currentHeight;
-                
+
                 return headerHeight - currentHeight > 10;
             }
             catch
