@@ -146,7 +146,7 @@ namespace Neo.UnitTests.Plugins.Security
             var policy = PluginSecurityPolicy.CreateDefault();
             Assert.IsNotNull(policy);
             Assert.AreEqual(PluginPermissions.ReadOnly, policy.DefaultPermissions);
-            
+
             // Test permission validation logic
             var hasReadOnlyPermission = (policy.DefaultPermissions & PluginPermissions.ReadOnly) == PluginPermissions.ReadOnly;
             Assert.IsTrue(hasReadOnlyPermission);
@@ -272,7 +272,7 @@ namespace Neo.UnitTests.Plugins.Security
         {
             // In test mode, we use simplified resource tracking
             var policy = PluginSecurityPolicy.CreateDefault();
-            
+
             // Test basic resource usage creation
             var usage = new ResourceUsage
             {
@@ -281,7 +281,7 @@ namespace Neo.UnitTests.Plugins.Security
                 CpuTimeUsed = 50,
                 ThreadsCreated = 2
             };
-            
+
             Assert.IsNotNull(usage);
             Assert.AreEqual(1024, usage.MemoryUsed);
             Assert.AreEqual(100, usage.ExecutionTime);
@@ -423,23 +423,23 @@ namespace Neo.UnitTests.Plugins.Security
             // In test mode, test cache manager interfaces through ServiceLocator
             var cacheManager = ServiceLocator.PermissionCacheManager;
             Assert.IsNotNull(cacheManager);
-            
+
             const string testPlugin = "CacheTestPlugin";
-            
+
             // Test cache operations
             cacheManager.CachePermissionResult(testPlugin, PluginPermissions.ReadOnly, true);
             var cachedResult = cacheManager.GetCachedPermissionResult(testPlugin, PluginPermissions.ReadOnly);
             Assert.IsTrue(cachedResult.HasValue);
-            
+
             // Test cache invalidation
             cacheManager.InvalidatePluginCache(testPlugin);
             var invalidatedResult = cacheManager.GetCachedPermissionResult(testPlugin, PluginPermissions.ReadOnly);
             Assert.IsFalse(invalidatedResult.HasValue);
-            
+
             // Test state manager
             var stateManager = ServiceLocator.ThreadSafeStateManager;
             Assert.IsNotNull(stateManager);
-            
+
             // Enable security for testing
             stateManager.SetGlobalSecurityConfiguration(true, SecurityMode.Default);
             Assert.IsTrue(stateManager.IsSecurityEnabled);
@@ -451,10 +451,10 @@ namespace Neo.UnitTests.Plugins.Security
             // In test mode, test concurrent operations with thread-safe collections
             var stateManager = ServiceLocator.ThreadSafeStateManager;
             Assert.IsNotNull(stateManager);
-            
+
             // Enable security for testing
             stateManager.SetGlobalSecurityConfiguration(true, SecurityMode.Default);
-            
+
             // Test concurrent state updates
             var tasks = new Task[10];
             for (int i = 0; i < tasks.Length; i++)
@@ -470,13 +470,13 @@ namespace Neo.UnitTests.Plugins.Security
                     });
                 });
             }
-            
+
             // Wait for all tasks to complete
             Task.WaitAll(tasks, TimeSpan.FromSeconds(5));
-            
+
             // Verify thread safety didn't cause issues
             Assert.IsTrue(stateManager.IsSecurityEnabled);
-            
+
             // Verify all plugin states were created
             var allStates = stateManager.GetAllPluginStates();
             Assert.AreEqual(10, allStates.Count);

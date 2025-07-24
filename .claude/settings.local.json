@@ -4,7 +4,15 @@
       "Bash(git fetch:*)",
       "Bash(git merge-base:*)",
       "Bash(git merge:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(git push:*)",
+      "Bash(dotnet format:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

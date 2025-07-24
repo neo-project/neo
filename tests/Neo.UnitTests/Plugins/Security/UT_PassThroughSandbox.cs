@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// UT_PassThroughSandboxResourceTracking.cs file belongs to the neo project and is free
+// UT_PassThroughSandbox.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -125,20 +125,20 @@ namespace Neo.UnitTests.Plugins.Security
             // Simple test to check if initialization works
             var policy = PluginSecurityPolicy.CreateDefault();
             Assert.IsNotNull(policy);
-            
+
             using var sandbox = new PassThroughSandbox();
             Assert.IsNotNull(sandbox);
-            
+
             await sandbox.InitializeAsync(policy);
             Assert.IsTrue(sandbox.IsActive);
-            
+
             // Execute a single simple operation
             var result = await sandbox.ExecuteAsync(() => 42);
-            
+
             Assert.IsTrue(result.Success);
             Assert.AreEqual(42, result.Result);
             Assert.IsNotNull(result.ResourceUsage);
-            
+
             // Resource values should be non-negative
             Assert.IsTrue(result.ResourceUsage.ExecutionTime >= 0);
             Assert.IsTrue(result.ResourceUsage.MemoryUsed >= 0);

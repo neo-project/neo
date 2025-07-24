@@ -364,7 +364,7 @@ namespace Neo.Plugins.Security
         {
             // Modern .NET Core/5+ permission validation
             // Code Access Security (CAS) is obsolete, so we use runtime policy checks instead
-            
+
             if ((_policy.MaxPermissions & PluginPermissions.FileSystemAccess) != 0)
             {
                 // File system access validation would be handled at runtime
@@ -816,7 +816,7 @@ namespace Neo.Plugins.Security
                 // 2. Runtime permission checks
                 // 3. Network policies
                 // 4. File system access controls
-                
+
                 if ((_manager._policy.MaxPermissions & PluginPermissions.FileSystemAccess) != 0)
                 {
                     // File system access would be validated at runtime

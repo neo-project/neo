@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Plugins.Security
         {
             // Set environment variable to ensure test mode is detected
             Environment.SetEnvironmentVariable("DOTNET_TEST_MODE", "true");
-            
+
             // Log test initialization
             context.WriteLine("Security test environment initialized");
             context.WriteLine($"Test mode environment variable set: {Environment.GetEnvironmentVariable("DOTNET_TEST_MODE")}");

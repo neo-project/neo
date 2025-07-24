@@ -247,7 +247,7 @@ namespace Neo.UnitTests.Plugins
                 catch (Exception ex)
                 {
                     Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
-            }
+                }
 
                 Assert.IsFalse(pp2.IsStopped);
             }

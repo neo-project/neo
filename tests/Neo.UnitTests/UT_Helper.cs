@@ -98,11 +98,11 @@ namespace Neo.UnitTests
             // Test GetVersion extension method with current test assembly
             var asm = System.Reflection.Assembly.GetExecutingAssembly();
             string version = asm.GetVersion();
-            
+
             // The test assembly should have a valid version
             Assert.IsNotNull(version);
             Assert.IsTrue(version.Length > 0);
-            
+
             // Test with null case
             var nullVersion = ((System.Reflection.Assembly)null)?.GetVersion() ?? "";
             Assert.AreEqual("", nullVersion);

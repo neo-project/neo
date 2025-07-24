@@ -71,7 +71,7 @@ namespace Neo.Plugins.Security
         {
             // Check if we're running in a test environment
             var assemblyName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name;
-            return assemblyName?.Contains("UnitTest") == true || 
+            return assemblyName?.Contains("UnitTest") == true ||
                    assemblyName?.Contains("Test") == true ||
                    Environment.GetCommandLineArgs().Any(arg => arg.Contains("test"));
         }

@@ -86,7 +86,7 @@ namespace Neo.Plugins
         {
             // Skip filesystem watcher creation in test environments
             if (IsTestEnvironment()) return;
-            
+
             if (!Directory.Exists(PluginsDirectory)) return;
             s_configWatcher = new FileSystemWatcher(PluginsDirectory)
             {

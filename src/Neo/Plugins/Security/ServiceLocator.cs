@@ -135,7 +135,7 @@ namespace Neo.Plugins.Security
                 // Check if we're running in a test environment
                 var assemblyName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name;
                 if (assemblyName?.Contains("testhost", StringComparison.OrdinalIgnoreCase) == true ||
-                    assemblyName?.Contains("UnitTest") == true || 
+                    assemblyName?.Contains("UnitTest") == true ||
                     assemblyName?.Contains("Test") == true)
                     return true;
 
@@ -186,12 +186,12 @@ namespace Neo.Plugins.Security
         public void CachePermissionResult(string pluginName, PluginPermissions permission, bool result)
         {
             if (string.IsNullOrEmpty(pluginName)) return;
-            _permissionCache.AddOrUpdate(pluginName, 
+            _permissionCache.AddOrUpdate(pluginName,
                 new ConcurrentDictionary<PluginPermissions, (bool, DateTime)> { [permission] = (result, DateTime.UtcNow) },
                 (key, existing) => { existing[permission] = (result, DateTime.UtcNow); return existing; });
         }
 
-        public PluginSecurityPolicy GetCachedPolicy(string pluginName) => 
+        public PluginSecurityPolicy GetCachedPolicy(string pluginName) =>
             _policyCache.TryGetValue(pluginName ?? "", out var entry) ? entry.Policy : null;
 
         public void CachePolicy(string pluginName, PluginSecurityPolicy policy)
@@ -246,7 +246,7 @@ namespace Neo.Plugins.Security
 
         public void SetGlobalSecurityConfiguration(bool enabled, SecurityMode mode) => _securityEnabled = enabled;
 
-        public PluginState GetPluginState(string pluginName) => 
+        public PluginState GetPluginState(string pluginName) =>
             _pluginStates.GetOrAdd(pluginName ?? "", name => new PluginState { PluginName = name });
 
         public bool UpdatePluginState(string pluginName, Action<PluginState> updateAction)
@@ -267,7 +267,7 @@ namespace Neo.Plugins.Security
 
         public Task<T> ExecuteWithExclusiveAccess<T>(Func<Task<T>> operation, TimeSpan? timeout = null) => operation();
 
-        public Dictionary<string, PluginState> GetAllPluginStates() => 
+        public Dictionary<string, PluginState> GetAllPluginStates() =>
             new(_pluginStates.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
         public void InvalidateAllPluginStates() => _pluginStates.Clear();
