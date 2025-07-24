@@ -306,7 +306,7 @@ namespace Neo.UnitTests.Plugins.Security
             {
                 await manager.ExecuteWithCoordination(async () =>
                 {
-                    await Task.Delay(200); // 200ms
+                    await Task.Delay(150); // 150ms
                     return "result";
                 }, TimeSpan.FromMilliseconds(100)); // 100ms timeout
             });
@@ -359,7 +359,7 @@ namespace Neo.UnitTests.Plugins.Security
                 });
             }
 
-            Task.WaitAll(tasks);
+            Task.WaitAll(tasks, TimeSpan.FromSeconds(5));
 
             // Verify all operations completed without exceptions
             Assert.AreEqual(threadCount, results.Count);

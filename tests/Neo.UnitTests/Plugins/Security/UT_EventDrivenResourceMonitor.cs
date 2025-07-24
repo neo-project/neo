@@ -31,8 +31,7 @@ namespace Neo.UnitTests.Plugins.Security
         public async Task TestResourceEventReporting()
         {
             using var monitor = new EventDrivenResourceMonitor();
-
-            var resetEvent = new ManualResetEventSlim(false);
+            using var resetEvent = new ManualResetEventSlim(false);
 
             monitor.ResourceViolationDetected += (sender, args) =>
             {
@@ -49,7 +48,7 @@ namespace Neo.UnitTests.Plugins.Security
             });
 
             // Wait for event processing
-            await Task.Delay(100);
+            await Task.Delay(10);
 
             // Note: The actual violation detection depends on policy configuration
             // This test verifies the monitoring infrastructure works
@@ -66,7 +65,7 @@ namespace Neo.UnitTests.Plugins.Security
             monitor.ReportOperationStart("TestPlugin", operationId);
 
             // Simulate some work
-            await Task.Delay(50);
+            await Task.Delay(10);
 
             monitor.ReportOperationEnd("TestPlugin", operationId, new ResourceUsage());
 
@@ -123,7 +122,7 @@ namespace Neo.UnitTests.Plugins.Security
             }
 
             // Wait for processing
-            await Task.Delay(50);
+            await Task.Delay(10);
 
             // Verify the monitor can handle high event volume
             // The test passes if no exceptions are thrown
@@ -157,7 +156,7 @@ namespace Neo.UnitTests.Plugins.Security
             });
 
             // Give time for event processing
-            Thread.Sleep(200);
+            Thread.Sleep(20);
 
             // Note: Actual violation detection depends on policy configuration
             // This test verifies the event infrastructure is working
@@ -191,7 +190,7 @@ namespace Neo.UnitTests.Plugins.Security
                 MemoryBytes = 1024 * 1024 * 1024, // 1GB simulates high memory pressure
             });
 
-            await Task.Delay(50);
+            await Task.Delay(10);
 
             // Verify no exceptions thrown during resource reporting
         }
@@ -207,7 +206,7 @@ namespace Neo.UnitTests.Plugins.Security
             monitor.ReportOperationStart("TestPlugin", "exception-test");
             monitor.ReportOperationEnd("TestPlugin", "exception-test", new ResourceUsage());
 
-            await Task.Delay(50);
+            await Task.Delay(10);
 
             // Verify operation reporting doesn't throw
         }
@@ -230,7 +229,7 @@ namespace Neo.UnitTests.Plugins.Security
             });
 
             // Wait for processing
-            Thread.Sleep(100);
+            Thread.Sleep(10);
 
             // Verify that exceptions in event handlers don't crash the monitor
             // The test passes if no unhandled exceptions escape

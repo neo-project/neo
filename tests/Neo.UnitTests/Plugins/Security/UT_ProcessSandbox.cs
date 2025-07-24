@@ -144,7 +144,7 @@ namespace Neo.UnitTests.Plugins.Security
             // Note: Without actual executable, this will fail at process start
             var result = await sandbox.ExecuteAsync(async () =>
             {
-                await Task.Delay(200);
+                await Task.Delay(50);
                 return "Should timeout";
             });
 

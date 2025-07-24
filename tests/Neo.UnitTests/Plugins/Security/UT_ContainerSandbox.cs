@@ -71,7 +71,7 @@ namespace Neo.UnitTests.Plugins.Security
             // Test async execution
             var result = await sandbox.ExecuteAsync(async () =>
             {
-                await Task.Delay(50);
+                await Task.Delay(10);
                 return 42;
             });
 
@@ -82,11 +82,11 @@ namespace Neo.UnitTests.Plugins.Security
         }
 
         [TestMethod]
-        [Timeout(10000)] // 10 second timeout for this test
+        [Timeout(3000)] // 3 second timeout for this test
         public async Task TestContainerSandboxTimeout()
         {
             var policy = PluginSecurityPolicy.CreateDefault();
-            policy.MaxExecutionTimeSeconds = 2; // 2 second timeout
+            policy.MaxExecutionTimeSeconds = 1; // 1 second timeout
 
             using var sandbox = new ContainerSandbox();
             await sandbox.InitializeAsync(policy);
@@ -94,7 +94,7 @@ namespace Neo.UnitTests.Plugins.Security
             // Test timeout handling
             var result = await sandbox.ExecuteAsync(async () =>
             {
-                await Task.Delay(3000); // Should timeout
+                await Task.Delay(1500); // Should timeout
                 return "Should not complete";
             });
 

@@ -178,14 +178,14 @@ namespace Neo.UnitTests.Plugins.Security
                 Assert.IsNotNull(childProcess);
 
                 // Give the process time to start
-                Thread.Sleep(100);
+                Thread.Sleep(10);
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     try
                     {
                         ProcessControl.SuspendProcess(childProcess);
-                        Thread.Sleep(100); // Let suspension take effect
+                        Thread.Sleep(10); // Let suspension take effect
                         ProcessControl.ResumeProcess(childProcess);
                     }
                     catch (InvalidOperationException)

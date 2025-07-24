@@ -26,7 +26,7 @@ namespace Neo.UnitTests.Plugins.Security
             using var sandbox = new PassThroughSandbox();
             await sandbox.InitializeAsync(policy);
 
-            const int delayMs = 100;
+            const int delayMs = 10;
             var result = await sandbox.ExecuteAsync(async () =>
             {
                 await Task.Delay(delayMs);
@@ -37,8 +37,8 @@ namespace Neo.UnitTests.Plugins.Security
             Assert.IsNotNull(result.ResourceUsage);
 
             // Execution time should be at least the delay time (with some tolerance)
-            Assert.IsTrue(result.ResourceUsage.ExecutionTime >= delayMs - 10,
-                $"Expected execution time >= {delayMs - 10}ms, got {result.ResourceUsage.ExecutionTime}ms");
+            Assert.IsTrue(result.ResourceUsage.ExecutionTime >= delayMs - 5,
+                $"Expected execution time >= {delayMs - 5}ms, got {result.ResourceUsage.ExecutionTime}ms");
 
             // Should not be excessively longer (allow 100ms overhead)
             Assert.IsTrue(result.ResourceUsage.ExecutionTime <= delayMs + 100,
@@ -106,7 +106,7 @@ namespace Neo.UnitTests.Plugins.Security
             await sandbox.InitializeAsync(policy);
 
             // Wait a bit to establish baseline
-            await Task.Delay(50);
+            await Task.Delay(10);
 
             var usageAfterInit = sandbox.GetResourceUsage();
 
@@ -189,7 +189,7 @@ namespace Neo.UnitTests.Plugins.Security
                 var index = i;
                 tasks[i] = sandbox.ExecuteAsync(async () =>
                 {
-                    await Task.Delay(50);
+                    await Task.Delay(10);
                     var data = new byte[1024 * (index + 1)];
                     return data.Length;
                 });
@@ -202,7 +202,7 @@ namespace Neo.UnitTests.Plugins.Security
             {
                 Assert.IsTrue(result.Success);
                 Assert.IsNotNull(result.ResourceUsage);
-                Assert.IsTrue(result.ResourceUsage.ExecutionTime >= 45); // At least delay time
+                Assert.IsTrue(result.ResourceUsage.ExecutionTime >= 5); // At least delay time
                 Assert.IsTrue(result.ResourceUsage.MemoryUsed >= 0);
             }
 
@@ -234,7 +234,7 @@ namespace Neo.UnitTests.Plugins.Security
                 });
             }
 
-            Task.WaitAll(tasks);
+            Task.WaitAll(tasks, TimeSpan.FromSeconds(5));
 
             // All calls should succeed and return valid results
             foreach (var usage in results)

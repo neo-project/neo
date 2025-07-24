@@ -220,7 +220,7 @@ namespace Neo.UnitTests.Plugins.Security
             }
 
             // Wait for all tasks to complete
-            Task.WaitAll(tasks, TimeSpan.FromSeconds(30));
+            Task.WaitAll(tasks, TimeSpan.FromSeconds(5));
 
             // Verify no exceptions were thrown
             foreach (var task in tasks)

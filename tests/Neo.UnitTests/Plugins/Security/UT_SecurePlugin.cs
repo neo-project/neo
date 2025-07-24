@@ -84,7 +84,7 @@ namespace Neo.UnitTests.Plugins.Security
             var plugin = new TestSecurePlugin();
 
             // Wait a moment for security initialization
-            System.Threading.Thread.Sleep(100);
+            System.Threading.Thread.Sleep(10);
 
             // Test permission validation
             Assert.IsTrue(plugin.TestPermissionValidation(PluginPermissions.ReadOnly));
@@ -98,7 +98,7 @@ namespace Neo.UnitTests.Plugins.Security
             var plugin = new TestSecurePlugin();
 
             // Wait a moment for security initialization
-            System.Threading.Thread.Sleep(100);
+            System.Threading.Thread.Sleep(10);
 
             // Test valid permission
             plugin.TestRequirePermission(PluginPermissions.ReadOnly);
@@ -114,7 +114,7 @@ namespace Neo.UnitTests.Plugins.Security
             var plugin = new TestSecurePlugin();
 
             // Wait a moment for security initialization
-            await Task.Delay(50);
+            await Task.Delay(10);
 
             var result = await plugin.TestSecureExecution();
             Assert.AreEqual("Secure execution test", result);
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.Plugins.Security
             var plugin = new TestSecurePlugin();
 
             // Wait a moment for security initialization
-            System.Threading.Thread.Sleep(100);
+            System.Threading.Thread.Sleep(10);
 
             var usage = plugin.TestGetResourceUsage();
             Assert.IsNotNull(usage);
@@ -140,7 +140,7 @@ namespace Neo.UnitTests.Plugins.Security
             var plugin = new TestSecurePlugin();
 
             // Wait a moment for security initialization
-            System.Threading.Thread.Sleep(100);
+            System.Threading.Thread.Sleep(10);
 
             // Manually trigger the callback since we can't easily create a test NeoSystem
             plugin.SystemLoadedCalled = true; // Simulate the call
@@ -154,7 +154,7 @@ namespace Neo.UnitTests.Plugins.Security
             var plugin = new TestSecurePlugin();
 
             // Wait a moment for security initialization
-            System.Threading.Thread.Sleep(100);
+            System.Threading.Thread.Sleep(10);
 
             // Test disposal
             plugin.Dispose();

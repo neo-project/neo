@@ -153,11 +153,11 @@ namespace Neo.UnitTests.Plugins.Security
         }
 
         [TestMethod]
-        [Timeout(10000)] // 10 second timeout for this test
+        [Timeout(3000)] // 3 second timeout for this test
         public async Task TestSecurityViolationHandling()
         {
             var policy = PluginSecurityPolicy.CreateDefault();
-            policy.MaxExecutionTimeSeconds = 2; // 2 second timeout
+            policy.MaxExecutionTimeSeconds = 1; // 1 second timeout
 
             using var sandbox = new AssemblyLoadContextSandbox();
             await sandbox.InitializeAsync(policy);
@@ -165,7 +165,7 @@ namespace Neo.UnitTests.Plugins.Security
             // Test timeout scenario
             var result = await sandbox.ExecuteAsync(async () =>
             {
-                await Task.Delay(3000); // This should timeout
+                await Task.Delay(1500); // This should timeout
                 return "Should not complete";
             });
 
