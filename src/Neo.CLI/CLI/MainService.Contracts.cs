@@ -238,7 +238,7 @@ namespace Neo.CLI
             // Validate parameter count - moved outside parsing loop for better performance
             var expectedParamCount = method.Parameters.Length;
             var actualParamCount = args?.Count ?? 0;
-            
+
             if (actualParamCount != expectedParamCount)
             {
                 ConsoleHelper.Error($"Method '{operation}' expects exactly {expectedParamCount} parameters but {actualParamCount} were provided.");
