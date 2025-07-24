@@ -222,11 +222,11 @@ namespace Neo.UnitTests.Plugins.Security
             using var sandbox = new PassThroughSandbox();
             await sandbox.InitializeAsync(policy);
 
-            // Assert - PassThrough sandbox allows all permissions regardless of policy
+            // Assert - PassThrough sandbox still respects permission boundaries from policy
             Assert.IsTrue(sandbox.ValidatePermission(PluginPermissions.ReadOnly));
-            Assert.IsTrue(sandbox.ValidatePermission(PluginPermissions.NetworkAccess));
-            Assert.IsTrue(sandbox.ValidatePermission(PluginPermissions.ProcessAccess));
-            Assert.IsTrue(sandbox.ValidatePermission(PluginPermissions.FullAccess));
+            Assert.IsFalse(sandbox.ValidatePermission(PluginPermissions.NetworkAccess));
+            Assert.IsFalse(sandbox.ValidatePermission(PluginPermissions.ProcessAccess));
+            Assert.IsFalse(sandbox.ValidatePermission(PluginPermissions.FullAccess));
         }
 
         #endregion
