@@ -42,6 +42,13 @@ namespace Neo.Plugins.SignClient.Tests
 
         private static readonly ECPoint s_publicKey = ECPoint.DecodePoint(PublicKey.HexToBytes(), ECCurve.Secp256r1);
 
+        /// <summary>
+        /// Checks if the current platform is macOS ARM64 (where SignClient is not supported)
+        /// </summary>
+        private static bool IsRunningOnUnsupportedPlatform =>
+            OperatingSystem.IsMacOS() &&
+            System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64;
+
         private static SignClient NewClient(Block? block, ExtensiblePayload? payload)
         {
             // When test sepcific endpoint, set SIGN_SERVICE_ENDPOINT
@@ -138,6 +145,19 @@ namespace Neo.Plugins.SignClient.Tests
         [TestMethod]
         public void TestSignBlock()
         {
+            if (IsRunningOnUnsupportedPlatform)
+            {
+                // On macOS ARM64, SignClient should throw SignException due to platform incompatibility
+                var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+                var block = TestUtils.MakeBlock(snapshotCache, UInt256.Zero, 0);
+                using var signClient = NewClient(block, null);
+
+                var action = () => { _ = signClient.SignBlock(block, s_publicKey, s_testNetwork); };
+                var exception = Assert.ThrowsException<SignException>(action);
+                Assert.IsTrue(exception.Message.Contains("macOS ARM64") || exception.Message.Contains("Rosetta"));
+                return;
+            }
+
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var block = TestUtils.MakeBlock(snapshotCache, UInt256.Zero, 0);
             using var signClient = NewClient(block, null);
@@ -162,6 +182,29 @@ namespace Neo.Plugins.SignClient.Tests
         [TestMethod]
         public void TestSignExtensiblePayload()
         {
+            if (IsRunningOnUnsupportedPlatform)
+            {
+                // On macOS ARM64, SignClient should throw SignException due to platform incompatibility
+                var script = Contract.CreateSignatureRedeemScript(s_publicKey);
+                var signer = script.ToScriptHash();
+                var payload = new ExtensiblePayload()
+                {
+                    Category = "test",
+                    ValidBlockStart = 1,
+                    ValidBlockEnd = 100,
+                    Sender = signer,
+                    Data = new byte[] { 1, 2, 3 },
+                };
+                using var signClient = NewClient(null, payload);
+                using var store = new MemoryStore();
+                using var snapshot = new StoreCache(store, false);
+
+                var action = () => { _ = signClient.SignExtensiblePayload(payload, snapshot, s_testNetwork); };
+                var exception = Assert.ThrowsException<SignException>(action);
+                Assert.IsTrue(exception.Message.Contains("macOS ARM64") || exception.Message.Contains("Rosetta"));
+                return;
+            }
+
             var script = Contract.CreateSignatureRedeemScript(s_publicKey);
             var signer = script.ToScriptHash();
             var payload = new ExtensiblePayload()
@@ -187,6 +230,24 @@ namespace Neo.Plugins.SignClient.Tests
         [TestMethod]
         public void TestGetAccountStatus()
         {
+            if (IsRunningOnUnsupportedPlatform)
+            {
+                // On macOS ARM64, SignClient should throw SignException due to platform incompatibility
+                using var signClient = NewClient(null, null);
+
+                var action1 = () => { _ = signClient.ContainsSignable(s_publicKey); };
+                var exception1 = Assert.ThrowsException<SignException>(action1);
+                Assert.IsTrue(exception1.Message.Contains("macOS ARM64") || exception1.Message.Contains("Rosetta"));
+
+                // AccountStatusCommand should not throw (it uses Console output) but should show error message
+                signClient.AccountStatusCommand(PublicKey);
+                
+                var privateKey = Enumerable.Repeat((byte)0x0f, 32).ToArray();
+                var keypair = new KeyPair(privateKey);
+                signClient.AccountStatusCommand(keypair.PublicKey.EncodePoint(true).ToHexString());
+                return;
+            }
+
             using var signClient = NewClient(null, null);
 
             // exists
