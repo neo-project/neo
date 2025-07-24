@@ -11,6 +11,8 @@
 
 #nullable enable
 
+using Neo.Extensions;
+using Neo.IEventHandlers;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -31,6 +33,18 @@ namespace Neo.Ledger
     {
         public event EventHandler<Transaction>? TransactionAdded;
         public event EventHandler<TransactionRemovedEventArgs>? TransactionRemoved;
+
+        // MemPool metrics event delegates
+        public delegate void MemPoolStatsSnapshotHandler(MemoryPool memPool, MemPoolStats stats);
+
+        // MemPool metrics events
+        public static event MemPoolStatsSnapshotHandler? MemPoolStatsSnapshot;
+
+        // Metrics tracking fields
+        private readonly Timer? _metricsTimer;
+        private int _lastBatchRemovedCount;
+        private int _conflictsCount;
+        private readonly object _metricsLock = new object();
 
         // Allow a reverified transaction to be rebroadcast if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcast = 10;
@@ -130,6 +144,12 @@ namespace Neo.Ledger
             var timePerBlock = system.GetTimePerBlock().TotalMilliseconds;
             MaxMillisecondsToReverifyTx = timePerBlock / 3;
             MaxMillisecondsToReverifyTxPerIdle = timePerBlock / 15;
+
+            // Start metrics collection timer if there are handlers
+            if (MemPoolStatsSnapshot != null)
+            {
+                _metricsTimer = new Timer(CollectMemPoolStats, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+            }
         }
 
         /// <summary>
@@ -400,6 +420,10 @@ namespace Neo.Ledger
             // Step 3: take into account sender's conflicting transactions while balance check,
             // this will be done in VerifyStateDependant.
 
+            // Track conflicts if any were found
+            if (conflictsList.Count > 0)
+                IncrementConflictsCount();
+
             return true;
         }
 
@@ -421,6 +445,10 @@ namespace Neo.Ledger
                     VerificationContext.RemoveTransaction(minItem.Tx);
                 }
             } while (Count > Capacity);
+
+            // Track the number of transactions removed
+            if (removedTransactions.Count > 0)
+                SetLastBatchRemovedCount(removedTransactions.Count);
 
             return removedTransactions;
         }
@@ -698,6 +726,105 @@ namespace Neo.Ledger
             {
                 _txRwLock.ExitReadLock();
             }
+        }
+
+        // Event invocation methods
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void InvokeMemPoolStatsSnapshot(MemoryPool memPool, MemPoolStats stats)
+        {
+            InvokeHandlers(MemPoolStatsSnapshot?.GetInvocationList(), h => ((MemPoolStatsSnapshotHandler)h)(memPool, stats));
+        }
+
+        private static void InvokeHandlers(Delegate[]? handlers, Action<Delegate> handlerAction)
+        {
+            if (handlers == null) return;
+
+            foreach (var handler in handlers)
+            {
+                try
+                {
+                    // skip stopped plugin.
+                    if (handler.Target is Neo.Plugins.Plugin { IsStopped: true })
+                    {
+                        continue;
+                    }
+
+                    handlerAction(handler);
+                }
+                catch (Exception ex) when (handler.Target is Neo.Plugins.Plugin plugin)
+                {
+                    Utility.Log(nameof(plugin), LogLevel.Error, ex);
+                    switch (plugin.ExceptionPolicy)
+                    {
+                        case Neo.Plugins.UnhandledExceptionPolicy.StopNode:
+                            throw;
+                        case Neo.Plugins.UnhandledExceptionPolicy.StopPlugin:
+                            //Stop plugin on exception
+                            plugin.IsStopped = true;
+                            break;
+                        case Neo.Plugins.UnhandledExceptionPolicy.Ignore:
+                            // Log the exception and continue with the next handler
+                            break;
+                    }
+                }
+            }
+        }
+
+        private void CollectMemPoolStats(object? state)
+        {
+            try
+            {
+                long totalMemoryBytes = 0;
+                _txRwLock.EnterReadLock();
+                try
+                {
+                    // Calculate total memory usage
+                    foreach (var tx in _unsortedTransactions.Values)
+                    {
+                        totalMemoryBytes += tx.Tx.Size;
+                    }
+                    foreach (var tx in _unverifiedTransactions.Values)
+                    {
+                        totalMemoryBytes += tx.Tx.Size;
+                    }
+                }
+                finally
+                {
+                    _txRwLock.ExitReadLock();
+                }
+
+                var stats = new MemPoolStats
+                {
+                    Count = Count,
+                    VerifiedCount = VerifiedCount,
+                    UnverifiedCount = UnVerifiedCount,
+                    Capacity = Capacity,
+                    TotalMemoryBytes = totalMemoryBytes,
+                    ConflictsCount = _conflictsCount,
+                    LastBatchRemovedCount = _lastBatchRemovedCount
+                };
+
+                InvokeMemPoolStatsSnapshot(this, stats);
+            }
+            catch (Exception ex)
+            {
+                Utility.Log(nameof(MemoryPool), LogLevel.Error, ex);
+            }
+        }
+
+        public void IncrementConflictsCount()
+        {
+            Interlocked.Increment(ref _conflictsCount);
+        }
+
+        public void SetLastBatchRemovedCount(int count)
+        {
+            Interlocked.Exchange(ref _lastBatchRemovedCount, count);
+        }
+
+        public void Dispose()
+        {
+            _metricsTimer?.Dispose();
         }
     }
 }

@@ -10,7 +10,9 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Neo.Extensions;
 using Neo.Extensions.Exceptions;
+using Neo.IEventHandlers;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
@@ -22,6 +24,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
@@ -77,6 +81,22 @@ namespace Neo.Network.P2P
         /// </summary>
         public static string UserAgent { get; set; }
 
+        // Network metrics event delegates
+        public delegate void NetworkPeerConnectedHandler(LocalNode node, IActorRef peer);
+        public delegate void NetworkPeerDisconnectedHandler(LocalNode node, IActorRef peer);
+        public delegate void NetworkStatsSnapshotHandler(LocalNode node, NetworkStats stats);
+
+        // Network metrics events
+        public static event NetworkPeerConnectedHandler NetworkPeerConnected;
+        public static event NetworkPeerDisconnectedHandler NetworkPeerDisconnected;
+        public static event NetworkStatsSnapshotHandler NetworkStatsSnapshot;
+
+        // Metrics tracking fields
+        private long _bytesSent;
+        private long _bytesReceived;
+        private readonly Timer _metricsTimer;
+        private readonly object _metricsLock = new object();
+
         static LocalNode()
         {
             Random rand = new();
@@ -99,6 +119,12 @@ namespace Neo.Network.P2P
             {
                 var index = i;
                 Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
+            }
+
+            // Start metrics collection timer if there are handlers
+            if (NetworkStatsSnapshot != null)
+            {
+                _metricsTimer = new Timer(CollectNetworkStats, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
             }
         }
 
@@ -169,6 +195,9 @@ namespace Neo.Network.P2P
 
             if (node.Remote.Port != node.ListenerTcpPort && node.ListenerTcpPort != 0)
                 ConnectedPeers.TryUpdate(actor, node.Listener, node.Remote);
+
+            // Invoke network peer connected event
+            InvokeNetworkPeerConnected(this, actor);
 
             return true;
         }
@@ -292,6 +321,105 @@ namespace Neo.Network.P2P
         protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)
         {
             return RemoteNode.Props(system, this, connection, remote, local, Config);
+        }
+
+        // Event invocation methods
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void InvokeNetworkPeerConnected(LocalNode node, IActorRef peer)
+        {
+            InvokeHandlers(NetworkPeerConnected?.GetInvocationList(), h => ((NetworkPeerConnectedHandler)h)(node, peer));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void InvokeNetworkPeerDisconnected(LocalNode node, IActorRef peer)
+        {
+            InvokeHandlers(NetworkPeerDisconnected?.GetInvocationList(), h => ((NetworkPeerDisconnectedHandler)h)(node, peer));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void InvokeNetworkStatsSnapshot(LocalNode node, NetworkStats stats)
+        {
+            InvokeHandlers(NetworkStatsSnapshot?.GetInvocationList(), h => ((NetworkStatsSnapshotHandler)h)(node, stats));
+        }
+
+        private static void InvokeHandlers(Delegate[] handlers, Action<Delegate> handlerAction)
+        {
+            if (handlers == null) return;
+
+            foreach (var handler in handlers)
+            {
+                try
+                {
+                    // skip stopped plugin.
+                    if (handler.Target is Neo.Plugins.Plugin { IsStopped: true })
+                    {
+                        continue;
+                    }
+
+                    handlerAction(handler);
+                }
+                catch (Exception ex) when (handler.Target is Neo.Plugins.Plugin plugin)
+                {
+                    Utility.Log(nameof(plugin), LogLevel.Error, ex);
+                    switch (plugin.ExceptionPolicy)
+                    {
+                        case Neo.Plugins.UnhandledExceptionPolicy.StopNode:
+                            throw;
+                        case Neo.Plugins.UnhandledExceptionPolicy.StopPlugin:
+                            //Stop plugin on exception
+                            plugin.IsStopped = true;
+                            break;
+                        case Neo.Plugins.UnhandledExceptionPolicy.Ignore:
+                            // Log the exception and continue with the next handler
+                            break;
+                    }
+                }
+            }
+        }
+
+        private void CollectNetworkStats(object state)
+        {
+            try
+            {
+                var stats = new NetworkStats
+                {
+                    ConnectedPeers = ConnectedCount,
+                    UnconnectedPeers = UnconnectedCount,
+                    BytesSent = Interlocked.Read(ref _bytesSent),
+                    BytesReceived = Interlocked.Read(ref _bytesReceived),
+                    PendingTasks = 0, // TODO: Get from actor mailbox if available
+                    HighPriorityQueueSize = 0, // TODO: Get from message queues
+                    LowPriorityQueueSize = 0 // TODO: Get from message queues
+                };
+
+                InvokeNetworkStatsSnapshot(this, stats);
+            }
+            catch (Exception ex)
+            {
+                Utility.Log(nameof(LocalNode), LogLevel.Error, ex);
+            }
+        }
+
+        public void TrackBytesSent(long bytes)
+        {
+            Interlocked.Add(ref _bytesSent, bytes);
+        }
+
+        public void TrackBytesReceived(long bytes)
+        {
+            Interlocked.Add(ref _bytesReceived, bytes);
+        }
+
+        protected override void PostStop()
+        {
+            _metricsTimer?.Dispose();
+            base.PostStop();
+        }
+
+        // Internal method to notify disconnection
+        internal void NotifyPeerDisconnected(IActorRef peer)
+        {
+            InvokeNetworkPeerDisconnected(this, peer);
         }
     }
 }

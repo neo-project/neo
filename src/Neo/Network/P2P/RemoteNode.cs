@@ -212,6 +212,8 @@ namespace Neo.Network.P2P
             {
                 _knownHashes.Clear();
                 _sentHashes.Clear();
+                // Notify LocalNode of peer disconnection
+                _localNode.NotifyPeerDisconnected(Self);
             }
             base.PostStop();
         }

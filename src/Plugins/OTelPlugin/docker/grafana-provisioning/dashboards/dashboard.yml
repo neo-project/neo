@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: 'Neo Dashboards'
+    orgId: 1
+    folder: 'Neo'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

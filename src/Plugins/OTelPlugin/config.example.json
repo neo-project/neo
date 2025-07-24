@@ -1,0 +1,51 @@
+{
+  "PluginConfiguration": {
+    "OpenTelemetry": {
+      "Enabled": true,
+      "ServiceName": "neo-mainnet-node",
+      "ServiceVersion": "3.6.0",
+      "InstanceId": "node-prod-01",
+      "Metrics": {
+        "Enabled": true,
+        "ConsoleExporter": {
+          "Enabled": false
+        },
+        "PrometheusExporter": {
+          "Enabled": true,
+          "Port": 9184,
+          "Path": "/metrics"
+        }
+      },
+      "Traces": {
+        "Enabled": false,
+        "ConsoleExporter": {
+          "Enabled": false
+        }
+      },
+      "Logs": {
+        "Enabled": false,
+        "ConsoleExporter": {
+          "Enabled": false
+        }
+      },
+      "OtlpExporter": {
+        "Enabled": false,
+        "Endpoint": "http://localhost:4317",
+        "Protocol": "grpc",
+        "Headers": "",
+        "Timeout": 10000,
+        "ExportMetrics": true,
+        "ExportTraces": false,
+        "ExportLogs": false
+      },
+      "ResourceAttributes": {
+        "deployment.environment": "production",
+        "service.namespace": "neo-blockchain",
+        "host.name": "neo-node-01.example.com",
+        "cloud.provider": "aws",
+        "cloud.region": "us-east-1",
+        "cloud.availability_zone": "us-east-1a"
+      }
+    }
+  }
+}
