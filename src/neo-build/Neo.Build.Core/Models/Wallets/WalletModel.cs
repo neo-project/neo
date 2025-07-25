@@ -12,6 +12,7 @@
 using Neo.Build.Core.Interfaces;
 using Neo.Build.Core.Wallets;
 using System;
+using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Models.Wallets
 {
@@ -21,6 +22,7 @@ namespace Neo.Build.Core.Models.Wallets
 
         public Version? Version { get; set; }
 
+        [JsonPropertyName("scrypt")]
         public SCryptModel? SCrypt { get; set; }
 
         public WalletAccountModel[]? Accounts { get; set; }
