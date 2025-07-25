@@ -37,6 +37,7 @@ namespace Neo.Build.ToolSet.Commands
             var stdOutOption = new Option<bool>(["--stdout"], "Print wallet to stdout");
             var passwordOption = new Option<string>(["--password", "-p"], "Password for production wallet");
             var overWriteOption = new Option<bool>(["--over-write"], "Overwrite existing file");
+            var protocolAddressVersionOption = new Option<byte>(["--address-version", "-Av"], "Protocol address version");
 
             AddOption(isProdWalletOption);
             AddOption(walletFilenameOption);
@@ -46,6 +47,7 @@ namespace Neo.Build.ToolSet.Commands
             AddOption(stdOutOption);
             AddOption(passwordOption);
             AddOption(overWriteOption);
+            AddOption(protocolAddressVersionOption);
         }
 
         public enum PrivateKeyFormat : byte
@@ -74,6 +76,7 @@ namespace Neo.Build.ToolSet.Commands
             public bool StdOut { get; set; } = false;
             public string? Name { get; set; }
             public bool OverWrite { get; set; } = false;
+            public byte? AddressVersion { get; set; }
 
             private readonly INeoConfigurationOptions _neoConfiguration = neoConfiguration;
 
@@ -153,7 +156,7 @@ namespace Neo.Build.ToolSet.Commands
 
             private Wallet CreateProductionWallet(KeyPair privateKey, FileInfo fileInfo)
             {
-                var wallet = new NEP6Wallet(fileInfo.FullName, Password, ProtocolSettings.Default);
+                var wallet = new NEP6Wallet(fileInfo.FullName, Password, ProtocolSettings.Default with { AddressVersion = AddressVersion ?? _neoConfiguration.ProtocolOptions.AddressVersion });
                 var walletAccount = wallet.CreateAccount(privateKey.PrivateKey);
                 var walletKey = walletAccount.GetKey();
 
@@ -166,7 +169,7 @@ namespace Neo.Build.ToolSet.Commands
                 var protocolSettings = ProtocolSettings.Default with
                 {
                     Network = _neoConfiguration.ProtocolOptions.Network,
-                    AddressVersion = _neoConfiguration.ProtocolOptions.AddressVersion,
+                    AddressVersion = AddressVersion ?? _neoConfiguration.ProtocolOptions.AddressVersion,
                     ValidatorsCount = 1,
                     StandbyCommittee = [privateKey.PublicKey],
                     InitialGasDistribution = _neoConfiguration.ProtocolOptions.InitialGasDistribution,

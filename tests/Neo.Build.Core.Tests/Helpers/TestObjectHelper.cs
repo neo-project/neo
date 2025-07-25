@@ -27,7 +27,7 @@ namespace Neo.Build.Core.Tests.Helpers
             {
                 Name = "Unit Test Wallet",
                 Version = new(1, 0),
-                Scrypt = SCryptModel.Default,
+                SCrypt = SCryptModel.Default,
                 Accounts = [
                     new()
                     {

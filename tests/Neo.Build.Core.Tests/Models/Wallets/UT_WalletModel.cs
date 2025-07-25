@@ -36,10 +36,10 @@ namespace Neo.Build.Core.Tests.Models.Wallets
             Assert.IsNotNull(actualTestWalletModel.Version);
             Assert.AreEqual(expectedTestWalletModel.Version, actualTestWalletModel.Version);
 
-            Assert.IsNotNull(actualTestWalletModel.Scrypt);
-            Assert.AreEqual(expectedTestWalletModel.Scrypt!.N, actualTestWalletModel.Scrypt.N);
-            Assert.AreEqual(expectedTestWalletModel.Scrypt!.R, actualTestWalletModel.Scrypt.R);
-            Assert.AreEqual(expectedTestWalletModel.Scrypt!.P, actualTestWalletModel.Scrypt.P);
+            Assert.IsNotNull(actualTestWalletModel.SCrypt);
+            Assert.AreEqual(expectedTestWalletModel.SCrypt!.N, actualTestWalletModel.SCrypt.N);
+            Assert.AreEqual(expectedTestWalletModel.SCrypt!.R, actualTestWalletModel.SCrypt.R);
+            Assert.AreEqual(expectedTestWalletModel.SCrypt!.P, actualTestWalletModel.SCrypt.P);
 
             Assert.IsNotNull(actualTestWalletModel.Accounts);
             Assert.AreEqual(1, actualTestWalletModel.Accounts.Length);

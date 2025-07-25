@@ -49,7 +49,7 @@ namespace Neo.Build.Core.Wallets
                 throw new NeoBuildWalletInvalidVersionException(walletModel.Version);
 
             _walletName = walletModel.Name;
-            _sCryptParameters = walletModel.Scrypt ?? SCryptModel.Default;
+            _sCryptParameters = walletModel.SCrypt ?? SCryptModel.Default;
 
             if (walletModel.Accounts != null)
             {
@@ -82,7 +82,7 @@ namespace Neo.Build.Core.Wallets
                 throw new NeoBuildWalletInvalidVersionException(walletModel.Version);
 
             _walletName = walletModel.Name;
-            _sCryptParameters = walletModel.Scrypt ?? SCryptModel.Default;
+            _sCryptParameters = walletModel.SCrypt ?? SCryptModel.Default;
 
             if (walletModel.Accounts != null)
             {
@@ -234,7 +234,7 @@ namespace Neo.Build.Core.Wallets
             {
                 Name = Name,
                 Version = Version,
-                Scrypt = _sCryptParameters,
+                SCrypt = _sCryptParameters,
                 Accounts = [.. _walletAccounts.Values.Select(s => s.ToObject())],
                 Extra = new ProtocolOptionsModel()
                 {
