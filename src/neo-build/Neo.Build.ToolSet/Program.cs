@@ -32,9 +32,13 @@ namespace Neo.Build.ToolSet
             var parser = new CommandLineBuilder(rootCommand)
                 .UseHost(DefaultNeoBuildHostFactory, builder =>
                 {
-                    // Add Console Commands Here
-                    builder.UseCommandHandler<ProgramRootCommand, ProgramRootCommand.Handler>();
-                    builder.UseCommandHandler<RunNodeCommand, RunNodeCommand.Handler>();
+                    // Add Global Commands Here
+                    builder.UseCommandHandler<SettingsCommand, SettingsCommand.Handler>();
+
+                    // Add Node Commands Here
+                    builder.UseCommandHandler<RunNodeSubCommand, RunNodeSubCommand.Handler>();
+
+                    // Add Wallet Commands Here
                     builder.UseCommandHandler<CreateWalletSubCommand, CreateWalletSubCommand.Handler>();
                 })
                 .UseDefaults()

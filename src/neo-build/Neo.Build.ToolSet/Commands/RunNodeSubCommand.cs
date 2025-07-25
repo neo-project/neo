@@ -31,9 +31,9 @@ using System.Threading.Tasks;
 
 namespace Neo.Build.ToolSet.Commands
 {
-    internal class RunNodeCommand : Command
+    internal class RunNodeSubCommand : Command
     {
-        public RunNodeCommand() : base("run", "Run Neo instance node")
+        public RunNodeSubCommand() : base("run", "Run Neo instance node")
         {
             var walletPathOptions = new Option<string>(["--filename", "-f"], GetDefaultWalletFilename, "Wallet filename");
             var secondsPerBlockOptions = new Option<uint>(["--seconds-per-block", "-s"], GetDefaultSecondsPerBlock, "Seconds per blockchain block");
