@@ -27,6 +27,11 @@ namespace Neo.Plugins.Storage
 
         /// <inheritdoc/>
         public event IStore.OnNewSnapshotDelegate? OnNewSnapshot;
+        public event OnPutDelegate<byte[], byte[]>? OnPut;
+        public event OnDeleteDelegate<byte[]>? OnDelete;
+        public event OnTryGetDelegate<byte[]>? OnTryGet;
+        public event OnContainsDelegate<byte[]>? OnContains;
+        public event OnFindDelegate<byte[]>? OnFind;
 
         public Store(string path)
         {
@@ -41,6 +46,7 @@ namespace Neo.Plugins.Storage
 
         public void Delete(byte[] key)
         {
+            OnDelete?.Invoke(key);
             _db.Delete(WriteOptions.Default, key);
         }
 
@@ -57,27 +63,43 @@ namespace Neo.Plugins.Storage
             return snapshot;
         }
 
-        public void Put(byte[] key, byte[] value) =>
+        public void Put(byte[] key, byte[] value)
+        {
+            OnPut?.Invoke(key, value);
             _db.Put(WriteOptions.Default, key, value);
+        }
 
-        public void PutSync(byte[] key, byte[] value) =>
+        public void PutSync(byte[] key, byte[] value)
+        {
+            OnPut?.Invoke(key, value);
             _db.Put(WriteOptions.SyncWrite, key, value);
+        }
 
-        public bool Contains(byte[] key) =>
-            _db.Contains(ReadOptions.Default, key);
+        public bool Contains(byte[] key)
+        {
+            OnContains?.Invoke(key);
+            return _db.Contains(ReadOptions.Default, key);
+        }
 
-        public byte[]? TryGet(byte[] key) =>
-            _db.Get(ReadOptions.Default, key);
+        public byte[]? TryGet(byte[] key)
+        {
+            OnTryGet?.Invoke(key);
+            return _db.Get(ReadOptions.Default, key);
+        }
 
         public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
+            OnTryGet?.Invoke(key);
             value = _db.Get(ReadOptions.Default, key);
             return value != null;
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[], byte[])> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward) =>
-            _db.Seek(ReadOptions.Default, keyOrPrefix, direction);
+        public IEnumerable<(byte[], byte[])> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
+        {
+            OnFind?.Invoke(keyOrPrefix, direction);
+            return _db.Seek(ReadOptions.Default, keyOrPrefix, direction);
+        }
 
         public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator() =>
             _db.GetEnumerator();

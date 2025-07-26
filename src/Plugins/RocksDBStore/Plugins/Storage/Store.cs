@@ -24,6 +24,11 @@ namespace Neo.Plugins.Storage
 
         /// <inheritdoc/>
         public event IStore.OnNewSnapshotDelegate? OnNewSnapshot;
+        public event OnPutDelegate<byte[], byte[]>? OnPut;
+        public event OnDeleteDelegate<byte[]>? OnDelete;
+        public event OnTryGetDelegate<byte[]>? OnTryGet;
+        public event OnContainsDelegate<byte[]>? OnContains;
+        public event OnFindDelegate<byte[]>? OnFind;
 
         public Store(string path)
         {
@@ -45,6 +50,8 @@ namespace Neo.Plugins.Storage
         /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
+            OnFind?.Invoke(keyOrPrefix, direction);
+
             keyOrPrefix ??= [];
 
             using var it = _db.NewIterator();
@@ -58,32 +65,38 @@ namespace Neo.Plugins.Storage
 
         public bool Contains(byte[] key)
         {
+            OnContains?.Invoke(key);
             return _db.Get(key, Array.Empty<byte>(), 0, 0) >= 0;
         }
 
         public byte[]? TryGet(byte[] key)
         {
+            OnTryGet?.Invoke(key);
             return _db.Get(key);
         }
 
         public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
+            OnTryGet?.Invoke(key);
             value = _db.Get(key);
             return value != null;
         }
 
         public void Delete(byte[] key)
         {
+            OnDelete?.Invoke(key);
             _db.Remove(key);
         }
 
         public void Put(byte[] key, byte[] value)
         {
+            OnPut?.Invoke(key, value);
             _db.Put(key, value);
         }
 
         public void PutSync(byte[] key, byte[] value)
         {
+            OnPut?.Invoke(key, value);
             _db.Put(key, value, writeOptions: Options.WriteDefaultSync);
         }
     }

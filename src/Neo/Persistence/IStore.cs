@@ -21,6 +21,7 @@ namespace Neo.Persistence
     public interface IStore :
         IReadOnlyStore<byte[], byte[]>,
         IWriteStore<byte[], byte[]>,
+        IStoreEvents<byte[], byte[]>,
         IDisposable
     {
         /// <summary>

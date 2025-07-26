@@ -12,6 +12,7 @@
 #nullable enable
 
 using Neo.Extensions;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -29,14 +30,21 @@ namespace Neo.Persistence.Providers
 
         /// <inheritdoc/>
         public event IStore.OnNewSnapshotDelegate? OnNewSnapshot;
+        public event OnPutDelegate<byte[], byte[]>? OnPut;
+        public event OnDeleteDelegate<byte[]>? OnDelete;
+        public event OnTryGetDelegate<byte[]>? OnTryGet;
+        public event OnContainsDelegate<byte[]>? OnContains;
+        public event OnFindDelegate<byte[]>? OnFind;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Delete(byte[] key)
         {
+            OnDelete?.Invoke(key);
             _innerData.TryRemove(key, out _);
         }
 
-        public void Dispose() { }
+        public void Dispose() =>
+            GC.SuppressFinalize(this);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IStoreSnapshot GetSnapshot()
@@ -49,21 +57,27 @@ namespace Neo.Persistence.Providers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Put(byte[] key, byte[] value)
         {
+            OnPut?.Invoke(key, value);
             _innerData[key[..]] = value[..];
         }
 
         /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
+            OnFind?.Invoke(keyOrPrefix, direction);
+
             keyOrPrefix ??= [];
             if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
 
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _innerData;
+
             if (keyOrPrefix.Length > 0)
                 records = records
                     .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
+
             foreach (var pair in records)
                 yield return (pair.Key[..], pair.Value[..]);
         }
@@ -71,6 +85,7 @@ namespace Neo.Persistence.Providers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[]? TryGet(byte[] key)
         {
+            OnTryGet?.Invoke(key);
             if (!_innerData.TryGetValue(key, out var value)) return null;
             return value[..];
         }
@@ -78,12 +93,14 @@ namespace Neo.Persistence.Providers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
+            OnTryGet?.Invoke(key);
             return _innerData.TryGetValue(key, out value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(byte[] key)
         {
+            OnContains?.Invoke(key);
             return _innerData.ContainsKey(key);
         }
 
