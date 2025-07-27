@@ -2,6 +2,16 @@
 
 <!-- Please include a summary of the changes and the related issue. Please also include relevant motivation and context. List any dependencies that are required for this change. -->
 
+# Change Log
+<!-- Use a list
+
+- Add File 'filename here'
+- Removed File 'filename here'
+- Add Class 'class name here'
+- etc
+
+-->
+
 Fixes # (issue)
 
 ## Type of change
@@ -19,10 +29,10 @@ Fixes # (issue)
 
 <!-- Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration -->
 
-- [ ] Test A
-- [ ] Test B
-
-**Test Configuration**:
+- [ ] Unit Testing
+- [ ] Run Application
+- [ ] Local Computer Tests
+- [ ] No Testing
 
 
 # Checklist:

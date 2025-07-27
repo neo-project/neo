@@ -562,7 +562,7 @@ Gets the storage item by contract ID or script hash and key.
   "jsonrpc": "2.0",
   "id": 1,
   "method": "getstorage",
-  "params": ["The contract id(int) or hash(UInt160)", "The Base64 encoded key"]
+  "params": ["The contract id(int), hash(UInt160), or native contract name(string)", "The Base64 encoded key"]
 }
 ```
 
@@ -585,7 +585,7 @@ Lists storage items by contract ID or script hash and prefix.
   "id": 1,
   "method": "findstorage",
   "params": [
-    "The contract id(int) or hash(UInt160)", // The contract id or script hash
+    "The contract id(int), hash(UInt160), or native contract name(string)",
     "The Base64 encoded key prefix", // The Base64 encoded key prefix
     0 // The start index, optional
   ]
