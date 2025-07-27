@@ -447,6 +447,36 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestStorage_NativeContractName()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var key = new byte[] { 0x01 };
+            var value = new byte[] { 0x02 };
+            TestUtils.StorageItemAdd(snapshot, NativeContract.GAS.Id, key, value);
+            snapshot.Commit();
+
+            // GetStorage
+            var result = _rpcServer.GetStorage(new("GasToken"), Convert.ToBase64String(key));
+            Assert.AreEqual(Convert.ToBase64String(value), result.AsString());
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetStorage(null, Convert.ToBase64String(key)));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetStorage(new("GasToken"), null));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // FindStorage
+            var result2 = _rpcServer.FindStorage(new("GasToken"), Convert.ToBase64String(key), 0);
+            Assert.AreEqual(Convert.ToBase64String(value), result2["results"][0]["value"].AsString());
+
+            ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.FindStorage(null, Convert.ToBase64String(key), 0));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.FindStorage(new("GasToken"), null, 0));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+        }
+
+        [TestMethod]
         public void TestFindStorage_Pagination()
         {
             var snapshot = _neoSystem.GetSnapshotCache();

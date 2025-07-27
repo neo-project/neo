@@ -739,7 +739,7 @@ namespace Neo.Plugins.RpcServer
 
             var (signers, witnesses) = _params.Count >= 3
                 ? ((JArray)_params[2]).ToSignersAndWitnesses(system.Settings.AddressVersion)
-                : (null, null);
+                : default;
             return GetVerificationResult(scriptHash, args, signers, witnesses);
         }
 
