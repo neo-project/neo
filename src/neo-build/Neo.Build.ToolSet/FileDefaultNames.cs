@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// FileNameDefaults.cs file belongs to the neo project and is free
+// FileDefaultNames.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,8 +11,8 @@
 
 namespace Neo.Build.ToolSet
 {
-    internal static class FileNameDefaults
+    internal static class FileDefaultNames
     {
-        public static readonly string WalletName = "wallet1.json";
+        public static readonly string Wallet = "wallet1.json";
     }
 }
