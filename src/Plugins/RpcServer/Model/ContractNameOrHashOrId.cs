@@ -17,11 +17,19 @@ namespace Neo.Plugins.RpcServer.Model
     {
         private readonly object _value;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="id">Contract Id</param>
         public ContractNameOrHashOrId(int id)
         {
             _value = id;
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="hash">Contract hash</param>
         public ContractNameOrHashOrId(UInt160 hash)
         {
             _value = hash;
@@ -34,10 +42,10 @@ namespace Neo.Plugins.RpcServer.Model
         ///  Or use `list nativecontract` in neo-cli to get the native contract names.
         /// </para>
         /// </summary>
-        /// <param name="name"></param>
-        public ContractNameOrHashOrId(string name)
+        /// <param name="nameOrId">Contract Name or Id</param>
+        public ContractNameOrHashOrId(string nameOrId)
         {
-            _value = name;
+            _value = nameOrId;
         }
 
         public bool IsId => _value is int;
