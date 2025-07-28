@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Neo.ConsoleService.Tests
 {
@@ -22,6 +23,7 @@ namespace Neo.ConsoleService.Tests
         private class TestConsoleService : ConsoleServiceBase
         {
             public override string ServiceName => "TestService";
+            public bool _asyncTestCalled = false;
 
             // Test method with various parameter types
             [ConsoleCommand("test", Category = "Test Commands")]
@@ -31,6 +33,24 @@ namespace Neo.ConsoleService.Tests
             [ConsoleCommand("testenum", Category = "Test Commands")]
             public void TestEnumMethod(TestEnum enumParam) { }
 
+            [ConsoleCommand("testversion", Category = "Test Commands")]
+            public Version TestMethodVersion() { return new Version("1.0.0"); }
+
+            [ConsoleCommand("testambiguous", Category = "Test Commands")]
+            public void TestAmbiguousFirst() { }
+
+            [ConsoleCommand("testambiguous", Category = "Test Commands")]
+            public void TestAmbiguousSecond() { }
+
+            [ConsoleCommand("testcrash", Category = "Test Commands")]
+            public void TestCrashMethod(uint number) { }
+
+            [ConsoleCommand("testasync", Category = "Test Commands")]
+            public async Task TestAsyncCommand()
+            {
+                await Task.Delay(100);
+                _asyncTestCalled = true;
+            }
             public enum TestEnum { Value1, Value2, Value3 }
         }
 
@@ -115,6 +135,46 @@ namespace Neo.ConsoleService.Tests
             // Test case 5: Empty arguments should use all default values
             var args5 = new List<CommandToken>();
             Assert.ThrowsExactly<ArgumentException>(() => service.ParseSequentialArguments(method, args5.Trim()));
+        }
+
+        [TestMethod]
+        public void TestOnCommand()
+        {
+            var service = new TestConsoleService();
+            service.RegisterCommand(service, "TestConsoleService");
+
+            // Test case 1: Missing command
+            var resultEmptyCommand = service.OnCommand("");
+            Assert.IsTrue(resultEmptyCommand);
+
+            // Test case 2: White space command
+            var resultWhiteSpaceCommand = service.OnCommand(" ");
+            Assert.IsTrue(resultWhiteSpaceCommand);
+
+            // Test case 3: Not exist command
+            var resultNotExistCommand = service.OnCommand("notexist");
+            Assert.IsFalse(resultNotExistCommand);
+
+            // Test case 4: Exists command test
+            var resultTestCommand = service.OnCommand("testversion");
+            Assert.IsTrue(resultTestCommand);
+
+            // Test case 5: Exists command with quote
+            var resultTestCommandWithQuote = service.OnCommand("testversion --noargs");
+            Assert.IsTrue(resultTestCommandWithQuote);
+
+            // Test case 6: Ambiguous command tst
+            var ex = Assert.ThrowsExactly<ArgumentException>(() => service.OnCommand("testambiguous"));
+            Assert.Contains("Ambiguous calls for", ex.Message);
+
+            // Test case 7: Help test
+            var resultTestHelp = service.OnCommand("testcrash notANumber");
+            Assert.IsTrue(resultTestHelp);
+
+            // Test case 8: Test Task
+            var resultTestTaskAsync = service.OnCommand("testasync");
+            Assert.IsTrue(resultTestTaskAsync);
+            Assert.IsTrue(service._asyncTestCalled);
         }
     }
 }
