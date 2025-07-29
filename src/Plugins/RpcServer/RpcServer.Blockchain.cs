@@ -12,6 +12,7 @@
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -377,6 +378,17 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
+        private static int GetContractId(IReadOnlyStore snapshot, ContractNameOrHashOrId contractNameOrHashOrId)
+        {
+            if (contractNameOrHashOrId.IsId) return contractNameOrHashOrId.AsId();
+
+            var hash = contractNameOrHashOrId.IsName
+                ? ToScriptHash(contractNameOrHashOrId.AsName())
+                : contractNameOrHashOrId.AsHash();
+            var contract = NativeContract.ContractManagement.GetContract(snapshot, hash).NotNull_Or(RpcError.UnknownContract);
+            return contract.Id;
+        }
+
         /// <summary>
         /// Gets the storage item by contract ID or script hash and key.
         /// <para>Request format:</para>
@@ -385,7 +397,7 @@ namespace Neo.Plugins.RpcServer
         ///   "jsonrpc": "2.0",
         ///   "id": 1,
         ///   "method": "getstorage",
-        ///   "params": ["The contract id(int) or hash(UInt160)", "The Base64-encoded key"]
+        ///   "params": ["The contract id(int),  hash(UInt160) or native contract name(string)", "The Base64-encoded key"]
         /// }
         /// </code>
         /// <para>Response format:</para>
@@ -401,17 +413,7 @@ namespace Neo.Plugins.RpcServer
             RpcException.ThrowIfNull(base64Key, nameof(base64Key), RpcError.InvalidParams);
 
             using var snapshot = system.GetSnapshotCache();
-            int id;
-            if (contractNameOrHashOrId.IsHash)
-            {
-                var hash = contractNameOrHashOrId.AsHash();
-                var contract = NativeContract.ContractManagement.GetContract(snapshot, hash).NotNull_Or(RpcError.UnknownContract);
-                id = contract.Id;
-            }
-            else
-            {
-                id = contractNameOrHashOrId.AsId();
-            }
+            int id = GetContractId(snapshot, contractNameOrHashOrId);
 
             var key = Convert.FromBase64String(base64Key);
             var item = snapshot.TryGet(new StorageKey
@@ -429,7 +431,11 @@ namespace Neo.Plugins.RpcServer
         ///   "jsonrpc": "2.0",
         ///   "id": 1,
         ///   "method": "findstorage",
-        ///   "params": ["The contract id(int) or hash(UInt160)", "The base64-encoded key prefix", 0/*The start index, optional*/]
+        ///   "params": ["
+        ///     "The contract id(int), hash(UInt160) or native contract name(string)",
+        ///     "The base64-encoded key prefix",
+        ///     0 /*The start index, optional*/
+        ///   ]
         /// }</code>
         /// <para>Response format:</para>
         /// <code>{
@@ -457,16 +463,7 @@ namespace Neo.Plugins.RpcServer
             RpcException.ThrowIfNull(base64KeyPrefix, nameof(base64KeyPrefix), RpcError.InvalidParams);
 
             using var snapshot = system.GetSnapshotCache();
-            int id;
-            if (contractNameOrHashOrId.IsHash)
-            {
-                var contract = NativeContract.ContractManagement.GetContract(snapshot, contractNameOrHashOrId.AsHash()).NotNull_Or(RpcError.UnknownContract);
-                id = contract.Id;
-            }
-            else
-            {
-                id = contractNameOrHashOrId.AsId();
-            }
+            int id = GetContractId(snapshot, contractNameOrHashOrId);
 
             var prefix = Result.Ok_Or(
                 () => Convert.FromBase64String(base64KeyPrefix),
