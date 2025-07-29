@@ -51,6 +51,7 @@ namespace Neo.ConsoleService.Tests
                 await Task.Delay(100);
                 _asyncTestCalled = true;
             }
+
             public enum TestEnum { Value1, Value2, Value3 }
         }
 
