@@ -111,7 +111,7 @@ namespace Neo.Plugins.OracleService.Tests
         internal static void ResetStore()
         {
             s_store.Reset();
-            s_theNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
+            s_theNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         internal static StoreCache GetTestSnapshotCache()

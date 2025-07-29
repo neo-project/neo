@@ -76,6 +76,7 @@ namespace Neo.SmartContract
                 Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
             };
             if (json["value"] != null)
+            {
                 parameter.Value = parameter.Type switch
                 {
                     ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"].AsString()),
@@ -89,6 +90,7 @@ namespace Neo.SmartContract
                     ContractParameterType.Map => ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson((JObject)p["key"]), FromJson((JObject)p["value"]))).ToList(),
                     _ => throw new ArgumentException($"Parameter type '{parameter.Type}' is not supported.", nameof(json)),
                 };
+            }
             return parameter;
         }
 
@@ -145,6 +147,7 @@ namespace Neo.SmartContract
             JObject json = new();
             json["type"] = parameter.Type;
             if (parameter.Value != null)
+            {
                 switch (parameter.Type)
                 {
                     case ContractParameterType.Signature:
@@ -180,6 +183,7 @@ namespace Neo.SmartContract
                         if (!context.Remove(parameter)) throw new InvalidOperationException("Circular reference.");
                         break;
                 }
+            }
             return json;
         }
 

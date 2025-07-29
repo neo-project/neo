@@ -160,7 +160,7 @@ namespace Neo.Extensions
             return z;
         }
 
-        public static BigInteger GetLowPart(this BigInteger value, int bitCount)
+        internal static BigInteger GetLowPart(this BigInteger value, int bitCount)
         {
             var mask = (BigInteger.One << bitCount) - 1;
             return value & mask;
