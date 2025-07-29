@@ -39,7 +39,7 @@ namespace Neo.Build.ToolSet.Providers
             }
 
             // Hosting Environment
-            Data.Add(HostDefaults.EnvironmentKey, HostingEnvironments.Localnet);
+            Data.Add(HostDefaults.EnvironmentKey, NeoHostingEnvironments.Localnet);
             Data.Add(HostDefaults.ContentRootKey, Environment.CurrentDirectory);
 
             // Node Storage Configuration
@@ -68,7 +68,7 @@ namespace Neo.Build.ToolSet.Providers
             Data.Add(ProtocolOptionsConfigurationNames.InitialGasDistributionKey, "5200000000000000");
 
             // Application Engine Configuration
-            Data.Add(AppEngineConfigurationNames.MaxGasKey, "2000000000");
+            Data.Add(ApplicationEngineConfigurationNames.MaxGasKey, "2000000000");
 
             // DBFT Plugin Configuration
             var dbftRoot = Path.Combine(Environment.CurrentDirectory, $"DBFT_{protocolNetwork:X08}");

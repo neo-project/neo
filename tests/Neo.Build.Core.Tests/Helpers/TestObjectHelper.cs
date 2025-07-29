@@ -22,7 +22,7 @@ namespace Neo.Build.Core.Tests.Helpers
 {
     internal static class TestObjectHelper
     {
-        public static TestWalletModel CreateTestWalletModel() =>
+        public static WalletModel CreateTestWalletModel() =>
             new()
             {
                 Name = "Unit Test Wallet",
