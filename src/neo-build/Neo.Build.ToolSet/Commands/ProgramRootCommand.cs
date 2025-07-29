@@ -20,11 +20,13 @@ namespace Neo.Build.ToolSet.Commands
 {
     internal class ProgramRootCommand : RootCommand
     {
-        public ProgramRootCommand() : base(CommandLineStrings.Program.RootDescription)
+        public ProgramRootCommand() : base("Neo Build Engine Command-line Tool")
         {
-            var runCommand = new RunNodeCommand();
+            var runNodeCommand = new RunNodeCommand();
+            var createCommand = new CreateCommand();
 
-            AddCommand(runCommand);
+            AddCommand(runNodeCommand);
+            AddCommand(createCommand);
         }
 
         public new sealed class Handler(

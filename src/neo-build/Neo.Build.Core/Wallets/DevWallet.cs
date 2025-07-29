@@ -14,6 +14,7 @@ using Neo.Build.Core.Exceptions.Wallet;
 using Neo.Build.Core.Interfaces;
 using Neo.Build.Core.Models;
 using Neo.Build.Core.Models.Wallets;
+using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
@@ -112,6 +113,22 @@ namespace Neo.Build.Core.Wallets
 
         public override bool Contains(UInt160 scriptHash) =>
             _walletAccounts.ContainsKey(scriptHash);
+
+        public WalletAccount CreateMultiSigAccount(ECPoint[] publicKeys, string? name = null, bool isDefaultAccount = false)
+        {
+            var contract = Contract.CreateMultiSigContract(publicKeys.Length, publicKeys);
+            var account = _walletAccounts.Values.FirstOrDefault(
+                f =>
+                    f.HasKey &&
+                    f.Lock == false &&
+                    publicKeys.Contains(f.GetKey().PublicKey));
+            var accountKey = account?.GetKey();
+
+            var newAccount = CreateAccount(contract, accountKey, name);
+            newAccount.IsDefault = isDefaultAccount;
+
+            return newAccount;
+        }
 
         public override WalletAccount CreateAccount(byte[] privateKey) =>
             CreateAccount(privateKey, null);
