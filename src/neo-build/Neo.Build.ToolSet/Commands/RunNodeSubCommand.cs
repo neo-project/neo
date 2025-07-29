@@ -46,7 +46,7 @@ namespace Neo.Build.ToolSet.Commands
 
 
         private static string GetDefaultWalletFilename() =>
-            FileDefaultNames.Wallet;
+            FileNameDefaults.WalletName;
 
         //private static bool GetDefaultEnableTrace() =>
         //    false;

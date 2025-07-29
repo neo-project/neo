@@ -60,7 +60,7 @@ namespace Neo.Build.ToolSet.Commands
             false;
 
         private static string GetDefaultWalletFilename() =>
-            FileDefaultNames.Wallet;
+            FileNameDefaults.WalletName;
 
         private static PrivateKeyFormat GetDefaultPrivateKeyFormat() =>
             PrivateKeyFormat.HexString;
