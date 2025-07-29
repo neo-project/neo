@@ -446,6 +446,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("100000000000000000000000"));
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1_00000000);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 10);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Zero);
 
                 var tx = TransactionBuilder.CreateEmpty()
                     .Nonce((uint)Random.Shared.Next())
@@ -455,9 +456,13 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.AreEqual(6, engine.ResultStack.Count);
 
                 var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue <= 0);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
                 Assert.IsTrue(actualValue < 10);
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 

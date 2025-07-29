@@ -271,6 +271,9 @@ namespace Neo.SmartContract.Native
             if (maxValue.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
 
+            if (maxValue == BigInteger.Zero)
+                return BigInteger.Zero;
+
             var maxValueBits = maxValue.GetByteCount() * 8;
             var maxValueSize = BigInteger.Pow(2, maxValueBits);
 
