@@ -9,6 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.SmartContract.Debugger;
+using Neo.Persistence;
+using Neo.SmartContract;
 using Neo.VM;
 
 namespace Neo.Build.Core.SmartContract
@@ -17,13 +20,25 @@ namespace Neo.Build.Core.SmartContract
     {
         private void CheckBreakPointsAndBreak()
         {
-            if (State == VMState.NONE && InvocationStack.Count > 0 && BreakPoints.Count > 0)
+            if (State == VMState.NONE && InvocationStack.Count > 0 && _breakPoints.Count > 0)
             {
                 if (CurrentContext is null) return;
                 if (_breakPoints.TryGetValue(CurrentContext.Script, out var positionTable) &&
                     positionTable.Contains((uint)CurrentContext.InstructionPointer))
                     State = VMState.BREAK;
             }
+        }
+
+        private void OnUpdateSnapshotCache(DataCache sender, StorageKey key, StorageItem item)
+        {
+            var exeState = CurrentContext?.GetState<ExecutionContextState>()!;
+            _snapshotStorage[exeState] = new(key, item, StorageEvent.Write);
+        }
+
+        private void OnReadSnapshot(DataCache sender, StorageKey key, StorageItem item)
+        {
+            var exeState = CurrentContext?.GetState<ExecutionContextState>()!;
+            _snapshotStorage[exeState] = new(key, item, StorageEvent.Read);
         }
     }
 }

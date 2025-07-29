@@ -12,6 +12,9 @@
 using Neo.Build.Core.Builders;
 using Neo.Build.Core.SmartContract;
 using Neo.Build.Core.Tests.Helpers;
+using Neo.Extensions;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 
@@ -63,6 +66,31 @@ namespace Neo.Build.Core.Tests.SmartContract
             debugger.Execute();
 
             Assert.AreEqual(VMState.HALT, debugger.State);
+        }
+
+        [TestMethod]
+        public void TestDebugSnapshotStorage()
+        {
+            var pb = BlockBuilder
+                .CreateNext(TestNode.NeoSystem.GenesisBlock)
+                .Build();
+
+            using var sb = new ScriptBuilder()
+                .EmitDynamicCall(NativeContract.NEO.Hash, "transfer", NativeContract.NEO.Hash, NativeContract.NEO.Hash, 324, null);
+
+            using var debugger = new DebugApplicationEngine(
+                TestNode.NeoSystem.Settings,
+                TestNode.NeoSystem.StoreView,
+                persistingBlock: pb);
+
+            debugger.LoadScript(sb.ToArray());
+
+            var actualState = debugger.Execute();
+
+            Console.WriteLine("{0}", sb.ToArray().ToScriptHash());
+
+            Assert.AreEqual(VMState.HALT, actualState);
+            Assert.AreEqual(1, debugger.SnapshotStorage.Count);
         }
     }
 }

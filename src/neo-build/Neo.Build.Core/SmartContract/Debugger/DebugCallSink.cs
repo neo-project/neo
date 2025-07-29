@@ -24,7 +24,7 @@ namespace Neo.Build.Core.SmartContract.Debugger
         public DebugCallSink(
             string methodName,
             int eventId,
-            IEnumerable<string> arguments)
+            IEnumerable<StackItem> arguments)
             : this(methodName, eventId)
         {
             Arguments = arguments;
@@ -33,7 +33,7 @@ namespace Neo.Build.Core.SmartContract.Debugger
         public DebugCallSink(
             string methodName,
             int eventId,
-            IEnumerable<string> arguments,
+            IEnumerable<StackItem> arguments,
             IEnumerable<StackItem> resultStack)
             : this(methodName, eventId, arguments)
         {
@@ -51,12 +51,12 @@ namespace Neo.Build.Core.SmartContract.Debugger
         public int EventId { get; } = eventId;
 
         /// <summary>
-        /// Gets arguments for the call.
+        /// Gets <see cref="StackItem"/> arguments for the call.
         /// </summary>
-        public IEnumerable<string> Arguments { get; } = [];
+        public IEnumerable<StackItem> Arguments { get; } = [];
 
         /// <summary>
-        /// Gets the <see cref="StackItem"/>'s of the call.
+        /// Gets <see cref="StackItem"/>'s of the call.
         /// </summary>
         public IEnumerable<StackItem> Results { get; } = [];
 

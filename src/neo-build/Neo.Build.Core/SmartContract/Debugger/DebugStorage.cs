@@ -19,11 +19,14 @@ namespace Neo.Build.Core.SmartContract.Debugger
     [DebuggerDisplay("{ToString()}")]
     public class DebugStorage(
         StorageKey key,
-        StorageItem value)
+        StorageItem value,
+        StorageEvent storageEvent)
     {
-        public StorageKey Key { get; set; } = key;
+        public StorageKey Key { get; } = key;
 
-        public StorageItem Value { get; set; } = value;
+        public StorageItem Value { get; } = value;
+
+        public StorageEvent Event { get; } = storageEvent;
 
         public override int GetHashCode() =>
             Key.ToArray().XxHash3_32();
@@ -33,5 +36,12 @@ namespace Neo.Build.Core.SmartContract.Debugger
                 nameof(StorageKey),
                 Key.Id,
                 string.Join(", ", Key.ToArray()[4..].Select(s => $"0x{s:x02}")));
+    }
+
+    public enum StorageEvent : byte
+    {
+        Unknown = 0,
+        Read = 1,
+        Write = 2,
     }
 }

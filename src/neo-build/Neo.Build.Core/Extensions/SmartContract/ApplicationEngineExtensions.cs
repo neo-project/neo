@@ -110,7 +110,7 @@ namespace Neo.Build.Core.Extensions.SmartContract
             var key = StorageKey.CreateSearchPrefix(contractState.Id, prefix);
             var snapshot = engine.SnapshotCache;
 
-            return [.. snapshot.Find(key, seekDirection).Select(static s => new DebugStorage(s.Key, s.Value))];
+            return [.. snapshot.Find(key, seekDirection).Select(static s => new DebugStorage(s.Key, s.Value, StorageEvent.Read))];
         }
     }
 }

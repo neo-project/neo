@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Neo.Build.Core.SmartContract.Debugger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -48,7 +49,13 @@ namespace Neo.Build.Core.SmartContract
         /// </summary>
         public IReadOnlyDictionary<Script, HashSet<uint>> BreakPoints => _breakPoints;
 
+        /// <summary>
+        /// Gets state storage events of the keys and values that were either read or updated.
+        /// </summary>
+        public IReadOnlyDictionary<ExecutionContextState, DebugStorage> SnapshotStorage => _snapshotStorage;
+
         private readonly Dictionary<Script, HashSet<uint>> _breakPoints = [];
+        private readonly Dictionary<ExecutionContextState, DebugStorage> _snapshotStorage = [];
 
         public void AddBreakPoints(Script script, params uint[] positions)
         {
@@ -144,7 +151,18 @@ namespace Neo.Build.Core.SmartContract
 
             if (State == VMState.NONE)
                 State = VMState.BREAK;
+
             return State;
+        }
+
+        public override void LoadContext(ExecutionContext context)
+        {
+            var exeState = context.GetState<ExecutionContextState>();
+
+            exeState.SnapshotCache.OnRead += OnReadSnapshot;
+            exeState.SnapshotCache.OnUpdate += OnUpdateSnapshotCache;
+
+            base.LoadContext(context);
         }
     }
 }
