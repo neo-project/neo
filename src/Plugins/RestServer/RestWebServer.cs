@@ -279,7 +279,7 @@ namespace Neo.Plugins.RestServer
                                     Contact = new OpenApiContact()
                                     {
                                         Name = "The Neo Project",
-                                        Url = new Uri("https://github.com/neo-project/neo-modules"),
+                                        Url = new Uri("https://github.com/neo-project/neo"),
                                         Email = "dev@neo.org",
                                     },
                                     License = new OpenApiLicense()
