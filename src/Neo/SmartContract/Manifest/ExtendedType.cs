@@ -28,7 +28,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// NamedType is used to refer to one of the types defined in the namedtypes object of Contract,
         /// so namedtypes MUST contain a field named name.
-        /// This field is only used for structures (ordered set of named values of diffent types),
+        /// This field is only used for structures (ordered set of named values of different types),
         /// if used other fields MUST NOT be set, except for the type which MUST be an Array.
         /// Value string MUST start with a letter and can contain alphanumeric characters and dots.
         /// It MUST NOT be longer than 64 characters.
