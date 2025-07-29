@@ -11,4 +11,4 @@
 
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Neo.Network.RPC.Tests")]
+[assembly: InternalsVisibleTo("Neo.RpcClient.Tests")]

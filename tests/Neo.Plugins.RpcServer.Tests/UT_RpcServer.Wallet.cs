@@ -103,7 +103,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             TestUtilOpenWallet();
             var invalidAddress = "NotAValidAddress";
-            var ex = Assert.ThrowsExactly<FormatException>(() => _rpcServer.DumpPrivKey(new JArray(invalidAddress)));
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.DumpPrivKey(new JArray(invalidAddress)));
             TestUtilCloseWallet();
         }
 
@@ -366,7 +366,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var amount = "1";
             var paramsArray = new JArray(assetId.ToString(), invalidToAddress, amount);
 
-            var ex = Assert.ThrowsExactly<FormatException>(() => _rpcServer.SendToAddress(paramsArray));
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendToAddress(paramsArray));
             // Expect FormatException from AddressToScriptHash
             TestUtilCloseWallet();
         }
@@ -423,7 +423,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var to = new JArray { new JObject { ["asset"] = NativeContract.GAS.Hash.ToString(), ["value"] = "1", ["address"] = _walletAccount.Address } };
             var paramsArray = new JArray(invalidFrom, to);
 
-            var ex = Assert.ThrowsExactly<FormatException>(() => _rpcServer.SendMany(paramsArray));
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendMany(paramsArray));
             TestUtilCloseWallet();
         }
 
