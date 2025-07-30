@@ -60,6 +60,12 @@ namespace Neo.SmartContract.Manifest
         public Nep25Interface? Interface { get; set; }
 
         /// <summary>
+        /// key is only used along with the Map type (MUST NOT be used for other types) and can have Signature, Boolean, Integer,
+        /// Hash160, Hash256, ByteArray, PublicKey or String value, that is all the basic types that can be used as a map key.
+        /// </summary>
+        public Nep25Key? Key { get; set; }
+
+        /// <summary>
         /// value is used for Array, InteropInterface and Map types (type field) and MUST NOT be used with other base types.
         /// When used for Array it contains the type of an individual element of an array (ordered set of values of one type).
         /// If used for InteropInterface it contains the type of an individual iterator's value. If used for Map it contains map value type.
@@ -68,10 +74,12 @@ namespace Neo.SmartContract.Manifest
         public ExtendedType? Value { get; set; }
 
         /// <summary>
-        /// key is only used along with the Map type (MUST NOT be used for other types) and can have Signature, Boolean, Integer,
-        /// Hash160, Hash256, ByteArray, PublicKey or String value, that is all the basic types that can be used as a map key.
+        /// fields is used for Array type and when used it means that the type is a structure (ordered set of named values of diffent types),
+        /// which has its fields defined directly here (unlike namedtype which is just a reference to namedtypes).
+        /// It's an array with each member being a Parameter. fields MUST NOT be used in method parameter or return value definitions
+        /// (these MUST use namedtype referring to a valid type specified in the namedtypes object).
         /// </summary>
-        public Nep25Key? Key { get; set; }
+        public ExtendedType[]? Fields { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -137,6 +145,21 @@ namespace Neo.SmartContract.Manifest
             {
                 Value = null;
             }
+
+            if (array[startIndex++] is VM.Types.Array fields)
+            {
+                Fields = new ExtendedType[fields.Count];
+                for (var i = 0; i < fields.Count; i++)
+                {
+                    var field = new ExtendedType();
+                    field.FromStackItem((VM.Types.Array)fields[i], 0);
+                    Fields[i] = field;
+                }
+            }
+            else
+            {
+                Fields = null;
+            }
         }
 
         internal StackItem ToStackItem(IReferenceCounter referenceCounter, Struct array)
@@ -152,6 +175,16 @@ namespace Neo.SmartContract.Manifest
             {
                 var arrayValue = new Struct(referenceCounter);
                 Value.ToStackItem(referenceCounter, arrayValue);
+                array.Add(arrayValue);
+            }
+            if (Fields is null) array.Add(StackItem.Null);
+            else
+            {
+                var arrayValue = new VM.Types.Array(referenceCounter);
+                foreach (var field in Fields)
+                {
+                    arrayValue.Add(field.ToStackItem(referenceCounter, []));
+                }
                 array.Add(arrayValue);
             }
             return array;
@@ -203,7 +236,18 @@ namespace Neo.SmartContract.Manifest
             {
                 type.Value = FromJson(jValue);
             }
+            if (json["fields"] is JArray jFields)
+            {
+                type.Fields = new ExtendedType[jFields.Count];
 
+                for (var i = 0; i < jFields.Count; i++)
+                {
+                    if (jFields[i] is not JObject jField)
+                        throw new FormatException("Invalid Field entry");
+
+                    type.Fields[i] = FromJson(jField);
+                }
+            }
             return type;
         }
 
@@ -236,24 +280,50 @@ namespace Neo.SmartContract.Manifest
             {
                 json["value"] = Value.ToJson();
             }
+            if (Fields != null)
+            {
+                var jFields = new JArray();
+
+                foreach (var field in Fields)
+                {
+                    jFields.Add(field.ToJson());
+                }
+
+                json["fields"] = jFields;
+            }
             return json;
         }
 
         public override bool Equals(object? obj) => Equals(obj as ExtendedType);
-        public override int GetHashCode() => HashCode.Combine(Type, NamedType, Length, ForbidNull, Interface, Key, Value);
+        public override int GetHashCode() => HashCode.Combine(Type, NamedType, Length, ForbidNull, Interface, Key, Value, Fields?.Length ?? -1);
 
         public bool Equals(ExtendedType? other)
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
 
-            return Type == other.Type
-                && NamedType == other.NamedType
-                && Length == other.Length
-                && ForbidNull == other.ForbidNull
-                && Interface == other.Interface
-                && Key == other.Key
-                && Equals(Value, other.Value);
+            if (Type != other.Type
+                || NamedType != other.NamedType
+                || Length != other.Length
+                || ForbidNull != other.ForbidNull
+                || Interface != other.Interface
+                || Key != other.Key
+                || !Equals(Value, other.Value))
+                return false;
+
+            if (Fields == null != (other.Fields == null)) return false;
+
+            if (Fields != null)
+            {
+                if (Fields.Length != other.Fields!.Length) return false;
+
+                for (var i = 0; i < Fields.Length; i++)
+                {
+                    if (!Equals(Fields[i], other.Fields[i])) return false;
+                }
+            }
+
+            return true;
         }
     }
 #nullable disable
