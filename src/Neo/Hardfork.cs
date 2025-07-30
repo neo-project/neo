@@ -17,6 +17,7 @@ namespace Neo
         HF_Basilisk,
         HF_Cockatrice,
         HF_Domovoi,
-        HF_Echidna
+        HF_Echidna,
+        HF_Faun
     }
 }
