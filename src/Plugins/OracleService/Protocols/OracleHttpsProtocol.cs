@@ -37,9 +37,9 @@ namespace Neo.Plugins.OracleService
         public void Configure()
         {
             client.DefaultRequestHeaders.Accept.Clear();
-            foreach (string type in Settings.Default.AllowedContentTypes)
+            foreach (string type in OracleSettings.Default.AllowedContentTypes)
                 client.DefaultRequestHeaders.Accept.ParseAdd(type);
-            client.Timeout = Settings.Default.Https.Timeout;
+            client.Timeout = OracleSettings.Default.Https.Timeout;
         }
 
         public void Dispose()
@@ -57,7 +57,7 @@ namespace Neo.Plugins.OracleService
                 int redirects = 2;
                 do
                 {
-                    if (!Settings.Default.AllowPrivateHost)
+                    if (!OracleSettings.Default.AllowPrivateHost)
                     {
                         IPHostEntry entry = await Dns.GetHostEntryAsync(uri.Host, cancellation);
                         if (entry.IsInternal())
@@ -83,7 +83,7 @@ namespace Neo.Plugins.OracleService
                 return (OracleResponseCode.Forbidden, null);
             if (!message.IsSuccessStatusCode)
                 return (OracleResponseCode.Error, message.StatusCode.ToString());
-            if (!Settings.Default.AllowedContentTypes.Contains(message.Content.Headers.ContentType.MediaType))
+            if (!OracleSettings.Default.AllowedContentTypes.Contains(message.Content.Headers.ContentType.MediaType))
                 return (OracleResponseCode.ContentTypeNotSupported, null);
             if (message.Content.Headers.ContentLength.HasValue && message.Content.Headers.ContentLength > OracleResponse.MaxResultSize)
                 return (OracleResponseCode.ResponseTooLarge, null);

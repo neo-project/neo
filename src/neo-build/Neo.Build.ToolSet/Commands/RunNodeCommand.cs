@@ -20,7 +20,6 @@ using Neo.Build.Core.Models.Wallets;
 using Neo.Build.Core.Providers.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Build.ToolSet.Configuration;
-using Neo.Build.ToolSet.Extensions;
 using Neo.Build.ToolSet.Plugins;
 using Neo.Persistence;
 using Neo.Plugins.DBFTPlugin;
@@ -28,6 +27,7 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Build.ToolSet.Commands
@@ -53,7 +53,7 @@ namespace Neo.Build.ToolSet.Commands
         //    false;
 
         private static uint GetDefaultSecondsPerBlock() =>
-            1000u;
+            1u;
 
         public new sealed class Handler(
             IHostEnvironment env,
@@ -95,7 +95,7 @@ namespace Neo.Build.ToolSet.Commands
                 using var mutex = FunctionFactory.CreateMutex(defaultMultiSigWalletAccount.Address);
                 using var logPlugin = new LoggerPlugin(context.Console);
                 using var dbftPlugin = new DBFTPlugin(dbftSettings);
-                using var neoSystem = new NeoSystem(wallet.ProtocolSettings with { MillisecondsPerBlock = SecondsPerBlock }, storeProvider, _neoConfiguration.StorageOptions.StoreRoot);
+                using var neoSystem = new NeoSystem(wallet.ProtocolSettings with { MillisecondsPerBlock = SecondsPerBlock * 1000 }, storeProvider, _neoConfiguration.StorageOptions.StoreRoot);
 
                 neoSystem.StartNode(new()
                 {
@@ -103,16 +103,15 @@ namespace Neo.Build.ToolSet.Commands
                 });
                 dbftPlugin.Start(wallet);
 
-                context.Console.InfoMessage("Node Running...");
+                var cts = context.GetCancellationToken();
 
-                var ctn = context.GetCancellationToken();
-
-                ctn.WaitHandle.WaitOne();
+                while (cts.IsCancellationRequested == false)
+                    Thread.Sleep(1000);
 
                 return Task.FromResult(0);
             }
 
-            private Settings GetConsensusSettings(ProtocolSettings protocolSettings)
+            private DbftSettings GetConsensusSettings(ProtocolSettings protocolSettings)
             {
                 var settings = new Dictionary<string, string>()
                 {
@@ -121,7 +120,7 @@ namespace Neo.Build.ToolSet.Commands
                 };
 
                 var config = new ConfigurationBuilder().AddInMemoryCollection(settings!).Build();
-                return new Settings(config.GetSection("PluginConfiguration"));
+                return new DbftSettings(config.GetSection("PluginConfiguration"));
             }
         }
     }
