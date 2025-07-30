@@ -60,6 +60,14 @@ namespace Neo.SmartContract.Manifest
         public Nep25Interface? Interface { get; set; }
 
         /// <summary>
+        /// value is used for Array, InteropInterface and Map types (type field) and MUST NOT be used with other base types.
+        /// When used for Array it contains the type of an individual element of an array (ordered set of values of one type).
+        /// If used for InteropInterface it contains the type of an individual iterator's value. If used for Map it contains map value type.
+        /// If this field is used, fields MUST NOT be present.
+        /// </summary>
+        public ExtendedType? Value { get; set; }
+
+        /// <summary>
         /// key is only used along with the Map type (MUST NOT be used for other types) and can have Signature, Boolean, Integer,
         /// Hash160, Hash256, ByteArray, PublicKey or String value, that is all the basic types that can be used as a map key.
         /// </summary>
@@ -70,13 +78,13 @@ namespace Neo.SmartContract.Manifest
             FromStackItem((VM.Types.Array)stackItem, 0);
         }
 
-        internal void FromStackItem(VM.Types.Array @struct, int startIndex)
+        internal void FromStackItem(VM.Types.Array array, int startIndex)
         {
-            Type = (ContractParameterType)(byte)@struct[startIndex++].GetInteger();
+            Type = (ContractParameterType)(byte)array[startIndex++].GetInteger();
             if (!Enum.IsDefined(typeof(ContractParameterType), Type)) throw new FormatException();
-            NamedType = @struct[startIndex++].GetString();
+            NamedType = array[startIndex++].GetString();
 
-            if (@struct[startIndex++] is Integer length)
+            if (array[startIndex++] is Integer length)
             {
                 Length = checked((int)length.GetInteger());
                 if (Length < 0) throw new FormatException("Length must be non-negative.");
@@ -87,7 +95,7 @@ namespace Neo.SmartContract.Manifest
                 Length = null;
             }
 
-            if (@struct[startIndex++] is VM.Types.Boolean forbidnull)
+            if (array[startIndex++] is VM.Types.Boolean forbidnull)
             {
                 ForbidNull = forbidnull.GetBoolean();
             }
@@ -96,7 +104,7 @@ namespace Neo.SmartContract.Manifest
                 ForbidNull = null;
             }
 
-            if (@struct[startIndex++] is ByteString interf)
+            if (array[startIndex++] is ByteString interf)
             {
                 if (!Enum.TryParse<Nep25Interface>(interf.GetString(), false, out var inferValue))
                     throw new FormatException();
@@ -108,7 +116,7 @@ namespace Neo.SmartContract.Manifest
                 Interface = null;
             }
 
-            if (@struct[startIndex++] is ByteString key)
+            if (array[startIndex++] is ByteString key)
             {
                 if (!Enum.TryParse<Nep25Key>(key.GetString(), false, out var keyValue))
                     throw new FormatException();
@@ -119,24 +127,41 @@ namespace Neo.SmartContract.Manifest
             {
                 Key = null;
             }
+
+            if (array[startIndex++] is Struct value)
+            {
+                Value = new ExtendedType();
+                Value.FromStackItem(value, 0);
+            }
+            else
+            {
+                Value = null;
+            }
         }
 
-        internal StackItem ToStackItem(IReferenceCounter referenceCounter, Struct @struct)
+        internal StackItem ToStackItem(IReferenceCounter referenceCounter, Struct array)
         {
-            @struct.Add((byte)Type);
-            @struct.Add(NamedType ?? StackItem.Null);
-            @struct.Add(Length ?? StackItem.Null);
-            @struct.Add(ForbidNull ?? StackItem.Null);
-            @struct.Add(Interface?.ToString() ?? StackItem.Null);
-            @struct.Add(Key?.ToString() ?? StackItem.Null);
-            return @struct;
+            array.Add((byte)Type);
+            array.Add(NamedType ?? StackItem.Null);
+            array.Add(Length ?? StackItem.Null);
+            array.Add(ForbidNull ?? StackItem.Null);
+            array.Add(Interface?.ToString() ?? StackItem.Null);
+            array.Add(Key?.ToString() ?? StackItem.Null);
+            if (Value is null) array.Add(StackItem.Null);
+            else
+            {
+                var arrayValue = new Struct(referenceCounter);
+                Value.ToStackItem(referenceCounter, arrayValue);
+                array.Add(arrayValue);
+            }
+            return array;
         }
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            var @struct = new Struct(referenceCounter);
-            ToStackItem(referenceCounter, @struct);
-            return @struct;
+            var item = new Struct(referenceCounter);
+            ToStackItem(referenceCounter, item);
+            return item;
         }
 
         /// <summary>
@@ -174,6 +199,11 @@ namespace Neo.SmartContract.Manifest
                     throw new FormatException("Invalid key value.");
                 type.Key = keyValue;
             }
+            if (json["value"] is JObject jValue)
+            {
+                type.Value = FromJson(jValue);
+            }
+
             return type;
         }
 
@@ -202,12 +232,15 @@ namespace Neo.SmartContract.Manifest
             {
                 json["key"] = Key.Value.ToString();
             }
+            if (Value != null)
+            {
+                json["value"] = Value.ToJson();
+            }
             return json;
         }
 
         public override bool Equals(object? obj) => Equals(obj as ExtendedType);
-
-        public override int GetHashCode() => HashCode.Combine(Type, NamedType, Length, ForbidNull, Interface, Key);
+        public override int GetHashCode() => HashCode.Combine(Type, NamedType, Length, ForbidNull, Interface, Key, Value);
 
         public bool Equals(ExtendedType? other)
         {
@@ -219,7 +252,8 @@ namespace Neo.SmartContract.Manifest
                 && Length == other.Length
                 && ForbidNull == other.ForbidNull
                 && Interface == other.Interface
-                && Key == other.Key;
+                && Key == other.Key
+                && Equals(Value, other.Value);
         }
     }
 #nullable disable
