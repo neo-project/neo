@@ -56,7 +56,7 @@ namespace Neo.Build.ToolSet.Services
         public WebSocketOptions SocketOptions => _socketOptions;
 
         private static RpcDispatcher JsonRpcDispatcher { get; } = new();
-
+        
         private readonly IWebHost _webHost;
         private readonly WebSocketOptions _socketOptions;
         private readonly IConsole _console;
