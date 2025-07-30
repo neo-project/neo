@@ -15,7 +15,7 @@ using Neo.Plugins.DBFTPlugin;
 
 namespace Neo.Build.ToolSet.Options
 {
-    internal sealed class DBFTOptions() : IConvertToObject<Settings>
+    internal sealed class DBFTOptions() : IConvertToObject<DbftSettings>
     {
         public string StoreRoot { get; set; } = string.Empty;
         public bool IgnoreRecoveryLogs { get; set; }
@@ -23,7 +23,7 @@ namespace Neo.Build.ToolSet.Options
         public long MaxBlockSystemFee { get; set; }
         public UnhandledExceptionPolicy ExceptionPolicy { get; set; } = UnhandledExceptionPolicy.StopNode;
 
-        public Settings ToObject()
+        public DbftSettings ToObject()
         {
             throw new System.NotImplementedException();
         }
