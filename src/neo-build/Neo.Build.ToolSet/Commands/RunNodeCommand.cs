@@ -104,7 +104,8 @@ namespace Neo.Build.ToolSet.Commands
 
                 var cts = context.GetCancellationToken();
 
-                while (cts.IsCancellationRequested == false) { }
+                while (cts.IsCancellationRequested == false)
+                    Thread.Sleep(1000);
 
                 return Task.FromResult(0);
             }
