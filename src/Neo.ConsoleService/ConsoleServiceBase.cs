@@ -122,9 +122,9 @@ namespace Neo.ConsoleService
             return arguments;
         }
 
-        private bool OnCommand(string commandLine)
+        internal bool OnCommand(string commandLine)
         {
-            if (string.IsNullOrEmpty(commandLine)) return true;
+            if (string.IsNullOrWhiteSpace(commandLine)) return true;
 
             var possibleHelp = "";
             var tokens = commandLine.Tokenize();
