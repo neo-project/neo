@@ -86,7 +86,7 @@ namespace Neo.Plugins.RestServer
                                 return;
                             listenOptions.UseHttps(_settings.SslCertFile, _settings.SslCertPassword, httpsOptions =>
                             {
-                                if (_settings.TrustedAuthorities.Length == 0)
+                                if (_settings.TrustedAuthorities.Length > 0)
                                 {
                                     httpsOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
                                     httpsOptions.ClientCertificateValidation = (cert, chain, err) =>
