@@ -34,9 +34,9 @@ namespace Neo.Plugins.RestServer.Models.Node
         public int MemoryPoolMaxTransactions { get; set; }
         public uint MaxTraceableBlocks { get; set; }
         public ulong InitialGasDistribution { get; set; }
-        public IReadOnlyCollection<string> SeedList { get; set; } = new List<string>().AsReadOnly();
+        public IReadOnlyCollection<string> SeedList { get; set; } = [];
         public IReadOnlyDictionary<string, uint> Hardforks { get; set; } = new Dictionary<string, uint>().AsReadOnly();
-        public IReadOnlyList<ECPoint> StandbyValidators { get; set; } = new List<ECPoint>().AsReadOnly();
-        public IReadOnlyList<ECPoint> StandbyCommittee { get; set; } = new List<ECPoint>().AsReadOnly();
+        public IReadOnlyList<ECPoint> StandbyValidators { get; set; } = [];
+        public IReadOnlyList<ECPoint> StandbyCommittee { get; set; } = [];
     }
 }
