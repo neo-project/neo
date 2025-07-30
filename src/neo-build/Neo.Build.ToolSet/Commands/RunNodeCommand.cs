@@ -109,7 +109,7 @@ namespace Neo.Build.ToolSet.Commands
                 return Task.FromResult(0);
             }
 
-            private Settings GetConsensusSettings(ProtocolSettings protocolSettings)
+            private DbftSettings GetConsensusSettings(ProtocolSettings protocolSettings)
             {
                 var settings = new Dictionary<string, string>()
                 {
@@ -118,7 +118,7 @@ namespace Neo.Build.ToolSet.Commands
                 };
 
                 var config = new ConfigurationBuilder().AddInMemoryCollection(settings!).Build();
-                return new Settings(config.GetSection("PluginConfiguration"));
+                return new DbftSettings(config.GetSection("PluginConfiguration"));
             }
         }
     }

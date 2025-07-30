@@ -17,6 +17,9 @@ namespace Neo.ConsoleService
 {
     public static class ConsoleHelper
     {
+        private const string PrintableASCIIChars =
+            " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
         private static readonly ConsoleColorSet InfoColor = new(ConsoleColor.Cyan);
         private static readonly ConsoleColorSet WarningColor = new(ConsoleColor.Yellow);
         private static readonly ConsoleColorSet ErrorColor = new(ConsoleColor.Red);
@@ -79,9 +82,6 @@ namespace Neo.ConsoleService
 
         public static string ReadUserInput(string prompt, bool password = false)
         {
-            const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-            var sb = new StringBuilder();
-
             if (!string.IsNullOrEmpty(prompt))
             {
                 Console.Write(prompt + ": ");
@@ -91,6 +91,7 @@ namespace Neo.ConsoleService
             var prevForeground = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Yellow;
 
+            var sb = new StringBuilder();
             if (Console.IsInputRedirected)
             {
                 // neo-gui Console require it
@@ -102,7 +103,7 @@ namespace Neo.ConsoleService
                 do
                 {
                     key = Console.ReadKey(true);
-                    if (t.IndexOf(key.KeyChar) != -1)
+                    if (PrintableASCIIChars.IndexOf(key.KeyChar) != -1)
                     {
                         sb.Append(key.KeyChar);
                         Console.Write(password ? '*' : key.KeyChar);
@@ -123,7 +124,6 @@ namespace Neo.ConsoleService
 
         public static SecureString ReadSecureString(string prompt)
         {
-            const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
             SecureString securePwd = new SecureString();
             ConsoleKeyInfo key;
 
@@ -138,7 +138,7 @@ namespace Neo.ConsoleService
             do
             {
                 key = Console.ReadKey(true);
-                if (t.IndexOf(key.KeyChar) != -1)
+                if (PrintableASCIIChars.IndexOf(key.KeyChar) != -1)
                 {
                     securePwd.AppendChar(key.KeyChar);
                     Console.Write('*');
