@@ -39,14 +39,14 @@ namespace Neo.SmartContract.Manifest
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            var @struct = (Struct)stackItem;
-            Name = @struct[0].GetString();
-            Type = (ContractParameterType)(byte)@struct[1].GetInteger();
+            var item = (Struct)stackItem;
+            Name = item[0].GetString();
+            Type = (ContractParameterType)(byte)item[1].GetInteger();
 
-            if (@struct.Count >= 3)
+            if (item.Count >= 3)
             {
                 ExtendedType = new ExtendedType();
-                ExtendedType.FromStackItem((VM.Types.Array)@struct[2], 0);
+                ExtendedType.FromStackItem((VM.Types.Array)item[2], 0);
             }
             else
             {
@@ -56,15 +56,15 @@ namespace Neo.SmartContract.Manifest
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            var @struct = new Struct(referenceCounter) { Name, (byte)Type };
+            var item = new Struct(referenceCounter) { Name, (byte)Type };
 
             if (ExtendedType != null)
             {
                 var structExtended = new Struct(referenceCounter);
-                @struct.Add(ExtendedType.ToStackItem(referenceCounter, structExtended));
+                item.Add(ExtendedType.ToStackItem(referenceCounter, structExtended));
             }
 
-            return @struct;
+            return item;
         }
 
         /// <summary>

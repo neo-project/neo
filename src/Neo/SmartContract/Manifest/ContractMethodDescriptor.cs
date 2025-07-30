@@ -47,15 +47,15 @@ namespace Neo.SmartContract.Manifest
         public override void FromStackItem(StackItem stackItem)
         {
             base.FromStackItem(stackItem);
-            var @struct = (Struct)stackItem;
-            ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
-            Offset = (int)@struct[3].GetInteger();
-            Safe = @struct[4].GetBoolean();
+            var item = (Struct)stackItem;
+            ReturnType = (ContractParameterType)(byte)item[2].GetInteger();
+            Offset = (int)item[3].GetInteger();
+            Safe = item[4].GetBoolean();
 
-            if (@struct.Count >= 6)
+            if (item.Count >= 6)
             {
                 ExtendedReturnType = new ExtendedType();
-                ExtendedReturnType.FromStackItem((VM.Types.Array)@struct[5], 0);
+                ExtendedReturnType.FromStackItem((VM.Types.Array)item[5], 0);
             }
             else
             {
@@ -65,16 +65,16 @@ namespace Neo.SmartContract.Manifest
 
         public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            var @struct = (Struct)base.ToStackItem(referenceCounter);
-            @struct.Add((byte)ReturnType);
-            @struct.Add(Offset);
-            @struct.Add(Safe);
+            var item = (Struct)base.ToStackItem(referenceCounter);
+            item.Add((byte)ReturnType);
+            item.Add(Offset);
+            item.Add(Safe);
             if (ExtendedReturnType != null)
             {
                 var structExtended = new Struct(referenceCounter);
-                @struct.Add(ExtendedReturnType.ToStackItem(referenceCounter, structExtended));
+                item.Add(ExtendedReturnType.ToStackItem(referenceCounter, structExtended));
             }
-            return @struct;
+            return item;
         }
 
         /// <summary>
