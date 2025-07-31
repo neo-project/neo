@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Neo.Build.Core.Factories;
 using Neo.Build.ToolSet.Configuration;
+using Neo.Extensions.Factories;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -52,7 +53,7 @@ namespace Neo.Build.ToolSet.Providers
 
             // Node Network Configuration
             Data.Add(NeoSystemConfigurationNames.ListenKey, $"{IPAddress.Loopback}");
-            Data.Add(NeoSystemConfigurationNames.PortKey, $"{Random.Shared.Next(ushort.MaxValue)}");
+            Data.Add(NeoSystemConfigurationNames.PortKey, $"{RandomNumberFactory.NextUInt16()}");
             Data.Add(NeoSystemConfigurationNames.MinDesiredConnectionsKey, "10");
             Data.Add(NeoSystemConfigurationNames.MaxConnectionsKey, "40");
             Data.Add(NeoSystemConfigurationNames.MaxConnectionsPerAddressKey, "3");
