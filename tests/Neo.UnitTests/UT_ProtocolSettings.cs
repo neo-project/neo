@@ -97,11 +97,11 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestNone()
         {
-            string json = CreateHFSettings("");
-
+            var json = CreateHFSettings("");
             var file = Path.GetTempFileName();
+
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file);
+            var settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
             Assert.AreEqual((uint)0, settings.Hardforks[Hardfork.HF_Aspidochelone]);
@@ -113,6 +113,7 @@ namespace Neo.UnitTests
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 0));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Faun, 10));
         }
 
         [TestMethod]
