@@ -238,7 +238,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestParseWithUnicodeData()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            
+
             // Test that the data field must remain valid Base64/hex for transaction data
             // Unicode should only be supported in script/signature fields, not in the transaction data itself
             var json = """
@@ -254,11 +254,11 @@ namespace Neo.UnitTests.SmartContract
                 },
                 "network":
             """ + TestProtocolSettings.Default.Network + "}";
-            
+
             // The data field must remain valid transaction data
             var parsedContext = ContractParametersContext.Parse(json, snapshotCache);
             Assert.IsNotNull(parsedContext);
-            
+
             // Unicode in the data field should throw an exception during deserialization
             var invalidJson = JObject.Parse(json);
             invalidJson["data"] = "你好世界 Hello World";
