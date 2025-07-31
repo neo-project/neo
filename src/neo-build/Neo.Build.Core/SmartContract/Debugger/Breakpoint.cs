@@ -41,7 +41,8 @@ namespace Neo.Build.Core.SmartContract.Debugger
         public bool Equals(Breakpoint? other)
         {
             if (other == null) return false;
-            return GetHashCode() == other.GetHashCode();
+            return BlockIndex == other.BlockIndex &&
+                Script.GetHashCode() == other.Script.GetHashCode();
         }
     }
 }
