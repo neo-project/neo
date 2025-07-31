@@ -1,0 +1,94 @@
+{
+  "scripts": [
+    {
+      "id": "production-readiness",
+      "name": "Production Readiness Check",
+      "description": "Checks for TODO, FIXME, placeholders, and incomplete implementations",
+      "enabled": true,
+      "predefined": true,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/production-readiness.sh"
+    },
+    {
+      "id": "build-check",
+      "name": "Build Check",
+      "description": "Ensures the project can build successfully",
+      "enabled": true,
+      "predefined": true,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/build-check.sh"
+    },
+    {
+      "id": "test-check",
+      "name": "Test Check",
+      "description": "Runs all tests and ensures they pass",
+      "enabled": true,
+      "predefined": true,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/test-check.sh"
+    },
+    {
+      "id": "format-check",
+      "name": "Format Check",
+      "description": "Ensures code is properly formatted",
+      "enabled": true,
+      "predefined": true,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/format-check.sh"
+    },
+    {
+      "id": "github-actions",
+      "name": "GitHub Actions Check",
+      "description": "Validates GitHub Actions workflows",
+      "enabled": true,
+      "predefined": true,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/github-actions.sh"
+    },
+    {
+      "id": "code-understanding-check",
+      "name": "Code Understanding Check",
+      "description": "User-defined script: code-understanding-check.sh",
+      "enabled": false,
+      "predefined": false,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/code-understanding-check.sh"
+    },
+    {
+      "id": "context-check",
+      "name": "Context Check",
+      "description": "User-defined script: context-check.sh",
+      "enabled": false,
+      "predefined": false,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/context-check.sh"
+    },
+    {
+      "id": "dependency-check",
+      "name": "Dependency Check",
+      "description": "User-defined script: dependency-check.sh",
+      "enabled": false,
+      "predefined": false,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/dependency-check.sh"
+    },
+    {
+      "id": "integration-testing-check",
+      "name": "Integration Testing Check",
+      "description": "User-defined script: integration-testing-check.sh",
+      "enabled": false,
+      "predefined": false,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/integration-testing-check.sh"
+    },
+    {
+      "id": "performance-check",
+      "name": "Performance Check",
+      "description": "User-defined script: performance-check.sh",
+      "enabled": false,
+      "predefined": false,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/performance-check.sh"
+    },
+    {
+      "id": "security-audit-check",
+      "name": "Security Audit Check",
+      "description": "User-defined script: security-audit-check.sh",
+      "enabled": false,
+      "predefined": false,
+      "path": "/home/neo/git/neo/.autoclaude/scripts/security-audit-check.sh"
+    }
+  ],
+  "maxIterations": 5,
+  "continueOnError": false
+}

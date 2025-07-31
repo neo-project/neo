@@ -41,20 +41,4 @@ namespace Neo.IEventHandlers
         /// <param name="stats">Current network statistics</param>
         void Network_StatsSnapshot_Handler(LocalNode node, NetworkStats stats);
     }
-
-    /// <summary>
-    /// Network statistics snapshot
-    /// </summary>
-    public class NetworkStats
-    {
-        public int ConnectedPeers { get; set; }
-        public int UnconnectedPeers { get; set; }
-        public long BytesSent { get; set; }
-        public long BytesReceived { get; set; }
-        public int PendingTasks { get; set; }
-        public int HighPriorityQueueSize { get; set; }
-        public int LowPriorityQueueSize { get; set; }
-        public Dictionary<string, long> MessagesSentByType { get; set; } = new Dictionary<string, long>();
-        public Dictionary<string, long> MessagesReceivedByType { get; set; } = new Dictionary<string, long>();
-    }
 }

@@ -25,18 +25,4 @@ namespace Neo.IEventHandlers
         /// <param name="stats">Current memory pool statistics</param>
         void MemPool_StatsSnapshot_Handler(MemoryPool memPool, MemPoolStats stats);
     }
-
-    /// <summary>
-    /// Memory pool statistics snapshot
-    /// </summary>
-    public class MemPoolStats
-    {
-        public int Count { get; set; }
-        public int VerifiedCount { get; set; }
-        public int UnverifiedCount { get; set; }
-        public int Capacity { get; set; }
-        public long TotalMemoryBytes { get; set; }
-        public int ConflictsCount { get; set; }
-        public int LastBatchRemovedCount { get; set; }
-    }
 }

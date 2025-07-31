@@ -44,18 +44,4 @@ namespace Neo.IEventHandlers
         /// <param name="stats">Current storage statistics</param>
         void Storage_StatsSnapshot_Handler(IStore store, StorageStats stats);
     }
-
-    /// <summary>
-    /// Storage statistics snapshot
-    /// </summary>
-    public class StorageStats
-    {
-        public long TotalReads { get; set; }
-        public long TotalWrites { get; set; }
-        public long CacheHits { get; set; }
-        public long CacheMisses { get; set; }
-        public double CacheHitRate => TotalReads > 0 ? (double)CacheHits / TotalReads : 0;
-        public long StorageSizeBytes { get; set; }
-        public int SnapshotCount { get; set; }
-    }
 }

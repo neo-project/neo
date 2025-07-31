@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <WarningsAsErrors />
+    <WarningsAsErrors Condition="'$(Configuration)' == 'Debug'">$(WarningsAsErrors);NU1605;SYSLIB0011</WarningsAsErrors>
+    <OutputPath>../../bin/tests/Neo.CLI.Tests/</OutputPath>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Platform" Version="1.7.3" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.9.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Neo.CLI/Neo.CLI.csproj" />
+    <ProjectReference Include="../../src/Neo/Neo.csproj" />
+  </ItemGroup>
+
+</Project>
