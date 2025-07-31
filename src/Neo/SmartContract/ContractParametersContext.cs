@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using static Neo.SmartContract.Helper;
 
 namespace Neo.SmartContract
@@ -31,6 +32,59 @@ namespace Neo.SmartContract
     /// </summary>
     public class ContractParametersContext
     {
+        private static readonly Regex Base64Regex = new Regex(@"^[A-Za-z0-9+/]*={0,2}$", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Helper method to convert string data to byte array.
+        /// Supports Base64, Hex (with or without 0x prefix), and UTF-8 encoded strings.
+        /// </summary>
+        private static byte[] ParseDataString(string data)
+        {
+            if (string.IsNullOrEmpty(data))
+                return Array.Empty<byte>();
+
+            // Try Base64 first (most common case for backward compatibility)
+            if (Base64Regex.IsMatch(data) && data.Length % 4 == 0)
+            {
+                try
+                {
+                    return Convert.FromBase64String(data);
+                }
+                catch
+                {
+                    // Not valid Base64, continue to other formats
+                }
+            }
+
+            // Try Hex with 0x prefix
+            if (data.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    return data[2..].HexToBytes();
+                }
+                catch
+                {
+                    // Not valid hex, continue
+                }
+            }
+
+            // Try Hex without prefix (must be even length and all hex chars)
+            if (data.Length % 2 == 0 && Regex.IsMatch(data, @"^[0-9A-Fa-f]+$"))
+            {
+                try
+                {
+                    return data.HexToBytes();
+                }
+                catch
+                {
+                    // Not valid hex, continue
+                }
+            }
+
+            // Fall back to UTF-8 encoding for Unicode strings
+            return System.Text.Encoding.UTF8.GetBytes(data);
+        }
         private class ContextItem
         {
             public readonly byte[] Script;
@@ -46,12 +100,12 @@ namespace Neo.SmartContract
 
             public ContextItem(JObject json)
             {
-                Script = json["script"] is JToken.Null ? null : Convert.FromBase64String(json["script"].AsString());
+                Script = json["script"] is JToken.Null ? null : ParseDataString(json["script"].AsString());
                 Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray();
                 Signatures = ((JObject)json["signatures"]).Properties.Select(p => new
                 {
                     PublicKey = ECPoint.Parse(p.Key, ECCurve.Secp256r1),
-                    Signature = Convert.FromBase64String(p.Value.AsString())
+                    Signature = ParseDataString(p.Value.AsString())
                 }).ToDictionary(p => p.PublicKey, p => p.Signature);
             }
 
@@ -294,7 +348,7 @@ namespace Neo.SmartContract
                 throw new FormatException($"json['type']({typeName}) is not an {nameof(IVerifiable)}");
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
-            var data = Convert.FromBase64String(json["data"].AsString());
+            var data = ParseDataString(json["data"].AsString());
             var reader = new MemoryReader(data);
 
             verifiable.DeserializeUnsigned(ref reader);

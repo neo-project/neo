@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Neo.SmartContract
 {
@@ -25,6 +26,59 @@ namespace Neo.SmartContract
     /// </summary>
     public class ContractParameter
     {
+        private static readonly Regex Base64Regex = new Regex(@"^[A-Za-z0-9+/]*={0,2}$", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Helper method to convert string data to byte array.
+        /// Supports Base64, Hex (with or without 0x prefix), and UTF-8 encoded strings.
+        /// </summary>
+        private static byte[] ParseDataString(string data)
+        {
+            if (string.IsNullOrEmpty(data))
+                return Array.Empty<byte>();
+
+            // Try Base64 first (most common case for backward compatibility)
+            if (Base64Regex.IsMatch(data) && data.Length % 4 == 0)
+            {
+                try
+                {
+                    return Convert.FromBase64String(data);
+                }
+                catch
+                {
+                    // Not valid Base64, continue to other formats
+                }
+            }
+
+            // Try Hex with 0x prefix
+            if (data.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    return data[2..].HexToBytes();
+                }
+                catch
+                {
+                    // Not valid hex, continue
+                }
+            }
+
+            // Try Hex without prefix (must be even length and all hex chars)
+            if (data.Length % 2 == 0 && Regex.IsMatch(data, @"^[0-9A-Fa-f]+$"))
+            {
+                try
+                {
+                    return data.HexToBytes();
+                }
+                catch
+                {
+                    // Not valid hex, continue
+                }
+            }
+
+            // Fall back to UTF-8 encoding for Unicode strings
+            return System.Text.Encoding.UTF8.GetBytes(data);
+        }
         /// <summary>
         /// The type of the parameter.
         /// </summary>
@@ -78,7 +132,7 @@ namespace Neo.SmartContract
             if (json["value"] != null)
                 parameter.Value = parameter.Type switch
                 {
-                    ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"].AsString()),
+                    ContractParameterType.Signature or ContractParameterType.ByteArray => ParseDataString(json["value"].AsString()),
                     ContractParameterType.Boolean => json["value"].AsBoolean(),
                     ContractParameterType.Integer => BigInteger.Parse(json["value"].AsString()),
                     ContractParameterType.Hash160 => UInt160.Parse(json["value"].AsString()),
@@ -101,7 +155,7 @@ namespace Neo.SmartContract
             switch (Type)
             {
                 case ContractParameterType.Signature:
-                    byte[] signature = text.HexToBytes();
+                    byte[] signature = ParseDataString(text);
                     if (signature.Length != 64) throw new FormatException();
                     Value = signature;
                     break;
@@ -118,7 +172,7 @@ namespace Neo.SmartContract
                     Value = UInt256.Parse(text);
                     break;
                 case ContractParameterType.ByteArray:
-                    Value = text.HexToBytes();
+                    Value = ParseDataString(text);
                     break;
                 case ContractParameterType.PublicKey:
                     Value = ECPoint.Parse(text, ECCurve.Secp256r1);

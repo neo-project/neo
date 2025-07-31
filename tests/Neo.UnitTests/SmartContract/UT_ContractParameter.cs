@@ -16,6 +16,7 @@ using Neo.Json;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 
@@ -232,6 +233,178 @@ namespace Neo.UnitTests.SmartContract
 
             ContractParameter contractParameter5 = new(ContractParameterType.String);
             Assert.AreEqual("", contractParameter5.ToString());
+        }
+
+        [TestMethod]
+        public void TestFromJsonWithUnicode()
+        {
+            // Test ByteArray with Unicode string
+            var json = new JObject();
+            json["type"] = ContractParameterType.ByteArray.ToString();
+            json["value"] = "你好世界"; // "Hello World" in Chinese
+
+            var param = ContractParameter.FromJson(json);
+            Assert.AreEqual(ContractParameterType.ByteArray, param.Type);
+            var bytes = (byte[])param.Value;
+            var text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("你好世界", text);
+
+            // Test with mixed Unicode
+            json["value"] = "Hello 世界 Test";
+            param = ContractParameter.FromJson(json);
+            bytes = (byte[])param.Value;
+            text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("Hello 世界 Test", text);
+        }
+
+        [TestMethod]
+        public void TestFromJsonWithHex()
+        {
+            // Test ByteArray with hex string (0x prefix)
+            var json = new JObject();
+            json["type"] = ContractParameterType.ByteArray.ToString();
+            json["value"] = "0x48656c6c6f"; // "Hello" in hex
+
+            var param = ContractParameter.FromJson(json);
+            Assert.AreEqual(ContractParameterType.ByteArray, param.Type);
+            var bytes = (byte[])param.Value;
+            var text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("Hello", text);
+
+            // Test ByteArray with hex string (no prefix)
+            json["value"] = "48656c6c6f20576f726c64"; // "Hello World" in hex
+            param = ContractParameter.FromJson(json);
+            bytes = (byte[])param.Value;
+            text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("Hello World", text);
+        }
+
+        [TestMethod]
+        public void TestFromJsonBackwardCompatibility()
+        {
+            // Test ByteArray with Base64 (backward compatibility)
+            var json = new JObject();
+            json["type"] = ContractParameterType.ByteArray.ToString();
+            json["value"] = "SGVsbG8gV29ybGQ="; // "Hello World" in Base64
+
+            var param = ContractParameter.FromJson(json);
+            Assert.AreEqual(ContractParameterType.ByteArray, param.Type);
+            var bytes = (byte[])param.Value;
+            var text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("Hello World", text);
+
+            // Test Signature with Base64
+            json["type"] = ContractParameterType.Signature.ToString();
+            var signatureBytes = new byte[64];
+            for (int i = 0; i < 64; i++) signatureBytes[i] = (byte)i;
+            json["value"] = Convert.ToBase64String(signatureBytes);
+
+            param = ContractParameter.FromJson(json);
+            Assert.AreEqual(ContractParameterType.Signature, param.Type);
+            bytes = (byte[])param.Value;
+            Assert.IsTrue(signatureBytes.SequenceEqual(bytes));
+        }
+
+        [TestMethod]
+        public void TestSetValueWithUnicode()
+        {
+            // Test ByteArray SetValue with Unicode
+            var param = new ContractParameter(ContractParameterType.ByteArray);
+            param.SetValue("某些中文字符");
+
+            var bytes = (byte[])param.Value;
+            var text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("某些中文字符", text);
+
+            // Test with emoji
+            param.SetValue("Hello 👋 World 🌍");
+            bytes = (byte[])param.Value;
+            text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("Hello 👋 World 🌍", text);
+        }
+
+        [TestMethod]
+        public void TestSetValueWithHex()
+        {
+            // Test ByteArray SetValue with hex (0x prefix)
+            var param = new ContractParameter(ContractParameterType.ByteArray);
+            param.SetValue("0x48656c6c6f");
+
+            var bytes = (byte[])param.Value;
+            var text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("Hello", text);
+
+            // Test ByteArray SetValue with hex (no prefix)
+            param.SetValue("48656c6c6f20576f726c64");
+            bytes = (byte[])param.Value;
+            text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("Hello World", text);
+
+            // Test Signature SetValue with hex
+            var sigParam = new ContractParameter(ContractParameterType.Signature);
+            var hexSig = string.Concat(Enumerable.Range(0, 64).Select(i => i.ToString("X2")));
+            sigParam.SetValue(hexSig);
+
+            bytes = (byte[])sigParam.Value;
+            Assert.AreEqual(64, bytes.Length);
+            for (int i = 0; i < 64; i++)
+            {
+                Assert.AreEqual(i, bytes[i]);
+            }
+        }
+
+        [TestMethod]
+        public void TestAmbiguousStringParsing()
+        {
+            // Test ambiguous strings that could be hex or text
+            var param = new ContractParameter(ContractParameterType.ByteArray);
+
+            // "ABCD" - valid hex and valid Base64
+            var json = new JObject();
+            json["type"] = ContractParameterType.ByteArray.ToString();
+            json["value"] = "ABCD";
+
+            param = ContractParameter.FromJson(json);
+            var bytes = (byte[])param.Value;
+            // Should be parsed as Base64 first
+            Assert.AreEqual(3, bytes.Length); // Base64 "ABCD" decodes to 3 bytes
+
+            // "123456" - valid hex but odd Base64
+            json["value"] = "123456";
+            param = ContractParameter.FromJson(json);
+            bytes = (byte[])param.Value;
+            // Should be parsed as hex (even length, all hex chars)
+            Assert.AreEqual(3, bytes.Length);
+            Assert.AreEqual(0x12, bytes[0]);
+            Assert.AreEqual(0x34, bytes[1]);
+            Assert.AreEqual(0x56, bytes[2]);
+
+            // "Hello" - not valid hex or Base64
+            json["value"] = "Hello";
+            param = ContractParameter.FromJson(json);
+            bytes = (byte[])param.Value;
+            // Should fall back to UTF-8
+            var text = Encoding.UTF8.GetString(bytes);
+            Assert.AreEqual("Hello", text);
+        }
+
+        [TestMethod]
+        public void TestEmptyAndNullValues()
+        {
+            // Test empty string
+            var json = new JObject();
+            json["type"] = ContractParameterType.ByteArray.ToString();
+            json["value"] = "";
+
+            var param = ContractParameter.FromJson(json);
+            var bytes = (byte[])param.Value;
+            Assert.AreEqual(0, bytes.Length);
+
+            // Test SetValue with empty string
+            param = new ContractParameter(ContractParameterType.ByteArray);
+            param.SetValue("");
+            bytes = (byte[])param.Value;
+            Assert.AreEqual(0, bytes.Length);
         }
     }
 }
