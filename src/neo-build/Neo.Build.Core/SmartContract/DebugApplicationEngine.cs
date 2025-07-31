@@ -47,7 +47,7 @@ namespace Neo.Build.Core.SmartContract
         /// <summary>
         /// All the set breakpoints for a given <see cref="Script"/>.
         /// </summary>
-        public IReadOnlyDictionary<Script, HashSet<uint>> BreakPoints => (IReadOnlyDictionary<Script, HashSet<uint>>)_breakPoints;
+        public IReadOnlyDictionary<Breakpoint, HashSet<uint>> BreakPoints => _breakPoints;
 
         /// <summary>
         /// Gets state storage events of the keys and values that were either read or updated.
