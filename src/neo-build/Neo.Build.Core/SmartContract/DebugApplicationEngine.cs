@@ -47,31 +47,35 @@ namespace Neo.Build.Core.SmartContract
         /// <summary>
         /// All the set breakpoints for a given <see cref="Script"/>.
         /// </summary>
-        public IReadOnlyDictionary<Script, HashSet<uint>> BreakPoints => _breakPoints;
+        public IReadOnlyDictionary<Script, HashSet<uint>> BreakPoints => (IReadOnlyDictionary<Script, HashSet<uint>>)_breakPoints;
 
         /// <summary>
         /// Gets state storage events of the keys and values that were either read or updated.
         /// </summary>
         public IReadOnlyDictionary<ExecutionContextState, DebugStorage> SnapshotStorage => _snapshotStorage;
 
-        private readonly Dictionary<Script, HashSet<uint>> _breakPoints = [];
+        private readonly Dictionary<Breakpoint, HashSet<uint>> _breakPoints = [];
         private readonly Dictionary<ExecutionContextState, DebugStorage> _snapshotStorage = [];
 
-        public void AddBreakPoints(Script script, params uint[] positions)
+        public void AddBreakPoints(Script script, uint? blockIndex, params uint[] positions)
         {
-            if (_breakPoints.TryGetValue(script, out var positionTable))
+            var bp = Breakpoint.Create(script, blockIndex);
+
+            if (_breakPoints.TryGetValue(bp, out var positionTable))
                 positionTable.UnionWith(positions);
             else
             {
                 positionTable = [];
                 positionTable.UnionWith(positions);
-                _breakPoints.Add(script, positionTable);
+                _breakPoints.Add(bp, positionTable);
             }
         }
 
-        public bool RemoveBreakPoints(Script script, params uint[] positions)
+        public bool RemoveBreakPoints(Script script, uint? blockIndex, params uint[] positions)
         {
-            if (_breakPoints.TryGetValue(script, out var positionTable))
+            var bp = Breakpoint.Create(script, blockIndex);
+
+            if (_breakPoints.TryGetValue(bp, out var positionTable))
             {
                 foreach (var position in positions)
                 {
@@ -80,7 +84,7 @@ namespace Neo.Build.Core.SmartContract
                 }
 
                 if (positionTable.Count == 0)
-                    _breakPoints.Remove(script);
+                    _breakPoints.Remove(bp);
 
                 return true;
             }

@@ -44,12 +44,12 @@ namespace Neo.Build.Core.Tests.SmartContract
             debugger.LoadScript(sb.ToArray());
 
             Assert.IsNotNull(debugger.CurrentContext);
-            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, 3));
+            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 3));
 
             Assert.IsNotNull(debugger.CurrentContext.NextInstruction);
             Assert.AreEqual(OpCode.NOP, debugger.CurrentContext.NextInstruction.OpCode);
 
-            debugger.AddBreakPoints(debugger.CurrentContext.Script, 2, 3);
+            debugger.AddBreakPoints(debugger.CurrentContext.Script, pb.Index, 2, 3);
             debugger.Execute();
 
             Assert.IsNotNull(debugger.CurrentContext);
@@ -59,9 +59,9 @@ namespace Neo.Build.Core.Tests.SmartContract
             Assert.AreEqual(2, debugger.CurrentContext.InstructionPointer);
             Assert.AreEqual(VMState.BREAK, debugger.State);
 
-            Assert.ThrowsExactly<ArgumentException>(() => debugger.RemoveBreakPoints(debugger.CurrentContext.Script, 4));
-            Assert.IsTrue(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, 2, 3));
-            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, 2, 3));
+            Assert.ThrowsExactly<ArgumentException>(() => debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 4));
+            Assert.IsTrue(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 2, 3));
+            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 2, 3));
 
             debugger.Execute();
 

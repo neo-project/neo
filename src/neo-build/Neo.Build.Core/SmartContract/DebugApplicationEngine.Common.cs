@@ -23,7 +23,11 @@ namespace Neo.Build.Core.SmartContract
             if (State == VMState.NONE && InvocationStack.Count > 0 && _breakPoints.Count > 0)
             {
                 if (CurrentContext is null) return;
-                if (_breakPoints.TryGetValue(CurrentContext.Script, out var positionTable) &&
+
+                var bp = Breakpoint.Create(CurrentContext.Script, PersistingBlock?.Index);
+
+                if (_breakPoints.TryGetValue(bp, out var positionTable) &&
+                    bp.BlockIndex == PersistingBlock?.Index &&
                     positionTable.Contains((uint)CurrentContext.InstructionPointer))
                     State = VMState.BREAK;
             }
