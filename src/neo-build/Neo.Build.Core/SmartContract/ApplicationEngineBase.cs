@@ -77,6 +77,7 @@ namespace Neo.Build.Core.SmartContract
         { }
 
         public Transaction? CurrentTransaction => ScriptContainer as Transaction;
+        protected ILogger Logger => _traceLogger;
 
         private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
 
@@ -112,6 +113,9 @@ namespace Neo.Build.Core.SmartContract
             var contextState = context.GetState<ExecutionContextState>();
             var contractState = contextState.Contract;
 
+            contextState.SnapshotCache.OnRead += OnSnapshotCacheRead;
+            contextState.SnapshotCache.OnUpdate += OnSnapshotCacheUpdate;
+
             if (contextState.ScriptHash is not null &&
                 contractState is not null)
                 _traceLogger.LogInformation(DebugEventLog.Load,
@@ -141,6 +145,26 @@ namespace Neo.Build.Core.SmartContract
                 base.OnSysCall(overrideDescriptor);
             else
                 base.OnSysCall(descriptor);
+        }
+
+        private void OnSnapshotCacheRead(DataCache sender, StorageKey key, StorageItem item)
+        {
+            var keyString = GetStorageKeyValueString(key.ToArray(), _storageSettings.KeyFormat);
+            var valueString = GetStorageKeyValueString(item.ToArray(), _storageSettings.ValueFormat);
+
+            _traceLogger.LogInformation(DebugEventLog.ReadStorage,
+                "Storage id={Id}, key={Key}, value={Value}",
+                key.Id, keyString, valueString);
+        }
+
+        private void OnSnapshotCacheUpdate(DataCache sender, StorageKey key, StorageItem item)
+        {
+            var keyString = GetStorageKeyValueString(key.ToArray(), _storageSettings.KeyFormat);
+            var valueString = GetStorageKeyValueString(item.ToArray(), _storageSettings.ValueFormat);
+
+            _traceLogger.LogInformation(DebugEventLog.UpdateStorage,
+                "Storage id={Id}, key={Key}, value={Value}",
+                key.Id, keyString, valueString);
         }
     }
 }

@@ -37,5 +37,8 @@ namespace Neo.Build.Core.Logging
 
         public const int IteratorNext = 600;
         public const int IteratorGet = 601;
+
+        public const int ReadStorage = 700;
+        public const int UpdateStorage = 701;
     }
 }
