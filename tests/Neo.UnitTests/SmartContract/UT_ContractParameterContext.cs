@@ -238,24 +238,31 @@ namespace Neo.UnitTests.SmartContract
         public void TestParseWithUnicodeData()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var tx = TestUtils.GetTransaction(UInt160.Zero);
-
-            // Create a context and convert to JSON
-            var originalContext = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
-            var json = originalContext.ToJson();
-
-            // Replace the Base64 data with Unicode string
-            var unicodeData = "你好世界 Hello World";
-            json["data"] = unicodeData;
-
-            // Parse should handle Unicode
-            var parsedContext = ContractParametersContext.Parse(json.ToString(), snapshotCache);
+            
+            // Test that the data field must remain valid Base64/hex for transaction data
+            // Unicode should only be supported in script/signature fields, not in the transaction data itself
+            var json = """
+            {
+                "type":"Neo.Network.P2P.Payloads.Transaction",
+                "data":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAARI=",
+                "items":{
+                    "0xbecaad15c0ea585211faf99738a4354014f177f2":{
+                        "script":"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq",
+                        "parameters":[{"type":"Signature","value":"AQ=="}],
+                        "signatures":{"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c":"AQ=="}
+                    }
+                },
+                "network":
+            """ + TestProtocolSettings.Default.Network + "}";
+            
+            // The data field must remain valid transaction data
+            var parsedContext = ContractParametersContext.Parse(json, snapshotCache);
             Assert.IsNotNull(parsedContext);
-
-            // The data should be UTF-8 encoded bytes of the Unicode string
-            var expectedBytes = Encoding.UTF8.GetBytes(unicodeData);
-            // Note: We can't directly compare the transaction data because it would be invalid,
-            // but the parsing should not throw an exception
+            
+            // Unicode in the data field should throw an exception during deserialization
+            var invalidJson = JObject.Parse(json);
+            invalidJson["data"] = "你好世界 Hello World";
+            Assert.ThrowsExactly<FormatException>(() => ContractParametersContext.Parse(invalidJson.ToString(), snapshotCache));
         }
 
         [TestMethod]
@@ -430,8 +437,8 @@ namespace Neo.UnitTests.SmartContract
             json["items"] = new JObject();
             json["network"] = TestProtocolSettings.Default.Network;
 
-            // Should handle empty string gracefully
-            Assert.ThrowsException<Exception>(() => ContractParametersContext.Parse(json.ToString(), snapshotCache));
+            // Should handle empty string gracefully - empty data is invalid for transaction
+            Assert.ThrowsExactly<FormatException>(() => ContractParametersContext.Parse(json.ToString(), snapshotCache));
 
             // Test empty script in ContextItem
             var itemJson = new JObject();

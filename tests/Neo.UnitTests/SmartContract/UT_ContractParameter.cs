@@ -366,8 +366,10 @@ namespace Neo.UnitTests.SmartContract
 
             param = ContractParameter.FromJson(json);
             var bytes = (byte[])param.Value;
-            // Should be parsed as Base64 first
-            Assert.AreEqual(3, bytes.Length); // Base64 "ABCD" decodes to 3 bytes
+            // Should be parsed as hex first (new behavior)
+            Assert.AreEqual(2, bytes.Length); // Hex "ABCD" decodes to 2 bytes
+            Assert.AreEqual(0xAB, bytes[0]);
+            Assert.AreEqual(0xCD, bytes[1]);
 
             // "123456" - valid hex but odd Base64
             json["value"] = "123456";

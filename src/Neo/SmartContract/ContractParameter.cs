@@ -37,25 +37,12 @@ namespace Neo.SmartContract
             if (string.IsNullOrEmpty(data))
                 return Array.Empty<byte>();
 
-            // Try Base64 first (most common case for backward compatibility)
-            if (Base64Regex.IsMatch(data) && data.Length % 4 == 0)
-            {
-                try
-                {
-                    return Convert.FromBase64String(data);
-                }
-                catch
-                {
-                    // Not valid Base64, continue to other formats
-                }
-            }
-
-            // Try Hex with 0x prefix
+            // Try Hex with 0x prefix first
             if (data.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
             {
                 try
                 {
-                    return data[2..].HexToBytes();
+                    return data.Substring(2).HexToBytes();
                 }
                 catch
                 {
@@ -73,6 +60,19 @@ namespace Neo.SmartContract
                 catch
                 {
                     // Not valid hex, continue
+                }
+            }
+
+            // Try Base64 (backward compatibility)
+            if (Base64Regex.IsMatch(data) && data.Length % 4 == 0)
+            {
+                try
+                {
+                    return Convert.FromBase64String(data);
+                }
+                catch
+                {
+                    // Not valid Base64, continue to other formats
                 }
             }
 
