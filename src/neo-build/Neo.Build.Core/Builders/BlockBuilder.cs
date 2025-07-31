@@ -11,6 +11,7 @@
 
 using Neo.Builders;
 using Neo.Cryptography;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Linq;
@@ -19,15 +20,13 @@ namespace Neo.Build.Core.Builders
 {
     public class BlockBuilder
     {
-        private static readonly Random s_random = new();
-
         private BlockBuilder() { }
 
         private readonly Block _block = new()
         {
             Header = new()
             {
-                Nonce = (ulong)(s_random.Next() ^ s_random.Next()),
+                Nonce = RandomNumberFactory.NextUInt64(),
                 Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 MerkleRoot = new(),
                 NextConsensus = new(),
