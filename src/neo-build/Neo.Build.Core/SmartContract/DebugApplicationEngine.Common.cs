@@ -36,13 +36,13 @@ namespace Neo.Build.Core.SmartContract
         private void OnUpdateSnapshotCache(DataCache sender, StorageKey key, StorageItem item)
         {
             var exeState = CurrentContext?.GetState<ExecutionContextState>()!;
-            _snapshotStorage[exeState] = new(key, item, StorageEvent.Write);
+            _snapshotStack[exeState] = new(key, item, StorageEvent.Write);
         }
 
         private void OnReadSnapshot(DataCache sender, StorageKey key, StorageItem item)
         {
             var exeState = CurrentContext?.GetState<ExecutionContextState>()!;
-            _snapshotStorage[exeState] = new(key, item, StorageEvent.Read);
+            _snapshotStack[exeState] = new(key, item, StorageEvent.Read);
         }
     }
 }

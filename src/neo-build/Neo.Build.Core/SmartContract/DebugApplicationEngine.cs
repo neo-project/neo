@@ -51,10 +51,10 @@ namespace Neo.Build.Core.SmartContract
         /// <summary>
         /// Gets state storage events of the keys and values that were either read or updated.
         /// </summary>
-        public IReadOnlyDictionary<ExecutionContextState, DebugStorage> SnapshotStorage => _snapshotStorage;
+        public IReadOnlyDictionary<ExecutionContextState, DebugStorage> SnapshotStack => _snapshotStack;
 
         private readonly Dictionary<Breakpoint, HashSet<uint>> _breakPoints = [];
-        private readonly Dictionary<ExecutionContextState, DebugStorage> _snapshotStorage = [];
+        private readonly Dictionary<ExecutionContextState, DebugStorage> _snapshotStack = [];
 
         public void AddBreakPoints(Script script, uint? blockIndex, params uint[] positions)
         {

@@ -90,7 +90,7 @@ namespace Neo.Build.Core.Tests.SmartContract
             Console.WriteLine("{0}", sb.ToArray().ToScriptHash());
 
             Assert.AreEqual(VMState.HALT, actualState);
-            Assert.AreEqual(1, debugger.SnapshotStorage.Count);
+            Assert.AreEqual(1, debugger.SnapshotStack.Count);
         }
     }
 }
