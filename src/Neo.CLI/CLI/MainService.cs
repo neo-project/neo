@@ -303,8 +303,27 @@ namespace Neo.CLI
                 }
                 else if (OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst())
                 {
-                    DisplayError("Shared library libleveldb.dylib not found, please get libleveldb.dylib.",
-                        $"Use command \"brew install leveldb\" in terminal or download from {levelDbUrl}");
+                    // Check if the error message contains information about missing dependencies
+                    if (ex.Message.Contains("libtcmalloc") && ex.Message.Contains("gperftools"))
+                    {
+                        DisplayError("LevelDB dependency 'gperftools' not found. This is required for libleveldb on macOS.",
+                            "To fix this issue:\n" +
+                            "1. Install gperftools: brew install gperftools\n" +
+                            "2. Install leveldb: brew install leveldb\n" +
+                            "3. If the issue persists, try: brew reinstall gperftools leveldb\n" +
+                            "\n" +
+                            "Note: The system is looking for libtcmalloc.4.dylib which is provided by gperftools.");
+                    }
+                    else
+                    {
+                        DisplayError("Shared library libleveldb.dylib not found or has missing dependencies.",
+                            "To fix this issue:\n" +
+                            "1. Install dependencies: brew install gperftools snappy\n" +
+                            "2. Install leveldb: brew install leveldb\n" +
+                            "3. If already installed, try: brew reinstall gperftools leveldb\n" +
+                            $"\n" +
+                            $"Alternative: Download pre-compiled binaries from {levelDbUrl}");
+                    }
                 }
                 else
                 {
