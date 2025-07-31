@@ -15,7 +15,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
-using System;
 using System.Collections.Generic;
 
 namespace Neo.Build.Core.SmartContract
@@ -78,10 +77,7 @@ namespace Neo.Build.Core.SmartContract
             if (_breakPoints.TryGetValue(bp, out var positionTable))
             {
                 foreach (var position in positions)
-                {
-                    if (positionTable.Remove(position) == false)
-                        throw new ArgumentException($"Position at {position} was not found.");
-                }
+                    positionTable.Remove(position);
 
                 if (positionTable.Count == 0)
                     _breakPoints.Remove(bp);

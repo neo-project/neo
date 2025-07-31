@@ -59,7 +59,7 @@ namespace Neo.Build.Core.Tests.SmartContract
             Assert.AreEqual(2, debugger.CurrentContext.InstructionPointer);
             Assert.AreEqual(VMState.BREAK, debugger.State);
 
-            Assert.ThrowsExactly<ArgumentException>(() => debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 4));
+            Assert.IsTrue(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 4));
             Assert.IsTrue(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 2, 3));
             Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 2, 3));
 
