@@ -152,17 +152,17 @@ namespace Neo.SmartContract
                  options.HasFlag(FindOptions.PickField0) ||
                  options.HasFlag(FindOptions.PickField1)))
             {
-                throw new ArgumentException("`KeysOnly` cannot be used with `ValuesOnly`, `DeserializeValues`, `PickField0`, or `PickField1`", nameof(options));
+                throw new ArgumentException("KeysOnly cannot be used with ValuesOnly, DeserializeValues, PickField0, or PickField1", nameof(options));
             }
 
             if (options.HasFlag(FindOptions.ValuesOnly) && (options.HasFlag(FindOptions.KeysOnly) || options.HasFlag(FindOptions.RemovePrefix)))
-                throw new ArgumentException("`ValuesOnly` cannot be used with `KeysOnly` or `RemovePrefix`", nameof(options));
+                throw new ArgumentException("ValuesOnly cannot be used with KeysOnly or RemovePrefix", nameof(options));
 
             if (options.HasFlag(FindOptions.PickField0) && options.HasFlag(FindOptions.PickField1))
-                throw new ArgumentException("`PickField0` and `PickField1` cannot be used together", nameof(options));
+                throw new ArgumentException("PickField0 and PickField1 cannot be used together", nameof(options));
 
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
-                throw new ArgumentException("`PickField0` or `PickField1` requires `DeserializeValues`", nameof(options));
+                throw new ArgumentException("PickField0 or PickField1 requires DeserializeValues", nameof(options));
 
             var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
             var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
@@ -179,10 +179,10 @@ namespace Neo.SmartContract
         protected internal void Put(StorageContext context, byte[] key, byte[] value)
         {
             if (key.Length > MaxStorageKeySize)
-                throw new ArgumentException($"Key length too big: {key.Length}", nameof(key));
+                throw new ArgumentException($"Key length {key.Length} exceeds maximum allowed size of {MaxStorageKeySize} bytes.", nameof(key));
             if (value.Length > MaxStorageValueSize)
-                throw new ArgumentException($"Value length too big: {value.Length}", nameof(value));
-            if (context.IsReadOnly) throw new ArgumentException("StorageContext is readonly", nameof(context));
+                throw new ArgumentException($"Value length {value.Length} exceeds maximum allowed size of {MaxStorageValueSize} bytes.", nameof(value));
+            if (context.IsReadOnly) throw new ArgumentException("StorageContext is read-only", nameof(context));
 
             int newDataSize;
             StorageKey skey = new()
@@ -220,7 +220,7 @@ namespace Neo.SmartContract
         /// <param name="key">The key of the entry.</param>
         protected internal void Delete(StorageContext context, byte[] key)
         {
-            if (context.IsReadOnly) throw new ArgumentException("StorageContext is readonly", nameof(context));
+            if (context.IsReadOnly) throw new ArgumentException("StorageContext is read-only", nameof(context));
             SnapshotCache.Delete(new StorageKey
             {
                 Id = context.Id,

@@ -14,6 +14,7 @@ namespace Neo.ConsoleService
     public readonly struct CommandToken(int offset, string value, char quoteChar)
     {
         public const char NoQuoteChar = '\0';
+        public const char NoEscapedChar = '`';
 
         /// <summary>
         /// The start offset of the token in the command line
@@ -25,6 +26,14 @@ namespace Neo.ConsoleService
         /// </summary>
         public readonly string Value { get; } = value;
 
+        /// <summary>
+        /// Whether the token is an indicator. Like --key key.
+        /// </summary>
+        public readonly bool IsIndicator => _quoteChar == NoQuoteChar && Value.StartsWith("--");
+
+        /// <summary>
+        /// The quote character of the token. It can be ', " or `.
+        /// </summary>
         private readonly char _quoteChar = quoteChar;
 
         /// <summary>

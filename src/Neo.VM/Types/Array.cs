@@ -50,18 +50,18 @@ namespace Neo.VM.Types
         /// The number of items in the array.
         /// </summary>
         public override int Count => _array.Count;
+
         public override IEnumerable<StackItem> SubItems => _array;
+
         public override int SubItemsCount => _array.Count;
+
         public override StackItemType Type => StackItemType.Array;
 
         /// <summary>
         /// Create an array containing the specified items.
         /// </summary>
         /// <param name="items">The items to be included in the array.</param>
-        public Array(IEnumerable<StackItem>? items = null)
-            : this(null, items)
-        {
-        }
+        public Array(IEnumerable<StackItem>? items = null) : this(null, items) { }
 
         /// <summary>
         /// Create an array containing the specified items. And make the array use the specified <see cref="IReferenceCounter"/>.
@@ -113,8 +113,10 @@ namespace Neo.VM.Types
         {
             if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not clear.");
             if (ReferenceCounter != null)
-                foreach (StackItem item in _array)
+            {
+                foreach (var item in _array)
                     ReferenceCounter.RemoveReference(item, this);
+            }
             _array.Clear();
         }
 
@@ -127,11 +129,14 @@ namespace Neo.VM.Types
 
         internal sealed override StackItem DeepCopy(Dictionary<StackItem, StackItem> refMap, bool asImmutable)
         {
-            if (refMap.TryGetValue(this, out StackItem? mappedItem)) return mappedItem;
-            Array result = this is Struct ? new Struct(ReferenceCounter) : new Array(ReferenceCounter);
+            if (refMap.TryGetValue(this, out var mappedItem)) return mappedItem;
+
+            var result = this is Struct ? new Struct(ReferenceCounter) : new Array(ReferenceCounter);
             refMap.Add(this, result);
-            foreach (StackItem item in _array)
+            foreach (var item in _array)
+            {
                 result.Add(item.DeepCopy(refMap, asImmutable));
+            }
             result.IsReadOnly = true;
             return result;
         }

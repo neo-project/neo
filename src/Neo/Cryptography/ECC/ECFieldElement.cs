@@ -12,6 +12,7 @@
 #nullable enable
 
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using System;
 using System.Numerics;
 
@@ -25,7 +26,7 @@ namespace Neo.Cryptography.ECC
         public ECFieldElement(BigInteger value, ECCurve curve)
         {
             if (value >= curve.Q)
-                throw new ArgumentException("x value too large in field element");
+                throw new ArgumentException($"Invalid field element value: {value}. The value must be less than the curve's prime field size {curve.Q}.");
             Value = value;
             _curve = curve;
         }
@@ -34,7 +35,7 @@ namespace Neo.Cryptography.ECC
         {
             if (ReferenceEquals(this, other)) return 0;
             if (other == null) throw new ArgumentNullException(nameof(other));
-            if (!_curve.Equals(other._curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
+            if (!_curve.Equals(other._curve)) throw new InvalidOperationException("Cannot compare ECFieldElements from different curves. Both elements must belong to the same elliptic curve.");
             return Value.CompareTo(other.Value);
         }
 
@@ -121,11 +122,10 @@ namespace Neo.Cryptography.ECC
             BigInteger U, V;
             do
             {
-                Random rand = new();
-                BigInteger P;
+                var P = BigInteger.Zero;
                 do
                 {
-                    P = rand.NextBigInteger((int)_curve.Q.GetBitLength());
+                    P = RandomNumberFactory.NextBigInteger((int)_curve.Q.GetBitLength());
                 }
                 while (P >= _curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, _curve.Q) != qMinusOne);
                 var result = FastLucasSequence(_curve.Q, P, Q, k);

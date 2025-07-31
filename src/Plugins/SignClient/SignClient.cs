@@ -46,7 +46,7 @@ namespace Neo.Plugins.SignClient
 
         public SignClient() { }
 
-        public SignClient(Settings settings)
+        public SignClient(SignSettings settings)
         {
             Reset(settings);
         }
@@ -66,9 +66,8 @@ namespace Neo.Plugins.SignClient
             if (!string.IsNullOrEmpty(_name)) SignerManager.RegisterSigner(_name, this);
         }
 
-        private void Reset(Settings settings)
+        private ServiceConfig GetServiceConfig(SignSettings settings)
         {
-            // _settings = settings;
             var methodConfig = new MethodConfig
             {
                 Names = { MethodName.Default },
@@ -91,10 +90,24 @@ namespace Neo.Plugins.SignClient
                 }
             };
 
-            var channel = GrpcChannel.ForAddress(settings.Endpoint, new GrpcChannelOptions
+            return new ServiceConfig { MethodConfigs = { methodConfig } };
+        }
+
+        private void Reset(SignSettings settings)
+        {
+            // _settings = settings;
+            var serviceConfig = GetServiceConfig(settings);
+            var vsockAddress = settings.GetVsockAddress();
+
+            GrpcChannel channel;
+            if (vsockAddress is not null)
             {
-                ServiceConfig = new ServiceConfig { MethodConfigs = { methodConfig } }
-            });
+                channel = Vsock.CreateChannel(vsockAddress, serviceConfig);
+            }
+            else
+            {
+                channel = GrpcChannel.ForAddress(settings.Endpoint, new() { ServiceConfig = serviceConfig });
+            }
 
             _channel?.Dispose();
             _channel = channel;
@@ -319,7 +332,7 @@ namespace Neo.Plugins.SignClient
         protected override void Configure()
         {
             var config = GetConfiguration();
-            if (config is not null) Reset(new Settings(config));
+            if (config is not null) Reset(new SignSettings(config));
         }
 
         /// <inheritdoc/>

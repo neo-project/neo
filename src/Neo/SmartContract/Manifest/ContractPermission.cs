@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Null => WildcardContainer<string>.CreateWildcard(),
                 Array array => WildcardContainer<string>.Create(array.Select(p => p.GetString()).ToArray()),
-                _ => throw new ArgumentException("The second field(`methods`) is not a null or array", nameof(stackItem))
+                _ => throw new ArgumentException("Methods field must be null or array", nameof(stackItem))
             };
         }
 

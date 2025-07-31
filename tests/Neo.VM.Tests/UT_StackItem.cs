@@ -233,22 +233,32 @@ namespace Neo.Test
         [TestMethod]
         public void TestDeepCopy()
         {
-            Array a = new()
+            var a = new Array
             {
                 true,
                 1,
                 new byte[] { 1 },
                 StackItem.Null,
-                new Buffer(new byte[] { 1 }),
+                new Buffer([1]),
                 new Map { [0] = 1, [2] = 3 },
                 new Struct { 1, 2, 3 }
             };
             a.Add(a);
-            Array aa = (Array)a.DeepCopy();
+            var aa = (Array)a.DeepCopy();
             Assert.AreNotEqual(a, aa);
             Assert.AreSame(aa, aa[^1]);
             Assert.IsTrue(a[^2].Equals(aa[^2], ExecutionEngineLimits.Default));
             Assert.AreNotSame(a[^2], aa[^2]);
+        }
+
+        [TestMethod]
+        public void TestMinIntegerAbs()
+        {
+            const string minLiteral = "-57896044618658097711785492504343953926634992332820282019728792003956564819968";
+            var minInt256 = BigInteger.Parse(minLiteral);
+
+            // Throw exception because of the size of the integer is too large(33 bytes > 32 bytes)
+            Assert.ThrowsExactly<System.ArgumentException>(() => _ = new Integer(BigInteger.Abs(minInt256)));
         }
     }
 }

@@ -86,7 +86,7 @@ namespace Neo
             var buffer = MemoryMarshal.AsBytes((ReadOnlySpan<int>)span);
             _value = new BigInteger(buffer[..12], isUnsigned: true);
             if (buffer[14] > decimals)
-                throw new ArgumentException($"Invalid decimals: {buffer[14]}-{decimals}", nameof(value));
+                throw new ArgumentException($"Decimal value has {buffer[14]} decimal places, which exceeds the maximum allowed precision of {decimals}.", nameof(value));
             else if (buffer[14] < decimals)
                 _value *= BigInteger.Pow(10, decimals - buffer[14]);
 
@@ -127,7 +127,7 @@ namespace Neo
         public static BigDecimal Parse(string s, byte decimals)
         {
             if (!TryParse(s, decimals, out var result))
-                throw new FormatException();
+                throw new FormatException($"Failed to parse BigDecimal from string '{s}' with {decimals} decimal places. Please ensure the string represents a valid number in the correct format.");
             return result;
         }
 

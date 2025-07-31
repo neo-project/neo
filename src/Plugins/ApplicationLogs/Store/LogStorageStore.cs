@@ -160,14 +160,14 @@ namespace Neo.Plugins.ApplicationLogs.Store
             {
                 _snapshot.Put(key, BinarySerializer.Serialize(stackItem, ExecutionEngineLimits.Default with
                 {
-                    MaxItemSize = (uint)Settings.Default.MaxStackSize
+                    MaxItemSize = (uint)ApplicationLogsSettings.Default.MaxStackSize
                 }));
             }
             catch
             {
                 _snapshot.Put(key, BinarySerializer.Serialize(StackItem.Null, ExecutionEngineLimits.Default with
                 {
-                    MaxItemSize = (uint)Settings.Default.MaxStackSize
+                    MaxItemSize = (uint)ApplicationLogsSettings.Default.MaxStackSize
                 }));
             }
             return id;
@@ -286,7 +286,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         #region TryGet
 
-        public bool TryGetEngineState(Guid engineStateId, [NotNullWhen(true)] out EngineLogState state)
+        public bool TryGetEngineState(Guid engineStateId, [NotNullWhen(true)] out EngineLogState? state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Engine)
                 .Add(engineStateId.ToByteArray())
@@ -295,7 +295,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetTransactionEngineState(UInt256 hash, [NotNullWhen(true)] out TransactionEngineLogState state)
+        public bool TryGetTransactionEngineState(UInt256 hash, [NotNullWhen(true)] out TransactionEngineLogState? state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Engine_Transaction)
                 .Add(hash)
@@ -304,7 +304,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetBlockState(UInt256 hash, TriggerType trigger, [NotNullWhen(true)] out BlockLogState state)
+        public bool TryGetBlockState(UInt256 hash, TriggerType trigger, [NotNullWhen(true)] out BlockLogState? state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Block)
                 .Add(hash)
@@ -314,7 +314,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetNotifyState(Guid notifyStateId, [NotNullWhen(true)] out NotifyLogState state)
+        public bool TryGetNotifyState(Guid notifyStateId, [NotNullWhen(true)] out NotifyLogState? state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Notify)
                 .Add(notifyStateId.ToByteArray())
@@ -323,7 +323,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetContractState(UInt160 scriptHash, ulong timestamp, uint iterIndex, [NotNullWhen(true)] out ContractLogState state)
+        public bool TryGetContractState(UInt160 scriptHash, ulong timestamp, uint iterIndex, [NotNullWhen(true)] out ContractLogState? state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Contract)
                 .Add(scriptHash)
@@ -334,7 +334,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             return data != null && data.Length > 0;
         }
 
-        public bool TryGetExecutionState(Guid executionStateId, [NotNullWhen(true)] out ExecutionLogState state)
+        public bool TryGetExecutionState(Guid executionStateId, [NotNullWhen(true)] out ExecutionLogState? state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Execution)
                 .Add(executionStateId.ToByteArray())
@@ -362,7 +362,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             return data != null;
         }
 
-        public bool TryGetTransactionState(UInt256 hash, [NotNullWhen(true)] out TransactionLogState state)
+        public bool TryGetTransactionState(UInt256 hash, [NotNullWhen(true)] out TransactionLogState? state)
         {
             var key = new KeyBuilder(Prefix_Id, Prefix_Transaction)
                 .Add(hash)

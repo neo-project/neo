@@ -21,6 +21,6 @@ namespace Neo.IEventHandlers
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="logEventArgs">The arguments <see cref="LogEventArgs"/> of the log.</param>
-        void ApplicationEngine_Log_Handler(object sender, LogEventArgs logEventArgs);
+        void ApplicationEngine_Log_Handler(ApplicationEngine sender, LogEventArgs logEventArgs);
     }
 }

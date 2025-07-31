@@ -22,12 +22,12 @@ namespace Neo.VM.Types
     [DebuggerDisplay("Type={GetType().Name}, Value={value}")]
     public class Boolean : PrimitiveType
     {
-        private static readonly ReadOnlyMemory<byte> TRUE = new byte[] { 1 };
-        private static readonly ReadOnlyMemory<byte> FALSE = new byte[] { 0 };
+        private static readonly ReadOnlyMemory<byte> s_true = new byte[] { 1 };
+        private static readonly ReadOnlyMemory<byte> s_false = new byte[] { 0 };
 
-        private readonly bool value;
+        private readonly bool _value;
 
-        public override ReadOnlyMemory<byte> Memory => value ? TRUE : FALSE;
+        public override ReadOnlyMemory<byte> Memory => _value ? s_true : s_false;
         public override int Size => sizeof(bool);
         public override StackItemType Type => StackItemType.Boolean;
 
@@ -37,31 +37,31 @@ namespace Neo.VM.Types
         /// <param name="value">The initial value of the object.</param>
         internal Boolean(bool value)
         {
-            this.value = value;
+            _value = value;
         }
 
         public override bool Equals(StackItem? other)
         {
             if (ReferenceEquals(this, other)) return true;
-            if (other is Boolean b) return value == b.value;
+            if (other is Boolean b) return _value == b._value;
             return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool GetBoolean()
         {
-            return value;
+            return _value;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(value);
+            return HashCode.Combine(_value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override BigInteger GetInteger()
         {
-            return value ? BigInteger.One : BigInteger.Zero;
+            return _value ? BigInteger.One : BigInteger.Zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -72,7 +72,7 @@ namespace Neo.VM.Types
 
         public override string ToString()
         {
-            return value.ToString();
+            return _value.ToString();
         }
     }
 }

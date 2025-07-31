@@ -153,6 +153,9 @@ namespace Neo.Plugins.RpcServer.Tests
             expectedJson["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
             Assert.AreEqual(expectedJson["hash"].AsString(), resultVerbose["hash"].AsString());
             Assert.AreEqual(0, ((JArray)resultVerbose["tx"]).Count);
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetBlock(null, true));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
         }
 
         [TestMethod]
@@ -191,6 +194,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
+
             var result = _rpcServer.GetBlockHeader(new BlockHashOrIndex(block.Hash), true);
             var header = block.Header.ToJson(_neoSystem.Settings);
             header["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
@@ -200,6 +204,9 @@ namespace Neo.Plugins.RpcServer.Tests
             var headerArr = Convert.FromBase64String(result.AsString());
             var header2 = headerArr.AsSerializable<Header>();
             Assert.AreEqual(block.Header.ToJson(_neoSystem.Settings).ToString(), header2.ToJson(_neoSystem.Settings).ToString());
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetBlockHeader(null, true));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
         }
 
         [TestMethod]
@@ -227,6 +234,9 @@ namespace Neo.Plugins.RpcServer.Tests
 
             var ex2 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetContractState(new(contractState.Id)));
             Assert.AreEqual(RpcError.UnknownContract.Message, ex2.Message);
+
+            var ex3 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetContractState(null));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex3.HResult);
         }
 
         [TestMethod]
@@ -340,6 +350,9 @@ namespace Neo.Plugins.RpcServer.Tests
             result = _rpcServer.GetRawTransaction(tx.Hash, false);
             var tx2 = Convert.FromBase64String(result.AsString()).AsSerializable<Transaction>();
             Assert.AreEqual(tx.ToJson(_neoSystem.Settings).ToString(), tx2.ToJson(_neoSystem.Settings).ToString());
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetRawTransaction(null, true));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
         }
 
         [TestMethod]
@@ -385,6 +398,12 @@ namespace Neo.Plugins.RpcServer.Tests
 
             var result = _rpcServer.GetStorage(new(contractState.Hash), Convert.ToBase64String(key));
             Assert.AreEqual(Convert.ToBase64String(value), result.AsString());
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetStorage(null, Convert.ToBase64String(key)));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            var ex2 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetStorage(new(contractState.Hash), null));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex2.HResult);
         }
 
         [TestMethod]
@@ -423,8 +442,38 @@ namespace Neo.Plugins.RpcServer.Tests
                 .ForEach(i => TestUtils.StorageItemAdd(snapshot, contractState.Id, [0x01, (byte)i], [0x02]));
             snapshot.Commit();
             var result4 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(new byte[] { 0x01 }), 0);
-            Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, result4["next"].AsNumber());
+            Assert.AreEqual(RpcServersSettings.Default.FindStoragePageSize, result4["next"].AsNumber());
             Assert.IsTrue(result4["truncated"].AsBoolean());
+        }
+
+        [TestMethod]
+        public void TestStorage_NativeContractName()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var key = new byte[] { 0x01 };
+            var value = new byte[] { 0x02 };
+            TestUtils.StorageItemAdd(snapshot, NativeContract.GAS.Id, key, value);
+            snapshot.Commit();
+
+            // GetStorage
+            var result = _rpcServer.GetStorage(new("GasToken"), Convert.ToBase64String(key));
+            Assert.AreEqual(Convert.ToBase64String(value), result.AsString());
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetStorage(null, Convert.ToBase64String(key)));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetStorage(new("GasToken"), null));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            // FindStorage
+            var result2 = _rpcServer.FindStorage(new("GasToken"), Convert.ToBase64String(key), 0);
+            Assert.AreEqual(Convert.ToBase64String(value), result2["results"][0]["value"].AsString());
+
+            ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.FindStorage(null, Convert.ToBase64String(key), 0));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            ex = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.FindStorage(new("GasToken"), null, 0));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
         }
 
         [TestMethod]
@@ -434,7 +483,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var contractState = TestUtils.GetContract();
             snapshot.AddContract(contractState.Hash, contractState);
             var prefix = new byte[] { 0xAA };
-            int totalItems = RpcServerSettings.Default.FindStoragePageSize + 5;
+            int totalItems = RpcServersSettings.Default.FindStoragePageSize + 5;
 
             for (int i = 0; i < totalItems; i++)
             {
@@ -447,9 +496,9 @@ namespace Neo.Plugins.RpcServer.Tests
             // Get first page
             var resultPage1 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), 0);
             Assert.IsTrue(resultPage1["truncated"].AsBoolean());
-            Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, ((JArray)resultPage1["results"]).Count);
+            Assert.AreEqual(RpcServersSettings.Default.FindStoragePageSize, ((JArray)resultPage1["results"]).Count);
             int nextIndex = (int)resultPage1["next"].AsNumber();
-            Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, nextIndex);
+            Assert.AreEqual(RpcServersSettings.Default.FindStoragePageSize, nextIndex);
 
             // Get second page
             var resultPage2 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
@@ -487,6 +536,14 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsFalse(resultPage2["truncated"].AsBoolean());
             Assert.AreEqual(0, ((JArray)resultPage2["results"]).Count);
             Assert.AreEqual(nextIndex, (int)resultPage2["next"].AsNumber()); // Next index should remain the same
+
+            var ex = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.FindStorage(null, Convert.ToBase64String(prefix), 0));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+
+            var ex2 = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.FindStorage(new(contractState.Hash), null, 0));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex2.HResult);
         }
 
         [TestMethod]
@@ -536,8 +593,6 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetCandidates()
         {
             var snapshot = _neoSystem.GetSnapshotCache();
-
-            var result = _rpcServer.GetCandidates();
             var json = new JArray();
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
 
@@ -545,8 +600,9 @@ namespace Neo.Plugins.RpcServer.Tests
                 .Add(ECPoint.Parse("02237309a0633ff930d51856db01d17c829a5b2e5cc2638e9c03b4cfa8e9c9f971", ECCurve.Secp256r1));
             snapshot.Add(key, new StorageItem(new CandidateState() { Registered = true, Votes = 10000 }));
             snapshot.Commit();
+
             var candidates = NativeContract.NEO.GetCandidates(_neoSystem.GetSnapshotCache());
-            result = _rpcServer.GetCandidates();
+            var result = _rpcServer.GetCandidates();
             foreach (var candidate in candidates)
             {
                 var item = new JObject()
@@ -733,6 +789,9 @@ namespace Neo.Plugins.RpcServer.Tests
             {
                 Assert.AreEqual(RpcError.UnknownTransaction.Code, ex.HResult);
             }
+
+            var ex2 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetTransactionHeight(null));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex2.HResult);
         }
 
         [TestMethod]
