@@ -58,7 +58,7 @@ namespace RestServer.Authentication
                     }
                 }
             }
-            return Task.FromResult(AuthenticateResult.Fail("Authentication Failed!!!"));
+            return Task.FromResult(AuthenticateResult.Fail("Authentication Failed!"));
         }
     }
 }

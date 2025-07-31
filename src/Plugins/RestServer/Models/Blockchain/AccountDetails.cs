@@ -25,7 +25,6 @@ namespace Neo.Plugins.RestServer.Models.Blockchain
         /// Wallet address.
         /// </summary>
         /// <example>NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs</example>
-
         public string Address { get; set; } = string.Empty;
 
         /// <summary>
