@@ -1,0 +1,114 @@
+groups:
+  - name: neo_blockchain_alerts
+    interval: 30s
+    rules:
+      # Critical Alerts
+      - alert: NeoNodeDown
+        expr: up{job="neo-node"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Neo node is down"
+          description: "Neo node {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: NeoNodeNotSyncing
+        expr: neo_blockchain_is_syncing == 1
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Neo node is not syncing"
+          description: "Neo node {{ $labels.instance }} has been in syncing state for more than 30 minutes."
+
+      - alert: NeoNoPeers
+        expr: neo_p2p_connected_peers == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Neo node has no peers"
+          description: "Neo node {{ $labels.instance }} has no connected peers for more than 5 minutes."
+
+      # Warning Alerts
+      - alert: NeoLowPeerCount
+        expr: neo_p2p_connected_peers < 3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Neo node has low peer count"
+          description: "Neo node {{ $labels.instance }} has only {{ $value }} connected peers."
+
+      - alert: NeoHighMemPoolUsage
+        expr: neo_mempool_capacity_ratio > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Neo mempool usage is high"
+          description: "Neo node {{ $labels.instance }} mempool is {{ $value | humanizePercentage }} full."
+
+      - alert: NeoSlowBlockProcessing
+        expr: histogram_quantile(0.95, rate(neo_block_processing_time_bucket[5m])) > 1000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Neo block processing is slow"
+          description: "Neo node {{ $labels.instance }} 95th percentile block processing time is {{ $value }}ms."
+
+      - alert: NeoHighCPUUsage
+        expr: process_cpu_usage > 80
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Neo node CPU usage is high"
+          description: "Neo node {{ $labels.instance }} CPU usage is {{ $value }}%."
+
+      - alert: NeoHighMemoryUsage
+        expr: (process_memory_working_set / 1024 / 1024 / 1024) > 8
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Neo node memory usage is high"
+          description: "Neo node {{ $labels.instance }} is using {{ $value | humanize }}GB of memory."
+
+      # Info Alerts
+      - alert: NeoTransactionVerificationFailures
+        expr: rate(neo_transaction_verification_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "Neo transaction verification failures detected"
+          description: "Neo node {{ $labels.instance }} is experiencing {{ $value | humanize }} verification failures per second."
+
+      - alert: NeoMemPoolConflicts
+        expr: rate(neo_mempool_conflicts_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "Neo mempool conflicts detected"
+          description: "Neo node {{ $labels.instance }} is detecting {{ $value | humanize }} conflicts per second."
+
+      - alert: NeoLowBlockProcessingRate
+        expr: neo_block_processing_rate < 0.5
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Neo block processing rate is low"
+          description: "Neo node {{ $labels.instance }} is processing only {{ $value | humanize }} blocks per second."
+
+      - alert: NeoHighNetworkTraffic
+        expr: (rate(neo_p2p_bytes_received_total[5m]) + rate(neo_p2p_bytes_sent_total[5m])) > 10485760
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Neo node network traffic is high"
+          description: "Neo node {{ $labels.instance }} total network traffic is {{ $value | humanize }}B/s."
