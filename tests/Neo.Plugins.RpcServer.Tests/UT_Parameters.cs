@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
+using Neo.Network.P2P.Payloads;
 using Neo.Plugins.RpcServer.Model;
 using Neo.UnitTests;
 using Neo.Wallets;
@@ -410,6 +411,55 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test conversion of Unicode numeric characters
             Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter("１２３４", typeof(int)));
+        }
+
+        [TestMethod]
+        public void TestToSignersAndWitnesses()
+        {
+            const string address = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
+            var addressVersion = TestProtocolSettings.Default.AddressVersion;
+            var account = address.AddressToScriptHash(addressVersion);
+            var signers = new JArray(new JObject
+            {
+                ["account"] = address,
+                ["scopes"] = WitnessScope.CalledByEntry.ToString()
+            });
+
+            var result = ParameterConverter.ToSignersAndWitnesses(signers, addressVersion);
+            Assert.AreEqual(1, result.Signers.Length);
+            Assert.AreEqual(0, result.Witnesses.Length);
+            Assert.AreEqual(account, result.Signers[0].Account);
+            Assert.AreEqual(WitnessScope.CalledByEntry, result.Signers[0].Scopes);
+
+            var signersAndWitnesses = new JArray(new JObject
+            {
+                ["account"] = address,
+                ["scopes"] = WitnessScope.CalledByEntry.ToString(),
+                ["invocation"] = "SGVsbG8K",
+                ["verification"] = "V29ybGQK"
+            });
+            result = ParameterConverter.ToSignersAndWitnesses(signersAndWitnesses, addressVersion);
+            Assert.AreEqual(1, result.Signers.Length);
+            Assert.AreEqual(1, result.Witnesses.Length);
+            Assert.AreEqual(account, result.Signers[0].Account);
+            Assert.AreEqual(WitnessScope.CalledByEntry, result.Signers[0].Scopes);
+            Assert.AreEqual("SGVsbG8K", Convert.ToBase64String(result.Witnesses[0].InvocationScript.Span));
+            Assert.AreEqual("V29ybGQK", Convert.ToBase64String(result.Witnesses[0].VerificationScript.Span));
+        }
+
+        [TestMethod]
+        public void TestAddressToScriptHash()
+        {
+            const string address = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
+            var addressVersion = TestProtocolSettings.Default.AddressVersion;
+            var account = address.AddressToScriptHash(addressVersion);
+            Assert.AreEqual(account, address.AddressToScriptHash(addressVersion));
+
+            var hex = new UInt160().ToString();
+            Assert.AreEqual(new UInt160(), hex.AddressToScriptHash(addressVersion));
+
+            var base58 = account.ToAddress(addressVersion);
+            Assert.AreEqual(account, base58.AddressToScriptHash(addressVersion));
         }
     }
 }

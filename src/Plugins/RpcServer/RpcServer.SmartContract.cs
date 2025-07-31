@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -24,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Array = System.Array;
 
 namespace Neo.Plugins.RpcServer
 {
@@ -171,75 +169,193 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        private static Signer[] SignersFromJson(JArray _params, ProtocolSettings settings)
-        {
-            if (_params.Count > Transaction.MaxTransactionAttributes)
-            {
-                throw new RpcException(RpcError.InvalidParams.WithData("Max allowed witness exceeded."));
-            }
-
-            var ret = _params.Select(u => new Signer
-            {
-                Account = AddressToScriptHash(u["account"].AsString(), settings.AddressVersion),
-                Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), u["scopes"]?.AsString()),
-                AllowedContracts = ((JArray)u["allowedcontracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray() ?? Array.Empty<UInt160>(),
-                AllowedGroups = ((JArray)u["allowedgroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray() ?? Array.Empty<ECPoint>(),
-                Rules = ((JArray)u["rules"])?.Select(r => WitnessRule.FromJson((JObject)r)).ToArray() ?? Array.Empty<WitnessRule>(),
-            }).ToArray();
-
-            // Validate format
-
-            _ = ret.ToByteArray().AsSerializableArray<Signer>();
-
-            return ret;
-        }
-
-        private static Witness[] WitnessesFromJson(JArray _params)
-        {
-            if (_params.Count > Transaction.MaxTransactionAttributes)
-            {
-                throw new RpcException(RpcError.InvalidParams.WithData("Max allowed witness exceeded."));
-            }
-
-            return _params.Select(u => new
-            {
-                Invocation = u["invocation"]?.AsString(),
-                Verification = u["verification"]?.AsString()
-            }).Where(x => x.Invocation != null || x.Verification != null).Select(x => new Witness()
-            {
-                InvocationScript = Convert.FromBase64String(x.Invocation ?? string.Empty),
-                VerificationScript = Convert.FromBase64String(x.Verification ?? string.Empty)
-            }).ToArray();
-        }
-
+        /// <summary>
+        /// Invokes a function on a contract.
+        /// <para>Request format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "method": "invokefunction",
+        ///   "params": [
+        ///     "An UInt160 ScriptHash",  // the contract address
+        ///     "operation",  // the operation to invoke
+        ///     [{"type": "ContractParameterType", "value": "The parameter value"}],  // ContractParameter, the arguments
+        ///     [{
+        ///       // The part of the Signer
+        ///       "account": "An UInt160 or Base58Check address", // The account of the signer, required
+        ///       "scopes": "WitnessScope", // WitnessScope, required
+        ///       "allowedcontracts": ["The contract hash(UInt160)"], // optional
+        ///       "allowedgroups": ["PublicKey"], // ECPoint, i.e. ECC PublicKey, optional
+        ///       "rules": [{"action": "WitnessRuleAction", "condition": {/*A json of WitnessCondition*/}}] // WitnessRule
+        ///       // The part of the Witness, optional
+        ///       "invocation": "A Base64-encoded string",
+        ///       "verification": "A Base64-encoded string"
+        ///     }], // A JSON array of signers and witnesses, optional
+        ///     false // useDiagnostic, a bool value indicating whether to use diagnostic information, optional
+        ///   ]
+        /// }</code>
+        /// <para>Response format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "result": {
+        ///     "script": "A Base64-encoded string",
+        ///     "state": "A string of VMState",
+        ///     "gasconsumed": "An integer number in string",
+        ///     "exception": "The exception message",
+        ///     "stack": [{"type": "The stack item type", "value": "The stack item value"}],
+        ///     "notifications": [
+        ///       {"eventname": "The event name", "contract": "The contract hash", "state": {"interface": "A string", "id": "The GUID string"}}
+        ///     ], // The notifications, optional
+        ///     "diagnostics": {
+        ///       "invokedcontracts": {"hash": "The contract hash","call": [{"hash": "The contract hash"}]}, // The invoked contracts
+        ///       "storagechanges": [
+        ///         {
+        ///           "state": "The TrackState string",
+        ///           "key": "The Base64-encoded key",
+        ///           "value": "The Base64-encoded value"
+        ///         }
+        ///         // ...
+        ///       ] // The storage changes
+        ///     }, // The diagnostics, optional, if useDiagnostic is true
+        ///     "session": "A GUID string" // The session id, optional
+        ///   }
+        /// }</code>
+        /// </summary>
+        /// <param name="_params">An array containing the following elements:
+        /// [0]: The script hash of the contract to invoke as a string.
+        /// [1]: The operation to invoke as a string.
+        /// [2]: The arguments to pass to the function as an array of ContractParameter. Optional.
+        /// [3]: The JSON array of signers and witnesses<see cref="ParameterConverter.ToSignersAndWitnesses"/>. Optional.
+        /// [4]: A boolean value indicating whether to use diagnostic information. Optional.
+        /// </param>
+        /// <returns>The result of the function invocation.</returns>
+        /// <exception cref="RpcException">
+        /// Thrown when the script hash is invalid, the contract is not found, or the verification fails.
+        /// </exception>
         [RpcMethod]
         protected internal virtual JToken InvokeFunction(JArray _params)
         {
-            UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash {nameof(script_hash)}"));
-            string operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
-            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : [];
-            Signer[] signers = _params.Count >= 4 ? SignersFromJson((JArray)_params[3], system.Settings) : null;
-            Witness[] witnesses = _params.Count >= 4 ? WitnessesFromJson((JArray)_params[3]) : null;
-            bool useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
+            var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()),
+                RpcError.InvalidParams.WithData($"Invalid script hash `{_params[0]}`"));
+
+            var operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
+            var args = _params.Count >= 3
+                ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray()
+                : [];
+
+            var (signers, witnesses) = _params.Count >= 4
+                ? ((JArray)_params[3]).ToSignersAndWitnesses(system.Settings.AddressVersion)
+                : (null, null);
+
+            var useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
 
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                script = sb.EmitDynamicCall(script_hash, operation, args).ToArray();
+                script = sb.EmitDynamicCall(scriptHash, operation, args).ToArray();
             }
             return GetInvokeResult(script, signers, witnesses, useDiagnostic);
         }
 
+        /// <summary>
+        /// Invokes a script.
+        /// <para>Request format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "method": "invokescript",
+        ///   "params": [
+        ///     "A Base64-encoded script", // the script to invoke
+        ///     [{
+        ///       // The part of the Signer
+        ///       "account": "An UInt160 or Base58Check address", // The account of the signer, required
+        ///       "scopes": "WitnessScope", // WitnessScope, required
+        ///       "allowedcontracts": ["The contract hash(UInt160)"], // optional
+        ///       "allowedgroups": ["PublicKey"], // ECPoint, i.e. ECC PublicKey, optional
+        ///       "rules": [{"action": "WitnessRuleAction", "condition": {/* A json of WitnessCondition */ }}], // WitnessRule
+        ///       // The part of the Witness, optional
+        ///       "invocation": "A Base64-encoded string",
+        ///       "verification": "A Base64-encoded string"
+        ///     }], // A JSON array of signers and witnesses, optional
+        ///     false // useDiagnostic, a bool value indicating whether to use diagnostic information, optional
+        ///   ]
+        /// }</code>
+        /// <para>Response format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "result": {
+        ///     "script": "A Base64-encoded script",
+        ///     "state": "A string of VMState", // see VMState
+        ///     "gasconsumed": "An integer number in string", // The gas consumed
+        ///     "exception": "The exception message", // The exception message
+        ///     "stack": [
+        ///       {"type": "The stack item type", "value": "The stack item value"} // A stack item in the stack
+        ///       // ...
+        ///     ],
+        ///     "notifications": [
+        ///       {"eventname": "The event name", // The name of the event
+        ///        "contract": "The contract hash", // The hash of the contract
+        ///        "state": {"interface": "A string", "id": "The GUID string"} // The state of the event
+        ///       }
+        ///     ], // The notifications, optional
+        ///     "diagnostics": {
+        ///       "invokedcontracts": {"hash": "The contract hash","call": [{"hash": "The contract hash"}]}, // The invoked contracts
+        ///       "storagechanges": [
+        ///         {
+        ///           "state": "The TrackState string",
+        ///           "key": "The Base64-encoded key",
+        ///           "value": "The Base64-encoded value"
+        ///         }
+        ///         // ...
+        ///       ] // The storage changes
+        ///     }, // The diagnostics, optional, if useDiagnostic is true
+        ///     "session": "A GUID string" // The session id, optional
+        ///   }
+        /// }</code>
+        /// </summary>
+        /// <param name="_params">An array containing the following elements:
+        /// [0]: The script as a Base64-encoded string.
+        /// [1]: The JSON array of signers and witnesses<see cref="ParameterConverter.ToSignersAndWitnesses"/>. Optional.
+        /// [3]: A boolean value indicating whether to use diagnostic information. Optional.
+        /// </param>
+        /// <returns>The result of the script invocation.</returns>
+        /// <exception cref="RpcException">
+        /// Thrown when the script is invalid, the verification fails, or the script hash is invalid.
+        /// </exception>
         [RpcMethod]
         protected internal virtual JToken InvokeScript(JArray _params)
         {
-            byte[] script = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams);
-            Signer[] signers = _params.Count >= 2 ? SignersFromJson((JArray)_params[1], system.Settings) : null;
-            Witness[] witnesses = _params.Count >= 2 ? WitnessesFromJson((JArray)_params[1]) : null;
-            bool useDiagnostic = _params.Count >= 3 && _params[2].GetBoolean();
+            var script = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams);
+            var (signers, witnesses) = _params.Count >= 2
+                ? ((JArray)_params[1]).ToSignersAndWitnesses(system.Settings.AddressVersion)
+                : (null, null);
+            var useDiagnostic = _params.Count >= 3 && _params[2].GetBoolean();
             return GetInvokeResult(script, signers, witnesses, useDiagnostic);
         }
 
+        /// <summary>
+        /// <para>Request format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "method": "traverseiterator",
+        ///   "params": [
+        ///     "A GUID string(The session id)",
+        ///     "A GUID string(The iterator id)",
+        ///     100, // An integer number(The number of items to traverse)
+        ///   ]
+        /// }</code>
+        /// <para>Response format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "result": [{"type": "The stack item type", "value": "The stack item value"}]
+        /// }</code>
+        /// </summary>
+        /// <param name="_params"></param>
+        /// <returns></returns>
         [RpcMethod]
         protected internal virtual JToken TraverseIterator(JArray _params)
         {
@@ -261,6 +377,25 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
+        /// <summary>
+        /// Terminates a session.
+        /// <para>Request format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "method": "terminatesession",
+        ///   "params": ["A GUID string(The session id)"]
+        /// }</code>
+        /// <para>Response format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "result": true // true if the session is terminated successfully, otherwise false
+        /// }</code>
+        /// </summary>
+        /// <param name="_params">A 1-element array containing the session id as a GUID string.</param>
+        /// <returns>True if the session is terminated successfully, otherwise false.</returns>
+        /// <exception cref="RpcException">Thrown when the session id is invalid.</exception>
         [RpcMethod]
         protected internal virtual JToken TerminateSession(JArray _params)
         {
@@ -277,12 +412,38 @@ namespace Neo.Plugins.RpcServer
             return result;
         }
 
+        /// <summary>
+        /// Gets the unclaimed gas of an address.
+        /// <para>Request format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "method": "getunclaimedgas",
+        ///   "params": ["An UInt160 or Base58Check address"]
+        /// }</code>
+        /// <para>Response format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "result": {"unclaimed": "An integer in string", "address": "The Base58Check address"}
+        /// }</code>
+        /// </summary>
+        /// <param name="_params">An array containing the following elements:
+        /// [0]: The address as a UInt160 or Base58Check address.
+        /// </param>
+        /// <returns>A JSON object containing the unclaimed gas and the address.</returns>
+        /// <exception cref="RpcException">
+        /// Thrown when the address is invalid.
+        /// </exception>
         [RpcMethod]
         protected internal virtual JToken GetUnclaimedGas(JArray _params)
         {
-            string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invalid address {nameof(address)}"));
+            var address = Result.Ok_Or(() => _params[0].AsString(),
+                RpcError.InvalidParams.WithData($"Invalid address `{_params[0]}`"));
             var json = new JObject();
-            UInt160 scriptHash = Result.Ok_Or(() => AddressToScriptHash(address, system.Settings.AddressVersion), RpcError.InvalidParams);
+            var scriptHash = Result.Ok_Or(
+                () => address.AddressToScriptHash(system.Settings.AddressVersion),
+                RpcError.InvalidParams.WithData($"Invalid address `{address}`"));
 
             var snapshot = system.StoreView;
             json["unclaimed"] = NativeContract.NEO.UnclaimedGas(snapshot, scriptHash, NativeContract.Ledger.CurrentIndex(snapshot) + 1).ToString();

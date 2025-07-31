@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging.EventLog;
 using Neo.Build.ToolSet.Configuration;
 using Neo.Build.ToolSet.Configuration.Converters;
 using Neo.Build.ToolSet.Options;
+using Neo.Build.ToolSet.Services;
 using System;
 using System.ComponentModel;
 using System.Net;
@@ -91,6 +92,8 @@ namespace Neo.Build.ToolSet.Extensions
 
             hostBuilder.ConfigureServices((context, services) =>
             {
+                services.AddHostedService<WebSocketService>();
+
                 // Add default services here
             });
 
