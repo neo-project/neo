@@ -33,7 +33,7 @@ namespace Neo.Plugins.RpcServer
         /// <code>{"jsonrpc": "2.0", "id": 1, "result": 10}</code>
         /// </summary>
         /// <returns>The number of connections as a JToken.</returns>
-        [RpcMethodWithParams]
+        [RpcMethod]
         protected internal virtual JToken GetConnectionCount()
         {
             return localNode.ConnectedCount;
@@ -56,7 +56,7 @@ namespace Neo.Plugins.RpcServer
         /// }</code>
         /// </summary>
         /// <returns>A JObject containing information about unconnected, bad, and connected peers.</returns>
-        [RpcMethodWithParams]
+        [RpcMethod]
         protected internal virtual JToken GetPeers()
         {
             return new JObject()
@@ -146,7 +146,7 @@ namespace Neo.Plugins.RpcServer
         /// }</code>
         /// </summary>
         /// <returns>A JObject containing detailed version and configuration information.</returns>
-        [RpcMethodWithParams]
+        [RpcMethod]
         protected internal virtual JToken GetVersion()
         {
             JObject json = new();
@@ -205,7 +205,7 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <param name="base64Tx">The base64-encoded transaction.</param>
         /// <returns>A JToken containing the result of the transaction relay.</returns>
-        [RpcMethodWithParams]
+        [RpcMethod]
         protected internal virtual JToken SendRawTransaction(string base64Tx)
         {
             var tx = Result.Ok_Or(
@@ -225,7 +225,7 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <param name="base64Block">The base64-encoded block.</param>
         /// <returns>A JToken containing the result of the block submission.</returns>
-        [RpcMethodWithParams]
+        [RpcMethod]
         protected internal virtual JToken SubmitBlock(string base64Block)
         {
             var block = Result.Ok_Or(
