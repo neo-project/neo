@@ -13,8 +13,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
@@ -30,18 +30,42 @@ namespace Neo.Plugins.RpcServer.Tests
 {
     partial class UT_RpcServer
     {
+        private const string WalletJson = """
+        {
+            "name":null,
+            "version":"1.0",
+            "scrypt":{"n":16384, "r":8, "p":8 },
+            "accounts":[{
+                "address":"NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv",
+                "label":null,
+                "isDefault":false,
+                "lock":false,
+                "key":"6PYPMrsCJ3D4AXJCFWYT2WMSBGF7dLoaNipW14t4UFAkZw3Z9vQRQV1bEU",
+                "contract":{
+                    "script":"DCEDaR+FVb8lOdiMZ/wCHLiI+zuf17YuGFReFyHQhB80yMpBVuezJw==",
+                    "parameters":[{"name":"signature", "type":"Signature"}],
+                    "deployed":false
+                },
+                "extra":null
+            }],
+            "extra":null
+        }
+        """;
+
         [TestMethod]
         public void TestOpenWallet()
         {
             const string Path = "wallet-TestOpenWallet.json";
             const string Password = "123456";
-            File.WriteAllText(Path, "{\"name\":null,\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv\",\"label\":null,\"isDefault\":false,\"lock\":false,\"key\":\"6PYPMrsCJ3D4AXJCFWYT2WMSBGF7dLoaNipW14t4UFAkZw3Z9vQRQV1bEU\",\"contract\":{\"script\":\"DCEDaR\\u002BFVb8lOdiMZ/wCHLiI\\u002Bzuf17YuGFReFyHQhB80yMpBVuezJw==\",\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}");
+            File.WriteAllText(Path, WalletJson);
+
             var paramsArray = new JArray(Path, Password);
             var res = _rpcServer.OpenWallet(paramsArray);
             Assert.IsTrue(res.AsBoolean());
             Assert.IsNotNull(_rpcServer.wallet);
             Assert.AreEqual("NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv", _rpcServer.wallet.GetAccounts().FirstOrDefault()!.Address);
-            _rpcServer.CloseWallet([]);
+
+            _rpcServer.CloseWallet();
             File.Delete(Path);
             Assert.IsNull(_rpcServer.wallet);
         }
@@ -52,6 +76,7 @@ namespace Neo.Plugins.RpcServer.Tests
             const string Path = "wallet-TestOpenInvalidWallet.json";
             const string Password = "password";
             File.Delete(Path);
+
             var paramsArray = new JArray(Path, Password);
             var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.OpenWallet(paramsArray), "Should throw RpcException for unsupported wallet");
             Assert.AreEqual(RpcError.WalletNotFound.Code, exception.HResult);
@@ -60,11 +85,11 @@ namespace Neo.Plugins.RpcServer.Tests
             exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.OpenWallet(paramsArray), "Should throw RpcException for unsupported wallet");
             File.Delete(Path);
             Assert.AreEqual(RpcError.WalletNotSupported.Code, exception.HResult);
-            var result = _rpcServer.CloseWallet(new JArray());
+            var result = _rpcServer.CloseWallet();
             Assert.IsTrue(result.AsBoolean());
             Assert.IsNull(_rpcServer.wallet);
 
-            File.WriteAllText(Path, "{\"name\":null,\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv\",\"label\":null,\"isDefault\":false,\"lock\":false,\"key\":\"6PYPMrsCJ3D4AXJCFWYT2WMSBGF7dLoaNipW14t4UFAkZw3Z9vQRQV1bEU\",\"contract\":{\"script\":\"DCEDaR\\u002BFVb8lOdiMZ/wCHLiI\\u002Bzuf17YuGFReFyHQhB80yMpBVuezJw==\",\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}");
+            File.WriteAllText(Path, WalletJson);
             exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.OpenWallet(paramsArray), "Should throw RpcException for unsupported wallet");
             Assert.AreEqual(RpcError.WalletNotSupported.Code, exception.HResult);
             Assert.AreEqual("Wallet not supported - Invalid password.", exception.Message);
@@ -111,7 +136,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetNewAddress()
         {
             TestUtilOpenWallet();
-            var result = _rpcServer.GetNewAddress([]);
+            var result = _rpcServer.GetNewAddress();
             Assert.IsInstanceOfType(result, typeof(JString));
             Assert.IsTrue(_rpcServer.wallet.GetAccounts().Any(a => a.Address == result.AsString()));
             TestUtilCloseWallet();
@@ -160,7 +185,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetWalletUnclaimedGas()
         {
             TestUtilOpenWallet();
-            var result = _rpcServer.GetWalletUnclaimedGas([]);
+            var result = _rpcServer.GetWalletUnclaimedGas();
             Assert.IsInstanceOfType(result, typeof(JString));
             TestUtilCloseWallet();
         }
@@ -206,6 +231,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestImportPrivKey_KeyAlreadyExists()
         {
             TestUtilOpenWallet();
+
             // Get a key already in the default test wallet
             var existingAccount = _rpcServer.wallet.GetAccounts().First(a => a.HasKey);
             var existingWif = existingAccount.GetKey().Export();
@@ -236,6 +262,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var paramsArray = new JArray(txBase64);
             var result = _rpcServer.CalculateNetworkFee(paramsArray);
             Assert.IsInstanceOfType(result, typeof(JObject));
+
             var json = (JObject)result;
             Assert.IsTrue(json.ContainsProperty("networkfee"));
         }
@@ -250,7 +277,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestListAddressNoWallet()
         {
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ListAddress([]));
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ListAddress());
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -258,8 +285,9 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestListAddress()
         {
             TestUtilOpenWallet();
-            var result = _rpcServer.ListAddress([]);
+            var result = _rpcServer.ListAddress();
             Assert.IsInstanceOfType(result, typeof(JArray));
+
             var json = (JArray)result;
             Assert.IsTrue(json.Count > 0);
             TestUtilCloseWallet();
@@ -305,7 +333,9 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestSendMany()
         {
             var from = _walletAccount.Address;
-            var to = new JArray { new JObject { ["asset"] = NativeContract.GAS.Hash.ToString(), ["value"] = "1", ["address"] = _walletAccount.Address } };
+            var to = new JArray {
+                new JObject { ["asset"] = NativeContract.GAS.Hash.ToString(), ["value"] = "1", ["address"] = _walletAccount.Address }
+            };
             var paramsArray = new JArray(from, to);
             var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendMany(paramsArray), "Should throw RpcException for insufficient funds");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
@@ -420,7 +450,9 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             TestUtilOpenWallet();
             var invalidFrom = "NotAnAddress";
-            var to = new JArray { new JObject { ["asset"] = NativeContract.GAS.Hash.ToString(), ["value"] = "1", ["address"] = _walletAccount.Address } };
+            var to = new JArray {
+                new JObject { ["asset"] = NativeContract.GAS.Hash.ToString(), ["value"] = "1", ["address"] = _walletAccount.Address }
+            };
             var paramsArray = new JArray(invalidFrom, to);
 
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendMany(paramsArray));
@@ -445,7 +477,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestCloseWallet_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var result = _rpcServer.CloseWallet(new JArray());
+            var result = _rpcServer.CloseWallet();
             Assert.IsTrue(result.AsBoolean());
         }
 
@@ -453,7 +485,9 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestDumpPrivKey_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.DumpPrivKey(new JArray(_walletAccount.Address)), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.DumpPrivKey(new JArray(_walletAccount.Address)),
+                "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -461,7 +495,9 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetNewAddress_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetNewAddress(new JArray()), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.GetNewAddress(),
+                "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -469,7 +505,9 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetWalletBalance_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetWalletBalance(new JArray(NativeContract.NEO.Hash.ToString())), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.GetWalletBalance(new JArray(NativeContract.NEO.Hash.ToString())),
+                "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -477,7 +515,9 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetWalletUnclaimedGas_WhenWalletNotOpen()
         {
             _rpcServer.wallet = null;
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetWalletUnclaimedGas(new JArray()), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.GetWalletUnclaimedGas(),
+                "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -486,7 +526,9 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             _rpcServer.wallet = null;
             var privKey = _walletAccount.GetKey().Export();
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ImportPrivKey(new JArray(privKey)), "Should throw RpcException for no opened wallet");
+            var exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.ImportPrivKey(new JArray(privKey)),
+                "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         }
 
@@ -495,7 +537,9 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             var invalidTxBase64 = "invalid_base64";
             var paramsArray = new JArray(invalidTxBase64);
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.CalculateNetworkFee(paramsArray), "Should throw RpcException for invalid transaction format");
+            var exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.CalculateNetworkFee(paramsArray),
+                "Should throw RpcException for invalid transaction format");
             Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
         }
 
@@ -506,7 +550,7 @@ namespace Neo.Plugins.RpcServer.Tests
             _rpcServer.wallet = null;
 
             // Attempt to call ListAddress and expect an RpcException
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ListAddress(new JArray()));
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ListAddress());
 
             // Verify the exception has the expected error code
             Assert.AreEqual(RpcError.NoOpenedWallet.Code, exception.HResult);
@@ -520,35 +564,50 @@ namespace Neo.Plugins.RpcServer.Tests
             var snapshot = _neoSystem.GetSnapshotCache();
             var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
             snapshot.Commit();
-            var paramsArray = new JArray(tx.Hash.ToString(), new JArray(_walletAccount.Address));
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.CancelTransaction(paramsArray), "Should throw RpcException for non-existing transaction");
 
+            var paramsArray = new JArray(tx.Hash.ToString(), new JArray(_walletAccount.Address));
+            var exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.CancelTransaction(paramsArray),
+                "Should throw RpcException for non-existing transaction");
             Assert.AreEqual(RpcError.InsufficientFunds.Code, exception.HResult);
 
             // Test with invalid transaction id
             var invalidParamsArray = new JArray("invalid_txid", new JArray(_walletAccount.Address));
-            exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.CancelTransaction(invalidParamsArray), "Should throw RpcException for invalid txid");
+            exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.CancelTransaction(invalidParamsArray),
+                "Should throw RpcException for invalid txid");
             Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
 
             // Test with no signer
             invalidParamsArray = new JArray(tx.Hash.ToString());
-            exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.CancelTransaction(invalidParamsArray), "Should throw RpcException for invalid txid");
+            exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.CancelTransaction(invalidParamsArray),
+                "Should throw RpcException for invalid txid");
             Assert.AreEqual(exception.HResult, RpcError.BadRequest.Code);
 
             // Test with null wallet
             _rpcServer.wallet = null;
-            exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.CancelTransaction(paramsArray), "Should throw RpcException for no opened wallet");
+            exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.CancelTransaction(paramsArray),
+                "Should throw RpcException for no opened wallet");
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
             TestUtilCloseWallet();
 
             // Test valid cancel
             _rpcServer.wallet = _wallet;
-            JObject resp = (JObject)_rpcServer.SendFrom(new JArray(NativeContract.GAS.Hash.ToString(), _walletAccount.Address, _walletAccount.Address, "1"));
-            string txHash = resp["hash"].AsString();
+            var resp = (JObject)_rpcServer.SendFrom([
+                NativeContract.GAS.Hash.ToString(),
+                _walletAccount.Address,
+                _walletAccount.Address,
+                "1"
+            ]);
+
+            var txHash = resp["hash"].AsString();
             resp = (JObject)_rpcServer.CancelTransaction(new JArray(txHash, new JArray(ValidatorAddress), "1"));
             Assert.AreEqual(12, resp.Count);
             Assert.AreEqual(resp["sender"], ValidatorAddress);
-            JArray signers = (JArray)resp["signers"];
+
+            var signers = (JArray)resp["signers"];
             Assert.AreEqual(1, signers.Count);
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
             Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.None));
@@ -561,23 +620,69 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             var scriptHash = UInt160.Parse("0x70cde1619e405cdef363ab66a1e8dce430d798d5");
             var paramsArray = new JArray(scriptHash.ToString());
-            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.InvokeContractVerify(paramsArray), "Should throw RpcException for unknown contract");
+            var exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.InvokeContractVerify(paramsArray),
+                "Should throw RpcException for unknown contract");
             Assert.AreEqual(exception.HResult, RpcError.UnknownContract.Code);
+
             // Test with invalid script hash
             var invalidParamsArray = new JArray("invalid_script_hash");
-            exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.InvokeContractVerify(invalidParamsArray), "Should throw RpcException for invalid script hash");
+            exception = Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.InvokeContractVerify(invalidParamsArray),
+                "Should throw RpcException for invalid script hash");
             Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
-            string base64NefFile = "TkVGM05lby5Db21waWxlci5DU2hhcnAgMy43LjQrNjAzNGExODIxY2E3MDk0NjBlYzMxMzZjNzBjMmRjYzNiZWEuLi4AAAAAAGNXAAJ5JgQiGEEtUQgwE84MASDbMEGb9mfOQeY/GIRADAEg2zBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEBXAAERiEoQeNBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEDo2WhC";
-            string manifest = """{"name":"ContractWithVerify","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"_deploy","parameters":[{"name":"data","type":"Any"},{"name":"update","type":"Boolean"}],"returntype":"Void","offset":0,"safe":false},{"name":"verify","parameters":[],"returntype":"Boolean","offset":31,"safe":false},{"name":"verify","parameters":[{"name":"prefix","type":"Integer"}],"returntype":"Boolean","offset":63,"safe":false}],"events":[]},"permissions":[],"trusts":[],"extra":{"nef":{"optimization":"All"}}}""";
-            JObject deployResp = (JObject)_rpcServer.InvokeFunction(new JArray([ContractManagement.ContractManagement.Hash.ToString(),
+
+            string base64NefFile = "TkVGM05lby5Db21waWxlci5DU2hhcnAgMy43LjQrNjAzNGExODIxY2E3MDk0NjBlYzMxMzZjNzBjMmRjY" +
+                "zNiZWEuLi4AAAAAAGNXAAJ5JgQiGEEtUQgwE84MASDbMEGb9mfOQeY/GIRADAEg2zBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002B" +
+                "CfsjEBXAAERiEoQeNBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEDo2WhC";
+            string manifest = """
+            {
+                "name":"ContractWithVerify",
+                "groups":[],
+                "features":{},
+                "supportedstandards":[],
+                "abi":{
+                    "methods":[
+                        {
+                            "name":"_deploy",
+                            "parameters":[{"name":"data","type":"Any"},{"name":"update","type":"Boolean"}],
+                            "returntype":"Void",
+                            "offset":0,
+                            "safe":false
+                        }, {
+                            "name":"verify",
+                            "parameters":[],
+                            "returntype":"Boolean",
+                            "offset":31,
+                            "safe":false
+                        }, {
+                            "name":"verify",
+                            "parameters":[{"name":"prefix","type":"Integer"}],
+                            "returntype":"Boolean",
+                            "offset":63,
+                            "safe":false
+                        }
+                    ],
+                    "events":[]
+                },
+                "permissions":[],
+                "trusts":[],
+                "extra":{"nef":{"optimization":"All"}}
+            }
+            """;
+
+            var deployResp = (JObject)_rpcServer.InvokeFunction(
+                NativeContract.ContractManagement.Hash,
                 "deploy",
-                new JArray([
-                    new JObject() { ["type"] = nameof(ContractParameterType.ByteArray), ["value"] = base64NefFile },
-                    new JObject() { ["type"] = nameof(ContractParameterType.String), ["value"] = manifest },
-                ]),
-                validatorSigner]));
+                [
+                    new(ContractParameterType.ByteArray) { Value = Convert.FromBase64String(base64NefFile) },
+                    new(ContractParameterType.String) { Value = manifest },
+                ],
+                validatorSigner.AsParameter<SignersAndWitnesses>()
+            );
             Assert.AreEqual(deployResp["state"], nameof(VMState.HALT));
-            UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
+
+            var deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
             var snapshot = _neoSystem.GetSnapshotCache();
             var tx = new Transaction
             {
@@ -588,65 +693,76 @@ namespace Neo.Plugins.RpcServer.Tests
                 Script = Convert.FromBase64String(deployResp["script"].AsString()),
                 Witnesses = null,
             };
-            ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: _neoSystem.Settings, gas: 1200_0000_0000);
+
+            var engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: _neoSystem.Settings, gas: 1200_0000_0000);
             engine.SnapshotCache.Commit();
 
             // invoke verify without signer; should return false
             JObject resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString()]);
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(false, resp["stack"][0]["value"].AsBoolean());
+
             // invoke verify with signer; should return true
             resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([]), validatorSigner]);
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(true, resp["stack"][0]["value"].AsBoolean());
+
             // invoke verify with wrong input value; should FAULT
-            resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "0" }]), validatorSigner]);
+            resp = (JObject)_rpcServer.InvokeContractVerify([
+                deployedScriptHash.ToString(),
+                new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "0" }]),
+                validatorSigner
+            ]);
             Assert.AreEqual(resp["state"], nameof(VMState.FAULT));
             Assert.AreEqual(resp["exception"], "Object reference not set to an instance of an object.");
+
             // invoke verify with 1 param and signer; should return true
-            resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]);
+            resp = (JObject)_rpcServer.InvokeContractVerify([
+                deployedScriptHash.ToString(),
+                new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]),
+                validatorSigner,
+            ]);
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(true, resp["stack"][0]["value"].AsBoolean());
+
             // invoke verify with 2 param (which does not exist); should throw Exception
-            Assert.ThrowsExactly<RpcException>(action: () => _ = _rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }, new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]),
-                message: $"Invalid contract verification function - The smart contract {deployedScriptHash} haven't got verify method with 2 input parameters.", []);
+            Assert.ThrowsExactly<RpcException>(
+                () => _ = _rpcServer.InvokeContractVerify([
+                    deployedScriptHash.ToString(),
+                    new JArray([
+                        new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" },
+                        new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }
+                    ]),
+                    validatorSigner
+                ]),
+                $"Invalid contract verification function - The smart contract {deployedScriptHash} haven't got verify method with 2 input parameters.",
+                []
+            );
         }
 
         private void TestUtilOpenWallet([CallerMemberName] string callerMemberName = "")
         {
-            try
-            {
-                // Avoid using the same wallet file for different tests when they are run in parallel
-                string path = $"wallet_{callerMemberName}.json";
-                const string Password = "123456";
-                File.WriteAllText(path, "{\"name\":null,\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv\",\"label\":null,\"isDefault\":false,\"lock\":false,\"key\":\"6PYPMrsCJ3D4AXJCFWYT2WMSBGF7dLoaNipW14t4UFAkZw3Z9vQRQV1bEU\",\"contract\":{\"script\":\"DCEDaR\\u002BFVb8lOdiMZ/wCHLiI\\u002Bzuf17YuGFReFyHQhB80yMpBVuezJw==\",\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}");
-                var paramsArray = new JArray(path, Password);
-                _rpcServer.OpenWallet(paramsArray);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            const string Password = "123456";
+
+            // Avoid using the same wallet file for different tests when they are run in parallel
+            var path = $"wallet_{callerMemberName}.json";
+            File.WriteAllText(path, WalletJson);
+
+            var paramsArray = new JArray(path, Password);
+            _rpcServer.OpenWallet(paramsArray);
         }
 
         private void TestUtilCloseWallet()
         {
-            try
-            {
-                const string Path = "wallet-TestUtilCloseWallet.json";
-                _rpcServer.CloseWallet([]);
-                File.Delete(Path);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+
+            const string Path = "wallet-TestUtilCloseWallet.json";
+            _rpcServer.CloseWallet();
+            File.Delete(Path);
         }
 
         private UInt160 TestUtilAddTestContract()
         {
             var state = TestUtils.GetContract();
-
             var storageKey = new StorageKey
             {
                 Id = state.Id,
