@@ -102,6 +102,9 @@ jobs:
       run: |
         rm -v -R runtimes
         rm -v Neo*
+        mv LevelDBStore.dll LevelDBStore.so
+        rm -v *.dll
+        mv LevelDBStore.so LevelDBStore.dll
 
     # Create the distribution directory
     - name: Create Distribution Directory
