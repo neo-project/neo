@@ -62,7 +62,14 @@ namespace Neo.Plugins.RestServer.Tokens
             if (ContractHelper.GetContractMethod(_dataCache, ScriptHash, "balanceOf", 1) == null)
                 throw new NotSupportedException(nameof(ScriptHash));
             if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _dataCache, ScriptHash, "balanceOf", out var result, address))
-                return new BigDecimal(result[0].GetInteger(), Decimals);
+            {
+                BigInteger balance = BigInteger.Zero;
+                if (result != null && result[0] != StackItem.Null)
+                {
+                    balance = result[0].GetInteger();
+                }
+                return new BigDecimal(balance, Decimals);
+            }
             return new BigDecimal(BigInteger.Zero, Decimals);
         }
 
