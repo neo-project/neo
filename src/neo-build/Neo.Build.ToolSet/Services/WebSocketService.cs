@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Neo.Build.Core;
 using Neo.Build.Core.Exceptions;
+using Neo.Build.Core.Models;
+using Neo.Build.ToolSet.Net;
 using System;
 using System.Buffers;
 using System.CommandLine;
@@ -22,6 +24,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -51,6 +54,8 @@ namespace Neo.Build.ToolSet.Services
         }
 
         public WebSocketOptions SocketOptions => _socketOptions;
+
+        private static RpcDispatcher JsonRpcDispatcher { get; } = new();
 
         private readonly IWebHost _webHost;
         private readonly WebSocketOptions _socketOptions;
@@ -90,7 +95,7 @@ namespace Neo.Build.ToolSet.Services
 
             var pipe = new Pipe();
             var writer = FillPipeAsync(webSocket, pipe.Writer);
-            var reader = ReadPipeAsync(pipe.Reader);
+            var reader = ReadPipeAsync(webSocket, pipe.Reader);
 
             await _tcs.Task;
         }
@@ -102,28 +107,36 @@ namespace Neo.Build.ToolSet.Services
             return string.IsNullOrWhiteSpace(json) == false;
         }
 
+        private async Task SendJson(WebSocket webSocket, object message)
+        {
+            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(message);
+            var segment = new ArraySegment<byte>(jsonBytes);
+
+            await webSocket.SendAsync(segment, WebSocketMessageType.Text, endOfMessage: true, _cts.Token);
+        }
+
         private async Task FillPipeAsync(WebSocket socket, PipeWriter writer)
         {
             var buffer = new byte[1024 * 4];
 
             while (socket.State == WebSocketState.Open)
             {
-                var result = await socket.ReceiveAsync(buffer, CancellationToken.None);
+                var result = await socket.ReceiveAsync(buffer, _cts.Token);
 
                 if (result.MessageType == WebSocketMessageType.Close)
                     break;
 
                 writer.Write(buffer.AsSpan(0, result.Count));
 
-                var flush = await writer.FlushAsync();
-                if (flush.IsCompleted) break;
+                if (result.EndOfMessage)
+                    await writer.FlushAsync();
             }
 
             await writer.CompleteAsync();
             _tcs.TrySetResult();
         }
 
-        private async Task ReadPipeAsync(PipeReader reader)
+        private async Task ReadPipeAsync(WebSocket webSocket, PipeReader reader)
         {
             while (true)
             {
@@ -132,8 +145,23 @@ namespace Neo.Build.ToolSet.Services
 
                 while (TryReadJson(ref buffer, out var jsonString))
                 {
-                    //var jsonObject = JsonSerializer.Deserialize(jsonString);
-                    _console.Write(jsonString);
+                    try
+                    {
+                        var request = JsonSerializer.Deserialize<JsonRpcRequest<object>>(jsonString);
+                        var response = await JsonRpcDispatcher.DispatchAsync(request);
+
+                        await SendJson(webSocket, response);
+
+                        //_console.Write(jsonString);
+                    }
+                    catch (JsonException ex)
+                    {
+                        await SendJson(webSocket, new JsonRpcError() { Code = -32700, Message = ex.Message });
+                    }
+                    catch (Exception ex)
+                    {
+                        _tcs.TrySetException(ex);
+                    }
                 }
 
                 reader.AdvanceTo(buffer.Start, buffer.End);
