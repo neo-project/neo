@@ -35,8 +35,10 @@ namespace Neo.Network.RPC
     /// </summary>
     public class RpcClient : IDisposable
     {
-        private readonly HttpClient _httpClient;
         private readonly Uri _baseAddress;
+        private readonly HttpClient _httpClient;
+        private static readonly Regex s_rpcNameRegex = new("(.*?)(Hex|Both)?(Async)?", RegexOptions.Compiled);
+
         internal readonly ProtocolSettings protocolSettings;
 
         public RpcClient(Uri url, string rpcUser = default, string rpcPass = default, ProtocolSettings protocolSettings = null)
@@ -148,7 +150,6 @@ namespace Neo.Network.RPC
             return response.Result;
         }
 
-        private static readonly Regex s_rpcNameRegex = new("(.*?)(Hex|Both)?(Async)?", RegexOptions.Compiled);
         public static string GetRpcName([CallerMemberName] string methodName = null)
         {
             return s_rpcNameRegex.Replace(methodName, "$1").ToLowerInvariant();
