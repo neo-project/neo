@@ -15,6 +15,7 @@ using Neo.Plugins.RestServer.Helpers;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Numerics;
 
@@ -63,7 +64,7 @@ namespace Neo.Plugins.RestServer.Tokens
                 throw new NotSupportedException(nameof(ScriptHash));
             if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _dataCache, ScriptHash, "balanceOf", out var result, address))
             {
-                BigInteger balance = BigInteger.Zero;
+                var balance = BigInteger.Zero;
                 if (result != null && result[0] != StackItem.Null)
                 {
                     balance = result[0].GetInteger();
