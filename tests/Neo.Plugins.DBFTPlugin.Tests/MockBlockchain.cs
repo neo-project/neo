@@ -14,8 +14,6 @@ using Microsoft.Extensions.Configuration;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.Persistence.Providers;
-using Neo.Plugins.DBFTPlugin;
-using Neo.UnitTests;
 using System;
 using System.Collections.Generic;
 
@@ -43,10 +41,10 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         internal static void ResetStore()
         {
             Store.Reset();
-            TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
+            TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
-        internal static Settings CreateDefaultSettings()
+        internal static DbftSettings CreateDefaultSettings()
         {
             var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string>
@@ -60,7 +58,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 })
                 .Build();
 
-            return new Settings(config.GetSection("ApplicationConfiguration:DBFTPlugin"));
+            return new DbftSettings(config.GetSection("ApplicationConfiguration:DBFTPlugin"));
         }
 
         internal static DataCache GetTestSnapshot()

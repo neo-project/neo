@@ -93,7 +93,7 @@ namespace Neo.Plugins.OracleService.Tests
                 InvocationScript = new byte[] { (byte)OpCode.PUSHDATA1, (byte)signature.Length }.Concat(signature).ToArray(),
                 VerificationScript = MultisigScript,
             };
-            s_theNeoSystem.Blockchain.Ask(block).Wait();
+            s_theNeoSystem.Blockchain.Ask(block).ConfigureAwait(false).GetAwaiter().GetResult();
             Task t = s_oracle.Start(s_wallet);
             t.Wait(TimeSpan.FromMilliseconds(900));
             s_oracle.cancelSource.Cancel();
