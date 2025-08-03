@@ -19,7 +19,7 @@ namespace Neo.Plugins.RpcServer
         public override string Name => "RpcServer";
         public override string Description => "Enables RPC for the node";
 
-        private Settings settings;
+        private RpcServerSettings settings;
         private static readonly Dictionary<uint, RpcServer> servers = new();
         private static readonly Dictionary<uint, List<object>> handlers = new();
 
@@ -28,8 +28,8 @@ namespace Neo.Plugins.RpcServer
 
         protected override void Configure()
         {
-            settings = new Settings(GetConfiguration());
-            foreach (RpcServerSettings s in settings.Servers)
+            settings = new RpcServerSettings(GetConfiguration());
+            foreach (var s in settings.Servers)
                 if (servers.TryGetValue(s.Network, out RpcServer server))
                     server.UpdateSettings(s);
         }
@@ -43,7 +43,7 @@ namespace Neo.Plugins.RpcServer
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
-            RpcServerSettings s = settings.Servers.FirstOrDefault(p => p.Network == system.Settings.Network);
+            var s = settings.Servers.FirstOrDefault(p => p.Network == system.Settings.Network);
             if (s is null) return;
 
             if (s.EnableCors && string.IsNullOrEmpty(s.RpcUser) == false && s.AllowOrigins.Length == 0)

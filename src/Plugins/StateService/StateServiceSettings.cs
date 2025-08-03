@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// Settings.cs file belongs to the neo project and is free
+// StateServiceSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Neo.Plugins.StateService
 {
-    internal class Settings : PluginSettings
+    internal class StateServiceSettings : IPluginSettings
     {
         public string Path { get; }
         public bool FullState { get; }
@@ -21,20 +21,23 @@ namespace Neo.Plugins.StateService
         public bool AutoVerify { get; }
         public int MaxFindResultItems { get; }
 
-        public static Settings Default { get; private set; }
+        public static StateServiceSettings Default { get; private set; }
 
-        private Settings(IConfigurationSection section) : base(section)
+        public UnhandledExceptionPolicy ExceptionPolicy { get; }
+
+        private StateServiceSettings(IConfigurationSection section)
         {
             Path = section.GetValue("Path", "Data_MPT_{0}");
             FullState = section.GetValue("FullState", false);
             Network = section.GetValue("Network", 5195086u);
             AutoVerify = section.GetValue("AutoVerify", false);
             MaxFindResultItems = section.GetValue("MaxFindResultItems", 100);
+            ExceptionPolicy = section.GetValue("UnhandledExceptionPolicy", UnhandledExceptionPolicy.StopPlugin);
         }
 
         public static void Load(IConfigurationSection section)
         {
-            Default = new Settings(section);
+            Default = new StateServiceSettings(section);
         }
     }
 }
