@@ -25,7 +25,7 @@ namespace Neo.IEventHandlers
         public int PendingTasks { get; set; }
         public int HighPriorityQueueSize { get; set; }
         public int LowPriorityQueueSize { get; set; }
-        public Dictionary<string, long> MessagesSentByType { get; set; } = new Dictionary<string, long>();
-        public Dictionary<string, long> MessagesReceivedByType { get; set; } = new Dictionary<string, long>();
+        public Dictionary<string, long> MessagesSentByType { get; set; } = [];
+        public Dictionary<string, long> MessagesReceivedByType { get; set; } = [];
     }
 }
