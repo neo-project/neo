@@ -15,6 +15,7 @@ using Neo.Network.P2P;
 using System;
 using System.Linq;
 using System.Net;
+using System.Threading;
 
 namespace Neo.UnitTests.Network.P2P
 {
@@ -35,7 +36,7 @@ namespace Neo.UnitTests.Network.P2P
             var senderProbe = CreateTestProbe();
             senderProbe.Send(_system.LocalNode, new ChannelsConfig()); // No Tcp
             senderProbe.Send(_system.LocalNode, new LocalNode.GetInstance());
-            var localnode = senderProbe.ExpectMsg<LocalNode>();
+            var localnode = senderProbe.ExpectMsg<LocalNode>(cancellationToken: CancellationToken.None);
 
             Assert.AreEqual(0, localnode.ListenerTcpPort);
             Assert.AreEqual(3, localnode.Config.MaxConnectionsPerAddress);
