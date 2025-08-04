@@ -168,9 +168,39 @@ namespace Neo.Cryptography.BN254
         private static Scalar MontgomeryReduce(ulong r0, ulong r1, ulong r2, ulong r3, 
                                               ulong r4, ulong r5, ulong r6, ulong r7)
         {
-            // Montgomery reduction implementation
-            // This is a simplified version - actual implementation would be more complex
-            Scalar result = new(r0, r1, r2, r3);
+            // Montgomery reduction using BN254 scalar field inverse: 0xf0fd797b2c3f5d5
+            const ulong inv = 0xf0fd797b2c3f5d5;
+            
+            // Montgomery reduction steps
+            ulong k = r0 * inv;
+            (_, var carry) = Mac(r0, k, MODULUS.u0, 0);
+            (r1, carry) = Mac(r1, k, MODULUS.u1, carry);
+            (r2, carry) = Mac(r2, k, MODULUS.u2, carry);
+            (r3, carry) = Mac(r3, k, MODULUS.u3, carry);
+            (r4, r5) = Adc(r4, 0, carry);
+            
+            k = r1 * inv;
+            (_, carry) = Mac(r1, k, MODULUS.u0, 0);
+            (r2, carry) = Mac(r2, k, MODULUS.u1, carry);
+            (r3, carry) = Mac(r3, k, MODULUS.u2, carry);
+            (r4, carry) = Mac(r4, k, MODULUS.u3, carry);
+            (r5, r6) = Adc(r5, 0, carry);
+            
+            k = r2 * inv;
+            (_, carry) = Mac(r2, k, MODULUS.u0, 0);
+            (r3, carry) = Mac(r3, k, MODULUS.u1, carry);
+            (r4, carry) = Mac(r4, k, MODULUS.u2, carry);
+            (r5, carry) = Mac(r5, k, MODULUS.u3, carry);
+            (r6, r7) = Adc(r6, 0, carry);
+            
+            k = r3 * inv;
+            (_, carry) = Mac(r3, k, MODULUS.u0, 0);
+            (r4, carry) = Mac(r4, k, MODULUS.u1, carry);
+            (r5, carry) = Mac(r5, k, MODULUS.u2, carry);
+            (r6, carry) = Mac(r6, k, MODULUS.u3, carry);
+            (r7, _) = Adc(r7, 0, carry);
+            
+            var result = new Scalar(r4, r5, r6, r7);
             return result.Reduce();
         }
 
@@ -253,6 +283,30 @@ namespace Neo.Cryptography.BN254
         public override string ToString()
         {
             return $"0x{u3:x16}{u2:x16}{u1:x16}{u0:x16}";
+        }
+
+        internal ulong GetLimb(int index)
+        {
+            return index switch
+            {
+                0 => u0,
+                1 => u1,
+                2 => u2,
+                3 => u3,
+                _ => throw new ArgumentOutOfRangeException(nameof(index))
+            };
+        }
+
+        internal Scalar SetLimb(int index, ulong value)
+        {
+            return index switch
+            {
+                0 => new Scalar(value, u1, u2, u3),
+                1 => new Scalar(u0, value, u2, u3),
+                2 => new Scalar(u0, u1, value, u3),
+                3 => new Scalar(u0, u1, u2, value),
+                _ => throw new ArgumentOutOfRangeException(nameof(index))
+            };
         }
     }
 }

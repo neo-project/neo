@@ -183,8 +183,8 @@ namespace Neo.Cryptography.BN254
 
         private static bool Sqrt(in Fp a, out Fp result)
         {
-            // Tonelli-Shanks algorithm for BN254
-            // This is a simplified implementation
+            // Tonelli-Shanks algorithm for BN254 square root
+            // For p ≡ 3 (mod 4), we can use a^((p+1)/4) for square root
             result = a.PowVartime(new ulong[] {
                 0x0f40231095ee3347,
                 0x25e05a5a347a3c4b,

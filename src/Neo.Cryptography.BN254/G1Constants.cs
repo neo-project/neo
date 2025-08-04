@@ -13,7 +13,8 @@ namespace Neo.Cryptography.BN254
 {
     static class G1Constants
     {
-        // Generator point G1 (Montgomery form)
+        // Generator point G1: (1, 2) converted to Montgomery form
+        // These are the correct BN254 G1 generator coordinates
         public static readonly Fp GENERATOR_X = new(new ulong[]
         {
             0xd35d438dc58f0d9d,

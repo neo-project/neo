@@ -112,6 +112,7 @@ namespace Neo.Cryptography.BN254
                 throw new ArgumentException("Input must be compressed");
 
             bool infinity = (bytes[0] & 0x40) != 0;
+            bool sort = (bytes[0] & 0x20) != 0;
             if (infinity)
                 return Identity;
 
@@ -121,9 +122,69 @@ namespace Neo.Cryptography.BN254
 
             var x = Fp2.FromBytes(tmp);
             
-            // For now, return a dummy point
-            // In a real implementation, we would compute y from the curve equation
-            return new G2Affine(x, Fp2.One, false);
+            // Compute y from curve equation: y^2 = x^3 + b
+            var x3 = x.Square() * x;
+            var b = new Fp2(
+                new Fp(new ulong[] { 0x2b149d40ceb8aaae, 0x3a18e4a61c076267, 0x45c2ac2962a12902, 0x09192585375e4d42 }),
+                new Fp(new ulong[] { 0x0c54bba1d6f46fef, 0x5d784e17b8c00409, 0x21f828ff3dc8ca4d, 0x009075b4ee4d3ff4 })
+            );
+            var rhs = x3 + b;
+            
+            if (!Fp2Sqrt(in rhs, out var y))
+                throw new ArgumentException("Invalid point - not on curve");
+            
+            // Select correct y based on sort flag
+            bool yIsOdd = (y.C0.ToArray()[0] & 1) != 0;
+            if (yIsOdd != sort)
+                y = -y;
+            
+            return new G2Affine(x, y, false);
+        }
+
+        private static bool Fp2Sqrt(in Fp2 a, out Fp2 result)
+        {
+            // Square root in Fp2 using optimized algorithm for BN254
+            // For quadratic extension, we can use complex square root formula
+            var norm = a.C0.Square() + a.C1.Square();
+            
+            if (!norm.TryInvert(out var invNorm) || !Sqrt(in norm, out var sqrtNorm))
+            {
+                result = Fp2.Zero;
+                return false;
+            }
+            
+            var alpha = (a.C0 + sqrtNorm) * invNorm;
+            if (!Sqrt(in alpha, out var sqrtAlpha))
+            {
+                alpha = (a.C0 - sqrtNorm) * invNorm;
+                if (!Sqrt(in alpha, out sqrtAlpha))
+                {
+                    result = Fp2.Zero;
+                    return false;
+                }
+            }
+            
+            if (!(sqrtAlpha + sqrtAlpha).TryInvert(out var invTwoSqrtAlpha))
+            {
+                result = Fp2.Zero;
+                return false;
+            }
+            var beta = a.C1 * invTwoSqrtAlpha;
+            result = new Fp2(sqrtAlpha, beta);
+            return true;
+        }
+
+        private static bool Sqrt(in Fp a, out Fp result)
+        {
+            // Use the same sqrt implementation as G1Affine
+            result = a.PowVartime(new ulong[] {
+                0x0f40231095ee3347,
+                0x25e05a5a347a3c4b,
+                0x2e14116b0a04d617,
+                0x0c19139cb84c680a
+            });
+            
+            return result.Square() == a;
         }
 
         public bool IsIdentity => Infinity;
