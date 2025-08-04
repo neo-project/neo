@@ -194,7 +194,7 @@ namespace Neo.UnitTests
         {
             foreach (var point in TestProtocolSettings.Default.StandbyCommittee)
             {
-                StringAssert.Matches(point.ToString(), new Regex("^[0-9A-Fa-f]{66}$")); // ECPoint is 66 hex characters
+                Assert.MatchesRegex(new Regex("^[0-9A-Fa-f]{66}$"), point.ToString()); // ECPoint is 66 hex characters
             }
         }
 
@@ -271,7 +271,7 @@ namespace Neo.UnitTests
         {
             foreach (var seed in TestProtocolSettings.Default.SeedList)
             {
-                StringAssert.Matches(seed, new Regex(@"^[\w.-]+:\d+$")); // Format: domain:port
+                Assert.MatchesRegex(new Regex(@"^[\w.-]+:\d+$"), seed); // Format: domain:port
             }
         }
 
