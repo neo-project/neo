@@ -36,7 +36,8 @@ namespace Neo.ConsoleService
                 'e' => '\e',
                 '0' => '\0',
                 ' ' => ' ',
-                _ => throw new ArgumentException($"Invalid escaped character: {ch}")
+                _ => throw new ArgumentException($"Invalid escaped character: \\{ch}. " +
+                    "If you don't want to use escape character, please use backtick(`) to wrap the string.")
             };
         }
 
@@ -45,20 +46,19 @@ namespace Neo.ConsoleService
             index++; // next char after \
             if (index >= commandLine.Length)
             {
-                throw new ArgumentException("Unexpected end of command line while processing escape sequence." +
-                    " The command line ends with a backslash character.");
+                throw new ArgumentException("Invalid escape sequence. The command line ends with a backslash character.");
             }
 
             if (commandLine[index] == 'x')
             {
                 if (index + 2 >= commandLine.Length)
-                {
-                    throw new ArgumentException("Unexpected end of command line while processing escape sequence." +
-                        " Too few hex digits after \\x");
-                }
+                    throw new ArgumentException("Invalid escape sequence. Too few hex digits after \\x");
 
                 if (!byte.TryParse(commandLine.AsSpan(index + 1, 2), NumberStyles.AllowHexSpecifier, null, out var ch))
-                    throw new ArgumentException($"Invalid hex digits after \\x");
+                {
+                    throw new ArgumentException($"Invalid hex digits after \\x. " +
+                        "If you don't want to use escape character, please use backtick(`) to wrap the string.");
+                }
 
                 return new((char)ch, 1 + 2);
             }
@@ -66,13 +66,13 @@ namespace Neo.ConsoleService
             if (commandLine[index] == 'u')
             {
                 if (index + 4 >= commandLine.Length)
-                {
-                    throw new ArgumentException("Unexpected end of command line while processing escape sequence." +
-                        " Too few hex digits after \\u");
-                }
+                    throw new ArgumentException("Invalid escape sequence. Too few hex digits after \\u");
 
                 if (!ushort.TryParse(commandLine.AsSpan(index + 1, 4), NumberStyles.AllowHexSpecifier, null, out var ch))
-                    throw new ArgumentException($"Invalid hex digits after \\u");
+                {
+                    throw new ArgumentException($"Invalid hex digits after \\u. " +
+                        "If you don't want to use escape character, please use backtick(`) to wrap the string.");
+                }
 
                 // handle invalid surrogate pairs if needed, but good enough for a cli tool
                 return new((char)ch, 1 + 4);
