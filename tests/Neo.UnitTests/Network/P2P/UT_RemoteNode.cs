@@ -91,7 +91,7 @@ namespace Neo.UnitTests.Network.P2P
             var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
 
             //Verack
-            Assert.AreEqual(3, verackMessage.Data.Count);
+            Assert.HasCount(3, verackMessage.Data);
         }
     }
 }

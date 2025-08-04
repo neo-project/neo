@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Ledger
 
             Assert.AreEqual((uint)1, block.Index);
             Assert.AreEqual(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"), block.MerkleRoot);
-            Assert.AreEqual(2, block.Transactions.Length);
+            Assert.HasCount(2, block.Transactions);
             Assert.AreEqual(tx1.Hash, block.Transactions[0].Hash);
             Assert.AreEqual(tblock.Header.Witness.InvocationScript.Span.ToHexString(), block.Witness.InvocationScript.Span.ToHexString());
             Assert.AreEqual(tblock.Header.Witness.VerificationScript.Span.ToHexString(), block.Witness.VerificationScript.Span.ToHexString());

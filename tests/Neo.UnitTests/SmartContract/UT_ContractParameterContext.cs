@@ -147,7 +147,7 @@ namespace Neo.UnitTests.SmartContract
             context.Add(contract, 0, new byte[] { 0x01 });
 
             var witnesses = context.GetWitnesses();
-            Assert.AreEqual(1, witnesses.Length);
+            Assert.HasCount(1, witnesses);
             Assert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0x01, 0x01 }.ToHexString(), witnesses[0].InvocationScript.Span.ToHexString());
             Assert.AreEqual(contract.Script.ToHexString(), witnesses[0].VerificationScript.Span.ToHexString());
         }

@@ -43,7 +43,7 @@ namespace Neo.UnitTests.IO.Caching
                 Witnesses = Array.Empty<Witness>()
             };
             relayCache.Add(tx);
-            Assert.IsTrue(relayCache.Contains(tx));
+            Assert.Contains(tx, relayCache);
             Assert.IsTrue(relayCache.TryGet(tx.Hash, out IInventory tmp));
             Assert.IsTrue(tmp is Transaction);
         }

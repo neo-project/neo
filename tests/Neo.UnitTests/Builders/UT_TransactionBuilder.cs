@@ -118,7 +118,7 @@ namespace Neo.UnitTests.Builders
                 .AddAttributes(ab => ab.AddHighPriority())
                 .Build();
 
-            Assert.AreEqual(1, tx.Attributes.Length);
+            Assert.HasCount(1, tx.Attributes);
             Assert.IsInstanceOfType<HighPriorityAttribute>(tx.Attributes[0]);
             Assert.IsNotNull(tx.Hash);
         }
@@ -135,7 +135,7 @@ namespace Neo.UnitTests.Builders
                 })
                 .Build();
 
-            Assert.AreEqual(1, tx.Witnesses.Length);
+            Assert.HasCount(1, tx.Witnesses);
             Assert.AreEqual(0, tx.Witnesses[0].InvocationScript.Length);
             Assert.AreEqual(0, tx.Witnesses[0].VerificationScript.Length);
             Assert.IsNotNull(tx.Hash);
@@ -178,14 +178,14 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(tx.Hash);
-            Assert.AreEqual(1, tx.Signers.Length);
+            Assert.HasCount(1, tx.Signers);
             Assert.AreEqual(expectedContractHash, tx.Signers[0].Account);
-            Assert.AreEqual(1, tx.Signers[0].AllowedContracts.Length);
+            Assert.HasCount(1, tx.Signers[0].AllowedContracts);
             Assert.AreEqual(expectedContractHash, tx.Signers[0].AllowedContracts[0]);
-            Assert.AreEqual(1, tx.Signers[0].AllowedGroups.Length);
+            Assert.HasCount(1, tx.Signers[0].AllowedGroups);
             Assert.AreEqual(expectedPublicKey, tx.Signers[0].AllowedGroups[0]);
             Assert.AreEqual(WitnessScope.WitnessRules, tx.Signers[0].Scopes);
-            Assert.AreEqual(1, tx.Signers[0].Rules.Length);
+            Assert.HasCount(1, tx.Signers[0].Rules);
             Assert.AreEqual(WitnessRuleAction.Deny, tx.Signers[0].Rules[0].Action);
             Assert.IsNotNull(tx.Signers[0].Rules[0].Condition);
             Assert.IsInstanceOfType<ScriptHashCondition>(tx.Signers[0].Rules[0].Condition);
