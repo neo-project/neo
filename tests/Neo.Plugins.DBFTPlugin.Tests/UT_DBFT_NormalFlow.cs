@@ -29,6 +29,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -177,14 +178,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             // Assert - Verify consensus messages are processed without errors
             // In a real implementation, the blockchain would receive a block when consensus completes
             // For this test, we verify that the consensus services handle the messages without crashing
-            ExpectNoMsg(TimeSpan.FromMilliseconds(500));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(500), cancellationToken: CancellationToken.None);
 
             // Verify all consensus services are still operational
             for (int i = 0; i < ValidatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No Terminated messages
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No Terminated messages
         }
 
         [TestMethod]
@@ -225,7 +226,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 }
 
                 // Verify the round progresses (simplified verification)
-                ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+                ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
             }
         }
 
@@ -268,7 +269,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - Verify transactions are included in consensus
-            ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
             // In a real implementation, we would verify that:
             // 1. Validators request the transactions from mempool
