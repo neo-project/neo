@@ -188,8 +188,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
-            // The specific exception might vary, but it should indicate method not found or similar
-            StringAssert.Contains(resp["exception"].AsString(), "doesn't exist in the contract"); // Fix based on test output
+            Assert.Contains("doesn't exist in the contract", resp["exception"].AsString()); // Fix based on test output
         }
 
         [TestMethod]
@@ -206,7 +205,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var resp = (JObject)_rpcServer.InvokeScript(abortScript);
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
-            StringAssert.Contains(resp["exception"].AsString(), "ABORT is executed"); // Check for specific ABORT message
+            Assert.Contains("ABORT is executed", resp["exception"].AsString()); // Check for specific ABORT message
         }
 
         [TestMethod]
@@ -230,7 +229,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var resp = (JObject)tempRpcServer.InvokeScript(loopScript);
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
-            StringAssert.Contains(resp["exception"].AsString(), "Insufficient GAS");
+            Assert.Contains("Insufficient GAS", resp["exception"].AsString());
             Assert.IsTrue(long.Parse(resp["gasconsumed"].AsString()) > lowGasSettings.MaxGasInvoke);
         }
 
@@ -324,7 +323,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var invalidBase64Script = new JString("ThisIsNotValidBase64***");
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeScript(invalidBase64Script.AsParameter<byte[]>()));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            StringAssert.Contains(ex.Message, RpcError.InvalidParams.Message); // Fix based on test output
+            Assert.Contains(RpcError.InvalidParams.Message, ex.Message); // Fix based on test output
         }
 
         [TestMethod]
@@ -506,7 +505,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var ex = Assert.ThrowsExactly<RpcException>(
                 () => _rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), requestedCount));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            StringAssert.Contains(ex.Message, "Invalid iterator items count");
+            Assert.Contains("Invalid iterator items count", ex.Message);
 
             // Clean up the session
             _rpcServer.TerminateSession(sessionId.AsParameter<Guid>());

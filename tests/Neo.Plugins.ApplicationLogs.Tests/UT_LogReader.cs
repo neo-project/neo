@@ -28,6 +28,7 @@ using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using static Neo.Plugins.ApplicationsLogs.Tests.UT_LogReader;
 using ApplicationLogsSettings = Neo.Plugins.ApplicationLogs.ApplicationLogsSettings;
@@ -140,7 +141,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
         {
             NeoSystem system = s_neoSystemFixture._neoSystem;
             Block block = s_neoSystemFixture.block;
-            await system.Blockchain.Ask(block);  // persist the block
+            await system.Blockchain.Ask(block, cancellationToken: CancellationToken.None);  // persist the block
 
             JObject blockJson = (JObject)s_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString()]);
             Assert.AreEqual(blockJson["blockhash"], block.Hash.ToString());
@@ -181,7 +182,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
         {
             NeoSystem system = s_neoSystemFixture._neoSystem;
             Block block = s_neoSystemFixture.block;
-            await system.Blockchain.Ask(block);  // persist the block
+            await system.Blockchain.Ask(block, cancellationToken: CancellationToken.None);  // persist the block
 
             s_neoSystemFixture.logReader.OnGetBlockCommand("1");
             s_neoSystemFixture.logReader.OnGetBlockCommand(block.Hash.ToString());

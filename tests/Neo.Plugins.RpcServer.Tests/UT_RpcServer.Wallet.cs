@@ -177,7 +177,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetWalletBalance(paramsArray));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            StringAssert.Contains(ex.Message, "Invalid asset id");
+            Assert.Contains("Invalid asset id", ex.Message);
             TestUtilCloseWallet();
         }
 
@@ -383,7 +383,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendToAddress(paramsArray));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            StringAssert.Contains(ex.Message, "Invalid asset hash");
+            Assert.Contains("Invalid asset hash", ex.Message);
             TestUtilCloseWallet();
         }
 
@@ -469,7 +469,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendMany(paramsArray));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            StringAssert.Contains(ex.Message, "Argument 'to' can't be empty");
+            Assert.Contains("Argument 'to' can't be empty", ex.Message);
             TestUtilCloseWallet();
         }
 

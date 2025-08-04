@@ -75,9 +75,11 @@ jobs:
           -p:GITHUB_ACTIONS=true
 
     - name: Remove (junk)
+      working-directory: ${{ env.DIST_DIR }}/Plugins/LevelDBStore
       run: |
-        rm -v -R ${{ env.DIST_DIR }}/Plugins/LevelDBStore/runtimes
-        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/Neo*
+        rm -v -R runtimes
+        rm -v Neo*
+        rm -v $(ls *.dll | grep -v "LevelDBStore.dll")
 
     - name: Docker Login
       run: |
