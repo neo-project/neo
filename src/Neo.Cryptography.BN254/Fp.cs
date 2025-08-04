@@ -156,24 +156,7 @@ namespace Neo.Cryptography.BN254
         }
 
 
-<<<<<<< TODO: Unmerged change from project 'Neo.Cryptography.BN254(net9.0)', Before:
-        private Fp Reduce() 
-=======
         private Fp Reduce()
->>>>>>> After
-        private Fp Reduce()
-<<<<<<< TODO: Unmerged change from project 'Neo.Cryptography.BN254(net9.0)', Before:
-                      (u3 == Modulus.u3 && 
-=======
-                      (u3 == Modulus.u3 &&
->>>>>>> After
-
-<<<<<<< TODO: Unmerged change from project 'Neo.Cryptography.BN254(net9.0)', Before:
-        private static Fp MontgomeryReduce(ulong r0, ulong r1, ulong r2, ulong r3, 
-=======
-        private static Fp MontgomeryReduce(ulong r0, ulong r1, ulong r2, ulong r3,
->>>>>>> After
-
         {
             // Compare with modulus and subtract if needed
             bool geq = u3 > Modulus.u3 ||
