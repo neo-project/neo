@@ -102,6 +102,7 @@ jobs:
       run: |
         rm -v -R runtimes
         rm -v Neo*
+        rm -v $(ls *.dll | grep -v "LevelDBStore.dll") 
 
     # Create the distribution directory
     - name: Create Distribution Directory

@@ -29,6 +29,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -102,11 +103,11 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Verify the service is responsive and doesn't crash on unknown messages
             consensusService.Tell("unknown_message");
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
 
             // Verify the actor is still alive
             Watch(consensusService);
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // Should not receive Terminated message
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // Should not receive Terminated message
         }
 
         [TestMethod]
@@ -120,7 +121,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             consensusService.Tell(new ConsensusService.Start());
 
             // Assert - The service should start without throwing exceptions
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -158,7 +159,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             consensusService.Tell(new Blockchain.PersistCompleted { Block = block });
 
             // Assert - The service should handle the message without throwing
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -190,7 +191,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             consensusService.Tell(payload);
 
             // Assert - The service should handle the payload without throwing
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -218,11 +219,11 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             consensusService.Tell(payload);
 
             // Assert - Service should process the message without crashing
-            ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
             // Verify the actor is still responsive
             Watch(consensusService);
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // Should not receive Terminated message
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // Should not receive Terminated message
         }
 
         [TestMethod]
@@ -252,11 +253,11 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             consensusService.Tell(invalidPayload);
 
             // Assert - Service should ignore invalid payload and remain stable
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
 
             // Verify the actor is still alive and responsive
             Watch(consensusService);
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
         }
     }
 }
