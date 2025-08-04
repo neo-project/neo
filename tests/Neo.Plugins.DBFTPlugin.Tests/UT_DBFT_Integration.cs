@@ -28,6 +28,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
@@ -132,7 +133,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Assert - Wait for consensus messages to be exchanged
             // In a real scenario, we would see PrepareRequest, PrepareResponse, and Commit messages
-            ExpectNoMsg(TimeSpan.FromSeconds(2));
+            ExpectNoMsg(TimeSpan.FromSeconds(2), cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -164,13 +165,13 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Wait for timeout and view change
-            ExpectNoMsg(TimeSpan.FromSeconds(3));
+            ExpectNoMsg(TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             // Now start the new primary (index 1) after view change
             consensusServices[0].Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
 
             // Assert - Consensus should eventually succeed with new primary
-            ExpectNoMsg(TimeSpan.FromSeconds(2));
+            ExpectNoMsg(TimeSpan.FromSeconds(2), cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -202,7 +203,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - Consensus should succeed with 3 honest validators out of 4
-            ExpectNoMsg(TimeSpan.FromSeconds(2));
+            ExpectNoMsg(TimeSpan.FromSeconds(2), cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -235,13 +236,13 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Wait a bit for consensus to start
-            ExpectNoMsg(TimeSpan.FromMilliseconds(500));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(500), cancellationToken: CancellationToken.None);
 
             // Late validator joins and should request recovery
             consensusServices[ValidatorCount - 1].Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
 
             // Assert - Recovery should allow late validator to catch up
-            ExpectNoMsg(TimeSpan.FromSeconds(2));
+            ExpectNoMsg(TimeSpan.FromSeconds(2), cancellationToken: CancellationToken.None);
         }
     }
 }
