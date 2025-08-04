@@ -173,8 +173,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
-            // The specific exception might vary, but it should indicate method not found or similar
-            StringAssert.Contains(resp["exception"].AsString(), "doesn't exist in the contract"); // Fix based on test output
+            Assert.Contains("doesn't exist in the contract", resp["exception"].AsString()); // Fix based on test output
         }
 
         [TestMethod]
@@ -193,7 +192,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
-            StringAssert.Contains(resp["exception"].AsString(), "ABORT is executed"); // Check for specific ABORT message
+            Assert.Contains("ABORT is executed", resp["exception"].AsString()); // Check for specific ABORT message
         }
 
         [TestMethod]
@@ -219,7 +218,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
-            StringAssert.Contains(resp["exception"].AsString(), "Insufficient GAS");
+            Assert.Contains("Insufficient GAS", resp["exception"].AsString());
             Assert.IsTrue(long.Parse(resp["gasconsumed"].AsString()) > lowGasSettings.MaxGasInvoke);
         }
 
@@ -235,7 +234,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // Underlying Enum.Parse throws ArgumentException when called directly
             var ex = Assert.ThrowsExactly<ArgumentException>(
                 () => _rpcServer.InvokeFunction(new JArray(s_neoHash, "symbol", new JArray([]), invalidSigner)));
-            StringAssert.Contains(ex.Message, "Requested value 'InvalidScopeValue' was not found"); // Check actual ArgumentException message
+            Assert.Contains("Requested value 'InvalidScopeValue' was not found", ex.Message); // Check actual ArgumentException message
         }
 
         [TestMethod]
@@ -310,7 +309,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeScript(new JArray(invalidBase64Script)));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            StringAssert.Contains(ex.Message, RpcError.InvalidParams.Message); // Fix based on test output
+            Assert.Contains(RpcError.InvalidParams.Message, ex.Message); // Fix based on test output
         }
 
         [TestMethod]
@@ -468,7 +467,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.TraverseIterator([sessionId, iteratorId, requestedCount]));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            StringAssert.Contains(ex.Message, "Invalid iterator items count");
+            Assert.Contains("Invalid iterator items count", ex.Message);
 
             // Clean up the session
             _rpcServer.TerminateSession([sessionId]);
@@ -500,8 +499,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var invalidAddress = "ThisIsNotAValidNeoAddress";
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetUnclaimedGas([invalidAddress]));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            // The underlying error is likely FormatException during AddressToScriptHash
-            StringAssert.Contains(ex.Message, RpcError.InvalidParams.Message); // Fix based on test output
+            Assert.Contains(RpcError.InvalidParams.Message, ex.Message); // Fix based on test output
         }
     }
 }
