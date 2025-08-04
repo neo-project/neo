@@ -42,9 +42,9 @@ namespace Neo.Plugins.RpcServer.Tests
             var settings = TestProtocolSettings.SoleNode;
             var neoSystem = new NeoSystem(settings, _memoryStoreProvider);
             var localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken: CancellationToken.None).Result;
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress([127, 0, 0, 1]), 11332) });
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress([127, 0, 0, 1]), 12332) });
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress([127, 0, 0, 1]), 13332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(IPAddress.Loopback, 11332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(IPAddress.Loopback, 12332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(IPAddress.Loopback, 13332) });
             var rpcServer = new RpcServer(neoSystem, RpcServersSettings.Default);
 
             var result = rpcServer.GetPeers();
