@@ -22,13 +22,6 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_CryptoLib_BN254
     {
-        private TestEngine _engine;
-
-        [TestInitialize]
-        public void Init()
-        {
-            _engine = new TestEngine();
-        }
 
         [TestMethod]
         public void TestBn254Serialize_G1()
