@@ -68,10 +68,15 @@ namespace Neo.Cryptography.BN254
             if (data.Length != Size)
                 throw new ArgumentException($"Invalid data length {data.Length}, expected {Size}");
 
-            var tmp = MemoryMarshal.Cast<byte, ulong>(data);
-            Fp result = new(tmp);
+            // Read each limb as little-endian
+            var u0 = BitConverter.ToUInt64(data.Slice(0, 8));
+            var u1 = BitConverter.ToUInt64(data.Slice(8, 8));
+            var u2 = BitConverter.ToUInt64(data.Slice(16, 8));
+            var u3 = BitConverter.ToUInt64(data.Slice(24, 8));
 
-            // Convert from Montgomery form
+            var result = new Fp(u0, u1, u2, u3);
+            
+            // Convert TO Montgomery form
             result = result * R2;
             return result.Reduce();
         }
@@ -148,11 +153,37 @@ namespace Neo.Cryptography.BN254
 
         private static Fp Multiply(in Fp a, in Fp b)
         {
-            // Montgomery multiplication
-            return MontgomeryReduce(
-                a.u0, a.u1, a.u2, a.u3,
-                b.u0, b.u1, b.u2, b.u3
-            );
+            // Full 256x256 bit multiplication followed by Montgomery reduction
+
+            // Initialize 512-bit product
+            ulong r0 = 0, r1 = 0, r2 = 0, r3 = 0, r4 = 0, r5 = 0, r6 = 0, r7 = 0;
+
+            // Multiply a.u0 * b
+            ulong carry;
+            (r0, carry) = Mac(r0, a.u0, b.u0, 0);
+            (r1, carry) = Mac(r1, a.u0, b.u1, carry);
+            (r2, carry) = Mac(r2, a.u0, b.u2, carry);
+            (r3, r4) = Mac(r3, a.u0, b.u3, carry);
+
+            // Multiply a.u1 * b
+            (r1, carry) = Mac(r1, a.u1, b.u0, 0);
+            (r2, carry) = Mac(r2, a.u1, b.u1, carry);
+            (r3, carry) = Mac(r3, a.u1, b.u2, carry);
+            (r4, r5) = Mac(r4, a.u1, b.u3, carry);
+
+            // Multiply a.u2 * b
+            (r2, carry) = Mac(r2, a.u2, b.u0, 0);
+            (r3, carry) = Mac(r3, a.u2, b.u1, carry);
+            (r4, carry) = Mac(r4, a.u2, b.u2, carry);
+            (r5, r6) = Mac(r5, a.u2, b.u3, carry);
+
+            // Multiply a.u3 * b
+            (r3, carry) = Mac(r3, a.u3, b.u0, 0);
+            (r4, carry) = Mac(r4, a.u3, b.u1, carry);
+            (r5, carry) = Mac(r5, a.u3, b.u2, carry);
+            (r6, r7) = Mac(r6, a.u3, b.u3, carry);
+
+            return MontgomeryReduce(r0, r1, r2, r3, r4, r5, r6, r7);
         }
 
 
@@ -182,8 +213,8 @@ namespace Neo.Cryptography.BN254
         private static Fp MontgomeryReduce(ulong r0, ulong r1, ulong r2, ulong r3,
                                           ulong r4, ulong r5, ulong r6, ulong r7)
         {
-            // Montgomery reduction using BN254 inverse: 0xc2e1f593efffffff
-            const ulong inv = 0xc2e1f593efffffff;
+            // Montgomery reduction using BN254 inverse
+            const ulong inv = 0x87d20782e4866389;
 
             // Montgomery reduction steps
             ulong k = r0 * inv;
@@ -263,8 +294,10 @@ namespace Neo.Cryptography.BN254
             var result = One;
             var base_ = this;
 
-            foreach (var limb in exponent)
+            // Process bits from least significant to most significant
+            for (int limbIdx = 0; limbIdx < exponent.Length; limbIdx++)
             {
+                var limb = exponent[limbIdx];
                 for (int i = 0; i < 64; i++)
                 {
                     if ((limb & (1UL << i)) != 0)
@@ -281,15 +314,15 @@ namespace Neo.Cryptography.BN254
         public byte[] ToArray()
         {
             var result = new byte[Size];
-            var span = MemoryMarshal.Cast<byte, ulong>(result.AsSpan());
-
-            // Convert from Montgomery form
+            
+            // Convert from Montgomery form by multiplying by 1
             var normalized = this * new Fp(1, 0, 0, 0);
 
-            span[0] = normalized.u0;
-            span[1] = normalized.u1;
-            span[2] = normalized.u2;
-            span[3] = normalized.u3;
+            // Write each limb as little-endian bytes
+            BitConverter.GetBytes(normalized.u0).CopyTo(result, 0);
+            BitConverter.GetBytes(normalized.u1).CopyTo(result, 8);
+            BitConverter.GetBytes(normalized.u2).CopyTo(result, 16);
+            BitConverter.GetBytes(normalized.u3).CopyTo(result, 24);
 
             return result;
         }

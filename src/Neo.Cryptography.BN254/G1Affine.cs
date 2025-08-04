@@ -48,7 +48,7 @@ namespace Neo.Cryptography.BN254
 
         public static G1Affine FromCompressed(ReadOnlySpan<byte> bytes)
         {
-            if (bytes.Length != 32)
+            if (bytes.Length != 48)
                 throw new ArgumentException($"Invalid input length {bytes.Length}");
 
             // Check compression flag
@@ -64,14 +64,14 @@ namespace Neo.Cryptography.BN254
                 return Identity;
             }
 
-            // Clear the flag bits
-            var tmp = bytes.ToArray();
+            // Clear the flag bits and extract X coordinate (first 32 bytes)
+            var tmp = bytes.Slice(0, 32).ToArray();
             tmp[0] &= 0x1f;
 
             Fp x = Fp.FromBytes(tmp);
 
             // Compute y from curve equation: y^2 = x^3 + b
-            Fp y2 = x.Square() * x + new Fp(3, 0, 0, 0);
+            Fp y2 = x.Square() * x + B;
 
             // Compute square root
             if (!Sqrt(in y2, out Fp y))
@@ -93,12 +93,13 @@ namespace Neo.Cryptography.BN254
         {
             if (Infinity)
             {
-                var result = new byte[32];
+                var result = new byte[48];
                 result[0] = 0xc0; // compressed + infinity flags
                 return result;
             }
 
             var bytes = X.ToArray();
+            Array.Resize(ref bytes, 48);
 
             // Set compression flag
             bytes[0] |= 0x80;
@@ -117,7 +118,7 @@ namespace Neo.Cryptography.BN254
 
             // Check y^2 = x^3 + b
             Fp y2 = Y.Square();
-            Fp x3b = X.Square() * X + new Fp(3, 0, 0, 0);
+            Fp x3b = X.Square() * X + B;
 
             return y2 == x3b;
         }

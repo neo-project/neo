@@ -284,9 +284,10 @@ namespace Neo.Cryptography.BN254
                 return false;
             }
 
-            // Fermat's little theorem
+            // Fermat's little theorem: a^(r-2) = a^(-1) mod r
+            // r - 2 = 0x30644e72e131a029b85045b68181585d2833e84879b97091043e1f593efffffff
             result = PowVartime(new ulong[] {
-                0x43e1f593f0000001,
+                0x43e1f593efffffff,
                 0x2833e84879b97091,
                 0xb85045b68181585d,
                 0x30644e72e131a029
@@ -300,8 +301,10 @@ namespace Neo.Cryptography.BN254
             var result = One;
             var base_ = this;
 
-            foreach (var limb in exponent)
+            // Process bits from least significant to most significant
+            for (int limbIdx = 0; limbIdx < exponent.Length; limbIdx++)
             {
+                var limb = exponent[limbIdx];
                 for (int i = 0; i < 64; i++)
                 {
                     if ((limb & (1UL << i)) != 0)

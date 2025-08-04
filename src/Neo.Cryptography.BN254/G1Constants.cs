@@ -14,30 +14,13 @@ namespace Neo.Cryptography.BN254
     static class G1Constants
     {
         // Generator point G1: (1, 2) converted to Montgomery form
-        // These are the correct BN254 G1 generator coordinates
-        public static readonly Fp GENERATOR_X = new(new ulong[]
-        {
-            0xd35d438dc58f0d9d,
-            0x0a78eb28f5c70b3d,
-            0x666ea36f7879462c,
-            0x0e0a77c19a07df2f
-        });
+        // x = 1 * R mod p = R mod p
+        public static readonly Fp GENERATOR_X = FpConstants.R;
 
-        public static readonly Fp GENERATOR_Y = new(new ulong[]
-        {
-            0xa6ba871b8b1e1b3a,
-            0x14f1d651eb8e167b,
-            0xccdd46def0f28c58,
-            0x1c14ef83340fbe5e
-        });
+        // y = 2 * R mod p = (2R) mod p = R + R mod p
+        public static readonly Fp GENERATOR_Y = FpConstants.R + FpConstants.R;
 
-        // Curve parameter b = 3
-        public static readonly Fp B = new(new ulong[]
-        {
-            0x0000000000000003,
-            0x0000000000000000,
-            0x0000000000000000,
-            0x0000000000000000
-        });
+        // Curve parameter b = 3 in Montgomery form = 3*R mod p
+        public static readonly Fp B = FpConstants.R + FpConstants.R + FpConstants.R;
     }
 }
