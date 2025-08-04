@@ -34,7 +34,12 @@ namespace Neo.Cryptography.BN254
 
         public static ref readonly Gt Identity => ref identity;
         
-        private static readonly Gt identity = new(new byte[Size]);
+        private static readonly Gt identity = CreateIdentity();
+        
+        private static Gt CreateIdentity()
+        {
+            return new Gt(new byte[Size]);
+        }
 
         public static Gt FromBytes(ReadOnlySpan<byte> bytes)
         {
@@ -51,7 +56,14 @@ namespace Neo.Cryptography.BN254
 
         public static bool operator ==(in Gt a, in Gt b)
         {
-            return a.data.AsSpan().SequenceEqual(b.data);
+            if (ReferenceEquals(a.data, b.data)) return true;
+            if (a.data == null || b.data == null) return false;
+            
+            for (int i = 0; i < Size; i++)
+            {
+                if (a.data[i] != b.data[i]) return false;
+            }
+            return true;
         }
 
         public static bool operator !=(in Gt a, in Gt b)
@@ -94,7 +106,9 @@ namespace Neo.Cryptography.BN254
 
         public override string ToString()
         {
-            return $"Gt({BitConverter.ToString(data.AsSpan(0, 16))}...)";
+            var truncated = new byte[16];
+            Array.Copy(data, 0, truncated, 0, 16);
+            return $"Gt({BitConverter.ToString(truncated)}...)";
         }
     }
 }

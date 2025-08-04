@@ -32,6 +32,16 @@ namespace Neo.Cryptography.BN254
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static (ulong result, ulong carry) Mac(ulong z, ulong x, ulong y, ulong a, ulong carry)
+        {
+            // Extended multiply-accumulate: z = z + x * y + a + carry
+            var (lo, hi) = Mac(z, x, y, carry);
+            lo += a;
+            hi += lo < a ? 1UL : 0UL;
+            return (lo, hi);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static (ulong result, ulong borrow) Sbb(ulong x, ulong y, ulong borrow)
         {
             // Subtract with borrow

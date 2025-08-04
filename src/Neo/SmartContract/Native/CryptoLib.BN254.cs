@@ -30,7 +30,7 @@ namespace Neo.SmartContract.Native
                 G1Affine p => p.ToCompressed(),
                 G1Projective p => new G1Affine(p).ToCompressed(),
                 G2Affine p => p.ToCompressed(),
-                G2Projective p => new G2Affine(p).ToCompressed(),
+                G2Projective p => p.ToCompressed(),
                 Gt p => p.ToArray(),
                 _ => throw new ArgumentException("BN254 type mismatch")
             };

@@ -32,6 +32,22 @@ namespace Neo.Cryptography.BN254
             Infinity = infinity;
         }
 
+        public G2Affine(in G2Projective p)
+        {
+            if (p.Z.TryInvert(out var zinv))
+            {
+                X = p.X * zinv;
+                Y = p.Y * zinv;
+                Infinity = false;
+            }
+            else
+            {
+                X = Fp2.Zero;
+                Y = Fp2.One;
+                Infinity = true;
+            }
+        }
+
         public static ref readonly G2Affine Identity => ref identity;
         public static ref readonly G2Affine Generator => ref generator;
 
@@ -154,5 +170,11 @@ namespace Neo.Cryptography.BN254
         {
             return new G2Projective(b) * a;
         }
+
+        public static G2Projective operator +(in G2Affine a, in G2Projective b)
+        {
+            return new G2Projective(a) + b;
+        }
+
     }
 }

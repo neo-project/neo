@@ -130,14 +130,13 @@ namespace Neo.Cryptography.BN254
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Fp Add(in Fp a, in Fp b)
         {
-            Fp result;
             ulong carry = 0;
-            (result.u0, carry) = Mac(0, a.u0, 1, b.u0, carry);
-            (result.u1, carry) = Mac(0, a.u1, 1, b.u1, carry);
-            (result.u2, carry) = Mac(0, a.u2, 1, b.u2, carry);
-            (result.u3, carry) = Mac(0, a.u3, 1, b.u3, carry);
+            (var u0, carry) = Adc(a.u0, b.u0, carry);
+            (var u1, carry) = Adc(a.u1, b.u1, carry);
+            (var u2, carry) = Adc(a.u2, b.u2, carry);
+            (var u3, carry) = Adc(a.u3, b.u3, carry);
             
-            // Reduce if needed
+            var result = new Fp(u0, u1, u2, u3);
             return result.Reduce();
         }
 
@@ -158,26 +157,25 @@ namespace Neo.Cryptography.BN254
 
         private Fp Reduce() 
         {
-            Fp result = this;
-            
             // Compare with modulus and subtract if needed
-            bool geq = result.u3 > Modulus.u3 ||
-                      (result.u3 == Modulus.u3 && 
-                       (result.u2 > Modulus.u2 ||
-                        (result.u2 == Modulus.u2 &&
-                         (result.u1 > Modulus.u1 ||
-                          (result.u1 == Modulus.u1 && result.u0 >= Modulus.u0)))));
+            bool geq = u3 > Modulus.u3 ||
+                      (u3 == Modulus.u3 && 
+                       (u2 > Modulus.u2 ||
+                        (u2 == Modulus.u2 &&
+                         (u1 > Modulus.u1 ||
+                          (u1 == Modulus.u1 && u0 >= Modulus.u0)))));
             
             if (geq)
             {
                 ulong borrow = 0;
-                (result.u0, borrow) = Sbb(result.u0, Modulus.u0, borrow);
-                (result.u1, borrow) = Sbb(result.u1, Modulus.u1, borrow);
-                (result.u2, borrow) = Sbb(result.u2, Modulus.u2, borrow);
-                (result.u3, borrow) = Sbb(result.u3, Modulus.u3, borrow);
+                (var r0, borrow) = Sbb(u0, Modulus.u0, borrow);
+                (var r1, borrow) = Sbb(u1, Modulus.u1, borrow);
+                (var r2, borrow) = Sbb(u2, Modulus.u2, borrow);
+                (var r3, borrow) = Sbb(u3, Modulus.u3, borrow);
+                return new Fp(r0, r1, r2, r3);
             }
             
-            return result;
+            return this;
         }
 
         private static Fp MontgomeryReduce(ulong r0, ulong r1, ulong r2, ulong r3, 
@@ -195,13 +193,12 @@ namespace Neo.Cryptography.BN254
             if (this == Zero) return Zero;
             
             ulong borrow = 0;
-            Fp result;
-            (result.u0, borrow) = Sbb(Modulus.u0, u0, borrow);
-            (result.u1, borrow) = Sbb(Modulus.u1, u1, borrow);
-            (result.u2, borrow) = Sbb(Modulus.u2, u2, borrow);
-            (result.u3, borrow) = Sbb(Modulus.u3, u3, borrow);
+            (var r0, borrow) = Sbb(Modulus.u0, u0, borrow);
+            (var r1, borrow) = Sbb(Modulus.u1, u1, borrow);
+            (var r2, borrow) = Sbb(Modulus.u2, u2, borrow);
+            (var r3, borrow) = Sbb(Modulus.u3, u3, borrow);
             
-            return result;
+            return new Fp(r0, r1, r2, r3);
         }
 
         public Fp Square()

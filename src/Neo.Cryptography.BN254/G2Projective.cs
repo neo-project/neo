@@ -106,6 +106,11 @@ namespace Neo.Cryptography.BN254
             return new G2Projective(a.X, -a.Y, a.Z);
         }
 
+        public byte[] ToCompressed()
+        {
+            return new G2Affine(this).ToCompressed();
+        }
+
         public override string ToString()
         {
             if (IsIdentity) return "G2Projective(Identity)";
