@@ -40,10 +40,10 @@ namespace Neo.Cryptography.BN254
         {
             if (data.Length != Size)
                 throw new ArgumentException($"Invalid data length {data.Length}, expected {Size}");
-            
+
             var c0 = Fp.FromBytes(data.Slice(0, 32));
             var c1 = Fp.FromBytes(data.Slice(32, 32));
-            
+
             return new Fp2(c0, c1);
         }
 
@@ -122,13 +122,27 @@ namespace Neo.Cryptography.BN254
                 result = Zero;
                 return false;
             }
-            
+
             result = new Fp2(C0 * inv, -C1 * inv);
             return true;
         }
 
         public bool IsZero => C0.IsZero & C1.IsZero;
         public bool IsOne => C0.IsOne & C1.IsZero;
+
+        public Fp2 FrobeniusMap(int power = 1)
+        {
+            // Frobenius map: (a + bi) -> (a + b*i^p)
+            // For BN254, i^p = -i, so (a + bi) -> (a - bi)
+            return power % 2 == 0 ? this : new Fp2(C0, -C1);
+        }
+
+        public Fp2 MulByNonResidue()
+        {
+            // Multiply by non-residue u = (1, 1)
+            return new Fp2(C0 - C1, C0 + C1);
+        }
+
 
         public override string ToString()
         {

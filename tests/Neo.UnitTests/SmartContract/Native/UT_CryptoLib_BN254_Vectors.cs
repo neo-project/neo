@@ -29,7 +29,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var a = new Fp(new ulong[] { 1, 0, 0, 0 });
             var b = new Fp(new ulong[] { 2, 0, 0, 0 });
             var result = a + b;
-            
+
             result.Should().NotBe(Fp.Zero);
             (result - b).Should().Be(a);
         }
@@ -40,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Test G1 identity operations
             var identity = G1Affine.Identity;
             var doubled = new G1Projective(identity) + new G1Projective(identity);
-            
+
             doubled.IsIdentity.Should().BeTrue();
             identity.IsOnCurve().Should().BeTrue();
         }
@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Test G2 identity operations
             var identity = G2Affine.Identity;
             var doubled = new G2Projective(identity) + new G2Projective(identity);
-            
+
             doubled.IsIdentity.Should().BeTrue();
             identity.IsOnCurve().Should().BeTrue();
         }
@@ -62,11 +62,11 @@ namespace Neo.UnitTests.SmartContract.Native
             // Test serialization roundtrip for identity
             var point = G1Affine.Identity;
             var interop = new InteropInterface(point);
-            
+
             var serialized = CryptoLib.Bn254Serialize(interop);
             var deserialized = CryptoLib.Bn254Deserialize(serialized);
             var deserializedPoint = deserialized.GetInterface<G1Affine>();
-            
+
             deserializedPoint.Should().Be(point);
         }
 
@@ -76,10 +76,10 @@ namespace Neo.UnitTests.SmartContract.Native
             // Test scalar multiplication by zero
             var point = new InteropInterface(G1Affine.Identity);
             var zeroScalar = new byte[32]; // All zeros
-            
+
             var result = CryptoLib.Bn254Mul(point, zeroScalar, false);
             var resultPoint = result.GetInterface<G1Projective>();
-            
+
             resultPoint.IsIdentity.Should().BeTrue();
         }
 
@@ -89,10 +89,10 @@ namespace Neo.UnitTests.SmartContract.Native
             // Test pairing with identity elements
             var g1 = new InteropInterface(G1Affine.Identity);
             var g2 = new InteropInterface(G2Affine.Identity);
-            
+
             var result = CryptoLib.Bn254Pairing(g1, g2);
             result.Should().NotBeNull();
-            
+
             var gt = result.GetInterface<Gt>();
             gt.Should().NotBeNull();
         }
@@ -103,7 +103,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Empty pairing check should return true
             var g1Array = new InteropInterface[0];
             var g2Array = new InteropInterface[0];
-            
+
             var result = CryptoLib.Bn254PairingCheck(g1Array, g2Array);
             result.Should().BeTrue();
         }
@@ -113,7 +113,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             // Verify BN254 curve parameters are correct
             var b = new Fp(new ulong[] { 3, 0, 0, 0 });
-            
+
             // For BN254: y^2 = x^3 + 3
             // Identity point (0, 1, 0) should satisfy the curve equation in projective coordinates
             var identity = G1Affine.Identity;
@@ -127,7 +127,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var one = Fp.One;
             one.TryInvert(out var invOne).Should().BeTrue();
             invOne.Should().Be(one);
-            
+
             // Test zero inversion fails
             var zero = Fp.Zero;
             zero.TryInvert(out var invZero).Should().BeFalse();
@@ -139,7 +139,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Test projective identity properties
             var identity = G1Projective.Identity;
             var other = new G1Projective(G1Affine.Identity);
-            
+
             identity.IsIdentity.Should().BeTrue();
             other.IsIdentity.Should().BeTrue();
             (identity == other).Should().BeTrue();
@@ -151,7 +151,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Test G2 projective identity properties
             var identity = G2Projective.Identity;
             var other = new G2Projective(G2Affine.Identity);
-            
+
             identity.IsIdentity.Should().BeTrue();
             other.IsIdentity.Should().BeTrue();
             (identity == other).Should().BeTrue();

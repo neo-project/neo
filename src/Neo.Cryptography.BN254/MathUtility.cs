@@ -21,13 +21,13 @@ namespace Neo.Cryptography.BN254
             // Multiply-accumulate: z = z + x * y + carry
             ulong hi, lo;
             MultiplyUInt64(x, y, out hi, out lo);
-            
+
             lo += carry;
             hi += lo < carry ? 1UL : 0UL;
-            
+
             lo += z;
             hi += lo < z ? 1UL : 0UL;
-            
+
             return (lo, hi);
         }
 

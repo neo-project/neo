@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var point = G1Affine.Identity;
             var interop = new InteropInterface(point);
-            
+
             var result = CryptoLib.Bn254Serialize(interop);
             result.Should().NotBeNull();
             result.Length.Should().Be(32);
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestBn254Serialize_InvalidType()
         {
             var invalid = new InteropInterface("invalid");
-            
+
             Action act = () => CryptoLib.Bn254Serialize(invalid);
             act.Should().Throw<ArgumentException>()
                 .WithMessage("BN254 type mismatch");
@@ -48,7 +48,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var a = new InteropInterface(G1Affine.Identity);
             var b = new InteropInterface(G1Affine.Identity);
-            
+
             CryptoLib.Bn254Equal(a, b).Should().BeTrue();
         }
 
@@ -57,10 +57,10 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var a = new InteropInterface(G1Affine.Identity);
             var b = new InteropInterface(G1Affine.Identity);
-            
+
             var result = CryptoLib.Bn254Add(a, b);
             result.Should().NotBeNull();
-            
+
             var resultPoint = result.GetInterface<G1Projective>();
             resultPoint.Should().NotBeNull();
         }
@@ -71,7 +71,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var point = new InteropInterface(G1Affine.Identity);
             var scalar = new byte[32];
             scalar[0] = 5;
-            
+
             var result = CryptoLib.Bn254Mul(point, scalar, false);
             result.Should().NotBeNull();
         }
@@ -81,7 +81,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var g1 = new InteropInterface(G1Affine.Identity);
             var g2 = new InteropInterface(G2Affine.Identity);
-            
+
             var result = CryptoLib.Bn254Pairing(g1, g2);
             result.Should().NotBeNull();
         }
@@ -91,7 +91,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var g1Array = new InteropInterface[0];
             var g2Array = new InteropInterface[0];
-            
+
             var result = CryptoLib.Bn254PairingCheck(g1Array, g2Array);
             result.Should().BeTrue();
         }

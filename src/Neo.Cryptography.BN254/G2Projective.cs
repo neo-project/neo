@@ -31,7 +31,7 @@ namespace Neo.Cryptography.BN254
         }
 
         public static ref readonly G2Projective Identity => ref identity;
-        
+
         private static readonly G2Projective identity = new(Fp2.Zero, Fp2.One, Fp2.Zero);
 
         public G2Projective(in G2Affine p)
@@ -47,10 +47,10 @@ namespace Neo.Cryptography.BN254
         {
             var x1 = a.X * b.Z;
             var x2 = b.X * a.Z;
-            
+
             var y1 = a.Y * b.Z;
             var y2 = b.Y * a.Z;
-            
+
             return x1 == x2 & y1 == y2;
         }
 
@@ -80,7 +80,7 @@ namespace Neo.Cryptography.BN254
             // Complete addition formula for short Weierstrass curves over Fp2
             if (a.IsIdentity) return other;
             if (other.IsIdentity) return a;
-            
+
             var t0 = a.X * other.X;
             var t1 = a.Y * other.Y;
             var t2 = a.Z * other.Z;
@@ -99,13 +99,13 @@ namespace Neo.Cryptography.BN254
             t5 = t5 * x3;
             x3 = t1 + t2;
             t5 = t5 - x3;
-            
+
             // G2 curve constant: b = (0x2b149d40ceb8aaae3a18e4a61c076267..., 0x09075b4ee4d3ff4c9054...)
             var curveB = new Fp2(
                 new Fp(new ulong[] { 0x2b149d40ceb8aaae, 0x3a18e4a61c076267, 0x45c2ac2962a12902, 0x09192585375e4d42 }),
                 new Fp(new ulong[] { 0x0c54bba1d6f46fef, 0x5d784e17b8c00409, 0x21f828ff3dc8ca4d, 0x009075b4ee4d3ff4 })
             );
-            
+
             var z3 = curveB * t2;
             x3 = z3 + t2;
             z3 = t1 - x3;
@@ -122,7 +122,7 @@ namespace Neo.Cryptography.BN254
             t0 = t3 * t1;
             z3 = t5 * z3;
             z3 = z3 + t0;
-            
+
             return new G2Projective(x3, y3, z3);
         }
 
@@ -137,12 +137,12 @@ namespace Neo.Cryptography.BN254
             if (a.IsIdentity) return Identity;
             if (b == Scalar.Zero) return Identity;
             if (b == Scalar.One) return a;
-            
+
             // Use binary method for scalar multiplication
             var result = Identity;
             var addend = a;
             var scalar = b;
-            
+
             while (scalar != Scalar.Zero)
             {
                 if ((scalar.GetLimb(0) & 1) == 1)
@@ -150,7 +150,7 @@ namespace Neo.Cryptography.BN254
                     result = result + addend;
                 }
                 addend = addend + addend; // Double
-                
+
                 // Right shift scalar by 1
                 var carry = 0UL;
                 for (int i = 3; i >= 0; i--)
@@ -161,7 +161,7 @@ namespace Neo.Cryptography.BN254
                     carry = newCarry;
                 }
             }
-            
+
             return result;
         }
 
@@ -178,6 +178,17 @@ namespace Neo.Cryptography.BN254
         public byte[] ToCompressed()
         {
             return new G2Affine(this).ToCompressed();
+        }
+
+        public G2Projective Double()
+        {
+            // Point doubling using complete formulas
+            return this + this;
+        }
+
+        public G2Affine Negate()
+        {
+            return new G2Affine(X, -Y, false);
         }
 
         public override string ToString()

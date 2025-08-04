@@ -67,7 +67,7 @@ namespace Neo.Cryptography.BN254
         public bool IsOnCurve()
         {
             if (Infinity) return true;
-            
+
             // Check y^2 = x^3 + b
             var y2 = Y.Square();
             var x3 = X.Square() * X;
@@ -75,7 +75,7 @@ namespace Neo.Cryptography.BN254
                 new Fp(new ulong[] { 0x2b149d40ceb8aaae, 0x3a18e4a61c076267, 0x45c2ac2962a12902, 0x09192585375e4d42 }),
                 new Fp(new ulong[] { 0x0c54bba1d6f46fef, 0x5d784e17b8c00409, 0x21f828ff3dc8ca4d, 0x009075b4ee4d3ff4 })
             );
-            
+
             return y2 == (x3 + b);
         }
 
@@ -89,10 +89,10 @@ namespace Neo.Cryptography.BN254
             }
 
             var bytes = X.ToArray();
-            
+
             // Set compression flag
             bytes[0] |= 0x80;
-            
+
             // Set sort flag based on y coordinate
             var yBytes = Y.ToArray();
             bool yIsOdd = (yBytes[0] & 1) != 0;
@@ -121,7 +121,7 @@ namespace Neo.Cryptography.BN254
             tmp[0] &= 0x1f;
 
             var x = Fp2.FromBytes(tmp);
-            
+
             // Compute y from curve equation: y^2 = x^3 + b
             var x3 = x.Square() * x;
             var b = new Fp2(
@@ -129,15 +129,15 @@ namespace Neo.Cryptography.BN254
                 new Fp(new ulong[] { 0x0c54bba1d6f46fef, 0x5d784e17b8c00409, 0x21f828ff3dc8ca4d, 0x009075b4ee4d3ff4 })
             );
             var rhs = x3 + b;
-            
+
             if (!Fp2Sqrt(in rhs, out var y))
                 throw new ArgumentException("Invalid point - not on curve");
-            
+
             // Select correct y based on sort flag
             bool yIsOdd = (y.C0.ToArray()[0] & 1) != 0;
             if (yIsOdd != sort)
                 y = -y;
-            
+
             return new G2Affine(x, y, false);
         }
 
@@ -146,13 +146,13 @@ namespace Neo.Cryptography.BN254
             // Square root in Fp2 using optimized algorithm for BN254
             // For quadratic extension, we can use complex square root formula
             var norm = a.C0.Square() + a.C1.Square();
-            
+
             if (!norm.TryInvert(out var invNorm) || !Sqrt(in norm, out var sqrtNorm))
             {
                 result = Fp2.Zero;
                 return false;
             }
-            
+
             var alpha = (a.C0 + sqrtNorm) * invNorm;
             if (!Sqrt(in alpha, out var sqrtAlpha))
             {
@@ -163,7 +163,7 @@ namespace Neo.Cryptography.BN254
                     return false;
                 }
             }
-            
+
             if (!(sqrtAlpha + sqrtAlpha).TryInvert(out var invTwoSqrtAlpha))
             {
                 result = Fp2.Zero;
@@ -183,7 +183,7 @@ namespace Neo.Cryptography.BN254
                 0x2e14116b0a04d617,
                 0x0c19139cb84c680a
             });
-            
+
             return result.Square() == a;
         }
 
@@ -214,6 +214,12 @@ namespace Neo.Cryptography.BN254
         {
             if (Infinity) return Infinity.GetHashCode();
             return HashCode.Combine(X, Y);
+        }
+
+        public G2Affine Negate()
+        {
+            if (Infinity) return this;
+            return new G2Affine(X, -Y, false);
         }
 
         public override string ToString()

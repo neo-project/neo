@@ -155,12 +155,12 @@ namespace Neo.SmartContract.Native
         {
             if (g1.Length != g2.Length)
                 throw new ArgumentException("Input arrays must have the same length");
-            
+
             if (g1.Length == 0)
                 return true;
 
             var pairs = new (G1Affine, G2Affine)[g1.Length];
-            
+
             for (int i = 0; i < g1.Length; i++)
             {
                 G1Affine g1a = g1[i].GetInterface<object>() switch
@@ -169,17 +169,17 @@ namespace Neo.SmartContract.Native
                     G1Projective g => new(g),
                     _ => throw new ArgumentException("BN254 G1 type mismatch")
                 };
-                
+
                 G2Affine g2a = g2[i].GetInterface<object>() switch
                 {
                     G2Affine g => g,
                     G2Projective g => new(g),
                     _ => throw new ArgumentException("BN254 G2 type mismatch")
                 };
-                
+
                 pairs[i] = (g1a, g2a);
             }
-            
+
             return Bn254.PairingCheck(pairs);
         }
     }

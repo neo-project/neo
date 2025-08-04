@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using FluentAssertions;
-using Neo.Cryptography.BN254;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.BN254;
 using System;
 
 namespace Neo.UnitTests.Cryptography.BN254
@@ -143,10 +143,10 @@ namespace Neo.UnitTests.Cryptography.BN254
         {
             Fp.Zero.IsZero.Should().BeTrue();
             Fp.Zero.IsOne.Should().BeFalse();
-            
+
             Fp.One.IsZero.Should().BeFalse();
             Fp.One.IsOne.Should().BeTrue();
-            
+
             var other = new Fp(1, 2, 3, 4);
             other.IsZero.Should().BeFalse();
             other.IsOne.Should().BeFalse();
@@ -155,7 +155,7 @@ namespace Neo.UnitTests.Cryptography.BN254
         [TestMethod]
         public void TestToString()
         {
-            var a = new Fp(0x0123456789abcdef, 0xfedcba9876543210, 
+            var a = new Fp(0x0123456789abcdef, 0xfedcba9876543210,
                           0x1111111111111111, 0x2222222222222222);
             var str = a.ToString();
             str.Should().Contain("2222222222222222");

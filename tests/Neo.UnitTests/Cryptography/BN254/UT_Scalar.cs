@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using FluentAssertions;
-using Neo.Cryptography.BN254;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.BN254;
 using System;
 
 namespace Neo.UnitTests.Cryptography.BN254
@@ -44,21 +44,21 @@ namespace Neo.UnitTests.Cryptography.BN254
         {
             var a = Scalar.One;
             var b = Scalar.One;
-            
+
             // Addition
             var sum = a + b;
             sum.Should().NotBe(Scalar.Zero);
             sum.Should().NotBe(Scalar.One);
             (Scalar.Zero + Scalar.One).Should().Be(Scalar.One);
-            
+
             // Subtraction
             (sum - b).Should().Be(Scalar.One);
             (Scalar.One - Scalar.One).Should().Be(Scalar.Zero);
-            
+
             // Multiplication
             (Scalar.One * Scalar.One).Should().Be(Scalar.One);
             (Scalar.Zero * Scalar.One).Should().Be(Scalar.Zero);
-            
+
             // Negation
             var neg_a = -a;
             (a + neg_a).Should().Be(Scalar.Zero);
@@ -110,10 +110,10 @@ namespace Neo.UnitTests.Cryptography.BN254
         {
             Scalar.Zero.IsZero.Should().BeTrue();
             Scalar.Zero.IsOne.Should().BeFalse();
-            
+
             Scalar.One.IsZero.Should().BeFalse();
             Scalar.One.IsOne.Should().BeTrue();
-            
+
             var other = new Scalar(1, 2, 3, 4);
             other.IsZero.Should().BeFalse();
             other.IsOne.Should().BeFalse();

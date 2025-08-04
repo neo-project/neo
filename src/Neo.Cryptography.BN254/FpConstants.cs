@@ -15,7 +15,7 @@ namespace Neo.Cryptography.BN254
     {
         // BN254 prime field modulus
         // p = 21888242871839275222246405745257275088696311157297823662689037894645226208583
-        
+
         // Montgomery form R = 2^256 mod p
         public static readonly Fp R = new(new ulong[]
         {

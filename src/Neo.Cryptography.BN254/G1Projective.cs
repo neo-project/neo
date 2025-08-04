@@ -50,7 +50,7 @@ namespace Neo.Cryptography.BN254
             var x3 = X.Square() * X;
             var z3 = Z.Square() * Z;
             var bz3 = new Fp(3, 0, 0, 0) * z3;
-            
+
             return (y2 * Z) == (x3 + bz3);
         }
 
@@ -61,10 +61,10 @@ namespace Neo.Cryptography.BN254
             // and (Y * Z') = (Y' * Z).
             var x1 = a.X * b.Z;
             var x2 = b.X * a.Z;
-            
+
             var y1 = a.Y * b.Z;
             var y2 = b.Y * a.Z;
-            
+
             return x1 == x2 & y1 == y2;
         }
 
@@ -162,7 +162,7 @@ namespace Neo.Cryptography.BN254
             t0 = t3 * t1;
             z3 = t5 * z3;
             z3 = z3 + t0;
-            
+
             return new G1Projective(x3, y3, z3);
         }
 
@@ -171,7 +171,7 @@ namespace Neo.Cryptography.BN254
             // Mixed addition formula
             if (b.IsIdentity) return a;
             if (a.IsIdentity) return new G1Projective(b);
-            
+
             var t0 = a.X * b.X;
             var t1 = a.Y * b.Y;
             var t3 = b.X + b.Y;
@@ -199,7 +199,7 @@ namespace Neo.Cryptography.BN254
             t0 = t3 * t1;
             z3 = t5 * z3;
             z3 = z3 + t0;
-            
+
             return new G1Projective(x3, y3, z3);
         }
 
@@ -224,7 +224,7 @@ namespace Neo.Cryptography.BN254
             t1 = X * Y;
             x3 = t0 * t1;
             x3 = x3 + x3;
-            
+
             return new G1Projective(x3, y3, z3);
         }
 
@@ -233,7 +233,7 @@ namespace Neo.Cryptography.BN254
             var acc = Identity;
             var base_ = point;
 
-            // Simple double-and-add algorithm
+            // Binary scalar multiplication algorithm
             foreach (byte b in scalar)
             {
                 for (int i = 0; i < 8; i++)

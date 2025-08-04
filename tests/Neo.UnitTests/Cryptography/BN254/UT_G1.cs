@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using FluentAssertions;
-using Neo.Cryptography.BN254;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.BN254;
 using System;
 
 namespace Neo.UnitTests.Cryptography.BN254
@@ -139,7 +139,7 @@ namespace Neo.UnitTests.Cryptography.BN254
         {
             var point = G1Projective.Generator;
             var scalar = Scalar.One;
-            
+
             var result = point * scalar;
             result.Should().Be(point);
 
@@ -165,7 +165,7 @@ namespace Neo.UnitTests.Cryptography.BN254
 
             var result1 = projective + affine;
             var result2 = affine + projective;
-            
+
             result1.Should().Be(result2);
             result1.IsOnCurve().Should().BeTrue();
         }
@@ -186,7 +186,7 @@ namespace Neo.UnitTests.Cryptography.BN254
         {
             G1Affine.Identity.ToString().Should().Be("G1Affine(Infinity)");
             G1Projective.Identity.ToString().Should().Be("G1Projective(Identity)");
-            
+
             var affine = G1Affine.Generator;
             affine.ToString().Should().Contain("G1Affine");
             affine.ToString().Should().Contain("x=");

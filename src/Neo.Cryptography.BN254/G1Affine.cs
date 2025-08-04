@@ -69,10 +69,10 @@ namespace Neo.Cryptography.BN254
             tmp[0] &= 0x1f;
 
             Fp x = Fp.FromBytes(tmp);
-            
+
             // Compute y from curve equation: y^2 = x^3 + b
             Fp y2 = x.Square() * x + new Fp(3, 0, 0, 0);
-            
+
             // Compute square root
             if (!Sqrt(in y2, out Fp y))
                 throw new ArgumentException("Invalid point - not on curve");
@@ -99,10 +99,10 @@ namespace Neo.Cryptography.BN254
             }
 
             var bytes = X.ToArray();
-            
+
             // Set compression flag
             bytes[0] |= 0x80;
-            
+
             // Set sort flag based on y coordinate
             bool yIsOdd = (Y.ToArray()[0] & 1) != 0;
             if (yIsOdd)
@@ -114,11 +114,11 @@ namespace Neo.Cryptography.BN254
         public bool IsOnCurve()
         {
             if (Infinity) return true;
-            
+
             // Check y^2 = x^3 + b
             Fp y2 = Y.Square();
             Fp x3b = X.Square() * X + new Fp(3, 0, 0, 0);
-            
+
             return y2 == x3b;
         }
 
@@ -191,7 +191,7 @@ namespace Neo.Cryptography.BN254
                 0x2e14116b0a04d617,
                 0x0c19139cb84c680a
             });
-            
+
             return result.Square() == a;
         }
 
