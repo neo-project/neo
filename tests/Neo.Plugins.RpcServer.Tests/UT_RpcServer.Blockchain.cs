@@ -24,6 +24,7 @@ using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
 using System;
 using System.Linq;
+using System.Threading;
 using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.Plugins.RpcServer.Tests
@@ -181,7 +182,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
             // TestUtils.BlocksAdd(snapshot, block.Hash, block);
             // snapshot.Commit();
-            var reason = _neoSystem.Blockchain.Ask<Blockchain.RelayResult>(block).Result;
+            var reason = _neoSystem.Blockchain.Ask<Blockchain.RelayResult>(block, cancellationToken: CancellationToken.None).Result;
             var expectedHash = block.Hash.ToString();
             var result = _rpcServer.GetBlockHash(block.Index);
             Assert.AreEqual(expectedHash, result.AsString());
