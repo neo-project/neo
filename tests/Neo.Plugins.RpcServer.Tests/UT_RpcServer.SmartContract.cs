@@ -245,7 +245,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // Underlying Enum.Parse throws ArgumentException when called directly
             var ex = Assert.ThrowsExactly<ArgumentException>(
                 () => _rpcServer.InvokeFunction(s_neoHash, "symbol", [], invalidSigner.AsParameter<SignersAndWitnesses>()));
-            StringAssert.Contains(ex.Message, "Requested value 'InvalidScopeValue' was not found"); // Check actual ArgumentException message
+            Assert.Contains("Requested value 'InvalidScopeValue' was not found", ex.Message); // Check actual ArgumentException message
         }
 
         [TestMethod]
@@ -542,7 +542,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
 
             // The underlying error is likely FormatException during AddressToScriptHash
-            StringAssert.Contains(ex.Message, RpcError.InvalidParams.Message); // Fix based on test output
+            Assert.Contains(RpcError.InvalidParams.Message, ex.Message); // Fix based on test output
         }
     }
 }
