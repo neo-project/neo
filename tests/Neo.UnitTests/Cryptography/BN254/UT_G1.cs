@@ -53,7 +53,7 @@ namespace Neo.UnitTests.Cryptography.BN254
         {
             var point = G1Affine.Generator;
             var compressed = point.ToCompressed();
-            compressed.Length.Should().Be(48);
+            compressed.Length.Should().Be(32);
 
             var decompressed = G1Affine.FromCompressed(compressed);
             decompressed.Should().Be(point);
@@ -64,8 +64,8 @@ namespace Neo.UnitTests.Cryptography.BN254
         {
             var identity = G1Affine.Identity;
             var compressed = identity.ToCompressed();
-            compressed.Length.Should().Be(48);
-            compressed[0].Should().Be(0xc0); // Compressed + infinity flags
+            compressed.Length.Should().Be(32);
+            // All zeros for infinity in Neo format
 
             var decompressed = G1Affine.FromCompressed(compressed);
             decompressed.Should().Be(identity);
@@ -80,11 +80,11 @@ namespace Neo.UnitTests.Cryptography.BN254
             act1.Should().Throw<ArgumentException>()
                 .WithMessage("Invalid input length 47");
 
-            // Not compressed
-            var notCompressed = new byte[48];
-            Action act2 = () => G1Affine.FromCompressed(notCompressed);
+            // Not correct length
+            var wrongLength = new byte[48];
+            Action act2 = () => G1Affine.FromCompressed(wrongLength);
             act2.Should().Throw<ArgumentException>()
-                .WithMessage("Input must be compressed");
+                .WithMessage("Invalid input length 48");
         }
 
         [TestMethod]

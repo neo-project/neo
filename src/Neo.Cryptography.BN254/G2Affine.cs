@@ -81,46 +81,38 @@ namespace Neo.Cryptography.BN254
 
         public byte[] ToCompressed()
         {
+            // Neo uses a custom serialization format that's just the X coordinate for non-infinity points
             if (Infinity)
             {
-                var result = new byte[Size / 2];
-                result[0] = 0xc0; // compressed + infinity flags
-                return result;
+                return new byte[64]; // All zeros for infinity
             }
 
-            var bytes = X.ToArray();
-
-            // Set compression flag
-            bytes[0] |= 0x80;
-
-            // Set sort flag based on y coordinate
-            var yBytes = Y.ToArray();
-            bool yIsOdd = (yBytes[0] & 1) != 0;
-            if (yIsOdd)
-                bytes[0] |= 0x20;
-
-            return bytes;
+            return X.ToArray();
         }
 
         public static G2Affine FromCompressed(ReadOnlySpan<byte> bytes)
         {
-            if (bytes.Length != Size / 2)
+            if (bytes.Length != 64)
                 throw new ArgumentException($"Invalid input length {bytes.Length}");
 
-            bool compressed = (bytes[0] & 0x80) != 0;
-            if (!compressed)
-                throw new ArgumentException("Input must be compressed");
+            // Check if all zeros (infinity point)
+            bool isZero = true;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                if (bytes[i] != 0)
+                {
+                    isZero = false;
+                    break;
+                }
+            }
 
-            bool infinity = (bytes[0] & 0x40) != 0;
-            bool sort = (bytes[0] & 0x20) != 0;
-            if (infinity)
+            if (isZero)
+            {
                 return Identity;
+            }
 
-            // Clear the flag bits
-            var tmp = bytes.ToArray();
-            tmp[0] &= 0x1f;
-
-            var x = Fp2.FromBytes(tmp);
+            // Parse X coordinate
+            var x = Fp2.FromBytes(bytes);
 
             // Compute y from curve equation: y^2 = x^3 + b
             var x3 = x.Square() * x;
@@ -133,9 +125,9 @@ namespace Neo.Cryptography.BN254
             if (!Fp2Sqrt(in rhs, out var y))
                 throw new ArgumentException("Invalid point - not on curve");
 
-            // Select correct y based on sort flag
+            // For Neo's format, always choose the even y
             bool yIsOdd = (y.C0.ToArray()[0] & 1) != 0;
-            if (yIsOdd != sort)
+            if (yIsOdd)
                 y = -y;
 
             return new G2Affine(x, y, false);

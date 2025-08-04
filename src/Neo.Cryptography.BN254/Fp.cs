@@ -43,6 +43,7 @@ namespace Neo.Cryptography.BN254
         public static ref readonly Fp One => ref one;
 
         private static readonly Fp zero = new();
+        // Neo appears to expect R as the identity element
         private static readonly Fp one = R;
 
         public Fp(ulong u0, ulong u1, ulong u2, ulong u3)
@@ -75,7 +76,7 @@ namespace Neo.Cryptography.BN254
             var u3 = BitConverter.ToUInt64(data.Slice(24, 8));
 
             var result = new Fp(u0, u1, u2, u3);
-            
+
             // Convert TO Montgomery form
             result = result * R2;
             return result.Reduce();
@@ -214,7 +215,7 @@ namespace Neo.Cryptography.BN254
                                           ulong r4, ulong r5, ulong r6, ulong r7)
         {
             // Montgomery reduction using BN254 inverse
-            const ulong inv = 0x87d20782e4866389;
+            const ulong inv = INV;
 
             // Montgomery reduction steps
             ulong k = r0 * inv;
@@ -222,28 +223,28 @@ namespace Neo.Cryptography.BN254
             (r1, carry) = Mac(r1, k, Modulus.u1, carry);
             (r2, carry) = Mac(r2, k, Modulus.u2, carry);
             (r3, carry) = Mac(r3, k, Modulus.u3, carry);
-            (r4, r5) = Adc(r4, 0, carry);
+            (r4, carry) = Adc(r4, 0, carry);
 
             k = r1 * inv;
             (_, carry) = Mac(r1, k, Modulus.u0, 0);
             (r2, carry) = Mac(r2, k, Modulus.u1, carry);
             (r3, carry) = Mac(r3, k, Modulus.u2, carry);
             (r4, carry) = Mac(r4, k, Modulus.u3, carry);
-            (r5, r6) = Adc(r5, 0, carry);
+            (r5, carry) = Adc(r5, 0, carry);
 
             k = r2 * inv;
             (_, carry) = Mac(r2, k, Modulus.u0, 0);
             (r3, carry) = Mac(r3, k, Modulus.u1, carry);
             (r4, carry) = Mac(r4, k, Modulus.u2, carry);
             (r5, carry) = Mac(r5, k, Modulus.u3, carry);
-            (r6, r7) = Adc(r6, 0, carry);
+            (r6, carry) = Adc(r6, 0, carry);
 
             k = r3 * inv;
             (_, carry) = Mac(r3, k, Modulus.u0, 0);
             (r4, carry) = Mac(r4, k, Modulus.u1, carry);
             (r5, carry) = Mac(r5, k, Modulus.u2, carry);
             (r6, carry) = Mac(r6, k, Modulus.u3, carry);
-            (r7, _) = Adc(r7, 0, carry);
+            (r7, carry) = Adc(r7, 0, carry);
 
             var result = new Fp(r4, r5, r6, r7);
             return result.Reduce();
@@ -304,7 +305,11 @@ namespace Neo.Cryptography.BN254
                     {
                         result *= base_;
                     }
-                    base_ = base_.Square();
+                    // Only square if we have more bits to process
+                    if (i < 63 || limbIdx < exponent.Length - 1)
+                    {
+                        base_ = base_.Square();
+                    }
                 }
             }
 
@@ -314,7 +319,7 @@ namespace Neo.Cryptography.BN254
         public byte[] ToArray()
         {
             var result = new byte[Size];
-            
+
             // Convert from Montgomery form by multiplying by 1
             var normalized = this * new Fp(1, 0, 0, 0);
 

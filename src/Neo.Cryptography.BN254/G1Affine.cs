@@ -48,27 +48,28 @@ namespace Neo.Cryptography.BN254
 
         public static G1Affine FromCompressed(ReadOnlySpan<byte> bytes)
         {
-            if (bytes.Length != 48)
+            if (bytes.Length != 32)
                 throw new ArgumentException($"Invalid input length {bytes.Length}");
 
-            // Check compression flag
-            bool compressed = (bytes[0] & 0x80) != 0;
-            if (!compressed)
-                throw new ArgumentException("Input must be compressed");
+            // Check if all zeros (infinity point)
+            bool isZero = true;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                if (bytes[i] != 0)
+                {
+                    isZero = false;
+                    break;
+                }
+            }
 
-            bool infinity = (bytes[0] & 0x40) != 0;
-            bool sort = (bytes[0] & 0x20) != 0;
-
-            if (infinity)
+            if (isZero)
             {
                 return Identity;
             }
 
-            // Clear the flag bits and extract X coordinate (first 32 bytes)
-            var tmp = bytes.Slice(0, 32).ToArray();
-            tmp[0] &= 0x1f;
-
-            Fp x = Fp.FromBytes(tmp);
+            // Parse X coordinate
+            // Note: FromBytes converts to Montgomery form, which is what we want
+            Fp x = Fp.FromBytes(bytes);
 
             // Compute y from curve equation: y^2 = x^3 + b
             Fp y2 = x.Square() * x + B;
@@ -77,9 +78,9 @@ namespace Neo.Cryptography.BN254
             if (!Sqrt(in y2, out Fp y))
                 throw new ArgumentException("Invalid point - not on curve");
 
-            // Select correct y based on sort flag
+            // For Neo's format, always choose the even y
             bool yIsOdd = (y.ToArray()[0] & 1) != 0;
-            if (yIsOdd != sort)
+            if (yIsOdd)
                 y = -y;
 
             var result = new G1Affine(in x, in y, false);
@@ -91,25 +92,13 @@ namespace Neo.Cryptography.BN254
 
         public byte[] ToCompressed()
         {
+            // Neo uses a custom serialization format that's just the X coordinate for non-infinity points
             if (Infinity)
             {
-                var result = new byte[48];
-                result[0] = 0xc0; // compressed + infinity flags
-                return result;
+                return new byte[32]; // All zeros for infinity
             }
 
-            var bytes = X.ToArray();
-            Array.Resize(ref bytes, 48);
-
-            // Set compression flag
-            bytes[0] |= 0x80;
-
-            // Set sort flag based on y coordinate
-            bool yIsOdd = (Y.ToArray()[0] & 1) != 0;
-            if (yIsOdd)
-                bytes[0] |= 0x20;
-
-            return bytes;
+            return X.ToArray();
         }
 
         public bool IsOnCurve()

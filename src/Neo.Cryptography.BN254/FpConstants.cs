@@ -43,7 +43,7 @@ namespace Neo.Cryptography.BN254
             0x20fd6e902d592544
         });
 
-        // -p^(-1) mod 2^64
+        // -p^(-1) mod 2^64 = 0x87d20782e4866389
         public const ulong INV = 0x87d20782e4866389;
 
         // Generator of the multiplicative group
