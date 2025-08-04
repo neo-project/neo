@@ -13,21 +13,21 @@ namespace Neo.Cryptography.BN254
 {
     static class G1Constants
     {
-        // Generator point G1
+        // Generator point G1 (Montgomery form)
         public static readonly Fp GENERATOR_X = new(new ulong[]
         {
-            0x0000000000000001,
-            0x0000000000000000,
-            0x0000000000000000,
-            0x0000000000000000
+            0xd35d438dc58f0d9d,
+            0x0a78eb28f5c70b3d,
+            0x666ea36f7879462c,
+            0x0e0a77c19a07df2f
         });
 
         public static readonly Fp GENERATOR_Y = new(new ulong[]
         {
-            0x0000000000000002,
-            0x0000000000000000,
-            0x0000000000000000,
-            0x0000000000000000
+            0xa6ba871b8b1e1b3a,
+            0x14f1d651eb8e167b,
+            0xccdd46def0f28c58,
+            0x1c14ef83340fbe5e
         });
 
         // Curve parameter b = 3

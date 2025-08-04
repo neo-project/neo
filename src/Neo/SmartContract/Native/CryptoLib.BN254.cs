@@ -46,7 +46,7 @@ namespace Neo.SmartContract.Native
         {
             return data.Length switch
             {
-                48 => new InteropInterface(G1Affine.FromCompressed(data)),
+                32 => new InteropInterface(G1Affine.FromCompressed(data)),
                 64 => new InteropInterface(G2Affine.FromCompressed(data)),
                 384 => new InteropInterface(Gt.FromBytes(data)),
                 _ => throw new ArgumentException("Invalid BN254 point length"),

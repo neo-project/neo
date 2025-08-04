@@ -48,7 +48,7 @@ namespace Neo.Cryptography.BN254
 
         public static G1Affine FromCompressed(ReadOnlySpan<byte> bytes)
         {
-            if (bytes.Length != 48)
+            if (bytes.Length != 32)
                 throw new ArgumentException($"Invalid input length {bytes.Length}");
 
             // Check compression flag
@@ -93,7 +93,7 @@ namespace Neo.Cryptography.BN254
         {
             if (Infinity)
             {
-                var result = new byte[48];
+                var result = new byte[32];
                 result[0] = 0xc0; // compressed + infinity flags
                 return result;
             }
