@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Neo.Cryptography.BLS12_381\Neo.Cryptography.BLS12_381.csproj" />
+    <ProjectReference Include="..\Neo.Cryptography.BN254\Neo.Cryptography.BN254.csproj" />
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\Neo.IO\Neo.IO.csproj" />
     <ProjectReference Include="..\Neo.Json\Neo.Json.csproj" />
