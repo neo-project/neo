@@ -299,7 +299,7 @@ namespace Neo.SmartContract.Native
             // Since BigInteger doesn't have a max value or bit size
             // anything over 'maxValue' return zero
             if (result >= maxValue)
-                return BigInteger.Zero;
+                return result % maxValue;
 
             return result;
         }
