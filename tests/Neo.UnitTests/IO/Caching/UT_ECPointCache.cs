@@ -30,7 +30,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestGetKeyForItem()
         {
             relayCache.Add(ECCurve.Secp256r1.G);
-            Assert.IsTrue(relayCache.Contains(ECCurve.Secp256r1.G));
+            Assert.Contains(ECCurve.Secp256r1.G, relayCache);
             Assert.IsTrue(relayCache.TryGet(ECCurve.Secp256r1.G.EncodePoint(true), out ECPoint tmp));
             Assert.IsTrue(tmp is ECPoint);
         }

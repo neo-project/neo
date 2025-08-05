@@ -27,14 +27,14 @@ namespace Neo.UnitTests.Network.P2P
 
             Assert.IsFalse(ses.HasTooManyTasks);
             Assert.AreEqual((uint)123, ses.LastBlockIndex);
-            Assert.AreEqual(0, ses.IndexTasks.Count);
+            Assert.IsEmpty(ses.IndexTasks);
             Assert.IsTrue(ses.IsFullNode);
 
             ses = new TaskSession(new VersionPayload() { Capabilities = Array.Empty<NodeCapability>() });
 
             Assert.IsFalse(ses.HasTooManyTasks);
             Assert.AreEqual((uint)0, ses.LastBlockIndex);
-            Assert.AreEqual(0, ses.IndexTasks.Count);
+            Assert.IsEmpty(ses.IndexTasks);
             Assert.IsFalse(ses.IsFullNode);
         }
     }

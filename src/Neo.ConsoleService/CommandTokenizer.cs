@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -35,8 +36,49 @@ namespace Neo.ConsoleService
                 'e' => '\e',
                 '0' => '\0',
                 ' ' => ' ',
-                _ => throw new ArgumentException($"Invalid escaped character: {ch}")
+                _ => throw new ArgumentException($"Invalid escaped character: \\{ch}. " +
+                    "If you don't want to use escape character, please use backtick(`) to wrap the string.")
             };
+        }
+
+        private static (char, int) EscapedChar(string commandLine, int index)
+        {
+            index++; // next char after \
+            if (index >= commandLine.Length)
+            {
+                throw new ArgumentException("Invalid escape sequence. The command line ends with a backslash character.");
+            }
+
+            if (commandLine[index] == 'x')
+            {
+                if (index + 2 >= commandLine.Length)
+                    throw new ArgumentException("Invalid escape sequence. Too few hex digits after \\x");
+
+                if (!byte.TryParse(commandLine.AsSpan(index + 1, 2), NumberStyles.AllowHexSpecifier, null, out var ch))
+                {
+                    throw new ArgumentException($"Invalid hex digits after \\x. " +
+                        "If you don't want to use escape character, please use backtick(`) to wrap the string.");
+                }
+
+                return new((char)ch, 1 + 2);
+            }
+
+            if (commandLine[index] == 'u')
+            {
+                if (index + 4 >= commandLine.Length)
+                    throw new ArgumentException("Invalid escape sequence. Too few hex digits after \\u");
+
+                if (!ushort.TryParse(commandLine.AsSpan(index + 1, 4), NumberStyles.AllowHexSpecifier, null, out var ch))
+                {
+                    throw new ArgumentException($"Invalid hex digits after \\u. " +
+                        "If you don't want to use escape character, please use backtick(`) to wrap the string.");
+                }
+
+                // handle invalid surrogate pairs if needed, but good enough for a cli tool
+                return new((char)ch, 1 + 4);
+            }
+
+            return new(EscapedChar(commandLine[index]), 1);
         }
 
         /// <summary>
@@ -61,13 +103,9 @@ namespace Neo.ConsoleService
                 var ch = commandLine[index];
                 if (ch == '\\' && quoteChar != CommandToken.NoEscapedChar)
                 {
-                    index++;
-                    if (index >= commandLine.Length)
-                    {
-                        throw new ArgumentException("Unexpected end of command line while processing escape sequence." +
-                            " The command line ends with a backslash character.");
-                    }
-                    token.Append(EscapedChar(commandLine[index]));
+                    (var escapedChar, var length) = EscapedChar(commandLine, index);
+                    token.Append(escapedChar);
+                    index += length;
                 }
                 else if (quoteChar != CommandToken.NoQuoteChar)
                 {

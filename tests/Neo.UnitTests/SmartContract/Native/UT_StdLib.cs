@@ -80,7 +80,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(4, engine.ResultStack.Count);
+                Assert.HasCount(4, engine.ResultStack);
 
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
                 Assert.AreEqual(0, engine.ResultStack.Pop<Integer>().GetInteger());
@@ -102,7 +102,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
 
                 Assert.AreEqual("3DUz7ncyT", engine.ResultStack.Pop<ByteString>().GetString());
             }
@@ -115,7 +115,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
 
                 CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, engine.ResultStack.Pop<ByteString>().GetSpan().ToArray());
             }
@@ -160,7 +160,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.HasCount(5, engine.ResultStack);
 
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
@@ -180,7 +180,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.HasCount(5, engine.ResultStack);
 
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
@@ -200,7 +200,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.HasCount(5, engine.ResultStack);
 
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
                 Assert.AreEqual(2, engine.ResultStack.Pop<Integer>().GetInteger());
@@ -221,10 +221,10 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.HasCount(1, engine.ResultStack);
 
             var arr = engine.ResultStack.Pop<VM.Types.Array>();
-            Assert.AreEqual(2, arr.Count);
+            Assert.HasCount(2, arr);
             Assert.AreEqual("a", arr[0].GetString());
             Assert.AreEqual("b", arr[1].GetString());
         }
@@ -243,7 +243,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreEqual(3, engine.ResultStack.Count);
+            Assert.HasCount(3, engine.ResultStack);
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
@@ -265,7 +265,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.HasCount(2, engine.ResultStack);
             Assert.AreEqual(3, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
         }
@@ -286,7 +286,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(2, engine.ResultStack.Count);
+                Assert.HasCount(2, engine.ResultStack);
 
                 engine.ResultStack.Pop<Null>();
                 Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
@@ -302,7 +302,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
-                Assert.AreEqual(0, engine.ResultStack.Count);
+                Assert.IsEmpty(engine.ResultStack);
             }
 
             // Error 2 - No decimals
@@ -315,7 +315,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
-                Assert.AreEqual(0, engine.ResultStack.Count);
+                Assert.IsEmpty(engine.ResultStack);
             }
         }
 
@@ -346,7 +346,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.HasCount(5, engine.ResultStack);
 
                 Assert.AreEqual("{\"key\":\"value\"}", engine.ResultStack.Pop<ByteString>().GetString());
                 Assert.AreEqual("null", engine.ResultStack.Pop<ByteString>().GetString());
@@ -365,7 +365,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
-                Assert.AreEqual(0, engine.ResultStack.Count);
+                Assert.IsEmpty(engine.ResultStack);
             }
         }
 
@@ -384,7 +384,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.HasCount(2, engine.ResultStack);
 
             Assert.AreEqual("280474657374", engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString());
             Assert.AreEqual("210164", engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString());
@@ -405,7 +405,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.HasCount(2, engine.ResultStack);
 
             Assert.AreEqual(engine.ResultStack.Pop<Integer>().GetInteger(), 100);
             Assert.AreEqual("test", engine.ResultStack.Pop<ByteString>().GetString());
@@ -426,7 +426,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(3, engine.ResultStack.Count);
+                Assert.HasCount(3, engine.ResultStack);
                 Assert.AreEqual("Subject=test@example.com&Issuer=https://example.com", engine.ResultStack.Pop<ByteString>());
                 Assert.AreEqual("Subject=test@example.com&Issuer=https://example.com", engine.ResultStack.Pop<ByteString>());
                 Assert.AreEqual("U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t", engine.ResultStack.Pop<ByteString>().GetString());
