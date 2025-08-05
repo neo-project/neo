@@ -149,8 +149,8 @@ namespace Neo.UnitTests.Ledger
                 Witnesses = [Witness.Empty]
             };
 
-            Assert.AreEqual(0, tx.Attributes.Length);
-            Assert.AreEqual(0, tx.Signers.Length);
+            Assert.IsEmpty(tx.Attributes);
+            Assert.IsEmpty(tx.Signers);
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException($"The size({size}) cannot be less than the Transaction.Size({tx.Size}).");
