@@ -22,7 +22,6 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_CryptoLib_BN254
     {
-
         [TestMethod]
         public void TestBn254Serialize_G1()
         {
