@@ -71,7 +71,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.ThrowsExactly<ArgumentNullException>(actual);
 
             item.Witnesses = [new()];
-            Assert.AreEqual(1, item.Witnesses.Length);
+            Assert.HasCount(1, item.Witnesses);
         }
     }
 }

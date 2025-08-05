@@ -170,8 +170,8 @@ namespace Neo.UnitTests.SmartContract
                 var currentScriptHash = engine.EntryScriptHash;
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.AreEqual(2, engine.Notifications.Count);
+                Assert.HasCount(1, engine.ResultStack);
+                Assert.HasCount(2, engine.Notifications);
 
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.Array));
 
@@ -247,8 +247,8 @@ namespace Neo.UnitTests.SmartContract
                 var currentScriptHash = engine.EntryScriptHash;
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.AreEqual(2, engine.Notifications.Count);
+                Assert.HasCount(1, engine.ResultStack);
+                Assert.HasCount(2, engine.Notifications);
 
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.Array));
 
@@ -277,7 +277,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
 
             var array = (VM.Types.Array)stackItem;
-            Assert.AreEqual(3, array.Count);
+            Assert.HasCount(3, array);
             CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetSpan().ToArray());
             Assert.AreEqual(notification, array[1].GetString());
         }
@@ -423,10 +423,10 @@ namespace Neo.UnitTests.SmartContract
 
             result = engineB.ResultStack.Pop();
             Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
-            Assert.AreEqual(1, (result as VM.Types.Array).Count);
+            Assert.HasCount(1, result as VM.Types.Array);
             result = (result as VM.Types.Array)[0];
             Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
-            Assert.AreEqual(5, (result as VM.Types.Array).Count);
+            Assert.HasCount(5, result as VM.Types.Array);
             result = (result as VM.Types.Array)[0]; // Address
             Assert.AreEqual(UInt160.Zero, new UInt160(result.GetSpan()));
         }
@@ -545,7 +545,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
             var list = NativeContract.ContractManagement.ListContracts(engine.SnapshotCache);
-            list.ForEach(p => Assert.IsTrue(p.Id < 0));
+            list.ForEach(p => Assert.IsLessThan(0, p.Id));
 
             var state = TestUtils.GetContract();
             engine.SnapshotCache.AddContract(state.Hash, state);

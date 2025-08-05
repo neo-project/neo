@@ -256,10 +256,10 @@ namespace Neo.UnitTests.Persistence
             Assert.IsTrue(items[0].Value.EqualsTo(s_value3));
             Assert.AreEqual(s_key2, items[1].Key);
             Assert.IsTrue(items[1].Value.EqualsTo(s_value2));
-            Assert.AreEqual(3, items.Length);
+            Assert.HasCount(3, items);
 
             items = [.. _myDataCache.Seek(s_key5.ToArray(), SeekDirection.Forward)];
-            Assert.AreEqual(0, items.Length);
+            Assert.IsEmpty(items);
         }
 
         [TestMethod]
@@ -278,7 +278,7 @@ namespace Neo.UnitTests.Persistence
             Assert.IsTrue(items[0].Value.EqualsTo(s_value3));
             Assert.AreEqual(s_key4, items[1].Key);
             Assert.IsTrue(items[1].Value.EqualsTo(s_value4));
-            Assert.AreEqual(2, items.Length);
+            Assert.HasCount(2, items);
 
             // case 2 Need to sort the cache of myDataCache
 
@@ -295,7 +295,7 @@ namespace Neo.UnitTests.Persistence
             Assert.IsTrue(items[0].Value.EqualsTo(s_value3));
             Assert.AreEqual(s_key4, items[1].Key);
             Assert.IsTrue(items[1].Value.EqualsTo(s_value4));
-            Assert.AreEqual(2, items.Length);
+            Assert.HasCount(2, items);
 
             // case 3 FindRange by Backward
 
@@ -313,7 +313,7 @@ namespace Neo.UnitTests.Persistence
             Assert.IsTrue(items[0].Value.EqualsTo(s_value5));
             Assert.AreEqual(s_key4, items[1].Key);
             Assert.IsTrue(items[1].Value.EqualsTo(s_value4));
-            Assert.AreEqual(2, items.Length);
+            Assert.HasCount(2, items);
         }
 
         [TestMethod]

@@ -29,7 +29,7 @@ namespace Neo.UnitTests.IO.Caching
                 Assert.IsTrue(bucket.TryAdd(i));
                 Assert.IsFalse(bucket.TryAdd(i));
             }
-            Assert.AreEqual(100, bucket.Count);
+            Assert.HasCount(100, bucket);
 
             var sum = 0;
             foreach (var ele in bucket)
@@ -39,7 +39,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(5050, sum);
 
             bucket.TryAdd(101);
-            Assert.AreEqual(100, bucket.Count);
+            Assert.HasCount(100, bucket);
 
             var items = new int[10];
             var value = 11;
@@ -49,10 +49,10 @@ namespace Neo.UnitTests.IO.Caching
                 value += 2;
             }
             bucket.ExceptWith(items);
-            Assert.AreEqual(90, bucket.Count);
+            Assert.HasCount(90, bucket);
 
-            Assert.IsFalse(bucket.Contains(13));
-            Assert.IsTrue(bucket.Contains(50));
+            Assert.DoesNotContain(13, bucket);
+            Assert.Contains(50, bucket);
         }
 
         [TestMethod]

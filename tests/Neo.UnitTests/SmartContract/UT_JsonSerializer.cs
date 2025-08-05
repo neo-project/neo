@@ -207,7 +207,7 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("{}"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Map));
-            Assert.AreEqual(0, ((Map)items).Count);
+            Assert.IsEmpty((Map)items);
         }
 
         [TestMethod]
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Array));
-            Assert.AreEqual(0, ((Array)items).Count);
+            Assert.IsEmpty((Array)items);
         }
 
         [TestMethod]
@@ -229,7 +229,7 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("{\"test1\":123,\"test2\":321}"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Map));
-            Assert.AreEqual(2, ((Map)items).Count);
+            Assert.HasCount(2, (Map)items);
 
             var map = (Map)items;
 
@@ -250,7 +250,7 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[true,\"test\",123,9.05E+28]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Array));
-            Assert.AreEqual(4, ((Array)items).Count);
+            Assert.HasCount(4, (Array)items);
 
             var array = (Array)items;
 
@@ -268,15 +268,15 @@ namespace Neo.UnitTests.SmartContract
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[[true,\"test1\",123],[true,\"test2\",321]]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Array));
-            Assert.AreEqual(2, ((Array)items).Count);
+            Assert.HasCount(2, (Array)items);
 
             var array = (Array)items;
 
             Assert.IsInstanceOfType(array[0], typeof(Array));
-            Assert.AreEqual(3, ((Array)array[0]).Count);
+            Assert.HasCount(3, (Array)array[0]);
 
             array = (Array)array[0];
-            Assert.AreEqual(3, array.Count);
+            Assert.HasCount(3, array);
 
             Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual("test1", array[1].GetString());
@@ -284,7 +284,7 @@ namespace Neo.UnitTests.SmartContract
 
             array = (Array)items;
             array = (Array)array[1];
-            Assert.AreEqual(3, array.Count);
+            Assert.HasCount(3, array);
 
             Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual("test2", array[1].GetString());
