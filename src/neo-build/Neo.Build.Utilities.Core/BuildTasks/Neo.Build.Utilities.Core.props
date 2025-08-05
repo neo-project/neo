@@ -1,0 +1,32 @@
+<Project>
+  <!-- Tasks Configuration-->
+  <PropertyGroup>
+    <NeoBuildTasksAssemblyName>$(MSBuildThisFileName)</NeoBuildTasksAssemblyName>
+    <NeoBuildTasksAssemblyDirectory>$(MSBuildThisFileDirectory)..\tasks\netstandard2.0</NeoBuildTasksAssemblyDirectory>
+    <NeoBuildTasksAssemblyFile>$(NeoBuildTasksAssemblyDirectory)\$(NeoBuildTasksAssemblyName).dll</NeoBuildTasksAssemblyFile>
+  </PropertyGroup>
+
+  <!-- Tasks -->
+  <UsingTask TaskName="$(NeoBuildTasksAssemblyName).NeoWallet" AssemblyFile="$(NeoBuildTasksAssemblyFile)"/>
+
+  <PropertyGroup>
+    <!-- Project Configuration -->
+    <NeoBuildProjectDirectory Condition=" '$(NeoBuildProjectDirectory)' == '' ">$(MSBuildProjectDirectory)</NeoBuildProjectDirectory>
+
+    <!-- Build Configuration -->
+    <NeoBuildVersion Condition=" '$(NeoBuildVersion)' == '' ">3.9.0</NeoBuildVersion>
+
+    <!-- Runtime Tool Configuration -->
+    <NeoBuildToolSource Condition=" '$(NeoBuildToolSource)' == '' "></NeoBuildToolSource>
+    <NeoBuildToolPath>$(NeoBuildProjectDirectory)/../tools</NeoBuildToolPath>
+    <NeoBuildToolPackageName Condition=" '$(NeoBuildToolPackageName)' == '' ">Neo.Build.ToolSet</NeoBuildToolPackageName>
+
+    <!-- Protocol Settings -->
+    <NeoProtocolAddressVersion Condition=" '$(NeoProtocolAddressVersion)' == '' ">53</NeoProtocolAddressVersion>
+    
+    <!-- Wallet Configuration -->
+    <NeoWalletFileName Condition=" '$(NeoWalletFileName)' == '' ">wallet1</NeoWalletFileName>
+    <NeoWalletFileFullPath Condition=" '$(NeoWalletFileFullPath)' == '' ">$(NeoBuildProjectDirectory)$(NeoWalletFileName).json</NeoWalletFileFullPath>
+  </PropertyGroup>
+
+</Project>
