@@ -52,7 +52,7 @@ namespace Neo.UnitTests
             Assert.IsNull(data.GetSignatures(tx.Sender));
             Assert.IsTrue(wallet.Sign(data));
             Assert.IsTrue(data.Completed);
-            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count);
+            Assert.HasCount(1, data.GetSignatures(tx.Sender));
 
             tx.Witnesses = data.GetWitnesses();
             return tx;
@@ -76,7 +76,7 @@ namespace Neo.UnitTests
             Assert.IsNull(data.GetSignatures(tx.Sender));
             Assert.IsTrue(wallet.Sign(data));
             Assert.IsTrue(data.Completed);
-            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count);
+            Assert.HasCount(1, data.GetSignatures(tx.Sender));
             tx.Witnesses = data.GetWitnesses();
             return tx;
         }
@@ -204,7 +204,7 @@ namespace Neo.UnitTests
             Assert.IsNull(data.GetSignatures(tx.Sender));
             Assert.IsTrue(wallet.Sign(data));
             Assert.IsTrue(data.Completed);
-            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count);
+            Assert.HasCount(1, data.GetSignatures(tx.Sender));
             tx.Witnesses = data.GetWitnesses();
             if (type == InvalidTransactionType.InvalidSignature)
             {

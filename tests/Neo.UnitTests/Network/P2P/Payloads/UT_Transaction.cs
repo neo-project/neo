@@ -196,7 +196,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
             }
@@ -249,14 +249,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var data = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
             // 'from' is always required as witness
             // if not included on cosigner with a scope, its scope should be considered 'CalledByEntry'
-            Assert.AreEqual(1, data.ScriptHashes.Count);
+            Assert.HasCount(1, data.ScriptHashes);
             Assert.AreEqual(acc.ScriptHash, data.ScriptHashes[0]);
             // will sign tx
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
             // get witnesses from signed 'data'
             tx.Witnesses = data.GetWitnesses();
-            Assert.AreEqual(1, tx.Witnesses.Length);
+            Assert.HasCount(1, tx.Witnesses);
 
             // Fast check
 
@@ -272,7 +272,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
             }
@@ -288,8 +288,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(25, Transaction.HeaderSize);
             // Part II
             Assert.AreEqual(1, tx.Attributes.GetVarSize());
-            Assert.AreEqual(0, tx.Attributes.Length);
-            Assert.AreEqual(1, tx.Signers.Length);
+            Assert.IsEmpty(tx.Attributes);
+            Assert.HasCount(1, tx.Signers);
             // Note that Data size and Usage size are different (because of first byte on GetVarSize())
             Assert.AreEqual(22, tx.Signers.GetVarSize());
             // Part III
@@ -364,7 +364,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // get witnesses from signed 'data'
             tx.Witnesses = data.GetWitnesses();
-            Assert.AreEqual(1, tx.Witnesses.Length);
+            Assert.HasCount(1, tx.Witnesses);
 
             // Fast check
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
@@ -378,7 +378,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
             }
@@ -445,7 +445,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // get witnesses from signed 'data'
             tx.Witnesses = data.GetWitnesses();
-            Assert.AreEqual(1, tx.Witnesses.Length);
+            Assert.HasCount(1, tx.Witnesses);
 
             // Fast check
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
@@ -459,7 +459,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
             }
@@ -530,7 +530,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // get witnesses from signed 'data'
             tx.Witnesses = data.GetWitnesses();
-            Assert.AreEqual(1, tx.Witnesses.Length);
+            Assert.HasCount(1, tx.Witnesses);
 
             // Fast check
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
@@ -544,7 +544,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
             }
@@ -658,11 +658,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // get witnesses from signed 'data'
             tx.Witnesses = data.GetWitnesses();
             // only a single witness should exist
-            Assert.AreEqual(1, tx.Witnesses.Length);
+            Assert.HasCount(1, tx.Witnesses);
             // no attributes must exist
-            Assert.AreEqual(0, tx.Attributes.Length);
+            Assert.IsEmpty(tx.Attributes);
             // one cosigner must exist
-            Assert.AreEqual(1, tx.Signers.Length);
+            Assert.HasCount(1, tx.Signers);
 
             // Fast check
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
@@ -676,7 +676,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
             }
@@ -809,7 +809,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Witnesses = [],
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshotCache);
-            Assert.AreEqual(1, hashes.Length);
+            Assert.HasCount(1, hashes);
             Assert.AreNotEqual(VerifyResult.Succeed,
                 txSimple.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, new(), []));
         }
@@ -1048,7 +1048,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // get witnesses from signed 'data'
             tx.Witnesses = data.GetWitnesses();
-            Assert.AreEqual(1, tx.Witnesses.Length);
+            Assert.HasCount(1, tx.Witnesses);
 
             // Fast check
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
@@ -1062,7 +1062,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
             }
@@ -1088,7 +1088,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual("0x0ab073429086d9e48fc87386122917989705d1c81fe4a60bf90e2fc228de3146", jObj["hash"].AsString());
             Assert.AreEqual(84, jObj["size"].AsNumber());
             Assert.AreEqual(0, jObj["version"].AsNumber());
-            Assert.AreEqual(0, ((JArray)jObj["attributes"]).Count);
+            Assert.IsEmpty((JArray)jObj["attributes"]);
             Assert.AreEqual("0", jObj["netfee"].AsString());
             Assert.AreEqual("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=", jObj["script"].AsString());
             Assert.AreEqual("4200000000", jObj["sysfee"].AsString());

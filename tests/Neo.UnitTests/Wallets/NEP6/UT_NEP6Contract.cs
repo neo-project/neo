@@ -37,9 +37,9 @@ namespace Neo.UnitTests.Wallets.NEP6
 
             NEP6Contract nep6Contract = NEP6Contract.FromJson(@object);
             CollectionAssert.AreEqual("2103ef891df4c0b7eefb937d21ea0fb88cde8e0d82a7ff11872b5e7047969dafb4eb68747476aa".HexToBytes(), nep6Contract.Script);
-            Assert.AreEqual(1, nep6Contract.ParameterList.Length);
+            Assert.HasCount(1, nep6Contract.ParameterList);
             Assert.AreEqual(ContractParameterType.Signature, nep6Contract.ParameterList[0]);
-            Assert.AreEqual(1, nep6Contract.ParameterNames.Length);
+            Assert.HasCount(1, nep6Contract.ParameterNames);
             Assert.AreEqual("signature", nep6Contract.ParameterNames[0]);
             Assert.IsFalse(nep6Contract.Deployed);
         }
@@ -63,7 +63,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             Assert.IsFalse(jBoolean.Value);
 
             JArray parameters = (JArray)@object["parameters"];
-            Assert.AreEqual(2, parameters.Count);
+            Assert.HasCount(2, parameters);
 
             jString = (JString)parameters[0]["name"];
             Assert.AreEqual("param1", jString.Value);
