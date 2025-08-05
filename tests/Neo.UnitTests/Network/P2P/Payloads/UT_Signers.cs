@@ -321,9 +321,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var newSigner = Signer.FromJson(json);
             Assert.IsTrue(newSigner.Account.Equals(signer.Account));
             Assert.AreEqual(signer.Scopes, newSigner.Scopes);
-            Assert.AreEqual(1, newSigner.AllowedContracts.Length);
+            Assert.HasCount(1, newSigner.AllowedContracts);
             Assert.IsTrue(newSigner.AllowedContracts[0].Equals(signer.AllowedContracts[0]));
-            Assert.AreEqual(1, newSigner.AllowedGroups.Length);
+            Assert.HasCount(1, newSigner.AllowedGroups);
             Assert.IsTrue(newSigner.AllowedGroups[0].Equals(signer.AllowedGroups[0]));
         }
     }
