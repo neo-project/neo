@@ -66,10 +66,9 @@ namespace Neo.Plugins.RpcServer
         /// <para>Response format:</para>
         /// <code>{"jsonrpc": "2.0", "id": 1, "result": true}</code>
         /// </summary>
-        /// <param name="_params">An empty array.</param>
         /// <returns>Returns true if the wallet was successfully closed.</returns>
         [RpcMethod]
-        protected internal virtual JToken CloseWallet(JArray _params)
+        protected internal virtual JToken CloseWallet()
         {
             wallet = null;
             return true;
@@ -103,11 +102,10 @@ namespace Neo.Plugins.RpcServer
         /// <para>Response format:</para>
         /// <code>{"jsonrpc": "2.0", "id": 1, "result": "The newly created Base58Check address"}</code>
         /// </summary>
-        /// <param name="_params">An empty array.</param>
         /// <returns>The newly created address as a string.</returns>
         /// <exception cref="RpcException">Thrown when no wallet is open.</exception>
         [RpcMethod]
-        protected internal virtual JToken GetNewAddress(JArray _params)
+        protected internal virtual JToken GetNewAddress()
         {
             CheckWallet();
             WalletAccount account = wallet.CreateAccount();
@@ -149,11 +147,10 @@ namespace Neo.Plugins.RpcServer
         /// {"jsonrpc": "2.0", "id": 1, "result": "The amount of unclaimed GAS(an integer number in string)"}
         /// </code>
         /// </summary>
-        /// <param name="_params">An empty array.</param>
         /// <returns>The amount of unclaimed GAS(an integer number in string).</returns>
         /// <exception cref="RpcException">Thrown when no wallet is open.</exception>
         [RpcMethod]
-        protected internal virtual JToken GetWalletUnclaimedGas(JArray _params)
+        protected internal virtual JToken GetWalletUnclaimedGas()
         {
             CheckWallet();
             // Datoshi is the smallest unit of GAS, 1 GAS = 10^8 Datoshi
@@ -238,11 +235,10 @@ namespace Neo.Plugins.RpcServer
         ///   "result": [{"address": "address", "haskey": true, "label": "label", "watchonly": false} ]
         /// }</code>
         /// </summary>
-        /// <param name="_params">An empty array.</param>
         /// <returns>An array of JSON objects, each containing information about an address in the wallet.</returns>
         /// <exception cref="RpcException">Thrown when no wallet is open.</exception>
         [RpcMethod]
-        protected internal virtual JToken ListAddress(JArray _params)
+        protected internal virtual JToken ListAddress()
         {
             CheckWallet();
             return wallet.GetAccounts().Select(p =>
