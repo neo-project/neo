@@ -25,8 +25,8 @@ namespace Neo.UnitTests.IO.Caching
             var item = new TestItem { Id = 1, Name = "Item1" };
             var ok = collection.TryAdd(item);
             Assert.IsTrue(ok);
-            Assert.AreEqual(1, collection.Count);
-            Assert.IsTrue(collection.Contains(1));
+            Assert.HasCount(1, collection);
+            Assert.Contains(item, collection);
             Assert.AreEqual(item, collection.FirstOrDefault);
         }
 
@@ -45,7 +45,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.IsFalse(ok);
 
             collection.Clear();
-            Assert.AreEqual(0, collection.Count);
+            Assert.IsEmpty(collection);
             Assert.IsNull(collection.FirstOrDefault);
         }
 
@@ -62,8 +62,8 @@ namespace Neo.UnitTests.IO.Caching
 
             // Assert
             Assert.IsTrue(ok);
-            Assert.AreEqual(0, collection.Count);
-            Assert.IsFalse(collection.Contains(1));
+            Assert.IsEmpty(collection);
+            Assert.DoesNotContain(item, collection);
         }
 
         [TestMethod]
@@ -80,9 +80,9 @@ namespace Neo.UnitTests.IO.Caching
             Assert.IsTrue(collection.RemoveFirst());
 
             // Assert
-            Assert.AreEqual(1, collection.Count);
-            Assert.IsFalse(collection.Contains(1));
-            Assert.IsTrue(collection.Contains(2));
+            Assert.HasCount(1, collection);
+            Assert.DoesNotContain(item1, collection);
+            Assert.Contains(item2, collection);
         }
 
         public class TestItem
