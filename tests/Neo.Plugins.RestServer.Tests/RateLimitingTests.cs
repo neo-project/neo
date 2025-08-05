@@ -105,15 +105,15 @@ namespace Neo.Plugins.RestServer.Tests
             // Act & Assert
 
             // First request should succeed
-            var lease1 = await limiter.AcquireAsync(httpContext);
+            var lease1 = await limiter.AcquireAsync(httpContext, cancellationToken: CancellationToken.None);
             Assert.IsTrue(lease1.IsAcquired);
 
             // Second request should succeed
-            var lease2 = await limiter.AcquireAsync(httpContext);
+            var lease2 = await limiter.AcquireAsync(httpContext, cancellationToken: CancellationToken.None);
             Assert.IsTrue(lease2.IsAcquired);
 
             // Third request should be rejected
-            var lease3 = await limiter.AcquireAsync(httpContext);
+            var lease3 = await limiter.AcquireAsync(httpContext, cancellationToken: CancellationToken.None);
             Assert.IsFalse(lease3.IsAcquired);
 
             // Check retry-after metadata
@@ -155,18 +155,18 @@ namespace Neo.Plugins.RestServer.Tests
             // Act & Assert
 
             // First two requests should succeed immediately
-            var lease1 = await limiter.AcquireAsync(httpContext);
+            var lease1 = await limiter.AcquireAsync(httpContext, cancellationToken: CancellationToken.None);
             Assert.IsTrue(lease1.IsAcquired);
 
-            var lease2 = await limiter.AcquireAsync(httpContext);
+            var lease2 = await limiter.AcquireAsync(httpContext, cancellationToken: CancellationToken.None);
             Assert.IsTrue(lease2.IsAcquired);
 
             // Third request should be queued
-            var lease3Task = limiter.AcquireAsync(httpContext);
+            var lease3Task = limiter.AcquireAsync(httpContext, cancellationToken: CancellationToken.None);
             Assert.IsFalse(lease3Task.IsCompleted); // Should not complete immediately
 
             // Fourth request should be rejected (queue full)
-            var lease4 = await limiter.AcquireAsync(httpContext);
+            var lease4 = await limiter.AcquireAsync(httpContext, cancellationToken: CancellationToken.None);
             Assert.IsFalse(lease4.IsAcquired);
 
             // Release previous leases

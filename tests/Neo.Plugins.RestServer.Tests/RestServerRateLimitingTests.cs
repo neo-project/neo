@@ -75,21 +75,21 @@ namespace Neo.Plugins.RestServer.Tests
         {
             // Act & Assert
             // First two requests should succeed
-            var response1 = await _client!.GetAsync("/api/test");
+            var response1 = await _client!.GetAsync("/api/test", CancellationToken.None);
             Assert.AreEqual(HttpStatusCode.OK, response1.StatusCode);
 
-            var response2 = await _client!.GetAsync("/api/test");
+            var response2 = await _client!.GetAsync("/api/test", CancellationToken.None);
             Assert.AreEqual(HttpStatusCode.OK, response2.StatusCode);
 
             // Third request should be rate limited
-            var response3 = await _client!.GetAsync("/api/test");
+            var response3 = await _client!.GetAsync("/api/test", CancellationToken.None);
             Assert.AreEqual(HttpStatusCode.TooManyRequests, response3.StatusCode);
 
             // Check for Retry-After header
             Assert.IsTrue(response3.Headers.Contains("Retry-After"));
 
             // Read the response content
-            var content = await response3.Content.ReadAsStringAsync();
+            var content = await response3.Content.ReadAsStringAsync(CancellationToken.None);
             Assert.IsTrue(content.Contains("Too many requests"));
         }
 

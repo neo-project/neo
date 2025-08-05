@@ -101,7 +101,7 @@ namespace Neo.Plugins.RestServer.Tests
             // Should allow more requests due to higher global limit
             for (int i = 0; i < 5; i++)
             {
-                var response = await _client!.GetAsync("/api/regular");
+                var response = await _client!.GetAsync("/api/regular", CancellationToken.None);
                 Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
             }
         }
@@ -121,11 +121,11 @@ namespace Neo.Plugins.RestServer.Tests
             var limiter = new FixedWindowRateLimiter(limiterOptions);
 
             // First lease should be acquired successfully
-            var lease1 = await limiter.AcquireAsync();
+            var lease1 = await limiter.AcquireAsync(cancellationToken: CancellationToken.None);
             Assert.IsTrue(lease1.IsAcquired, "First request should be permitted");
 
             // Second lease should be denied (rate limited)
-            var lease2 = await limiter.AcquireAsync();
+            var lease2 = await limiter.AcquireAsync(cancellationToken: CancellationToken.None);
             Assert.IsFalse(lease2.IsAcquired, "Second request should be rate limited");
 
             // Verify the RetryAfter metadata is present
@@ -144,7 +144,7 @@ namespace Neo.Plugins.RestServer.Tests
             // Should allow many requests
             for (int i = 0; i < 10; i++)
             {
-                var response = await _client!.GetAsync("/api/disabled");
+                var response = await _client!.GetAsync("/api/disabled", CancellationToken.None);
                 Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
             }
         }

@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.AspNetCore.TestHost;
-
 namespace Neo.Plugins.RestServer.Tests
 {
     [TestClass]
@@ -27,14 +25,14 @@ namespace Neo.Plugins.RestServer.Tests
 
             // Act & Assert
             // First two requests should succeed
-            var response1 = await _client!.GetAsync("/api/test");
+            var response1 = await _client!.GetAsync("/api/test", CancellationToken.None);
             Assert.AreEqual(HttpStatusCode.OK, response1.StatusCode);
 
-            var response2 = await _client!.GetAsync("/api/test");
+            var response2 = await _client!.GetAsync("/api/test", CancellationToken.None);
             Assert.AreEqual(HttpStatusCode.OK, response2.StatusCode);
 
             // Third request should be rate limited
-            var response3 = await _client!.GetAsync("/api/test");
+            var response3 = await _client!.GetAsync("/api/test", CancellationToken.None);
             Assert.AreEqual(HttpStatusCode.TooManyRequests, response3.StatusCode);
 
             // Check for Retry-After header
@@ -43,7 +41,7 @@ namespace Neo.Plugins.RestServer.Tests
             Assert.IsNotNull(retryAfter);
 
             // Read the response content
-            var content = await response3.Content.ReadAsStringAsync();
+            var content = await response3.Content.ReadAsStringAsync(CancellationToken.None);
             Assert.IsTrue(content.Contains("Too many requests"));
         }
 
@@ -55,20 +53,20 @@ namespace Neo.Plugins.RestServer.Tests
 
             // Act & Assert
             // First two requests should succeed immediately
-            var response1 = await _client!.GetAsync("/api/test");
+            var response1 = await _client!.GetAsync("/api/test", CancellationToken.None);
             Assert.AreEqual(HttpStatusCode.OK, response1.StatusCode);
 
-            var response2 = await _client!.GetAsync("/api/test");
+            var response2 = await _client!.GetAsync("/api/test", CancellationToken.None);
             Assert.AreEqual(HttpStatusCode.OK, response2.StatusCode);
 
             // Third request should be queued and eventually succeed
-            var task3 = _client!.GetAsync("/api/test");
+            var task3 = _client!.GetAsync("/api/test", CancellationToken.None);
 
             // Small delay to ensure the task3 request is fully queued
-            await Task.Delay(100);
+            await Task.Delay(100, CancellationToken.None);
 
             // Fourth request should be rejected (queue full)
-            var response4 = await _client!.GetAsync("/api/test");
+            var response4 = await _client!.GetAsync("/api/test", CancellationToken.None);
             Assert.AreEqual(HttpStatusCode.TooManyRequests, response4.StatusCode);
 
             // Wait for the queued request to complete
@@ -86,7 +84,7 @@ namespace Neo.Plugins.RestServer.Tests
             // Multiple requests should all succeed
             for (int i = 0; i < 5; i++)
             {
-                var response = await _client!.GetAsync("/api/test");
+                var response = await _client!.GetAsync("/api/test", CancellationToken.None);
                 Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
             }
         }
