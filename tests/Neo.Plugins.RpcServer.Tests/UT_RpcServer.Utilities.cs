@@ -19,24 +19,26 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestListPlugins()
         {
-            JArray resp = (JArray)_rpcServer.ListPlugins([]);
+            var resp = (JArray)_rpcServer.ListPlugins();
             Assert.AreEqual(0, resp.Count);
             Plugin.Plugins.Add(new RpcServerPlugin());
-            resp = (JArray)_rpcServer.ListPlugins([]);
+
+            resp = (JArray)_rpcServer.ListPlugins();
             Assert.AreEqual(2, resp.Count);
-            foreach (JObject p in resp)
+            foreach (var p in resp)
                 Assert.AreEqual(p["name"], nameof(RpcServer));
         }
 
         [TestMethod]
         public void TestValidateAddress()
         {
-            string validAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBP";
-            JObject resp = (JObject)_rpcServer.ValidateAddress([validAddr]);
+            var validAddr = new JString("NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBP");
+            var resp = (JObject)_rpcServer.ValidateAddress(validAddr.AsString());
             Assert.AreEqual(resp["address"], validAddr);
             Assert.AreEqual(resp["isvalid"], true);
-            string invalidAddr = "ANeo2toNeo3MigrationAddressxwPB2Hz";
-            resp = (JObject)_rpcServer.ValidateAddress([invalidAddr]);
+
+            var invalidAddr = "ANeo2toNeo3MigrationAddressxwPB2Hz";
+            resp = (JObject)_rpcServer.ValidateAddress(invalidAddr);
             Assert.AreEqual(resp["address"], invalidAddr);
             Assert.AreEqual(resp["isvalid"], false);
         }
@@ -45,7 +47,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestValidateAddress_EmptyString()
         {
             var emptyAddr = "";
-            var resp = (JObject)_rpcServer.ValidateAddress([emptyAddr]);
+            var resp = (JObject)_rpcServer.ValidateAddress(emptyAddr);
             Assert.AreEqual(resp["address"], emptyAddr);
             Assert.AreEqual(resp["isvalid"], false);
         }
@@ -56,7 +58,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // Valid address: NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBP
             // Change last char to invalidate checksum
             var invalidChecksumAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBO";
-            var resp = (JObject)_rpcServer.ValidateAddress([invalidChecksumAddr]);
+            var resp = (JObject)_rpcServer.ValidateAddress(invalidChecksumAddr);
             Assert.AreEqual(resp["address"], invalidChecksumAddr);
             Assert.AreEqual(resp["isvalid"], false);
         }
@@ -66,13 +68,13 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             // Address too short
             var shortAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7P";
-            var resp = (JObject)_rpcServer.ValidateAddress([shortAddr]);
+            var resp = (JObject)_rpcServer.ValidateAddress(shortAddr);
             Assert.AreEqual(resp["address"], shortAddr);
             Assert.AreEqual(resp["isvalid"], false);
 
             // Address too long
             var longAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBPPP";
-            resp = (JObject)_rpcServer.ValidateAddress([longAddr]);
+            resp = (JObject)_rpcServer.ValidateAddress(longAddr);
             Assert.AreEqual(resp["address"], longAddr);
             Assert.AreEqual(resp["isvalid"], false);
         }

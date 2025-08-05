@@ -207,26 +207,26 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestMaxTransactionsPerBlock()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.MaxTransactionsPerBlock > 0);
-            Assert.IsTrue(TestProtocolSettings.Default.MaxTransactionsPerBlock <= 50000); // Assuming 50000 as a reasonable upper limit
+            Assert.IsGreaterThan(0u, TestProtocolSettings.Default.MaxTransactionsPerBlock);
+            Assert.IsLessThanOrEqualTo(50000u, TestProtocolSettings.Default.MaxTransactionsPerBlock); // Assuming 50000 as a reasonable upper limit
         }
 
         [TestMethod]
         public void TestMaxTraceableBlocks()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.MaxTraceableBlocks > 0);
+            Assert.IsGreaterThan(0u, TestProtocolSettings.Default.MaxTraceableBlocks);
         }
 
         [TestMethod]
         public void TestMaxValidUntilBlockIncrement()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.MaxValidUntilBlockIncrement > 0);
+            Assert.IsGreaterThan(0u, TestProtocolSettings.Default.MaxValidUntilBlockIncrement);
         }
 
         [TestMethod]
         public void TestInitialGasDistribution()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.InitialGasDistribution > 0);
+            Assert.IsGreaterThan(0ul, TestProtocolSettings.Default.InitialGasDistribution);
         }
 
         [TestMethod]
@@ -238,14 +238,14 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestAddressVersion()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.AddressVersion >= 0);
-            Assert.IsTrue(TestProtocolSettings.Default.AddressVersion <= 255); // Address version is a byte
+            Assert.IsGreaterThanOrEqualTo(0, TestProtocolSettings.Default.AddressVersion);
+            Assert.IsLessThanOrEqualTo(255, TestProtocolSettings.Default.AddressVersion); // Address version is a byte
         }
 
         [TestMethod]
         public void TestNetworkSettingsConsistency()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.Network > 0);
+            Assert.IsGreaterThan(0u, TestProtocolSettings.Default.Network);
             Assert.IsNotNull(TestProtocolSettings.Default.SeedList);
         }
 

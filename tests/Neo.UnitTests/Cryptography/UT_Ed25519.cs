@@ -25,7 +25,7 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] keyPair = Ed25519.GenerateKeyPair();
             Assert.IsNotNull(keyPair);
-            Assert.AreEqual(32, keyPair.Length);
+            Assert.HasCount(32, keyPair);
         }
 
         [TestMethod]
@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] privateKey = Ed25519.GenerateKeyPair();
             byte[] publicKey = Ed25519.GetPublicKey(privateKey);
             Assert.IsNotNull(publicKey);
-            Assert.AreEqual(Ed25519.PublicKeySize, publicKey.Length);
+            Assert.HasCount(Ed25519.PublicKeySize, publicKey);
         }
 
         [TestMethod]
@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Cryptography
 
             byte[] signature = Ed25519.Sign(privateKey, message);
             Assert.IsNotNull(signature);
-            Assert.AreEqual(Ed25519.SignatureSize, signature.Length);
+            Assert.HasCount(Ed25519.SignatureSize, signature);
 
             bool isValid = Ed25519.Verify(publicKey, message, signature);
             Assert.IsTrue(isValid);

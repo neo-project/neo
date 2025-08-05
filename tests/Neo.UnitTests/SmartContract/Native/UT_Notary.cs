@@ -341,7 +341,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
             var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
-            Assert.IsTrue(engine.Execute() == VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
             snapshot.Commit();
 
             // Check that transaction's fees were paid by from's deposit.
