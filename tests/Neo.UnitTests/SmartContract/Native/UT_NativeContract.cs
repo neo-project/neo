@@ -87,10 +87,10 @@ namespace Neo.UnitTests.SmartContract.Native
             var before = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 19);
             var after = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 20);
 
-            Assert.AreEqual(2, before.Manifest.Abi.Events[0].Parameters.Length);
-            Assert.AreEqual(1, before.Manifest.Abi.Events.Length);
-            Assert.AreEqual(4, after.Manifest.Abi.Events[0].Parameters.Length);
-            Assert.AreEqual(1, after.Manifest.Abi.Events.Length);
+            Assert.HasCount(2, before.Manifest.Abi.Events[0].Parameters);
+            Assert.HasCount(1, before.Manifest.Abi.Events);
+            Assert.HasCount(4, after.Manifest.Abi.Events[0].Parameters);
+            Assert.HasCount(1, after.Manifest.Abi.Events);
         }
 
         [TestMethod]
@@ -111,13 +111,13 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 0, out var hf));
             Assert.IsNotNull(hf);
-            Assert.AreEqual(0, hf.Length);
+            Assert.IsEmpty(hf);
 
             Assert.IsFalse(NativeContract.CryptoLib.IsInitializeBlock(settings, 1, out hf));
             Assert.IsNull(hf);
 
             Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 20, out hf));
-            Assert.AreEqual(1, hf.Length);
+            Assert.HasCount(1, hf);
             Assert.AreEqual(Hardfork.HF_Cockatrice, hf[0]);
         }
 

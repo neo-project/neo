@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(signer);
-            Assert.AreEqual(1, signer.AllowedContracts.Length);
+            Assert.HasCount(1, signer.AllowedContracts);
             Assert.AreEqual(UInt160.Zero, signer.AllowedContracts[0]);
         }
 
@@ -59,7 +59,7 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(signer);
-            Assert.AreEqual(1, signer.AllowedGroups.Length);
+            Assert.HasCount(1, signer.AllowedGroups);
             Assert.AreEqual(myPublicKey, signer.AllowedGroups[0]);
         }
 
@@ -88,7 +88,7 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(signer);
-            Assert.AreEqual(1, signer.Rules.Length);
+            Assert.HasCount(1, signer.Rules);
             Assert.AreEqual(WitnessRuleAction.Allow, signer.Rules[0].Action);
             Assert.IsInstanceOfType<ScriptHashCondition>(signer.Rules[0].Condition);
         }

@@ -70,11 +70,11 @@ namespace Neo.UnitTests.SmartContract
 
             ContractParameter contractParameter9 = new(ContractParameterType.Array);
             Assert.IsNotNull(contractParameter9);
-            Assert.AreEqual(0, ((List<ContractParameter>)contractParameter9.Value).Count);
+            Assert.IsEmpty((List<ContractParameter>)contractParameter9.Value);
 
             ContractParameter contractParameter10 = new(ContractParameterType.Map);
             Assert.IsNotNull(contractParameter10);
-            Assert.AreEqual(0, ((List<KeyValuePair<ContractParameter, ContractParameter>>)contractParameter10.Value).Count);
+            Assert.IsEmpty((List<KeyValuePair<ContractParameter, ContractParameter>>)contractParameter10.Value);
 
             Assert.ThrowsExactly<ArgumentException>(() => _ = new ContractParameter(ContractParameterType.Void));
         }
