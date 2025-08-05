@@ -24,7 +24,6 @@
     
     <!-- Wallet Configuration -->
     <NeoWalletFileName Condition=" '$(NeoWalletFileName)' == '' ">wallet1</NeoWalletFileName>
-    <NeoWalletPassword Condition=" '$(NeoWalletPassword)' == '' "></NeoWalletPassword>
     <NeoWalletFileFullPath Condition=" '$(NeoWalletFileFullPath)' == '' ">$(NeoBuildProjectDirectory)$(NeoWalletFileName).json</NeoWalletFileFullPath>
   </PropertyGroup>
 
