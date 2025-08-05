@@ -167,7 +167,7 @@ namespace Neo.UnitTests.Network.P2P
             var msg = Message.Create(MessageCommand.Transaction, payload);
             var buffer = msg.ToArray();
 
-            Assert.AreEqual(56, buffer.Length);
+            Assert.HasCount(56, buffer);
 
             byte[] script = new byte[100];
             Array.Fill(script, (byte)OpCode.PUSH2);
@@ -175,7 +175,7 @@ namespace Neo.UnitTests.Network.P2P
             msg = Message.Create(MessageCommand.Transaction, payload);
             buffer = msg.ToArray();
 
-            Assert.AreEqual(30, buffer.Length);
+            Assert.HasCount(30, buffer);
             Assert.IsTrue(msg.Flags.HasFlag(MessageFlags.Compressed));
 
             _ = Message.TryDeserialize(ByteString.CopyFrom(msg.ToArray()), out var copy);

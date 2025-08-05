@@ -120,7 +120,7 @@ namespace Neo.UnitTests.Persistence
 
             // Can not get anything from the snapshot
             var entries = _snapshot.Find([0x00, 0x00, 0x02]).ToArray();
-            Assert.AreEqual(0, entries.Length);
+            Assert.IsEmpty(entries);
         }
 
         [TestMethod]

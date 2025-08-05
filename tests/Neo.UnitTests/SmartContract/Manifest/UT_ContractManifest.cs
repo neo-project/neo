@@ -386,7 +386,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             var actualTrusts = ((Array)si)[6];
 
-            Assert.AreEqual(2, ((Array)actualTrusts).Count);
+            Assert.HasCount(2, (Array)actualTrusts);
             Assert.AreEqual(((Array)actualTrusts)[0], new ByteString(UInt160.Parse("0x0000000000000000000000000000000000000001").ToArray()));
             // Wildcard trust should be represented as Null stackitem (not as zero-length ByteString):
             Assert.AreEqual(((Array)actualTrusts)[1], StackItem.Null);
