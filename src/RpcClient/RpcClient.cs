@@ -167,7 +167,7 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Returns the hash of the tallest block in the main chain
+        /// Send an RPC request using the specified method name
         /// </summary>
         internal async Task<JToken> RpcSendByHashOrIndexAsync(string rpcName, string hashOrIndex, params JToken[] arguments)
         {
