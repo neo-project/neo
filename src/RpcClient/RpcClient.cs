@@ -35,42 +35,44 @@ namespace Neo.Network.RPC
     /// </summary>
     public class RpcClient : IDisposable
     {
-        private readonly HttpClient httpClient;
-        private readonly Uri baseAddress;
+        private readonly Uri _baseAddress;
+        private readonly HttpClient _httpClient;
+        private static readonly Regex s_rpcNameRegex = new("(.*?)(Hex|Both)?(Async)?", RegexOptions.Compiled);
+
         internal readonly ProtocolSettings protocolSettings;
 
         public RpcClient(Uri url, string rpcUser = default, string rpcPass = default, ProtocolSettings protocolSettings = null)
         {
-            httpClient = new HttpClient();
-            baseAddress = url;
+            _httpClient = new HttpClient();
+            _baseAddress = url;
             if (!string.IsNullOrEmpty(rpcUser) && !string.IsNullOrEmpty(rpcPass))
             {
-                string token = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{rpcUser}:{rpcPass}"));
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
+                var token = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{rpcUser}:{rpcPass}"));
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
             }
             this.protocolSettings = protocolSettings ?? ProtocolSettings.Default;
         }
 
         public RpcClient(HttpClient client, Uri url, ProtocolSettings protocolSettings = null)
         {
-            httpClient = client;
-            baseAddress = url;
+            _httpClient = client;
+            _baseAddress = url;
             this.protocolSettings = protocolSettings ?? ProtocolSettings.Default;
         }
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool _disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposedValue)
             {
                 if (disposing)
                 {
-                    httpClient.Dispose();
+                    _httpClient.Dispose();
                 }
 
-                disposedValue = true;
+                _disposedValue = true;
             }
         }
 
@@ -107,7 +109,7 @@ namespace Neo.Network.RPC
         HttpRequestMessage AsHttpRequest(RpcRequest request)
         {
             var requestJson = request.ToJson().ToString();
-            return new HttpRequestMessage(HttpMethod.Post, baseAddress)
+            return new HttpRequestMessage(HttpMethod.Post, _baseAddress)
             {
                 Content = new StringContent(requestJson, Neo.Utility.StrictUTF8)
             };
@@ -115,10 +117,10 @@ namespace Neo.Network.RPC
 
         public RpcResponse Send(RpcRequest request, bool throwOnError = true)
         {
-            if (disposedValue) throw new ObjectDisposedException(nameof(RpcClient));
+            ObjectDisposedException.ThrowIf(_disposedValue, nameof(RpcClient));
 
             using var requestMsg = AsHttpRequest(request);
-            using var responseMsg = httpClient.Send(requestMsg);
+            using var responseMsg = _httpClient.Send(requestMsg);
             using var contentStream = responseMsg.Content.ReadAsStream();
             using var contentReader = new StreamReader(contentStream);
             return AsRpcResponse(contentReader.ReadToEnd(), throwOnError);
@@ -126,10 +128,10 @@ namespace Neo.Network.RPC
 
         public async Task<RpcResponse> SendAsync(RpcRequest request, bool throwOnError = true)
         {
-            if (disposedValue) throw new ObjectDisposedException(nameof(RpcClient));
+            ObjectDisposedException.ThrowIf(_disposedValue, nameof(RpcClient));
 
             using var requestMsg = AsHttpRequest(request);
-            using var responseMsg = await httpClient.SendAsync(requestMsg).ConfigureAwait(false);
+            using var responseMsg = await _httpClient.SendAsync(requestMsg).ConfigureAwait(false);
             var content = await responseMsg.Content.ReadAsStringAsync();
             return AsRpcResponse(content, throwOnError);
         }
@@ -150,7 +152,7 @@ namespace Neo.Network.RPC
 
         public static string GetRpcName([CallerMemberName] string methodName = null)
         {
-            return new Regex("(.*?)(Hex|Both)?(Async)?").Replace(methodName, "$1").ToLowerInvariant();
+            return s_rpcNameRegex.Replace(methodName, "$1").ToLowerInvariant();
         }
 
         #region Blockchain
@@ -165,14 +167,22 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
+        /// Returns the hash of the tallest block in the main chain
+        /// </summary>
+        internal async Task<JToken> RpcSendByHashOrIndexAsync(string rpcName, string hashOrIndex, params JToken[] arguments)
+        {
+            return int.TryParse(hashOrIndex, out var index)
+                ? await RpcSendAsync(rpcName, arguments.Length > 0 ? [index, .. arguments] : [index]).ConfigureAwait(false)
+                : await RpcSendAsync(rpcName, arguments.Length > 0 ? [hashOrIndex, .. arguments] : [hashOrIndex]).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Returns the hash of the tallest block in the main chain.
         /// The serialized information of the block is returned, represented by a hexadecimal string.
         /// </summary>
         public async Task<string> GetBlockHexAsync(string hashOrIndex)
         {
-            var result = int.TryParse(hashOrIndex, out int index)
-                ? await RpcSendAsync(GetRpcName(), index).ConfigureAwait(false)
-                : await RpcSendAsync(GetRpcName(), hashOrIndex).ConfigureAwait(false);
+            var result = await RpcSendByHashOrIndexAsync(GetRpcName(), hashOrIndex).ConfigureAwait(false);
             return result.AsString();
         }
 
@@ -181,10 +191,7 @@ namespace Neo.Network.RPC
         /// </summary>
         public async Task<RpcBlock> GetBlockAsync(string hashOrIndex)
         {
-            var result = int.TryParse(hashOrIndex, out int index)
-                ? await RpcSendAsync(GetRpcName(), index, true).ConfigureAwait(false)
-                : await RpcSendAsync(GetRpcName(), hashOrIndex, true).ConfigureAwait(false);
-
+            var result = await RpcSendByHashOrIndexAsync(GetRpcName(), hashOrIndex, true).ConfigureAwait(false);
             return RpcBlock.FromJson((JObject)result, protocolSettings);
         }
 
@@ -220,9 +227,7 @@ namespace Neo.Network.RPC
         /// </summary>
         public async Task<string> GetBlockHeaderHexAsync(string hashOrIndex)
         {
-            var result = int.TryParse(hashOrIndex, out int index)
-                ? await RpcSendAsync(GetRpcName(), index).ConfigureAwait(false)
-                : await RpcSendAsync(GetRpcName(), hashOrIndex).ConfigureAwait(false);
+            var result = await RpcSendByHashOrIndexAsync(GetRpcName(), hashOrIndex).ConfigureAwait(false);
             return result.AsString();
         }
 
@@ -231,10 +236,7 @@ namespace Neo.Network.RPC
         /// </summary>
         public async Task<RpcBlockHeader> GetBlockHeaderAsync(string hashOrIndex)
         {
-            var result = int.TryParse(hashOrIndex, out int index)
-                ? await RpcSendAsync(GetRpcName(), index, true).ConfigureAwait(false)
-                : await RpcSendAsync(GetRpcName(), hashOrIndex, true).ConfigureAwait(false);
-
+            var result = await RpcSendByHashOrIndexAsync(GetRpcName(), hashOrIndex, true).ConfigureAwait(false);
             return RpcBlockHeader.FromJson((JObject)result, protocolSettings);
         }
 
@@ -332,9 +334,7 @@ namespace Neo.Network.RPC
         /// </summary>
         public async Task<string> GetStorageAsync(string scriptHashOrId, string key)
         {
-            var result = int.TryParse(scriptHashOrId, out int id)
-                ? await RpcSendAsync(GetRpcName(), id, key).ConfigureAwait(false)
-                : await RpcSendAsync(GetRpcName(), scriptHashOrId, key).ConfigureAwait(false);
+            var result = await RpcSendByHashOrIndexAsync(GetRpcName(), scriptHashOrId, key).ConfigureAwait(false);
             return result.AsString();
         }
 
@@ -362,7 +362,7 @@ namespace Neo.Network.RPC
         public async Task<string[]> GetCommitteeAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return ((JArray)result).Select(p => p.AsString()).ToArray();
+            return [.. ((JArray)result).Select(p => p.AsString())];
         }
 
         #endregion Blockchain
@@ -432,12 +432,12 @@ namespace Neo.Network.RPC
         /// </summary>
         public async Task<RpcInvokeResult> InvokeFunctionAsync(string scriptHash, string operation, RpcStack[] stacks, params Signer[] signer)
         {
-            List<JToken> parameters = new() { scriptHash.AsScriptHash(), operation, stacks.Select(p => p.ToJson()).ToArray() };
+            List<JToken> parameters = [scriptHash.AsScriptHash(), operation, stacks.Select(p => p.ToJson()).ToArray()];
             if (signer.Length > 0)
             {
                 parameters.Add(signer.Select(p => p.ToJson()).ToArray());
             }
-            var result = await RpcSendAsync(GetRpcName(), parameters.ToArray()).ConfigureAwait(false);
+            var result = await RpcSendAsync(GetRpcName(), [.. parameters]).ConfigureAwait(false);
             return RpcInvokeResult.FromJson((JObject)result);
         }
 
@@ -452,7 +452,7 @@ namespace Neo.Network.RPC
             {
                 parameters.Add(signers.Select(p => p.ToJson()).ToArray());
             }
-            var result = await RpcSendAsync(GetRpcName(), parameters.ToArray()).ConfigureAwait(false);
+            var result = await RpcSendAsync(GetRpcName(), [.. parameters]).ConfigureAwait(false);
             return RpcInvokeResult.FromJson((JObject)result);
         }
 
@@ -518,7 +518,7 @@ namespace Neo.Network.RPC
         public async Task<RpcPlugin[]> ListPluginsAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return ((JArray)result).Select(p => RpcPlugin.FromJson((JObject)p)).ToArray();
+            return [.. ((JArray)result).Select(p => RpcPlugin.FromJson((JObject)p))];
         }
 
         /// <summary>
@@ -598,7 +598,7 @@ namespace Neo.Network.RPC
         public async Task<List<RpcAccount>> ListAddressAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return ((JArray)result).Select(p => RpcAccount.FromJson((JObject)p)).ToList();
+            return [.. ((JArray)result).Select(p => RpcAccount.FromJson((JObject)p))];
         }
 
         /// <summary>
@@ -634,7 +634,7 @@ namespace Neo.Network.RPC
             }
             parameters.Add(outputs.Select(p => p.ToJson(protocolSettings)).ToArray());
 
-            return (JObject)await RpcSendAsync(GetRpcName(), paraArgs: parameters.ToArray()).ConfigureAwait(false);
+            return (JObject)await RpcSendAsync(GetRpcName(), paraArgs: [.. parameters]).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -653,7 +653,7 @@ namespace Neo.Network.RPC
         /// <returns>This function returns Signed Transaction JSON if successful, ContractParametersContext JSON if signing failed.</returns>
         public async Task<JObject> CancelTransactionAsync(UInt256 txId, string[] signers, string extraFee)
         {
-            JToken[] parameters = signers.Select(s => (JString)s.AsScriptHash()).ToArray();
+            JToken[] parameters = [.. signers.Select(s => (JString)s.AsScriptHash())];
             return (JObject)await RpcSendAsync(GetRpcName(), txId.ToString(), new JArray(parameters), extraFee).ConfigureAwait(false);
         }
 
