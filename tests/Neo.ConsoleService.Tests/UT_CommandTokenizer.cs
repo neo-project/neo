@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace Neo.ConsoleService.Tests
 {
@@ -140,6 +141,106 @@ namespace Neo.ConsoleService.Tests
             Assert.AreEqual(" ", args[1].Value);
             Assert.AreEqual("123\"456", args[2].Value);
             Assert.AreEqual("`123\"456`", args[2].RawValue);
+        }
+
+        [TestMethod]
+        public void TestUnicodeEscape()
+        {
+            // Test basic Unicode escape sequence
+            var cmd = "show \"\\u0041\""; // Should decode to 'A'
+            var args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("A", args[2].Value);
+
+            // Test Unicode escape sequence for emoji
+            cmd = "show \"\\uD83D\\uDE00\""; // Should decode to 😀
+            args = CommandTokenizer.Tokenize(cmd); // surrogate pairs
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("😀", args[2].Value);
+
+            // Test Unicode escape sequence in single quotes
+            cmd = "show '\\u0048\\u0065\\u006C\\u006C\\u006F'"; // Should decode to "Hello"
+            args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("Hello", args[2].Value);
+
+            cmd = "show '\\x48\\x65\\x6C\\x6C\\x6F'"; // Should decode to "Hello"
+            args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("Hello", args[2].Value);
+        }
+
+        [TestMethod]
+        public void TestUnicodeEscapeErrors()
+        {
+            // Test incomplete Unicode escape sequence
+            Assert.ThrowsExactly<ArgumentException>(() => CommandTokenizer.Tokenize("show \"\\u123\""));
+
+            // Test invalid hex digits
+            Assert.ThrowsExactly<ArgumentException>(() => CommandTokenizer.Tokenize("show \"\\u12XY\""));
+
+            // Test Unicode escape at end of string
+            Assert.ThrowsExactly<ArgumentException>(() => CommandTokenizer.Tokenize("show \"\\u"));
+        }
+
+        [TestMethod]
+        public void TestUnicodeEdgeCases()
+        {
+            // Test surrogate pairs - high surrogate
+            var cmd = "show \"\\uD83D\"";
+            var args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("\uD83D", args[2].Value); // High surrogate
+
+            // Test surrogate pairs - low surrogate
+            cmd = "show \"\\uDE00\"";
+            args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("\uDE00", args[2].Value); // Low surrogate
+
+            // Test null character
+            cmd = "show \"\\u0000\"";
+            args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("\u0000", args[2].Value); // Null character
+
+            // Test maximum Unicode value
+            cmd = "show \"\\uFFFF\"";
+            args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("\uFFFF", args[2].Value); // Maximum Unicode value
+
+            // Test multiple Unicode escapes in sequence
+            cmd = "show \"\\u0048\\u0065\\u006C\\u006C\\u006F\\u0020\\u0057\\u006F\\u0072\\u006C\\u0064\"";
+            args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("Hello World", args[2].Value);
+
+            // Test Unicode escape mixed with regular characters
+            cmd = "show \"Hello\\u0020World\"";
+            args = CommandTokenizer.Tokenize(cmd);
+            Assert.AreEqual(3, args.Count);
+            Assert.AreEqual("show", args[0].Value);
+            Assert.AreEqual(" ", args[1].Value);
+            Assert.AreEqual("Hello World", args[2].Value);
         }
     }
 }
