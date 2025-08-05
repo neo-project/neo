@@ -116,7 +116,7 @@ namespace Neo.Build.ToolSet.Commands
                 var settings = new Dictionary<string, string>()
                 {
                     { "PluginConfiguration:Network", $"{protocolSettings.Network}" },
-                    { "PluginConfiguration:IgnoreRecoveryLogs", "true" }
+                    { "PluginConfiguration:IgnoreRecoveryLogs", bool.TrueString }
                 };
 
                 var config = new ConfigurationBuilder().AddInMemoryCollection(settings!).Build();
