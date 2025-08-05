@@ -79,14 +79,14 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCount()
         {
-            Assert.AreEqual(0, cache.Count);
+            Assert.IsEmpty(cache);
 
             cache.Add("hello");
             cache.Add("world");
-            Assert.AreEqual(2, cache.Count);
+            Assert.HasCount(2, cache);
 
             cache.Remove("hello");
-            Assert.AreEqual(1, cache.Count);
+            Assert.HasCount(1, cache);
         }
 
         [TestMethod]
@@ -99,10 +99,10 @@ namespace Neo.UnitTests.IO.Caching
         public void TestAddAndAddInternal()
         {
             cache.Add("hello");
-            Assert.IsTrue(cache.Contains("hello"));
-            Assert.IsFalse(cache.Contains("world"));
+            Assert.Contains("hello", cache);
+            Assert.DoesNotContain("world", cache);
             cache.Add("hello");
-            Assert.AreEqual(1, cache.Count);
+            Assert.HasCount(1, cache);
         }
 
         [TestMethod]
@@ -110,10 +110,10 @@ namespace Neo.UnitTests.IO.Caching
         {
             string[] range = { "hello", "world" };
             cache.AddRange(range);
-            Assert.AreEqual(2, cache.Count);
-            Assert.IsTrue(cache.Contains("hello"));
-            Assert.IsTrue(cache.Contains("world"));
-            Assert.IsFalse(cache.Contains("non exist string"));
+            Assert.HasCount(2, cache);
+            Assert.Contains("hello", cache);
+            Assert.Contains("world", cache);
+            Assert.DoesNotContain("non exist string", cache);
         }
 
         [TestMethod]
@@ -121,25 +121,25 @@ namespace Neo.UnitTests.IO.Caching
         {
             cache.Add("hello");
             cache.Add("world");
-            Assert.AreEqual(2, cache.Count);
+            Assert.HasCount(2, cache);
             cache.Clear();
-            Assert.AreEqual(0, cache.Count);
+            Assert.IsEmpty(cache);
         }
 
         [TestMethod]
         public void TestContainsKey()
         {
             cache.Add("hello");
-            Assert.IsTrue(cache.Contains("hello"));
-            Assert.IsFalse(cache.Contains("world"));
+            Assert.Contains("hello", cache);
+            Assert.DoesNotContain("world", cache);
         }
 
         [TestMethod]
         public void TestContainsValue()
         {
             cache.Add("hello");
-            Assert.IsTrue(cache.Contains("hello".GetHashCode()));
-            Assert.IsFalse(cache.Contains("world".GetHashCode()));
+            Assert.Contains("hello", cache);
+            Assert.DoesNotContain("world", cache);
         }
 
         [TestMethod]
@@ -169,7 +169,7 @@ namespace Neo.UnitTests.IO.Caching
             cache.Add("hello");
             Assert.IsTrue(cache.Remove("hello".GetHashCode()));
             Assert.IsFalse(cache.Remove("world".GetHashCode()));
-            Assert.IsFalse(cache.Contains("hello"));
+            Assert.DoesNotContain("hello", cache);
         }
 
         [TestMethod]
@@ -193,7 +193,7 @@ namespace Neo.UnitTests.IO.Caching
             cache.Add("hello");
             Assert.IsTrue(cache.Remove("hello"));
             Assert.IsFalse(cache.Remove("world"));
-            Assert.IsFalse(cache.Contains("hello"));
+            Assert.DoesNotContain("hello", cache);
         }
 
         [TestMethod]
@@ -248,7 +248,7 @@ namespace Neo.UnitTests.IO.Caching
             }
             cache.Add(i.ToString());    // The first one will be deleted
             Assert.AreEqual(maxCapacity, cache.Count);
-            Assert.IsTrue(cache.Contains((maxCapacity + 1).ToString()));
+            Assert.Contains((maxCapacity + 1).ToString(), cache);
         }
 
         [TestMethod]

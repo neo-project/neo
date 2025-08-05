@@ -11,8 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
-using System;
-using System.IO;
 
 namespace Neo.UnitTests.IO.Caching
 {
@@ -30,7 +28,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestLRUCache()
         {
             var cache = new DemoLRUCache(3);
-            Assert.AreEqual(0, cache.Count);
+            Assert.IsEmpty(cache);
 
             var key1 = "1".GetHashCode();
             var key2 = "2".GetHashCode();
@@ -41,38 +39,38 @@ namespace Neo.UnitTests.IO.Caching
             cache.Add("1");
             cache.Add("2");
             cache.Add("3");
-            Assert.AreEqual(3, cache.Count);
-            Assert.IsTrue(cache.Contains(key1));
-            Assert.IsTrue(cache.Contains(key2));
-            Assert.IsTrue(cache.Contains(key3));
-            Assert.IsFalse(cache.Contains(key4));
+            Assert.HasCount(3, cache);
+            Assert.Contains("1", cache);
+            Assert.Contains("2", cache);
+            Assert.Contains("3", cache);
+            Assert.DoesNotContain("4", cache);
 
             var cached = cache[key2];
             Assert.AreEqual("2", cached);
-            Assert.AreEqual(3, cache.Count);
-            Assert.IsTrue(cache.Contains(key1));
-            Assert.IsTrue(cache.Contains(key2));
-            Assert.IsTrue(cache.Contains(key3));
-            Assert.IsFalse(cache.Contains(key4));
+            Assert.HasCount(3, cache);
+            Assert.Contains("1", cache);
+            Assert.Contains("2", cache);
+            Assert.Contains("3", cache);
+            Assert.DoesNotContain("4", cache);
 
             cache.Add("4");
-            Assert.AreEqual(3, cache.Count);
-            Assert.IsTrue(cache.Contains(key3));
-            Assert.IsTrue(cache.Contains(key2));
-            Assert.IsTrue(cache.Contains(key4));
-            Assert.IsFalse(cache.Contains(key1));
+            Assert.HasCount(3, cache);
+            Assert.Contains("3", cache);
+            Assert.Contains("2", cache);
+            Assert.Contains("4", cache);
+            Assert.DoesNotContain("1", cache);
 
             cache.Add("5");
-            Assert.AreEqual(3, cache.Count);
-            Assert.IsFalse(cache.Contains(key1));
-            Assert.IsTrue(cache.Contains(key2));
-            Assert.IsFalse(cache.Contains(key3));
-            Assert.IsTrue(cache.Contains(key4));
-            Assert.IsTrue(cache.Contains(key5));
+            Assert.HasCount(3, cache);
+            Assert.DoesNotContain("1", cache);
+            Assert.Contains("2", cache);
+            Assert.DoesNotContain("3", cache);
+            Assert.Contains("4", cache);
+            Assert.Contains("5", cache);
 
             cache.Add("6");
-            Assert.AreEqual(3, cache.Count);
-            Assert.IsTrue(cache.Contains(key5));
+            Assert.HasCount(3, cache);
+            Assert.Contains("5", cache);
         }
     }
 }

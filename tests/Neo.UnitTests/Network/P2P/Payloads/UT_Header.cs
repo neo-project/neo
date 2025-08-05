@@ -76,7 +76,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(uut.NextConsensus, header.NextConsensus);
             CollectionAssert.AreEqual(uut.Witness.InvocationScript.ToArray(), header.Witness.InvocationScript.ToArray());
             CollectionAssert.AreEqual(uut.Witness.VerificationScript.ToArray(), header.Witness.VerificationScript.ToArray());
-            Assert.AreEqual(0, trim.Hashes.Length);
+            Assert.IsEmpty(trim.Hashes);
         }
 
         [TestMethod]
@@ -144,7 +144,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.ThrowsExactly<ArgumentNullException>(Actual);
 
             item.Witnesses = [new()];
-            Assert.AreEqual(1, item.Witnesses.Length);
+            Assert.HasCount(1, item.Witnesses);
         }
     }
 }

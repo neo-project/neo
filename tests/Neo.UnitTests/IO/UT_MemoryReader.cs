@@ -24,8 +24,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestReadFixedString()
         {
-            using MemoryStream stream = new();
-            using BinaryWriter writer = new(stream);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
             writer.WriteFixedString("AA", Encoding.UTF8.GetBytes("AA").Length + 1);
             MemoryReader reader = new(stream.ToArray());
             string result = reader.ReadFixedString(Encoding.UTF8.GetBytes("AA").Length + 1);
@@ -35,8 +35,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestReadVarString()
         {
-            using MemoryStream stream = new();
-            using BinaryWriter writer = new(stream);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
             writer.WriteVarString("AAAAAAA");
             MemoryReader reader = new(stream.ToArray());
             string result = reader.ReadVarString(10);
@@ -58,9 +58,9 @@ namespace Neo.UnitTests.IO
             var values = new sbyte[] { 0, 1, -1, 5, -5, sbyte.MaxValue, sbyte.MinValue };
             foreach (var v in values)
             {
-                byte[] byteArray = new byte[1];
+                var byteArray = new byte[1];
                 byteArray[0] = (byte)v;
-                MemoryReader reader = new(byteArray);
+                var reader = new MemoryReader(byteArray);
                 var n = reader.ReadSByte();
                 Assert.AreEqual(v, n);
             }
@@ -68,9 +68,9 @@ namespace Neo.UnitTests.IO
             var values2 = new long[] { (long)int.MaxValue + 1, (long)int.MinValue - 1 };
             foreach (var v in values2)
             {
-                byte[] byteArray = new byte[1];
+                var byteArray = new byte[1];
                 byteArray[0] = (byte)v;
-                MemoryReader reader = new(byteArray);
+                var reader = new MemoryReader(byteArray);
                 var n = reader.ReadSByte();
                 Assert.AreEqual((sbyte)v, n);
             }
@@ -82,8 +82,8 @@ namespace Neo.UnitTests.IO
             var values = new int[] { 0, 1, -1, 5, -5, int.MaxValue, int.MinValue };
             foreach (var v in values)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
-                MemoryReader reader = new(bytes);
+                var bytes = BitConverter.GetBytes(v);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadInt32();
                 Assert.AreEqual(v, n);
             }
@@ -91,8 +91,8 @@ namespace Neo.UnitTests.IO
             var values2 = new long[] { (long)int.MaxValue + 1, (long)int.MinValue - 1 };
             foreach (var v in values2)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
-                MemoryReader reader = new(bytes);
+                var bytes = BitConverter.GetBytes(v);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadInt32();
                 Assert.AreEqual((int)v, n);
             }
@@ -104,8 +104,8 @@ namespace Neo.UnitTests.IO
             var values = new ulong[] { 0, 1, 5, ulong.MaxValue, ulong.MinValue };
             foreach (var v in values)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
-                MemoryReader reader = new(bytes);
+                var bytes = BitConverter.GetBytes(v);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadUInt64();
                 Assert.AreEqual(v, n);
             }
@@ -113,8 +113,8 @@ namespace Neo.UnitTests.IO
             var values2 = new long[] { long.MinValue, -1, long.MaxValue };
             foreach (var v in values2)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
-                MemoryReader reader = new(bytes);
+                var bytes = BitConverter.GetBytes(v);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadUInt64();
                 Assert.AreEqual((ulong)v, n);
             }
@@ -126,12 +126,12 @@ namespace Neo.UnitTests.IO
             var values = new short[] { short.MinValue, -1, 0, 1, 12345, short.MaxValue };
             foreach (var v in values)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
+                var bytes = BitConverter.GetBytes(v);
                 if (BitConverter.IsLittleEndian)
                 {
                     Array.Reverse(bytes);
                 }
-                MemoryReader reader = new(bytes);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadInt16BigEndian();
                 Assert.AreEqual(v, n);
             }
@@ -143,12 +143,12 @@ namespace Neo.UnitTests.IO
             var values = new ushort[] { ushort.MinValue, 0, 1, 12345, ushort.MaxValue };
             foreach (var v in values)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
+                var bytes = BitConverter.GetBytes(v);
                 if (BitConverter.IsLittleEndian)
                 {
                     Array.Reverse(bytes);
                 }
-                MemoryReader reader = new(bytes);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadUInt16BigEndian();
                 Assert.AreEqual(v, n);
             }
@@ -160,12 +160,12 @@ namespace Neo.UnitTests.IO
             var values = new int[] { int.MinValue, -1, 0, 1, 12345, int.MaxValue };
             foreach (var v in values)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
+                var bytes = BitConverter.GetBytes(v);
                 if (BitConverter.IsLittleEndian)
                 {
                     Array.Reverse(bytes);
                 }
-                MemoryReader reader = new(bytes);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadInt32BigEndian();
                 Assert.AreEqual(v, n);
             }
@@ -177,12 +177,12 @@ namespace Neo.UnitTests.IO
             var values = new uint[] { uint.MinValue, 0, 1, 12345, uint.MaxValue };
             foreach (var v in values)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
+                var bytes = BitConverter.GetBytes(v);
                 if (BitConverter.IsLittleEndian)
                 {
                     Array.Reverse(bytes);
                 }
-                MemoryReader reader = new(bytes);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadUInt32BigEndian();
                 Assert.AreEqual(v, n);
             }
@@ -194,12 +194,12 @@ namespace Neo.UnitTests.IO
             var values = new long[] { long.MinValue, int.MinValue, -1, 0, 1, 12345, int.MaxValue, long.MaxValue };
             foreach (var v in values)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
+                var bytes = BitConverter.GetBytes(v);
                 if (BitConverter.IsLittleEndian)
                 {
                     Array.Reverse(bytes);
                 }
-                MemoryReader reader = new(bytes);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadInt64BigEndian();
                 Assert.AreEqual(v, n);
             }
@@ -211,12 +211,12 @@ namespace Neo.UnitTests.IO
             var values = new ulong[] { ulong.MinValue, 0, 1, 12345, ulong.MaxValue };
             foreach (var v in values)
             {
-                byte[] bytes = BitConverter.GetBytes(v);
+                var bytes = BitConverter.GetBytes(v);
                 if (BitConverter.IsLittleEndian)
                 {
                     Array.Reverse(bytes);
                 }
-                MemoryReader reader = new(bytes);
+                var reader = new MemoryReader(bytes);
                 var n = reader.ReadUInt64BigEndian();
                 Assert.AreEqual(v, n);
             }

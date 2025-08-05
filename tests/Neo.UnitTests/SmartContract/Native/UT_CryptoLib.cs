@@ -779,8 +779,8 @@ namespace Neo.UnitTests.SmartContract.Native
             var n = keys.Count;
 
             // Must ensure the following conditions are met before verification script construction:
-            Assert.IsTrue(n > 0);
-            Assert.IsTrue(m <= n);
+            Assert.IsGreaterThan(0, n);
+            Assert.IsLessThanOrEqualTo(n, m);
             Assert.AreEqual(n, keys.Select(k => k.Item2).Distinct().Count());
 
             // In fact, the following algorithm is implemented via NeoVM instructions:
