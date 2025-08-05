@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(Hardfork.HF_Basilisk, arg.ActiveIn);
             Assert.AreEqual(0, arg.Order);
             Assert.AreEqual("1", arg.Descriptor.Name);
-            Assert.AreEqual(1, arg.Descriptor.Parameters.Length);
+            Assert.HasCount(1, arg.Descriptor.Parameters);
             Assert.AreEqual("a1", arg.Descriptor.Parameters[0].Name);
             Assert.AreEqual(ContractParameterType.String, arg.Descriptor.Parameters[0].Type);
 
@@ -35,7 +35,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsNull(arg.ActiveIn);
             Assert.AreEqual(1, arg.Order);
             Assert.AreEqual("1", arg.Descriptor.Name);
-            Assert.AreEqual(1, arg.Descriptor.Parameters.Length);
+            Assert.HasCount(1, arg.Descriptor.Parameters);
             Assert.AreEqual("a1", arg.Descriptor.Parameters[0].Name);
             Assert.AreEqual(ContractParameterType.String, arg.Descriptor.Parameters[0].Type);
         }
@@ -50,7 +50,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(Hardfork.HF_Basilisk, arg.ActiveIn);
             Assert.AreEqual(0, arg.Order);
             Assert.AreEqual("2", arg.Descriptor.Name);
-            Assert.AreEqual(2, arg.Descriptor.Parameters.Length);
+            Assert.HasCount(2, arg.Descriptor.Parameters);
             Assert.AreEqual("a1", arg.Descriptor.Parameters[0].Name);
             Assert.AreEqual(ContractParameterType.String, arg.Descriptor.Parameters[0].Type);
             Assert.AreEqual("a2", arg.Descriptor.Parameters[1].Name);
@@ -63,7 +63,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsNull(arg.ActiveIn);
             Assert.AreEqual(1, arg.Order);
             Assert.AreEqual("2", arg.Descriptor.Name);
-            Assert.AreEqual(2, arg.Descriptor.Parameters.Length);
+            Assert.HasCount(2, arg.Descriptor.Parameters);
             Assert.AreEqual("a1", arg.Descriptor.Parameters[0].Name);
             Assert.AreEqual(ContractParameterType.String, arg.Descriptor.Parameters[0].Type);
             Assert.AreEqual("a2", arg.Descriptor.Parameters[1].Name);
@@ -81,7 +81,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(Hardfork.HF_Basilisk, arg.ActiveIn);
             Assert.AreEqual(0, arg.Order);
             Assert.AreEqual("3", arg.Descriptor.Name);
-            Assert.AreEqual(3, arg.Descriptor.Parameters.Length);
+            Assert.HasCount(3, arg.Descriptor.Parameters);
             Assert.AreEqual("a1", arg.Descriptor.Parameters[0].Name);
             Assert.AreEqual(ContractParameterType.String, arg.Descriptor.Parameters[0].Type);
             Assert.AreEqual("a2", arg.Descriptor.Parameters[1].Name);
@@ -97,7 +97,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsNull(arg.ActiveIn);
             Assert.AreEqual(1, arg.Order);
             Assert.AreEqual("3", arg.Descriptor.Name);
-            Assert.AreEqual(3, arg.Descriptor.Parameters.Length);
+            Assert.HasCount(3, arg.Descriptor.Parameters);
             Assert.AreEqual("a1", arg.Descriptor.Parameters[0].Name);
             Assert.AreEqual(ContractParameterType.String, arg.Descriptor.Parameters[0].Type);
             Assert.AreEqual("a2", arg.Descriptor.Parameters[1].Name);
@@ -118,7 +118,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(Hardfork.HF_Basilisk, arg.ActiveIn);
             Assert.AreEqual(0, arg.Order);
             Assert.AreEqual("4", arg.Descriptor.Name);
-            Assert.AreEqual(4, arg.Descriptor.Parameters.Length);
+            Assert.HasCount(4, arg.Descriptor.Parameters);
             Assert.AreEqual("a1", arg.Descriptor.Parameters[0].Name);
             Assert.AreEqual(ContractParameterType.String, arg.Descriptor.Parameters[0].Type);
             Assert.AreEqual("a2", arg.Descriptor.Parameters[1].Name);
@@ -137,7 +137,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsNull(arg.ActiveIn);
             Assert.AreEqual(1, arg.Order);
             Assert.AreEqual("4", arg.Descriptor.Name);
-            Assert.AreEqual(4, arg.Descriptor.Parameters.Length);
+            Assert.HasCount(4, arg.Descriptor.Parameters);
             Assert.AreEqual("a1", arg.Descriptor.Parameters[0].Name);
             Assert.AreEqual(ContractParameterType.String, arg.Descriptor.Parameters[0].Type);
             Assert.AreEqual("a2", arg.Descriptor.Parameters[1].Name);

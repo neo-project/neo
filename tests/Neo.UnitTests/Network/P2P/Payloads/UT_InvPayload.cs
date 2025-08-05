@@ -44,7 +44,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var array = InvPayload.CreateGroup(InventoryType.TX, hashes).ToArray();
 
-            Assert.AreEqual(2, array.Length);
+            Assert.HasCount(2, array);
             Assert.AreEqual(InventoryType.TX, array[0].Type);
             Assert.AreEqual(InventoryType.TX, array[1].Type);
             CollectionAssert.AreEqual(hashes.Take(InvPayload.MaxHashesCount).ToArray(), array[0].Hashes);

@@ -47,7 +47,7 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new();
             byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), TestProtocolSettings.Default.Network);
-            Assert.AreEqual(64, res.Length);
+            Assert.HasCount(64, res);
         }
 
         [TestMethod]
