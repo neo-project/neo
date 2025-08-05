@@ -77,8 +77,8 @@ namespace Neo.Cryptography.BN254
 
             var result = new Fp(u0, u1, u2, u3);
 
-            // Convert TO Montgomery form
-            result = result * R2;
+            // NOTE: Neo expects the bytes to already be in Montgomery form
+            // So we don't convert here
             return result.Reduce();
         }
 
@@ -223,28 +223,31 @@ namespace Neo.Cryptography.BN254
             (r1, carry) = Mac(r1, k, Modulus.u1, carry);
             (r2, carry) = Mac(r2, k, Modulus.u2, carry);
             (r3, carry) = Mac(r3, k, Modulus.u3, carry);
-            (r4, carry) = Adc(r4, 0, carry);
+            (r4, var c) = Adc(r4, 0, carry);
+            (r5, _) = Adc(r5, 0, c);
 
             k = r1 * inv;
             (_, carry) = Mac(r1, k, Modulus.u0, 0);
             (r2, carry) = Mac(r2, k, Modulus.u1, carry);
             (r3, carry) = Mac(r3, k, Modulus.u2, carry);
             (r4, carry) = Mac(r4, k, Modulus.u3, carry);
-            (r5, carry) = Adc(r5, 0, carry);
+            (r5, c) = Adc(r5, 0, carry);
+            (r6, _) = Adc(r6, 0, c);
 
             k = r2 * inv;
             (_, carry) = Mac(r2, k, Modulus.u0, 0);
             (r3, carry) = Mac(r3, k, Modulus.u1, carry);
             (r4, carry) = Mac(r4, k, Modulus.u2, carry);
             (r5, carry) = Mac(r5, k, Modulus.u3, carry);
-            (r6, carry) = Adc(r6, 0, carry);
+            (r6, c) = Adc(r6, 0, carry);
+            (r7, _) = Adc(r7, 0, c);
 
             k = r3 * inv;
             (_, carry) = Mac(r3, k, Modulus.u0, 0);
             (r4, carry) = Mac(r4, k, Modulus.u1, carry);
             (r5, carry) = Mac(r5, k, Modulus.u2, carry);
             (r6, carry) = Mac(r6, k, Modulus.u3, carry);
-            (r7, carry) = Adc(r7, 0, carry);
+            (r7, _) = Adc(r7, 0, carry);
 
             var result = new Fp(r4, r5, r6, r7);
             return result.Reduce();
@@ -320,14 +323,14 @@ namespace Neo.Cryptography.BN254
         {
             var result = new byte[Size];
 
-            // Convert from Montgomery form by multiplying by 1
-            var normalized = this * new Fp(1, 0, 0, 0);
+            // NOTE: Neo expects the bytes to remain in Montgomery form
+            // So we don't convert here
 
             // Write each limb as little-endian bytes
-            BitConverter.GetBytes(normalized.u0).CopyTo(result, 0);
-            BitConverter.GetBytes(normalized.u1).CopyTo(result, 8);
-            BitConverter.GetBytes(normalized.u2).CopyTo(result, 16);
-            BitConverter.GetBytes(normalized.u3).CopyTo(result, 24);
+            BitConverter.GetBytes(u0).CopyTo(result, 0);
+            BitConverter.GetBytes(u1).CopyTo(result, 8);
+            BitConverter.GetBytes(u2).CopyTo(result, 16);
+            BitConverter.GetBytes(u3).CopyTo(result, 24);
 
             return result;
         }

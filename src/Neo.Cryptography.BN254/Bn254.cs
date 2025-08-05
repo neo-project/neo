@@ -73,6 +73,10 @@ namespace Neo.Cryptography.BN254
         /// <returns>Element in Gt (target group) before final exponentiation</returns>
         private static Gt ComputePairing(in G1Affine p, in G2Affine q)
         {
+            // Handle identity cases
+            if (p.IsIdentity || q.IsIdentity)
+                return Gt.Identity;
+
             // Miller loop implementation for BN254 ate pairing
             // Accumulates the product: ∏ l_{i,P}(Q) where l is the line function
             var result = Gt.Identity;

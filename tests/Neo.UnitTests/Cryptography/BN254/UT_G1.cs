@@ -19,6 +19,17 @@ namespace Neo.UnitTests.Cryptography.BN254
     [TestClass]
     public class UT_G1
     {
+        private static Fp HexToFp(string hex)
+        {
+            var bytes = Convert.FromHexString(hex);
+            return Fp.FromBytes(bytes);
+        }
+
+        private static Scalar HexToScalar(string hex)
+        {
+            var bytes = Convert.FromHexString(hex);
+            return Scalar.FromBytes(bytes);
+        }
         [TestMethod]
         public void TestG1AffineIdentity()
         {
@@ -191,6 +202,82 @@ namespace Neo.UnitTests.Cryptography.BN254
             affine.ToString().Should().Contain("G1Affine");
             affine.ToString().Should().Contain("x=");
             affine.ToString().Should().Contain("y=");
+        }
+
+        [TestMethod]
+        public void TestG1AdditionTestVectors()
+        {
+            // Simple test: Identity addition
+            var identity = G1Affine.Identity;
+            var identityResult = identity + identity;
+            identityResult.Should().Be(identity);
+
+            // Adding identity to generator
+            var generator = G1Affine.Generator;
+            var identityAddResult = identity + generator;
+            identityAddResult.Should().Be(generator);
+
+            // Point doubling (adding generator to itself)
+            var doubled = generator + generator;
+            doubled.IsOnCurve().Should().BeTrue();
+            doubled.Should().NotBe(generator);
+            doubled.Should().NotBe(identity);
+
+            // Commutative property
+            var p1 = G1Affine.Generator;
+            var p2 = new G1Affine(new G1Projective(G1Affine.Generator).Double());
+            var sum1 = p1 + p2;
+            var sum2 = p2 + p1;
+            sum1.Should().Be(sum2);
+
+            // Adding point to its negation should give identity
+            var negatedGen = new G1Affine(generator.X, Fp.Zero - generator.Y, false);
+            var shouldBeIdentity = generator + negatedGen;
+            shouldBeIdentity.Should().Be(G1Affine.Identity);
+        }
+
+        [TestMethod]
+        public void TestG1ScalarMultiplicationTestVectors()
+        {
+            var generator = G1Affine.Generator;
+            var generatorProjective = new G1Projective(generator);
+
+            // Test zero scalar multiplication
+            var zeroResult = generatorProjective * Scalar.Zero;
+            zeroResult.IsIdentity.Should().BeTrue();
+
+            // Test one scalar multiplication
+            var oneResult = generatorProjective * Scalar.One;
+            var affineOne = new G1Affine(oneResult);
+            affineOne.Should().Be(generator);
+
+            // Test small scalar multiplication (2)
+            var two = Scalar.One + Scalar.One;
+            var doubledResult = generatorProjective * two;
+            var affineDoubled = new G1Affine(doubledResult);
+            affineDoubled.Should().Be(generator + generator);
+            affineDoubled.IsOnCurve().Should().BeTrue();
+
+            // Test small scalar multiplication (3)
+            var three = two + Scalar.One;
+            var tripledResult = generatorProjective * three;
+            var affineTripled = new G1Affine(tripledResult);
+            var expectedTripled = (generator + generator) + generator;
+            affineTripled.Should().Be(expectedTripled);
+            affineTripled.IsOnCurve().Should().BeTrue();
+
+            // Test associativity: (a * b) * G = a * (b * G)
+            var a = Scalar.One + Scalar.One; // 2
+            var b = two + Scalar.One; // 3
+            var ab = a * b; // 6
+
+            var result1 = new G1Affine(generatorProjective * ab);
+            var tempResult = generatorProjective * b;
+            var result2 = new G1Affine(new G1Projective(new G1Affine(tempResult)) * a);
+
+            result1.Should().Be(result2);
+            result1.IsOnCurve().Should().BeTrue();
+            result2.IsOnCurve().Should().BeTrue();
         }
     }
 }

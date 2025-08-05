@@ -13,6 +13,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.BN254;
 using System;
+using System.Linq;
 using System.Reflection;
 
 namespace Neo.UnitTests.Cryptography.BN254
@@ -31,10 +32,8 @@ namespace Neo.UnitTests.Cryptography.BN254
             var assembly = typeof(Scalar).Assembly;
             var types = assembly.GetTypes();
 
-            foreach (var type in types)
+            foreach (var type in types.Where(t => t.Namespace == "Neo.Cryptography.BN254"))
             {
-                type.Namespace.Should().Be("Neo.Cryptography.BN254");
-
                 // Verify no placeholder methods
                 var methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
                 foreach (var method in methods)

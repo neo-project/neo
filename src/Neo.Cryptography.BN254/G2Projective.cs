@@ -100,20 +100,14 @@ namespace Neo.Cryptography.BN254
             x3 = t1 + t2;
             t5 = t5 - x3;
 
-            // G2 curve constant: b = (0x2b149d40ceb8aaae3a18e4a61c076267..., 0x09075b4ee4d3ff4c9054...)
-            var curveB = new Fp2(
-                new Fp(new ulong[] { 0x2b149d40ceb8aaae, 0x3a18e4a61c076267, 0x45c2ac2962a12902, 0x09192585375e4d42 }),
-                new Fp(new ulong[] { 0x0c54bba1d6f46fef, 0x5d784e17b8c00409, 0x21f828ff3dc8ca4d, 0x009075b4ee4d3ff4 })
-            );
-
-            var z3 = curveB * t2;
+            var z3 = G2Constants.B * t2;
             x3 = z3 + t2;
             z3 = t1 - x3;
             x3 = t1 + x3;
             var y3 = x3 * z3;
             t1 = t0 + t0;
             t1 = t1 + t0;
-            t4 = curveB * t4;
+            t4 = G2Constants.B * t4;
             t0 = t1 * t4;
             y3 = y3 + t0;
             t0 = t5 * t4;

@@ -49,7 +49,7 @@ namespace Neo.Cryptography.BN254
             var y2 = Y.Square();
             var x3 = X.Square() * X;
             var z3 = Z.Square() * Z;
-            var bz3 = new Fp(3, 0, 0, 0) * z3;
+            var bz3 = G1Constants.B * z3;
 
             return (y2 * Z) == (x3 + bz3);
         }
@@ -126,106 +126,50 @@ namespace Neo.Cryptography.BN254
 
         private static G1Projective Add(in G1Projective a, in G1Projective b)
         {
-            // Complete addition formula for short Weierstrass curves
-            // From "Complete addition formulas for prime order elliptic curves" by Renes-Costello-Batina
-            var t0 = a.X * b.X;
-            var t1 = a.Y * b.Y;
-            var t2 = a.Z * b.Z;
-            var t3 = a.X + a.Y;
-            var t4 = b.X + b.Y;
-            t3 = t3 * t4;
-            t4 = t0 + t1;
-            t3 = t3 - t4;
-            t4 = a.X + a.Z;
-            var t5 = b.X + b.Z;
-            t4 = t4 * t5;
-            t5 = t0 + t2;
-            t4 = t4 - t5;
-            t5 = a.Y + a.Z;
-            var x3 = b.Y + b.Z;
-            t5 = t5 * x3;
-            x3 = t1 + t2;
-            t5 = t5 - x3;
-            var z3 = new Fp(3, 0, 0, 0) * t2;
-            x3 = z3 + t2;
-            z3 = t1 - x3;
-            x3 = t1 + x3;
-            var y3 = x3 * z3;
-            t1 = t0 + t0;
-            t1 = t1 + t0;
-            t4 = new Fp(3, 0, 0, 0) * t4;
-            t0 = t1 * t4;
-            y3 = y3 + t0;
-            t0 = t5 * t4;
-            x3 = t3 * x3;
-            x3 = x3 - t0;
-            t0 = t3 * t1;
-            z3 = t5 * z3;
-            z3 = z3 + t0;
+            // Handle identity cases
+            if (a.IsIdentity) return b;
+            if (b.IsIdentity) return a;
 
-            return new G1Projective(x3, y3, z3);
+            // Temporary implementation: convert to affine, add, convert back
+            // This is slower but correct until we fix the projective formulas
+            var aAffine = new G1Affine(a);
+            var bAffine = new G1Affine(b);
+
+            // Use affine addition (which works correctly)
+            var result = aAffine + bAffine;
+
+            // Convert back to projective
+            return new G1Projective(result);
         }
 
         private static G1Projective AddMixed(in G1Projective a, in G1Affine b)
         {
-            // Mixed addition formula
+            // Handle identity cases
             if (b.IsIdentity) return a;
             if (a.IsIdentity) return new G1Projective(b);
 
-            var t0 = a.X * b.X;
-            var t1 = a.Y * b.Y;
-            var t3 = b.X + b.Y;
-            var t4 = a.X + a.Y;
-            t3 = t3 * t4;
-            t4 = t0 + t1;
-            t3 = t3 - t4;
-            t4 = b.X * a.Z;
-            t4 = t4 + a.X;
-            var t5 = b.Y * a.Z;
-            t5 = t5 + a.Y;
-            var z3 = new Fp(3, 0, 0, 0) * a.Z;
-            var x3 = z3 + a.Z;
-            z3 = t1 - x3;
-            x3 = t1 + x3;
-            var y3 = x3 * z3;
-            t1 = t0 + t0;
-            t1 = t1 + t0;
-            t4 = new Fp(3, 0, 0, 0) * t4;
-            t0 = t1 * t4;
-            y3 = y3 + t0;
-            t0 = t5 * t4;
-            x3 = t3 * x3;
-            x3 = x3 - t0;
-            t0 = t3 * t1;
-            z3 = t5 * z3;
-            z3 = z3 + t0;
+            // Temporary implementation: convert to affine, add, convert back
+            // This is slower but correct until we fix the mixed addition formulas
+            var aAffine = new G1Affine(a);
 
-            return new G1Projective(x3, y3, z3);
+            // Use affine addition (which works correctly)
+            var result = aAffine + b;
+
+            // Convert back to projective
+            return new G1Projective(result);
         }
 
         public G1Projective Double()
         {
-            // Point doubling formula
-            var t0 = Y.Square();
-            var z3 = t0 + t0;
-            z3 = z3 + z3;
-            z3 = z3 + z3;
-            var t1 = Y * Z;
-            var t2 = Z.Square();
-            t2 = new Fp(3, 0, 0, 0) * t2;
-            var x3 = t2 * z3;
-            var y3 = t0 + t2;
-            z3 = t1 * z3;
-            t1 = t2 + t2;
-            t2 = t1 + t2;
-            t0 = t0 - t2;
-            y3 = t0 * y3;
-            y3 = x3 + y3;
-            t1 = X * Y;
-            x3 = t0 * t1;
-            x3 = x3 + x3;
+            // Handle identity case
+            if (IsIdentity) return this;
 
-            return new G1Projective(x3, y3, z3);
+            // Temporary implementation: convert to affine, double, convert back
+            // This is slower but correct until we fix the projective formulas
+            var affine = new G1Affine(this);
+            var doubled = affine.Double();
+
+            return new G1Projective(doubled);
         }
 
         private static G1Projective Multiply(in G1Projective point, ReadOnlySpan<byte> scalar)

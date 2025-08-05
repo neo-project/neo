@@ -146,9 +146,78 @@ namespace Neo.Cryptography.BN254
             return new G1Projective(this);
         }
 
-        public static G1Projective operator +(in G1Affine a, in G1Affine b)
+        public static G1Affine operator +(in G1Affine a, in G1Affine b)
         {
-            return a.ToProjective() + b;
+            return AddAffine(a, b);
+        }
+
+        private static G1Affine AddAffine(in G1Affine a, in G1Affine b)
+        {
+            // Handle identity cases
+            if (a.IsIdentity) return b;
+            if (b.IsIdentity) return a;
+
+            // Handle doubling case
+            if (a == b) return a.DoubleAffine();
+
+            // Handle inverse case (a + (-a) = identity)
+            if (a.X == b.X && a.Y == -b.Y) return Identity;
+
+            // General addition case
+            // λ = (y₂ - y₁) / (x₂ - x₁)
+            var dx = b.X - a.X;
+            var dy = b.Y - a.Y;
+
+            if (!dx.TryInvert(out var dxInv))
+                return Identity; // Points are the same x, different y (shouldn't happen if handled above)
+
+            var lambda = dy * dxInv;
+
+            // x₃ = λ² - x₁ - x₂
+            var lambda2 = lambda.Square();
+            var x3 = lambda2 - a.X - b.X;
+
+            // y₃ = λ(x₁ - x₃) - y₁
+            var y3 = lambda * (a.X - x3) - a.Y;
+
+            return new G1Affine(x3, y3, false);
+        }
+
+        public G1Affine Double()
+        {
+            return DoubleAffine();
+        }
+
+        private G1Affine DoubleAffine()
+        {
+            // Handle identity case
+            if (IsIdentity) return this;
+
+            // Handle case where y = 0 (point has order 2)
+            if (Y.IsZero) return Identity;
+
+            // Point doubling: λ = (3x²) / (2y)
+            var three = Fp.One + Fp.One + Fp.One;
+            var two = Fp.One + Fp.One;
+
+            var x2 = X.Square();
+            var threeX2 = three * x2;
+            var twoY = two * Y;
+
+            if (!twoY.TryInvert(out var twoYInv))
+                return Identity; // y = 0, which we handled above
+
+            var lambda = threeX2 * twoYInv;
+
+            // x₃ = λ² - 2x
+            var lambda2 = lambda.Square();
+            var twoX = two * X;
+            var x3 = lambda2 - twoX;
+
+            // y₃ = λ(x - x₃) - y
+            var y3 = lambda * (X - x3) - Y;
+
+            return new G1Affine(x3, y3, false);
         }
 
         public static G1Projective operator -(in G1Affine a)
@@ -176,9 +245,9 @@ namespace Neo.Cryptography.BN254
             // Tonelli-Shanks algorithm for BN254 square root
             // For p ≡ 3 (mod 4), we can use a^((p+1)/4) for square root
             result = a.PowVartime(new ulong[] {
-                0x0f40231095ee3347,
-                0x25e05a5a347a3c4b,
-                0x2e14116b0a04d617,
+                0x4f082305b61f3f52,
+                0x65e05aa45a1c72a3,
+                0x6e14116da0605617,
                 0x0c19139cb84c680a
             });
 
