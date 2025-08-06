@@ -99,7 +99,9 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 StackItem.Null, // Length
                 StackItem.Null, // ForbidNull
                 StackItem.Null, // Interface
-                StackItem.Null // Key
+                StackItem.Null, // Key
+                StackItem.Null, // Value
+                StackItem.Null  // Fields
             };
 
             var extended = new ExtendedType();
@@ -123,20 +125,24 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Length = null,
                 ForbidNull = null,
                 Interface = null,
-                Key = null
+                Key = null,
+                Value = null,
+                Fields = null
             };
 
             var refCounter = new ReferenceCounter();
             var result = ((IInteroperable)extended).ToStackItem(refCounter) as Struct;
 
             Assert.IsNotNull(result);
-            Assert.AreEqual(6, result.Count);
+            Assert.AreEqual(8, result.Count);
             Assert.AreEqual((byte)ContractParameterType.String, result[0].GetInteger());
             Assert.IsTrue(result[1].IsNull);
             Assert.IsTrue(result[2].IsNull);
             Assert.IsTrue(result[3].IsNull);
             Assert.IsTrue(result[4].IsNull);
             Assert.IsTrue(result[5].IsNull);
+            Assert.IsTrue(result[6].IsNull);
+            Assert.IsTrue(result[7].IsNull);
         }
 
         [TestMethod]
