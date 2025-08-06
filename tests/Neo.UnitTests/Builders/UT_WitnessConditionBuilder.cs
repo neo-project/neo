@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Builders
 
             Assert.IsNotNull(actual);
             Assert.IsInstanceOfType<AndCondition>(condition);
-            Assert.AreEqual(2, actual.Expressions.Length);
+            Assert.HasCount(2, actual.Expressions);
             Assert.IsInstanceOfType<CalledByContractCondition>(actual.Expressions[0]);
             Assert.IsInstanceOfType<CalledByGroupCondition>(actual.Expressions[1]);
             Assert.AreEqual(expectedContractHash, (actual.Expressions[0] as CalledByContractCondition).Hash);
@@ -60,7 +60,7 @@ namespace Neo.UnitTests.Builders
 
             Assert.IsNotNull(actual);
             Assert.IsInstanceOfType<OrCondition>(condition);
-            Assert.AreEqual(2, actual.Expressions.Length);
+            Assert.HasCount(2, actual.Expressions);
             Assert.IsInstanceOfType<CalledByContractCondition>(actual.Expressions[0]);
             Assert.IsInstanceOfType<CalledByGroupCondition>(actual.Expressions[1]);
             Assert.AreEqual(expectedContractHash, (actual.Expressions[0] as CalledByContractCondition).Hash);
@@ -176,7 +176,7 @@ namespace Neo.UnitTests.Builders
             Assert.IsNotNull(actual);
             Assert.IsInstanceOfType<NotCondition>(condition);
             Assert.IsInstanceOfType<AndCondition>(actual.Expression);
-            Assert.AreEqual(2, actualAndCondition.Expressions.Length);
+            Assert.HasCount(2, actualAndCondition.Expressions);
             Assert.IsInstanceOfType<CalledByContractCondition>(actualAndCondition.Expressions[0]);
             Assert.IsInstanceOfType<CalledByGroupCondition>(actualAndCondition.Expressions[1]);
             Assert.AreEqual(expectedContractHash, (actualAndCondition.Expressions[0] as CalledByContractCondition).Hash);
@@ -205,7 +205,7 @@ namespace Neo.UnitTests.Builders
             Assert.IsNotNull(actual);
             Assert.IsInstanceOfType<NotCondition>(condition);
             Assert.IsInstanceOfType<OrCondition>(actual.Expression);
-            Assert.AreEqual(2, actualOrCondition.Expressions.Length);
+            Assert.HasCount(2, actualOrCondition.Expressions);
             Assert.IsInstanceOfType<CalledByContractCondition>(actualOrCondition.Expressions[0]);
             Assert.IsInstanceOfType<CalledByGroupCondition>(actualOrCondition.Expressions[1]);
             Assert.AreEqual(expectedContractHash, (actualOrCondition.Expressions[0] as CalledByContractCondition).Hash);

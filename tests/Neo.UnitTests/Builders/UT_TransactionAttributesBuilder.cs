@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(attr);
-            Assert.AreEqual(1, attr.Length);
+            Assert.HasCount(1, attr);
             Assert.IsInstanceOfType<Conflicts>(attr[0]);
             Assert.AreEqual(UInt256.Zero, ((Conflicts)attr[0]).Hash);
         }
@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(attr);
-            Assert.AreEqual(1, attr.Length);
+            Assert.HasCount(1, attr);
             Assert.IsInstanceOfType<OracleResponse>(attr[0]);
             Assert.AreEqual(1ul, ((OracleResponse)attr[0]).Id);
             Assert.AreEqual(OracleResponseCode.Success, ((OracleResponse)attr[0]).Code);
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(attr);
-            Assert.AreEqual(1, attr.Length);
+            Assert.HasCount(1, attr);
             Assert.IsInstanceOfType<HighPriorityAttribute>(attr[0]);
         }
 
@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(attr);
-            Assert.AreEqual(1, attr.Length);
+            Assert.HasCount(1, attr);
             Assert.IsInstanceOfType<NotValidBefore>(attr[0]);
             Assert.AreEqual(10u, ((NotValidBefore)attr[0]).Height);
         }

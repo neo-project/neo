@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -40,10 +41,10 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             var settings = TestProtocolSettings.SoleNode;
             var neoSystem = new NeoSystem(settings, _memoryStoreProvider);
-            var localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 11332) });
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 12332) });
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 13332) });
+            var localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken: CancellationToken.None).Result;
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(IPAddress.Loopback, 11332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(IPAddress.Loopback, 12332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(IPAddress.Loopback, 13332) });
             var rpcServer = new RpcServer(neoSystem, RpcServersSettings.Default);
 
             var result = rpcServer.GetPeers();
@@ -310,7 +311,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 "Should throw RpcException for invalid block format");
 
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
-            StringAssert.Contains(exception.Message, "Invalid Block Format");
+            Assert.Contains("Invalid Block Format", exception.Message);
         }
 
         [TestMethod]

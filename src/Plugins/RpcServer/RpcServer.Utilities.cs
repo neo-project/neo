@@ -30,10 +30,9 @@ namespace Neo.Plugins.RpcServer
         ///   ]
         /// }</code>
         /// </summary>
-        /// <param name="_params">A empty array.</param>
         /// <returns>A JSON array containing the plugin information.</returns>
         [RpcMethod]
-        protected internal virtual JToken ListPlugins(JArray _params)
+        protected internal virtual JToken ListPlugins()
         {
             return new JArray(Plugin.Plugins
                 .OrderBy(u => u.Name)
@@ -59,12 +58,11 @@ namespace Neo.Plugins.RpcServer
         ///   "result": {"address": "The Base58Check address", "isvalid": true}
         /// }</code>
         /// </summary>
-        /// <param name="_params">A 1-element array containing the address as a string.</param>
+        /// <param name="address">The address as a string.</param>
         /// <returns>A JSON object containing the address and whether it is valid.</returns>
         [RpcMethod]
-        protected internal virtual JToken ValidateAddress(JArray _params)
+        protected internal virtual JToken ValidateAddress(string address)
         {
-            string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invlid address format: {_params[0]}"));
             UInt160 scriptHash;
             try
             {

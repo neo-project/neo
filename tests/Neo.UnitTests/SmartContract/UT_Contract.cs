@@ -59,7 +59,7 @@ namespace Neo.UnitTests.SmartContract
             ContractParameterType[] parameterList = new ContractParameterType[] { ContractParameterType.Signature };
             Contract contract = Contract.Create(parameterList, script);
             Assert.AreEqual(contract.Script, script);
-            Assert.AreEqual(1, contract.ParameterList.Length);
+            Assert.HasCount(1, contract.ParameterList);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
         }
 
@@ -91,7 +91,7 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[72] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(ApplicationEngine.System_Crypto_CheckMultisig), 0, expectedArray, 73, 4);
             CollectionAssert.AreEqual(expectedArray, contract.Script);
-            Assert.AreEqual(2, contract.ParameterList.Length);
+            Assert.HasCount(2, contract.ParameterList);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[1]);
         }
@@ -143,7 +143,7 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[35] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(ApplicationEngine.System_Crypto_CheckSig), 0, expectedArray, 36, 4);
             CollectionAssert.AreEqual(expectedArray, contract.Script);
-            Assert.AreEqual(1, contract.ParameterList.Length);
+            Assert.HasCount(1, contract.ParameterList);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
         }
 
