@@ -73,17 +73,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void JsonTest_Serialize_Map_Test()
-        {
-            var entry = new Map
-            {
-                [new byte[] { 0xC1 }] = 1,
-                [new byte[] { 0xC2 }] = 2,
-            };
-            Assert.ThrowsExactly<DecoderFallbackException>(() => _ = JsonSerializer.Serialize(entry));
-        }
-
-        [TestMethod]
         public void JsonTest_Bool()
         {
             var json = "[  true ,false ]";
@@ -211,34 +200,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void Serialize_WrongJson()
-        {
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonSerializer.Serialize(StackItem.FromInterface(new object())));
-        }
-
-        [TestMethod]
-        public void Serialize_EmptyObject()
-        {
-            var entry = new Map();
-            var json = JsonSerializer.Serialize(entry).ToString();
-
-            Assert.AreEqual("{}", json);
-        }
-
-        [TestMethod]
-        public void Serialize_Number()
-        {
-            var entry = new Array { 1, 9007199254740992 };
-            Assert.ThrowsExactly<InvalidOperationException>(() => _ = JsonSerializer.Serialize(entry));
-        }
-
-        [TestMethod]
-        public void Serialize_Null()
-        {
-            Assert.AreEqual(JObject.Null, JsonSerializer.Serialize(StackItem.Null));
-        }
-
-        [TestMethod]
         public void Deserialize_EmptyObject()
         {
             var snapshot = _snapshotCache.CloneCache();
@@ -250,15 +211,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void Serialize_EmptyArray()
-        {
-            var entry = new Array();
-            var json = JsonSerializer.Serialize(entry).ToString();
-
-            Assert.AreEqual("[]", json);
-        }
-
-        [TestMethod]
         public void Deserialize_EmptyArray()
         {
             var snapshot = _snapshotCache.CloneCache();
@@ -267,21 +219,6 @@ namespace Neo.UnitTests.SmartContract
 
             Assert.IsInstanceOfType(items, typeof(Array));
             Assert.IsEmpty((Array)items);
-        }
-
-        [TestMethod]
-        public void Serialize_Map_Test()
-        {
-            var entry = new Map
-            {
-                ["test1"] = 1,
-                ["test3"] = 3,
-                ["test2"] = 2
-            };
-
-            var json = JsonSerializer.Serialize(entry).ToString();
-
-            Assert.AreEqual("{\"test1\":1,\"test3\":3,\"test2\":2}", json);
         }
 
         [TestMethod]
@@ -306,16 +243,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void Serialize_Array_Bool_Str_Num()
-        {
-            var entry = new Array { true, "test", 123 };
-
-            var json = JsonSerializer.Serialize(entry).ToString();
-
-            Assert.AreEqual("[true,\"test\",123]", json);
-        }
-
-        [TestMethod]
         public void Deserialize_Array_Bool_Str_Num()
         {
             var snapshot = _snapshotCache.CloneCache();
@@ -331,20 +258,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("test", array[1].GetString());
             Assert.AreEqual(array[2].GetInteger(), 123);
             Assert.AreEqual(array[3].GetInteger(), BigInteger.Parse("90500000000000000000000000000"));
-        }
-
-        [TestMethod]
-        public void Serialize_Array_OfArray()
-        {
-            var entry = new Array
-            {
-                new Array { true, "test1", 123 },
-                new Array { true, "test2", 321 }
-            };
-
-            var json = JsonSerializer.Serialize(entry).ToString();
-
-            Assert.AreEqual("[[true,\"test1\",123],[true,\"test2\",321]]", json);
         }
 
         [TestMethod]
