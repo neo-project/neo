@@ -26,7 +26,7 @@ namespace Neo.Wallets.SQLite
 
         public bool Handle(string path)
         {
-            return GetExtension(path).ToLowerInvariant() == ".db3";
+            return GetExtension(path).Equals(".db3", StringComparison.InvariantCultureIgnoreCase);
         }
 
         public Wallet CreateWallet(string name, string path, string password, ProtocolSettings settings)
