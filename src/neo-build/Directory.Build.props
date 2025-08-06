@@ -41,4 +41,8 @@
     <None Include="../../../.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="../../IsExternalInit.cs" Visible="false" />
+  </ItemGroup>
+
 </Project>
