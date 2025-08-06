@@ -14,6 +14,8 @@ using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
 using System;
 
+#nullable enable
+
 namespace Neo.SmartContract
 {
     partial class ApplicationEngine
@@ -190,7 +192,7 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            StorageItem item = SnapshotCache.GetAndChange(skey);
+            var item = SnapshotCache.GetAndChange(skey);
             if (item is null)
             {
                 newDataSize = key.Length + value.Length;
@@ -229,3 +231,5 @@ namespace Neo.SmartContract
         }
     }
 }
+
+#nullable disable
