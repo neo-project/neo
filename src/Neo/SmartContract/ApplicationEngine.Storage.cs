@@ -70,31 +70,31 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Storage.Delete.
         /// Deletes an entry from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 1 << 15, CallFlags.WriteStates);
+        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.SelfGet.
         /// Gets the entry with the specified key from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_SelfGet = Register("System.Storage.SelfGet", nameof(GetSelf), 1 << 15, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Storage_SelfGet = Register("System.Storage.SelfGet", nameof(GetSelf), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.SelfFind.
         /// Finds the entries from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_SelfFind = Register("System.Storage.SelfFind", nameof(FindSelf), 1 << 15, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Storage_SelfFind = Register("System.Storage.SelfFind", nameof(FindSelf), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.SelfPut.
         /// Puts a new entry into the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_SelfPut = Register("System.Storage.SelfPut", nameof(PutSelf), 1 << 15, CallFlags.WriteStates);
+        public static readonly InteropDescriptor System_Storage_SelfPut = Register("System.Storage.SelfPut", nameof(PutSelf), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.SelfDelete.
         /// Deletes an entry from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_SelfDelete = Register("System.Storage.SelfDelete", nameof(DeleteSelf), 1 << 15, CallFlags.WriteStates);
+        public static readonly InteropDescriptor System_Storage_SelfDelete = Register("System.Storage.SelfDelete", nameof(DeleteSelf), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
 
         /// <summary>
         /// The implementation of System.Storage.GetContext.
