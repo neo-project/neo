@@ -59,6 +59,11 @@ namespace Neo.SmartContract
         public long FixedPrice { get; init; }
 
         /// <summary>
+        /// Required Hardfork to be active.
+        /// </summary>
+        public Hardfork? Hardfork { get; init; }
+
+        /// <summary>
         /// The required <see cref="CallFlags"/> for the interoperable service.
         /// </summary>
         public CallFlags RequiredCallFlags { get; init; }
