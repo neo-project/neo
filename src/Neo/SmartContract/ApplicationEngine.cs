@@ -694,7 +694,7 @@ namespace Neo.SmartContract
         private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags)
         {
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-            MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, flags)
+            var method = typeof(ApplicationEngine).GetMethod(handler, flags)
                 ?? typeof(ApplicationEngine).GetProperty(handler, flags).GetMethod;
             InteropDescriptor descriptor = new()
             {
@@ -703,7 +703,7 @@ namespace Neo.SmartContract
                 FixedPrice = fixedPrice,
                 RequiredCallFlags = requiredCallFlags
             };
-            services ??= new Dictionary<uint, InteropDescriptor>();
+            services ??= [];
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
         }
