@@ -1,0 +1,48 @@
+// Copyright (C) 2015-2025 The Neo Project.
+//
+// DebugApplicationEngine.Common.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+using Neo.Build.Core.SmartContract.Debugger;
+using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.VM;
+
+namespace Neo.Build.Core.SmartContract
+{
+    public partial class DebugApplicationEngine
+    {
+        private void CheckBreakPointsAndBreak()
+        {
+            if (State == VMState.NONE && InvocationStack.Count > 0 && _breakPoints.Count > 0)
+            {
+                if (CurrentContext is null) return;
+
+                var bp = Breakpoint.Create(CurrentContext.Script, PersistingBlock?.Index);
+
+                if (_breakPoints.TryGetValue(bp, out var positionTable) &&
+                    bp.BlockIndex == PersistingBlock?.Index &&
+                    positionTable.Contains((uint)CurrentContext.InstructionPointer))
+                    State = VMState.BREAK;
+            }
+        }
+
+        private void OnUpdateSnapshotCache(DataCache sender, StorageKey key, StorageItem item)
+        {
+            var exeState = CurrentContext?.GetState<ExecutionContextState>()!;
+            _snapshotStack[exeState] = new(key, item, StorageEvent.Write);
+        }
+
+        private void OnReadSnapshot(DataCache sender, StorageKey key, StorageItem item)
+        {
+            var exeState = CurrentContext?.GetState<ExecutionContextState>()!;
+            _snapshotStack[exeState] = new(key, item, StorageEvent.Read);
+        }
+    }
+}

@@ -31,13 +31,13 @@ namespace Neo.Build.Core.Tests.Storage
             using (var snapshot = store.GetSnapshot())
             {
                 var result = snapshot.TryGet([0x01, 0x00], out var value);
-                CollectionAssert.AreEqual(value, new byte[] { 0x00 });
+                CollectionAssert.AreEqual(new byte[] { 0x00 }, value);
 
                 result = snapshot.TryGet([0x01, 0x01], out value);
-                CollectionAssert.AreEqual(value, new byte[] { 0x01 });
+                CollectionAssert.AreEqual(new byte[] { 0x01 }, value);
 
                 result = snapshot.TryGet([0x01, 0x02], out value);
-                CollectionAssert.AreEqual(value, new byte[] { 0x02 });
+                CollectionAssert.AreEqual(new byte[] { 0x02 }, value);
             }
         }
 
@@ -56,9 +56,9 @@ namespace Neo.Build.Core.Tests.Storage
                 snapshot.Commit();
             }
 
-            CollectionAssert.AreEqual(store.TryGet([0x01, 0x00]), new byte[] { 0x00 });
-            CollectionAssert.AreEqual(store.TryGet([0x01, 0x01]), new byte[] { 0xee });
-            CollectionAssert.AreEqual(store.TryGet([0x01, 0x02]), new byte[] { 0x02 });
+            CollectionAssert.AreEqual(new byte[] { 0x00 }, store.TryGet([0x01, 0x00]));
+            CollectionAssert.AreEqual(new byte[] { 0xee }, store.TryGet([0x01, 0x01]));
+            CollectionAssert.AreEqual(new byte[] { 0x02 }, store.TryGet([0x01, 0x02]));
         }
 
         [TestMethod]
@@ -76,9 +76,9 @@ namespace Neo.Build.Core.Tests.Storage
                 snapshot.Commit();
             }
 
-            CollectionAssert.AreEqual(store.TryGet([0x01, 0x00]), new byte[] { 0x00 });
-            CollectionAssert.AreEqual(store.TryGet([0x01, 0x01]), null);
-            CollectionAssert.AreEqual(store.TryGet([0x01, 0x02]), new byte[] { 0x02 });
+            CollectionAssert.AreEqual(new byte[] { 0x00 }, store.TryGet([0x01, 0x00]));
+            Assert.IsNull(store.TryGet([0x01, 0x01]));
+            CollectionAssert.AreEqual(new byte[] { 0x02 }, store.TryGet([0x01, 0x02]));
         }
 
         [TestMethod]
@@ -98,31 +98,31 @@ namespace Neo.Build.Core.Tests.Storage
             var items = snapshot.Find([0x02], SeekDirection.Forward).ToArray();
 
             Assert.AreEqual(2, items.Length);
-            CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x02, 0x00 });
-            CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x02, 0x01 });
+            CollectionAssert.AreEqual(new byte[] { 0x02, 0x00 }, items[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x02, 0x01 }, items[1].Key);
 
             items = [.. snapshot.Find(null, SeekDirection.Forward)];
 
             Assert.AreEqual(5, items.Length);
-            CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x01, 0x00 });
-            CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x01, 0x01 });
-            CollectionAssert.AreEqual(items[2].Key, new byte[] { 0x01, 0x02 });
-            CollectionAssert.AreEqual(items[3].Key, new byte[] { 0x02, 0x00 });
-            CollectionAssert.AreEqual(items[4].Key, new byte[] { 0x02, 0x01 });
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x00 }, items[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x01 }, items[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02 }, items[2].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x02, 0x00 }, items[3].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x02, 0x01 }, items[4].Key);
 
             items = [.. snapshot.Find([0x01, 0x02], SeekDirection.Backward)];
 
             Assert.AreEqual(3, items.Length);
-            CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x01, 0x02 });
-            CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x01, 0x01 });
-            CollectionAssert.AreEqual(items[2].Key, new byte[] { 0x01, 0x00 });
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02 }, items[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x01 }, items[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x00 }, items[2].Key);
 
             items = [.. snapshot.Find([0x02], SeekDirection.Backward)];
 
             Assert.AreEqual(3, items.Length);
-            CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x01, 0x02 });
-            CollectionAssert.AreEqual(items[1].Key, new byte[] { 0x01, 0x01 });
-            CollectionAssert.AreEqual(items[2].Key, new byte[] { 0x01, 0x00 });
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02 }, items[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x01 }, items[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x00 }, items[2].Key);
 
             items = [.. snapshot.Find(null, SeekDirection.Backward)];
 

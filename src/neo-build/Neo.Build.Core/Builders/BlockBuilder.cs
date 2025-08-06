@@ -9,9 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Build.Core.Factories;
 using Neo.Builders;
 using Neo.Cryptography;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Linq;

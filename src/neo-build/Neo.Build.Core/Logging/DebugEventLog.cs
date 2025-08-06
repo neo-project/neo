@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// VMEventLog.cs file belongs to the neo project and is free
+// DebugEventLog.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,10 +11,9 @@
 
 namespace Neo.Build.Core.Logging
 {
-    internal static class VMEventLog
+    internal static class DebugEventLog
     {
         public const int Fault = 100;
-        public const int Result = 101;
 
         public const int Create = 200;
         public const int Load = 201;
@@ -38,5 +37,8 @@ namespace Neo.Build.Core.Logging
 
         public const int IteratorNext = 600;
         public const int IteratorGet = 601;
+
+        public const int ReadStorage = 700;
+        public const int UpdateStorage = 701;
     }
 }
