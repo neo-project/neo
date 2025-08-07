@@ -413,7 +413,7 @@ namespace Neo.Plugins.OpenTelemetry
                 builder.AddOtlpExporter(options =>
                 {
                     options.Endpoint = new Uri(_settings.OtlpExporter.Endpoint);
-                    options.Protocol = _settings.OtlpExporter.Protocol == "grpc"
+                    options.Protocol = _settings.OtlpExporter.Protocol == OTelConstants.ProtocolGrpc
                         ? OtlpExportProtocol.Grpc
                         : OtlpExportProtocol.HttpProtobuf;
                     options.TimeoutMilliseconds = _settings.OtlpExporter.Timeout;

@@ -11,9 +11,22 @@
 
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Reflection;
 
 namespace Neo.Plugins.OpenTelemetry
 {
+    public static class OTelConstants
+    {
+        public const string DefaultServiceName = "neo-node";
+        public const string DefaultEndpoint = "http://localhost:4317";
+        public const string DefaultPath = "/metrics";
+        public const string ProtocolGrpc = "grpc";
+        public const string ProtocolHttpProtobuf = "http/protobuf";
+        public const int DefaultPrometheusPort = 9090;
+        public const int DefaultTimeout = 10000;
+        public const int DefaultMetricsInterval = 10000;
+    }
+
     public class OTelSettings
     {
         public bool Enabled { get; init; }
@@ -28,9 +41,9 @@ namespace Neo.Plugins.OpenTelemetry
         public OTelSettings(IConfigurationSection section)
         {
             Enabled = section.GetValue("Enabled", true);
-            ServiceName = section.GetValue("ServiceName", "neo-node") ?? "neo-node";
-            ServiceVersion = section.GetValue("ServiceVersion", "3.8.1") ?? "3.8.1";
-            InstanceId = section.GetValue("InstanceId", string.Empty) ?? string.Empty;
+            ServiceName = section.GetValue("ServiceName", OTelConstants.DefaultServiceName);
+            ServiceVersion = section.GetValue("ServiceVersion", OTelSettingsExtensions.GetDefaultServiceVersion());
+            InstanceId = section.GetValue("InstanceId", string.Empty);
 
             Metrics = new MetricsSettings(section.GetSection("Metrics"));
             Traces = new TracesSettings(section.GetSection("Traces"));
@@ -51,7 +64,7 @@ namespace Neo.Plugins.OpenTelemetry
         public MetricsSettings(IConfigurationSection section)
         {
             Enabled = section.GetValue("Enabled", true);
-            Interval = section.GetValue("Interval", 10000);
+            Interval = section.GetValue("Interval", OTelConstants.DefaultMetricsInterval);
             PrometheusExporter = new PrometheusExporterSettings(section.GetSection("PrometheusExporter"));
             ConsoleExporter = new ConsoleExporterSettings(section.GetSection("ConsoleExporter"));
         }
@@ -90,8 +103,8 @@ namespace Neo.Plugins.OpenTelemetry
         public PrometheusExporterSettings(IConfigurationSection section)
         {
             Enabled = section.GetValue("Enabled", false);
-            Port = section.GetValue("Port", 9090);
-            Path = section.GetValue("Path", "/metrics") ?? "/metrics";
+            Port = section.GetValue("Port", OTelConstants.DefaultPrometheusPort);
+            Path = section.GetValue("Path", OTelConstants.DefaultPath);
 
             // Validate port
             if (Port < 1 || Port > 65535)
@@ -123,10 +136,10 @@ namespace Neo.Plugins.OpenTelemetry
         public OtlpExporterSettings(IConfigurationSection section)
         {
             Enabled = section.GetValue("Enabled", false);
-            Endpoint = section.GetValue("Endpoint", "http://localhost:4317") ?? "http://localhost:4317";
-            Protocol = section.GetValue("Protocol", "grpc") ?? "grpc";
-            Timeout = section.GetValue("Timeout", 10000);
-            Headers = section.GetValue("Headers", string.Empty) ?? string.Empty;
+            Endpoint = section.GetValue("Endpoint", OTelConstants.DefaultEndpoint);
+            Protocol = section.GetValue("Protocol", OTelConstants.ProtocolGrpc);
+            Timeout = section.GetValue("Timeout", OTelConstants.DefaultTimeout);
+            Headers = section.GetValue("Headers", string.Empty);
             ExportMetrics = section.GetValue("ExportMetrics", true);
             ExportTraces = section.GetValue("ExportTraces", false);
             ExportLogs = section.GetValue("ExportLogs", false);
@@ -139,8 +152,8 @@ namespace Neo.Plugins.OpenTelemetry
                 throw new ArgumentException($"OTLP endpoint must use HTTP or HTTPS scheme: {Endpoint}");
 
             // Validate protocol
-            if (Protocol != "grpc" && Protocol != "http/protobuf")
-                throw new ArgumentException($"Invalid OTLP protocol: {Protocol}. Must be 'grpc' or 'http/protobuf'.");
+            if (Protocol != OTelConstants.ProtocolGrpc && Protocol != OTelConstants.ProtocolHttpProtobuf)
+                throw new ArgumentException($"Invalid OTLP protocol: {Protocol}. Must be '{OTelConstants.ProtocolGrpc}' or '{OTelConstants.ProtocolHttpProtobuf}'.");
 
             // Validate timeout
             if (Timeout < 0)
@@ -154,6 +167,16 @@ namespace Neo.Plugins.OpenTelemetry
         {
             // Remove any potential injection attempts
             return headers?.Replace('\n', ' ').Replace('\r', ' ') ?? string.Empty;
+        }
+    }
+
+    internal static class OTelSettingsExtensions
+    {
+        internal static string GetDefaultServiceVersion()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var version = assembly.GetName().Version;
+            return version?.ToString() ?? "1.0.0";
         }
     }
 }

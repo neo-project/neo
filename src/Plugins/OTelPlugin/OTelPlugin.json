@@ -2,7 +2,6 @@
   "PluginConfiguration": {
     "Enabled": true,
     "ServiceName": "neo-node",
-    "ServiceVersion": "3.8.1",
     "InstanceId": "",
     "Metrics": {
       "Enabled": true,
@@ -16,14 +15,14 @@
         "Enabled": false
       }
     },
-    "Tracing": {
+    "Traces": {
       "Enabled": true,
       "SamplingRatio": 0.1,
       "ConsoleExporter": {
         "Enabled": false
       }
     },
-    "Logging": {
+    "Logs": {
       "Enabled": true,
       "IncludeScopes": true,
       "IncludeFormattedMessage": true,
