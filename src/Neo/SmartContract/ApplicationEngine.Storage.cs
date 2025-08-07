@@ -70,7 +70,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Storage.Delete.
         /// Deletes an entry from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
+        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 1 << 15, CallFlags.WriteStates);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.SelfGet.
