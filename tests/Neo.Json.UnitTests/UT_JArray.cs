@@ -126,8 +126,8 @@ namespace Neo.Json.UnitTests
             {
                 alice
             };
-            Assert.IsTrue(jArray.Contains(alice));
-            Assert.IsFalse(jArray.Contains(bob));
+            Assert.Contains(alice, jArray);
+            Assert.DoesNotContain(bob, jArray);
         }
 
         [TestMethod]
@@ -230,7 +230,7 @@ namespace Neo.Json.UnitTests
             };
             jArray.RemoveAt(1);
             Assert.AreEqual(2, jArray.Count());
-            Assert.IsFalse(jArray.Contains(bob));
+            Assert.DoesNotContain(bob, jArray);
         }
 
         [TestMethod]
@@ -269,7 +269,7 @@ namespace Neo.Json.UnitTests
         public void TestCount()
         {
             var jArray = new JArray { alice, bob };
-            Assert.AreEqual(2, jArray.Count);
+            Assert.HasCount(2, jArray);
         }
 
         [TestMethod]
@@ -296,7 +296,7 @@ namespace Neo.Json.UnitTests
             JToken[] jTokens = { alice, bob };
             JArray jArray = jTokens;
 
-            Assert.AreEqual(2, jArray.Count);
+            Assert.HasCount(2, jArray);
             Assert.AreEqual(alice, jArray[0]);
             Assert.AreEqual(bob, jArray[1]);
         }
@@ -308,7 +308,7 @@ namespace Neo.Json.UnitTests
             {
                 null
             };
-            Assert.AreEqual(1, jArray.Count);
+            Assert.HasCount(1, jArray);
             Assert.IsNull(jArray[0]);
         }
 
@@ -343,7 +343,7 @@ namespace Neo.Json.UnitTests
         {
             var jArray = new JArray { null };
 
-            Assert.AreEqual(1, jArray.Count);
+            Assert.HasCount(1, jArray);
             Assert.IsNull(jArray[0]);
         }
 
@@ -353,7 +353,7 @@ namespace Neo.Json.UnitTests
             var jArray = new JArray { alice };
             jArray[0] = null;
 
-            Assert.AreEqual(1, jArray.Count);
+            Assert.HasCount(1, jArray);
             Assert.IsNull(jArray[0]);
         }
 
@@ -363,7 +363,7 @@ namespace Neo.Json.UnitTests
             var jArray = new JArray { alice };
             jArray.Insert(0, null);
 
-            Assert.AreEqual(2, jArray.Count);
+            Assert.HasCount(2, jArray);
             Assert.IsNull(jArray[0]);
             Assert.AreEqual(alice, jArray[1]);
         }
@@ -374,7 +374,7 @@ namespace Neo.Json.UnitTests
             var jArray = new JArray { null, alice };
             jArray.Remove(null);
 
-            Assert.AreEqual(1, jArray.Count);
+            Assert.HasCount(1, jArray);
             Assert.AreEqual(alice, jArray[0]);
         }
 
@@ -382,8 +382,8 @@ namespace Neo.Json.UnitTests
         public void TestContainsNull()
         {
             var jArray = new JArray { null, alice };
-            Assert.IsTrue(jArray.Contains(null));
-            Assert.IsFalse(jArray.Contains(bob));
+            Assert.Contains((JToken)null, jArray);
+            Assert.DoesNotContain(bob, jArray);
         }
 
         [TestMethod]
@@ -422,7 +422,7 @@ namespace Neo.Json.UnitTests
             var jsonString = "[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]";
             var jArray = (JArray)JArray.Parse(jsonString);
 
-            Assert.AreEqual(3, jArray.Count);
+            Assert.HasCount(3, jArray);
             Assert.IsNull(jArray[0]);
 
             // Checking the second and third elements

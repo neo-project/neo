@@ -115,7 +115,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(expectedJson["merkleroot"].AsString(), resultVerbose["merkleroot"].AsString());
             Assert.AreEqual(expectedJson["confirmations"].AsNumber(), resultVerbose["confirmations"].AsNumber());
             // Genesis block should have 0 transactions
-            Assert.AreEqual(0, ((JArray)resultVerbose["tx"]).Count);
+            Assert.IsEmpty((JArray)resultVerbose["tx"]);
         }
 
         [TestMethod]
@@ -146,14 +146,14 @@ namespace Neo.Plugins.RpcServer.Tests
             var blockArr = Convert.FromBase64String(resultNonVerbose.AsString());
             var deserializedBlock = blockArr.AsSerializable<Block>();
             Assert.AreEqual(block.Hash, deserializedBlock.Hash);
-            Assert.AreEqual(0, deserializedBlock.Transactions.Length);
+            Assert.IsEmpty(deserializedBlock.Transactions);
 
             // Test verbose
             var resultVerbose = _rpcServer.GetBlock(new BlockHashOrIndex(block.Index), true);
             var expectedJson = block.ToJson(TestProtocolSettings.Default);
             expectedJson["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
             Assert.AreEqual(expectedJson["hash"].AsString(), resultVerbose["hash"].AsString());
-            Assert.AreEqual(0, ((JArray)resultVerbose["tx"]).Count);
+            Assert.IsEmpty((JArray)resultVerbose["tx"]);
 
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetBlock(null, true));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
@@ -291,13 +291,13 @@ namespace Neo.Plugins.RpcServer.Tests
             // Test without unverified
             var result = _rpcServer.GetRawMemPool();
             Assert.IsInstanceOfType(result, typeof(JArray));
-            Assert.AreEqual(0, ((JArray)result).Count);
+            Assert.IsEmpty((JArray)result);
 
             // Test with unverified
             result = _rpcServer.GetRawMemPool(true);
             Assert.IsInstanceOfType(result, typeof(JObject));
-            Assert.AreEqual(0, ((JArray)((JObject)result)["verified"]).Count);
-            Assert.AreEqual(0, ((JArray)((JObject)result)["unverified"]).Count);
+            Assert.IsEmpty((JArray)((JObject)result)["verified"]);
+            Assert.IsEmpty((JArray)((JObject)result)["unverified"]);
             Assert.IsTrue(((JObject)result).ContainsProperty("height"));
         }
 
@@ -321,7 +321,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var expectedVerifiedHashes = verified.Select(tx => tx.Hash.ToString()).ToHashSet();
             var expectedUnverifiedHashes = unverified.Select(tx => tx.Hash.ToString()).ToHashSet();
 
-            Assert.IsTrue(expectedVerifiedCount + expectedUnverifiedCount > 0, "Test setup failed: No transactions in mempool");
+            Assert.IsGreaterThan(0, expectedVerifiedCount + expectedUnverifiedCount, "Test setup failed: No transactions in mempool");
 
             // Call the RPC method
             var result = _rpcServer.GetRawMemPool(true);
@@ -504,7 +504,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // Get second page
             var resultPage2 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
             Assert.IsFalse(resultPage2["truncated"].AsBoolean());
-            Assert.AreEqual(5, ((JArray)resultPage2["results"]).Count);
+            Assert.HasCount(5, (JArray)resultPage2["results"]);
             Assert.AreEqual(totalItems, (int)resultPage2["next"].AsNumber()); // Next should be total count
         }
 
@@ -535,7 +535,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // Try to get next page (should be empty)
             var resultPage2 = _rpcServer.FindStorage(new(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
             Assert.IsFalse(resultPage2["truncated"].AsBoolean());
-            Assert.AreEqual(0, ((JArray)resultPage2["results"]).Count);
+            Assert.IsEmpty((JArray)resultPage2["results"]);
             Assert.AreEqual(nextIndex, (int)resultPage2["next"].AsNumber()); // Next index should remain the same
 
             var ex = Assert.ThrowsExactly<RpcException>(

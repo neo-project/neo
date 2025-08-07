@@ -63,7 +63,7 @@ namespace Neo.ConsoleService.Tests
 
             // Test case 1: Basic indicator arguments
             var args1 = "test --strParam hello --intParam 42 --boolParam".Tokenize();
-            Assert.AreEqual(11, args1.Count);
+            Assert.HasCount(11, args1);
             Assert.AreEqual("test", args1[0].Value);
             Assert.AreEqual("--strParam", args1[2].Value);
             Assert.AreEqual("hello", args1[4].Value);
@@ -72,10 +72,10 @@ namespace Neo.ConsoleService.Tests
             Assert.AreEqual("--boolParam", args1[10].Value);
 
             var result1 = service.ParseIndicatorArguments(method, args1[1..]);
-            Assert.AreEqual(4, result1.Length);
+            Assert.HasCount(4, result1);
             Assert.AreEqual("hello", result1[0]);
             Assert.AreEqual(42u, result1[1]);
-            Assert.AreEqual(true, result1[2]);
+            Assert.IsTrue((bool?)result1[2]);
             Assert.AreEqual("default", result1[3]); // Default value
 
             // Test case 2: Boolean parameter without value
@@ -86,7 +86,7 @@ namespace Neo.ConsoleService.Tests
             var enumMethod = typeof(TestConsoleService).GetMethod("TestEnumMethod");
             var args3 = "testenum --enumParam Value2".Tokenize();
             var result3 = service.ParseIndicatorArguments(enumMethod, args3[1..]);
-            Assert.AreEqual(1, result3.Length);
+            Assert.HasCount(1, result3);
             Assert.AreEqual(TestConsoleService.TestEnum.Value2, result3[0]);
 
             // Test case 4: Unknown parameter should throw exception
@@ -107,26 +107,26 @@ namespace Neo.ConsoleService.Tests
             // Test case 1: All parameters provided
             var args1 = "test hello 42 true custom".Tokenize();
             var result1 = service.ParseSequentialArguments(method, args1[1..]);
-            Assert.AreEqual(4, result1.Length);
+            Assert.HasCount(4, result1);
             Assert.AreEqual("hello", result1[0]);
             Assert.AreEqual(42u, result1[1]);
-            Assert.AreEqual(true, result1[2]);
+            Assert.IsTrue((bool?)result1[2]);
             Assert.AreEqual("custom", result1[3]);
 
             // Test case 2: Some parameters with default values
             var args2 = "test hello 42 true".Tokenize();
             var result2 = service.ParseSequentialArguments(method, args2[1..]);
-            Assert.AreEqual(4, result2.Length);
+            Assert.HasCount(4, result2);
             Assert.AreEqual("hello", result2[0]);
             Assert.AreEqual(42u, result2[1]);
-            Assert.AreEqual(true, result2[2]);
+            Assert.IsTrue((bool?)result2[2]);
             Assert.AreEqual("default", result2[3]); // optionalParam default value
 
             // Test case 3: Enum parameter
             var enumMethod = typeof(TestConsoleService).GetMethod("TestEnumMethod");
             var args3 = "testenum Value1".Tokenize();
             var result3 = service.ParseSequentialArguments(enumMethod, args3[1..].Trim());
-            Assert.AreEqual(1, result3.Length);
+            Assert.HasCount(1, result3);
             Assert.AreEqual(TestConsoleService.TestEnum.Value1, result3[0]);
 
             // Test case 4: Missing required parameter should throw exception
