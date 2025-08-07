@@ -23,7 +23,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = IteratorNext(iterator);
 
-            _traceLogger.LogInformation(VMEventLog.IteratorNext,
+            _traceLogger.LogInformation(DebugEventLog.IteratorNext,
                 "{SysCall} iterator={Iterator}, result={Result}",
                 nameof(System_Iterator_Next), iterator.GetType().Name, result);
 
@@ -34,7 +34,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = IteratorValue(iterator);
 
-            _traceLogger.LogInformation(VMEventLog.IteratorGet,
+            _traceLogger.LogInformation(DebugEventLog.IteratorGet,
                 "{SysCall} iterator={Iterator}, result={Result}",
                 nameof(System_Iterator_Value), iterator.GetType().Name, result.ToJson());
 

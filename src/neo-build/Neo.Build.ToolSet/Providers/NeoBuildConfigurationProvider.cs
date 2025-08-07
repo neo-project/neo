@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Neo.Build.Core.Factories;
 using Neo.Build.ToolSet.Configuration;
+using Neo.Extensions.Factories;
 using System;
 using System.Collections;
 using System.Collections.Generic;

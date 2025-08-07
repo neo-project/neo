@@ -29,7 +29,7 @@ namespace Neo.Build.Core.SmartContract
         protected ApplicationEngineBase(
             ProtocolSettings protocolSettings,
             DataCache snapshotCache,
-            long maxGas,
+            long maxGas = 20_00000000L,
             StorageSettings? storageSettings = null,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
@@ -54,9 +54,9 @@ namespace Neo.Build.Core.SmartContract
         }
 
         protected ApplicationEngineBase(
-            ApplicationEngineSettings engineSettings,
             ProtocolSettings protocolSettings,
             DataCache snapshotCache,
+            ApplicationEngineSettings engineSettings,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
             Block? persistingBlock = null,
@@ -77,38 +77,30 @@ namespace Neo.Build.Core.SmartContract
         { }
 
         public Transaction? CurrentTransaction => ScriptContainer as Transaction;
+        protected ILogger Logger => _traceLogger;
 
         private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
 
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _traceLogger;
 
-        private readonly UTF8Encoding _encoding = new(false, true)
-        {
-            DecoderFallback = DecoderFallback.ExceptionFallback,
-            EncoderFallback = EncoderFallback.ExceptionFallback,
-        };
+        private readonly Encoding _encoding = Encoding.GetEncoding("utf-8", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
 
         private readonly StorageSettings _storageSettings;
-
-        public override void Dispose()
-        {
-            base.Dispose();
-        }
 
         public override VMState Execute()
         {
             ReadOnlyMemory<byte> memoryScript = CurrentContext?.Script ?? ReadOnlyMemory<byte>.Empty;
             var scriptString = System.Convert.ToBase64String(memoryScript.Span);
 
-            _traceLogger.LogInformation(VMEventLog.Execute,
+            _traceLogger.LogInformation(DebugEventLog.Execute,
                 "Executing container={TxHash}, script={Script}",
                 ScriptContainer?.Hash, scriptString);
 
             var result = base.Execute();
 
-            _traceLogger.LogInformation(VMEventLog.Execute,
-                "Executed state={VMState}, gas={Consumed}, leftover={GasLeft}, result={Result}",
+            _traceLogger.LogInformation(DebugEventLog.Execute,
+                "Executed state={VMState}, gas={Consumed}, gasleft={GasLeft}, result={Result}",
                 result, FeeConsumed, GasLeft, ResultStack.ToJson());
 
             return result;
@@ -121,17 +113,20 @@ namespace Neo.Build.Core.SmartContract
             var contextState = context.GetState<ExecutionContextState>();
             var contractState = contextState.Contract;
 
+            contextState.SnapshotCache.OnRead += OnSnapshotCacheRead;
+            contextState.SnapshotCache.OnUpdate += OnSnapshotCacheUpdate;
+
             if (contextState.ScriptHash is not null &&
                 contractState is not null)
-                _traceLogger.LogInformation(VMEventLog.Load,
+                _traceLogger.LogInformation(DebugEventLog.Load,
                     "Loaded name={Name}, hash={ScriptHash}",
                     contractState.Manifest.Name, contextState.ScriptHash);
             else
             {
-                ReadOnlyMemory<byte> memBytes = context.Script;
-                var scriptString = System.Convert.ToBase64String(memBytes.Span);
+                ReadOnlyMemory<byte> memoryScript = context.Script ?? ReadOnlyMemory<byte>.Empty;
+                var scriptString = System.Convert.ToBase64String(memoryScript.Span);
 
-                _traceLogger.LogInformation(VMEventLog.Load,
+                _traceLogger.LogInformation(DebugEventLog.Load,
                     "Loaded script={Script}",
                     scriptString);
             }
@@ -141,19 +136,7 @@ namespace Neo.Build.Core.SmartContract
         {
             base.OnFault(ex);
 
-            _traceLogger.LogError(VMEventLog.Fault, ex,
-                "{Message}",
-                ex.InnerException?.Message ?? ex.Message);
-        }
-
-        protected override void PostExecuteInstruction(Instruction instruction)
-        {
-            base.PostExecuteInstruction(instruction);
-        }
-
-        protected override void PreExecuteInstruction(Instruction instruction)
-        {
-            base.PreExecuteInstruction(instruction);
+            _traceLogger.LogError(DebugEventLog.Fault, ex, string.Empty);
         }
 
         protected override void OnSysCall(InteropDescriptor descriptor)
@@ -162,6 +145,26 @@ namespace Neo.Build.Core.SmartContract
                 base.OnSysCall(overrideDescriptor);
             else
                 base.OnSysCall(descriptor);
+        }
+
+        private void OnSnapshotCacheRead(DataCache sender, StorageKey key, StorageItem item)
+        {
+            var keyString = GetStorageKeyValueString(key.ToArray(), _storageSettings.KeyFormat);
+            var valueString = GetStorageKeyValueString(item.ToArray(), _storageSettings.ValueFormat);
+
+            _traceLogger.LogInformation(DebugEventLog.ReadStorage,
+                "Storage id={Id}, key={Key}, value={Value}",
+                key.Id, keyString, valueString);
+        }
+
+        private void OnSnapshotCacheUpdate(DataCache sender, StorageKey key, StorageItem item)
+        {
+            var keyString = GetStorageKeyValueString(key.ToArray(), _storageSettings.KeyFormat);
+            var valueString = GetStorageKeyValueString(item.ToArray(), _storageSettings.ValueFormat);
+
+            _traceLogger.LogInformation(DebugEventLog.UpdateStorage,
+                "Storage id={Id}, key={Key}, value={Value}",
+                key.Id, keyString, valueString);
         }
     }
 }
