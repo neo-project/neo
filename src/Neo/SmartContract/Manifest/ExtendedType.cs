@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Manifest
         /// key is only used along with the Map type (MUST NOT be used for other types) and can have Signature, Boolean, Integer,
         /// Hash160, Hash256, ByteArray, PublicKey or String value, that is all the basic types that can be used as a map key.
         /// </summary>
-        public Nep25Key? Key { get; set; }
+        public ContractParameterType? Key { get; set; }
 
         /// <summary>
         /// value is used for Array, InteropInterface and Map types (type field) and MUST NOT be used with other base types.
@@ -126,7 +126,7 @@ namespace Neo.SmartContract.Manifest
 
             if (array[startIndex++] is ByteString key)
             {
-                if (!Enum.TryParse<Nep25Key>(key.GetString(), false, out var keyValue))
+                if (!Enum.TryParse<ContractParameterType>(key.GetString(), false, out var keyValue))
                     throw new FormatException();
 
                 Key = keyValue;
@@ -228,7 +228,7 @@ namespace Neo.SmartContract.Manifest
             }
             if (json["key"] != null)
             {
-                if (!Enum.TryParse<Nep25Key>(json["key"]!.GetString(), true, out var keyValue))
+                if (!Enum.TryParse<ContractParameterType>(json["key"]!.GetString(), true, out var keyValue))
                     throw new FormatException("Invalid key value.");
                 type.Key = keyValue;
             }
