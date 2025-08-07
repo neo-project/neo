@@ -274,7 +274,16 @@ namespace Neo.SmartContract
         {
             if (engine is ApplicationEngine app)
             {
-                app.OnSysCall(GetInteropDescriptor(instruction.TokenU32));
+                var interop = GetInteropDescriptor(instruction.TokenU32);
+
+                if (interop?.Hardfork != null && !app.IsHardforkEnabled(interop.Hardfork.Value))
+                {
+                    // The syscall is not active
+
+                    throw new KeyNotFoundException();
+                }
+
+                app.OnSysCall(interop);
             }
             else
             {
@@ -691,15 +700,16 @@ namespace Neo.SmartContract
             };
         }
 
-        private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags)
+        private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, Hardfork? hardfork = null)
         {
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
             var method = typeof(ApplicationEngine).GetMethod(handler, flags)
                 ?? typeof(ApplicationEngine).GetProperty(handler, flags).GetMethod;
-            InteropDescriptor descriptor = new()
+            var descriptor = new InteropDescriptor()
             {
                 Name = name,
                 Handler = method,
+                Hardfork = hardfork,
                 FixedPrice = fixedPrice,
                 RequiredCallFlags = requiredCallFlags
             };
