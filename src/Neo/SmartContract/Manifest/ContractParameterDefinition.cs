@@ -37,7 +37,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ExtendedType ExtendedType { get; set; }
 
-        void IInteroperable.FromStackItem(StackItem stackItem)
+        public void FromStackItem(StackItem stackItem)
         {
             var item = (Struct)stackItem;
             Name = item[0].GetString();

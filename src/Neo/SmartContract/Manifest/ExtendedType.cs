@@ -79,7 +79,7 @@ namespace Neo.SmartContract.Manifest
         /// It's an array with each member being a Parameter. fields MUST NOT be used in method parameter or return value definitions
         /// (these MUST use namedtype referring to a valid type specified in the namedtypes object).
         /// </summary>
-        public ExtendedType[]? Fields { get; set; }
+        public ContractParameterDefinition[]? Fields { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -148,11 +148,11 @@ namespace Neo.SmartContract.Manifest
 
             if (array[startIndex++] is VM.Types.Array fields)
             {
-                Fields = new ExtendedType[fields.Count];
+                Fields = new ContractParameterDefinition[fields.Count];
                 for (var i = 0; i < fields.Count; i++)
                 {
-                    var field = new ExtendedType();
-                    field.FromStackItem((VM.Types.Array)fields[i], 0);
+                    var field = new ContractParameterDefinition();
+                    field.FromStackItem((VM.Types.Array)fields[i]);
                     Fields[i] = field;
                 }
             }
@@ -183,7 +183,7 @@ namespace Neo.SmartContract.Manifest
                 var arrayValue = new VM.Types.Array(referenceCounter);
                 foreach (var field in Fields)
                 {
-                    arrayValue.Add(field.ToStackItem(referenceCounter, []));
+                    arrayValue.Add(field.ToStackItem(referenceCounter));
                 }
                 array.Add(arrayValue);
             }
@@ -238,14 +238,14 @@ namespace Neo.SmartContract.Manifest
             }
             if (json["fields"] is JArray jFields)
             {
-                type.Fields = new ExtendedType[jFields.Count];
+                type.Fields = new ContractParameterDefinition[jFields.Count];
 
                 for (var i = 0; i < jFields.Count; i++)
                 {
                     if (jFields[i] is not JObject jField)
                         throw new FormatException("Invalid Field entry");
 
-                    type.Fields[i] = FromJson(jField);
+                    type.Fields[i] = ContractParameterDefinition.FromJson(jField);
                 }
             }
             return type;
