@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Actor;
 using Microsoft.Extensions.Configuration;
 using Neo;
 using Neo.ConsoleService;
@@ -35,7 +34,7 @@ using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.OpenTelemetry
 {
-    public class OpenTelemetryPlugin : Plugin, ICommittingHandler, ICommittedHandler, INetworkMetricsHandler, IMemPoolMetricsHandler
+    public class OpenTelemetryPlugin : Plugin, ICommittingHandler, ICommittedHandler
     {
         private MeterProvider? _meterProvider;
         private Meter? _meter;
@@ -100,6 +99,7 @@ namespace Neo.Plugins.OpenTelemetry
         private Process? _currentProcess;
         private DateTime _lastCpuCheck = DateTime.UtcNow;
         private TimeSpan _lastProcessorTime = TimeSpan.Zero;
+        private MetricsCollector? _metricsCollector;
 
         public override string Name => "OpenTelemetry";
         public override string Description => "Provides observability for Neo blockchain node using OpenTelemetry";
@@ -138,13 +138,13 @@ namespace Neo.Plugins.OpenTelemetry
                 Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
                 Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
 
-                // Subscribe to network events
-                LocalNode.NetworkPeerConnected += ((INetworkMetricsHandler)this).Network_PeerConnected_Handler;
-                LocalNode.NetworkPeerDisconnected += ((INetworkMetricsHandler)this).Network_PeerDisconnected_Handler;
-                LocalNode.NetworkStatsSnapshot += ((INetworkMetricsHandler)this).Network_StatsSnapshot_Handler;
-
-                // Subscribe to mempool events
-                MemoryPool.MemPoolStatsSnapshot += ((IMemPoolMetricsHandler)this).MemPool_StatsSnapshot_Handler;
+                // Initialize metrics collector
+                _metricsCollector = new MetricsCollector(system, TimeSpan.FromSeconds(5));
+                
+                // Subscribe to metrics updates
+                _metricsCollector.NetworkMetricsUpdated += OnNetworkMetricsUpdated;
+                _metricsCollector.MemPoolMetricsUpdated += OnMemPoolMetricsUpdated;
+                _metricsCollector.BlockchainMetricsUpdated += OnBlockchainMetricsUpdated;
 
                 ConsoleHelper.Info("OpenTelemetry plugin initialized successfully");
             }
@@ -533,11 +533,10 @@ namespace Neo.Plugins.OpenTelemetry
             // Unsubscribe from events
             Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
-            LocalNode.NetworkPeerConnected -= ((INetworkMetricsHandler)this).Network_PeerConnected_Handler;
-            LocalNode.NetworkPeerDisconnected -= ((INetworkMetricsHandler)this).Network_PeerDisconnected_Handler;
-            LocalNode.NetworkStatsSnapshot -= ((INetworkMetricsHandler)this).Network_StatsSnapshot_Handler;
-            MemoryPool.MemPoolStatsSnapshot -= ((IMemPoolMetricsHandler)this).MemPool_StatsSnapshot_Handler;
 
+            // Dispose metrics collector
+            _metricsCollector?.Dispose();
+            
             _meterProvider?.Dispose();
             _meter?.Dispose();
             _blockProcessingStopwatch = null;
@@ -575,50 +574,33 @@ namespace Neo.Plugins.OpenTelemetry
             }
         }
 
-        // INetworkMetricsHandler implementation
-        void INetworkMetricsHandler.Network_PeerConnected_Handler(LocalNode node, IActorRef peer)
+        // Metrics update handlers
+        private void OnNetworkMetricsUpdated(NetworkMetrics metrics)
         {
             if (!_settings.Enabled || !_settings.Metrics.Enabled) return;
-            _peerConnectedCounter?.Add(1);
+            
+            // Network metrics are now collected via polling
+            // Connected/unconnected peer counts are updated through observable gauges
         }
 
-        void INetworkMetricsHandler.Network_PeerDisconnected_Handler(LocalNode node, IActorRef peer)
-        {
-            if (!_settings.Enabled || !_settings.Metrics.Enabled) return;
-            _peerDisconnectedCounter?.Add(1);
-        }
-
-        void INetworkMetricsHandler.Network_StatsSnapshot_Handler(LocalNode node, NetworkStats stats)
+        private void OnMemPoolMetricsUpdated(MemPoolMetrics metrics)
         {
             if (!_settings.Enabled || !_settings.Metrics.Enabled) return;
 
             lock (_metricsLock)
             {
-                // Update counters with delta values
-                if (stats.BytesSent > 0)
-                    _bytesSentCounter?.Add(stats.BytesSent);
-                if (stats.BytesReceived > 0)
-                    _bytesReceivedCounter?.Add(stats.BytesReceived);
+                // Update memory bytes estimate
+                _lastMemPoolMemoryBytes = metrics.EstimatedMemoryBytes;
             }
         }
 
-        // IMemPoolMetricsHandler implementation
-        void IMemPoolMetricsHandler.MemPool_StatsSnapshot_Handler(MemoryPool memPool, MemPoolStats stats)
+        private void OnBlockchainMetricsUpdated(BlockchainMetrics metrics)
         {
             if (!_settings.Enabled || !_settings.Metrics.Enabled) return;
-
+            
             lock (_metricsLock)
             {
-                // Update conflict counter
-                if (stats.ConflictsCount > 0)
-                    _mempoolConflictsCounter?.Add(stats.ConflictsCount);
-
-                // Record batch removal size
-                if (stats.LastBatchRemovedCount > 0)
-                    _mempoolBatchRemovedHistogram?.Record(stats.LastBatchRemovedCount);
-
-                // Track memory bytes for the observable gauge
-                _lastMemPoolMemoryBytes = stats.TotalMemoryBytes;
+                _currentBlockHeight = metrics.CurrentHeight;
             }
         }
 
