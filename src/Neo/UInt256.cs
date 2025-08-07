@@ -24,7 +24,7 @@ namespace Neo
     /// Represents a 256-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable, ISerializableSpan
+    public class UInt256 : IComparable, IComparable<UInt256>, IEquatable<UInt256>, ISerializable, ISerializableSpan
     {
         /// <summary>
         /// The length of <see cref="UInt256"/> values.
@@ -59,6 +59,12 @@ namespace Neo
 
             var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
             value.CopyTo(span);
+        }
+
+        public int CompareTo(object obj)
+        {
+            if (ReferenceEquals(obj, this)) return 0;
+            return CompareTo(obj as UInt256);
         }
 
         public int CompareTo(UInt256 other)
@@ -205,6 +211,16 @@ namespace Neo
             if (data.Length != Length * 2)
                 throw new FormatException($"Invalid UInt256 string format: expected {Length * 2} hexadecimal characters, but got {data.Length}. UInt256 values must be represented as 64 hexadecimal characters (with or without '0x' prefix).");
             return new UInt256(data.HexToBytesReversed());
+        }
+
+        public static implicit operator UInt256(string s)
+        {
+            return Parse(s);
+        }
+
+        public static implicit operator UInt256(byte[] b)
+        {
+            return new UInt256(b);
         }
 
         public static bool operator ==(UInt256 left, UInt256 right)
