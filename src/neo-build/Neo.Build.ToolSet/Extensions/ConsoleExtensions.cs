@@ -89,8 +89,9 @@ namespace Neo.Build.ToolSet.Extensions
 
         public static void InfoMessage(this IConsole console, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format, params object?[] args)
         {
+            console.WriteDateTime();
             console.SetTerminalForegroundColor(ConsoleColor.Blue);
-            console.Write($"[Info] ");
+            console.Write($"Info: ");
             console.SetTerminalForegroundColor(ConsoleColor.White);
             console.WriteLine(format, args);
             console.ResetColor();
@@ -98,8 +99,9 @@ namespace Neo.Build.ToolSet.Extensions
 
         public static void WarningMessage(this IConsole console, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format, params object?[] args)
         {
+            console.WriteDateTime();
             console.SetTerminalForegroundColor(ConsoleColor.Yellow);
-            console.Write("[Warn] ");
+            console.Write("Warn: ");
             console.SetTerminalForegroundColor(ConsoleColor.White);
             console.WriteLine(format, args);
             console.ResetColor();
@@ -108,8 +110,8 @@ namespace Neo.Build.ToolSet.Extensions
         public static void DebugMessage(this IConsole console, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format, params object?[] args)
         {
             console.SetTerminalForegroundColor(ConsoleColor.DarkGray);
-            console.Write("[Debug] ");
-            console.SetTerminalForegroundColor(ConsoleColor.DarkGray);
+            console.WriteDateTime();
+            console.Write("Debug: ");
             console.WriteLine(format, args);
             console.ResetColor();
         }
@@ -117,8 +119,8 @@ namespace Neo.Build.ToolSet.Extensions
         public static void TraceMessage(this IConsole console, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format, params object?[] args)
         {
             console.SetTerminalForegroundColor(ConsoleColor.DarkGray);
-            console.Write("[Trace] ");
-            console.SetTerminalForegroundColor(ConsoleColor.DarkGray);
+            console.WriteDateTime();
+            console.Write("Trace: ");
             console.WriteLine(format, args);
             console.ResetColor();
         }
@@ -128,10 +130,11 @@ namespace Neo.Build.ToolSet.Extensions
             var stackTrace = exception.InnerException?.StackTrace ?? exception.StackTrace;
 
             console.SetTerminalForegroundColor(ConsoleColor.Red);
-            console.WriteLine("{0}: ", exception.InnerException?.GetType().Name ?? exception.GetType().Name);
+            console.WriteDateTime();
             console.SetTerminalForegroundColor(ConsoleColor.DarkRed);
-            console.WriteLine("   {0}", exception.InnerException?.Message ?? exception.Message);
+            console.WriteLine("{0}: ", exception.InnerException?.GetType().Name ?? exception.GetType().Name);
             console.SetTerminalForegroundColor(ConsoleColor.Red);
+            console.WriteLine("   {0}", exception.InnerException?.Message ?? exception.Message);
 
             if (showStackTrace)
             {
@@ -146,13 +149,20 @@ namespace Neo.Build.ToolSet.Extensions
         public static void ErrorMessage(this IConsole console, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format, params object?[] args)
         {
             console.SetTerminalForegroundColor(ConsoleColor.Red);
-            console.Write("Error: ");
+            console.WriteDateTime();
             console.SetTerminalForegroundColor(ConsoleColor.DarkRed);
+            console.Write("Error: ");
+            console.SetTerminalForegroundColor(ConsoleColor.Red);
             console.WriteLine(format, args);
             console.ResetColor();
         }
 
         internal static bool GetColorsAreSupported() =>
             !Console.IsOutputRedirected;
+
+        private static void WriteDateTime(this IConsole console)
+        {
+            console.Write($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.ffff}] ");
+        }
     }
 }

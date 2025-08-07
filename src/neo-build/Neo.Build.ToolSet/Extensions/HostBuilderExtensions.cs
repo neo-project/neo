@@ -67,6 +67,7 @@ namespace Neo.Build.ToolSet.Extensions
 
                 logging.AddDebug();
                 logging.AddEventSourceLogger();
+                logging.AddNeoBuildConsole();
 
                 if (isWindows)
                     logging.AddEventLog();

@@ -17,7 +17,6 @@ using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
-using System;
 using System.Collections.Generic;
 using System.CommandLine;
 
@@ -76,17 +75,17 @@ namespace Neo.Build.ToolSet.Plugins
             switch (level)
             {
                 case LogLevel.Debug:
-                    _console.DebugMessage("[{0:HH:mm:ss.ff}] [{1}] \"{2}\"", DateTimeOffset.Now, source, message);
+                    _console.DebugMessage("[{0}] \"{1}\"", source, message);
                     break;
                 case LogLevel.Info:
-                    _console.InfoMessage("[{0:HH:mm:ss.ff}] [{1}] \"{2}\"", DateTimeOffset.Now, source, message);
+                    _console.InfoMessage("[{0}] \"{1}\"", source, message);
                     break;
                 case LogLevel.Warning:
-                    _console.WarningMessage("[{0:HH:mm:ss.ff}] [{1}] \"{2}\"", DateTimeOffset.Now, source, message);
+                    _console.WarningMessage("[{0}] \"{1}\"", source, message);
                     break;
                 case LogLevel.Error:
                 case LogLevel.Fatal:
-                    _console.ErrorMessage("[{0:HH:mm:ss.ff}] [{1}] \"{2}\"", DateTimeOffset.Now, source, message);
+                    _console.ErrorMessage("[{0}] \"{1}\"", source, message);
                     break;
             }
         }

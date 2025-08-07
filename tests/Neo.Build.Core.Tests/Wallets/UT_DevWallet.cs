@@ -53,7 +53,7 @@ namespace Neo.Build.Core.Tests.Wallets
             Assert.IsTrue(devWallet.Contains(expectedDevWalletAccount!.ScriptHash));
             Assert.IsTrue(File.Exists(expectedFilename));
 
-            devWallet = new DevWallet(expectedFilename, walletModel.Extra!.ToObject());
+            devWallet = new DevWallet(expectedFilename, walletModel.Extra!.ProtocolConfiguration!.ToObject());
 
             var actualDevWalletAccount = devWallet.GetAccount(expectedDevWalletAccount!.ScriptHash);
 
