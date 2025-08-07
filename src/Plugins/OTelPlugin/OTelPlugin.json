@@ -3,6 +3,7 @@
     "Enabled": true,
     "ServiceName": "neo-node",
     "InstanceId": "",
+    "UnhandledExceptionPolicy": "StopPlugin",
     "Metrics": {
       "Enabled": true,
       "Interval": 10000,

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
+using Neo.Plugins;
 using System;
 using System.Reflection;
 
@@ -33,6 +34,7 @@ namespace Neo.Plugins.OpenTelemetry
         public string ServiceName { get; init; }
         public string ServiceVersion { get; init; }
         public string InstanceId { get; init; }
+        public UnhandledExceptionPolicy UnhandledExceptionPolicy { get; init; }
         public MetricsSettings Metrics { get; init; }
         public TracesSettings Traces { get; init; }
         public LogsSettings Logs { get; init; }
@@ -44,6 +46,11 @@ namespace Neo.Plugins.OpenTelemetry
             ServiceName = section.GetValue("ServiceName", OTelConstants.DefaultServiceName);
             ServiceVersion = section.GetValue("ServiceVersion", OTelSettingsExtensions.GetDefaultServiceVersion());
             InstanceId = section.GetValue("InstanceId", string.Empty);
+            
+            var policyString = section.GetValue("UnhandledExceptionPolicy", "StopPlugin");
+            UnhandledExceptionPolicy = Enum.TryParse<UnhandledExceptionPolicy>(policyString, out var policy) 
+                ? policy 
+                : UnhandledExceptionPolicy.StopPlugin;
 
             Metrics = new MetricsSettings(section.GetSection("Metrics"));
             Traces = new TracesSettings(section.GetSection("Traces"));
