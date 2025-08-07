@@ -38,8 +38,17 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGernerator2()
         {
-            UInt256 uInt256 = new(new byte[32]);
+            UInt256 uInt256 = new byte[32];
             Assert.IsNotNull(uInt256);
+            Assert.AreEqual(UInt256.Zero, uInt256);
+        }
+
+        [TestMethod]
+        public void TestGernerator3()
+        {
+            UInt256 uInt256 = "0xff00000000000000000000000000000000000000000000000000000000000001";
+            Assert.IsNotNull(uInt256);
+            Assert.AreEqual("0xff00000000000000000000000000000000000000000000000000000000000001", uInt256.ToString());
         }
 
         [TestMethod]
@@ -51,6 +60,7 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual(0, UInt256.Zero.CompareTo(UInt256.Zero));
             Assert.AreEqual(-1, UInt256.Zero.CompareTo(result));
             Assert.AreEqual(1, result.CompareTo(UInt256.Zero));
+            Assert.AreEqual(0, result.CompareTo(temp));
         }
 
         [TestMethod]
