@@ -27,8 +27,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetPlatform();
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_Platform), result);
 
             return result;
@@ -38,8 +38,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetNetwork();
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GetNetwork), result);
 
             return result;
@@ -49,8 +49,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetAddressVersion();
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result=0x{Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"0x{Result}\"",
                 nameof(System_Runtime_GetAddressVersion), result.ToString("x02"));
 
             return result;
@@ -60,8 +60,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = Trigger;
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GetTrigger), result.ToString());
 
             return result;
@@ -71,8 +71,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetTime();
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GetTime), result);
 
             return result;
@@ -82,8 +82,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetScriptContainer();
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GetScriptContainer), result.ToJson());
 
             return result;
@@ -93,8 +93,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = CurrentScriptHash;
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GetExecutingScriptHash), result);
 
             return result;
@@ -104,8 +104,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = CallingScriptHash;
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GetCallingScriptHash), result);
 
             return result;
@@ -115,8 +115,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = EntryScriptHash;
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GetEntryScriptHash), result);
 
             return result;
@@ -128,8 +128,8 @@ namespace Neo.Build.Core.SmartContract
 
             RuntimeLoadScript(script, callFlags, args);
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} script={Script}, flags={Flags}, args={Args}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Script=\"{Script}\" Flags=\"{Flags}\" Args=\"{Args}\"",
                 nameof(System_Runtime_LoadScript), scriptString, callFlags.ToString(), args.ToJson());
         }
 
@@ -137,8 +137,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = CheckWitness(scriptHashOrPublicKey);
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} hash=0x{Hash}, result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Hash=\"0x{Hash}\" Result=\"{Result}\"",
                 nameof(System_Runtime_CheckWitness), scriptHashOrPublicKey.ToHexString(), result);
 
             return result;
@@ -148,8 +148,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetInvocationCounter();
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GetInvocationCounter), result);
 
             return result;
@@ -159,8 +159,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetRandom();
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GetRandom), result);
 
             return result;
@@ -170,8 +170,8 @@ namespace Neo.Build.Core.SmartContract
         {
             RuntimeLog(state);
 
-            _traceLogger.LogInformation(DebugEventLog.Log,
-                "{SysCall} message={State}",
+            _traceLogger.LogDebug(DebugEventLog.Log,
+                "{SysCall} Message=\"{State}\"",
                 nameof(System_Runtime_Log), _encoding.GetString(state));
         }
 
@@ -179,8 +179,8 @@ namespace Neo.Build.Core.SmartContract
         {
             RuntimeNotify(eventName, state);
 
-            _traceLogger.LogInformation(DebugEventLog.Notify,
-                "{SysCall} event={Event}, state={State}",
+            _traceLogger.LogDebug(DebugEventLog.Notify,
+                "{SysCall} Event=\"{Event}\" State=\"{State}\"",
                 nameof(System_Runtime_Notify), eventName, state.ToJson());
         }
 
@@ -188,8 +188,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetNotifications(scriptHash);
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} contract={Hash}, result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Contract=\"{Hash}\" Result=\"{Result}\"",
                 nameof(System_Runtime_GetNotifications), scriptHash, result.ToJson());
 
             return result;
@@ -199,8 +199,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GasLeft;
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_GasLeft), result);
 
             return result;
@@ -210,8 +210,8 @@ namespace Neo.Build.Core.SmartContract
         {
             BurnGas(datoshi);
 
-            _traceLogger.LogInformation(DebugEventLog.Burn,
-                "{SysCall} gas={Gas}",
+            _traceLogger.LogDebug(DebugEventLog.Burn,
+                "{SysCall} Gas=\"{Gas}\"",
                 nameof(System_Runtime_BurnGas), datoshi);
         }
 
@@ -221,8 +221,8 @@ namespace Neo.Build.Core.SmartContract
 
             var resultStrings = result.Select(s => s.ToJson());
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result=[{Result}]",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Runtime_CurrentSigners), string.Join(',', resultStrings));
 
             return result;

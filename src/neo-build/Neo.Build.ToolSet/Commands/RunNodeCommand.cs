@@ -60,7 +60,8 @@ namespace Neo.Build.ToolSet.Commands
 
         public new sealed class Handler(
             IHostEnvironment env,
-            INeoConfigurationOptions neoConfiguration) : ICommandHandler
+            INeoConfigurationOptions neoConfiguration,
+            TraceApplicationEngineProvider traceApplicationEngineProvider) : ICommandHandler
         {
             public string Filename { get; set; } = GetDefaultWalletFilename();
 
@@ -70,6 +71,7 @@ namespace Neo.Build.ToolSet.Commands
 
             private readonly IHostEnvironment _env = env;
             private readonly INeoConfigurationOptions _neoConfiguration = neoConfiguration;
+            private readonly TraceApplicationEngineProvider _traceApplicationEngineProvider = traceApplicationEngineProvider;
 
             public int Invoke(InvocationContext context) =>
                 InvokeAsync(context).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -100,7 +102,7 @@ namespace Neo.Build.ToolSet.Commands
                 using var dbftPlugin = new DBFTPlugin(dbftSettings);
                 using var neoSystem = new NeoSystem(wallet.ProtocolSettings with { MillisecondsPerBlock = SecondsPerBlock * 1000 }, storeProvider, _neoConfiguration.StorageOptions.StoreRoot);
 
-                ApplicationEngine.Provider = TraceApplicationEngineProvider.Instance;
+                ApplicationEngine.Provider = _traceApplicationEngineProvider;
 
                 neoSystem.StartNode(new()
                 {

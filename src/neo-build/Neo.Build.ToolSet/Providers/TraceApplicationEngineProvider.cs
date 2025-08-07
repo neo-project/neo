@@ -18,16 +18,13 @@ using Neo.VM;
 
 namespace Neo.Build.ToolSet.Providers
 {
-    internal class TraceApplicationEngineProvider : IApplicationEngineProvider
+    internal class TraceApplicationEngineProvider(
+        ILoggerFactory loggerFactory)
+        : IApplicationEngineProvider
     {
-        private readonly ILoggerFactory FactoryLogger = LoggerFactory.Create(logging =>
-        {
-            logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-        });
-
-        public static TraceApplicationEngineProvider Instance => new();
+        private readonly ILoggerFactory _loggerFactory = loggerFactory;
 
         public ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable) =>
-            new TraceApplicationEngine(settings, snapshot, gas, new(), trigger, container, persistingBlock, diagnostic, FactoryLogger);
+            new TraceApplicationEngine(settings, snapshot, gas, new(), trigger, container, persistingBlock, diagnostic, _loggerFactory);
     }
 }
