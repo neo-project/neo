@@ -291,7 +291,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsInstanceOfType(result, typeof(JArray));
 
             var json = (JArray)result;
-            Assert.IsTrue(json.Count > 0);
+            Assert.IsGreaterThan(0, json.Count);
             TestUtilCloseWallet();
         }
 
@@ -325,9 +325,9 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(12, resp.Count);
             Assert.AreEqual(resp["sender"], ValidatorAddress);
             JArray signers = (JArray)resp["signers"];
-            Assert.AreEqual(1, signers.Count);
+            Assert.HasCount(1, signers);
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-            Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
+            Assert.AreEqual(nameof(WitnessScope.CalledByEntry), signers[0]["scopes"]);
             _rpcServer.wallet = null;
         }
 
@@ -347,9 +347,9 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(12, resp.Count);
             Assert.AreEqual(resp["sender"], ValidatorAddress);
             JArray signers = (JArray)resp["signers"];
-            Assert.AreEqual(1, signers.Count);
+            Assert.HasCount(1, signers);
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-            Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
+            Assert.AreEqual(nameof(WitnessScope.CalledByEntry), signers[0]["scopes"]);
             _rpcServer.wallet = null;
         }
 
@@ -368,9 +368,9 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(12, resp.Count);
             Assert.AreEqual(resp["sender"], ValidatorAddress);
             JArray signers = (JArray)resp["signers"];
-            Assert.AreEqual(1, signers.Count);
+            Assert.HasCount(1, signers);
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-            Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
+            Assert.AreEqual(nameof(WitnessScope.CalledByEntry), signers[0]["scopes"]);
             _rpcServer.wallet = null;
         }
 
@@ -610,10 +610,10 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(resp["sender"], ValidatorAddress);
 
             var signers = (JArray)resp["signers"];
-            Assert.AreEqual(1, signers.Count);
+            Assert.HasCount(1, signers);
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-            Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.None));
-            Assert.AreEqual(resp["attributes"][0]["type"], nameof(TransactionAttributeType.Conflicts));
+            Assert.AreEqual(nameof(WitnessScope.None), signers[0]["scopes"]);
+            Assert.AreEqual(nameof(TransactionAttributeType.Conflicts), resp["attributes"][0]["type"]);
             _rpcServer.wallet = null;
         }
 
@@ -682,7 +682,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 ],
                 validatorSigner.AsParameter<SignersAndWitnesses>()
             );
-            Assert.AreEqual(deployResp["state"], nameof(VMState.HALT));
+            Assert.AreEqual(nameof(VMState.HALT), deployResp["state"]);
 
             var deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
             var snapshot = _neoSystem.GetSnapshotCache();
@@ -701,13 +701,13 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // invoke verify without signer; should return false
             JObject resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString()]);
-            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
-            Assert.AreEqual(false, resp["stack"][0]["value"].AsBoolean());
+            Assert.AreEqual(nameof(VMState.HALT), resp["state"]);
+            Assert.IsFalse(resp["stack"][0]["value"].AsBoolean());
 
             // invoke verify with signer; should return true
             resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([]), validatorSigner]);
-            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
-            Assert.AreEqual(true, resp["stack"][0]["value"].AsBoolean());
+            Assert.AreEqual(nameof(VMState.HALT), resp["state"]);
+            Assert.IsTrue(resp["stack"][0]["value"].AsBoolean());
 
             // invoke verify with wrong input value; should FAULT
             resp = (JObject)_rpcServer.InvokeContractVerify([
@@ -715,8 +715,8 @@ namespace Neo.Plugins.RpcServer.Tests
                 new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "0" }]),
                 validatorSigner
             ]);
-            Assert.AreEqual(resp["state"], nameof(VMState.FAULT));
-            Assert.AreEqual(resp["exception"], "Object reference not set to an instance of an object.");
+            Assert.AreEqual(nameof(VMState.FAULT), resp["state"]);
+            Assert.AreEqual("Object reference not set to an instance of an object.", resp["exception"]);
 
             // invoke verify with 1 param and signer; should return true
             resp = (JObject)_rpcServer.InvokeContractVerify([
@@ -724,8 +724,8 @@ namespace Neo.Plugins.RpcServer.Tests
                 new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]),
                 validatorSigner,
             ]);
-            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
-            Assert.AreEqual(true, resp["stack"][0]["value"].AsBoolean());
+            Assert.AreEqual(nameof(VMState.HALT), resp["state"]);
+            Assert.IsTrue(resp["stack"][0]["value"].AsBoolean());
 
             // invoke verify with 2 param (which does not exist); should throw Exception
             Assert.ThrowsExactly<RpcException>(

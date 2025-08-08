@@ -265,7 +265,7 @@ namespace Neo.Extensions.Tests.Factories
 
             var actualValue = RandomNumberFactory.NextBigInteger(expectedMin, expectedMax);
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
-            Assert.IsTrue(actualValue.Sign < 0);
+            Assert.IsLessThan(0, actualValue.Sign);
         }
 
         [TestMethod]
