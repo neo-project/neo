@@ -257,7 +257,7 @@ namespace Neo.Network.RPC.Tests
             await txManager.SignAsync();
 
             var tx = txManager.Tx;
-            Assert.AreEqual(2, tx.Witnesses.Length);
+            Assert.HasCount(2, tx.Witnesses);
             Assert.AreEqual(40, tx.Witnesses[0].VerificationScript.Length);
             Assert.AreEqual(66, tx.Witnesses[0].InvocationScript.Length);
         }
