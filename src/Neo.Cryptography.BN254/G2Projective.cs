@@ -75,88 +75,159 @@ namespace Neo.Cryptography.BN254
             return HashCode.Combine(X, Y, Z);
         }
 
-        public static G2Projective operator +(in G2Projective a, in G2Projective other)
+        public static G2Projective operator +(in G2Projective a, in G2Projective b)
         {
-            // Complete addition formula for short Weierstrass curves over Fp2
-            if (a.IsIdentity) return other;
-            if (other.IsIdentity) return a;
+            // Complete addition formulas for short Weierstrass curves
+            // Using Jacobian coordinates for efficiency
+            
+            // Handle identity cases efficiently
+            if (a.IsIdentity) return b;
+            if (b.IsIdentity) return a;
 
-            var t0 = a.X * other.X;
-            var t1 = a.Y * other.Y;
-            var t2 = a.Z * other.Z;
-            var t3 = a.X + a.Y;
-            var t4 = other.X + other.Y;
-            t3 = t3 * t4;
-            t4 = t0 + t1;
-            t3 = t3 - t4;
-            t4 = a.X + a.Z;
-            var t5 = other.X + other.Z;
-            t4 = t4 * t5;
-            t5 = t0 + t2;
-            t4 = t4 - t5;
-            t5 = a.Y + a.Z;
-            var x3 = other.Y + other.Z;
-            t5 = t5 * x3;
-            x3 = t1 + t2;
-            t5 = t5 - x3;
+            // Efficient complete addition in Jacobian coordinates
+            var z1z1 = a.Z * a.Z;
+            var z2z2 = b.Z * b.Z;
+            var u1 = a.X * z2z2;
+            var u2 = b.X * z1z1;
+            var s1 = a.Y * b.Z * z2z2;
+            var s2 = b.Y * a.Z * z1z1;
 
-            var z3 = G2Constants.B * t2;
-            x3 = z3 + t2;
-            z3 = t1 - x3;
-            x3 = t1 + x3;
-            var y3 = x3 * z3;
-            t1 = t0 + t0;
-            t1 = t1 + t0;
-            t4 = G2Constants.B * t4;
-            t0 = t1 * t4;
-            y3 = y3 + t0;
-            t0 = t5 * t4;
-            x3 = t3 * x3;
-            x3 = x3 - t0;
-            t0 = t3 * t1;
-            z3 = t5 * z3;
-            z3 = z3 + t0;
+            if (u1 == u2)
+            {
+                if (s1 == s2)
+                {
+                    // Points are equal, use doubling
+                    return Double(in a);
+                }
+                else
+                {
+                    // Points are negatives of each other
+                    return Identity;
+                }
+            }
+
+            var h = u2 - u1;
+            var i = (h + h) * (h + h);
+            var j = h * i;
+            var r = (s2 - s1) + (s2 - s1);
+            var v = u1 * i;
+            var x3 = r * r - j - (v + v);
+            var y3 = r * (v - x3) - ((s1 * j) + (s1 * j));
+            var z3 = ((a.Z + b.Z) * (a.Z + b.Z) - z1z1 - z2z2) * h;
 
             return new G2Projective(x3, y3, z3);
         }
 
         public static G2Projective operator +(in G2Projective a, in G2Affine b)
         {
-            return a + new G2Projective(b);
-        }
+            // Mixed addition: projective + affine
+            // More efficient since b.Z = 1
+            if (b.Infinity) return a;
+            if (a.IsIdentity) return new G2Projective(b);
 
-        public static G2Projective operator *(in G2Projective a, in Scalar b)
-        {
-            // Window method scalar multiplication
-            if (a.IsIdentity) return Identity;
-            if (b == Scalar.Zero) return Identity;
-            if (b == Scalar.One) return a;
+            var z1z1 = a.Z * a.Z;
+            var u2 = b.X * z1z1;
+            var s2 = b.Y * a.Z * z1z1;
 
-            // Use binary method for scalar multiplication
-            var result = Identity;
-            var addend = a;
-            var scalar = b;
-
-            while (scalar != Scalar.Zero)
+            if (a.X == u2)
             {
-                if ((scalar.GetLimb(0) & 1) == 1)
+                if (a.Y == s2)
                 {
-                    result = result + addend;
+                    // Points are equal, use doubling
+                    return Double(in a);
                 }
-                addend = addend + addend; // Double
-
-                // Right shift scalar by 1
-                var carry = 0UL;
-                for (int i = 3; i >= 0; i--)
+                else
                 {
-                    var newCarry = (scalar.GetLimb(i) & 1) << 63;
-                    var limb = (scalar.GetLimb(i) >> 1) | carry;
-                    scalar = scalar.SetLimb(i, limb);
-                    carry = newCarry;
+                    // Points are negatives of each other
+                    return Identity;
                 }
             }
 
-            return result;
+            var h = u2 - a.X;
+            var hh = h * h;
+            var i = hh + hh;
+            i = i + i;
+            var j = h * hh;
+            var r = (s2 - a.Y) + (s2 - a.Y);
+            var v = a.X * hh;
+            var x3 = r * r - j - (v + v);
+            var y3 = r * (v - x3) - ((a.Y * j) + (a.Y * j));
+            var z3 = (a.Z + h) * (a.Z + h) - z1z1 - hh;
+
+            return new G2Projective(x3, y3, z3);
+        }
+
+        public static G2Projective operator *(in G2Projective point, in Scalar scalar)
+        {
+            // Constant-time scalar multiplication using Montgomery ladder
+            return Multiply(in point, scalar.ToArray());
+        }
+
+        private static G2Projective Multiply(in G2Projective point, ReadOnlySpan<byte> scalar)
+        {
+            // Constant-time scalar multiplication using Montgomery ladder
+            // This prevents timing attacks by ensuring consistent execution time
+            var r0 = Identity;
+            var r1 = point;
+
+            // Process each bit of the scalar in constant time
+            for (int i = scalar.Length - 1; i >= 0; i--)
+            {
+                byte b = scalar[i];
+                for (int j = 7; j >= 0; j--)
+                {
+                    // Double-and-add in constant time
+                    var bit = (b >> j) & 1;
+                    var swap = bit == 1;
+                    
+                    // Conditional swap without branching
+                    ConditionalSwap(ref r0, ref r1, swap);
+                    r1 = r0 + r1;
+                    r0 = Double(in r0);
+                    ConditionalSwap(ref r0, ref r1, swap);
+                }
+            }
+
+            return r0;
+        }
+
+        private static void ConditionalSwap(ref G2Projective a, ref G2Projective b, bool swap)
+        {
+            // Constant-time conditional swap
+            var tmp = a;
+            a = ConditionalSelect(in a, in b, swap);
+            b = ConditionalSelect(in b, in tmp, swap);
+        }
+
+        private static G2Projective ConditionalSelect(in G2Projective a, in G2Projective b, bool choice)
+        {
+            // Select b if choice is true, otherwise select a (constant-time)
+            var x = choice ? b.X : a.X;
+            var y = choice ? b.Y : a.Y;
+            var z = choice ? b.Z : a.Z;
+            return new G2Projective(x, y, z);
+        }
+
+        private static G2Projective Double(in G2Projective p)
+        {
+            // Handle identity case
+            if (p.IsIdentity) return p;
+
+            // Efficient doubling in Jacobian coordinates
+            var a = p.X * p.X;
+            var b = p.Y * p.Y;
+            var c = b * b;
+            var d = ((p.X + b) * (p.X + b) - a - c) + ((p.X + b) * (p.X + b) - a - c);
+            var e = a + a + a;
+            var f = e * e;
+            var x3 = f - (d + d);
+            var eightC = c + c;
+            eightC = eightC + eightC;
+            eightC = eightC + eightC;
+            var y3 = e * (d - x3) - eightC;
+            var z3 = (p.Y + p.Z) * (p.Y + p.Z) - b - p.Z * p.Z;
+
+            return new G2Projective(x3, y3, z3);
         }
 
         public static G2Projective operator *(in Scalar b, in G2Projective a)

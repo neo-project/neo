@@ -26,7 +26,7 @@ Serializes a BN254 point (G1, G2, or Gt) to its compressed byte representation.
 InteropInterface Bn254Deserialize(byte[] data)
 ```
 Deserializes a byte array to a BN254 point. The point type is determined by the data length:
-- 48 bytes: G1 point
+- 32 bytes: G1 point
 - 64 bytes: G2 point  
 - 384 bytes: Gt point
 
@@ -113,8 +113,8 @@ bool isValid = CryptoLib.Bn254PairingCheck(g1Points, g2Points);
 - **Curve Equation**: y² = x³ + 3
 
 ### Point Encoding
-- **G1 Points**: 48 bytes compressed (x-coordinate + flags)
-- **G2 Points**: 64 bytes compressed (x-coordinate in Fp2 + flags)
+- **G1 Points**: 32 bytes compressed (x-coordinate only for Neo's format)
+- **G2 Points**: 64 bytes compressed (x-coordinate in Fp2)
 - **Gt Elements**: 384 bytes (full Fp12 element)
 
 ### Compression Flags
@@ -148,6 +148,6 @@ The BN254 implementation is compatible with:
 
 If migrating from BLS12-381 to BN254:
 1. Replace `Bls12381*` method calls with `Bn254*` equivalents
-2. Update point sizes in serialization (G1: 48→48, G2: 96→64, Gt: 576→384)
+2. Update point sizes in serialization (G1: 48→32, G2: 96→64, Gt: 576→384)
 3. Adjust gas costs in smart contracts (BN254 operations are generally faster)
 4. Verify security requirements are still met with lower security level

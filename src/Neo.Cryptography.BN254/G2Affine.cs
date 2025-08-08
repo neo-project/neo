@@ -87,12 +87,22 @@ namespace Neo.Cryptography.BN254
         {
             if (Infinity) return true;
 
-            // Check y^2 = x^3 + b
+            // G2 uses a twisted curve: y^2 = x^3 + b / ξ
+            // where ξ = u + 9 and b = 3
+            // So the curve equation is: y^2 = x^3 + b'
+            // where b' = 3 / (u + 9) in Fp2
+            
             var y2 = Y.Square();
             var x3 = X.Square() * X;
-
-            // For G2 twisted curve, curve check is bypassed for current implementation
-            return true;
+            
+            // The twist parameter for BN254 G2
+            // b' = 3 / (9 + i) = (3 * (9 - i)) / (9^2 + 1) = (27 - 3i) / 82
+            var b_twisted = new Fp2(
+                Fp.FromRawUnchecked(0x3bf938e377b802a8, 0x020b1b273633535d, 0x26b7edf049755260, 0x2514c6324384a86d),
+                Fp.FromRawUnchecked(0x38e7ecccd1dcff67, 0x65f0b37d93ce0d3e, 0xd749d0dd22ac00aa, 0x0141b9ce4a688d4d)
+            );
+            
+            return y2 == (x3 + b_twisted);
         }
 
         public byte[] ToCompressed()
