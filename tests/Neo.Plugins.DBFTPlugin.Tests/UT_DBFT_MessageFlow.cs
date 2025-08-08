@@ -120,7 +120,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Assert - Enhanced validation
             Assert.IsNotNull(receivedMessages, "Message collection should not be null");
-            Assert.IsTrue(receivedMessages.Count >= 0, "Should monitor consensus message flow");
+            Assert.IsGreaterThanOrEqualTo(0, receivedMessages.Count, "Should monitor consensus message flow");
 
             // Verify consensus services are not null
             foreach (var service in consensusServices)
@@ -136,14 +136,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             {
                 Assert.IsNotNull(msg, "Message should not be null");
                 Assert.AreEqual("dBFT", msg.Category, "Message should be DBFT category");
-                Assert.IsTrue(msg.Data.Length > 0, "Message data should not be empty");
+                Assert.IsGreaterThan(0, msg.Data.Length, "Message data should not be empty");
 
                 try
                 {
                     var consensusMsg = ConsensusMessage.DeserializeFrom(msg.Data);
                     Assert.IsNotNull(consensusMsg, "Consensus message should deserialize successfully");
-                    Assert.IsTrue(consensusMsg.ValidatorIndex < ValidatorCount,
-                        $"Validator index {consensusMsg.ValidatorIndex} should be valid");
+                    Assert.IsLessThan(ValidatorCount,
+consensusMsg.ValidatorIndex, $"Validator index {consensusMsg.ValidatorIndex} should be valid");
 
                     validConsensusMessages++;
                     Console.WriteLine($"Valid consensus message: {consensusMsg.Type} from validator {consensusMsg.ValidatorIndex}");
@@ -257,8 +257,8 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             // Assert - Enhanced validation
             Assert.IsNotNull(messages, "Message collection should not be null");
             Assert.IsNotNull(additionalMessages, "Additional message collection should not be null");
-            Assert.IsTrue(messages.Count >= 0, "Should monitor consensus message flow");
-            Assert.IsTrue(additionalMessages.Count >= 0, "Should handle invalid messages gracefully");
+            Assert.IsGreaterThanOrEqualTo(0, messages.Count, "Should monitor consensus message flow");
+            Assert.IsGreaterThanOrEqualTo(0, additionalMessages.Count, "Should handle invalid messages gracefully");
 
             // Verify that invalid messages don't crash the system
             var totalValidMessages = 0;
@@ -281,7 +281,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             VerifyConsensusServicesOperational();
 
-            Assert.IsTrue(totalValidMessages >= 0, "Should have processed some valid messages");
+            Assert.IsGreaterThanOrEqualTo(0, totalValidMessages, "Should have processed some valid messages");
             Console.WriteLine($"Valid message monitoring: {messages.Count} messages");
             Console.WriteLine($"Invalid message handling: {additionalMessages.Count} additional messages");
             Console.WriteLine($"Total valid consensus messages processed: {totalValidMessages}");
@@ -331,7 +331,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var messages = MonitorConsensusMessages(TimeSpan.FromSeconds(2));
 
             // Assert
-            Assert.IsTrue(messages.Count >= 0, "Should handle various message conditions");
+            Assert.IsGreaterThanOrEqualTo(0, messages.Count, "Should handle various message conditions");
             VerifyConsensusServicesOperational();
 
             Console.WriteLine($"Resilience test: {messages.Count} messages monitored");
@@ -371,8 +371,8 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var additionalMessages = MonitorConsensusMessages(TimeSpan.FromSeconds(1));
 
             // Assert
-            Assert.IsTrue(messages.Count >= 0, "Should handle PrepareRequest messages");
-            Assert.IsTrue(additionalMessages.Count >= 0, "Should handle PrepareResponse and Commit messages");
+            Assert.IsGreaterThanOrEqualTo(0, messages.Count, "Should handle PrepareRequest messages");
+            Assert.IsGreaterThanOrEqualTo(0, additionalMessages.Count, "Should handle PrepareResponse and Commit messages");
             VerifyConsensusServicesOperational();
 
             Console.WriteLine($"PrepareRequest phase: {messages.Count} messages");

@@ -438,8 +438,8 @@ namespace Neo.Plugins.RpcServer.Tests
             });
 
             var result = signers.ToSignersAndWitnesses(addressVersion);
-            Assert.AreEqual(1, result.Signers.Length);
-            Assert.AreEqual(0, result.Witnesses.Length);
+            Assert.HasCount(1, result.Signers);
+            Assert.IsEmpty(result.Witnesses);
             Assert.AreEqual(account, result.Signers[0].Account);
             Assert.AreEqual(WitnessScope.CalledByEntry, result.Signers[0].Scopes);
 
@@ -451,8 +451,8 @@ namespace Neo.Plugins.RpcServer.Tests
                 ["verification"] = "V29ybGQK"
             });
             result = signersAndWitnesses.ToSignersAndWitnesses(addressVersion);
-            Assert.AreEqual(1, result.Signers.Length);
-            Assert.AreEqual(1, result.Witnesses.Length);
+            Assert.HasCount(1, result.Signers);
+            Assert.HasCount(1, result.Witnesses);
             Assert.AreEqual(account, result.Signers[0].Account);
             Assert.AreEqual(WitnessScope.CalledByEntry, result.Signers[0].Scopes);
             Assert.AreEqual("SGVsbG8K", Convert.ToBase64String(result.Witnesses[0].InvocationScript.Span));

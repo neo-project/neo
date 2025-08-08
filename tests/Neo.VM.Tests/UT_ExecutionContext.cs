@@ -42,7 +42,7 @@ namespace Neo.Test
             // Test new
 
             var stack = context.GetState<Stack<int>>();
-            Assert.AreEqual(0, stack.Count);
+            Assert.IsEmpty(stack);
             stack.Push(100);
             stack = context.GetState<Stack<int>>();
             Assert.AreEqual(100, stack.Pop());
@@ -52,7 +52,7 @@ namespace Neo.Test
 
             var copy = context.Clone();
             var copyStack = copy.GetState<Stack<int>>();
-            Assert.AreEqual(1, copyStack.Count);
+            Assert.HasCount(1, copyStack);
             copyStack.Push(200);
             copyStack = context.GetState<Stack<int>>();
             Assert.AreEqual(200, copyStack.Pop());
