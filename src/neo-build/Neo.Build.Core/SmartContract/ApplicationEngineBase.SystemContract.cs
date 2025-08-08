@@ -67,7 +67,7 @@ namespace Neo.Build.Core.SmartContract
             var result = CreateMultisigAccount(verifyCount, publicKeys);
 
             _traceLogger.LogDebug(DebugEventLog.Call,
-                "{SysCall} Count=\"{Count}\" Keys=\"{Keys}\" Result=\"{Result}\"",
+                "{SysCall} Count=\"{Count}\" Keys=\"[{Keys}]\" Result=\"{Result}\"",
                 nameof(System_Contract_CreateMultisigAccount), verifyCount, string.Join(',', publicKeyStrings), result);
 
             return result;

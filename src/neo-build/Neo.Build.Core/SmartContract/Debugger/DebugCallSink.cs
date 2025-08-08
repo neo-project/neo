@@ -61,6 +61,6 @@ namespace Neo.Build.Core.SmartContract.Debugger
         public IEnumerable<StackItem> Results { get; } = [];
 
         public override string ToString() =>
-            $"{Name}[{EventId}]({string.Join(", ", Arguments)}) results={new JArray(Results.Select(static s => s.ToJson()))}";
+            $"{Name}[{EventId}] Args=\"{new JArray(Arguments.Select(static s => s.ToJson()))}\" Results=\"{new JArray(Results.Select(static s => s.ToJson()))}\"";
     }
 }
