@@ -36,13 +36,14 @@ namespace Neo.Plugins.RestServer.Tests
             Assert.AreEqual(HttpStatusCode.TooManyRequests, response3.StatusCode);
 
             // Check for Retry-After header
-            Assert.IsTrue(response3.Headers.Contains("Retry-After"));
+            Assert.Contains((header) => header.Key == "Retry-After", response3.Headers);
+
             var retryAfter = response3.Headers.GetValues("Retry-After").FirstOrDefault();
             Assert.IsNotNull(retryAfter);
 
             // Read the response content
             var content = await response3.Content.ReadAsStringAsync(CancellationToken.None);
-            Assert.IsTrue(content.Contains("Too many requests"));
+            Assert.Contains("Too many requests", content);
         }
 
         [TestMethod]
