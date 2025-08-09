@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Factories;
-using Neo.Build.Core.Models;
 using Neo.Build.Core.Models.Wallets;
 using Neo.Cryptography.ECC;
 using Neo.SmartContract;
@@ -50,30 +49,33 @@ namespace Neo.Build.Core.Tests.Helpers
                         },
                     },
                 ],
-                Extra = new ProtocolOptionsModel()
+                Extra = new()
                 {
-                    Network = FunctionFactory.GetDevNetwork(0),
-                    AddressVersion = 53,
-                    MillisecondsPerBlock = 1000u,
-                    MaxTransactionsPerBlock = 512u,
-                    MemoryPoolMaxTransactions = 50000,
-                    MaxTraceableBlocks = 2102400u,
-                    Hardforks = new Dictionary<Hardfork, uint>()
+                    ProtocolConfiguration = new()
                     {
-                        { Hardfork.HF_Aspidochelone, 0u },
-                        { Hardfork.HF_Basilisk, 0u },
-                        { Hardfork.HF_Cockatrice, 0u },
-                        { Hardfork.HF_Domovoi, 0u },
-                        { Hardfork.HF_Echidna, 0u },
-                    },
-                    InitialGasDistribution = 5200000000000000uL,
-                    ValidatorsCount = 1,
-                    StandbyCommittee = [
-                        ECPoint.Parse("028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a8", ECCurve.Secp256r1),
-                    ],
-                    SeedList = [
+                        Network = FunctionFactory.GetDevNetwork(0),
+                        AddressVersion = 53,
+                        MillisecondsPerBlock = 1000u,
+                        MaxTransactionsPerBlock = 512u,
+                        MemoryPoolMaxTransactions = 50000,
+                        MaxTraceableBlocks = 2102400u,
+                        Hardforks = new Dictionary<Hardfork, uint>()
+                        {
+                            { Hardfork.HF_Aspidochelone, 0u },
+                            { Hardfork.HF_Basilisk, 0u },
+                            { Hardfork.HF_Cockatrice, 0u },
+                            { Hardfork.HF_Domovoi, 0u },
+                            { Hardfork.HF_Echidna, 0u },
+                        },
+                        InitialGasDistribution = 5200000000000000uL,
+                        ValidatorsCount = 1,
+                        StandbyCommittee = [
+                            ECPoint.Parse("028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a8", ECCurve.Secp256r1),
+                        ],
+                        SeedList = [
                         "127.0.0.1:25485",
                     ],
+                    },
                 },
             };
     }

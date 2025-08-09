@@ -20,9 +20,12 @@ using Neo.Build.Core.Models.Wallets;
 using Neo.Build.Core.Providers.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Build.ToolSet.Configuration;
+using Neo.Build.ToolSet.Options;
 using Neo.Build.ToolSet.Plugins;
+using Neo.Build.ToolSet.Providers;
 using Neo.Persistence;
 using Neo.Plugins.DBFTPlugin;
+using Neo.SmartContract;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
@@ -57,7 +60,8 @@ namespace Neo.Build.ToolSet.Commands
 
         public new sealed class Handler(
             IHostEnvironment env,
-            INeoConfigurationOptions neoConfiguration) : ICommandHandler
+            INeoConfigurationOptions neoConfiguration,
+            TraceApplicationEngineProvider traceApplicationEngineProvider) : ICommandHandler
         {
             public string Filename { get; set; } = GetDefaultWalletFilename();
 
@@ -67,6 +71,7 @@ namespace Neo.Build.ToolSet.Commands
 
             private readonly IHostEnvironment _env = env;
             private readonly INeoConfigurationOptions _neoConfiguration = neoConfiguration;
+            private readonly TraceApplicationEngineProvider _traceApplicationEngineProvider = traceApplicationEngineProvider;
 
             public int Invoke(InvocationContext context) =>
                 InvokeAsync(context).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -82,7 +87,7 @@ namespace Neo.Build.ToolSet.Commands
 
                 var globalProtocolOptions = _neoConfiguration.ProtocolOptions.ToObject();
                 var wallet = new DevWallet(walletModel);
-                var defaultMultiSigWalletAccount = wallet.GetMultiSigAccounts().SingleOrDefault() ??
+                var defaultMultiSigWalletAccount = wallet.GetMultiSigAccounts().FirstOrDefault() ??
                     wallet.GetDefaultAccount() ??
                     // TODO: Create new exception class for this exception
                     throw new NeoBuildException("No Multi-Sig Address", NeoBuildErrorCodes.Wallet.AccountNotFound);
@@ -90,12 +95,14 @@ namespace Neo.Build.ToolSet.Commands
                 var storeProvider = new FasterDbStoreProvider(_neoConfiguration.StorageOptions.CheckPointRoot);
                 StoreFactory.RegisterProvider(storeProvider);
 
-                var dbftSettings = GetConsensusSettings(wallet.ProtocolSettings);
+                var dbftSettings = GetConsensusSettings(_neoConfiguration.DBFTOptions, wallet.ProtocolSettings);
 
-                using var mutex = FunctionFactory.CreateMutex(defaultMultiSigWalletAccount.Address);
+                using var mutex = FunctionFactory.CreateMutex($"{_neoConfiguration.NetworkOptions.Listen}_{_neoConfiguration.NetworkOptions.Port}");
                 using var logPlugin = new LoggerPlugin(context.Console);
                 using var dbftPlugin = new DBFTPlugin(dbftSettings);
                 using var neoSystem = new NeoSystem(wallet.ProtocolSettings with { MillisecondsPerBlock = SecondsPerBlock * 1000 }, storeProvider, _neoConfiguration.StorageOptions.StoreRoot);
+
+                ApplicationEngine.Provider = _traceApplicationEngineProvider;
 
                 neoSystem.StartNode(new()
                 {
@@ -111,12 +118,17 @@ namespace Neo.Build.ToolSet.Commands
                 return Task.FromResult(0);
             }
 
-            private DbftSettings GetConsensusSettings(ProtocolSettings protocolSettings)
+            private static DbftSettings GetConsensusSettings(DBFTOptions dBFTOptions, ProtocolSettings protocolSettings)
             {
                 var settings = new Dictionary<string, string>()
                 {
                     { "PluginConfiguration:Network", $"{protocolSettings.Network}" },
-                    { "PluginConfiguration:IgnoreRecoveryLogs", "true" }
+                    { "PluginConfiguration:RecoveryLogs", $"{dBFTOptions.StoreRoot}" },
+                    { "PluginConfiguration:IgnoreRecoveryLogs", $"{dBFTOptions.IgnoreRecoveryLogs}" },
+                    { "PluginConfiguration:MaxBlockSize", $"{dBFTOptions.MaxBlockSize}" },
+                    { "PluginConfiguration:MaxBlockSystemFee", $"{dBFTOptions.MaxBlockSystemFee}" },
+                    { "PluginConfiguration:UnhandledExceptionPolicy", $"{dBFTOptions.ExceptionPolicy}" },
+                    { "PluginConfiguration:AutoStart", bool.FalseString },
                 };
 
                 var config = new ConfigurationBuilder().AddInMemoryCollection(settings!).Build();
