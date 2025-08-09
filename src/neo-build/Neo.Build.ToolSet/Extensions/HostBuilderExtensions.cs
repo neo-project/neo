@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging.EventLog;
 using Neo.Build.ToolSet.Configuration;
 using Neo.Build.ToolSet.Configuration.Converters;
 using Neo.Build.ToolSet.Options;
+using Neo.Build.ToolSet.Providers;
 using Neo.Build.ToolSet.Services;
 using System;
 using System.ComponentModel;
@@ -67,6 +68,7 @@ namespace Neo.Build.ToolSet.Extensions
 
                 logging.AddDebug();
                 logging.AddEventSourceLogger();
+                logging.AddNeoBuildConsole();
 
                 if (isWindows)
                     logging.AddEventLog();
@@ -93,6 +95,7 @@ namespace Neo.Build.ToolSet.Extensions
             hostBuilder.ConfigureServices((context, services) =>
             {
                 services.AddHostedService<WebSocketService>();
+                services.AddSingleton<TraceApplicationEngineProvider>();
 
                 // Add default services here
             });

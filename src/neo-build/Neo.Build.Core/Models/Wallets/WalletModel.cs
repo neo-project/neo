@@ -23,6 +23,6 @@ namespace Neo.Build.Core.Models.Wallets
 
         public WalletAccountModel[]? Accounts { get; set; }
 
-        public ProtocolOptionsModel? Extra { get; set; }
+        public NodeConfigurationModel? Extra { get; set; }
     }
 }
