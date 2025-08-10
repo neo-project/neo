@@ -25,8 +25,8 @@ namespace Neo.Build.Core.SmartContract
         {
             CallContract(contractHash, methodName, callFlags, args);
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} hash={Contract}, method={Method}, flags={Flags}, args={Args}, result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Hash=\"{Contract}\" Method=\"{Method}\" Flags=\"{Flags}\" Args=\"{Args}\" Result=\"{Result}\"",
                 nameof(System_Contract_Call), contractHash, methodName, callFlags.ToString(), args.ToJson().ToString(), ResultStack.ToJson());
         }
 
@@ -34,8 +34,8 @@ namespace Neo.Build.Core.SmartContract
         {
             CallNativeContract(version);
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} version=0x{Version}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Version=\"0x{Version}\"",
                 nameof(System_Contract_CallNative), version.ToString("x02"));
         }
 
@@ -43,8 +43,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = GetCallFlags();
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Result=\"{Result}\"",
                 nameof(System_Contract_GetCallFlags), result.ToString());
 
             return result;
@@ -54,8 +54,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var result = CreateStandardAccount(publicKey);
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} key={Key}, result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Key=\"{Key}\" Result=\"{Result}\"",
                 nameof(System_Contract_CreateStandardAccount), publicKey, result);
 
             return result;
@@ -66,8 +66,8 @@ namespace Neo.Build.Core.SmartContract
             var publicKeyStrings = publicKeys.Select(s => s.ToString());
             var result = CreateMultisigAccount(verifyCount, publicKeys);
 
-            _traceLogger.LogInformation(DebugEventLog.Call,
-                "{SysCall} m={Count}, keys=[{Keys}], result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Call,
+                "{SysCall} Count=\"{Count}\" Keys=\"[{Keys}]\" Result=\"{Result}\"",
                 nameof(System_Contract_CreateMultisigAccount), verifyCount, string.Join(',', publicKeyStrings), result);
 
             return result;
@@ -77,7 +77,7 @@ namespace Neo.Build.Core.SmartContract
         {
             NativeOnPersistAsync();
 
-            _traceLogger.LogInformation(DebugEventLog.Persist,
+            _traceLogger.LogDebug(DebugEventLog.Persist,
                 "{SysCall}",
                 nameof(System_Contract_NativeOnPersist));
         }
@@ -86,7 +86,7 @@ namespace Neo.Build.Core.SmartContract
         {
             NativePostPersistAsync();
 
-            _traceLogger.LogInformation(DebugEventLog.PostPersist,
+            _traceLogger.LogDebug(DebugEventLog.PostPersist,
                 "{SysCall}",
                 nameof(System_Contract_NativePostPersist));
         }

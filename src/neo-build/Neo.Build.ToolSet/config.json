@@ -1,7 +1,9 @@
 {
   "Logging": {
     "LogLevel": {
-      "Default": "Information"
+      "Default": "Information",
+      "Microsoft.Hosting.Lifetime": "Error",
+      "ApplicationEngine": "Debug"
     },
     "Debug": {
       "LogLevel": {

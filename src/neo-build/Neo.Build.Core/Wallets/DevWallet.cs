@@ -95,7 +95,7 @@ namespace Neo.Build.Core.Wallets
             }
         }
 
-        public DevWallet(WalletModel walletModel) : this(walletModel, walletModel.Extra?.ToObject() ?? ProtocolSettings.Default) { }
+        public DevWallet(WalletModel walletModel) : this(walletModel, walletModel.Extra?.ProtocolConfiguration?.ToObject() ?? ProtocolSettings.Default) { }
         public DevWallet() : base(string.Empty, ProtocolSettings.Default) { }
         public DevWallet(ProtocolSettings protocolSettings) : base(string.Empty, protocolSettings) { }
 
@@ -242,22 +242,25 @@ namespace Neo.Build.Core.Wallets
             {
                 Name = Name,
                 Version = Version,
-                SCrypt = _sCryptParameters,
-                Accounts = [.. _walletAccounts.Values.Select(static s => s.ToObject())],
-                Extra = new ProtocolOptionsModel()
+                Scrypt = _sCryptParameters,
+                Accounts = [.. _walletAccounts.Values.Select(s => s.ToObject())],
+                Extra = new()
                 {
-                    Network = ProtocolSettings.Network,
-                    AddressVersion = ProtocolSettings.AddressVersion,
-                    MillisecondsPerBlock = ProtocolSettings.MillisecondsPerBlock,
-                    MaxTransactionsPerBlock = ProtocolSettings.MaxTransactionsPerBlock,
-                    MemoryPoolMaxTransactions = ProtocolSettings.MemoryPoolMaxTransactions,
-                    MaxTraceableBlocks = ProtocolSettings.MaxTraceableBlocks,
-                    InitialGasDistribution = ProtocolSettings.InitialGasDistribution,
-                    ValidatorsCount = ProtocolSettings.ValidatorsCount,
-                    SeedList = ProtocolSettings.SeedList,
-                    Hardforks = ProtocolSettings.Hardforks,
-                    StandbyCommittee = [.. ProtocolSettings.StandbyCommittee],
-                }
+                    ProtocolConfiguration = new()
+                    {
+                        Network = ProtocolSettings.Network,
+                        AddressVersion = ProtocolSettings.AddressVersion,
+                        MillisecondsPerBlock = ProtocolSettings.MillisecondsPerBlock,
+                        MaxTransactionsPerBlock = ProtocolSettings.MaxTransactionsPerBlock,
+                        MemoryPoolMaxTransactions = ProtocolSettings.MemoryPoolMaxTransactions,
+                        MaxTraceableBlocks = ProtocolSettings.MaxTraceableBlocks,
+                        InitialGasDistribution = ProtocolSettings.InitialGasDistribution,
+                        ValidatorsCount = ProtocolSettings.ValidatorsCount,
+                        SeedList = ProtocolSettings.SeedList,
+                        Hardforks = ProtocolSettings.Hardforks,
+                        StandbyCommittee = [.. ProtocolSettings.StandbyCommittee],
+                    },
+                },
             };
 
         /// <summary>

@@ -38,5 +38,7 @@ namespace Neo.Build.Core.Models.Wallets
         /// <returns><see cref="DevWallet"/></returns>
         public DevWallet ToObject() =>
             new(this);
+
+        public NodeConfigurationModel? Extra { get; set; }
     }
 }

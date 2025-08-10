@@ -93,14 +93,14 @@ namespace Neo.Build.Core.SmartContract
             ReadOnlyMemory<byte> memoryScript = CurrentContext?.Script ?? ReadOnlyMemory<byte>.Empty;
             var scriptString = System.Convert.ToBase64String(memoryScript.Span);
 
-            _traceLogger.LogInformation(DebugEventLog.Execute,
-                "Executing container={TxHash}, script={Script}",
+            _traceLogger.LogDebug(DebugEventLog.Execute,
+                "Executing Container=\"{TxHash}\" Script=\"{Script}\"",
                 ScriptContainer?.Hash, scriptString);
 
             var result = base.Execute();
 
-            _traceLogger.LogInformation(DebugEventLog.Execute,
-                "Executed state={VMState}, gas={Consumed}, gasleft={GasLeft}, result={Result}",
+            _traceLogger.LogDebug(DebugEventLog.Execute,
+                "Executed State=\"{VMState}\" Gas=\"{Consumed}\" GasLeft=\"{GasLeft}\" Result=\"{Result}\"",
                 result, FeeConsumed, GasLeft, ResultStack.ToJson());
 
             return result;
@@ -118,16 +118,16 @@ namespace Neo.Build.Core.SmartContract
 
             if (contextState.ScriptHash is not null &&
                 contractState is not null)
-                _traceLogger.LogInformation(DebugEventLog.Load,
-                    "Loaded name={Name}, hash={ScriptHash}",
+                _traceLogger.LogDebug(DebugEventLog.Load,
+                    "Loaded Name=\"{Name}\" Hash=\"{ScriptHash}\"",
                     contractState.Manifest.Name, contextState.ScriptHash);
             else
             {
                 ReadOnlyMemory<byte> memoryScript = context.Script ?? ReadOnlyMemory<byte>.Empty;
                 var scriptString = System.Convert.ToBase64String(memoryScript.Span);
 
-                _traceLogger.LogInformation(DebugEventLog.Load,
-                    "Loaded script={Script}",
+                _traceLogger.LogDebug(DebugEventLog.Load,
+                    "Loaded Script=\"{Script}\"",
                     scriptString);
             }
         }
@@ -152,8 +152,8 @@ namespace Neo.Build.Core.SmartContract
             var keyString = GetStorageKeyValueString(key.ToArray(), _storageSettings.KeyFormat);
             var valueString = GetStorageKeyValueString(item.ToArray(), _storageSettings.ValueFormat);
 
-            _traceLogger.LogInformation(DebugEventLog.ReadStorage,
-                "Storage id={Id}, key={Key}, value={Value}",
+            _traceLogger.LogDebug(DebugEventLog.ReadStorage,
+                "Storage Id=\"{Id}\" Key=\"{Key}\" Value=\"{Value}\"",
                 key.Id, keyString, valueString);
         }
 
@@ -162,8 +162,8 @@ namespace Neo.Build.Core.SmartContract
             var keyString = GetStorageKeyValueString(key.ToArray(), _storageSettings.KeyFormat);
             var valueString = GetStorageKeyValueString(item.ToArray(), _storageSettings.ValueFormat);
 
-            _traceLogger.LogInformation(DebugEventLog.UpdateStorage,
-                "Storage id={Id}, key={Key}, value={Value}",
+            _traceLogger.LogDebug(DebugEventLog.UpdateStorage,
+                "Storage Id=\"{Id}\" Key=\"{Key}\" Value=\"{Value}\"",
                 key.Id, keyString, valueString);
         }
     }
