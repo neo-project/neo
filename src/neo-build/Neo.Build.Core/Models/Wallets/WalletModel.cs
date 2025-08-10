@@ -27,7 +27,7 @@ namespace Neo.Build.Core.Models.Wallets
 
         public WalletAccountModel[]? Accounts { get; set; }
 
-        public ProtocolOptionsModel? Extra { get; set; }
+        public NodeConfigurationModel? Extra { get; set; }
 
         /// <summary>
         /// Converts to <see cref="DevWallet"/>.
@@ -38,7 +38,5 @@ namespace Neo.Build.Core.Models.Wallets
         /// <returns><see cref="DevWallet"/></returns>
         public DevWallet ToObject() =>
             new(this);
-
-        public NodeConfigurationModel? Extra { get; set; }
     }
 }

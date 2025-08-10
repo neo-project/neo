@@ -242,8 +242,8 @@ namespace Neo.Build.Core.Wallets
             {
                 Name = Name,
                 Version = Version,
-                Scrypt = _sCryptParameters,
-                Accounts = [.. _walletAccounts.Values.Select(s => s.ToObject())],
+                SCrypt = _sCryptParameters,
+                Accounts = [.. _walletAccounts.Values.Select(static s => s.ToObject())],
                 Extra = new()
                 {
                     ProtocolConfiguration = new()
