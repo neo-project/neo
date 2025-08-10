@@ -220,7 +220,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsInstanceOfType(response, typeof(JArray));
             var batchResults = (JArray)response;
 
-            Assert.AreEqual(4, batchResults.Count);
+            Assert.HasCount(4, batchResults);
 
             // Check response 1 (valid getblockcount)
             Assert.IsNull(batchResults[0]["error"]);

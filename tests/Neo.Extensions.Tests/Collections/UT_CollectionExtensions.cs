@@ -73,7 +73,7 @@ namespace Neo.Extensions.Tests.Collections
 
             dict.RemoveWhere(p => p.Value == "b");
 
-            Assert.AreEqual(2, dict.Count);
+            Assert.HasCount(2, dict);
             Assert.IsFalse(dict.ContainsKey(2));
             Assert.AreEqual("a", dict[1]);
             Assert.AreEqual("c", dict[3]);
