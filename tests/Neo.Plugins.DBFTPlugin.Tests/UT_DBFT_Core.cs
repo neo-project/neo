@@ -121,7 +121,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Assert - Services should start consensus without throwing
             // Verify all consensus services were created successfully
-            Assert.AreEqual(ValidatorCount, consensusServices.Length, "Should create all consensus services");
+            Assert.HasCount(ValidatorCount, consensusServices, "Should create all consensus services");
             foreach (var service in consensusServices)
             {
                 Assert.IsNotNull(service, "Each consensus service should be created successfully");

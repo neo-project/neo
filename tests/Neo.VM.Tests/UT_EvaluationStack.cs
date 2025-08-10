@@ -49,7 +49,7 @@ namespace Neo.Test
         {
             var stack = CreateOrderedStack(3);
             stack.Clear();
-            Assert.AreEqual(0, stack.Count);
+            Assert.IsEmpty(stack);
         }
 
         [TestMethod]
@@ -63,14 +63,14 @@ namespace Neo.Test
 
             stack.CopyTo(copy, 0);
 
-            Assert.AreEqual(3, stack.Count);
-            Assert.AreEqual(0, copy.Count);
+            Assert.HasCount(3, stack);
+            Assert.IsEmpty(copy);
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3 }, stack.ToArray());
 
             stack.CopyTo(copy, -1);
 
-            Assert.AreEqual(3, stack.Count);
-            Assert.AreEqual(3, copy.Count);
+            Assert.HasCount(3, stack);
+            Assert.HasCount(3, copy);
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3 }, stack.ToArray());
 
             // Test IEnumerable
@@ -82,8 +82,8 @@ namespace Neo.Test
 
             copy.CopyTo(stack, 2);
 
-            Assert.AreEqual(5, stack.Count);
-            Assert.AreEqual(3, copy.Count);
+            Assert.HasCount(5, stack);
+            Assert.HasCount(3, copy);
 
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3, 2, 3 }, stack.ToArray());
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3 }, copy.ToArray());
@@ -97,14 +97,14 @@ namespace Neo.Test
 
             stack.MoveTo(other, 0);
 
-            Assert.AreEqual(3, stack.Count);
-            Assert.AreEqual(0, other.Count);
+            Assert.HasCount(3, stack);
+            Assert.IsEmpty(other);
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3 }, stack.ToArray());
 
             stack.MoveTo(other, -1);
 
-            Assert.AreEqual(0, stack.Count);
-            Assert.AreEqual(3, other.Count);
+            Assert.IsEmpty(stack);
+            Assert.HasCount(3, other);
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3 }, other.ToArray());
 
             // Test IEnumerable
@@ -116,8 +116,8 @@ namespace Neo.Test
 
             other.MoveTo(stack, 2);
 
-            Assert.AreEqual(2, stack.Count);
-            Assert.AreEqual(1, other.Count);
+            Assert.HasCount(2, stack);
+            Assert.HasCount(1, other);
 
             CollectionAssert.AreEqual(new Integer[] { 2, 3 }, stack.ToArray());
             CollectionAssert.AreEqual(new Integer[] { 1 }, other.ToArray());
@@ -134,7 +134,7 @@ namespace Neo.Test
 
             Assert.ThrowsExactly<InvalidOperationException>(() => stack.Insert(4, 2));
 
-            Assert.AreEqual(3, stack.Count);
+            Assert.HasCount(3, stack);
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3 }, stack.ToArray());
 
             Assert.AreEqual(3, stack.Peek(0));
