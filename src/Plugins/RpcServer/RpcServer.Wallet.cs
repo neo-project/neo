@@ -92,6 +92,8 @@ namespace Neo.Plugins.RpcServer
             CheckWallet();
             var scriptHash = _params[0].AsString().AddressToScriptHash(system.Settings.AddressVersion);
             var account = wallet.GetAccount(scriptHash);
+            if (account is null) throw new RpcException(RpcError.UnknownAccount.WithData($"{scriptHash}"));
+
             return account.GetKey().Export();
         }
 
