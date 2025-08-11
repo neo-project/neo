@@ -75,7 +75,7 @@ namespace Neo.CLI
         [ParseFunction(".nef file path to content base64")]
         private string? NefFileToBase64(string path)
         {
-            if (Path.GetExtension(path).ToLower() != ".nef") return null;
+            if (!Path.GetExtension(path).Equals(".nef", StringComparison.CurrentCultureIgnoreCase)) return null;
             if (!File.Exists(path)) return null;
             return Convert.ToBase64String(File.ReadAllBytes(path));
         }

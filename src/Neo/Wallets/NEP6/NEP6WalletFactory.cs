@@ -20,7 +20,7 @@ namespace Neo.Wallets.NEP6
 
         public bool Handle(string path)
         {
-            return Path.GetExtension(path).ToLowerInvariant() == ".json";
+            return Path.GetExtension(path).Equals(".json", StringComparison.InvariantCultureIgnoreCase);
         }
 
         public Wallet CreateWallet(string name, string path, string password, ProtocolSettings settings)
