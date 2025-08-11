@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -40,17 +41,17 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             var settings = TestProtocolSettings.SoleNode;
             var neoSystem = new NeoSystem(settings, _memoryStoreProvider);
-            var localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 11332) });
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 12332) });
-            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 13332) });
+            var localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken: CancellationToken.None).Result;
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(IPAddress.Loopback, 11332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(IPAddress.Loopback, 12332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(IPAddress.Loopback, 13332) });
             var rpcServer = new RpcServer(neoSystem, RpcServersSettings.Default);
 
             var result = rpcServer.GetPeers();
             Assert.IsInstanceOfType(result, typeof(JObject));
             var json = (JObject)result;
             Assert.IsTrue(json.ContainsProperty("unconnected"));
-            Assert.AreEqual(3, (json["unconnected"] as JArray).Count);
+            Assert.HasCount(3, json["unconnected"] as JArray);
             Assert.IsTrue(json.ContainsProperty("bad"));
             Assert.IsTrue(json.ContainsProperty("connected"));
         }
@@ -69,7 +70,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsInstanceOfType(result, typeof(JObject));
             var json = (JObject)result;
             Assert.IsTrue(json.ContainsProperty("unconnected"));
-            Assert.AreEqual(0, (json["unconnected"] as JArray).Count);
+            Assert.IsEmpty(json["unconnected"] as JArray);
             Assert.IsTrue(json.ContainsProperty("bad"));
             Assert.IsTrue(json.ContainsProperty("connected"));
         }
@@ -90,7 +91,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(json.ContainsProperty("unconnected"));
             Assert.IsTrue(json.ContainsProperty("bad"));
             Assert.IsTrue(json.ContainsProperty("connected"));
-            Assert.AreEqual(0, (json["connected"] as JArray).Count); // Directly check connected count
+            Assert.IsEmpty(json["connected"] as JArray); // Directly check connected count
         }
 
         [TestMethod]
@@ -140,13 +141,13 @@ namespace Neo.Plugins.RpcServer.Tests
                     Assert.IsTrue(hfJson.ContainsProperty("blockheight"));
                     Assert.IsInstanceOfType(hfJson["name"], typeof(JString));
                     Assert.IsInstanceOfType(hfJson["blockheight"], typeof(JNumber));
-                    Assert.IsFalse(hfJson["name"].AsString().StartsWith("HF_")); // Check if prefix was stripped
+                    Assert.DoesNotStartWith("HF_", hfJson["name"].AsString()); // Check if prefix was stripped
                 }
             }
             // If no hardforks are defined, the array should be empty
             else
             {
-                Assert.AreEqual(0, _neoSystem.Settings.Hardforks.Count);
+                Assert.IsEmpty(_neoSystem.Settings.Hardforks);
             }
         }
 
@@ -310,7 +311,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 "Should throw RpcException for invalid block format");
 
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
-            StringAssert.Contains(exception.Message, "Invalid Block Format");
+            Assert.Contains("Invalid Block Format", exception.Message);
         }
 
         [TestMethod]

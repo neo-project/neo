@@ -76,7 +76,7 @@ namespace Neo.UnitTests.Cryptography
             tree.Trim(bitArray);
             var hashArray = tree.ToHashArray();
 
-            Assert.AreEqual(1, hashArray.Length);
+            Assert.HasCount(1, hashArray);
             var rootHash = MerkleTree.ComputeRoot(hashes);
             var hash4 = Crypto.Hash256(hash1.ToArray().Concat(hash2.ToArray()).ToArray());
             var hash5 = Crypto.Hash256(hash3.ToArray().Concat(hash3.ToArray()).ToArray());

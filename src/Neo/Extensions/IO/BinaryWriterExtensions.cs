@@ -14,6 +14,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
+#nullable enable
+
 namespace Neo.Extensions
 {
     public static class BinaryWriterExtensions
@@ -37,6 +39,8 @@ namespace Neo.Extensions
         public static void Write<T>(this BinaryWriter writer, IReadOnlyCollection<T> value)
             where T : ISerializable
         {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+
             writer.WriteVarInt(value.Count);
             foreach (T item in value)
             {
@@ -73,13 +77,15 @@ namespace Neo.Extensions
         public static void WriteNullableArray<T>(this BinaryWriter writer, T[] value)
             where T : class, ISerializable
         {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+
             writer.WriteVarInt(value.Length);
             foreach (var item in value)
             {
                 var isNull = item is null;
                 writer.Write(!isNull);
                 if (isNull) continue;
-                item.Serialize(writer);
+                item!.Serialize(writer);
             }
         }
 
@@ -135,3 +141,5 @@ namespace Neo.Extensions
         }
     }
 }
+
+#nullable disable

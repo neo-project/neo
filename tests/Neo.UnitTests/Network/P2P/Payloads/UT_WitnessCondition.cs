@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -87,7 +87,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -122,7 +122,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -150,7 +150,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -184,7 +184,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -265,7 +265,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -312,7 +312,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -333,7 +333,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var new_condi = WitnessCondition.FromJson(json, 2);
             Assert.IsTrue(new_condi is OrCondition);
             var or_condi = (OrCondition)new_condi;
-            Assert.AreEqual(2, or_condi.Expressions.Length);
+            Assert.HasCount(2, or_condi.Expressions);
             Assert.IsTrue(or_condi.Expressions[0] is CalledByContractCondition);
             var cbcc = (CalledByContractCondition)(or_condi.Expressions[0]);
             Assert.IsTrue(or_condi.Expressions[1] is CalledByGroupCondition);
@@ -352,11 +352,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var json = (JObject)JToken.Parse(jstr);
             var condi = WitnessCondition.FromJson(json, WitnessCondition.MaxNestingDepth);
             var or_condi = (OrCondition)condi;
-            Assert.AreEqual(2, or_condi.Expressions.Length);
+            Assert.HasCount(2, or_condi.Expressions);
             var and_condi = (AndCondition)or_condi.Expressions[0];
             var or_condi1 = (OrCondition)or_condi.Expressions[1];
-            Assert.AreEqual(2, and_condi.Expressions.Length);
-            Assert.AreEqual(2, or_condi1.Expressions.Length);
+            Assert.HasCount(2, and_condi.Expressions);
+            Assert.HasCount(2, or_condi1.Expressions);
             var cbcc = (CalledByContractCondition)and_condi.Expressions[0];
             var cbsc = (ScriptHashCondition)and_condi.Expressions[1];
             Assert.IsTrue(cbcc.Hash.Equals(hash1));
