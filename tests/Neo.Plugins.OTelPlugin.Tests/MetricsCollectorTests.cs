@@ -5,6 +5,9 @@
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -51,7 +54,7 @@ namespace Neo.Plugins.OTelPlugin.Tests
         public void Constructor_ValidParameters_InitializesCorrectly()
         {
             _collector = new MetricsCollector(_mockNeoSystem.Object, TimeSpan.FromSeconds(5));
-            
+
             Assert.IsNotNull(_collector.LastNetworkMetrics);
             Assert.IsNotNull(_collector.LastMemPoolMetrics);
             Assert.IsNotNull(_collector.LastBlockchainMetrics);
