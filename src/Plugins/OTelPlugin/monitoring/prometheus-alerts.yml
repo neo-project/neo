@@ -1,0 +1,171 @@
+groups:
+  - name: neo_node_alerts
+    interval: 30s
+    rules:
+      # Critical Alerts
+      - alert: NeoNodeDown
+        expr: up{job="neo-node"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: node
+        annotations:
+          summary: "Neo node is down"
+          description: "Neo node {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: NeoBlockchainNotSyncing
+        expr: rate(neo_blockchain_height[5m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+          component: blockchain
+        annotations:
+          summary: "Blockchain not syncing"
+          description: "Blockchain height has not increased for 10 minutes on {{ $labels.instance }}."
+
+      - alert: NeoNoPeers
+        expr: neo_p2p_connected_peers == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: network
+        annotations:
+          summary: "No connected peers"
+          description: "Neo node {{ $labels.instance }} has no connected peers for 5 minutes."
+
+      # Warning Alerts
+      - alert: NeoLowPeerCount
+        expr: neo_p2p_connected_peers < 3
+        for: 10m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "Low peer count"
+          description: "Neo node {{ $labels.instance }} has less than 3 connected peers (current: {{ $value }})."
+
+      - alert: NeoHighMemoryUsage
+        expr: (process_memory_working_set / 1024 / 1024 / 1024) > 4
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage"
+          description: "Neo node {{ $labels.instance }} is using more than 4GB of memory (current: {{ $value }}GB)."
+
+      - alert: NeoHighCPUUsage
+        expr: process_cpu_usage > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage"
+          description: "Neo node {{ $labels.instance }} CPU usage is above 80% (current: {{ $value | humanizePercentage }})."
+
+      - alert: NeoMemPoolFull
+        expr: neo_mempool_capacity_ratio > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: mempool
+        annotations:
+          summary: "MemPool nearly full"
+          description: "Neo node {{ $labels.instance }} mempool is above 90% capacity (current: {{ $value | humanizePercentage }})."
+
+      - alert: NeoSlowBlockProcessing
+        expr: histogram_quantile(0.95, rate(neo_block_processing_time_bucket[5m])) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          component: blockchain
+        annotations:
+          summary: "Slow block processing"
+          description: "Block processing p95 latency is above 1s on {{ $labels.instance }} (current: {{ $value }}ms)."
+
+      - alert: NeoHighTransactionFailureRate
+        expr: rate(neo_transaction_verification_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: transactions
+        annotations:
+          summary: "High transaction failure rate"
+          description: "Transaction verification failure rate is above 10% on {{ $labels.instance }} (current: {{ $value | humanizePercentage }})."
+
+      # Info Alerts
+      - alert: NeoNodeRestarted
+        expr: time() - neo_node_start_time < 300
+        labels:
+          severity: info
+          component: node
+        annotations:
+          summary: "Neo node recently restarted"
+          description: "Neo node {{ $labels.instance }} was restarted less than 5 minutes ago."
+
+      - alert: NeoBlockchainResyncing
+        expr: neo_blockchain_is_syncing == 1
+        for: 1m
+        labels:
+          severity: info
+          component: blockchain
+        annotations:
+          summary: "Blockchain is syncing"
+          description: "Neo node {{ $labels.instance }} is currently syncing the blockchain."
+
+  - name: neo_network_alerts
+    interval: 30s
+    rules:
+      - alert: NeoHighNetworkTraffic
+        expr: rate(neo_p2p_bytes_received_total[5m]) + rate(neo_p2p_bytes_sent_total[5m]) > 10485760
+        for: 5m
+        labels:
+          severity: info
+          component: network
+        annotations:
+          summary: "High network traffic"
+          description: "Network traffic on {{ $labels.instance }} exceeds 10MB/s (current: {{ $value | humanize }}B/s)."
+
+      - alert: NeoFrequentPeerDisconnects
+        expr: rate(neo_p2p_peer_disconnected_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "Frequent peer disconnections"
+          description: "Neo node {{ $labels.instance }} is experiencing frequent peer disconnections ({{ $value }} per second)."
+
+  - name: neo_error_alerts
+    interval: 30s
+    rules:
+      - alert: NeoProtocolErrors
+        expr: rate(neo_protocol_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: protocol
+        annotations:
+          summary: "Protocol errors detected"
+          description: "Neo node {{ $labels.instance }} is experiencing protocol errors ({{ $value }} per second)."
+
+      - alert: NeoStorageErrors
+        expr: rate(neo_storage_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: storage
+        annotations:
+          summary: "Storage errors detected"
+          description: "Neo node {{ $labels.instance }} is experiencing storage errors ({{ $value }} per second)."
+
+      - alert: NeoNetworkErrors
+        expr: rate(neo_network_errors_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "Network errors detected"
+          description: "Neo node {{ $labels.instance }} is experiencing network errors ({{ $value }} per second)."
