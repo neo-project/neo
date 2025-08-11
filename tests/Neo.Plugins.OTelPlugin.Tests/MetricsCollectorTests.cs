@@ -46,7 +46,7 @@ namespace Neo.Plugins.OTelPlugin.Tests
         [TestMethod]
         public void Constructor_NullNeoSystem_ThrowsArgumentNullException()
         {
-            Assert.ThrowsException<ArgumentNullException>(() =>
+            Assert.ThrowsExactly<ArgumentNullException>(() =>
                 new MetricsCollector(null, TimeSpan.FromSeconds(5)));
         }
 
