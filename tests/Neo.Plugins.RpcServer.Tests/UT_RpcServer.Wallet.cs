@@ -119,7 +119,9 @@ namespace Neo.Plugins.RpcServer.Tests
             var scriptHashNotInWallet = Contract.CreateSignatureRedeemScript(key.PublicKey).ToScriptHash();
             var addressNotInWallet = scriptHashNotInWallet.ToAddress(ProtocolSettings.Default.AddressVersion);
 
-            var ex = Assert.ThrowsExactly<NullReferenceException>(() => _rpcServer.DumpPrivKey(new JArray(addressNotInWallet)));
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.DumpPrivKey(new JArray(addressNotInWallet)));
+            Assert.AreEqual(RpcError.UnknownAccount.Code, ex.HResult);
+            Assert.Contains($"Unknown account - {scriptHashNotInWallet}", ex.Message);
             TestUtilCloseWallet();
         }
 
