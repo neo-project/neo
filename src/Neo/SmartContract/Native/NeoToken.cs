@@ -51,6 +51,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_GasPerBlock = 29;
         private const byte Prefix_RegisterPrice = 13;
         private const byte Prefix_VoterRewardPerCommittee = 23;
+        private const byte Prefix_BlacklistedNode = 34;
 
         private const byte NeoHolderRewardRatio = 10;
         private const byte CommitteeRewardRatio = 10;
@@ -418,6 +419,11 @@ namespace Neo.SmartContract.Native
             CandidateState validator_new = null;
             if (voteTo != null)
             {
+                if (engine.IsHardforkEnabled(Hardfork.HF_Gala))
+                {
+                    StorageKey blacklistKey = CreateStorageKey(Prefix_BlacklistedNode, voteTo);
+                    if (engine.SnapshotCache.Contains(blacklistKey)) return false;
+                }
                 validator_new = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Candidate, voteTo))?.GetInteroperable<CandidateState>();
                 if (validator_new is null) return false;
                 if (!validator_new.Registered) return false;
@@ -495,10 +501,15 @@ namespace Neo.SmartContract.Native
         internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(IReadOnlyStore snapshot)
         {
             var prefixKey = CreateStorageKey(Prefix_Candidate);
+            var blacklistPrefix = CreateStorageKey(Prefix_BlacklistedNode);
+            var blacklistedNodes = snapshot.Find(blacklistPrefix)
+                .Select(p => p.Key.Key[1..].AsSerializable<ECPoint>())
+                .ToHashSet();
             return snapshot.Find(prefixKey)
                 .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key[1..].AsSerializable<ECPoint>(), State: p.Value.GetInteroperable<CandidateState>()))
                 .Where(p => p.State.Registered)
-                .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()));
+                .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()))
+                .Where(p => !blacklistedNodes.Contains(p.PublicKey));
         }
 
         /// <summary>
@@ -549,6 +560,49 @@ namespace Neo.SmartContract.Native
         {
             ECPoint[] committees = GetCommittee(snapshot);
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
+        }
+
+        [ContractMethod(Hardfork.HF_Gala, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private bool AddToBlacklist(ApplicationEngine engine, ECPoint pubkey)
+        {
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            StorageKey key = CreateStorageKey(Prefix_BlacklistedNode, pubkey);
+            if (engine.SnapshotCache.Contains(key)) return false;
+            engine.SnapshotCache.Add(key, new StorageItem(Array.Empty<byte>()));
+            if (ShouldRefreshCommittee(engine.PersistingBlock.Index + 1, engine.ProtocolSettings.CommitteeMembersCount))
+            {
+                var storageItem = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Committee));
+                var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
+                cachedCommittee.Clear();
+                cachedCommittee.AddRange(ComputeCommitteeMembers(engine.SnapshotCache, engine.ProtocolSettings));
+            }
+            return true;
+        }
+
+        [ContractMethod(Hardfork.HF_Gala, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private bool RemoveFromBlacklist(ApplicationEngine engine, ECPoint pubkey)
+        {
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            StorageKey key = CreateStorageKey(Prefix_BlacklistedNode, pubkey);
+            if (!engine.SnapshotCache.Contains(key)) return false;
+            engine.SnapshotCache.Delete(key);
+            if (ShouldRefreshCommittee(engine.PersistingBlock.Index + 1, engine.ProtocolSettings.CommitteeMembersCount))
+            {
+                var storageItem = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Committee));
+                var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
+                cachedCommittee.Clear();
+                cachedCommittee.AddRange(ComputeCommitteeMembers(engine.SnapshotCache, engine.ProtocolSettings));
+            }
+            return true;
+        }
+
+        [ContractMethod(Hardfork.HF_Gala, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public ECPoint[] GetBlacklist(IReadOnlyStore snapshot)
+        {
+            var prefixKey = CreateStorageKey(Prefix_BlacklistedNode);
+            return snapshot.Find(prefixKey)
+                .Select(p => p.Key.Key[1..].AsSerializable<ECPoint>())
+                .ToArray();
         }
 
         private CachedCommittee GetCommitteeFromCache(IReadOnlyStore snapshot)

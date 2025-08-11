@@ -1287,5 +1287,54 @@ namespace Neo.UnitTests.SmartContract.Native
             var voteto = state[2].IsNull ? null : state[2].GetSpan().ToArray();
             return (balance, height, voteto);
         }
+
+        [TestMethod]
+        public void Test_HF_Gala_Blacklist()
+        {
+            // Create settings with HF_Gala enabled
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Gala\": 10");
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            var settings = ProtocolSettings.Load(stream);
+
+            var clonedCache = _snapshotCache.CloneCache();
+            var persistingBlock = new Block { Header = new Header() };
+
+            // Test WITHOUT HF_Gala
+            persistingBlock.Header.Index = 9;
+
+            using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+            {
+                var methods = NativeContract.NEO.GetContractMethods(engine);
+                var addToBlacklist = methods.Values.Where(u => u.Name == "addToBlacklist").ToArray();
+                var removeFromBlacklist = methods.Values.Where(u => u.Name == "removeFromBlacklist").ToArray();
+                var getBlacklist = methods.Values.Where(u => u.Name == "getBlacklist").ToArray();
+
+                // Methods should not exist before HF_Gala
+                Assert.HasCount(0, addToBlacklist);
+                Assert.HasCount(0, removeFromBlacklist);
+                Assert.HasCount(0, getBlacklist);
+            }
+
+            // Test WITH HF_Gala
+            persistingBlock.Header.Index = 10;
+
+            using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+            {
+                var methods = NativeContract.NEO.GetContractMethods(engine);
+                var addToBlacklist = methods.Values.Where(u => u.Name == "addToBlacklist").ToArray();
+                var removeFromBlacklist = methods.Values.Where(u => u.Name == "removeFromBlacklist").ToArray();
+                var getBlacklist = methods.Values.Where(u => u.Name == "getBlacklist").ToArray();
+
+                // Methods should exist after HF_Gala
+                Assert.HasCount(1, addToBlacklist);
+                Assert.HasCount(1, removeFromBlacklist);
+                Assert.HasCount(1, getBlacklist);
+                Assert.AreEqual(CallFlags.States, addToBlacklist[0].RequiredCallFlags);
+                Assert.AreEqual(CallFlags.States, removeFromBlacklist[0].RequiredCallFlags);
+                Assert.AreEqual(CallFlags.ReadStates, getBlacklist[0].RequiredCallFlags);
+            }
+        }
     }
 }
