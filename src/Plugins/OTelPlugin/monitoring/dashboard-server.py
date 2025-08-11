@@ -27,8 +27,8 @@ class ProxyHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({'error': str(e)}).encode())
         elif self.path == '/' or self.path == '/dashboard':
-            # Serve the dashboard HTML
-            self.path = '/neo-dashboard.html'
+            # Serve the professional dashboard HTML
+            self.path = '/professional-dashboard.html'
             return SimpleHTTPRequestHandler.do_GET(self)
         else:
             # Serve static files

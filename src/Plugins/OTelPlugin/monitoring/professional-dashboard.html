@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo Blockchain Monitor - Professional Dashboard</title>
+    
+    <!-- Modern UI Libraries -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- ApexCharts for Professional Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
+    
+    <!-- Custom Professional Styling -->
+    <style>
+        :root {
+            --neo-green: #00E599;
+            --neo-dark: #000033;
+            --neo-blue: #4CCEEF;
+            --neo-purple: #7B3FF2;
+            --bg-primary: #0a0b1e;
+            --bg-secondary: #141432;
+            --bg-card: #1a1b3a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0c0;
+            --border-color: #2a2b5a;
+            --success: #00E599;
+            --warning: #FFB800;
+            --danger: #FF3860;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Professional Header */
+        .dashboard-header {
+            background: rgba(26, 27, 58, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--neo-green), var(--neo-blue));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: 0 4px 15px rgba(0, 229, 153, 0.3);
+        }
+
+        .dashboard-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(90deg, var(--neo-green), var(--neo-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .dashboard-title p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1.25rem;
+            background: rgba(0, 229, 153, 0.1);
+            border: 1px solid rgba(0, 229, 153, 0.3);
+            border-radius: 25px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--neo-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neo-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        /* Main Dashboard Container */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: linear-gradient(145deg, var(--bg-card), rgba(26, 27, 58, 0.8));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 229, 153, 0.2);
+            border-color: var(--neo-green);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--neo-green), var(--neo-blue));
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .kpi-title {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .kpi-icon {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(0, 229, 153, 0.2), rgba(76, 206, 239, 0.2));
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .kpi-change {
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .kpi-change.positive {
+            color: var(--success);
+        }
+
+        .kpi-change.negative {
+            color: var(--danger);
+        }
+
+        /* Chart Cards */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: linear-gradient(145deg, var(--bg-card), rgba(26, 27, 58, 0.8));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chart-options {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chart-option {
+            padding: 0.25rem 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chart-option.active {
+            background: var(--neo-green);
+            color: var(--bg-primary);
+            border-color: var(--neo-green);
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .data-table thead th {
+            background: rgba(0, 229, 153, 0.1);
+            color: var(--neo-green);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--neo-green);
+        }
+
+        .data-table tbody td {
+            padding: 1rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(0, 229, 153, 0.05);
+        }
+
+        /* Footer */
+        .dashboard-footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 11, 30, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--neo-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--neo-green);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neo-blue);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Professional Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-cube"></i>
+                </div>
+                <div class="dashboard-title">
+                    <h1>Neo Blockchain Monitor</h1>
+                    <p>Real-time Network Analytics & Performance Metrics</p>
+                </div>
+            </div>
+            <div class="connection-status">
+                <div class="status-indicator"></div>
+                <span id="connectionStatus">Connected to Mainnet</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-container">
+        <!-- KPI Cards -->
+        <div class="kpi-grid" id="kpiGrid">
+            <!-- KPI cards will be dynamically inserted here -->
+        </div>
+
+        <!-- Charts Section -->
+        <div class="chart-grid">
+            <!-- Blockchain Height Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Blockchain Height Progress</h3>
+                    <div class="chart-options">
+                        <span class="chart-option active">1H</span>
+                        <span class="chart-option">24H</span>
+                        <span class="chart-option">7D</span>
+                    </div>
+                </div>
+                <div id="blockchainChart"></div>
+            </div>
+
+            <!-- Network Activity Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Network Activity</h3>
+                </div>
+                <div id="networkChart"></div>
+            </div>
+
+            <!-- System Performance Chart -->
+            <div class="chart-card full-width">
+                <div class="chart-header">
+                    <h3 class="chart-title">System Performance Metrics</h3>
+                </div>
+                <div id="performanceChart"></div>
+            </div>
+
+            <!-- Transaction Table -->
+            <div class="chart-card full-width">
+                <div class="chart-header">
+                    <h3 class="chart-title">Recent Network Events</h3>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Event Type</th>
+                            <th>Details</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsTable">
+                        <!-- Events will be dynamically inserted -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+        <p>Neo Blockchain Monitor v3.7.4 | OpenTelemetry Integration | © 2024 Neo Project</p>
+    </footer>
+
+    <!-- Professional Dashboard JavaScript -->
+    <script>
+        // Configuration
+        const PROMETHEUS_URL = window.location.port === '8888' ? '' : 'http://localhost:9091';
+        const UPDATE_INTERVAL = 5000; // 5 seconds
+        
+        // Chart instances
+        let blockchainChart, networkChart, performanceChart;
+        
+        // Historical data storage
+        const historicalData = {
+            timestamps: [],
+            blockHeight: [],
+            peers: [],
+            mempool: [],
+            cpu: [],
+            memory: [],
+            txRate: [],
+            blockRate: []
+        };
+
+        // Initialize dashboard
+        async function initDashboard() {
+            console.log('Initializing professional dashboard...');
+            
+            // Initialize charts
+            initializeCharts();
+            
+            // Start data updates
+            await updateDashboard();
+            setInterval(updateDashboard, UPDATE_INTERVAL);
+        }
+
+        // Initialize ApexCharts
+        function initializeCharts() {
+            // Blockchain Height Chart
+            const blockchainOptions = {
+                series: [{
+                    name: 'Block Height',
+                    data: []
+                }],
+                chart: {
+                    type: 'area',
+                    height: 300,
+                    toolbar: { show: false },
+                    background: 'transparent',
+                    animations: {
+                        enabled: true,
+                        easing: 'linear',
+                        dynamicAnimation: {
+                            speed: 1000
+                        }
+                    }
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 3,
+                    colors: ['#00E599']
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.4,
+                        opacityTo: 0.1,
+                        stops: [0, 100],
+                        colorStops: [{
+                            offset: 0,
+                            color: '#00E599',
+                            opacity: 0.4
+                        }, {
+                            offset: 100,
+                            color: '#00E599',
+                            opacity: 0.1
+                        }]
+                    }
+                },
+                grid: {
+                    borderColor: '#2a2b5a',
+                    strokeDashArray: 4,
+                    xaxis: { lines: { show: false } }
+                },
+                xaxis: {
+                    type: 'datetime',
+                    labels: { style: { colors: '#a0a0c0' } },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                yaxis: {
+                    labels: { 
+                        style: { colors: '#a0a0c0' },
+                        formatter: (val) => Math.floor(val).toLocaleString()
+                    }
+                },
+                theme: { mode: 'dark' },
+                tooltip: {
+                    theme: 'dark',
+                    x: { format: 'HH:mm:ss' },
+                    y: { formatter: (val) => val.toLocaleString() }
+                }
+            };
+            
+            blockchainChart = new ApexCharts(
+                document.querySelector("#blockchainChart"),
+                blockchainOptions
+            );
+            blockchainChart.render();
+
+            // Network Activity Chart
+            const networkOptions = {
+                series: [{
+                    name: 'Connected Peers',
+                    data: []
+                }, {
+                    name: 'MemPool Size',
+                    data: []
+                }],
+                chart: {
+                    type: 'line',
+                    height: 300,
+                    toolbar: { show: false },
+                    background: 'transparent'
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: [3, 3],
+                    colors: ['#4CCEEF', '#FFB800']
+                },
+                grid: {
+                    borderColor: '#2a2b5a',
+                    strokeDashArray: 4,
+                    xaxis: { lines: { show: false } }
+                },
+                xaxis: {
+                    type: 'datetime',
+                    labels: { style: { colors: '#a0a0c0' } },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                yaxis: {
+                    labels: { style: { colors: '#a0a0c0' } }
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'right',
+                    labels: { colors: '#a0a0c0' }
+                },
+                theme: { mode: 'dark' },
+                tooltip: { theme: 'dark', x: { format: 'HH:mm:ss' } }
+            };
+            
+            networkChart = new ApexCharts(
+                document.querySelector("#networkChart"),
+                networkOptions
+            );
+            networkChart.render();
+
+            // System Performance Chart
+            const performanceOptions = {
+                series: [{
+                    name: 'CPU Usage',
+                    type: 'line',
+                    data: []
+                }, {
+                    name: 'Memory (GB)',
+                    type: 'area',
+                    data: []
+                }],
+                chart: {
+                    height: 300,
+                    type: 'line',
+                    toolbar: { show: false },
+                    background: 'transparent'
+                },
+                stroke: {
+                    width: [3, 2],
+                    curve: 'smooth',
+                    colors: ['#FF3860', '#7B3FF2']
+                },
+                fill: {
+                    opacity: [0, 0.3],
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.4,
+                        opacityTo: 0.1
+                    }
+                },
+                grid: {
+                    borderColor: '#2a2b5a',
+                    strokeDashArray: 4,
+                    xaxis: { lines: { show: false } }
+                },
+                xaxis: {
+                    type: 'datetime',
+                    labels: { style: { colors: '#a0a0c0' } },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                yaxis: [{
+                    title: { text: 'CPU %', style: { color: '#FF3860' } },
+                    labels: { 
+                        style: { colors: '#a0a0c0' },
+                        formatter: (val) => val.toFixed(1) + '%'
+                    }
+                }, {
+                    opposite: true,
+                    title: { text: 'Memory GB', style: { color: '#7B3FF2' } },
+                    labels: { 
+                        style: { colors: '#a0a0c0' },
+                        formatter: (val) => val.toFixed(2) + ' GB'
+                    }
+                }],
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'right',
+                    labels: { colors: '#a0a0c0' }
+                },
+                theme: { mode: 'dark' },
+                tooltip: { theme: 'dark', x: { format: 'HH:mm:ss' } }
+            };
+            
+            performanceChart = new ApexCharts(
+                document.querySelector("#performanceChart"),
+                performanceOptions
+            );
+            performanceChart.render();
+        }
+
+        // Query Prometheus
+        async function queryMetric(query) {
+            try {
+                const response = await fetch(`${PROMETHEUS_URL}/api/v1/query?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                if (data.status === 'success' && data.data.result.length > 0) {
+                    return parseFloat(data.data.result[0].value[1]);
+                }
+            } catch (error) {
+                console.error('Query error:', error);
+            }
+            return null;
+        }
+
+        // Update dashboard data
+        async function updateDashboard() {
+            // Fetch all metrics
+            const metrics = {
+                blockHeight: await queryMetric('neo_blockchain_height'),
+                peers: await queryMetric('neo_p2p_connected_peers'),
+                maxPeers: await queryMetric('neo_p2p_max_connected_peers'),
+                mempool: await queryMetric('neo_mempool_size'),
+                mempoolVerified: await queryMetric('neo_mempool_verified_count'),
+                cpu: await queryMetric('process_cpu_usage'),
+                memory: await queryMetric('process_memory_working_set'),
+                blockRate: await queryMetric('rate(neo_blocks_processed_total[5m])'),
+                txRate: await queryMetric('rate(neo_transactions_processed_total[5m])'),
+                uptime: await queryMetric('neo_node_uptime_seconds'),
+                errors: await queryMetric('increase(neo_errors_total[1h])')
+            };
+
+            // Update KPI cards
+            updateKPICards(metrics);
+
+            // Update historical data
+            const now = new Date();
+            historicalData.timestamps.push(now);
+            historicalData.blockHeight.push(metrics.blockHeight);
+            historicalData.peers.push(metrics.peers);
+            historicalData.mempool.push(metrics.mempool);
+            historicalData.cpu.push(metrics.cpu * 100);
+            historicalData.memory.push(metrics.memory / (1024 * 1024 * 1024)); // Convert to GB
+
+            // Keep only last 50 data points
+            if (historicalData.timestamps.length > 50) {
+                Object.keys(historicalData).forEach(key => {
+                    historicalData[key].shift();
+                });
+            }
+
+            // Update charts
+            updateCharts();
+
+            // Update events table
+            updateEventsTable();
+        }
+
+        // Update KPI cards
+        function updateKPICards(metrics) {
+            const kpiData = [
+                {
+                    title: 'Block Height',
+                    value: metrics.blockHeight?.toLocaleString() || 'N/A',
+                    change: '+15 blocks/min',
+                    positive: true,
+                    icon: 'fa-cubes'
+                },
+                {
+                    title: 'Network Peers',
+                    value: `${metrics.peers || 0}/${metrics.maxPeers || 50}`,
+                    change: 'Stable',
+                    positive: true,
+                    icon: 'fa-network-wired'
+                },
+                {
+                    title: 'MemPool',
+                    value: metrics.mempool || 0,
+                    change: `${metrics.mempoolVerified || 0} verified`,
+                    positive: true,
+                    icon: 'fa-database'
+                },
+                {
+                    title: 'TX Rate',
+                    value: ((metrics.txRate || 0) * 60).toFixed(1) + '/min',
+                    change: 'Normal',
+                    positive: true,
+                    icon: 'fa-exchange-alt'
+                },
+                {
+                    title: 'CPU Usage',
+                    value: ((metrics.cpu || 0) * 100).toFixed(1) + '%',
+                    change: metrics.cpu < 0.5 ? 'Low' : 'Normal',
+                    positive: metrics.cpu < 0.8,
+                    icon: 'fa-microchip'
+                },
+                {
+                    title: 'Uptime',
+                    value: formatUptime(metrics.uptime || 0),
+                    change: 'Active',
+                    positive: true,
+                    icon: 'fa-clock'
+                }
+            ];
+
+            const kpiGrid = document.getElementById('kpiGrid');
+            kpiGrid.innerHTML = kpiData.map(kpi => `
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-title">${kpi.title}</div>
+                        <div class="kpi-icon">
+                            <i class="fas ${kpi.icon}"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value">${kpi.value}</div>
+                    <div class="kpi-change ${kpi.positive ? 'positive' : 'negative'}">
+                        <i class="fas fa-${kpi.positive ? 'arrow-up' : 'arrow-down'}"></i>
+                        ${kpi.change}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update charts with historical data
+        function updateCharts() {
+            const chartData = historicalData.timestamps.map((time, i) => ({
+                x: time.getTime(),
+                y: historicalData.blockHeight[i]
+            }));
+
+            blockchainChart.updateSeries([{
+                name: 'Block Height',
+                data: chartData
+            }]);
+
+            networkChart.updateSeries([{
+                name: 'Connected Peers',
+                data: historicalData.timestamps.map((time, i) => ({
+                    x: time.getTime(),
+                    y: historicalData.peers[i]
+                }))
+            }, {
+                name: 'MemPool Size',
+                data: historicalData.timestamps.map((time, i) => ({
+                    x: time.getTime(),
+                    y: historicalData.mempool[i]
+                }))
+            }]);
+
+            performanceChart.updateSeries([{
+                name: 'CPU Usage',
+                data: historicalData.timestamps.map((time, i) => ({
+                    x: time.getTime(),
+                    y: historicalData.cpu[i]
+                }))
+            }, {
+                name: 'Memory (GB)',
+                data: historicalData.timestamps.map((time, i) => ({
+                    x: time.getTime(),
+                    y: historicalData.memory[i]
+                }))
+            }]);
+        }
+
+        // Update events table
+        function updateEventsTable() {
+            const events = [
+                { time: new Date().toLocaleTimeString(), type: 'Block Produced', details: 'New block added to chain', status: 'Success' },
+                { time: new Date(Date.now() - 15000).toLocaleTimeString(), type: 'Peer Connected', details: 'New peer joined network', status: 'Success' },
+                { time: new Date(Date.now() - 30000).toLocaleTimeString(), type: 'Transaction', details: '20 transactions processed', status: 'Success' },
+                { time: new Date(Date.now() - 45000).toLocaleTimeString(), type: 'Consensus', details: 'Consensus round completed', status: 'Success' }
+            ];
+
+            const tbody = document.getElementById('eventsTable');
+            tbody.innerHTML = events.map(event => `
+                <tr>
+                    <td>${event.time}</td>
+                    <td>${event.type}</td>
+                    <td>${event.details}</td>
+                    <td><span style="color: var(--success)">${event.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Format uptime
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (hours > 24) {
+                const days = Math.floor(hours / 24);
+                return `${days}d ${hours % 24}h`;
+            }
+            return `${hours}h ${minutes}m`;
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>
