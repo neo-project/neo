@@ -52,12 +52,13 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestCompareTo()
         {
-            byte[] temp = new byte[20];
+            var temp = new byte[20];
             temp[19] = 0x01;
-            UInt160 result = new UInt160(temp);
+            var result = new UInt160(temp);
             Assert.AreEqual(0, UInt160.Zero.CompareTo(UInt160.Zero));
             Assert.AreEqual(-1, UInt160.Zero.CompareTo(result));
             Assert.AreEqual(1, result.CompareTo(UInt160.Zero));
+            Assert.AreEqual(0, result.CompareTo(temp));
         }
 
         [TestMethod]

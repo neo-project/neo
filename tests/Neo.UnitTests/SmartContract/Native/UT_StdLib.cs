@@ -407,7 +407,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.HasCount(2, engine.ResultStack);
 
-            Assert.AreEqual(engine.ResultStack.Pop<Integer>().GetInteger(), 100);
+            Assert.AreEqual(100, engine.ResultStack.Pop<Integer>().GetInteger());
             Assert.AreEqual("test", engine.ResultStack.Pop<ByteString>().GetString());
         }
 

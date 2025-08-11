@@ -33,16 +33,16 @@ namespace Neo.Json.UnitTests
         public void TestClear()
         {
             od.Clear();
-            Assert.AreEqual(0, od.Count);
+            Assert.IsEmpty(od);
             Assert.IsFalse(od.TryGetValue("a", out uint i));
         }
 
         [TestMethod]
         public void TestCount()
         {
-            Assert.AreEqual(3, od.Count);
+            Assert.HasCount(3, od);
             od.Add("d", 4);
-            Assert.AreEqual(4, od.Count);
+            Assert.HasCount(4, od);
         }
 
         [TestMethod]
@@ -67,7 +67,7 @@ namespace Neo.Json.UnitTests
         {
             var keys = od.Keys;
             Assert.IsTrue(keys.Contains("a"));
-            Assert.AreEqual(3, keys.Count);
+            Assert.HasCount(3, keys);
         }
 
         [TestMethod]
@@ -75,14 +75,14 @@ namespace Neo.Json.UnitTests
         {
             var values = od.Values;
             Assert.IsTrue(values.Contains(1u));
-            Assert.AreEqual(3, values.Count);
+            Assert.HasCount(3, values);
         }
 
         [TestMethod]
         public void TestRemove()
         {
             od.Remove("a");
-            Assert.AreEqual(2, od.Count);
+            Assert.HasCount(2, od);
             Assert.IsFalse(od.ContainsKey("a"));
         }
 
@@ -101,7 +101,7 @@ namespace Neo.Json.UnitTests
             var pair = new KeyValuePair<string, uint>("d", 4);
             ICollection<KeyValuePair<string, uint>> collection = od;
             collection.Add(pair);
-            Assert.IsTrue(collection.Contains(pair));
+            Assert.Contains(pair, collection);
         }
 
         [TestMethod]
@@ -124,8 +124,8 @@ namespace Neo.Json.UnitTests
             ICollection<KeyValuePair<string, uint>> collection = od;
             var pair = new KeyValuePair<string, uint>("a", 1);
             collection.Remove(pair);
-            Assert.IsFalse(collection.Contains(pair));
-            Assert.AreEqual(2, collection.Count);
+            Assert.DoesNotContain(pair, collection);
+            Assert.HasCount(2, collection);
         }
 
         [TestMethod]

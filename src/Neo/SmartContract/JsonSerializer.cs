@@ -36,6 +36,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="item">The <see cref="StackItem"/> to serialize.</param>
         /// <returns>The serialized object.</returns>
+        [Obsolete("This method will be removed in the future, do not use.")]
         public static JToken Serialize(StackItem item)
         {
             switch (item)
