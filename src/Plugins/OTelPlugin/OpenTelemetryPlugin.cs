@@ -140,7 +140,7 @@ namespace Neo.Plugins.OpenTelemetry
 
                 // Initialize metrics collector
                 _metricsCollector = new MetricsCollector(system, TimeSpan.FromSeconds(5));
-                
+
                 // Subscribe to metrics updates
                 _metricsCollector.NetworkMetricsUpdated += OnNetworkMetricsUpdated;
                 _metricsCollector.MemPoolMetricsUpdated += OnMemPoolMetricsUpdated;
@@ -165,41 +165,41 @@ namespace Neo.Plugins.OpenTelemetry
 
             // Create counters
             _blocksProcessedCounter = _meter.CreateCounter<long>(
-                "neo.blocks.processed_total",
+                MetricNames.BlocksProcessedTotal,
                 "blocks",
                 "Total number of blocks processed");
 
             _transactionsProcessedCounter = _meter.CreateCounter<long>(
-                "neo.transactions.processed_total",
+                MetricNames.TransactionsProcessedTotal,
                 "transactions",
                 "Total number of transactions processed");
 
             _contractInvocationsCounter = _meter.CreateCounter<long>(
-                "neo.contracts.invocations_total",
+                MetricNames.ContractInvocationsTotal,
                 "invocations",
                 "Total number of contract invocations");
 
             // Create histogram
             _blockProcessingTimeHistogram = _meter.CreateHistogram<double>(
-                "neo.block.processing_time",
+                MetricNames.BlockProcessingTime,
                 "milliseconds",
                 "Time taken to process a block");
 
             // Create observable gauges
             _blockHeightGauge = _meter.CreateObservableGauge<long>(
-                "neo.blockchain.height",
+                MetricNames.BlockchainHeight,
                 () => _currentBlockHeight,
                 "blocks",
                 "Current blockchain height");
 
             _mempoolSizeGauge = _meter.CreateObservableGauge<int>(
-                "neo.mempool.size",
+                MetricNames.MempoolSize,
                 () => _neoSystem?.MemPool?.Count ?? 0,
                 "transactions",
                 "Current number of transactions in mempool");
 
             _connectedPeersGauge = _meter.CreateObservableGauge<int>(
-                "neo.p2p.connected_peers",
+                MetricNames.P2PConnectedPeers,
                 () =>
                 {
                     if (_neoSystem?.LocalNode is LocalNode localNode)
@@ -211,46 +211,46 @@ namespace Neo.Plugins.OpenTelemetry
 
             // Create network metrics
             _peerConnectedCounter = _meter.CreateCounter<long>(
-                "neo.p2p.peer_connected_total",
+                MetricNames.P2PPeerConnectedTotal,
                 "peers",
                 "Total number of peer connections");
 
             _peerDisconnectedCounter = _meter.CreateCounter<long>(
-                "neo.p2p.peer_disconnected_total",
+                MetricNames.P2PPeerDisconnectedTotal,
                 "peers",
                 "Total number of peer disconnections");
 
             _bytesSentCounter = _meter.CreateCounter<long>(
-                "neo.p2p.bytes_sent_total",
+                MetricNames.P2PBytesSentTotal,
                 "bytes",
                 "Total number of bytes sent");
 
             _bytesReceivedCounter = _meter.CreateCounter<long>(
-                "neo.p2p.bytes_received_total",
+                MetricNames.P2PBytesReceivedTotal,
                 "bytes",
                 "Total number of bytes received");
 
             // Create mempool metrics
             _mempoolVerifiedGauge = _meter.CreateObservableGauge<int>(
-                "neo.mempool.verified_count",
+                MetricNames.MempoolVerifiedCount,
                 () => _neoSystem?.MemPool?.VerifiedCount ?? 0,
                 "transactions",
                 "Number of verified transactions in mempool");
 
             _mempoolUnverifiedGauge = _meter.CreateObservableGauge<int>(
-                "neo.mempool.unverified_count",
+                MetricNames.MempoolUnverifiedCount,
                 () => _neoSystem?.MemPool?.UnVerifiedCount ?? 0,
                 "transactions",
                 "Number of unverified transactions in mempool");
 
             _mempoolMemoryBytesGauge = _meter.CreateObservableGauge<long>(
-                "neo.mempool.memory_bytes",
+                MetricNames.MempoolMemoryBytes,
                 () => _lastMemPoolMemoryBytes,
                 "bytes",
                 "Total memory used by transactions in mempool");
 
             _mempoolConflictsCounter = _meter.CreateCounter<long>(
-                "neo.mempool.conflicts_total",
+                MetricNames.MempoolConflictsTotal,
                 "conflicts",
                 "Total number of transaction conflicts detected");
 
@@ -324,55 +324,55 @@ namespace Neo.Plugins.OpenTelemetry
             _currentProcess = Process.GetCurrentProcess();
 
             _cpuUsageGauge = _meter.CreateObservableGauge<double>(
-                "process_cpu_usage",
+                MetricNames.ProcessCpuUsage,
                 () => GetProcessCpuUsage(),
                 "percent",
                 "Process CPU usage percentage");
 
             _systemCpuUsageGauge = _meter.CreateObservableGauge<double>(
-                "system_cpu_usage",
+                MetricNames.SystemCpuUsage,
                 () => GetSystemCpuUsage(),
                 "percent",
                 "System CPU usage percentage");
 
             _memoryWorkingSetGauge = _meter.CreateObservableGauge<long>(
-                "process_memory_working_set",
+                MetricNames.ProcessMemoryWorkingSet,
                 () => _currentProcess?.WorkingSet64 ?? 0,
                 "bytes",
                 "Process working set memory");
 
             _memoryVirtualGauge = _meter.CreateObservableGauge<long>(
-                "process_memory_virtual",
+                MetricNames.ProcessMemoryVirtual,
                 () => _currentProcess?.VirtualMemorySize64 ?? 0,
                 "bytes",
                 "Process virtual memory");
 
             _gcHeapSizeGauge = _meter.CreateObservableGauge<long>(
-                "dotnet_gc_heap_size",
+                MetricNames.DotnetGcHeapSize,
                 () => GC.GetTotalMemory(false),
                 "bytes",
                 "GC heap size");
 
             _threadCountGauge = _meter.CreateObservableGauge<long>(
-                "process_thread_count",
+                MetricNames.ProcessThreadCount,
                 () => _currentProcess?.Threads.Count ?? 0,
                 "threads",
                 "Process thread count");
 
             _nodeStartTimeGauge = _meter.CreateObservableGauge<long>(
-                "neo_node_start_time",
+                MetricNames.NodeStartTime,
                 () => new DateTimeOffset(_nodeStartTime).ToUnixTimeSeconds(),
                 "unixtime",
                 "Node start time in Unix timestamp");
 
             _networkIdGauge = _meter.CreateObservableGauge<int>(
-                "neo_network_id",
+                MetricNames.NetworkId,
                 () => (int)(_neoSystem?.Settings.Network ?? 0),
                 "id",
                 "Network ID (0=TestNet, 1=MainNet)");
 
             _isSyncingGauge = _meter.CreateObservableGauge<int>(
-                "neo_blockchain_is_syncing",
+                MetricNames.IsSyncing,
                 () => _neoSystem != null && IsNodeSyncing() ? 1 : 0,
                 "bool",
                 "Whether the node is currently syncing (1=syncing, 0=synced)");
@@ -536,7 +536,7 @@ namespace Neo.Plugins.OpenTelemetry
 
             // Dispose metrics collector
             _metricsCollector?.Dispose();
-            
+
             _meterProvider?.Dispose();
             _meter?.Dispose();
             _blockProcessingStopwatch = null;
@@ -578,7 +578,7 @@ namespace Neo.Plugins.OpenTelemetry
         private void OnNetworkMetricsUpdated(NetworkMetrics metrics)
         {
             if (!_settings.Enabled || !_settings.Metrics.Enabled) return;
-            
+
             // Network metrics are now collected via polling
             // Connected/unconnected peer counts are updated through observable gauges
         }
@@ -597,7 +597,7 @@ namespace Neo.Plugins.OpenTelemetry
         private void OnBlockchainMetricsUpdated(BlockchainMetrics metrics)
         {
             if (!_settings.Enabled || !_settings.Metrics.Enabled) return;
-            
+
             lock (_metricsLock)
             {
                 _currentBlockHeight = metrics.CurrentHeight;

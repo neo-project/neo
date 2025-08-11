@@ -51,18 +51,18 @@ namespace Neo.Plugins.OpenTelemetry
         private Counter<long>? _contractInvocationsCounter;
         private Histogram<double>? _blockProcessingTimeHistogram;
         private ObservableGauge<long>? _blockHeightGauge;
-        
+
         // MemPool metrics (collected via polling)
         private ObservableGauge<int>? _mempoolSizeGauge;
         private ObservableGauge<int>? _mempoolVerifiedGauge;
         private ObservableGauge<int>? _mempoolUnverifiedGauge;
         private ObservableGauge<double>? _mempoolCapacityRatioGauge;
         private ObservableGauge<long>? _mempoolEstimatedBytesGauge;
-        
+
         // Network metrics (collected via polling)
         private ObservableGauge<int>? _connectedPeersGauge;
         private ObservableGauge<int>? _unconnectedPeersGauge;
-        
+
         // System metrics
         private ObservableGauge<double>? _cpuUsageGauge;
         private ObservableGauge<long>? _memoryWorkingSetGauge;
@@ -71,11 +71,11 @@ namespace Neo.Plugins.OpenTelemetry
         private ObservableGauge<long>? _nodeStartTimeGauge;
         private ObservableGauge<int>? _networkIdGauge;
         private ObservableGauge<int>? _isSyncingGauge;
-        
+
         // Performance tracking
         private ObservableGauge<double>? _blockProcessingRateGauge;
         private Counter<long>? _transactionVerificationFailuresCounter;
-        
+
         // State tracking
         private readonly object _metricsLock = new object();
         private Stopwatch? _blockProcessingStopwatch;
@@ -127,7 +127,7 @@ namespace Neo.Plugins.OpenTelemetry
                 // Initialize metrics collector for polling-based metrics
                 var collectionInterval = TimeSpan.FromMilliseconds(_settings.Metrics.Interval);
                 _metricsCollector = new MetricsCollector(system, collectionInterval);
-                
+
                 // Subscribe to metrics updates
                 _metricsCollector.MemPoolMetricsUpdated += OnMemPoolMetricsUpdated;
                 _metricsCollector.BlockchainMetricsUpdated += OnBlockchainMetricsUpdated;
@@ -213,11 +213,11 @@ namespace Neo.Plugins.OpenTelemetry
 
             _mempoolCapacityRatioGauge = _meter.CreateObservableGauge<double>(
                 "neo.mempool.capacity_ratio",
-                () => 
+                () =>
                 {
                     var memPool = _neoSystem?.MemPool;
-                    return memPool != null && memPool.Capacity > 0 
-                        ? (double)memPool.Count / memPool.Capacity 
+                    return memPool != null && memPool.Capacity > 0
+                        ? (double)memPool.Count / memPool.Capacity
                         : 0;
                 },
                 "ratio",
@@ -261,7 +261,7 @@ namespace Neo.Plugins.OpenTelemetry
 
             _memoryWorkingSetGauge = _meter.CreateObservableGauge<long>(
                 "process.memory.working_set",
-                () => 
+                () =>
                 {
                     try
                     {
@@ -411,7 +411,7 @@ namespace Neo.Plugins.OpenTelemetry
                     var failures = applicationExecutedList
                         .Where(x => x.VMState != VM.VMState.HALT)
                         .Count();
-                    
+
                     if (failures > 0)
                         _transactionVerificationFailuresCounter?.Add(failures);
                 }
@@ -473,7 +473,7 @@ namespace Neo.Plugins.OpenTelemetry
         private void OnBlockchainMetricsUpdated(BlockchainMetrics metrics)
         {
             if (!_settings.Enabled || !_settings.Metrics.Enabled) return;
-            
+
             lock (_metricsLock)
             {
                 _currentBlockHeight = metrics.CurrentHeight;
@@ -542,8 +542,8 @@ namespace Neo.Plugins.OpenTelemetry
             {
                 using var snapshot = _neoSystem.GetSnapshotCache();
                 var currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-                var headerHeight = _neoSystem.HeaderCache?.Count > 0 
-                    ? _neoSystem.HeaderCache.Last?.Index ?? currentHeight 
+                var headerHeight = _neoSystem.HeaderCache?.Count > 0
+                    ? _neoSystem.HeaderCache.Last?.Index ?? currentHeight
                     : currentHeight;
 
                 return headerHeight - currentHeight > 10;
@@ -582,7 +582,7 @@ namespace Neo.Plugins.OpenTelemetry
             _meter?.Dispose();
             _currentProcess?.Dispose();
             _blockProcessingStopwatch = null;
-            
+
             base.Dispose();
         }
 
@@ -626,7 +626,7 @@ namespace Neo.Plugins.OpenTelemetry
             ConsoleHelper.Info($"    Height: {_currentBlockHeight}");
             ConsoleHelper.Info($"    Processing Rate: {CalculateBlockProcessingRate():F2} blocks/sec");
             ConsoleHelper.Info($"    Is Syncing: {IsNodeSyncing()}");
-            
+
             var memPool = _neoSystem?.MemPool;
             if (memPool != null)
             {
@@ -637,14 +637,14 @@ namespace Neo.Plugins.OpenTelemetry
                 ConsoleHelper.Info($"    Capacity: {memPool.Capacity}");
                 ConsoleHelper.Info($"    Usage: {(memPool.Capacity > 0 ? (double)memPool.Count / memPool.Capacity * 100 : 0):F2}%");
             }
-            
+
             if (_neoSystem?.LocalNode is LocalNode localNode)
             {
                 ConsoleHelper.Info($"  Network:");
                 ConsoleHelper.Info($"    Connected: {localNode.ConnectedCount}");
                 ConsoleHelper.Info($"    Unconnected: {localNode.UnconnectedCount}");
             }
-            
+
             ConsoleHelper.Info($"  System:");
             ConsoleHelper.Info($"    CPU: {GetProcessCpuUsage():F2}%");
             ConsoleHelper.Info($"    Memory: {_currentProcess?.WorkingSet64 / 1024 / 1024 ?? 0} MB");

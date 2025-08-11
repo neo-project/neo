@@ -16,18 +16,6 @@ using System.Reflection;
 
 namespace Neo.Plugins.OpenTelemetry
 {
-    public static class OTelConstants
-    {
-        public const string DefaultServiceName = "neo-node";
-        public const string DefaultEndpoint = "http://localhost:4317";
-        public const string DefaultPath = "/metrics";
-        public const string ProtocolGrpc = "grpc";
-        public const string ProtocolHttpProtobuf = "http/protobuf";
-        public const int DefaultPrometheusPort = 9090;
-        public const int DefaultTimeout = 10000;
-        public const int DefaultMetricsInterval = 10000;
-    }
-
     public class OTelSettings
     {
         public bool Enabled { get; init; }
@@ -46,10 +34,10 @@ namespace Neo.Plugins.OpenTelemetry
             ServiceName = section.GetValue("ServiceName", OTelConstants.DefaultServiceName);
             ServiceVersion = section.GetValue("ServiceVersion", OTelSettingsExtensions.GetDefaultServiceVersion());
             InstanceId = section.GetValue("InstanceId", string.Empty);
-            
+
             var policyString = section.GetValue("UnhandledExceptionPolicy", "StopPlugin");
-            UnhandledExceptionPolicy = Enum.TryParse<UnhandledExceptionPolicy>(policyString, out var policy) 
-                ? policy 
+            UnhandledExceptionPolicy = Enum.TryParse<UnhandledExceptionPolicy>(policyString, out var policy)
+                ? policy
                 : UnhandledExceptionPolicy.StopPlugin;
 
             Metrics = new MetricsSettings(section.GetSection("Metrics"));
@@ -59,22 +47,6 @@ namespace Neo.Plugins.OpenTelemetry
         }
 
         public static OTelSettings Default => new(new ConfigurationBuilder().Build().GetSection("Empty"));
-    }
-
-    public class MetricsSettings
-    {
-        public bool Enabled { get; init; }
-        public int Interval { get; init; }
-        public PrometheusExporterSettings PrometheusExporter { get; init; }
-        public ConsoleExporterSettings ConsoleExporter { get; init; }
-
-        public MetricsSettings(IConfigurationSection section)
-        {
-            Enabled = section.GetValue("Enabled", true);
-            Interval = section.GetValue("Interval", OTelConstants.DefaultMetricsInterval);
-            PrometheusExporter = new PrometheusExporterSettings(section.GetSection("PrometheusExporter"));
-            ConsoleExporter = new ConsoleExporterSettings(section.GetSection("ConsoleExporter"));
-        }
     }
 
     public class TracesSettings

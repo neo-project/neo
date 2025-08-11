@@ -22,7 +22,7 @@ namespace Neo.Plugins.OpenTelemetry
     /// Collects metrics from Neo core classes without modifying them.
     /// This class reads publicly exposed information only.
     /// </summary>
-    internal class MetricsCollector : IDisposable
+    public class MetricsCollector : IDisposable
     {
         private readonly NeoSystem _neoSystem;
         private readonly Timer _collectionTimer;
@@ -41,7 +41,7 @@ namespace Neo.Plugins.OpenTelemetry
         public MetricsCollector(NeoSystem neoSystem, TimeSpan collectionInterval)
         {
             _neoSystem = neoSystem ?? throw new ArgumentNullException(nameof(neoSystem));
-            
+
             // Initialize with empty metrics
             LastNetworkMetrics = new NetworkMetrics();
             LastMemPoolMetrics = new MemPoolMetrics();
@@ -105,8 +105,8 @@ namespace Neo.Plugins.OpenTelemetry
                 };
 
                 // Calculate derived metrics
-                metrics.CapacityRatio = metrics.Capacity > 0 
-                    ? (double)metrics.Count / metrics.Capacity 
+                metrics.CapacityRatio = metrics.Capacity > 0
+                    ? (double)metrics.Count / metrics.Capacity
                     : 0;
 
                 // Estimate memory usage (approximate based on average tx size)
@@ -137,10 +137,10 @@ namespace Neo.Plugins.OpenTelemetry
                     };
 
                     // Check if syncing (simplified check)
-                    var headerHeight = _neoSystem?.HeaderCache?.Count > 0 
-                        ? _neoSystem.HeaderCache.Last?.Index ?? metrics.CurrentHeight 
+                    var headerHeight = _neoSystem?.HeaderCache?.Count > 0
+                        ? _neoSystem.HeaderCache.Last?.Index ?? metrics.CurrentHeight
                         : metrics.CurrentHeight;
-                    
+
                     metrics.IsSyncing = headerHeight - metrics.CurrentHeight > 10;
                     metrics.NetworkId = (int)(_neoSystem?.Settings.Network ?? 0);
 
@@ -162,40 +162,5 @@ namespace Neo.Plugins.OpenTelemetry
         {
             _collectionTimer?.Dispose();
         }
-    }
-
-    /// <summary>
-    /// Network metrics snapshot
-    /// </summary>
-    public class NetworkMetrics
-    {
-        public DateTime Timestamp { get; set; }
-        public int ConnectedPeers { get; set; }
-        public int UnconnectedPeers { get; set; }
-    }
-
-    /// <summary>
-    /// Memory pool metrics snapshot
-    /// </summary>
-    public class MemPoolMetrics
-    {
-        public DateTime Timestamp { get; set; }
-        public int Count { get; set; }
-        public int VerifiedCount { get; set; }
-        public int UnverifiedCount { get; set; }
-        public int Capacity { get; set; }
-        public double CapacityRatio { get; set; }
-        public long EstimatedMemoryBytes { get; set; }
-    }
-
-    /// <summary>
-    /// Blockchain metrics snapshot
-    /// </summary>
-    public class BlockchainMetrics
-    {
-        public DateTime Timestamp { get; set; }
-        public uint CurrentHeight { get; set; }
-        public bool IsSyncing { get; set; }
-        public int NetworkId { get; set; }
     }
 }
