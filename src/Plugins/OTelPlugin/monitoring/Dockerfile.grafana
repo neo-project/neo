@@ -1,0 +1,5 @@
+FROM quay.io/prometheus/busybox:latest
+# Simple grafana replacement for testing
+# This is just for testing prometheus connectivity
+EXPOSE 3000
+CMD ["sh", "-c", "echo 'Grafana placeholder running on port 3000' && nc -l -p 3000"]
