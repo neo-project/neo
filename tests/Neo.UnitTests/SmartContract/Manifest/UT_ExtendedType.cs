@@ -32,7 +32,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Length = 10,
                 ForbidNull = true,
                 Interface = Nep25Interface.IIterator,
-                Key = Nep25Key.String
+                Key = ContractParameterType.String
             };
 
             var b = new ExtendedType
@@ -42,7 +42,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Length = 10,
                 ForbidNull = true,
                 Interface = Nep25Interface.IIterator,
-                Key = Nep25Key.String
+                Key = ContractParameterType.String
             };
 
             Assert.IsTrue(a.Equals(b));
@@ -59,7 +59,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Length = 5,
                 ForbidNull = false,
                 Interface = Nep25Interface.IIterator,
-                Key = Nep25Key.String
+                Key = ContractParameterType.String
             };
 
             var b = new ExtendedType
@@ -69,7 +69,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Length = 8,
                 ForbidNull = true,
                 Interface = null,
-                Key = Nep25Key.PublicKey
+                Key = ContractParameterType.PublicKey
             };
 
             Assert.IsFalse(a.Equals(b));
@@ -163,7 +163,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.AreEqual(123, result.Length);
             Assert.IsTrue(result.ForbidNull);
             Assert.AreEqual(Nep25Interface.IIterator, result.Interface);
-            Assert.AreEqual(Nep25Key.String, result.Key);
+            Assert.AreEqual(ContractParameterType.String, result.Key);
         }
 
         [TestMethod]
@@ -176,7 +176,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Length = 50,
                 ForbidNull = true,
                 Interface = Nep25Interface.IIterator,
-                Key = Nep25Key.String
+                Key = ContractParameterType.String
             };
 
             var json = ext.ToJson();
@@ -256,7 +256,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Length = 20,
                 ForbidNull = true,
                 Interface = Nep25Interface.IIterator,
-                Key = Nep25Key.Hash160
+                Key = ContractParameterType.Hash160
             };
 
             var refCounter = new ReferenceCounter();
