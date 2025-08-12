@@ -9,20 +9,34 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.Interfaces;
+using Neo.Build.Core.Wallets;
 using System;
+using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Models.Wallets
 {
-    public class WalletModel : JsonModel
+    public class WalletModel : JsonModel, IConvertToObject<DevWallet>
     {
         public string? Name { get; set; }
 
         public Version? Version { get; set; }
 
-        public SCryptModel? Scrypt { get; set; }
+        [JsonPropertyName("scrypt")]
+        public SCryptModel? SCrypt { get; set; }
 
         public WalletAccountModel[]? Accounts { get; set; }
 
         public NodeConfigurationModel? Extra { get; set; }
+
+        /// <summary>
+        /// Converts to <see cref="DevWallet"/>.
+        /// <code>
+        /// Note: If 'Extra' property is <see langword="null"/> than <see cref="ProtocolSettings.Default"/> is used.
+        /// </code>
+        /// </summary>
+        /// <returns><see cref="DevWallet"/></returns>
+        public DevWallet ToObject() =>
+            new(this);
     }
 }

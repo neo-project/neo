@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core;
 using Neo.Build.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -39,18 +40,10 @@ namespace Neo.Build.ToolSet.Net
             if (request is not null)
             {
                 if (string.IsNullOrEmpty(request.Method))
-                    return new JsonRpcError()
-                    {
-                        Code = -32600,
-                        Message = "The JSON sent is not a valid Request object."
-                    };
+                    return JsonRpcError.CreateResponse(JsonRpcErrorCodes.InvalidRequest, "The JSON sent is not a valid Request object.");
 
                 if (_handlers.TryGetValue(request.Method, out var handler) == false)
-                    return new JsonRpcError()
-                    {
-                        Code = -32601,
-                        Message = "The method does not exist / is not available."
-                    };
+                    return JsonRpcError.CreateResponse(JsonRpcErrorCodes.MethodNotFound, "The method does not exist / is not available.");
                 else
                 {
                     var result = await handler(request.Params);
@@ -58,11 +51,7 @@ namespace Neo.Build.ToolSet.Net
                 }
             }
 
-            return new JsonRpcError()
-            {
-                Code = -32603,
-                Message = "Internal JSON-RPC error."
-            };
+            return JsonRpcError.CreateResponse(JsonRpcErrorCodes.InternalError, "Internal JSON-RPC error.");
         }
     }
 }

@@ -26,6 +26,6 @@ namespace Neo.Build.Core.Models
         public T? Params { get; set; }
 
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public int? Id { get; set; }
     }
 }
