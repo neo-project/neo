@@ -51,7 +51,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsInstanceOfType(result, typeof(JObject));
             var json = (JObject)result;
             Assert.IsTrue(json.ContainsProperty("unconnected"));
-            Assert.AreEqual(3, (json["unconnected"] as JArray).Count);
+            Assert.HasCount(3, json["unconnected"] as JArray);
             Assert.IsTrue(json.ContainsProperty("bad"));
             Assert.IsTrue(json.ContainsProperty("connected"));
         }
@@ -70,7 +70,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsInstanceOfType(result, typeof(JObject));
             var json = (JObject)result;
             Assert.IsTrue(json.ContainsProperty("unconnected"));
-            Assert.AreEqual(0, (json["unconnected"] as JArray).Count);
+            Assert.IsEmpty(json["unconnected"] as JArray);
             Assert.IsTrue(json.ContainsProperty("bad"));
             Assert.IsTrue(json.ContainsProperty("connected"));
         }
@@ -91,7 +91,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(json.ContainsProperty("unconnected"));
             Assert.IsTrue(json.ContainsProperty("bad"));
             Assert.IsTrue(json.ContainsProperty("connected"));
-            Assert.AreEqual(0, (json["connected"] as JArray).Count); // Directly check connected count
+            Assert.IsEmpty(json["connected"] as JArray); // Directly check connected count
         }
 
         [TestMethod]
@@ -141,13 +141,13 @@ namespace Neo.Plugins.RpcServer.Tests
                     Assert.IsTrue(hfJson.ContainsProperty("blockheight"));
                     Assert.IsInstanceOfType(hfJson["name"], typeof(JString));
                     Assert.IsInstanceOfType(hfJson["blockheight"], typeof(JNumber));
-                    Assert.IsFalse(hfJson["name"].AsString().StartsWith("HF_")); // Check if prefix was stripped
+                    Assert.DoesNotStartWith("HF_", hfJson["name"].AsString()); // Check if prefix was stripped
                 }
             }
             // If no hardforks are defined, the array should be empty
             else
             {
-                Assert.AreEqual(0, _neoSystem.Settings.Hardforks.Count);
+                Assert.IsEmpty(_neoSystem.Settings.Hardforks);
             }
         }
 
