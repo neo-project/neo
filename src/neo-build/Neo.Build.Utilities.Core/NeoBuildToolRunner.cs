@@ -43,6 +43,7 @@ namespace Neo.Build.Utilities.Core
 
             process.OutputDataReceived += OnProcessOutputDataReceived;
             process.ErrorDataReceived += OnProcessErrorDataReceived;
+
             process.Exited += (sender, args) => completeEvent.Set();
 
             if (process.Start() == false)

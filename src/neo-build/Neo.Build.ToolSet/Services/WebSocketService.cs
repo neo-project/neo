@@ -61,8 +61,8 @@ namespace Neo.Build.ToolSet.Services
         private readonly WebSocketOptions _socketOptions;
         private readonly IConsole _console;
 
-        private readonly CancellationTokenSource _cts = new();
-        private readonly TaskCompletionSource _tcs = new();
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
+        private readonly TaskCompletionSource _taskCompletionSource = new();
         private bool _isStarted = false;
 
         public Task StartAsync(CancellationToken cancellationToken = default)
@@ -71,7 +71,7 @@ namespace Neo.Build.ToolSet.Services
                 // TODO: Make custom exception class
                 throw new NeoBuildException($"{nameof(WebSocketService)} is already running.", NeoBuildErrorCodes.General.InternalException);
 
-            _webHost.StartAsync(_cts.Token).ConfigureAwait(false);
+            _webHost.StartAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
 
             _isStarted = true;
 
@@ -80,7 +80,7 @@ namespace Neo.Build.ToolSet.Services
 
         public Task StopAsync(CancellationToken cancellationToken = default)
         {
-            return _cts.CancelAsync();
+            return _cancellationTokenSource.CancelAsync();
         }
 
         private async Task ProcessRequestsAsync(HttpContext context)
@@ -97,7 +97,7 @@ namespace Neo.Build.ToolSet.Services
             var writer = FillPipeAsync(webSocket, pipe.Writer);
             var reader = ReadPipeAsync(webSocket, pipe.Reader);
 
-            await _tcs.Task;
+            await _taskCompletionSource.Task;
         }
 
         private static bool TryReadJson(ref ReadOnlySequence<byte> buffer, [NotNullWhen(true)] out string? json)
@@ -112,7 +112,7 @@ namespace Neo.Build.ToolSet.Services
             var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(message);
             var segment = new ArraySegment<byte>(jsonBytes);
 
-            await webSocket.SendAsync(segment, WebSocketMessageType.Text, endOfMessage: true, _cts.Token);
+            await webSocket.SendAsync(segment, WebSocketMessageType.Text, endOfMessage: true, _cancellationTokenSource.Token);
         }
 
         private async Task FillPipeAsync(WebSocket socket, PipeWriter writer)
@@ -121,7 +121,7 @@ namespace Neo.Build.ToolSet.Services
 
             while (socket.State == WebSocketState.Open)
             {
-                var result = await socket.ReceiveAsync(buffer, _cts.Token);
+                var result = await socket.ReceiveAsync(buffer, _cancellationTokenSource.Token);
 
                 if (result.MessageType == WebSocketMessageType.Close)
                     break;
@@ -133,7 +133,7 @@ namespace Neo.Build.ToolSet.Services
             }
 
             await writer.CompleteAsync();
-            _tcs.TrySetResult();
+            _taskCompletionSource.TrySetResult();
         }
 
         private async Task ReadPipeAsync(WebSocket webSocket, PipeReader reader)
@@ -156,11 +156,13 @@ namespace Neo.Build.ToolSet.Services
                     }
                     catch (JsonException ex)
                     {
-                        await SendJson(webSocket, new JsonRpcError() { Code = -32700, Message = ex.Message });
+                        var errorResponse = JsonRpcError.CreateResponse(JsonRpcErrorCodes.ParseError, ex.Message);
+
+                        await SendJson(webSocket, errorResponse);
                     }
                     catch (Exception ex)
                     {
-                        _tcs.TrySetException(ex);
+                        _taskCompletionSource.TrySetException(ex);
                     }
                 }
 
@@ -170,7 +172,7 @@ namespace Neo.Build.ToolSet.Services
             }
 
             await reader.CompleteAsync();
-            _tcs.TrySetResult();
+            _taskCompletionSource.TrySetResult();
         }
     }
 }

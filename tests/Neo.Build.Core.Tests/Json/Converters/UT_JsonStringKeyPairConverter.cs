@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Build.Core.Cryptography;
+using Neo.Build.Core.Helpers;
 using Neo.Build.Core.Json.Converters;
 using Neo.Build.Core.Tests.Helpers;
 using Neo.Extensions;
@@ -31,7 +31,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
         [TestMethod]
         public void TestReadJson()
         {
-            var keyPair = KeyPairHelper.CreateNew();
+            var keyPair = PrivateKeyHelper.CreateNew();
             var expectedBytes = keyPair.PrivateKey!;
             var expectedJsonString = $"{{\"test\":\"{expectedBytes.ToHexString()}\"}}";
 
@@ -44,7 +44,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
         [TestMethod]
         public void TestWriteJson()
         {
-            var keyPair = KeyPairHelper.CreateNew();
+            var keyPair = PrivateKeyHelper.CreateNew();
             var expectedBytes = keyPair.PrivateKey;
             var expectedJsonString = $"{{\"test\":\"{expectedBytes.ToHexString()}\"}}";
             var expectedJsonObj = new TestJson() { Test = keyPair, };
