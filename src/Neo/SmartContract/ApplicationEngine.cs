@@ -131,13 +131,13 @@ namespace Neo.SmartContract
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
         [Obsolete("This property is deprecated. Use FeeConsumed instead.")]
-        public long GasConsumed { get; private set; } = 0;
+        public long GasConsumed { get; protected set; } = 0;
 
         /// <summary>
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed { get; private set; } = 0;
+        public long FeeConsumed { get; protected set; } = 0;
 
         /// <summary>
         /// The remaining GAS that can be spent in order to complete the execution.
@@ -148,7 +148,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
         /// </summary>
-        public Exception FaultException { get; private set; }
+        public Exception FaultException { get; protected set; }
 
         /// <summary>
         /// The script hash of the current context. This field could be <see langword="null"/> if no context is loaded to the engine.
@@ -221,7 +221,7 @@ namespace Neo.SmartContract
 
             if (persistingBlock is not null)
             {
-                ref ulong nonce = ref System.Runtime.CompilerServices.Unsafe.As<byte, ulong>(ref nonceData[0]);
+                ref ulong nonce = ref Unsafe.As<byte, ulong>(ref nonceData[0]);
                 nonce ^= persistingBlock.Nonce;
             }
             diagnostic?.Initialized(this);
@@ -700,7 +700,7 @@ namespace Neo.SmartContract
             };
         }
 
-        private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, Hardfork? hardfork = null)
+        protected static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, Hardfork? hardfork = null)
         {
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
             var method = typeof(ApplicationEngine).GetMethod(handler, flags)
