@@ -419,7 +419,7 @@ namespace Neo.SmartContract.Native
             CandidateState validator_new = null;
             if (voteTo != null)
             {
-                if (engine.IsHardforkEnabled(Hardfork.HF_Gala))
+                if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 {
                     StorageKey blacklistKey = CreateStorageKey(Prefix_BlacklistedNode, voteTo);
                     if (engine.SnapshotCache.Contains(blacklistKey)) return false;
@@ -562,7 +562,7 @@ namespace Neo.SmartContract.Native
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        [ContractMethod(Hardfork.HF_Gala, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool AddToBlacklist(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
@@ -579,7 +579,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(Hardfork.HF_Gala, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool RemoveFromBlacklist(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
@@ -596,7 +596,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(Hardfork.HF_Gala, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ECPoint[] GetBlacklist(IReadOnlyStore snapshot)
         {
             var prefixKey = CreateStorageKey(Prefix_BlacklistedNode);

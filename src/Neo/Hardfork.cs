@@ -19,6 +19,5 @@ namespace Neo
         HF_Domovoi,
         HF_Echidna,
         HF_Faun,
-        HF_Gala
     }
 }

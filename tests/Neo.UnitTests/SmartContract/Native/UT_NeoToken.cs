@@ -1289,17 +1289,17 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Test_HF_Gala_Blacklist()
+        public void Test_HF_Faun_Blacklist()
         {
-            // Create settings with HF_Gala enabled
-            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Gala\": 10");
+            // Create settings with HF_Faun enabled
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Faun\": 10");
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
             var settings = ProtocolSettings.Load(stream);
 
             var clonedCache = _snapshotCache.CloneCache();
             var persistingBlock = new Block { Header = new Header() };
 
-            // Test WITHOUT HF_Gala
+            // Test WITHOUT HF_Faun
             persistingBlock.Header.Index = 9;
 
             using (var engine = ApplicationEngine.Create(TriggerType.Application,
@@ -1310,13 +1310,13 @@ namespace Neo.UnitTests.SmartContract.Native
                 var removeFromBlacklist = methods.Values.Where(u => u.Name == "removeFromBlacklist").ToArray();
                 var getBlacklist = methods.Values.Where(u => u.Name == "getBlacklist").ToArray();
 
-                // Methods should not exist before HF_Gala
+                // Methods should not exist before HF_Faun
                 Assert.HasCount(0, addToBlacklist);
                 Assert.HasCount(0, removeFromBlacklist);
                 Assert.HasCount(0, getBlacklist);
             }
 
-            // Test WITH HF_Gala
+            // Test WITH HF_Faun
             persistingBlock.Header.Index = 10;
 
             using (var engine = ApplicationEngine.Create(TriggerType.Application,
@@ -1327,7 +1327,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 var removeFromBlacklist = methods.Values.Where(u => u.Name == "removeFromBlacklist").ToArray();
                 var getBlacklist = methods.Values.Where(u => u.Name == "getBlacklist").ToArray();
 
-                // Methods should exist after HF_Gala
+                // Methods should exist after HF_Faun
                 Assert.HasCount(1, addToBlacklist);
                 Assert.HasCount(1, removeFromBlacklist);
                 Assert.HasCount(1, getBlacklist);
