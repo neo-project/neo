@@ -73,28 +73,28 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 1 << 15, CallFlags.WriteStates);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Storage.SelfGet.
+        /// The <see cref="InteropDescriptor"/> of System.Storage.GetLocal.
         /// Gets the entry with the specified key from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_SelfGet = Register("System.Storage.SelfGet", nameof(GetSelf), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
+        public static readonly InteropDescriptor System_Storage_GetLocal = Register("System.Storage.GetLocal", nameof(GetLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Storage.SelfFind.
+        /// The <see cref="InteropDescriptor"/> of System.Storage.FindLocal.
         /// Finds the entries from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_SelfFind = Register("System.Storage.SelfFind", nameof(FindSelf), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
+        public static readonly InteropDescriptor System_Storage_FindLocal = Register("System.Storage.FindLocal", nameof(FindLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Storage.SelfPut.
+        /// The <see cref="InteropDescriptor"/> of System.Storage.PutLocal.
         /// Puts a new entry into the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_SelfPut = Register("System.Storage.SelfPut", nameof(PutSelf), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
+        public static readonly InteropDescriptor System_Storage_PutLocal = Register("System.Storage.PutLocal", nameof(PutLocal), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Storage.SelfDelete.
+        /// The <see cref="InteropDescriptor"/> of System.Storage.DeleteLocal.
         /// Deletes an entry from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_SelfDelete = Register("System.Storage.SelfDelete", nameof(DeleteSelf), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
+        public static readonly InteropDescriptor System_Storage_DeleteLocal = Register("System.Storage.DeleteLocal", nameof(DeleteLocal), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
 
         /// <summary>
         /// The implementation of System.Storage.GetContext.
@@ -160,12 +160,12 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of System.Storage.SelfGet.
+        /// The implementation of System.Storage.GetLocal.
         /// Gets the entry with the specified key from the storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The value of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
-        protected internal ReadOnlyMemory<byte>? GetSelf(byte[] key)
+        protected internal ReadOnlyMemory<byte>? GetLocal(byte[] key)
         {
             return Get(GetReadOnlyContext(), key);
         }
@@ -207,13 +207,13 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of System.Storage.SelfFind.
+        /// The implementation of System.Storage.FindLocal.
         /// Finds the entries from the storage.
         /// </summary>
         /// <param name="prefix">The prefix of keys to find.</param>
         /// <param name="options">The options of the search.</param>
         /// <returns>An iterator for the results.</returns>
-        protected internal IIterator FindSelf(byte[] prefix, FindOptions options)
+        protected internal IIterator FindLocal(byte[] prefix, FindOptions options)
         {
             return Find(GetReadOnlyContext(), prefix, options);
         }
@@ -262,12 +262,12 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of System.Storage.SelfPut.
+        /// The implementation of System.Storage.PutLocal.
         /// Puts a new entry into the storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <param name="value">The value of the entry.</param>
-        protected internal void PutSelf(byte[] key, byte[] value)
+        protected internal void PutLocal(byte[] key, byte[] value)
         {
             Put(GetStorageContext(), key, value);
         }
@@ -289,11 +289,11 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of System.Storage.SelfDelete.
+        /// The implementation of System.Storage.DeleteLocal.
         /// Deletes an entry from the storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
-        protected internal void DeleteSelf(byte[] key)
+        protected internal void DeleteLocal(byte[] key)
         {
             Delete(GetStorageContext(), key);
         }
