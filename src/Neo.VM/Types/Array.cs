@@ -112,21 +112,6 @@ namespace Neo.VM.Types
         internal override bool Equals(StackItem? other, ExecutionEngineLimits limits) =>
             ReferenceEquals(this, other);
 
-        public override int GetHashCode()
-        {
-            if (_hashCode == 0)
-            {
-                var code = new HashCode();
-
-                code.Add(Type);
-                foreach (var k in SubItems)
-                    code.Add(k?.GetHashCode() ?? 0);
-
-                _hashCode = code.ToHashCode();
-            }
-            return _hashCode;
-        }
-
         public override void Clear()
         {
             if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not clear.");
