@@ -28,7 +28,6 @@ using System.Linq.Expressions;
 using System.Net.Security;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Address = Neo.Plugins.RpcServer.Model.Address;
@@ -66,6 +65,7 @@ namespace Neo.Plugins.RpcServer
             // An address can be either UInt160 or Base58Check format.
             // If only UInt160 format is allowed, use UInt160 as parameter type.
             ParameterConverter.RegisterConversion<Address>(token => token.ToAddress(addressVersion));
+            ParameterConverter.RegisterConversion<Address[]>(token => token.ToAddresses(addressVersion));
 
             localNode = system.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
             RegisterMethods(this);
