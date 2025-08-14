@@ -299,6 +299,15 @@ namespace Neo.Plugins.RpcServer
             return new Address(scriptHash, version);
         }
 
+        internal static Address[] ToAddresses(this JToken token, byte version)
+        {
+            if (token is null) return null;
+            if (token is not JArray array)
+                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Addresses: {token}"));
+
+            return array.Select(p => ToAddress(p, version)).ToArray();
+        }
+
         private static ContractParameter[] ToContractParameters(this JToken token)
         {
             if (token is null) return null;

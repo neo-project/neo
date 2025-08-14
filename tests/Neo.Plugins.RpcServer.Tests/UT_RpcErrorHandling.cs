@@ -107,7 +107,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // The message might include additional data and stack trace in DEBUG mode,
             // so just check that it contains the expected message
             var actualMessage = response["error"]["message"].AsString();
-            Assert.IsTrue(actualMessage.Contains(RpcError.AlreadyExists.Message),
+            Assert.Contains(RpcError.AlreadyExists.Message, actualMessage,
                 $"Expected message to contain '{RpcError.AlreadyExists.Message}' but got '{actualMessage}'");
         }
 
@@ -146,7 +146,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // The message might include additional data and stack trace in DEBUG mode,
             // so just check that it contains the expected message
             var actualMessage = response["error"]["message"].AsString();
-            Assert.IsTrue(actualMessage.Contains(RpcError.AlreadyExists.Message),
+            Assert.Contains(RpcError.AlreadyExists.Message, actualMessage,
                 $"Expected message to contain '{RpcError.AlreadyExists.Message}' but got '{actualMessage}'");
         }
 
@@ -311,7 +311,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // The message might include additional data and stack trace in DEBUG mode,
             // so just check that it contains the expected message
             var actualMessage = response["error"]["message"].AsString();
-            Assert.IsTrue(actualMessage.Contains(RpcError.AlreadyExists.Message),
+            Assert.Contains(RpcError.AlreadyExists.Message, actualMessage,
                 $"Expected message to contain '{RpcError.AlreadyExists.Message}' but got '{actualMessage}'");
         }
 

@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -87,7 +87,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -122,7 +122,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -150,7 +150,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -184,7 +184,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -265,7 +265,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 
@@ -312,7 +312,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(expected, null);
+            Assert.AreNotEqual(null, expected);
             Assert.IsFalse(expected.Equals(null));
         }
 

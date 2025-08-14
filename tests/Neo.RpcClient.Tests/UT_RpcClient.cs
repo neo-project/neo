@@ -67,7 +67,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestErrorResponse()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == (nameof(rpc.SendRawTransactionAsync) + "error").ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.SendRawTransactionAsync) + "error", StringComparison.CurrentCultureIgnoreCase));
             try
             {
                 var result = await rpc.SendRawTransactionAsync(Convert.FromBase64String(test.Request.Params[0].AsString()).AsSerializable<Transaction>());
@@ -82,7 +82,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestNoThrowErrorResponse()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == (nameof(rpc.SendRawTransactionAsync) + "error").ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.SendRawTransactionAsync) + "error", StringComparison.CurrentCultureIgnoreCase));
             handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
             handlerMock.Protected()
                // Setup the PROTECTED method to mock
@@ -136,7 +136,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetBestBlockHash()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetBestBlockHashAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetBestBlockHashAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetBestBlockHashAsync();
             Assert.AreEqual(test.Response.Result.AsString(), result);
         }
@@ -144,7 +144,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetBlockHex()
         {
-            var tests = TestUtils.RpcTestCases.Where(p => p.Name == nameof(rpc.GetBlockHexAsync).ToLower());
+            var tests = TestUtils.RpcTestCases.Where(p => p.Name.Equals(nameof(rpc.GetBlockHexAsync), StringComparison.CurrentCultureIgnoreCase));
             foreach (var test in tests)
             {
                 var result = await rpc.GetBlockHexAsync(test.Request.Params[0].AsString());
@@ -155,7 +155,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetBlock()
         {
-            var tests = TestUtils.RpcTestCases.Where(p => p.Name == nameof(rpc.GetBlockAsync).ToLower());
+            var tests = TestUtils.RpcTestCases.Where(p => p.Name.Equals(nameof(rpc.GetBlockAsync), StringComparison.CurrentCultureIgnoreCase));
             foreach (var test in tests)
             {
                 var result = await rpc.GetBlockAsync(test.Request.Params[0].AsString());
@@ -166,7 +166,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetBlockHeaderCount()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetBlockHeaderCountAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetBlockHeaderCountAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetBlockHeaderCountAsync();
             Assert.AreEqual(test.Response.Result.AsString(), result.ToString());
         }
@@ -174,7 +174,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetBlockCount()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetBlockCountAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetBlockCountAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetBlockCountAsync();
             Assert.AreEqual(test.Response.Result.AsString(), result.ToString());
         }
@@ -182,7 +182,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetBlockHash()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetBlockHashAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetBlockHashAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetBlockHashAsync((uint)test.Request.Params[0].AsNumber());
             Assert.AreEqual(test.Response.Result.AsString(), result.ToString());
         }
@@ -190,7 +190,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetBlockHeaderHex()
         {
-            var tests = TestUtils.RpcTestCases.Where(p => p.Name == nameof(rpc.GetBlockHeaderHexAsync).ToLower());
+            var tests = TestUtils.RpcTestCases.Where(p => p.Name.Equals(nameof(rpc.GetBlockHeaderHexAsync), StringComparison.CurrentCultureIgnoreCase));
             foreach (var test in tests)
             {
                 var result = await rpc.GetBlockHeaderHexAsync(test.Request.Params[0].AsString());
@@ -201,7 +201,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetBlockHeader()
         {
-            var tests = TestUtils.RpcTestCases.Where(p => p.Name == nameof(rpc.GetBlockHeaderAsync).ToLower());
+            var tests = TestUtils.RpcTestCases.Where(p => p.Name.Equals(nameof(rpc.GetBlockHeaderAsync), StringComparison.CurrentCultureIgnoreCase));
             foreach (var test in tests)
             {
                 var result = await rpc.GetBlockHeaderAsync(test.Request.Params[0].AsString());
@@ -212,7 +212,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetCommittee()
         {
-            var tests = TestUtils.RpcTestCases.Where(p => p.Name == nameof(rpc.GetCommitteeAsync).ToLower());
+            var tests = TestUtils.RpcTestCases.Where(p => p.Name.Equals(nameof(rpc.GetCommitteeAsync), StringComparison.CurrentCultureIgnoreCase));
             foreach (var test in tests)
             {
                 var result = await rpc.GetCommitteeAsync();
@@ -223,7 +223,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetContractState()
         {
-            var tests = TestUtils.RpcTestCases.Where(p => p.Name == nameof(rpc.GetContractStateAsync).ToLower());
+            var tests = TestUtils.RpcTestCases.Where(p => p.Name.Equals(nameof(rpc.GetContractStateAsync), StringComparison.CurrentCultureIgnoreCase));
             foreach (var test in tests)
             {
                 var type = test.Request.Params[0].GetType().Name;
@@ -243,7 +243,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetNativeContracts()
         {
-            var tests = TestUtils.RpcTestCases.Where(p => p.Name == nameof(rpc.GetNativeContractsAsync).ToLower());
+            var tests = TestUtils.RpcTestCases.Where(p => p.Name.Equals(nameof(rpc.GetNativeContractsAsync), StringComparison.CurrentCultureIgnoreCase));
             foreach (var test in tests)
             {
                 var result = await rpc.GetNativeContractsAsync();
@@ -254,7 +254,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetRawMempool()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetRawMempoolAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetRawMempoolAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetRawMempoolAsync();
             Assert.AreEqual(test.Response.Result.ToString(), ((JArray)result.Select(p => (JToken)p).ToArray()).ToString());
         }
@@ -262,7 +262,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetRawMempoolBoth()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetRawMempoolBothAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetRawMempoolBothAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetRawMempoolBothAsync();
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
         }
@@ -270,7 +270,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetRawTransactionHex()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetRawTransactionHexAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetRawTransactionHexAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetRawTransactionHexAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(test.Response.Result.AsString(), result);
         }
@@ -278,7 +278,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetRawTransaction()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetRawTransactionAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetRawTransactionAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetRawTransactionAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson(rpc.protocolSettings).ToString());
         }
@@ -286,7 +286,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetStorage()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetStorageAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetStorageAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetStorageAsync(test.Request.Params[0].AsString(), test.Request.Params[1].AsString());
             Assert.AreEqual(test.Response.Result.AsString(), result);
         }
@@ -294,7 +294,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetTransactionHeight()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetTransactionHeightAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetTransactionHeightAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetTransactionHeightAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToString());
         }
@@ -302,7 +302,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetNextBlockValidators()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetNextBlockValidatorsAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetNextBlockValidatorsAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetNextBlockValidatorsAsync();
             Assert.AreEqual(test.Response.Result.ToString(), ((JArray)result.Select(p => p.ToJson()).ToArray()).ToString());
         }
@@ -314,7 +314,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetConnectionCount()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetConnectionCountAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetConnectionCountAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetConnectionCountAsync();
             Assert.AreEqual(test.Response.Result.ToString(), result.ToString());
         }
@@ -322,7 +322,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetPeers()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetPeersAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetPeersAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetPeersAsync();
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
         }
@@ -330,7 +330,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetVersion()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetVersionAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetVersionAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetVersionAsync();
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
         }
@@ -338,7 +338,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestSendRawTransaction()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.SendRawTransactionAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.SendRawTransactionAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.SendRawTransactionAsync(Convert.FromBase64String(test.Request.Params[0].AsString()).AsSerializable<Transaction>());
             Assert.AreEqual(test.Response.Result["hash"].AsString(), result.ToString());
         }
@@ -346,7 +346,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestSubmitBlock()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.SubmitBlockAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.SubmitBlockAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.SubmitBlockAsync(Convert.FromBase64String(test.Request.Params[0].AsString()));
             Assert.AreEqual(test.Response.Result["hash"].AsString(), result.ToString());
         }
@@ -358,7 +358,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestInvokeFunction()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.InvokeFunctionAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.InvokeFunctionAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.InvokeFunctionAsync(test.Request.Params[0].AsString(), test.Request.Params[1].AsString(),
                 ((JArray)test.Request.Params[2]).Select(p => RpcStack.FromJson((JObject)p)).ToArray());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
@@ -369,7 +369,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestInvokeScript()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.InvokeScriptAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.InvokeScriptAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.InvokeScriptAsync(Convert.FromBase64String(test.Request.Params[0].AsString()));
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
         }
@@ -377,7 +377,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetUnclaimedGas()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetUnclaimedGasAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetUnclaimedGasAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetUnclaimedGasAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(result.ToJson().AsString(), RpcUnclaimedGas.FromJson(result.ToJson()).ToJson().AsString());
             Assert.AreEqual(test.Response.Result["unclaimed"].AsString(), result.Unclaimed.ToString());
@@ -390,7 +390,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestListPlugins()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.ListPluginsAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.ListPluginsAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.ListPluginsAsync();
             Assert.AreEqual(test.Response.Result.ToString(), ((JArray)result.Select(p => p.ToJson()).ToArray()).ToString());
         }
@@ -398,7 +398,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestValidateAddress()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.ValidateAddressAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.ValidateAddressAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.ValidateAddressAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
         }
@@ -410,7 +410,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestCloseWallet()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.CloseWalletAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.CloseWalletAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.CloseWalletAsync();
             Assert.AreEqual(test.Response.Result.AsBoolean(), result);
         }
@@ -418,7 +418,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestDumpPrivKey()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.DumpPrivKeyAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.DumpPrivKeyAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.DumpPrivKeyAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(test.Response.Result.AsString(), result);
         }
@@ -426,7 +426,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetNewAddress()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetNewAddressAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetNewAddressAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetNewAddressAsync();
             Assert.AreEqual(test.Response.Result.AsString(), result);
         }
@@ -434,7 +434,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetWalletBalance()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetWalletBalanceAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetWalletBalanceAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetWalletBalanceAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(test.Response.Result["balance"].AsString(), result.Value.ToString());
         }
@@ -442,7 +442,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestGetWalletUnclaimedGas()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetWalletUnclaimedGasAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetWalletUnclaimedGasAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetWalletUnclaimedGasAsync();
             Assert.AreEqual(test.Response.Result.AsString(), result.ToString());
         }
@@ -450,7 +450,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestImportPrivKey()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.ImportPrivKeyAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.ImportPrivKeyAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.ImportPrivKeyAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
         }
@@ -458,7 +458,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestListAddress()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.ListAddressAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.ListAddressAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.ListAddressAsync();
             Assert.AreEqual(test.Response.Result.ToString(), ((JArray)result.Select(p => p.ToJson()).ToArray()).ToString());
         }
@@ -466,7 +466,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestOpenWallet()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.OpenWalletAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.OpenWalletAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.OpenWalletAsync(test.Request.Params[0].AsString(), test.Request.Params[1].AsString());
             Assert.AreEqual(test.Response.Result.AsBoolean(), result);
         }
@@ -474,7 +474,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestSendFrom()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.SendFromAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.SendFromAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.SendFromAsync(test.Request.Params[0].AsString(), test.Request.Params[1].AsString(),
                 test.Request.Params[2].AsString(), test.Request.Params[3].AsString());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToString());
@@ -483,7 +483,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestSendMany()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.SendManyAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.SendManyAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.SendManyAsync(test.Request.Params[0].AsString(), ((JArray)test.Request.Params[1]).Select(p => RpcTransferOut.FromJson((JObject)p, rpc.protocolSettings)));
             Assert.AreEqual(test.Response.Result.ToString(), result.ToString());
         }
@@ -491,7 +491,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public async Task TestSendToAddress()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.SendToAddressAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.SendToAddressAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.SendToAddressAsync(test.Request.Params[0].AsString(), test.Request.Params[1].AsString(), test.Request.Params[2].AsString());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToString());
         }
@@ -503,7 +503,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod()]
         public async Task GetApplicationLogTest()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetApplicationLogAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetApplicationLogAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetApplicationLogAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
         }
@@ -511,7 +511,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod()]
         public async Task GetApplicationLogTest_TriggerType()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == (nameof(rpc.GetApplicationLogAsync) + "_triggertype").ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetApplicationLogAsync) + "_triggertype", StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetApplicationLogAsync(test.Request.Params[0].AsString(), TriggerType.OnPersist);
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
         }
@@ -519,7 +519,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod()]
         public async Task GetNep17TransfersTest()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetNep17TransfersAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetNep17TransfersAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetNep17TransfersAsync(test.Request.Params[0].AsString(), (ulong)test.Request.Params[1].AsNumber(), (ulong)test.Request.Params[2].AsNumber());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson(rpc.protocolSettings).ToString());
             test = TestUtils.RpcTestCases.Find(p => p.Name == (nameof(rpc.GetNep17TransfersAsync).ToLower() + "_with_null_transferaddress"));
@@ -530,7 +530,7 @@ namespace Neo.Network.RPC.Tests
         [TestMethod()]
         public async Task GetNep17BalancesTest()
         {
-            var test = TestUtils.RpcTestCases.Find(p => p.Name == nameof(rpc.GetNep17BalancesAsync).ToLower());
+            var test = TestUtils.RpcTestCases.Find(p => p.Name.Equals(nameof(rpc.GetNep17BalancesAsync), StringComparison.CurrentCultureIgnoreCase));
             var result = await rpc.GetNep17BalancesAsync(test.Request.Params[0].AsString());
             Assert.AreEqual(test.Response.Result.ToString(), result.ToJson(rpc.protocolSettings).ToString());
         }
