@@ -377,7 +377,7 @@ namespace Neo.Plugins.RpcServer
             for (var i = 0; i < parameterInfos.Length; i++)
             {
                 var param = parameterInfos[i];
-                if (arguments.Count > i && arguments[i] != null)
+                if (arguments.Count > i && arguments[i] != null) // Do not parse null values
                 {
                     try
                     {
