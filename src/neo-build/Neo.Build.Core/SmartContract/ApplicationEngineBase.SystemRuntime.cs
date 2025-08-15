@@ -83,7 +83,7 @@ namespace Neo.Build.Core.SmartContract
             var result = GetScriptContainer();
 
             _traceLogger.LogDebug(DebugEventLog.Call,
-                "{SysCall} Result=\"{Result}\"",
+                "{SysCall} Result={Result}",
                 nameof(System_Runtime_GetScriptContainer), result.ToJson());
 
             return result;
@@ -129,7 +129,7 @@ namespace Neo.Build.Core.SmartContract
             RuntimeLoadScript(script, callFlags, args);
 
             _traceLogger.LogDebug(DebugEventLog.Call,
-                "{SysCall} Script=\"{Script}\" Flags=\"{Flags}\" Args=\"{Args}\"",
+                "{SysCall} Script=\"{Script}\" Flags=\"{Flags}\" Args={Args}",
                 nameof(System_Runtime_LoadScript), scriptString, callFlags.ToString(), args.ToJson());
         }
 
@@ -180,7 +180,7 @@ namespace Neo.Build.Core.SmartContract
             RuntimeNotify(eventName, state);
 
             _traceLogger.LogDebug(DebugEventLog.Notify,
-                "{SysCall} Event=\"{Event}\" State=\"{State}\"",
+                "{SysCall} Event=\"{Event}\" State={State}",
                 nameof(System_Runtime_Notify), eventName, state.ToJson());
         }
 
@@ -189,7 +189,7 @@ namespace Neo.Build.Core.SmartContract
             var result = GetNotifications(scriptHash);
 
             _traceLogger.LogDebug(DebugEventLog.Call,
-                "{SysCall} Contract=\"{Hash}\" Result=\"{Result}\"",
+                "{SysCall} Contract=\"{Hash}\" Result={Result}",
                 nameof(System_Runtime_GetNotifications), scriptHash, result.ToJson());
 
             return result;
@@ -222,8 +222,8 @@ namespace Neo.Build.Core.SmartContract
             var resultStrings = result.Select(s => s.ToJson());
 
             _traceLogger.LogDebug(DebugEventLog.Call,
-                "{SysCall} Result=\"{Result}\"",
-                nameof(System_Runtime_CurrentSigners), string.Join(',', resultStrings));
+                "{SysCall} Result={Result}",
+                nameof(System_Runtime_CurrentSigners), string.Join(';', resultStrings));
 
             return result;
         }

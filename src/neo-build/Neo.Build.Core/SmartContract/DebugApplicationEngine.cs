@@ -56,33 +56,31 @@ namespace Neo.Build.Core.SmartContract
         private readonly Dictionary<Breakpoint, HashSet<uint>> _breakPoints = [];
         private readonly Dictionary<ExecutionContextState, DebugStorage> _snapshotStack = [];
 
-        public void AddBreakPoints(Script script, uint? blockIndex, params uint[] positions)
+        public void AddBreakPoints(Script script, uint? blockIndex, UInt256? txHash, uint position)
         {
-            var bp = Breakpoint.Create(script, blockIndex);
+            var bp = Breakpoint.Create(script, blockIndex, txHash);
 
             if (_breakPoints.TryGetValue(bp, out var positionTable))
-                positionTable.UnionWith(positions);
+                positionTable.Add(position);
             else
             {
-                positionTable = [];
-                positionTable.UnionWith(positions);
+                positionTable = [position];
                 _breakPoints.Add(bp, positionTable);
             }
         }
 
-        public bool RemoveBreakPoints(Script script, uint? blockIndex, params uint[] positions)
+        public bool RemoveBreakPoints(Script script, uint? blockIndex, UInt256? txHash, uint position)
         {
-            var bp = Breakpoint.Create(script, blockIndex);
+            var bp = Breakpoint.Create(script, blockIndex, txHash);
 
             if (_breakPoints.TryGetValue(bp, out var positionTable))
             {
-                foreach (var position in positions)
-                    positionTable.Remove(position);
+                var ret = positionTable.Remove(position);
 
                 if (positionTable.Count == 0)
-                    _breakPoints.Remove(bp);
+                    ret = _breakPoints.Remove(bp);
 
-                return true;
+                return ret;
             }
 
             return false;
