@@ -265,7 +265,7 @@ namespace Neo.Plugins.RpcServer
                 throw new RpcException(RpcError.InvalidParams.WithData("Max allowed signers exceeded."));
 
             var signers = new Signer[json.Count];
-            for (int i = 0; i < json.Count; i++)
+            for (var i = 0; i < json.Count; i++)
             {
                 if (json[i] is null || json[i] is not JObject obj)
                     throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Signer at {i}."));
@@ -302,7 +302,7 @@ namespace Neo.Plugins.RpcServer
                 throw new RpcException(RpcError.InvalidParams.WithData("Max allowed witness exceeded."));
 
             var witnesses = new List<Witness>(json.Count);
-            for (int i = 0; i < json.Count; i++)
+            for (var i = 0; i < json.Count; i++)
             {
                 if (json[i] is null || json[i] is not JObject obj)
                     throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Witness at {i}."));
