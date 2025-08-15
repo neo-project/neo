@@ -350,7 +350,7 @@ namespace Neo.Plugins.RpcServer
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Addresses: {token}"));
 
             var addresses = new Address[array.Count];
-            for (int i = 0; i < array.Count; i++)
+            for (var i = 0; i < array.Count; i++)
             {
                 if (array[i] is null) throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Address at {i}."));
                 addresses[i] = ToAddress(array[i]!, version);
