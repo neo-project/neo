@@ -364,7 +364,7 @@ namespace Neo.Plugins.RpcServer
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Addresses: {token}"));
 
             var parameters = new ContractParameter[array.Count];
-            for (int i = 0; i < array.Count; i++)
+            for (var i = 0; i < array.Count; i++)
             {
                 if (array[i] is null || array[i] is not JObject obj)
                     throw new RpcException(RpcError.InvalidParams.WithData($"Invalid ContractParameter at [{i}]"));
