@@ -8,8 +8,9 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
-
+#nullable enable
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Plugins.RpcServer
 {
@@ -37,7 +38,29 @@ namespace Neo.Plugins.RpcServer
         /// <param name="error">The error to throw.</param>
         public static void ThrowIfNull<T>(T value, string paramName, RpcError error)
         {
-            if (value is null) throw new RpcException(error.WithData($"Parameter '{paramName}' is null"));
+            if (value is null) throw new RpcException(string.IsNullOrWhiteSpace(error.Data) ? error.WithData($"Parameter '{paramName}' is null") : error);
+        }
+
+        /// <summary>
+        /// Throws an exception if the condition is true.
+        /// </summary>
+        /// <param name="condition">The condition to check.</param>
+        /// <param name="error">The error to throw.</param>
+        /// <param name="conditionExpresion">The expresion to evaluate.</param>
+        public static void ThrowIfTrue(bool condition, RpcError error, [CallerArgumentExpression(nameof(condition))] string? conditionExpresion = null)
+        {
+            if (condition) throw new RpcException(string.IsNullOrWhiteSpace(error.Data) ? error.WithData($"Condition {conditionExpresion} is true") : error);
+        }
+
+        /// <summary>
+        /// Throws an exception if the value is false.
+        /// </summary>
+        /// <param name="condition">The condition to check.</param>
+        /// <param name="error">The condition evaluated.</param>
+        /// <param name="conditionExpresion">The error to throw.</param>
+        public static void ThrowIfFalse(bool condition, RpcError error, [CallerArgumentExpression(nameof(condition))] string? conditionExpresion = null)
+        {
+            if (!condition) throw new RpcException(string.IsNullOrWhiteSpace(error.Data) ? error.WithData($"Condition {conditionExpresion} is false") : error);
         }
     }
 }
