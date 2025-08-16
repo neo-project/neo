@@ -95,37 +95,29 @@ namespace Neo.Plugins.ApplicationLogs
         #region JSON RPC Methods
 
         [RpcMethod]
-        public JToken GetApplicationLog(JArray _params)
+        public JToken GetApplicationLog(UInt256 hash, string triggerType = "")
         {
-            if (_params == null || _params.Count == 0)
-                throw new RpcException(RpcError.InvalidParams);
-            if (UInt256.TryParse(_params[0]!.AsString(), out var hash))
-            {
-                var raw = BlockToJObject(hash);
-                if (raw == null)
-                    raw = TransactionToJObject(hash);
-                if (raw == null)
-                    throw new RpcException(RpcError.InvalidParams.WithData("Unknown transaction/blockhash"));
+            var raw = BlockToJObject(hash);
+            if (raw == null) raw = TransactionToJObject(hash);
+            if (raw == null) throw new RpcException(RpcError.InvalidParams.WithData("Unknown transaction/blockhash"));
 
-                if (_params.Count >= 2 && Enum.TryParse(_params[1]!.AsString(), true, out TriggerType triggerType))
+            if (!string.IsNullOrEmpty(triggerType) && Enum.TryParse(triggerType, true, out TriggerType _))
+            {
+                var executions = raw["executions"] as JArray;
+                if (executions != null)
                 {
-                    var executions = raw["executions"] as JArray;
-                    if (executions != null)
+                    for (var i = 0; i < executions.Count;)
                     {
-                        for (var i = 0; i < executions.Count;)
-                        {
-                            if (executions[i]!["trigger"]?.AsString().Equals(triggerType.ToString(), StringComparison.OrdinalIgnoreCase) == false)
-                                executions.RemoveAt(i);
-                            else
-                                i++;
-                        }
+                        if (executions[i]!["trigger"]?.AsString().Equals(triggerType, StringComparison.OrdinalIgnoreCase) == false)
+                            executions.RemoveAt(i);
+                        else
+                            i++;
                     }
                 }
-
-                return raw;
             }
-            else
-                throw new RpcException(RpcError.InvalidParams);
+
+            return raw;
+
         }
 
         #endregion
@@ -215,7 +207,8 @@ namespace Neo.Plugins.ApplicationLogs
 
         #region Blockchain Events
 
-        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot,
+            IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != ApplicationLogsSettings.Default.Network)
                 return;
@@ -337,16 +330,6 @@ namespace Neo.Plugins.ApplicationLogs
             if (contractEvent == null)
                 return $"{parameterIndex}";
             return contractEvent.Parameters[parameterIndex].Name;
-        }
-
-        private JObject EventModelToJObject(BlockchainEventModel model)
-        {
-            return new JObject()
-            {
-                ["contract"] = model.ScriptHash.ToString(),
-                ["eventname"] = model.EventName,
-                ["state"] = model.State.Select(s => s.ToJson()).ToArray()
-            };
         }
 
         private JObject? TransactionToJObject(UInt256 txHash)
