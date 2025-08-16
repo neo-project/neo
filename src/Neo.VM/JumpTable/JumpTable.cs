@@ -49,29 +49,6 @@ namespace Neo.VM
         public JumpTable()
         {
             Initialize(typeof(JumpTable));
-            //// Fill defined
-
-            //foreach (var mi in GetType().GetMethods())
-            //{
-            //    if (Enum.TryParse<OpCode>(mi.Name, true, out var opCode))
-            //    {
-            //        if (Table[(byte)opCode] is not null)
-            //        {
-            //            throw new InvalidOperationException($"Opcode {opCode} is already defined.");
-            //        }
-
-            //        Table[(byte)opCode] = (DelAction)mi.CreateDelegate(typeof(DelAction), this);
-            //    }
-            //}
-
-            //// Fill with undefined
-
-            //for (var x = 0; x < Table.Length; x++)
-            //{
-            //    if (Table[x] is not null) continue;
-
-            //    Table[x] = InvalidOpcode;
-            //}
         }
         private void Initialize(
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
