@@ -40,7 +40,7 @@ namespace Neo.Build.ToolSet.Providers
             }
 
             // Hosting Environment
-            Data.Add(HostDefaults.EnvironmentKey, NeoHostingEnvironments.Localnet);
+            Data.Add(HostDefaults.EnvironmentKey, NeoHostingEnvironments.LocalNet);
             Data.Add(HostDefaults.ContentRootKey, Environment.CurrentDirectory);
 
             // Node Storage Configuration

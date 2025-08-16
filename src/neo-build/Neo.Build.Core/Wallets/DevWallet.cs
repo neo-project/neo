@@ -26,6 +26,8 @@ using System.Linq;
 
 namespace Neo.Build.Core.Wallets
 {
+    using Helper = Neo.SmartContract.Helper;
+
     /// <summary>
     /// Developer wallet.
     /// </summary>
@@ -167,41 +169,52 @@ namespace Neo.Build.Core.Wallets
             return wa;
         }
 
-        public override bool DeleteAccount(UInt160 scriptHash) =>
-            _walletAccounts.TryRemove(scriptHash, out _);
+        public override bool DeleteAccount(UInt160 scriptHash)
+        {
+            var account = GetAccount(scriptHash);
+            if (account is null)
+                return false;
+            return _walletAccounts.TryRemove(scriptHash, out _);
+        }
 
         public bool DeleteAccount(string name)
         {
             var account = GetAccount(name);
-
             if (account is null)
                 return false;
-
             return DeleteAccount(account.ScriptHash);
         }
 
         public override WalletAccount? GetAccount(UInt160 scriptHash)
         {
-            _ = _walletAccounts.TryGetValue(scriptHash, out var wa);
+            if (_walletAccounts.TryGetValue(scriptHash, out var wa))
+            {
+                if (wa is not null and { Lock: false })
+                    return wa;
+                throw new NeoBuildWalletAccountLockedException($"{scriptHash}");
+            }
 
-            return wa;
+            return null;
         }
 
-        public IEnumerable<DevWalletAccount> GetConsensusAccounts()
-        {
-            var keys = _walletAccounts
-                .Where(static w => w.Value.HasKey && w.Value.IsDefault)
+        public IEnumerable<DevWalletAccount> GetConsensusAccounts() =>
+            _walletAccounts
+                .Where(static w =>
+                    w.Value.HasKey &&
+                    w.Value.IsDefault &&
+                    w.Value.Lock == false &&
+                    Helper.IsMultiSigContract(w.Value.Contract.Script))
                 .Select(static s => s.Value);
 
-            return keys;
-        }
-
         public WalletAccount? GetAccount(string name) =>
-            _walletAccounts.Values.Where(w => w.Label.Equals(name))
+            _walletAccounts.Values.Where(w =>
+                    w.Lock == false &&
+                    w.Label.Equals(name))
                 .FirstOrDefault();
 
         public override IEnumerable<WalletAccount> GetAccounts() =>
-            _walletAccounts.Values;
+            _walletAccounts.Values
+                .Where(static w => w.Lock == false);
 
         public override void Delete()
         {
