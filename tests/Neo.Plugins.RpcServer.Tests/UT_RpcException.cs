@@ -58,7 +58,6 @@ namespace Neo.Plugins.RpcServer.Tests
             var exCondFalseWithData = Assert.Throws<RpcException>(() => RpcException.ThrowIfFalse(paramFakeA == (paramFakeB + 1), RpcError.InvalidParams.WithData(rpcDataError)));
             Assert.AreEqual(RpcError.InvalidParams.Code, exCondFalseWithData.HResult);
             Assert.AreEqual("Invalid params - RpcError_DATA", exCondFalseWithData.Message);
-
         }
     }
 }
