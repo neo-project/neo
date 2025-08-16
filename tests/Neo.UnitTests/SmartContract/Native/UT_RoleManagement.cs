@@ -72,7 +72,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Array) { Value = publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
                 );
                 snapshot1.Commit();
-                Assert.AreEqual(1, notifications.Count);
+                Assert.HasCount(1, notifications);
                 Assert.AreEqual("Designation", notifications[0].EventName);
 
                 var snapshot2 = system.GetTestSnapshotCache(false);
@@ -84,7 +84,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(1u) }
                 );
                 Assert.IsInstanceOfType<Array>(ret);
-                Assert.AreEqual(2, (ret as Array).Count);
+                Assert.HasCount(2, ret as Array);
                 Assert.AreEqual(publicKeys[0].ToArray().ToHexString(), (ret as Array)[0].GetSpan().ToHexString());
                 Assert.AreEqual(publicKeys[1].ToArray().ToHexString(), (ret as Array)[1].GetSpan().ToHexString());
 
@@ -95,7 +95,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(0) }
                 );
                 Assert.IsInstanceOfType<Array>(ret);
-                Assert.AreEqual(0, (ret as Array).Count);
+                Assert.IsEmpty(ret as Array);
             }
         }
 

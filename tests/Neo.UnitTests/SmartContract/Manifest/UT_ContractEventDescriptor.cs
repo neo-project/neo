@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             };
             var actual = ContractEventDescriptor.FromJson(expected.ToJson());
             Assert.AreEqual(expected.Name, actual.Name);
-            Assert.AreEqual(0, actual.Parameters.Length);
+            Assert.IsEmpty(actual.Parameters);
         }
     }
 }

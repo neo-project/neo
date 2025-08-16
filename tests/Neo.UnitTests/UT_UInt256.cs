@@ -38,8 +38,17 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGernerator2()
         {
-            UInt256 uInt256 = new(new byte[32]);
+            UInt256 uInt256 = new byte[32];
             Assert.IsNotNull(uInt256);
+            Assert.AreEqual(UInt256.Zero, uInt256);
+        }
+
+        [TestMethod]
+        public void TestGernerator3()
+        {
+            UInt256 uInt256 = "0xff00000000000000000000000000000000000000000000000000000000000001";
+            Assert.IsNotNull(uInt256);
+            Assert.AreEqual("0xff00000000000000000000000000000000000000000000000000000000000001", uInt256.ToString());
         }
 
         [TestMethod]
@@ -51,13 +60,14 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual(0, UInt256.Zero.CompareTo(UInt256.Zero));
             Assert.AreEqual(-1, UInt256.Zero.CompareTo(result));
             Assert.AreEqual(1, result.CompareTo(UInt256.Zero));
+            Assert.AreEqual(0, result.CompareTo(temp));
         }
 
         [TestMethod]
         public void TestDeserialize()
         {
-            using MemoryStream stream = new();
-            using BinaryWriter writer = new(stream);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
             writer.Write(new byte[20]);
             UInt256 uInt256 = new();
             Assert.ThrowsExactly<FormatException>(() =>
@@ -70,9 +80,10 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestEquals()
         {
-            byte[] temp = new byte[32];
+            var temp = new byte[32];
             temp[31] = 0x01;
-            UInt256 result = new(temp);
+
+            var result = new UInt256(temp);
             Assert.IsTrue(UInt256.Zero.Equals(UInt256.Zero));
             Assert.IsFalse(UInt256.Zero.Equals(result));
             Assert.IsFalse(result.Equals(null));
@@ -81,9 +92,9 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestEquals1()
         {
-            UInt256 temp1 = new();
-            UInt256 temp2 = new();
-            UInt160 temp3 = new();
+            var temp1 = new UInt256();
+            var temp2 = new UInt256();
+            var temp3 = new UInt160();
             Assert.IsFalse(temp1.Equals(null));
             Assert.IsTrue(temp1.Equals(temp1));
             Assert.IsTrue(temp1.Equals(temp2));

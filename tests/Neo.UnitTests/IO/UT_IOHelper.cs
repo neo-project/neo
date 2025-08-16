@@ -25,42 +25,36 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializableGeneric()
         {
-            byte[] caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                            0x00,0x00,0x00,0x00,0x00,
-                                            0x00,0x00,0x00,0x00,0x00,
-                                            0x00,0x00,0x00,0x00,0x00 };
-            UInt160 result = caseArray.AsSerializable<UInt160>();
+            var caseArray = Enumerable.Repeat((byte)0x00, 20).ToArray();
+            var result = caseArray.AsSerializable<UInt160>();
             Assert.AreEqual(UInt160.Zero, result);
         }
 
         [TestMethod]
         public void TestReadFixedBytes()
         {
-            byte[] data = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+            byte[] data = [0x01, 0x02, 0x03, 0x04];
 
             // Less data
-
-            using (BinaryReader reader = new(new MemoryStream(data), Encoding.UTF8, false))
+            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
             {
-                byte[] result = reader.ReadFixedBytes(3);
+                var result = reader.ReadFixedBytes(3);
 
                 Assert.AreEqual("010203", result.ToHexString());
                 Assert.AreEqual(3, reader.BaseStream.Position);
             }
 
             // Same data
-
-            using (BinaryReader reader = new(new MemoryStream(data), Encoding.UTF8, false))
+            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
             {
-                byte[] result = reader.ReadFixedBytes(4);
+                var result = reader.ReadFixedBytes(4);
 
                 Assert.AreEqual("01020304", result.ToHexString());
                 Assert.AreEqual(4, reader.BaseStream.Position);
             }
 
             // More data
-
-            using (BinaryReader reader = new(new MemoryStream(data), Encoding.UTF8, false))
+            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
             {
                 Assert.ThrowsExactly<FormatException>(() => _ = reader.ReadFixedBytes(5));
                 Assert.AreEqual(4, reader.BaseStream.Position);
@@ -72,25 +66,26 @@ namespace Neo.UnitTests.IO
         {
             var caseArray = new UInt160[]
             {
-                null, UInt160.Zero, new UInt160(
-                new byte[] {
+                null,
+                UInt160.Zero,
+                new UInt160(
+                [
                     0xAA,0x00,0x00,0x00,0x00,
                     0xBB,0x00,0x00,0x00,0x00,
                     0xCC,0x00,0x00,0x00,0x00,
                     0xDD,0x00,0x00,0x00,0x00
-                })
+                ])
             };
 
             byte[] data;
-            using (MemoryStream stream = new())
-            using (BinaryWriter writter = new(stream))
+            using var stream = new MemoryStream();
+            using var writter = new BinaryWriter(stream);
             {
                 writter.WriteNullableArray(caseArray);
                 data = stream.ToArray();
             }
 
             // Read Error
-
             Assert.ThrowsExactly<FormatException>(() =>
             {
                 var reader = new MemoryReader(data);
@@ -99,8 +94,7 @@ namespace Neo.UnitTests.IO
             });
 
             // Read 100%
-
-            MemoryReader reader = new(data);
+            var reader = new MemoryReader(data);
             var read = reader.ReadNullableArray<UInt160>();
             CollectionAssert.AreEqual(caseArray, read);
         }
@@ -108,27 +102,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializable()
         {
-            byte[] caseArray = [0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00];
-            ISerializable result = caseArray.AsSerializable<UInt160>();
+            var caseArray = Enumerable.Repeat((byte)0x00, 20).ToArray();
+            var result = caseArray.AsSerializable<UInt160>();
             Assert.AreEqual(UInt160.Zero, result);
         }
 
@@ -149,7 +124,7 @@ namespace Neo.UnitTests.IO
             byteArray = data.CompressLz4();
             result = byteArray.Span.DecompressLz4(byte.MaxValue);
 
-            Assert.IsTrue(byteArray.Length < result.Length);
+            Assert.IsLessThan(result.Length, byteArray.Length);
             CollectionAssert.AreEqual(result, data);
 
             // Error max length
@@ -169,43 +144,46 @@ namespace Neo.UnitTests.IO
         {
             byte[] byteArray = new UInt160[] { UInt160.Zero }.ToByteArray();
             UInt160[] result = byteArray.AsSerializableArray<UInt160>();
-            Assert.AreEqual(1, result.Length);
+            Assert.HasCount(1, result);
             Assert.AreEqual(UInt160.Zero, result[0]);
         }
 
         [TestMethod]
         public void TestReadSerializable()
         {
-            MemoryStream stream = new();
-            BinaryWriter writer = new(stream);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
             writer.Write(UInt160.Zero);
-            MemoryReader reader = new(stream.ToArray());
-            UInt160 result = reader.ReadSerializable<UInt160>();
+
+            var reader = new MemoryReader(stream.ToArray());
+            var result = reader.ReadSerializable<UInt160>();
             Assert.AreEqual(UInt160.Zero, result);
         }
 
         [TestMethod]
         public void TestReadSerializableArray()
         {
-            MemoryStream stream = new();
-            BinaryWriter writer = new(stream);
-            writer.Write(new UInt160[] { UInt160.Zero });
-            MemoryReader reader = new(stream.ToArray());
-            UInt160[] resultArray = reader.ReadSerializableArray<UInt160>();
-            Assert.AreEqual(1, resultArray.Length);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.Write([UInt160.Zero]);
+
+            var reader = new MemoryReader(stream.ToArray());
+            var resultArray = reader.ReadSerializableArray<UInt160>();
+            Assert.HasCount(1, resultArray);
             Assert.AreEqual(UInt160.Zero, resultArray[0]);
         }
 
         [TestMethod]
         public void TestReadVarBytes()
         {
-            MemoryStream stream = new();
-            BinaryWriter writer = new(stream);
-            writer.WriteVarBytes(new byte[] { 0xAA, 0xAA });
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.WriteVarBytes([0xAA, 0xAA]);
             stream.Seek(0, SeekOrigin.Begin);
-            BinaryReader reader = new(stream);
-            byte[] byteArray = reader.ReadVarBytes(10);
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xAA, 0xAA }), Encoding.Default.GetString(byteArray));
+
+            var reader = new BinaryReader(stream);
+            var byteArray = reader.ReadVarBytes(10);
+            Assert.AreEqual(Encoding.Default.GetString([0xAA, 0xAA]), Encoding.Default.GetString(byteArray));
         }
 
         [TestMethod]
@@ -215,31 +193,33 @@ namespace Neo.UnitTests.IO
             {
                 if (i == 0)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     writer.WriteVarInt(0xFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new(stream);
-                    ulong result = reader.ReadVarInt(0xFFFF);
+
+                    var reader = new BinaryReader(stream);
+                    var result = reader.ReadVarInt(0xFFFF);
                     Assert.AreEqual((ulong)0xFFFF, result);
                 }
                 else if (i == 1)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     writer.WriteVarInt(0xFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new(stream);
-                    ulong result = reader.ReadVarInt(0xFFFFFFFF);
+                    var reader = new BinaryReader(stream);
+                    var result = reader.ReadVarInt(0xFFFFFFFF);
                     Assert.AreEqual(0xFFFFFFFF, result);
                 }
                 else
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     writer.WriteVarInt(0xFFFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new(stream);
+
+                    var reader = new BinaryReader(stream);
                     Action action = () => reader.ReadVarInt(0xFFFFFFFF);
                     Assert.ThrowsExactly<FormatException>(action);
                 }
@@ -249,51 +229,46 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestToArray()
         {
-            byte[] byteArray = UInt160.Zero.ToArray();
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                                                    0x00,0x00,0x00,0x00,0x00,
-                                                                    0x00,0x00,0x00,0x00,0x00,
-                                                                    0x00,0x00,0x00,0x00,0x00}), Encoding.Default.GetString(byteArray));
+            var byteArray = UInt160.Zero.ToArray();
+            Assert.AreEqual(Encoding.Default.GetString(Enumerable.Repeat((byte)0x00, 20).ToArray()), Encoding.Default.GetString(byteArray));
         }
 
         [TestMethod]
         public void TestToByteArrayGeneric()
         {
-            byte[] byteArray = new UInt160[] { UInt160.Zero }.ToByteArray();
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01,0x00,0x00,0x00,0x00,0x00,
-                                                                         0x00,0x00,0x00,0x00,0x00,
-                                                                         0x00,0x00,0x00,0x00,0x00,
-                                                                         0x00,0x00,0x00,0x00,0x00}), Encoding.Default.GetString(byteArray));
+            var byteArray = new UInt160[] { UInt160.Zero }.ToByteArray();
+            var expected = Enumerable.Repeat((byte)0x00, 21).ToArray();
+            expected[0] = 0x01;
+            Assert.AreEqual(Encoding.Default.GetString(expected), Encoding.Default.GetString(byteArray));
         }
 
         [TestMethod]
         public void TestWrite()
         {
-            MemoryStream stream = new();
-            BinaryWriter writer = new(stream);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
             writer.Write(UInt160.Zero);
             stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
+
+            var byteArray = new byte[stream.Length];
             stream.Read(byteArray, 0, (int)stream.Length);
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                                                    0x00,0x00,0x00,0x00,0x00,
-                                                                    0x00,0x00,0x00,0x00,0x00,
-                                                                    0x00,0x00,0x00,0x00,0x00}), Encoding.Default.GetString(byteArray));
+            Assert.AreEqual(Encoding.Default.GetString(Enumerable.Repeat((byte)0x00, 20).ToArray()), Encoding.Default.GetString(byteArray));
         }
 
         [TestMethod]
         public void TestWriteGeneric()
         {
-            MemoryStream stream = new();
-            BinaryWriter writer = new(stream);
-            writer.Write(new UInt160[] { UInt160.Zero });
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.Write([UInt160.Zero]);
             stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
+
+            var byteArray = new byte[stream.Length];
             stream.Read(byteArray, 0, (int)stream.Length);
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01,0x00,0x00,0x00,0x00,0x00,
-                                                                         0x00,0x00,0x00,0x00,0x00,
-                                                                         0x00,0x00,0x00,0x00,0x00,
-                                                                         0x00,0x00,0x00,0x00,0x00}), Encoding.Default.GetString(byteArray));
+
+            var expected = Enumerable.Repeat((byte)0x00, 21).ToArray();
+            expected[0] = 0x01;
+            Assert.AreEqual(Encoding.Default.GetString(expected), Encoding.Default.GetString(byteArray));
         }
 
         [TestMethod]
@@ -303,36 +278,38 @@ namespace Neo.UnitTests.IO
             {
                 if (i == 0)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     Action action = () => writer.WriteFixedString(null, 0);
                     Assert.ThrowsExactly<ArgumentNullException>(action);
                 }
                 else if (i == 1)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     Action action = () => writer.WriteFixedString("AA", Encoding.UTF8.GetBytes("AA").Length - 1);
                     Assert.ThrowsExactly<ArgumentException>(action);
                 }
                 else if (i == 2)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     Action action = () => writer.WriteFixedString("拉拉", Encoding.UTF8.GetBytes("拉拉").Length - 1);
                     Assert.ThrowsExactly<ArgumentException>(action);
                 }
                 else if (i == 3)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     writer.WriteFixedString("AA", Encoding.UTF8.GetBytes("AA").Length + 1);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
-                    byte[] newArray = new byte[Encoding.UTF8.GetBytes("AA").Length + 1];
-                    Encoding.UTF8.GetBytes("AA").CopyTo(newArray, 0);
-                    Assert.AreEqual(Encoding.Default.GetString(newArray), Encoding.Default.GetString(byteArray));
+
+                    var expected = new byte[Encoding.UTF8.GetBytes("AA").Length + 1];
+                    Encoding.UTF8.GetBytes("AA").CopyTo(expected, 0);
+                    Assert.AreEqual(Encoding.Default.GetString(expected), Encoding.Default.GetString(byteArray));
                 }
             }
         }
@@ -340,13 +317,14 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestWriteVarBytes()
         {
-            MemoryStream stream = new();
-            BinaryWriter writer = new(stream);
-            writer.WriteVarBytes(new byte[] { 0xAA });
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.WriteVarBytes([0xAA]);
             stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
+
+            var byteArray = new byte[stream.Length];
             stream.Read(byteArray, 0, (int)stream.Length);
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01, 0xAA }), Encoding.Default.GetString(byteArray));
+            Assert.AreEqual(Encoding.Default.GetString([0x01, 0xAA]), Encoding.Default.GetString(byteArray));
         }
 
         [TestMethod]
@@ -356,53 +334,59 @@ namespace Neo.UnitTests.IO
             {
                 if (i == 0)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     Action action = () => writer.WriteVarInt(-1);
                     Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
                 }
                 else if (i == 1)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     writer.WriteVarInt(0xFC);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
                     Assert.AreEqual(0xFC, byteArray[0]);
                 }
                 else if (i == 2)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     writer.WriteVarInt(0xFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
                     Assert.AreEqual(0xFD, byteArray[0]);
-                    Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xFF, 0xFF }), Encoding.Default.GetString(byteArray.Skip(1).Take(byteArray.Length - 1).ToArray()));
+                    Assert.AreEqual(Encoding.Default.GetString([0xFF, 0xFF]),
+                        Encoding.Default.GetString(byteArray.Skip(1).Take(byteArray.Length - 1).ToArray()));
                 }
                 else if (i == 3)
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     writer.WriteVarInt(0xFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
                     Assert.AreEqual(0xFE, byteArray[0]);
                     Assert.AreEqual(0xFFFFFFFF, BitConverter.ToUInt32(byteArray, 1));
                 }
                 else
                 {
-                    MemoryStream stream = new();
-                    BinaryWriter writer = new(stream);
+                    using var stream = new MemoryStream();
+                    using var writer = new BinaryWriter(stream);
                     writer.WriteVarInt(0xAEFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
                     Assert.AreEqual(0xFF, byteArray[0]);
-                    Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00 }), Encoding.Default.GetString(byteArray.Skip(1).Take(byteArray.Length - 1).ToArray()));
+                    Assert.AreEqual(Encoding.Default.GetString([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00]),
+                        Encoding.Default.GetString(byteArray.Skip(1).Take(byteArray.Length - 1).ToArray()));
                 }
             }
         }
@@ -410,11 +394,12 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestWriteVarString()
         {
-            MemoryStream stream = new();
-            BinaryWriter writer = new(stream);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
             writer.WriteVarString("a");
             stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
+
+            var byteArray = new byte[stream.Length];
             stream.Read(byteArray, 0, (int)stream.Length);
             Assert.AreEqual(0x01, byteArray[0]);
             Assert.AreEqual(0x61, byteArray[1]);

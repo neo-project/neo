@@ -13,6 +13,7 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
@@ -222,36 +223,22 @@ namespace Neo.Plugins.RpcServer
         ///   }
         /// }</code>
         /// </summary>
-        /// <param name="_params">An array containing the following elements:
-        /// [0]: The script hash of the contract to invoke as a string.
-        /// [1]: The operation to invoke as a string.
-        /// [2]: The arguments to pass to the function as an array of ContractParameter. Optional.
-        /// [3]: The JSON array of signers and witnesses<see cref="ParameterConverter.ToSignersAndWitnesses"/>. Optional.
-        /// [4]: A boolean value indicating whether to use diagnostic information. Optional.
-        /// </param>
+        /// <param name="scriptHash">The script hash of the contract to invoke.</param>
+        /// <param name="operation">The operation to invoke.</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        /// <param name="signersAndWitnesses">The signers and witnesses of the transaction.</param>
+        /// <param name="useDiagnostic">A boolean value indicating whether to use diagnostic information.</param>
         /// <returns>The result of the function invocation.</returns>
         /// <exception cref="RpcException">
         /// Thrown when the script hash is invalid, the contract is not found, or the verification fails.
         /// </exception>
         [RpcMethod]
-        protected internal virtual JToken InvokeFunction(JArray _params)
+        protected internal virtual JToken InvokeFunction(UInt160 scriptHash, string operation,
+            ContractParameter[] args = null, SignersAndWitnesses signersAndWitnesses = default, bool useDiagnostic = false)
         {
-            var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()),
-                RpcError.InvalidParams.WithData($"Invalid script hash `{_params[0]}`"));
-
-            var operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
-            var args = _params.Count >= 3
-                ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray()
-                : [];
-
-            var (signers, witnesses) = _params.Count >= 4
-                ? ((JArray)_params[3]).ToSignersAndWitnesses(system.Settings.AddressVersion)
-                : (null, null);
-
-            var useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
-
+            var (signers, witnesses) = signersAndWitnesses;
             byte[] script;
-            using (ScriptBuilder sb = new())
+            using (var sb = new ScriptBuilder())
             {
                 script = sb.EmitDynamicCall(scriptHash, operation, args).ToArray();
             }
@@ -315,23 +302,18 @@ namespace Neo.Plugins.RpcServer
         ///   }
         /// }</code>
         /// </summary>
-        /// <param name="_params">An array containing the following elements:
-        /// [0]: The script as a Base64-encoded string.
-        /// [1]: The JSON array of signers and witnesses<see cref="ParameterConverter.ToSignersAndWitnesses"/>. Optional.
-        /// [3]: A boolean value indicating whether to use diagnostic information. Optional.
-        /// </param>
+        /// <param name="script">The script to invoke.</param>
+        /// <param name="signersAndWitnesses">The signers and witnesses of the transaction.</param>
+        /// <param name="useDiagnostic">A boolean value indicating whether to use diagnostic information.</param>
         /// <returns>The result of the script invocation.</returns>
         /// <exception cref="RpcException">
         /// Thrown when the script is invalid, the verification fails, or the script hash is invalid.
         /// </exception>
         [RpcMethod]
-        protected internal virtual JToken InvokeScript(JArray _params)
+        protected internal virtual JToken InvokeScript(byte[] script,
+            SignersAndWitnesses signersAndWitnesses = default, bool useDiagnostic = false)
         {
-            var script = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams);
-            var (signers, witnesses) = _params.Count >= 2
-                ? ((JArray)_params[1]).ToSignersAndWitnesses(system.Settings.AddressVersion)
-                : (null, null);
-            var useDiagnostic = _params.Count >= 3 && _params[2].GetBoolean();
+            var (signers, witnesses) = signersAndWitnesses;
             return GetInvokeResult(script, signers, witnesses, useDiagnostic);
         }
 
@@ -354,24 +336,27 @@ namespace Neo.Plugins.RpcServer
         ///   "result": [{"type": "The stack item type", "value": "The stack item value"}]
         /// }</code>
         /// </summary>
-        /// <param name="_params"></param>
+        /// <param name="sessionId">The session id.</param>
+        /// <param name="iteratorId">The iterator id.</param>
+        /// <param name="count">The number of items to traverse.</param>
         /// <returns></returns>
         [RpcMethod]
-        protected internal virtual JToken TraverseIterator(JArray _params)
+        protected internal virtual JToken TraverseIterator(Guid sessionId, Guid iteratorId, int count)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
-            Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData($"Invalid session id {nameof(sid)}"));
-            Guid iid = Result.Ok_Or(() => Guid.Parse(_params[1].GetString()), RpcError.InvalidParams.WithData($"Invliad iterator id {nameof(iid)}"));
-            int count = _params[2].GetInt32();
-            Result.True_Or(() => count <= settings.MaxIteratorResultItems, RpcError.InvalidParams.WithData($"Invalid iterator items count {nameof(count)}"));
+
+            Result.True_Or(() => count <= settings.MaxIteratorResultItems,
+                RpcError.InvalidParams.WithData($"Invalid iterator items count {nameof(count)}"));
+
             Session session;
             lock (sessions)
             {
-                session = Result.Ok_Or(() => sessions[sid], RpcError.UnknownSession);
+                session = Result.Ok_Or(() => sessions[sessionId], RpcError.UnknownSession);
                 session.ResetExpiration();
             }
-            IIterator iterator = Result.Ok_Or(() => session.Iterators[iid], RpcError.UnknownIterator);
-            JArray json = new();
+
+            var iterator = Result.Ok_Or(() => session.Iterators[iteratorId], RpcError.UnknownIterator);
+            var json = new JArray();
             while (count-- > 0 && iterator.Next())
                 json.Add(iterator.Value(null).ToJson());
             return json;
@@ -393,20 +378,19 @@ namespace Neo.Plugins.RpcServer
         ///   "result": true // true if the session is terminated successfully, otherwise false
         /// }</code>
         /// </summary>
-        /// <param name="_params">A 1-element array containing the session id as a GUID string.</param>
+        /// <param name="sessionId">The session id.</param>
         /// <returns>True if the session is terminated successfully, otherwise false.</returns>
         /// <exception cref="RpcException">Thrown when the session id is invalid.</exception>
         [RpcMethod]
-        protected internal virtual JToken TerminateSession(JArray _params)
+        protected internal virtual JToken TerminateSession(Guid sessionId)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
-            Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData("Invalid session id"));
 
             Session session = null;
             bool result;
             lock (sessions)
             {
-                result = Result.Ok_Or(() => sessions.Remove(sid, out session), RpcError.UnknownSession);
+                result = Result.Ok_Or(() => sessions.Remove(sessionId, out session), RpcError.UnknownSession);
             }
             if (result) session.Dispose();
             return result;
@@ -428,27 +412,22 @@ namespace Neo.Plugins.RpcServer
         ///   "result": {"unclaimed": "An integer in string", "address": "The Base58Check address"}
         /// }</code>
         /// </summary>
-        /// <param name="_params">An array containing the following elements:
-        /// [0]: The address as a UInt160 or Base58Check address.
-        /// </param>
+        /// <param name="address">The address as a UInt160 or Base58Check address.</param>
         /// <returns>A JSON object containing the unclaimed gas and the address.</returns>
         /// <exception cref="RpcException">
         /// Thrown when the address is invalid.
         /// </exception>
         [RpcMethod]
-        protected internal virtual JToken GetUnclaimedGas(JArray _params)
+        protected internal virtual JToken GetUnclaimedGas(Address address)
         {
-            var address = Result.Ok_Or(() => _params[0].AsString(),
-                RpcError.InvalidParams.WithData($"Invalid address `{_params[0]}`"));
-            var json = new JObject();
-            var scriptHash = Result.Ok_Or(
-                () => address.AddressToScriptHash(system.Settings.AddressVersion),
-                RpcError.InvalidParams.WithData($"Invalid address `{address}`"));
-
+            var scriptHash = address.ScriptHash;
             var snapshot = system.StoreView;
-            json["unclaimed"] = NativeContract.NEO.UnclaimedGas(snapshot, scriptHash, NativeContract.Ledger.CurrentIndex(snapshot) + 1).ToString();
-            json["address"] = scriptHash.ToAddress(system.Settings.AddressVersion);
-            return json;
+            var unclaimed = NativeContract.NEO.UnclaimedGas(snapshot, scriptHash, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
+            return new JObject()
+            {
+                ["unclaimed"] = unclaimed.ToString(),
+                ["address"] = scriptHash.ToAddress(system.Settings.AddressVersion),
+            };
         }
 
         static string GetExceptionMessage(Exception exception)
