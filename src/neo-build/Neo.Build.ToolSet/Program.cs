@@ -35,6 +35,7 @@ namespace Neo.Build.ToolSet
                     // Add Console Commands Here
                     builder.UseCommandHandler<ProgramRootCommand, ProgramRootCommand.Handler>();
                     builder.UseCommandHandler<RunNodeCommand, RunNodeCommand.Handler>();
+                    builder.UseCommandHandler<CreateWalletSubCommand, CreateWalletSubCommand.Handler>();
                 })
                 .UseDefaults()
                 .UseExceptionHandler(DefaultExceptionFilterHandler)

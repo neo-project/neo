@@ -34,7 +34,7 @@ namespace Neo.Build.ToolSet.Commands
 {
     internal class RunNodeCommand : Command
     {
-        public RunNodeCommand() : base("run", CommandLineStrings.Node.RunDescription)
+        public RunNodeCommand() : base("run", "Run Neo instance node")
         {
             var walletPathOptions = new Option<string>(["--filename", "-f"], GetDefaultWalletFilename, "Wallet filename");
             var secondsPerBlockOptions = new Option<uint>(["--seconds-per-block", "-s"], GetDefaultSecondsPerBlock, "Seconds per blockchain block");
@@ -47,7 +47,7 @@ namespace Neo.Build.ToolSet.Commands
 
 
         private static string GetDefaultWalletFilename() =>
-            "wallet1.json";
+            FileNameDefaults.WalletName;
 
         //private static bool GetDefaultEnableTrace() =>
         //    false;
@@ -59,11 +59,11 @@ namespace Neo.Build.ToolSet.Commands
             IHostEnvironment env,
             INeoConfigurationOptions neoConfiguration) : ICommandHandler
         {
-            public required string Filename { get; set; }
+            public string Filename { get; set; } = GetDefaultWalletFilename();
 
             public bool EnableTrace { get; set; }
 
-            public uint SecondsPerBlock { get; set; }
+            public uint SecondsPerBlock { get; set; } = GetDefaultSecondsPerBlock();
 
             private readonly IHostEnvironment _env = env;
             private readonly INeoConfigurationOptions _neoConfiguration = neoConfiguration;
