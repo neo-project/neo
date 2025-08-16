@@ -197,6 +197,13 @@ namespace Neo.Build.Core.Wallets
             return null;
         }
 
+        public IEnumerable<DevWalletAccount> GetMultiSigAddressAccounts() =>
+            _walletAccounts
+                .Where(static w =>
+                    w.Value.Lock == false &&
+                    Helper.IsMultiSigContract(w.Value.Contract.Script))
+                .Select(static s => s.Value);
+
         public IEnumerable<DevWalletAccount> GetConsensusAccounts() =>
             _walletAccounts
                 .Where(static w =>
