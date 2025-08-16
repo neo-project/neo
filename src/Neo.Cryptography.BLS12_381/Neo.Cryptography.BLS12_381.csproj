@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <VersionPrefix>0.3.0</VersionPrefix>
-    <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
+    <PublishAot>true</PublishAot>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>

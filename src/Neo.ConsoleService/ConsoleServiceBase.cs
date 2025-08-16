@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -478,41 +479,48 @@ namespace Neo.ConsoleService
         }
 
         /// <summary>
-        /// Register commands
+        /// Register commands (AOT/trimming-safe).
+        /// Use this overload in AOT builds to ensure command methods are preserved.
         /// </summary>
-        /// <param name="instance">Instance</param>
-        /// <param name="name">Name</param>
-        public void RegisterCommand(object instance, string? name = null)
+        public void RegisterCommand<
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+        T>(T instance, string? name = null)
+            where T : class
         {
             if (!string.IsNullOrEmpty(name))
             {
                 _instances.Add(name.ToLowerInvariant(), instance);
             }
 
-            foreach (var method in instance.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+            // Reflection on annotated type: safe for trimming/AOT
+            foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 foreach (var attribute in method.GetCustomAttributes<ConsoleCommandAttribute>())
                 {
                     // Check handlers
                     if (!method.GetParameters().All(u => u.ParameterType.IsEnum || _handlers.ContainsKey(u.ParameterType)))
-                    {
                         throw new ArgumentException($"Handler not found for the command: {method}");
-                    }
 
                     // Add command
                     var command = new ConsoleCommandMethod(instance, method, attribute);
                     if (!_verbs.TryGetValue(command.Key, out var commands))
-                    {
                         _verbs.Add(command.Key, [command]);
-                    }
                     else
-                    {
                         commands.Add(command);
-                    }
                 }
             }
         }
 
+        /// <summary>
+        /// Legacy overload. Not trimming-safe when called with types not known at compile time.
+        /// Prefer RegisterCommand&lt;T&gt;(T instance, ...) in AOT builds.
+        /// </summary>
+        [RequiresUnreferencedCode("Uses reflection over runtime type. Prefer the generic overload RegisterCommand<T>().")]
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Kept for backward compatibility; AOT builds should call the generic overload.")]
+        public void RegisterCommand(object instance, string? name = null)
+        {
+            RegisterCommand<object>(instance, name);
+        }
         private void OnScCommand(string action)
         {
             if (Environment.OSVersion.Platform != PlatformID.Win32NT)

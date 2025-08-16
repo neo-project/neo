@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Extensions.Exceptions
 {
@@ -91,7 +92,8 @@ namespace Neo.Extensions.Exceptions
             }
         }
 
-        public static TSource TryCatchThrow<TSource, TException>(this TSource obj, Action<TSource?> action, string? errorMessage = default)
+        public static TSource TryCatchThrow<TSource,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TException>(this TSource obj, Action<TSource?> action, string? errorMessage = default)
             where TSource : class?
             where TException : Exception, new()
         {
@@ -105,18 +107,19 @@ namespace Neo.Extensions.Exceptions
             {
                 if (string.IsNullOrEmpty(errorMessage))
                     throw;
-                else
-                {
-                    if (Activator.CreateInstance(typeof(TException), errorMessage, innerException) is not TException ex)
-                        throw;
-                    else
-                        throw ex;
-                }
 
+                if (Activator.CreateInstance(typeof(TException), errorMessage, innerException) is TException ex2)
+                    throw ex2;
+
+                if (Activator.CreateInstance(typeof(TException), errorMessage) is TException ex1)
+                    throw ex1;
+
+                throw;
             }
         }
 
-        public static TResult? TryCatchThrow<TSource, TException, TResult>(this TSource obj, Func<TSource?, TResult?> func, string? errorMessage = default)
+        public static TResult? TryCatchThrow<TSource,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TException, TResult>(this TSource obj, Func<TSource?, TResult?> func, string? errorMessage = default)
             where TSource : class?
             where TException : Exception
             where TResult : class?
@@ -129,14 +132,14 @@ namespace Neo.Extensions.Exceptions
             {
                 if (string.IsNullOrEmpty(errorMessage))
                     throw;
-                else
-                {
-                    if (Activator.CreateInstance(typeof(TException), errorMessage, innerException) is not TException ex)
-                        throw;
-                    else
-                        throw ex;
-                }
 
+                if (Activator.CreateInstance(typeof(TException), errorMessage, innerException) is TException ex2)
+                    throw ex2;
+
+                if (Activator.CreateInstance(typeof(TException), errorMessage) is TException ex1)
+                    throw ex1;
+
+                throw;
             }
         }
     }
