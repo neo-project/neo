@@ -19,7 +19,8 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestThrow()
         {
-            var rpcDataError = "RpcError_DATA";
+            const string RpcDataError = "RpcError_DATA";
+            const string ErrorWithData = "Invalid params - RpcError_DATA";
             string nullParamFake = null;
             var paramFakeA = 0;
             var paramFakeB = 0;
@@ -30,9 +31,9 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual("Invalid params - Parameter 'nullParamFake' is null", exNullNoData.Message);
 
             // Test 02 - ThrowIfNull with data
-            var exNullWithData = Assert.Throws<RpcException>(() => RpcException.ThrowIfNull(nullParamFake, nameof(nullParamFake), RpcError.InvalidParams.WithData(rpcDataError)));
+            var exNullWithData = Assert.Throws<RpcException>(() => RpcException.ThrowIfNull(nullParamFake, nameof(nullParamFake), RpcError.InvalidParams.WithData(RpcDataError)));
             Assert.AreEqual(RpcError.InvalidParams.Code, exNullWithData.HResult);
-            Assert.AreEqual("Invalid params - RpcError_DATA", exNullWithData.Message);
+            Assert.AreEqual(ErrorWithData, exNullWithData.Message);
 
             // Test 03 - ThrowIfTrue with no data
             var exCondTrueNoData = Assert.Throws<RpcException>(() => RpcException.ThrowIfTrue(paramFakeA == paramFakeB, RpcError.InvalidParams));
@@ -40,9 +41,9 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual("Invalid params - Condition paramFakeA == paramFakeB is true", exCondTrueNoData.Message);
 
             // Test 04 - ThrowIfTrue with data
-            var exCondTrueWithData = Assert.Throws<RpcException>(() => RpcException.ThrowIfTrue(paramFakeA == paramFakeB, RpcError.InvalidParams.WithData(rpcDataError)));
+            var exCondTrueWithData = Assert.Throws<RpcException>(() => RpcException.ThrowIfTrue(paramFakeA == paramFakeB, RpcError.InvalidParams.WithData(RpcDataError)));
             Assert.AreEqual(RpcError.InvalidParams.Code, exCondTrueWithData.HResult);
-            Assert.AreEqual("Invalid params - RpcError_DATA", exCondTrueWithData.Message);
+            Assert.AreEqual(ErrorWithData, exCondTrueWithData.Message);
 
             // Test 05 - ThrowIfFalse with no data
             var exCondFalseNoData = Assert.Throws<RpcException>(() => RpcException.ThrowIfFalse(paramFakeA == (paramFakeB + 1), RpcError.InvalidParams));
@@ -50,9 +51,9 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual("Invalid params - Condition paramFakeA == (paramFakeB + 1) is false", exCondFalseNoData.Message);
 
             // Test 06 - ThrowIfFalse with data
-            var exCondFalseWithData = Assert.Throws<RpcException>(() => RpcException.ThrowIfFalse(paramFakeA == (paramFakeB + 1), RpcError.InvalidParams.WithData(rpcDataError)));
+            var exCondFalseWithData = Assert.Throws<RpcException>(() => RpcException.ThrowIfFalse(paramFakeA == (paramFakeB + 1), RpcError.InvalidParams.WithData(RpcDataError)));
             Assert.AreEqual(RpcError.InvalidParams.Code, exCondFalseWithData.HResult);
-            Assert.AreEqual("Invalid params - RpcError_DATA", exCondFalseWithData.Message);
+            Assert.AreEqual(ErrorWithData, exCondFalseWithData.Message);
         }
     }
 }
