@@ -72,6 +72,13 @@ namespace Neo.Plugins.RpcServer
             throw new RpcException(RpcError.InvalidParams.WithData($"Unsupported parameter type: {targetType}"));
         }
 
+        internal static T AsParameter<T>(this JToken token)
+        {
+            if (s_conversions.TryGetValue(typeof(T), out var conversion))
+                return (T)conversion(token);
+            throw new RpcException(RpcError.InvalidParams.WithData($"Unsupported parameter type: {typeof(T)}"));
+        }
+
         private static object ToNumeric<T>(JToken token) where T : struct
         {
             if (token is null) throw new RpcException(RpcError.InvalidParams.WithData($"Invalid {typeof(T)}: {token}"));
@@ -142,10 +149,10 @@ namespace Neo.Plugins.RpcServer
             if (token is null) return (byte[])null;
 
             if (token is not JString value)
-                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Bytes: {token}"));
+                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Base64-encoded bytes: {token}"));
 
             return Result.Ok_Or(() => Convert.FromBase64String(value.Value),
-                RpcError.InvalidParams.WithData($"Invalid Bytes: {token}"));
+                RpcError.InvalidParams.WithData($"Invalid Base64-encoded bytes: {token}"));
         }
 
         private static object ToContractNameOrHashOrId(JToken token)
@@ -290,6 +297,15 @@ namespace Neo.Plugins.RpcServer
 
             var scriptHash = AddressToScriptHash(value.Value, version);
             return new Address(scriptHash, version);
+        }
+
+        internal static Address[] ToAddresses(this JToken token, byte version)
+        {
+            if (token is null) return null;
+            if (token is not JArray array)
+                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Addresses: {token}"));
+
+            return array.Select(p => ToAddress(p, version)).ToArray();
         }
 
         private static ContractParameter[] ToContractParameters(this JToken token)

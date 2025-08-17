@@ -71,7 +71,7 @@ namespace Neo.UnitTests.Plugins
         {
             var pp = new TestPlugin();
             var file = pp.ConfigFile;
-            Assert.IsTrue(file.EndsWith("config.json"));
+            Assert.EndsWith("config.json", file);
         }
 
         [TestMethod]

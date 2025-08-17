@@ -29,6 +29,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -131,14 +132,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - Consensus should work with minimum validators
-            ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
             // Verify all validators are operational
             for (int i = 0; i < minValidatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes
         }
 
         [TestMethod]
@@ -208,14 +209,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - Honest validators should continue consensus despite Byzantine failures
-            ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(300), cancellationToken: CancellationToken.None);
 
             // Verify honest validators are still operational
             foreach (var validatorIndex in honestValidators)
             {
                 Watch(consensusServices[validatorIndex]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes in honest validators
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes in honest validators
         }
 
         [TestMethod]
@@ -263,18 +264,18 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 }
 
                 // Small delay between rounds
-                ExpectNoMsg(TimeSpan.FromMilliseconds(50));
+                ExpectNoMsg(TimeSpan.FromMilliseconds(50), cancellationToken: CancellationToken.None);
             }
 
             // Assert - System should handle multiple rounds without degradation
-            ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
             // Verify all validators are still operational after stress test
             for (int i = 0; i < validatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes
         }
 
         [TestMethod]
@@ -329,14 +330,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - System should handle large transaction sets
-            ExpectNoMsg(TimeSpan.FromMilliseconds(500)); // Longer timeout for large data
+            ExpectNoMsg(TimeSpan.FromMilliseconds(500), cancellationToken: CancellationToken.None); // Longer timeout for large data
 
             // Verify all validators processed the large transaction set
             for (int i = 0; i < validatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes
         }
 
         [TestMethod]
@@ -382,14 +383,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - System should handle concurrent view changes gracefully
-            ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(300), cancellationToken: CancellationToken.None);
 
             // Verify all validators remain stable
             for (int i = 0; i < validatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes
         }
     }
 }

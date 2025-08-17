@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var jstring = new JString("*");
             var s = WildcardContainer<string>.FromJson(jstring, u => u.AsString());
             Assert.IsTrue(s.IsWildcard);
-            Assert.AreEqual(0, s.Count);
+            Assert.IsEmpty(s);
 
             jstring = new JString("hello world");
             Assert.ThrowsExactly<FormatException>(() => _ = WildcardContainer<string>.FromJson(jstring, u => u.AsString()));
@@ -50,11 +50,11 @@ namespace Neo.UnitTests.SmartContract.Manifest
         {
             string[] s = ["hello", "world"];
             var container = WildcardContainer<string>.Create(s);
-            Assert.AreEqual(2, container.Count);
+            Assert.HasCount(2, container);
 
             s = null;
             container = WildcardContainer<string>.Create(s);
-            Assert.AreEqual(0, container.Count);
+            Assert.IsEmpty(container);
         }
 
         [TestMethod]

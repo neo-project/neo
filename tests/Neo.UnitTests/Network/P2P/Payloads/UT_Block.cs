@@ -178,7 +178,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c", txObj["hash"].AsString());
             Assert.AreEqual(53, txObj["size"].AsNumber());
             Assert.AreEqual(0, txObj["version"].AsNumber());
-            Assert.AreEqual(0, ((JArray)txObj["attributes"]).Count);
+            Assert.IsEmpty((JArray)txObj["attributes"]);
             Assert.AreEqual("0", txObj["netfee"].AsString());
         }
 
@@ -186,7 +186,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Witness()
         {
             IVerifiable item = new Block() { Header = new(), };
-            Assert.AreEqual(1, item.Witnesses.Length);
+            Assert.HasCount(1, item.Witnesses);
             void Actual() => item.Witnesses = null;
             Assert.ThrowsExactly<NotSupportedException>(Actual);
         }

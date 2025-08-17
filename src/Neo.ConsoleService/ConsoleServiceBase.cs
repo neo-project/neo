@@ -343,7 +343,7 @@ namespace Neo.ConsoleService
              - Boolean: Can be specified without a value (defaults to true), true/false, 1/0, yes/no, y/n
              - Enum: Case-insensitive enum value names
              - JSON: Input as JSON string
-             - Escape characters: \\, \", \', \n, \r, \t, \v, \b, \f, \a, \e, \0, \ (whitespace).
+             - Escape characters: \\, \", \', \n, \r, \t, \v, \b, \f, \a, \e, \0, \ (whitespace), \xHH, \uHHHH.
                 If want to input without escape, quote the value with backtick(`).
             """);
         }

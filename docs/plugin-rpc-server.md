@@ -7,6 +7,9 @@ This document provides a comprehensive reference for the plugin RpcServer.
 1. [Get Started](#get-started)
 1. [Node Methods](#node-methods)
 2. [Blockchain Methods](#blockchain-methods)
+3. [Smart Contract Methods](#smart-contract-methods)
+4. [Wallet Methods](#wallet-methods)
+5. [Utility Methods](#utility-methods)
 
 ---
 
@@ -796,5 +799,712 @@ Gets the list of native contracts.
       } // The manifest of the contract
     }
   ]
+}
+```
+
+---
+
+## Smart Contract Methods
+
+### invokefunction
+Invokes a function on a smart contract.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "invokefunction",
+  "params": [
+    "The script hash(UInt160)",
+    "The operation to invoke as a string",
+    [
+      {
+        "type": "ContractParameterType", // The type of the parameter, see ContractParameterType
+        "value": "The parameter value" // The value of the parameter
+      } // A parameter in the operation
+      // ...
+    ], // The parameters of the operation, optional(can be null)
+    [
+      {
+        // The part of the Signer
+        "account": "An UInt160 or Base58Check address", // The account of the signer, required
+        "scopes": "WitnessScope", // The scopes of the signer, see WitnessScope, required
+        "allowedcontracts": ["The contract hash(UInt160)"], // The allowed contracts of the signer, optional
+        "allowedgroups": ["PublicKey"], // The allowed groups of the signer, optional
+        "rules": [
+          {
+            "action": "WitnessRuleAction", // The action of the witness rule, see WitnessRuleAction
+            "condition": { /* A json of WitnessCondition */ } // The condition of the witness rule, see WitnessCondition
+          } // A rule in the witness
+          // ...
+        ], // WitnessRule array, optional(can be null)
+
+        // The part of the Witness
+        "invocation": "A Base64 encoded string", // The invocation of the witness, optional
+        "verification": "A Base64 encoded string" // The verification of the witness, optional
+      }
+    ], // The signers and witnesses list, optional(can be null)
+    false // useDiagnostic, a bool value indicating whether to use diagnostic information, optional
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "script": "A Base64 encoded script",
+    "state": "A string of VMState", // see VMState
+    "gasconsumed": "An integer number in string", // The gas consumed
+    "exception": "The exception message", // The exception message
+    "stack": [
+      {"type": "The stack item type(StackItemType)", "value": "The stack item value"} // A StackItem in the stack
+      // ...
+    ],
+    "notifications": [
+      {
+        "eventname": "The event name", // The name of the event
+        "contract": "The contract hash", // The hash of the contract
+        "state": {"interface": "A string", "id": "The GUID string"} // The state of the event
+      }
+    ],
+    "diagnostics": {
+      "invokedcontracts": {"hash": "The contract hash", "call": [{"hash": "The contract hash"}]}, // The invoked contracts
+      "storagechanges": [
+        {
+          "state": "The TrackState string", // The type of the state, see TrackState
+          "key": "The Base64 encoded key", // The key of the storage change
+          "value": "The Base64 encoded value" // The value of the storage change
+        } // A storage change
+        // ...
+      ] // The storage changes
+    }, // The diagnostics, optional
+    "session": "A GUID string" // The session id, optional
+  }
+}
+```
+
+### invokescript
+Invokes a script.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "invokescript",
+  "params": [
+    "A Base64 encoded script",
+    [
+      {
+        // The part of the Signer
+        "account": "An UInt160 or Base58Check address", // The account of the signer, required
+        "scopes": "WitnessScope", // The scopes of the signer, see WitnessScope, required
+        "allowedcontracts": ["The contract hash(UInt160)"], // The allowed contracts of the signer, optional
+        "allowedgroups": ["PublicKey"], // The allowed groups of the signer, optional
+        "rules": [
+          {
+            "action": "WitnessRuleAction", // The action of the witness rule, see WitnessRuleAction
+            "condition": { /* A json of WitnessCondition */ } // The condition of the witness rule, see WitnessCondition
+          } // A rule in the witness
+          // ...
+        ], // WitnessRule array, optional(can be null)
+
+        // The part of the Witness
+        "invocation": "A Base64 encoded string", // The invocation of the witness, optional
+        "verification": "A Base64 encoded string" // The verification of the witness, optional
+      }
+    ], // The signers and witnesses list, optional(can be null)
+    false // useDiagnostic, a bool value indicating whether to use diagnostic information, optional
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "script": "A Base64 encoded string",
+    "state": "A string of VMState",
+    "gasconsumed": "An integer number in string",
+    "exception": "The exception message",
+    "stack": [
+      {"type": "The stack item type(StackItemType)", "value": "The stack item value"}
+    ],
+    "notifications": [
+      {
+        "eventname": "The event name",
+        "contract": "The contract hash",
+        "state": {"interface": "A string", "id": "The GUID string"}
+      }
+    ],
+    "diagnostics": {
+      "invokedcontracts": {"hash": "The contract hash", "call": [{"hash": "The contract hash"}]},
+      "storagechanges": [{"state": "The state", "key": "The key", "value": "The value"}]
+    },
+    "session": "A GUID string"
+  }
+}
+```
+
+### traverseiterator
+Traverses an iterator to get more items.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "traverseiterator",
+  "params": [
+    "A GUID string(The session id)",
+    "A GUID string(The iterator id)",
+    100 // An integer number(The number of items to traverse)
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {"type": "The stack item type(StackItemType)", "value": "The stack item value"}
+  ]
+}
+```
+
+### terminatesession
+Terminates a session.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "terminatesession",
+  "params": ["A GUID string(The session id)"]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": true // true if the session is terminated successfully, otherwise false
+}
+```
+
+### getunclaimedgas
+Gets the unclaimed gas of an address.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getunclaimedgas",
+  "params": ["An UInt160 or Base58Check address"]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {"unclaimed": "An integer in string", "address": "The Base58Check encoded address"}
+}
+```
+
+---
+
+## Wallet Methods
+
+### closewallet
+Closes the currently opened wallet.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "closewallet",
+  "params": []
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": true
+}
+```
+
+### dumpprivkey
+Exports the private key of a specified address.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "dumpprivkey",
+  "params": ["An UInt160 or Base58Check address"]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": "A WIF-encoded private key"
+}
+```
+
+### getnewaddress
+Creates a new address in the wallet.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getnewaddress",
+  "params": []
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": "The newly created address" // Base58Check address
+}
+```
+
+### getwalletbalance
+Gets the balance of a specified asset in the wallet.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getwalletbalance",
+  "params": ["An UInt160 address"]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {"balance": "0"} // An integer number in string, the balance of the specified asset in the wallet
+}
+```
+
+### getwalletunclaimedgas
+Gets the amount of unclaimed GAS in the wallet.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getwalletunclaimedgas",
+  "params": []
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": "The amount of unclaimed GAS(an integer number in string)"
+}
+```
+
+### importprivkey
+Imports a private key into the wallet.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "importprivkey",
+  "params": ["A WIF-encoded private key"]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "address": "The Base58Check address",
+    "haskey": true,
+    "label": "The label",
+    "watchonly": false
+  }
+}
+```
+
+### calculatenetworkfee
+Calculates the network fee for a given transaction.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "calculatenetworkfee",
+  "params": ["A Base64 encoded transaction"]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {"networkfee": "The network fee(an integer number in string)"}
+}
+```
+
+### listaddress
+Lists all addresses in the wallet.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "listaddress",
+  "params": []
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {"address": "address", "haskey": true, "label": "label", "watchonly": false}
+  ]
+}
+```
+
+### openwallet
+Opens a wallet file.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "openwallet",
+  "params": ["path", "password"]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": true
+}
+```
+
+### sendfrom
+Transfers an asset from a specific address to another address.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendfrom",
+  "params": [
+    "An UInt160 assetId",
+    "An UInt160 from address",
+    "An UInt160 to address",
+    "An amount as a string(An integer/decimal number in string)",
+    ["UInt160 or Base58Check address"] // signers, optional(can be null)
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "hash": "The tx hash(UInt256)", // The hash of the transaction
+    "size": 272, // The size of the transaction
+    "version": 0, // The version of the transaction
+    "nonce": 1553700339, // The nonce of the transaction
+    "sender": "The Base58Check address", // The sender of the transaction
+    "sysfee": "100000000", // The system fee of the transaction
+    "netfee": "1272390", // The network fee of the transaction
+    "validuntilblock": 2105487, // The valid until block of the transaction
+    "attributes": [], // The attributes of the transaction
+    "signers": [{"account": "The UInt160 address", "scopes": "CalledByEntry"}], // The signers of the transaction
+    "script": "A Base64 encoded script",
+    "witnesses": [{"invocation": "A Base64 encoded string", "verification": "A Base64 encoded string"}] // The witnesses of the transaction
+  }
+}
+```
+
+### sendmany
+Transfers assets to multiple addresses.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendmany",
+  "params": [
+    "An UInt160 address", // "from", optional(can be null)
+    [
+      {
+        "asset": "An UInt160 assetId",
+        "value": "An integer/decimal as a string",
+        "address": "An UInt160 address"
+      }
+      // ...
+    ], // The transfers list, optional(can be null)
+    ["UInt160 or Base58Check address"] // signers, optional(can be null)
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "hash": "The tx hash(UInt256)", // The hash of the transaction
+    "size": 483, // The size of the transaction
+    "version": 0, // The version of the transaction
+    "nonce": 34429660, // The nonce of the transaction
+    "sender": "The Base58Check address", // The sender of the transaction
+    "sysfee": "100000000", // The system fee of the transaction
+    "netfee": "2483780", // The network fee of the transaction
+    "validuntilblock": 2105494, // The valid until block of the transaction
+    "attributes": [], // The attributes of the transaction
+    "signers": [{"account": "The UInt160 address", "scopes": "CalledByEntry"}], // The signers of the transaction
+    "script": "A Base64 encoded script",
+    "witnesses": [{"invocation": "A Base64 encoded string", "verification": "A Base64 encoded string"}] // The witnesses of the transaction
+  }
+}
+```
+
+### sendtoaddress
+Transfers an asset to a specific address.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendtoaddress",
+  "params": [
+    "An UInt160 assetId",
+    "An UInt160 address(to)",
+    "An amount as a string(An integer/decimal number)"
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "hash": "The tx hash(UInt256)", // The hash of the transaction
+    "size": 483, // The size of the transaction
+    "version": 0, // The version of the transaction
+    "nonce": 34429660, // The nonce of the transaction
+    "sender": "The Base58Check address", // The sender of the transaction
+    "sysfee": "100000000", // The system fee of the transaction
+    "netfee": "2483780", // The network fee of the transaction
+    "validuntilblock": 2105494, // The valid until block of the transaction
+    "attributes": [], // The attributes of the transaction
+    "signers": [
+      {
+        "account": "The UInt160 address",
+        "scopes": "CalledByEntry" // see WitnessScope
+      }
+      // ...
+    ], // The signers of the transaction
+    "script": "A Base64 encoded script", // The script of the transaction
+    "witnesses": [{"invocation": "A Base64 encoded string", "verification": "A Base64 encoded string"}] // The witnesses of the transaction
+  }
+}
+```
+
+### canceltransaction
+Cancels an unconfirmed transaction.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "canceltransaction",
+  "params": [
+    "An tx hash(UInt256)",
+    ["UInt160 or Base58Check address"], // signers, optional(can be null)
+    "An amount as a string(An integer/decimal number)" // extraFee, optional
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "hash": "The tx hash(UInt256)", // The hash of the transaction
+    "size": 483, // The size of the transaction
+    "version": 0, // The version of the transaction
+    "nonce": 34429660, // The nonce of the transaction
+    "sender": "The Base58Check address", // The sender of the transaction
+    "sysfee": "100000000", // The system fee of the transaction
+    "netfee": "2483780", // The network fee of the transaction
+    "validuntilblock": 2105494, // The valid until block of the transaction
+    "attributes": [], // The attributes of the transaction
+    "signers": [{"account": "The UInt160 address", "scopes": "CalledByEntry"}], // The signers of the transaction
+    "script": "A Base64 encoded script",
+    "witnesses": [{"invocation": "A Base64 encoded string", "verification": "A Base64 encoded string"}] // The witnesses of the transaction
+  }
+}
+```
+
+### invokecontractverify
+Invokes the verify method of a contract.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "invokecontractverify",
+  "params": [
+    "The script hash(UInt160)",
+    [
+      {
+        "type": "The type of the parameter",
+        "value": "The value of the parameter"
+      }
+      // ...
+    ], // The arguments as an array of ContractParameter JSON objects
+    [
+      {
+        // The part of the Signer
+        "account": "An UInt160 or Base58Check address", // The account of the signer, required
+        "scopes": "WitnessScope", // The scopes of the signer, see WitnessScope, required
+        "allowedcontracts": ["The contract hash(UInt160)"], // The allowed contracts of the signer, optional
+        "allowedgroups": ["PublicKey"], // The allowed groups of the signer, optional
+        "rules": [
+          {
+            "action": "WitnessRuleAction", // The action of the witness rule, see WitnessRuleAction
+            "condition": { /* A json of WitnessCondition */ } // The condition of the witness rule, see WitnessCondition
+          } // A rule in the witness
+          // ...
+        ], // WitnessRule array, optional(can be null)
+
+        // The part of the Witness
+        "invocation": "A Base64 encoded string", // The invocation of the witness, optional
+        "verification": "A Base64 encoded string" // The verification of the witness, optional
+      }
+      // ...
+    ] // The signers and witnesses as an array of JSON objects
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "script": "A Base64 encoded string",
+    "state": "A string of VMState",
+    "gasconsumed": "An integer number in string",
+    "exception": "The exception message",
+    "stack": [{"type": "The stack item type", "value": "The stack item value"}]
+  }
+}
+```
+
+## Utility Methods
+
+### listplugins
+Lists all plugins.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "listplugins"
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {"name": "The plugin name", "version": "The plugin version", "interfaces": ["The plugin method name"]}
+  ]
+}
+```
+
+### validateaddress
+Validates an address.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "validateaddress",
+  "params": ["The Base58Check address"]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {"address": "The Base58Check address", "isvalid": true}
 }
 ```

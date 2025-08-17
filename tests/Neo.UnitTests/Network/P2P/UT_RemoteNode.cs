@@ -17,6 +17,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System.Net;
+using System.Threading;
 
 namespace Neo.UnitTests.Network.P2P
 {
@@ -58,7 +59,7 @@ namespace Neo.UnitTests.Network.P2P
             var testProbe = CreateTestProbe();
             testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
 
-            connectionTestProbe.ExpectMsg<Tcp.Abort>();
+            connectionTestProbe.ExpectMsg<Tcp.Abort>(cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -87,10 +88,10 @@ namespace Neo.UnitTests.Network.P2P
             var testProbe = CreateTestProbe();
             testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
 
-            var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>();
+            var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
 
             //Verack
-            Assert.AreEqual(3, verackMessage.Data.Count);
+            Assert.HasCount(3, verackMessage.Data);
         }
     }
 }

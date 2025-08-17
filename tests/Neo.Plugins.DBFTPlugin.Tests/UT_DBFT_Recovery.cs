@@ -29,6 +29,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -135,12 +136,12 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - Other validators should respond with RecoveryMessage
-            ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
             // Verify the recovering validator receives recovery information
             // In a real implementation, we would capture and verify RecoveryMessage responses
             Watch(consensusServices[recoveringValidatorIndex]);
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // Should not crash
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // Should not crash
         }
 
         [TestMethod]
@@ -218,14 +219,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             consensusServices[failedValidatorIndex].Tell(prepareRequestPayload);
 
             // Assert - Failed validator should catch up with consensus state
-            ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(300), cancellationToken: CancellationToken.None);
 
             // Verify all validators are operational
             for (int i = 0; i < ValidatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes
         }
 
         [TestMethod]
@@ -277,14 +278,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - System should handle view change recovery
-            ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(300), cancellationToken: CancellationToken.None);
 
             // Verify all validators are stable
             for (int i = 0; i < ValidatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes
         }
 
         [TestMethod]
@@ -320,14 +321,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - System should handle multiple recovery requests efficiently
-            ExpectNoMsg(TimeSpan.FromMilliseconds(400));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(400), cancellationToken: CancellationToken.None);
 
             // Verify all validators remain operational
             for (int i = 0; i < ValidatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes
         }
 
         [TestMethod]
@@ -392,11 +393,11 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - Late validator should receive recovery information and catch up
-            ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(300), cancellationToken: CancellationToken.None);
 
             // Verify the late validator is now operational
             Watch(consensusServices[lateValidatorIndex]);
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // Should not crash
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // Should not crash
         }
     }
 }

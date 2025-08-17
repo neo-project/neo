@@ -24,7 +24,7 @@ namespace Neo
     /// Represents a 160-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 20)]
-    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable, ISerializableSpan
+    public class UInt160 : IComparable, IComparable<UInt160>, IEquatable<UInt160>, ISerializable, ISerializableSpan
     {
         /// <summary>
         /// The length of <see cref="UInt160"/> values.
@@ -58,6 +58,13 @@ namespace Neo
 
             var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
             value.CopyTo(span);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int CompareTo(object obj)
+        {
+            if (ReferenceEquals(obj, this)) return 0;
+            return CompareTo(obj as UInt160);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
