@@ -113,7 +113,6 @@ namespace Neo.Plugins.StateService.Tests
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
         }
 
-
         [TestMethod]
         public void TestGetStateRoot_WithMockData_ShouldReturnStateRoot()
         {
