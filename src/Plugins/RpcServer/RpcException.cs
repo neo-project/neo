@@ -66,3 +66,5 @@ namespace Neo.Plugins.RpcServer
         }
     }
 }
+
+#nullable disable
