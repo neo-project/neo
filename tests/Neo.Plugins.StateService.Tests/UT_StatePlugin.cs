@@ -162,7 +162,6 @@ namespace Neo.Plugins.StateService.Tests
             Assert.AreEqual("aabb", Convert.FromBase64String(result.AsString() ?? "").ToHexString());
         }
 
-
         [TestMethod]
         public void TestFindStates_WithMockData_ShouldReturnResults()
         {
