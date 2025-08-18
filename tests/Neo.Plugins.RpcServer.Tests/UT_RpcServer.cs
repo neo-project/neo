@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.Persistence.Providers;
@@ -21,6 +22,7 @@ using Neo.Wallets.NEP6;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -36,9 +38,6 @@ namespace Neo.Plugins.RpcServer.Tests
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
-
-        const byte NativePrefixAccount = 20;
-        const byte NativePrefixTotalSupply = 11;
 
         [TestInitialize]
         public void TestSetup()
@@ -279,6 +278,44 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsNotNull(responseJson["result"]);
             Assert.AreEqual("mock", responseJson["result"].AsString());
             Assert.AreEqual(200, context.Response.StatusCode);
+        }
+
+        [TestMethod]
+        public void TestRpcServerSettings_Load()
+        {
+            var config = new ConfigurationBuilder()
+                .AddJsonFile("RpcServer.json")
+                .Build()
+                .GetSection("PluginConfiguration")
+                .GetSection("Servers")
+                .GetChildren()
+                .First();
+
+            var settings = RpcServersSettings.Load(config);
+            Assert.AreEqual(860833102u, settings.Network);
+            Assert.AreEqual(10332, settings.Port);
+            Assert.AreEqual(IPAddress.Parse("127.0.0.1"), settings.BindAddress);
+            Assert.AreEqual(string.Empty, settings.SslCert);
+            Assert.AreEqual(string.Empty, settings.SslCertPassword);
+            Assert.AreEqual(0, settings.TrustedAuthorities.Length);
+            Assert.AreEqual(string.Empty, settings.RpcUser);
+            Assert.AreEqual(string.Empty, settings.RpcPass);
+            Assert.AreEqual(true, settings.EnableCors);
+            Assert.AreEqual(20_00000000, settings.MaxGasInvoke);
+            Assert.AreEqual(TimeSpan.FromSeconds(60), settings.SessionExpirationTime);
+            Assert.AreEqual(false, settings.SessionEnabled);
+            Assert.AreEqual(true, settings.EnableCors);
+            Assert.AreEqual(0, settings.AllowOrigins.Length);
+            Assert.AreEqual(60, settings.KeepAliveTimeout);
+            Assert.AreEqual(15u, settings.RequestHeadersTimeout);
+            Assert.AreEqual(1000_0000, settings.MaxFee); // 0.1 * 10^8
+            Assert.AreEqual(100, settings.MaxIteratorResultItems);
+            Assert.AreEqual(65535, settings.MaxStackSize);
+            Assert.AreEqual(1, settings.DisabledMethods.Length);
+            Assert.AreEqual("openwallet", settings.DisabledMethods[0]);
+            Assert.AreEqual(40, settings.MaxConcurrentConnections);
+            Assert.AreEqual(5 * 1024 * 1024, settings.MaxRequestBodySize);
+            Assert.AreEqual(50, settings.FindStoragePageSize);
         }
     }
 }
