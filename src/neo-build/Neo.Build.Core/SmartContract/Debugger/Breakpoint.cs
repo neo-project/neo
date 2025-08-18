@@ -18,17 +18,20 @@ namespace Neo.Build.Core.SmartContract.Debugger
     {
         public uint? BlockIndex { get; set; } = null;
 
+        public UInt256? TransactionHash { get; set; } = null;
+
         public Script Script { get; set; } = Script.Empty;
 
         public override int GetHashCode() =>
-            HashCode.Combine(BlockIndex, Script.GetHashCode());
+            HashCode.Combine(BlockIndex, TransactionHash?.GetHashCode(), Script.GetHashCode());
 
         private Breakpoint() { }
 
-        public static Breakpoint Create(Script script, uint? blockIndex = null) =>
+        public static Breakpoint Create(Script script, uint? blockIndex = null, UInt256? txHash = null) =>
             new()
             {
                 BlockIndex = blockIndex,
+                TransactionHash = txHash,
                 Script = script,
             };
 
@@ -42,6 +45,7 @@ namespace Neo.Build.Core.SmartContract.Debugger
         {
             if (other == null) return false;
             return BlockIndex == other.BlockIndex &&
+                TransactionHash == other.TransactionHash &&
                 Script.GetHashCode() == other.Script.GetHashCode();
         }
     }

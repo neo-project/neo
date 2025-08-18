@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.Logging;
 using Neo.Build.Core.Builders;
 using Neo.Build.Core.Tests.Helpers;
 using Neo.Build.Core.Tests.Helpers.SmartContract;
@@ -23,12 +22,6 @@ namespace Neo.Build.Core.Tests.SmartContract
     [TestClass]
     public class UT_ApplicationEngineBase
     {
-        private readonly ILoggerFactory _factoryLogger = LoggerFactory.Create(logging =>
-        {
-            logging.AddDebug();
-            logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-        });
-
         [TestMethod]
         public void TestUnitTestApplicationEngineSimple()
         {
@@ -40,7 +33,7 @@ namespace Neo.Build.Core.Tests.SmartContract
                 TestNode.NeoSystem.Settings,
                 TestNode.NeoSystem.StoreView,
                 persistingBlock: pb,
-                loggerFactory: _factoryLogger,
+                loggerFactory: TestDefaults.FactoryLogger,
                 container: TransactionBuilder.CreateEmpty().Build());
 
             using var sb = new ScriptBuilder()
