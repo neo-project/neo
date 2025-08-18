@@ -26,8 +26,8 @@ namespace Neo.Build.Core.SmartContract
             CallContract(contractHash, methodName, callFlags, args);
 
             _traceLogger.LogDebug(DebugEventLog.Call,
-                "{SysCall} Hash=\"{Contract}\" Method=\"{Method}\" Flags=\"{Flags}\" Args=\"{Args}\" Result=\"{Result}\"",
-                nameof(System_Contract_Call), contractHash, methodName, callFlags.ToString(), args.ToJson().ToString(), ResultStack.ToJson());
+                "{SysCall} Hash=\"{Contract}\" Method=\"{Method}\" Flags=\"{Flags}\" Args={Args}",
+                nameof(System_Contract_Call), contractHash, methodName, callFlags.ToString(), args.ToJson().ToString());
         }
 
         protected virtual void SystemContractCallNative(byte version)
