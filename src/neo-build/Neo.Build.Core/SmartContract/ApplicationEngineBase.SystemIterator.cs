@@ -35,7 +35,7 @@ namespace Neo.Build.Core.SmartContract
             var result = IteratorValue(iterator);
 
             _traceLogger.LogDebug(DebugEventLog.IteratorGet,
-                "{SysCall} Iterator=\"{Iterator}\" Result=\"{Result}\"",
+                "{SysCall} Iterator=\"{Iterator}\" Result={Result}",
                 nameof(System_Iterator_Value), iterator.GetType().Name, result.ToJson());
 
             return result;

@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.Logging;
 using Neo.Build.Core.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
@@ -21,14 +20,6 @@ namespace Neo.Build.Core.Tests.Helpers
     {
         public static readonly NeoSystem NeoSystem;
         public static readonly DevWallet Wallet;
-        public static readonly ILoggerFactory FactoryLogger = LoggerFactory.Create(logging =>
-        {
-            logging.AddSimpleConsole(options =>
-            {
-                options.SingleLine = true;
-                options.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Disabled;
-            });
-        });
 
         private static readonly FasterDbStore s_store = new(Path.GetRandomFileName(), Path.GetRandomFileName());
 

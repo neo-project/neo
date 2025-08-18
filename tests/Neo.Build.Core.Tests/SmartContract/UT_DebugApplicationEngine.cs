@@ -12,6 +12,7 @@
 using Neo.Build.Core.Builders;
 using Neo.Build.Core.SmartContract;
 using Neo.Build.Core.Tests.Helpers;
+using Neo.Builders;
 using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -36,20 +37,27 @@ namespace Neo.Build.Core.Tests.SmartContract
                 .Emit(OpCode.NOP)
                 .Emit(OpCode.NOP);
 
+            var tx = TransactionBuilder.CreateEmpty()
+                .AttachSystem(sb.ToArray())
+                .Build();
+
             using var debugger = new DebugApplicationEngine(
                 TestNode.NeoSystem.Settings,
                 TestNode.NeoSystem.StoreView,
+                loggerFactory: TestDefaults.FactoryLogger,
+                container: tx,
                 persistingBlock: pb);
 
-            debugger.LoadScript(sb.ToArray());
+            debugger.LoadScript(tx.Script);
 
             Assert.IsNotNull(debugger.CurrentContext);
-            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 3));
+            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, tx.Hash, 3));
 
             Assert.IsNotNull(debugger.CurrentContext.NextInstruction);
             Assert.AreEqual(OpCode.NOP, debugger.CurrentContext.NextInstruction.OpCode);
 
-            debugger.AddBreakPoints(debugger.CurrentContext.Script, pb.Index, 2, 3);
+            debugger.AddBreakPoints(debugger.CurrentContext.Script, pb.Index, tx.Hash, 2);
+            debugger.AddBreakPoints(debugger.CurrentContext.Script, pb.Index, tx.Hash, 3);
             debugger.Execute();
 
             Assert.IsNotNull(debugger.CurrentContext);
@@ -59,9 +67,11 @@ namespace Neo.Build.Core.Tests.SmartContract
             Assert.AreEqual(2, debugger.CurrentContext.InstructionPointer);
             Assert.AreEqual(VMState.BREAK, debugger.State);
 
-            Assert.IsTrue(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 4));
-            Assert.IsTrue(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 2, 3));
-            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, 2, 3));
+            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, tx.Hash, 4));
+            Assert.IsTrue(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, tx.Hash, 2));
+            Assert.IsTrue(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, tx.Hash, 3));
+            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, tx.Hash, 2));
+            Assert.IsFalse(debugger.RemoveBreakPoints(debugger.CurrentContext.Script, pb.Index, tx.Hash, 3));
 
             debugger.Execute();
 
@@ -81,6 +91,7 @@ namespace Neo.Build.Core.Tests.SmartContract
             using var debugger = new DebugApplicationEngine(
                 TestNode.NeoSystem.Settings,
                 TestNode.NeoSystem.StoreView,
+                loggerFactory: TestDefaults.FactoryLogger,
                 persistingBlock: pb);
 
             debugger.LoadScript(sb.ToArray());
