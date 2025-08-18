@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging;
 using Neo.Build.Core.Json.Converters;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -38,5 +39,11 @@ namespace Neo.Build.Core.Tests.Helpers
                 new JsonStringUInt160Converter(),
             }
         };
+
+        public static readonly ILoggerFactory FactoryLogger = LoggerFactory.Create(logging =>
+        {
+            logging.AddDebug();
+            logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+        });
     }
 }
