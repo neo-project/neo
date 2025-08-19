@@ -56,8 +56,8 @@ namespace Neo.Plugins.RpcServer
             this.system = system;
             this.settings = settings;
 
-            _rpcUser = settings.RpcUser is not null ? Encoding.UTF8.GetBytes(settings.RpcUser) : [];
-            _rpcPass = settings.RpcPass is not null ? Encoding.UTF8.GetBytes(settings.RpcPass) : [];
+            _rpcUser = string.IsNullOrEmpty(settings.RpcUser) ? [] : Encoding.UTF8.GetBytes(settings.RpcUser);
+            _rpcPass = string.IsNullOrEmpty(settings.RpcPass) ? [] : Encoding.UTF8.GetBytes(settings.RpcPass);
 
             var addressVersion = system.Settings.AddressVersion;
             ParameterConverter.RegisterConversion<SignersAndWitnesses>(token => token.ToSignersAndWitnesses(addressVersion));
@@ -377,7 +377,7 @@ namespace Neo.Plugins.RpcServer
             for (var i = 0; i < parameterInfos.Length; i++)
             {
                 var param = parameterInfos[i];
-                if (arguments.Count > i && arguments[i] != null)
+                if (arguments.Count > i && arguments[i] != null) // Do not parse null values
                 {
                     try
                     {
