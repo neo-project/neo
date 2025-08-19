@@ -13,13 +13,13 @@ namespace Neo.Build.ToolSet
 {
     internal static class NeoHostingEnvironments
     {
-        public static readonly string Localnet = "localnet";
+        public static readonly string LocalNet = "localnet";
 
-        public static readonly string Testnet = "testnet";
+        public static readonly string TestNet = "testnet";
 
-        public static readonly string Mainnet = "mainnet";
+        public static readonly string MainNet = "mainnet";
 
-        public static readonly string Privatenet = "privatenet";
+        public static readonly string PrivateNet = "privatenet";
 
     }
 }

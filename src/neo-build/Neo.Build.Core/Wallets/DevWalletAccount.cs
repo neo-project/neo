@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.Exceptions.Wallet;
 using Neo.Build.Core.Interfaces;
 using Neo.Build.Core.Models;
 using Neo.Build.Core.Models.Wallets;
@@ -113,8 +114,13 @@ namespace Neo.Build.Core.Wallets
         /// Gets the account's <see cref="KeyPair"/> object.
         /// </summary>
         /// <returns>The associated <see cref="KeyPair"/> for the account</returns>
-        public override KeyPair GetKey() =>
-            _keyPair!;
+        public override KeyPair GetKey()
+        {
+            if (Lock)
+                throw new NeoBuildWalletAccountLockedException($"{ScriptHash}");
+
+            return _keyPair!;
+        }
 
         /// <summary>
         /// Converts to a <see cref="JsonModel"/>.
