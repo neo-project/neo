@@ -507,5 +507,60 @@ namespace Neo.Plugins.RpcServer.Tests
             // Invalid Parameter
             Assert.ThrowsExactly<RpcException>(() => _ = new JArray([null]).AsParameter(typeof(ContractParameter[])));
         }
+
+        [TestMethod]
+        public void TestToSigner()
+        {
+            const string address = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
+            var version = TestProtocolSettings.Default.AddressVersion;
+            var account = address.AddressToScriptHash(version);
+            var signer = new JObject
+            {
+                ["account"] = address,
+                ["scopes"] = WitnessScope.CalledByEntry.ToString()
+            };
+
+            var got = signer.ToSigner(version);
+            Assert.AreEqual(account, got.Account);
+            Assert.AreEqual(WitnessScope.CalledByEntry, got.Scopes);
+
+            // Invalid Parameter
+            Assert.ThrowsExactly<RpcException>(() => _ = new JObject().ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["account"] = address }.ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["scopes"] = "InvalidScopeValue" }.ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["allowedcontracts"] = "InvalidContractHash" }.ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["allowedgroups"] = "InvalidECPoint" }.ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["rules"] = "InvalidRule" }.ToSigner(version));
+        }
+
+        [TestMethod]
+        public void TestToSigners()
+        {
+            var address = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
+            var version = TestProtocolSettings.Default.AddressVersion;
+            var scopes = WitnessScope.CalledByEntry;
+            var account = address.AddressToScriptHash(version);
+            var signers = new JArray(new JObject { ["account"] = address, ["scopes"] = scopes.ToString() });
+            var got = signers.ToSigners(version);
+            Assert.HasCount(1, got);
+            Assert.AreEqual(account, got[0].Account);
+            Assert.AreEqual(scopes, got[0].Scopes);
+        }
+
+        [TestMethod]
+        public void TestToAddresses()
+        {
+            var address = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
+            var version = TestProtocolSettings.Default.AddressVersion;
+            var account = address.AddressToScriptHash(version);
+            var got = new JArray(new JString(address)).ToAddresses(version);
+            Assert.HasCount(1, got);
+            Assert.AreEqual(account, got[0].ScriptHash);
+
+            // Invalid Parameter
+            Assert.ThrowsExactly<RpcException>(() => _ = new JObject().ToAddresses(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JArray([null]).ToAddresses(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JArray([new JString("InvalidAddress")]).ToAddresses(version));
+        }
     }
 }
