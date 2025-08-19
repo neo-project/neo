@@ -269,7 +269,7 @@ namespace Neo.Plugins.RpcServer
             {
                 if (json[i] is null || json[i] is not JObject obj)
                     throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Signer at {i}."));
-                signers[i] = ToSigner(obj, addressVersion);
+                signers[i] = obj.ToSigner(addressVersion);
             }
 
             // Validate format
