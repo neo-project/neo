@@ -30,7 +30,7 @@ namespace Neo.Build.ToolSet.Extensions
         public static IHostBuilder UseNeoBuildGlobalConfiguration(this IHostBuilder hostBuilder)
         {
             // Host Configuration
-            hostBuilder.ConfigureHostConfiguration(config =>
+            hostBuilder.ConfigureHostConfiguration(static config =>
             {
                 var manger = new ConfigurationManager();
 
@@ -39,7 +39,7 @@ namespace Neo.Build.ToolSet.Extensions
             });
 
             // Application Configuration
-            hostBuilder.ConfigureAppConfiguration((context, config) =>
+            hostBuilder.ConfigureAppConfiguration(static (context, config) =>
             {
                 var environmentName = context.HostingEnvironment.EnvironmentName;
 
@@ -57,7 +57,7 @@ namespace Neo.Build.ToolSet.Extensions
             });
 
             // Logging Configuration
-            hostBuilder.ConfigureLogging((context, logging) =>
+            hostBuilder.ConfigureLogging(static (context, logging) =>
             {
                 var isWindows = OperatingSystem.IsWindows();
 
@@ -73,7 +73,7 @@ namespace Neo.Build.ToolSet.Extensions
                 if (isWindows)
                     logging.AddEventLog();
 
-                logging.Configure(options =>
+                logging.Configure(static options =>
                 {
                     options.ActivityTrackingOptions =
                         ActivityTrackingOptions.SpanId |
@@ -82,9 +82,9 @@ namespace Neo.Build.ToolSet.Extensions
                 });
             });
 
-            hostBuilder.UseDefaultServiceProvider((context, options) =>
+            hostBuilder.UseDefaultServiceProvider(static (context, options) =>
             {
-                var isDevelopment = context.HostingEnvironment.IsLocalnet();
+                var isDevelopment = context.HostingEnvironment.IsLocalNet();
                 options.ValidateScopes = isDevelopment;
                 options.ValidateOnBuild = isDevelopment;
             });
@@ -92,7 +92,7 @@ namespace Neo.Build.ToolSet.Extensions
             // Neo Hosting Options
             hostBuilder.AddNeoHostingOptions();
 
-            hostBuilder.ConfigureServices((context, services) =>
+            hostBuilder.ConfigureServices(static (context, services) =>
             {
                 services.AddHostedService<WebSocketService>();
                 services.AddSingleton<TraceApplicationEngineProvider>();
@@ -108,7 +108,7 @@ namespace Neo.Build.ToolSet.Extensions
 
         public static IHostBuilder AddNeoHostingOptions(this IHostBuilder hostBuilder)
         {
-            hostBuilder.ConfigureServices((context, services) =>
+            hostBuilder.ConfigureServices(static (context, services) =>
             {
                 var appEngineSection = context.Configuration.GetSection("VM");
                 var appEngineOptions = appEngineSection.Get<ApplicationEngineOptions>()!;

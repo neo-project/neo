@@ -13,7 +13,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Neo.Build.Core;
 using Neo.Build.Core.Exceptions;
-using Neo.Build.Core.Extensions;
 using Neo.Build.Core.Factories;
 using Neo.Build.Core.Models;
 using Neo.Build.Core.Models.Wallets;
@@ -87,7 +86,7 @@ namespace Neo.Build.ToolSet.Commands
 
                 var globalProtocolOptions = _neoConfiguration.ProtocolOptions.ToObject();
                 var wallet = new DevWallet(walletModel);
-                var defaultMultiSigWalletAccount = wallet.GetMultiSigAccounts().FirstOrDefault() ??
+                var defaultMultiSigWalletAccount = wallet.GetConsensusAccounts().FirstOrDefault() ??
                     wallet.GetDefaultAccount() ??
                     // TODO: Create new exception class for this exception
                     throw new NeoBuildException("No Multi-Sig Address", NeoBuildErrorCodes.Wallet.AccountNotFound);
