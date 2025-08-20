@@ -77,7 +77,7 @@ namespace Neo.Test
 
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3 }, GetEnumerable(enumerator).Cast<Integer>().ToArray());
 
-            Assert.AreEqual(3, slot.Count);
+            Assert.HasCount(3, slot);
 
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3 }, slot.ToArray());
 
@@ -94,7 +94,7 @@ namespace Neo.Test
 
             CollectionAssert.AreEqual(Array.Empty<Integer>(), GetEnumerable(enumerator).Cast<Integer>().ToArray());
 
-            Assert.AreEqual(0, slot.Count);
+            Assert.IsEmpty(slot);
 
             CollectionAssert.AreEqual(Array.Empty<Integer>(), slot.ToArray());
         }

@@ -30,6 +30,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -120,14 +121,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Assert - Services should start consensus without throwing
             // Verify all consensus services were created successfully
-            Assert.AreEqual(ValidatorCount, consensusServices.Length, "Should create all consensus services");
+            Assert.HasCount(ValidatorCount, consensusServices, "Should create all consensus services");
             foreach (var service in consensusServices)
             {
                 Assert.IsNotNull(service, "Each consensus service should be created successfully");
             }
 
             // Verify no unexpected messages or crashes
-            ExpectNoMsg(TimeSpan.FromMilliseconds(500));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(500), cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -148,7 +149,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             primaryService.Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
 
             // Assert - Primary should start consensus process
-            ExpectNoMsg(TimeSpan.FromMilliseconds(500));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(500), cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -189,11 +190,11 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 consensusService.Tell(new Blockchain.PersistCompleted { Block = block });
 
                 // Wait between rounds
-                ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+                ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
             }
 
             // Assert - Service should handle multiple rounds
-            ExpectNoMsg(TimeSpan.FromMilliseconds(500));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(500), cancellationToken: CancellationToken.None);
         }
     }
 }

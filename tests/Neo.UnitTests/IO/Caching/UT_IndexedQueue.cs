@@ -23,15 +23,15 @@ namespace Neo.UnitTests.IO.Caching
         public void TestDefault()
         {
             var queue = new IndexedQueue<int>(10);
-            Assert.AreEqual(0, queue.Count);
+            Assert.IsEmpty(queue);
 
             queue = new IndexedQueue<int>();
-            Assert.AreEqual(0, queue.Count);
+            Assert.IsEmpty(queue);
             queue.TrimExcess();
-            Assert.AreEqual(0, queue.Count);
+            Assert.IsEmpty(queue);
 
             queue = new IndexedQueue<int>(Array.Empty<int>());
-            Assert.AreEqual(0, queue.Count);
+            Assert.IsEmpty(queue);
             Assert.IsFalse(queue.TryPeek(out var a));
             Assert.AreEqual(0, a);
             Assert.IsFalse(queue.TryDequeue(out a));
@@ -50,10 +50,10 @@ namespace Neo.UnitTests.IO.Caching
         public void TestQueue()
         {
             var queue = new IndexedQueue<int>(new int[] { 1, 2, 3 });
-            Assert.AreEqual(3, queue.Count);
+            Assert.HasCount(3, queue);
 
             queue.Enqueue(4);
-            Assert.AreEqual(4, queue.Count);
+            Assert.HasCount(4, queue);
             Assert.AreEqual(1, queue.Peek());
             Assert.IsTrue(queue.TryPeek(out var a));
             Assert.AreEqual(1, a);
@@ -70,7 +70,7 @@ namespace Neo.UnitTests.IO.Caching
 
             queue.Enqueue(4);
             queue.Clear();
-            Assert.AreEqual(0, queue.Count);
+            Assert.IsEmpty(queue);
         }
 
         [TestMethod]

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.Persistence.Providers;
@@ -21,6 +22,7 @@ using Neo.Wallets.NEP6;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -36,9 +38,6 @@ namespace Neo.Plugins.RpcServer.Tests
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
-
-        const byte NativePrefixAccount = 20;
-        const byte NativePrefixTotalSupply = 11;
 
         [TestInitialize]
         public void TestSetup()
@@ -187,7 +186,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public async Task TestProcessRequest_MalformedJsonPostBody()
         {
-            var malformedJson = "{\"jsonrpc\": \"2.0\", \"method\": \"getblockcount\", \"params\": [], \"id\": 1"; // Missing closing brace
+            var malformedJson = """{"jsonrpc": "2.0", "method": "getblockcount", "params": [], "id": 1"""; // Missing closing brace
             var response = await SimulatePostRequest(malformedJson);
 
             Assert.IsNotNull(response["error"]);
@@ -207,18 +206,20 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public async Task TestProcessRequest_MixedBatch()
         {
-            var mixedBatchJson = "[" +
-                                 "{\"jsonrpc\": \"2.0\", \"method\": \"getblockcount\", \"params\": [], \"id\": 1}," + // Valid
-                                 "{\"jsonrpc\": \"2.0\", \"method\": \"nonexistentmethod\", \"params\": [], \"id\": 2}," + // Invalid method
-                                 "{\"jsonrpc\": \"2.0\", \"method\": \"getblock\", \"params\": [\"invalid_index\"], \"id\": 3}," + // Invalid params
-                                 "{\"jsonrpc\": \"2.0\", \"method\": \"getversion\", \"id\": 4}" + // Valid (no params needed)
-                                 "]";
+            var mixedBatchJson = """
+            [
+                {"jsonrpc": "2.0", "method": "getblockcount", "params": [], "id": 1},
+                {"jsonrpc": "2.0", "method": "nonexistentmethod", "params": [], "id": 2},
+                {"jsonrpc": "2.0", "method": "getblock", "params": ["invalid_index"], "id": 3},
+                {"jsonrpc": "2.0", "method": "getversion", "id": 4}
+            ]
+            """;
 
             var response = await SimulatePostRequest(mixedBatchJson);
             Assert.IsInstanceOfType(response, typeof(JArray));
             var batchResults = (JArray)response;
 
-            Assert.AreEqual(4, batchResults.Count);
+            Assert.HasCount(4, batchResults);
 
             // Check response 1 (valid getblockcount)
             Assert.IsNull(batchResults[0]["error"]);
@@ -239,6 +240,82 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsNull(batchResults[3]["error"]);
             Assert.IsNotNull(batchResults[3]["result"]);
             Assert.AreEqual(4, batchResults[3]["id"].AsNumber());
+        }
+
+        private class MockRpcMethods
+        {
+            [RpcMethod]
+            internal JToken GetMockMethod() => "mock";
+        }
+
+        [TestMethod]
+        public async Task TestRegisterMethods()
+        {
+            _rpcServer.RegisterMethods(new MockRpcMethods());
+
+            // Request ProcessAsync with a valid request
+            var context = new DefaultHttpContext();
+            var body = """
+            {"jsonrpc": "2.0", "method": "getmockmethod", "params": [], "id": 1 }
+            """;
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(body));
+            context.Request.ContentType = "application/json";
+
+            // Set up a writable response body
+            var responseBody = new MemoryStream();
+            context.Response.Body = responseBody;
+
+            await _rpcServer.ProcessAsync(context);
+            Assert.IsNotNull(context.Response.Body);
+
+            // Reset the stream position to read from the beginning
+            responseBody.Position = 0;
+            var output = new StreamReader(responseBody).ReadToEnd();
+
+            // Parse the JSON response and check the result
+            var responseJson = JToken.Parse(output);
+            Assert.IsNotNull(responseJson["result"]);
+            Assert.AreEqual("mock", responseJson["result"].AsString());
+            Assert.AreEqual(200, context.Response.StatusCode);
+        }
+
+        [TestMethod]
+        public void TestRpcServerSettings_Load()
+        {
+            var config = new ConfigurationBuilder()
+                .AddJsonFile("RpcServer.json")
+                .Build()
+                .GetSection("PluginConfiguration")
+                .GetSection("Servers")
+                .GetChildren()
+                .First();
+
+            var settings = RpcServersSettings.Load(config);
+            Assert.AreEqual(860833102u, settings.Network);
+            Assert.AreEqual(10332, settings.Port);
+            Assert.AreEqual(IPAddress.Parse("127.0.0.1"), settings.BindAddress);
+            Assert.AreEqual(string.Empty, settings.SslCert);
+            Assert.AreEqual(string.Empty, settings.SslCertPassword);
+            Assert.AreEqual(0, settings.TrustedAuthorities.Length);
+            Assert.AreEqual(string.Empty, settings.RpcUser);
+            Assert.AreEqual(string.Empty, settings.RpcPass);
+            Assert.AreEqual(true, settings.EnableCors);
+            Assert.AreEqual(20_00000000, settings.MaxGasInvoke);
+            Assert.AreEqual(TimeSpan.FromSeconds(60), settings.SessionExpirationTime);
+            Assert.AreEqual(false, settings.SessionEnabled);
+            Assert.AreEqual(true, settings.EnableCors);
+            Assert.AreEqual(0, settings.AllowOrigins.Length);
+            Assert.AreEqual(60, settings.KeepAliveTimeout);
+            Assert.AreEqual(15u, settings.RequestHeadersTimeout);
+            Assert.AreEqual(1000_0000, settings.MaxFee); // 0.1 * 10^8
+            Assert.AreEqual(100, settings.MaxIteratorResultItems);
+            Assert.AreEqual(65535, settings.MaxStackSize);
+            Assert.AreEqual(1, settings.DisabledMethods.Length);
+            Assert.AreEqual("openwallet", settings.DisabledMethods[0]);
+            Assert.AreEqual(40, settings.MaxConcurrentConnections);
+            Assert.AreEqual(5 * 1024 * 1024, settings.MaxRequestBodySize);
+            Assert.AreEqual(50, settings.FindStoragePageSize);
         }
     }
 }

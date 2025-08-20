@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.43" />
-    <PackageReference Include="System.IO.Hashing" Version="9.0.6" />
+    <PackageReference Include="Akka" Version="1.5.46" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.7" />
   </ItemGroup>
 
   <ItemGroup>

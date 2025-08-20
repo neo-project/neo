@@ -11,6 +11,7 @@
 
 using Akka.TestKit;
 using Akka.TestKit.MsTest;
+using Microsoft.Extensions.Primitives;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -18,6 +19,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Threading;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -62,10 +64,10 @@ namespace Neo.UnitTests.Ledger
             var tx = TestUtils.CreateValidTx(snapshot, walletA, acc.ScriptHash, 0);
 
             senderProbe.Send(_system.Blockchain, tx);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed, cancellationToken: CancellationToken.None);
 
             senderProbe.Send(_system.Blockchain, tx);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyInPool);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyInPool, cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -88,7 +90,7 @@ namespace Neo.UnitTests.Ledger
             tx.Signers = null;
 
             senderProbe.Send(_system.Blockchain, tx);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Invalid);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Invalid, cancellationToken: CancellationToken.None);
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
@@ -180,11 +182,11 @@ namespace Neo.UnitTests.Ledger
 
             // Add tx2: must fail because valid conflict is alredy on chain (tx1).
             senderProbe.Send(_system.Blockchain, tx2);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.HasConflicts);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.HasConflicts, cancellationToken: CancellationToken.None);
 
             // Add tx3: must succeed because on-chain conflict is invalid (doesn't have proper signer).
             senderProbe.Send(_system.Blockchain, tx3);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed, cancellationToken: CancellationToken.None);
         }
     }
 }

@@ -29,6 +29,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -141,14 +142,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - System should handle primary failure gracefully
-            ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
             // Verify all actors are still alive
             for (int i = 0; i < ValidatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No Terminated messages
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No Terminated messages
         }
 
         [TestMethod]
@@ -209,7 +210,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - System should handle Byzantine behavior
-            ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(300), cancellationToken: CancellationToken.None);
 
             // Honest validators should continue operating
             for (int i = 0; i < ValidatorCount; i++)
@@ -219,7 +220,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                     Watch(consensusServices[i]);
                 }
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No Terminated messages from honest validators
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No Terminated messages from honest validators
         }
 
         [TestMethod]
@@ -284,7 +285,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             }
 
             // Assert - Validators should reject invalid messages and continue operating
-            ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
             // Verify all validators are still responsive
             for (int i = 0; i < ValidatorCount; i++)
@@ -292,7 +293,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 Watch(consensusServices[i]);
                 consensusServices[i].Tell("test_message");
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes
         }
 
         [TestMethod]
@@ -333,14 +334,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             // They should eventually timeout and request view change
 
             // Assert - System should handle network partition
-            ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+            ExpectNoMsg(TimeSpan.FromMilliseconds(300), cancellationToken: CancellationToken.None);
 
             // Both partitions should remain stable
             for (int i = 0; i < ValidatorCount; i++)
             {
                 Watch(consensusServices[i]);
             }
-            ExpectNoMsg(TimeSpan.FromMilliseconds(100)); // No crashes
+            ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None); // No crashes
         }
     }
 }
