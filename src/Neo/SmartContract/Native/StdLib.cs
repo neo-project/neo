@@ -13,7 +13,6 @@
 
 using Microsoft.IdentityModel.Tokens;
 using Neo.Cryptography;
-using Neo.Extensions;
 using Neo.Json;
 using Neo.VM.Types;
 using System;
@@ -275,33 +274,24 @@ namespace Neo.SmartContract.Native
                 return BigInteger.Zero;
 
             var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxValueSize = BigInteger.Pow(2, maxValueBits);
+            var maxValueSize = BigInteger.Pow(2, maxValueBits) - BigInteger.One;
 
             var randomProduct = maxValue * engine.GetRandom();
-            var randomProductBits = randomProduct.GetByteCount() * 8;
 
-            var lowPart = randomProduct.GetLowPart(maxValueBits);
+            var lowPart = randomProduct >> maxValueBits;
 
             if (lowPart < maxValue)
             {
-                var remainder = (maxValueSize - maxValue) % maxValue;
+                var remainder = maxValueSize % maxValue;
 
                 while (lowPart < remainder)
                 {
                     randomProduct = maxValue * engine.GetRandom();
-                    randomProductBits = randomProduct.GetByteCount() * 8;
-                    lowPart = randomProduct.GetLowPart(maxValueBits);
+                    lowPart = randomProduct >> maxValueBits;
                 }
             }
 
-            var result = randomProduct >> (randomProductBits - maxValueBits);
-
-            // Since BigInteger doesn't have a max value or bit size
-            // anything over 'maxValue' return zero
-            if (result >= maxValue)
-                return result % maxValue;
-
-            return result;
+            return randomProduct >> 128;
         }
     }
 }
