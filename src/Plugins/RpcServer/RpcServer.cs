@@ -28,7 +28,6 @@ using System.Linq.Expressions;
 using System.Net.Security;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Address = Neo.Plugins.RpcServer.Model.Address;
@@ -57,8 +56,8 @@ namespace Neo.Plugins.RpcServer
             this.system = system;
             this.settings = settings;
 
-            _rpcUser = settings.RpcUser is not null ? Encoding.UTF8.GetBytes(settings.RpcUser) : [];
-            _rpcPass = settings.RpcPass is not null ? Encoding.UTF8.GetBytes(settings.RpcPass) : [];
+            _rpcUser = string.IsNullOrEmpty(settings.RpcUser) ? [] : Encoding.UTF8.GetBytes(settings.RpcUser);
+            _rpcPass = string.IsNullOrEmpty(settings.RpcPass) ? [] : Encoding.UTF8.GetBytes(settings.RpcPass);
 
             var addressVersion = system.Settings.AddressVersion;
             ParameterConverter.RegisterConversion<SignersAndWitnesses>(token => token.ToSignersAndWitnesses(addressVersion));
@@ -66,6 +65,7 @@ namespace Neo.Plugins.RpcServer
             // An address can be either UInt160 or Base58Check format.
             // If only UInt160 format is allowed, use UInt160 as parameter type.
             ParameterConverter.RegisterConversion<Address>(token => token.ToAddress(addressVersion));
+            ParameterConverter.RegisterConversion<Address[]>(token => token.ToAddresses(addressVersion));
 
             localNode = system.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
             RegisterMethods(this);
@@ -377,7 +377,7 @@ namespace Neo.Plugins.RpcServer
             for (var i = 0; i < parameterInfos.Length; i++)
             {
                 var param = parameterInfos[i];
-                if (arguments.Count > i && arguments[i] != null)
+                if (arguments.Count > i && arguments[i] != null) // Do not parse null values
                 {
                     try
                     {
