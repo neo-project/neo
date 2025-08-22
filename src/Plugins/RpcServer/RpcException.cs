@@ -27,17 +27,5 @@ namespace Neo.Plugins.RpcServer
         {
             return _rpcError;
         }
-
-        /// <summary>
-        /// Throws an exception if the value is null.
-        /// </summary>
-        /// <typeparam name="T">The type of the value.</typeparam>
-        /// <param name="value">The value to check.</param>
-        /// <param name="paramName">The name of the parameter.</param>
-        /// <param name="error">The error to throw.</param>
-        public static void ThrowIfNull<T>(T value, string paramName, RpcError error)
-        {
-            if (value is null) throw new RpcException(error.WithData($"Parameter '{paramName}' is null"));
-        }
     }
 }
