@@ -332,6 +332,16 @@ namespace Neo.Plugins.ApplicationLogs
             return contractEvent.Parameters[parameterIndex].Name;
         }
 
+        private JObject EventModelToJObject(BlockchainEventModel model)
+        {
+            return new JObject()
+            {
+                ["contract"] = model.ScriptHash.ToString(),
+                ["eventname"] = model.EventName,
+                ["state"] = model.State.Select(s => s.ToJson()).ToArray()
+            };
+        }
+
         private JObject? TransactionToJObject(UInt256 txHash)
         {
             var appLog = _neostore.GetTransactionLog(txHash);
