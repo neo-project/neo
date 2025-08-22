@@ -52,7 +52,7 @@ namespace Neo.Plugins.RpcServer.Model
         public bool IsHash => _value is UInt160;
         public bool IsName => _value is string;
 
-        public static bool TryParse(string value, [NotNullWhen(true)] out ContractNameOrHashOrId contractNameOrHashOrId)
+        public static bool TryParse(string value, [NotNullWhen(true)] out ContractNameOrHashOrId? contractNameOrHashOrId)
         {
             if (int.TryParse(value, out var id))
             {
@@ -70,6 +70,7 @@ namespace Neo.Plugins.RpcServer.Model
                 contractNameOrHashOrId = new ContractNameOrHashOrId(value);
                 return true;
             }
+
             contractNameOrHashOrId = null;
             return false;
         }

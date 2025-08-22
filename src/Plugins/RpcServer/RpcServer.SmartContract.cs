@@ -30,7 +30,7 @@ namespace Neo.Plugins.RpcServer
     partial class RpcServer
     {
         private readonly Dictionary<Guid, Session> sessions = new();
-        private Timer timer;
+        private Timer? timer;
 
         private void Initialize_SmartContract()
         {
@@ -51,7 +51,7 @@ namespace Neo.Plugins.RpcServer
                 session.Dispose();
         }
 
-        internal void OnTimer(object state)
+        internal void OnTimer(object? state)
         {
             List<(Guid Id, Session Session)> toBeDestroyed = new();
             lock (sessions)
@@ -66,7 +66,7 @@ namespace Neo.Plugins.RpcServer
                 session.Dispose();
         }
 
-        private JObject GetInvokeResult(byte[] script, Signer[] signers = null, Witness[] witnesses = null, bool useDiagnostic = false)
+        private JObject GetInvokeResult(byte[] script, Signer[]? signers = null, Witness[]? witnesses = null, bool useDiagnostic = false)
         {
             JObject json = new();
             Session session = new(system, script, signers, witnesses, settings.MaxGasInvoke, useDiagnostic ? new Diagnostic() : null);
@@ -88,10 +88,10 @@ namespace Neo.Plugins.RpcServer
                 }));
                 if (useDiagnostic)
                 {
-                    Diagnostic diagnostic = (Diagnostic)session.Engine.Diagnostic;
+                    var diagnostic = (Diagnostic)session.Engine.Diagnostic;
                     json["diagnostics"] = new JObject()
                     {
-                        ["invokedcontracts"] = ToJson(diagnostic.InvocationTree.Root),
+                        ["invokedcontracts"] = ToJson(diagnostic.InvocationTree.Root!),
                         ["storagechanges"] = ToJson(session.Engine.SnapshotCache.GetChangeSet())
                     };
                 }
@@ -110,7 +110,7 @@ namespace Neo.Plugins.RpcServer
                 json["stack"] = stack;
                 if (session.Engine.State != VMState.FAULT)
                 {
-                    ProcessInvokeWithWallet(json, signers);
+                    ProcessInvokeWithWallet(json, script, signers);
                 }
             }
             catch
@@ -127,7 +127,9 @@ namespace Neo.Plugins.RpcServer
                 Guid id = Guid.NewGuid();
                 json["session"] = id.ToString();
                 lock (sessions)
+                {
                     sessions.Add(id, session);
+                }
             }
             return json;
         }
@@ -234,7 +236,7 @@ namespace Neo.Plugins.RpcServer
         /// </exception>
         [RpcMethod]
         protected internal virtual JToken InvokeFunction(UInt160 scriptHash, string operation,
-            ContractParameter[] args = null, SignersAndWitnesses signersAndWitnesses = default, bool useDiagnostic = false)
+            ContractParameter[]? args = null, SignersAndWitnesses signersAndWitnesses = default, bool useDiagnostic = false)
         {
             var (signers, witnesses) = signersAndWitnesses;
             byte[] script;
@@ -386,13 +388,13 @@ namespace Neo.Plugins.RpcServer
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
 
-            Session session = null;
+            Session? session = null;
             bool result;
             lock (sessions)
             {
                 result = Result.Ok_Or(() => sessions.Remove(sessionId, out session), RpcError.UnknownSession);
             }
-            if (result) session.Dispose();
+            if (result) session?.Dispose();
             return result;
         }
 
@@ -430,7 +432,7 @@ namespace Neo.Plugins.RpcServer
             };
         }
 
-        static string GetExceptionMessage(Exception exception)
+        private static string? GetExceptionMessage(Exception? exception)
         {
             if (exception == null) return null;
 
