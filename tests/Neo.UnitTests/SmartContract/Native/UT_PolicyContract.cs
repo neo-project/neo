@@ -568,14 +568,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
-            Assert.IsInstanceOfType(ret, typeof(Boolean));
+            Assert.IsInstanceOfType<Boolean>(ret);
             Assert.IsTrue(ret.GetBoolean());
 
             Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero));
 
             var accounts = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "listBlockedAccounts");
-            Assert.IsInstanceOfType(accounts, typeof(VM.Types.Array));
+            Assert.IsInstanceOfType<VM.Types.Array>(accounts);
             Assert.AreEqual(new UInt160(((VM.Types.Array)accounts)[0].GetSpan()), UInt160.Zero);
         }
     }
