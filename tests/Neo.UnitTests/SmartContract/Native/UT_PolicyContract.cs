@@ -577,10 +577,6 @@ namespace Neo.UnitTests.SmartContract.Native
                 "listBlockedAccounts");
             Assert.IsInstanceOfType<VM.Types.Array>(accounts);
             Assert.AreEqual(new UInt160(((VM.Types.Array)accounts)[0].GetSpan()), UInt160.Zero);
-
-            var policyState = NativeContract.ContractManagement.ListContracts(snapshot).First(static f => f.Id == NativeContract.Policy.Id);
-            var str = policyState.ToJson().ToString();
-
         }
     }
 }
