@@ -243,9 +243,10 @@ namespace Neo.Plugins.RpcServer.Tests
             });
 
             // Underlying Enum.Parse throws ArgumentException when called directly
-            var ex = Assert.ThrowsExactly<ArgumentException>(
+            var ex = Assert.ThrowsExactly<RpcException>(
                 () => _rpcServer.InvokeFunction(s_neoHash, "symbol", [], invalidSigner.AsParameter<SignersAndWitnesses>()));
-            Assert.Contains("Requested value 'InvalidScopeValue' was not found", ex.Message); // Check actual ArgumentException message
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            Assert.Contains("Invalid params - Invalid 'scopes'", ex.Message);
         }
 
         [TestMethod]
