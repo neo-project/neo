@@ -160,12 +160,6 @@ namespace Neo.Extensions
             return z;
         }
 
-        internal static BigInteger GetLowPart(this BigInteger value, int bitCount)
-        {
-            var mask = (BigInteger.One << bitCount) - 1;
-            return value & mask;
-        }
-
         /// <summary>
         /// Gets the number of bits required for shortest two's complement representation of the current instance without the sign bit.
         /// Note: This method is imprecise and might not work as expected with integers larger than 256 bits if less than .NET5.

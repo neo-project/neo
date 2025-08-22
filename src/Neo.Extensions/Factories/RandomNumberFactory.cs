@@ -217,33 +217,23 @@ namespace Neo.Extensions.Factories
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
 
             var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxValueSize = BigInteger.Pow(2, maxValueBits);
+            var maxValueSize = BigInteger.Pow(2, maxValueBits) - BigInteger.One;
 
-            var randomProduct = maxValue * NextBigInteger(maxValueBits);
-            var randomProductBits = randomProduct.GetByteCount() * 8;
-
-            var lowPart = randomProduct.GetLowPart(maxValueBits);
+            var randomProduct = maxValue * NextBigInteger(128);
+            var lowPart = randomProduct >> maxValueBits;
 
             if (lowPart < maxValue)
             {
-                var remainder = (maxValueSize - maxValue) % maxValue;
+                var remainder = maxValueSize % maxValue;
 
                 while (lowPart < remainder)
                 {
-                    randomProduct = maxValue * NextBigInteger(maxValueBits);
-                    randomProductBits = randomProduct.GetByteCount() * 8;
-                    lowPart = randomProduct.GetLowPart(maxValueBits);
+                    randomProduct = maxValue * NextBigInteger(128);
+                    lowPart = randomProduct >> maxValueBits;
                 }
             }
 
-            var result = randomProduct >> (randomProductBits - maxValueBits);
-
-            // Since BigInteger doesn't have a max value or bit size
-            // anything over 'maxValue' return zero
-            if (result >= maxValue)
-                return BigInteger.Zero;
-
-            return result;
+            return randomProduct >> 128;
         }
 
         public static BigInteger NextBigInteger(int sizeInBits)
