@@ -419,7 +419,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private UInt160[] ListBlockedAccounts(ApplicationEngine engine)
         {
             return [.. engine
