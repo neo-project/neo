@@ -11,10 +11,10 @@
 
 #pragma warning disable IDE0051
 
-using Akka.Dispatch;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -417,6 +417,15 @@ namespace Neo.SmartContract.Native
 
             engine.SnapshotCache.Delete(key);
             return true;
+        }
+
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private UInt160[] ListBlockedAccounts(ApplicationEngine engine)
+        {
+            return [.. engine
+                .SnapshotCache
+                .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
+                .Select(static s => new UInt160(s.Key.ToArray().AsSpan()[StorageKey.PrefixLength..]))];
         }
     }
 }

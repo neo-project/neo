@@ -18,6 +18,7 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM.Types;
 using System;
+using System.Linq;
 using System.Numerics;
 using Boolean = Neo.VM.Types.Boolean;
 
@@ -546,6 +547,36 @@ namespace Neo.UnitTests.SmartContract.Native
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                     "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 5762 });
             });
+        }
+
+        [TestMethod]
+        public void TestListBlockedAccounts()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            // Fake blockchain
+
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
+            Assert.IsInstanceOfType(ret, typeof(Boolean));
+            Assert.IsTrue(ret.GetBoolean());
+
+            Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero));
+
+            var accounts = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "listBlockedAccounts");
+            Assert.IsInstanceOfType(accounts, typeof(VM.Types.Array));
+            Assert.AreEqual(new UInt160(((VM.Types.Array)accounts)[0].GetSpan()), UInt160.Zero);
         }
     }
 }
