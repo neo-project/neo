@@ -81,7 +81,7 @@ namespace Neo.Plugins.RpcServer
         public string Message { get; set; }
         public string Data { get; set; }
 
-        public RpcError(int code, string message, string data = null)
+        public RpcError(int code, string message, string data = "")
         {
             Code = code;
             Message = message;
