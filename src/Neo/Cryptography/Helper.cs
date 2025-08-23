@@ -107,12 +107,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value)
         {
-#if !NET5_0_OR_GREATER
-            using var sha256 = SHA256.Create();
-            return sha256.ComputeHash(value);
-#else
             return SHA256.HashData(value);
-#endif
         }
 
         /// <summary>
@@ -123,12 +118,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha512(this byte[] value)
         {
-#if !NET5_0_OR_GREATER
-            using var sha512 = SHA512.Create();
-            return sha512.ComputeHash(value);
-#else
             return SHA512.HashData(value);
-#endif
         }
 
         /// <summary>
@@ -141,12 +131,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
-#if !NET5_0_OR_GREATER
-            using var sha256 = SHA256.Create();
-            return sha256.ComputeHash(value, offset, count);
-#else
             return SHA256.HashData(value.AsSpan(offset, count));
-#endif
         }
 
         /// <summary>
@@ -159,12 +144,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha512(this byte[] value, int offset, int count)
         {
-#if !NET5_0_OR_GREATER
-            using var sha512 = SHA512.Create();
-            return sha512.ComputeHash(value, offset, count);
-#else
             return SHA512.HashData(value.AsSpan(offset, count));
-#endif
         }
 
         /// <summary>
@@ -176,12 +156,7 @@ namespace Neo.Cryptography
         public static byte[] Sha256(this ReadOnlySpan<byte> value)
         {
             var buffer = new byte[32];
-#if !NET5_0_OR_GREATER
-            using var sha256 = SHA256.Create();
-            sha256.TryComputeHash(value, buffer, out _);
-#else
             SHA256.HashData(value, buffer);
-#endif
             return buffer;
         }
 
@@ -194,12 +169,7 @@ namespace Neo.Cryptography
         public static byte[] Sha512(this ReadOnlySpan<byte> value)
         {
             var buffer = new byte[64];
-#if !NET5_0_OR_GREATER
-            using var sha512 = SHA512.Create();
-            sha512.TryComputeHash(value, buffer, out _);
-#else
             SHA512.HashData(value, buffer);
-#endif
             return buffer;
         }
 
