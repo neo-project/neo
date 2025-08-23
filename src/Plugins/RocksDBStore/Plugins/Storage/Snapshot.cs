@@ -27,12 +27,7 @@ namespace Neo.Plugins.Storage
         private readonly RocksDbSharp.Snapshot _snapshot;
         private readonly WriteBatch _batch;
         private readonly ReadOptions _options;
-
-#if NET9_0_OR_GREATER
         private readonly Lock _lock = new();
-#else
-        private readonly object _lock = new();
-#endif
 
         public IStore Store { get; }
 
