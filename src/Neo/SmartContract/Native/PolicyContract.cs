@@ -13,8 +13,8 @@
 
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Iterators;
 using System;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -420,12 +420,14 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private UInt160[] ListBlockedAccounts(ApplicationEngine engine)
+        private StorageIterator ListBlockedAccounts(ApplicationEngine engine)
         {
-            return [.. engine
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+            var enumerator = engine
                 .SnapshotCache
                 .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
-                .Select(static s => new UInt160(s.Key.ToArray().AsSpan()[StorageKey.PrefixLength..]))];
+                .GetEnumerator();
+            return new StorageIterator(enumerator, 1, options);
         }
     }
 }

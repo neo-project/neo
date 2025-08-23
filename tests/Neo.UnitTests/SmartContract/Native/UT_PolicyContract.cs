@@ -14,8 +14,10 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
@@ -573,10 +575,16 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero));
 
-            var accounts = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "listBlockedAccounts");
-            Assert.IsInstanceOfType<VM.Types.Array>(accounts);
-            Assert.AreEqual(new UInt160(((VM.Types.Array)accounts)[0].GetSpan()), UInt160.Zero);
+            var sb = new ScriptBuilder()
+                .EmitDynamicCall(NativeContract.Policy.Hash, "listBlockedAccounts");
+
+            var engine = ApplicationEngine.Run(sb.ToArray(), snapshot, null, block, TestBlockchain.GetSystem().Settings);
+
+            Assert.IsInstanceOfType<InteropInterface>(engine.ResultStack[0]);
+
+            var iter = engine.ResultStack[0].GetInterface<object>() as StorageIterator;
+            Assert.IsTrue(iter.Next());
+            Assert.AreEqual(new UInt160(iter.Value(new ReferenceCounter()).GetSpan()), UInt160.Zero);
         }
     }
 }
