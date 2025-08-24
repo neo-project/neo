@@ -49,6 +49,7 @@ namespace Neo.Plugins.RpcServer
         public static readonly RpcError NoOpenedWallet = new(-302, "No opened wallet");
         public static readonly RpcError WalletNotFound = new(-303, "Wallet not found");
         public static readonly RpcError WalletNotSupported = new(-304, "Wallet not supported");
+        public static readonly RpcError UnknownAccount = new(-305, "Unknown account");
 
         public static readonly RpcError VerificationFailed = new(-500, "Inventory verification failed");
         public static readonly RpcError AlreadyExists = new(-501, "Inventory already exists");
@@ -80,7 +81,7 @@ namespace Neo.Plugins.RpcServer
         public string Message { get; set; }
         public string Data { get; set; }
 
-        public RpcError(int code, string message, string data = null)
+        public RpcError(int code, string message, string data = "")
         {
             Code = code;
             Message = message;

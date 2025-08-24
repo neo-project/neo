@@ -222,7 +222,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         {
             var leaf = Node.NewLeaf(Array.Empty<byte>());
             var data = leaf.ToArray();
-            Assert.AreEqual(3, data.Length);
+            Assert.HasCount(3, data);
             var l = data.AsSerializable<Node>();
             Assert.AreEqual(NodeType.LeafNode, l.Type);
             Assert.AreEqual(0, l.Value.Length);

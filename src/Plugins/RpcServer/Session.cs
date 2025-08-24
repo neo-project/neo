@@ -26,17 +26,17 @@ namespace Neo.Plugins.RpcServer
         public readonly Dictionary<Guid, IIterator> Iterators = new();
         public DateTime StartTime;
 
-        public Session(NeoSystem system, byte[] script, Signer[] signers, Witness[] witnesses, long datoshi, Diagnostic diagnostic)
+        public Session(NeoSystem system, byte[] script, Signer[]? signers, Witness[]? witnesses, long datoshi, Diagnostic? diagnostic)
         {
             Random random = new();
             Snapshot = system.GetSnapshotCache();
-            Transaction tx = signers == null ? null : new Transaction
+            var tx = signers == null ? null : new Transaction
             {
                 Version = 0,
                 Nonce = (uint)random.Next(),
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(Snapshot) + system.GetMaxValidUntilBlockIncrement(),
                 Signers = signers,
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = script,
                 Witnesses = witnesses
             };

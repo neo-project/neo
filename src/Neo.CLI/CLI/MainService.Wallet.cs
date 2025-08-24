@@ -86,7 +86,7 @@ namespace Neo.CLI
         [ConsoleCommand("upgrade wallet", Category = "Wallet Commands")]
         private void OnUpgradeWalletCommand(string path)
         {
-            if (Path.GetExtension(path).ToLowerInvariant() != ".db3")
+            if (!Path.GetExtension(path).Equals(".db3", StringComparison.InvariantCultureIgnoreCase))
             {
                 ConsoleHelper.Warning("Can't upgrade the wallet file. Check if your wallet is in db3 format.");
                 return;
