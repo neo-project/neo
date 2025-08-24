@@ -29,12 +29,7 @@ namespace Neo.Plugins.Storage
         private readonly LSnapshot _snapshot;
         private readonly ReadOptions _readOptions;
         private readonly WriteBatch _batch;
-
-#if NET9_0_OR_GREATER
         private readonly Lock _lock = new();
-#else
-        private readonly object _lock = new();
-#endif
 
         public IStore Store { get; }
 
