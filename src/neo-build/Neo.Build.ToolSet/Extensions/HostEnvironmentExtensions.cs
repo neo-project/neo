@@ -16,28 +16,28 @@ namespace Neo.Build.ToolSet.Extensions
 {
     internal static class HostEnvironmentExtensions
     {
-        public static bool IsLocalnet(this IHostEnvironment hostEnvironment)
+        public static bool IsLocalNet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.Localnet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.LocalNet);
         }
 
-        public static bool IsTestnet(this IHostEnvironment hostEnvironment)
+        public static bool IsTestNet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.Testnet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.TestNet);
         }
 
-        public static bool IsMainnet(this IHostEnvironment hostEnvironment)
+        public static bool IsMainNet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.Mainnet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.MainNet);
         }
 
-        public static bool IsPrivatenet(this IHostEnvironment hostEnvironment)
+        public static bool IsPrivateNet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.Privatenet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.PrivateNet);
         }
     }
 }
