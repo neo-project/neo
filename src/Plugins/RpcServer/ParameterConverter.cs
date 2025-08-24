@@ -221,18 +221,15 @@ namespace Neo.Plugins.RpcServer
         {
             if (json is null || json is not JObject obj) throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Signer: {json}"));
 
-            var account = obj["account"];
-            var scopes = obj["scopes"];
-            if (account is null) throw new RpcException(RpcError.InvalidParams.WithData($"Missing 'account' in Signer."));
-            if (scopes is null) throw new RpcException(RpcError.InvalidParams.WithData($"Missing 'scopes' in Signer."));
-
+            var account = obj["account"].NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'account' in Signer."));
+            var scopes = obj["scopes"].NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'scopes' in Signer."));
             var contracts = obj["allowedcontracts"];
             var groups = obj["allowedgroups"];
             var rules = obj["rules"];
             return new Signer
             {
-                Account = account.AsString().AddressToScriptHash(addressVersion),
-                Scopes = Result.Ok_Or(() => Enum.Parse<WitnessScope>(scopes.AsString()),
+                Account = account!.AsString().AddressToScriptHash(addressVersion),
+                Scopes = Result.Ok_Or(() => Enum.Parse<WitnessScope>(scopes!.AsString()),
                     RpcError.InvalidParams.WithData($"Invalid 'scopes' in Signer.")),
                 AllowedContracts = contracts is null ? [] :
                     Result.Ok_Or(() => ((JArray)contracts).Select(p => UInt160.Parse(p!.AsString())).ToArray(),
@@ -269,6 +266,7 @@ namespace Neo.Plugins.RpcServer
             {
                 if (json[i] is null || json[i] is not JObject obj)
                     throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Signer at {i}."));
+
                 signers[i] = obj.ToSigner(addressVersion);
             }
 
@@ -279,8 +277,6 @@ namespace Neo.Plugins.RpcServer
 
         internal static Signer[] ToSigners(this Address[] accounts, WitnessScope scopes)
         {
-            if (accounts == null) return null;
-
             if (accounts.Length > Transaction.MaxTransactionAttributes)
                 throw new RpcException(RpcError.InvalidParams.WithData("Max allowed signers exceeded."));
 
@@ -340,7 +336,7 @@ namespace Neo.Plugins.RpcServer
             if (token is null || token is not JString value)
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Address: {token}"));
 
-            var scriptHash = AddressToScriptHash(value.Value, version);
+            var scriptHash = value.Value.AddressToScriptHash(version);
             return new Address(scriptHash, version);
         }
 
@@ -352,8 +348,8 @@ namespace Neo.Plugins.RpcServer
             var addresses = new Address[array.Count];
             for (var i = 0; i < array.Count; i++)
             {
-                if (array[i] is null) throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Address at {i}."));
-                addresses[i] = ToAddress(array[i]!, version);
+                var item = array[i].NotNull_Or(RpcError.InvalidParams.WithData($"Invalid Address at {i}."));
+                addresses[i] = item.ToAddress(version);
             }
             return addresses;
         }
