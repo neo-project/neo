@@ -13,6 +13,7 @@
 
 using Microsoft.IdentityModel.Tokens;
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM.Types;
 using System;
@@ -196,6 +197,18 @@ namespace Neo.SmartContract.Native
         public static byte[] Base58CheckDecode([MaxLength(MaxInputLength)] string s)
         {
             return Base58.Base58CheckDecode(s);
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.None)]
+        private static string HexEncode([MaxLength(MaxInputLength)] byte[] bytes)
+        {
+            return bytes.ToHexString();
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.None)]
+        private static byte[] HexDecode([MaxLength(MaxInputLength)] string str)
+        {
+            return str.HexToBytes();
         }
 
         [ContractMethod(CpuFee = 1 << 5)]
