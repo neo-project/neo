@@ -15,12 +15,12 @@ namespace Neo.Plugins.RpcServer
 {
     public static class RpcErrorFactory
     {
-        public static RpcError WithData(this RpcError error, string data = null)
+        public static RpcError WithData(this RpcError error, string data = "")
         {
             return new RpcError(error.Code, error.Message, data);
         }
 
-        public static RpcError NewCustomError(int code, string message, string data = null)
+        public static RpcError NewCustomError(int code, string message, string data = "")
         {
             return new RpcError(code, message, data);
         }

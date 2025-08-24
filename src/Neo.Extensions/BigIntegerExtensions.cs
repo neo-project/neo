@@ -40,11 +40,7 @@ namespace Neo.Extensions
         {
             if (value.Sign == 0) return -1; // special case for zero. TrailingZeroCount returns 32 in standard library.
 
-#if NET7_0_OR_GREATER
             return (int)BigInteger.TrailingZeroCount(value);
-#else
-            return TrailingZeroCount(value.ToByteArray());
-#endif
         }
 
         /// <summary>
@@ -179,11 +175,7 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long GetBitLength(this BigInteger value)
         {
-#if NET5_0_OR_GREATER
             return value.GetBitLength();
-#else
-            return BitLength(value);
-#endif
         }
 
         /// <summary>
