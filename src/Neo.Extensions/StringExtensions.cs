@@ -10,13 +10,9 @@
 // modifications are permitted.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Diagnostics.CodeAnalysis;
-
-#if !NET9_0_OR_GREATER
-using System.Globalization;
-#endif
 
 namespace Neo.Extensions
 {
@@ -145,18 +141,7 @@ namespace Neo.Extensions
         /// <returns>The converted byte array.</returns>
         public static byte[] HexToBytes(this ReadOnlySpan<char> value)
         {
-#if !NET9_0_OR_GREATER
-            if (value.IsEmpty)
-                return [];
-            if (value.Length % 2 == 1)
-                throw new FormatException($"value.Length({value.Length}) not multiple of 2");
-            var result = new byte[value.Length / 2];
-            for (var i = 0; i < result.Length; i++)
-                result[i] = byte.Parse(value.Slice(i * 2, 2), NumberStyles.AllowHexSpecifier);
-            return result;
-#else
             return Convert.FromHexString(value);
-#endif
         }
 
         /// <summary>
