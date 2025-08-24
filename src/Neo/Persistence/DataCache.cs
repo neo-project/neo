@@ -370,9 +370,7 @@ namespace Neo.Persistence
         /// <returns>
         /// The cached data, or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.
         /// </returns>
-#if NET5_0_OR_GREATER
         [return: NotNullIfNotNull(nameof(factory))]
-#endif
         public StorageItem? GetAndChange(StorageKey key, Func<StorageItem>? factory = null)
         {
             lock (_dictionary)

@@ -78,7 +78,7 @@ namespace Neo.Cryptography
                 }
                 source = source[remaining..];
             }
-#if NET7_0_OR_GREATER
+
             for (; source.Length >= 16; source = source[16..])
             {
                 var k = BinaryPrimitives.ReadUInt128LittleEndian(source);
@@ -87,7 +87,6 @@ namespace Neo.Cryptography
                 Mix((uint)(k >> 64));
                 Mix((uint)(k >> 96));
             }
-#endif
 
             for (; source.Length >= 4; source = source[4..])
             {
