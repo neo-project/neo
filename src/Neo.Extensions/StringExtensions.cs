@@ -237,7 +237,7 @@ namespace Neo.Extensions
         public static byte[] HexToBytes(this string? value)
         {
             if (value == null)
-                return Array.Empty<byte>();
+                return [];
 
             try
             {
