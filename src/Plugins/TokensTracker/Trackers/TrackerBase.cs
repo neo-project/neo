@@ -151,12 +151,6 @@ namespace Neo.Plugins.Trackers
             return transfer;
         }
 
-        public UInt160 GetScriptHashFromParam(string addressOrScriptHash)
-        {
-            return addressOrScriptHash.Length < 40 ?
-                addressOrScriptHash.ToScriptHash(_neoSystem.Settings.AddressVersion) : UInt160.Parse(addressOrScriptHash);
-        }
-
         public void Log(string message, LogLevel level = LogLevel.Info)
         {
             Utility.Log(TrackName, level, message);
