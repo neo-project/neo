@@ -15,6 +15,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer;
+using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -195,14 +196,15 @@ namespace Neo.Plugins.Trackers.NEP_11
 
 
         [RpcMethod]
-        public JToken GetNep11Transfers(JArray _params)
+        public JToken GetNep11Transfers(Address address, ulong startTime = 0, ulong endTime = 0)
         {
             _shouldTrackHistory.True_Or(RpcError.MethodNotFound);
-            UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
+
+            var userScriptHash = address.ScriptHash;
+
             // If start time not present, default to 1 week of history.
-            ulong startTime = _params.Count > 1 ? (ulong)_params[1].AsNumber() :
-                (DateTime.UtcNow - TimeSpan.FromDays(7)).ToTimestampMS();
-            ulong endTime = _params.Count > 2 ? (ulong)_params[2].AsNumber() : DateTime.UtcNow.ToTimestampMS();
+            startTime = startTime == 0 ? (DateTime.UtcNow - TimeSpan.FromDays(7)).ToTimestampMS() : startTime;
+            endTime = endTime == 0 ? DateTime.UtcNow.ToTimestampMS() : endTime;
             (endTime >= startTime).True_Or(RpcError.InvalidParams);
 
             JObject json = new();
@@ -217,9 +219,9 @@ namespace Neo.Plugins.Trackers.NEP_11
         }
 
         [RpcMethod]
-        public JToken GetNep11Balances(JArray _params)
+        public JToken GetNep11Balances(Address address)
         {
-            UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
+            var userScriptHash = address.ScriptHash;
 
             JObject json = new();
             JArray balances = new();
@@ -277,13 +279,12 @@ namespace Neo.Plugins.Trackers.NEP_11
         }
 
         [RpcMethod]
-        public JToken GetNep11Properties(JArray _params)
+        public JToken GetNep11Properties(Address address, string tokenId)
         {
-            UInt160 nep11Hash = GetScriptHashFromParam(_params[0].AsString());
-            var tokenId = _params[1].AsString().HexToBytes();
+            var nep11Hash = address.ScriptHash;
 
             using ScriptBuilder sb = new();
-            sb.EmitDynamicCall(nep11Hash, "properties", CallFlags.ReadOnly, tokenId);
+            sb.EmitDynamicCall(nep11Hash, "properties", CallFlags.ReadOnly, tokenId.HexToBytes());
             using var snapshot = _neoSystem.GetSnapshotCache();
 
             using var engine = ApplicationEngine.Run(sb.ToArray(), snapshot, settings: _neoSystem.Settings);
