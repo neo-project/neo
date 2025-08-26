@@ -12,7 +12,6 @@
 using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Configuration;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;

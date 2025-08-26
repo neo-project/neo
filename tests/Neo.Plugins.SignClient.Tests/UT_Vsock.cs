@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Neo.Plugins.SignClient.Tests
 {
