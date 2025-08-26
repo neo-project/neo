@@ -100,7 +100,7 @@ namespace Neo.Plugins.RpcServer
             block.NotNull_Or(RpcError.UnknownBlock);
             if (verbose)
             {
-                JObject json = Utility.BlockToJson(block, system.Settings);
+                JObject json = block.ToJson(system.Settings);
                 json["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
                 UInt256 hash = NativeContract.Ledger.GetBlockHash(snapshot, block.Index + 1);
                 if (hash != null)
@@ -369,7 +369,8 @@ namespace Neo.Plugins.RpcServer
             tx.NotNull_Or(RpcError.UnknownTransaction);
 
             if (!verbose) return Convert.ToBase64String(tx.ToArray());
-            var json = Utility.TransactionToJson(tx!, system.Settings);
+
+            var json = tx!.ToJson(system.Settings);
             if (state is not null)
             {
                 var block = NativeContract.Ledger.GetTrimmedBlock(snapshot, NativeContract.Ledger.GetBlockHash(snapshot, state.BlockIndex));
