@@ -774,7 +774,7 @@ namespace Neo.Plugins.RpcServer
             {
                 tx.Witnesses = context.GetWitnesses();
                 system.Blockchain.Tell(tx);
-                return Utility.TransactionToJson(tx, system.Settings);
+                return tx.ToJson(system.Settings);
             }
             else
             {

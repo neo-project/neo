@@ -171,7 +171,8 @@ namespace Neo.Plugins.OracleService
             ConsoleHelper.Info($"Oracle status: ", $"{status}");
         }
 
-        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot,
+            IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != OracleSettings.Default.Network) return;
 
@@ -226,25 +227,37 @@ namespace Neo.Plugins.OracleService
             }
         }
 
+        /// <summary>
+        /// Submit oracle response
+        /// </summary>
+        /// <param name="oraclePubkey">Oracle public key, base64-encoded if access from json-rpc</param>
+        /// <param name="requestId">Request id</param>
+        /// <param name="txSign">Transaction signature, base64-encoded if access from json-rpc</param>
+        /// <param name="msgSign">Message signature, base64-encoded if access from json-rpc</param>
+        /// <returns>JObject</returns>
         [RpcMethod]
-        public JObject SubmitOracleResponse(JArray _params)
+        public JObject SubmitOracleResponse(byte[] oraclePubkey, ulong requestId, byte[] txSign, byte[] msgSign)
         {
             status.Equals(OracleStatus.Running).True_Or(RpcError.OracleDisabled);
-            ECPoint oraclePub = ECPoint.DecodePoint(Convert.FromBase64String(_params[0].AsString()), ECCurve.Secp256r1);
-            ulong requestId = Result.Ok_Or(() => (ulong)_params[1].AsNumber(), RpcError.InvalidParams.WithData($"Invalid requestId: {_params[1]}"));
-            byte[] txSign = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid txSign: {_params[2]}"));
-            byte[] msgSign = Result.Ok_Or(() => Convert.FromBase64String(_params[3].AsString()), RpcError.InvalidParams.WithData($"Invalid msgSign: {_params[3]}"));
 
+            var oraclePub = ECPoint.DecodePoint(oraclePubkey, ECCurve.Secp256r1);
             finishedCache.ContainsKey(requestId).False_Or(RpcError.OracleRequestFinished);
 
             using (var snapshot = _system.GetSnapshotCache())
             {
-                uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
+                var height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
+
+                // Check if the oracle is designated
                 oracles.Any(p => p.Equals(oraclePub)).True_Or(RpcErrorFactory.OracleNotDesignatedNode(oraclePub));
+
+                // Check if the request exists
                 NativeContract.Oracle.GetRequest(snapshot, requestId).NotNull_Or(RpcError.OracleRequestNotFound);
+
+                // Check if the transaction signature is valid
                 byte[] data = [.. oraclePub.ToArray(), .. BitConverter.GetBytes(requestId), .. txSign];
-                Crypto.VerifySignature(data, msgSign, oraclePub).True_Or(RpcErrorFactory.InvalidSignature($"Invalid oracle response transaction signature from '{oraclePub}'."));
+                Crypto.VerifySignature(data, msgSign, oraclePub)
+                    .True_Or(RpcErrorFactory.InvalidSignature($"Invalid oracle response transaction signature from '{oraclePub}'."));
                 AddResponseTxSign(snapshot, requestId, oraclePub, txSign);
             }
             return new JObject();
