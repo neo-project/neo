@@ -98,8 +98,11 @@ namespace Neo.Plugins.ApplicationLogs
         public JToken GetApplicationLog(UInt256 hash, string triggerType = "")
         {
             var raw = BlockToJObject(hash);
-            if (raw == null) raw = TransactionToJObject(hash);
-            if (raw == null) throw new RpcException(RpcError.InvalidParams.WithData("Unknown transaction/blockhash"));
+            if (raw == null)
+            {
+                raw = TransactionToJObject(hash);
+                if (raw == null) throw new RpcException(RpcError.InvalidParams.WithData("Unknown transaction/blockhash"));
+            }
 
             if (!string.IsNullOrEmpty(triggerType) && Enum.TryParse(triggerType, true, out TriggerType _))
             {
