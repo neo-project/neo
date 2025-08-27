@@ -35,7 +35,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 if (error.Code == RpcError.WalletFeeLimit.Code)
                     Assert.IsNotNull(error.Data);
                 else
-                    Assert.IsNull(error.Data);
+                    Assert.IsEmpty(error.Data);
             }
         }
 
