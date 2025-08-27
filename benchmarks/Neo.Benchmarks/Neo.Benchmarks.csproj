@@ -5,7 +5,6 @@
     <TargetFrameworks>net9.0</TargetFrameworks>
     <RootNamespace>Neo</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
