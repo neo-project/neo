@@ -205,7 +205,7 @@ namespace Neo.SmartContract.Native
             return bytes.ToHexString();
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.None)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5]
         private static byte[] HexDecode([MaxLength(MaxInputLength)] string str)
         {
             return str.HexToBytes();
