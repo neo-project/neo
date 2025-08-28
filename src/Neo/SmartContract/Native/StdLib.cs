@@ -199,7 +199,7 @@ namespace Neo.SmartContract.Native
             return Base58.Base58CheckDecode(s);
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.None)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5]
         private static string HexEncode([MaxLength(MaxInputLength)] byte[] bytes)
         {
             return bytes.ToHexString();
