@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.Collections.Generic;
 
 namespace Neo.Extensions
@@ -23,7 +24,20 @@ namespace Neo.Extensions
             }
             else
             {
-                set.RemoveWhere(u => other.Contains(u));
+                set.RemoveWhere(other.Contains);
+            }
+        }
+
+        public static void Remove<T>(this HashSet<T> set, ICollection<T> other)
+            where T : IEquatable<T>
+        {
+            if (set.Count > other.Count)
+            {
+                set.ExceptWith(other);
+            }
+            else
+            {
+                set.RemoveWhere(other.Contains);
             }
         }
 
@@ -35,7 +49,7 @@ namespace Neo.Extensions
             }
             else
             {
-                set.RemoveWhere(u => other.ContainsKey(u));
+                set.RemoveWhere(other.ContainsKey);
             }
         }
     }

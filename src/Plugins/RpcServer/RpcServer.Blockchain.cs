@@ -91,7 +91,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetBlock(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
-            RpcException.ThrowIfNull(blockHashOrIndex, nameof(blockHashOrIndex), RpcError.InvalidParams);
+            blockHashOrIndex.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'blockHashOrIndex'"));
 
             using var snapshot = system.GetSnapshotCache();
             var block = blockHashOrIndex.IsIndex
@@ -100,7 +100,7 @@ namespace Neo.Plugins.RpcServer
             block.NotNull_Or(RpcError.UnknownBlock);
             if (verbose)
             {
-                JObject json = Utility.BlockToJson(block, system.Settings);
+                JObject json = block.ToJson(system.Settings);
                 json["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
                 UInt256 hash = NativeContract.Ledger.GetBlockHash(snapshot, block.Index + 1);
                 if (hash != null)
@@ -212,7 +212,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetBlockHeader(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
-            RpcException.ThrowIfNull(blockHashOrIndex, nameof(blockHashOrIndex), RpcError.InvalidParams);
+            blockHashOrIndex.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'blockHashOrIndex'"));
 
             var snapshot = system.StoreView;
             Header header;
@@ -252,7 +252,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetContractState(ContractNameOrHashOrId contractNameOrHashOrId)
         {
-            RpcException.ThrowIfNull(contractNameOrHashOrId, nameof(contractNameOrHashOrId), RpcError.InvalidParams);
+            contractNameOrHashOrId.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'contractNameOrHashOrId'"));
 
             if (contractNameOrHashOrId.IsId)
             {
@@ -358,16 +358,19 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetRawTransaction(UInt256 hash, bool verbose = false)
         {
-            RpcException.ThrowIfNull(hash, nameof(hash), RpcError.InvalidParams);
+            hash.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'hash'"));
 
             if (system.MemPool.TryGetValue(hash, out var tx) && !verbose)
                 return Convert.ToBase64String(tx.ToArray());
             var snapshot = system.StoreView;
             var state = NativeContract.Ledger.GetTransactionState(snapshot, hash);
+
             tx ??= state?.Transaction;
             tx.NotNull_Or(RpcError.UnknownTransaction);
+
             if (!verbose) return Convert.ToBase64String(tx.ToArray());
-            var json = Utility.TransactionToJson(tx, system.Settings);
+
+            var json = tx!.ToJson(system.Settings);
             if (state is not null)
             {
                 var block = NativeContract.Ledger.GetTrimmedBlock(snapshot, NativeContract.Ledger.GetBlockHash(snapshot, state.BlockIndex));
@@ -409,8 +412,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetStorage(ContractNameOrHashOrId contractNameOrHashOrId, string base64Key)
         {
-            RpcException.ThrowIfNull(contractNameOrHashOrId, nameof(contractNameOrHashOrId), RpcError.InvalidParams);
-            RpcException.ThrowIfNull(base64Key, nameof(base64Key), RpcError.InvalidParams);
+            contractNameOrHashOrId.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'contractNameOrHashOrId'"));
+            base64Key.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'base64Key'"));
 
             using var snapshot = system.GetSnapshotCache();
             int id = GetContractId(snapshot, contractNameOrHashOrId);
@@ -459,8 +462,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken FindStorage(ContractNameOrHashOrId contractNameOrHashOrId, string base64KeyPrefix, int start = 0)
         {
-            RpcException.ThrowIfNull(contractNameOrHashOrId, nameof(contractNameOrHashOrId), RpcError.InvalidParams);
-            RpcException.ThrowIfNull(base64KeyPrefix, nameof(base64KeyPrefix), RpcError.InvalidParams);
+            contractNameOrHashOrId.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'contractNameOrHashOrId'"));
+            base64KeyPrefix.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'base64KeyPrefix'"));
 
             using var snapshot = system.GetSnapshotCache();
             int id = GetContractId(snapshot, contractNameOrHashOrId);
@@ -512,7 +515,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetTransactionHeight(UInt256 hash)
         {
-            RpcException.ThrowIfNull(hash, nameof(hash), RpcError.InvalidParams);
+            hash.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'hash'"));
 
             uint? height = NativeContract.Ledger.GetTransactionState(system.StoreView, hash)?.BlockIndex;
             if (height.HasValue) return height.Value;

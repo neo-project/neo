@@ -77,9 +77,9 @@ namespace Neo.UnitTests.Cryptography
         public void TestAppend()
         {
             var random = new Random();
-            var buffer = new byte[random.Next(1, 2048)];
+            var buffer = new byte[random.Next(2, 2048)];
             random.NextBytes(buffer);
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < 100; i++)
             {
                 int split = random.Next(1, buffer.Length - 1);
                 var murmur128 = new Murmur128(123u);
