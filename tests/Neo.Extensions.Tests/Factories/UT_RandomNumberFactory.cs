@@ -287,5 +287,18 @@ namespace Neo.Extensions.Tests.Factories
             actualValue = RandomNumberFactory.NextBigInteger(expectedMax);
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
         }
+
+        [TestMethod]
+        public void CheckNextBigIntegerZero()
+        {
+            var expectedMax = BigInteger.Zero;
+            var expectedMin = BigInteger.Zero;
+
+            var actualValue = RandomNumberFactory.NextBigInteger(expectedMin, expectedMax);
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+
+            actualValue = RandomNumberFactory.NextBigInteger(expectedMax);
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+        }
     }
 }

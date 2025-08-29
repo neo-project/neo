@@ -216,6 +216,9 @@ namespace Neo.Extensions.Factories
             if (maxValue.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
 
+            if (maxValue == 0)
+                return BigInteger.Zero;
+
             var maxValueBits = maxValue.GetByteCount() * 8;
             var maxValueSize = BigInteger.Pow(2, maxValueBits) - BigInteger.One;
 
