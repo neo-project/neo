@@ -199,13 +199,13 @@ namespace Neo.SmartContract.Native
             return Base58.Base58CheckDecode(s);
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5)]
         private static string HexEncode([MaxLength(MaxInputLength)] byte[] bytes)
         {
             return bytes.ToHexString();
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5)]
         private static byte[] HexDecode([MaxLength(MaxInputLength)] string str)
         {
             return str.HexToBytes();
