@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,19 +20,22 @@ namespace Neo.Plugins.RpcServer
         public override string Name => "RpcServer";
         public override string Description => "Enables RPC for the node";
 
-        private RpcServerSettings settings;
+        private RpcServerSettings? settings;
         private static readonly Dictionary<uint, RpcServer> servers = new();
         private static readonly Dictionary<uint, List<object>> handlers = new();
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "RpcServer.json");
-        protected override UnhandledExceptionPolicy ExceptionPolicy => settings.ExceptionPolicy;
+
+        protected override UnhandledExceptionPolicy ExceptionPolicy => settings!.ExceptionPolicy;
 
         protected override void Configure()
         {
             settings = new RpcServerSettings(GetConfiguration());
             foreach (var s in settings.Servers)
-                if (servers.TryGetValue(s.Network, out RpcServer server))
+            {
+                if (servers.TryGetValue(s.Network, out var server))
                     server.UpdateSettings(s);
+            }
         }
 
         public override void Dispose()
@@ -43,6 +47,8 @@ namespace Neo.Plugins.RpcServer
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
+            if (settings is null) throw new InvalidOperationException("RpcServer settings are not loaded");
+
             var s = settings.Servers.FirstOrDefault(p => p.Network == system.Settings.Network);
             if (s is null) return;
 
@@ -56,8 +62,7 @@ namespace Neo.Plugins.RpcServer
                 $"Example: \"AllowOrigins\": [\"http://{s.BindAddress}:{s.Port}\"]", LogLevel.Info);
             }
 
-            RpcServer rpcRpcServer = new(system, s);
-
+            var rpcRpcServer = new RpcServer(system, s);
             if (handlers.Remove(s.Network, out var list))
             {
                 foreach (var handler in list)
@@ -72,7 +77,7 @@ namespace Neo.Plugins.RpcServer
 
         public static void RegisterMethods(object handler, uint network)
         {
-            if (servers.TryGetValue(network, out RpcServer server))
+            if (servers.TryGetValue(network, out var server))
             {
                 server.RegisterMethods(handler);
                 return;

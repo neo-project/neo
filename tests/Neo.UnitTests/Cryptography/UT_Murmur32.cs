@@ -83,9 +83,9 @@ namespace Neo.UnitTests.Cryptography
 
             // random data, random split
             var random = new Random();
-            var data = new byte[random.Next(1, 2048)];
+            var data = new byte[random.Next(2, 2048)];
             random.NextBytes(data);
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < 100; i++)
             {
                 var split = random.Next(1, data.Length - 1);
                 murmur3.Reset();

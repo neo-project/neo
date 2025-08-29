@@ -40,25 +40,25 @@ namespace Neo.Plugins.RpcServer
 
             public override bool ChangePassword(string oldPassword, string newPassword) => false;
             public override bool Contains(UInt160 scriptHash) => false;
-            public override WalletAccount CreateAccount(byte[] privateKey) => null;
-            public override WalletAccount CreateAccount(Contract contract, KeyPair key = null) => null;
-            public override WalletAccount CreateAccount(UInt160 scriptHash) => null;
+            public override WalletAccount? CreateAccount(byte[] privateKey) => null;
+            public override WalletAccount? CreateAccount(Contract contract, KeyPair? key = null) => null;
+            public override WalletAccount? CreateAccount(UInt160 scriptHash) => null;
             public override void Delete() { }
             public override bool DeleteAccount(UInt160 scriptHash) => false;
-            public override WalletAccount GetAccount(UInt160 scriptHash) => null;
-            public override IEnumerable<WalletAccount> GetAccounts() => Array.Empty<WalletAccount>();
+            public override WalletAccount? GetAccount(UInt160 scriptHash) => null;
+            public override IEnumerable<WalletAccount> GetAccounts() => [];
             public override bool VerifyPassword(string password) => false;
             public override void Save() { }
         }
 
-        protected internal Wallet wallet;
+        protected internal Wallet? wallet;
 
         /// <summary>
         /// Checks if a wallet is open and throws an error if not.
         /// </summary>
-        private void CheckWallet()
+        private Wallet CheckWallet()
         {
-            wallet.NotNull_Or(RpcError.NoOpenedWallet);
+            return wallet.NotNull_Or(RpcError.NoOpenedWallet);
         }
 
         /// <summary>
@@ -91,12 +91,10 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken DumpPrivKey(Address address)
         {
-            CheckWallet();
-
-            var account = wallet.GetAccount(address.ScriptHash);
-            if (account is null) throw new RpcException(RpcError.UnknownAccount.WithData($"{address.ScriptHash}"));
-
-            return account.GetKey().Export();
+            return CheckWallet().GetAccount(address.ScriptHash)
+                .NotNull_Or(RpcError.UnknownAccount.WithData($"{address.ScriptHash}"))
+                .GetKey()
+                .Export();
         }
 
         /// <summary>
@@ -111,8 +109,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetNewAddress()
         {
-            CheckWallet();
-
+            var wallet = CheckWallet();
             var account = wallet.CreateAccount();
             if (wallet is NEP6Wallet nep6)
                 nep6.Save();
@@ -136,9 +133,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetWalletBalance(UInt160 assetId)
         {
-            CheckWallet();
-
-            var balance = wallet.GetAvailable(system.StoreView, assetId).Value;
+            var balance = CheckWallet().GetAvailable(system.StoreView, assetId).Value;
             return new JObject { ["balance"] = balance.ToString() };
         }
 
@@ -156,14 +151,13 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetWalletUnclaimedGas()
         {
-            CheckWallet();
-
+            var wallet = CheckWallet();
             // Datoshi is the smallest unit of GAS, 1 GAS = 10^8 Datoshi
             var datoshi = BigInteger.Zero;
             using (var snapshot = system.GetSnapshotCache())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
-                foreach (UInt160 account in wallet.GetAccounts().Select(p => p.ScriptHash))
+                foreach (var account in wallet.GetAccounts().Select(p => p.ScriptHash))
                     datoshi += NativeContract.NEO.UnclaimedGas(snapshot, account, height);
             }
             return datoshi.ToString();
@@ -188,8 +182,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken ImportPrivKey(string privkey)
         {
-            CheckWallet();
-
+            var wallet = CheckWallet();
             var account = wallet.Import(privkey);
             if (wallet is NEP6Wallet nep6wallet)
                 nep6wallet.Save();
@@ -238,8 +231,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken ListAddress()
         {
-            CheckWallet();
-            return wallet.GetAccounts().Select(p =>
+            return CheckWallet().GetAccounts().Select(p =>
             {
                 return new JObject
                 {
@@ -288,16 +280,17 @@ namespace Neo.Plugins.RpcServer
         /// Processes the result of an invocation with wallet for signing.
         /// </summary>
         /// <param name="result">The result object to process.</param>
+        /// <param name="script">The script to process.</param>
         /// <param name="signers">Optional signers for the transaction.</param>
-        private void ProcessInvokeWithWallet(JObject result, Signer[] signers = null)
+        private void ProcessInvokeWithWallet(JObject result, byte[] script, Signer[]? signers = null)
         {
             if (wallet == null || signers == null || signers.Length == 0) return;
 
-            UInt160 sender = signers[0].Account;
+            var sender = signers[0].Account;
             Transaction tx;
             try
             {
-                tx = wallet.MakeTransaction(system.StoreView, Convert.FromBase64String(result["script"].AsString()), sender, signers, maxGas: settings.MaxGasInvoke);
+                tx = wallet.MakeTransaction(system.StoreView, script, sender, signers, maxGas: settings.MaxGasInvoke);
             }
             catch (Exception e)
             {
@@ -361,9 +354,9 @@ namespace Neo.Plugins.RpcServer
         /// <returns>The transaction details if successful, or the contract parameters if signatures are incomplete.</returns>
         /// <exception cref="RpcException">Thrown when no wallet is open, parameters are invalid, or there are insufficient funds.</exception>
         [RpcMethod]
-        protected internal virtual JToken SendFrom(UInt160 assetId, Address from, Address to, string amount, Address[] signers = null)
+        protected internal virtual JToken SendFrom(UInt160 assetId, Address from, Address to, string amount, Address[]? signers = null)
         {
-            CheckWallet();
+            var wallet = CheckWallet();
 
             using var snapshot = system.GetSnapshotCache();
             var descriptor = new AssetDescriptor(snapshot, system.Settings, assetId);
@@ -371,9 +364,9 @@ namespace Neo.Plugins.RpcServer
             var amountDecimal = new BigDecimal(BigInteger.Parse(amount), descriptor.Decimals);
             (amountDecimal.Sign > 0).True_Or(RpcErrorFactory.InvalidParams("Amount can't be negative."));
 
-            var calls = signers.ToSigners(WitnessScope.CalledByEntry);
-            var tx = Result.Ok_Or(
-                () => wallet.MakeTransaction(snapshot, [new() { AssetId = assetId, Value = amountDecimal, ScriptHash = to.ScriptHash }], from.ScriptHash, calls),
+            var callSigners = signers?.ToSigners(WitnessScope.CalledByEntry);
+            var transfer = new TransferOutput { AssetId = assetId, Value = amountDecimal, ScriptHash = to.ScriptHash };
+            var tx = Result.Ok_Or(() => wallet.MakeTransaction(snapshot, [transfer], from.ScriptHash, callSigners),
                 RpcError.InvalidRequest.WithData("Can not process this request.")).NotNull_Or(RpcError.InsufficientFunds);
 
             var transContext = new ContractParametersContext(snapshot, tx, settings.Network);
@@ -454,37 +447,40 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken SendMany(JArray _params)
         {
-            CheckWallet();
+            var wallet = CheckWallet();
 
             int toStart = 0;
             var addressVersion = system.Settings.AddressVersion;
-            UInt160 from = null;
+            UInt160? from = null;
             if (_params[0] is JString)
             {
-                from = _params[0].AsString().AddressToScriptHash(addressVersion);
+                from = _params[0]!.AsString().AddressToScriptHash(addressVersion);
                 toStart = 1;
             }
 
-            JArray to = Result.Ok_Or(() => (JArray)_params[toStart], RpcError.InvalidParams.WithData($"Invalid 'to' parameter: {_params[toStart]}"));
+            JArray to = Result.Ok_Or(() => (JArray)_params[toStart]!, RpcError.InvalidParams.WithData($"Invalid 'to' parameter: {_params[toStart]}"));
             (to.Count != 0).True_Or(RpcErrorFactory.InvalidParams("Argument 'to' can't be empty."));
 
-            var signers = _params.Count >= toStart + 2
-                ? ((JArray)_params[toStart + 1])
-                    .Select(p => new Signer() { Account = p.ToAddress(addressVersion).ScriptHash, Scopes = WitnessScope.CalledByEntry })
-                    .ToArray()
+            var signers = _params.Count >= toStart + 2 && _params[toStart + 1] is not null
+                ? _params[toStart + 1]!.ToAddresses(addressVersion).ToSigners(WitnessScope.CalledByEntry)
                 : null;
 
             var outputs = new TransferOutput[to.Count];
             using var snapshot = system.GetSnapshotCache();
             for (int i = 0; i < to.Count; i++)
             {
-                var assetId = UInt160.Parse(to[i]["asset"].AsString());
+                var item = to[i].NotNull_Or(RpcErrorFactory.InvalidParams($"Invalid 'to' parameter at {i}."));
+                var asset = item["asset"].NotNull_Or(RpcErrorFactory.InvalidParams($"no 'asset' parameter at 'to[{i}]'."));
+                var value = item["value"].NotNull_Or(RpcErrorFactory.InvalidParams($"no 'value' parameter at 'to[{i}]'."));
+                var address = item["address"].NotNull_Or(RpcErrorFactory.InvalidParams($"no 'address' parameter at 'to[{i}]'."));
+
+                var assetId = UInt160.Parse(asset.AsString());
                 var descriptor = new AssetDescriptor(snapshot, system.Settings, assetId);
                 outputs[i] = new TransferOutput
                 {
                     AssetId = assetId,
-                    Value = new BigDecimal(BigInteger.Parse(to[i]["value"].AsString()), descriptor.Decimals),
-                    ScriptHash = to[i]["address"].AsString().AddressToScriptHash(system.Settings.AddressVersion)
+                    Value = new BigDecimal(BigInteger.Parse(value.AsString()), descriptor.Decimals),
+                    ScriptHash = address.AsString().AddressToScriptHash(system.Settings.AddressVersion)
                 };
                 (outputs[i].Value.Sign > 0).True_Or(RpcErrorFactory.InvalidParams($"Amount of '{assetId}' can't be negative."));
             }
@@ -543,7 +539,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken SendToAddress(UInt160 assetId, Address to, string amount)
         {
-            CheckWallet();
+            var wallet = CheckWallet();
 
             using var snapshot = system.GetSnapshotCache();
             var descriptor = new AssetDescriptor(snapshot, system.Settings, assetId);
@@ -610,16 +606,16 @@ namespace Neo.Plugins.RpcServer
         /// Thrown when no wallet is open, the transaction is already confirmed, or there are insufficient funds for the cancellation fee.
         /// </exception>
         [RpcMethod]
-        protected internal virtual JToken CancelTransaction(UInt256 txid, Address[] signers, string extraFee = null)
+        protected internal virtual JToken CancelTransaction(UInt256 txid, Address[] signers, string? extraFee = null)
         {
-            CheckWallet();
+            var wallet = CheckWallet();
             NativeContract.Ledger.GetTransactionState(system.StoreView, txid)
                 .Null_Or(RpcErrorFactory.AlreadyExists("This tx is already confirmed, can't be cancelled."));
 
             if (signers is null || signers.Length == 0) throw new RpcException(RpcErrorFactory.BadRequest("No signer."));
 
             var conflict = new TransactionAttribute[] { new Conflicts() { Hash = txid } };
-            var noneSigners = signers.ToSigners(WitnessScope.None);
+            var noneSigners = signers.ToSigners(WitnessScope.None)!;
             var tx = new Transaction
             {
                 Signers = noneSigners,
@@ -693,7 +689,7 @@ namespace Neo.Plugins.RpcServer
         /// </exception>
         [RpcMethod]
         protected internal virtual JToken InvokeContractVerify(UInt160 scriptHash,
-            ContractParameter[] args = null, SignersAndWitnesses signersAndWitnesses = default)
+            ContractParameter[]? args = null, SignersAndWitnesses signersAndWitnesses = default)
         {
             args ??= [];
             var (signers, witnesses) = signersAndWitnesses;
@@ -708,7 +704,7 @@ namespace Neo.Plugins.RpcServer
         /// <param name="signers">Optional signers for the verification.</param>
         /// <param name="witnesses">Optional witnesses for the verification.</param>
         /// <returns>A JSON object containing the verification result.</returns>
-        private JObject GetVerificationResult(UInt160 scriptHash, ContractParameter[] args, Signer[] signers = null, Witness[] witnesses = null)
+        private JObject GetVerificationResult(UInt160 scriptHash, ContractParameter[] args, Signer[]? signers = null, Witness[]? witnesses = null)
         {
             using var snapshot = system.GetSnapshotCache();
             var contract = NativeContract.ContractManagement.GetContract(snapshot, scriptHash)
@@ -771,13 +767,14 @@ namespace Neo.Plugins.RpcServer
         /// <returns>A JSON object containing the transaction details.</returns>
         private JObject SignAndRelay(DataCache snapshot, Transaction tx)
         {
+            var wallet = CheckWallet();
             var context = new ContractParametersContext(snapshot, tx, settings.Network);
             wallet.Sign(context);
             if (context.Completed)
             {
                 tx.Witnesses = context.GetWitnesses();
                 system.Blockchain.Tell(tx);
-                return Utility.TransactionToJson(tx, system.Settings);
+                return tx.ToJson(system.Settings);
             }
             else
             {
