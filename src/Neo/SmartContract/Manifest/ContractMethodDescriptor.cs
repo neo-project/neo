@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Manifest
             if (item.Count >= 6)
             {
                 ExtendedReturnType = new ExtendedType();
-                ExtendedReturnType.FromStackItem((VM.Types.Array)item[5], 0);
+                ExtendedReturnType.FromStackItem((VM.Types.Array)item[5]);
             }
             else
             {

@@ -81,15 +81,15 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterDefinition[]? Fields { get; set; }
 
-        void IInteroperable.FromStackItem(StackItem stackItem)
+        public void FromStackItem(StackItem stackItem)
         {
-            FromStackItem((VM.Types.Array)stackItem, 0);
-        }
+            if (stackItem is not VM.Types.Array array) throw new FormatException("Array type was expected");
 
-        internal void FromStackItem(VM.Types.Array array, int startIndex)
-        {
+            var startIndex = 0;
             Type = (ContractParameterType)(byte)array[startIndex++].GetInteger();
-            if (!Enum.IsDefined(typeof(ContractParameterType), Type)) throw new FormatException();
+            if (!Enum.IsDefined(typeof(ContractParameterType), Type)) throw new FormatException("Incorrect Type");
+            if (Type == ContractParameterType.Void) throw new FormatException("Void Type is not allowed in NEP-25");
+
             NamedType = array[startIndex++].GetString();
 
             if (array[startIndex++] is Integer length)
@@ -115,7 +115,7 @@ namespace Neo.SmartContract.Manifest
             if (array[startIndex++] is ByteString interf)
             {
                 if (!Enum.TryParse<Nep25Interface>(interf.GetString(), false, out var inferValue))
-                    throw new FormatException();
+                    throw new FormatException("Incorrect NEP-25 interface");
 
                 Interface = inferValue;
             }
@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Manifest
             if (array[startIndex++] is ByteString key)
             {
                 if (!Enum.TryParse<ContractParameterType>(key.GetString(), false, out var keyValue))
-                    throw new FormatException();
+                    throw new FormatException("Incorrect Parameter Type");
 
                 Key = keyValue;
             }
@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Manifest
             if (array[startIndex++] is Struct value)
             {
                 Value = new ExtendedType();
-                Value.FromStackItem(value, 0);
+                Value.FromStackItem(value);
             }
             else
             {

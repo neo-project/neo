@@ -105,7 +105,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             };
 
             var extended = new ExtendedType();
-            extended.FromStackItem(structItem, 0);
+            extended.FromStackItem(structItem);
 
             Assert.AreEqual(ContractParameterType.String, extended.Type);
             Assert.IsNull(extended.NamedType);
@@ -264,7 +264,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var stackItem = original.ToStackItem(refCounter, structItem);
 
             var copy = new ExtendedType();
-            copy.FromStackItem((VM.Types.Array)stackItem, 0);
+            copy.FromStackItem((VM.Types.Array)stackItem);
 
             Assert.AreEqual(original.Type, copy.Type);
             Assert.AreEqual(original.NamedType, copy.NamedType);
