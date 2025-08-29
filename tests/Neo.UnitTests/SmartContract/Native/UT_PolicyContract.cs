@@ -576,7 +576,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero));
 
             var sb = new ScriptBuilder()
-                .EmitDynamicCall(NativeContract.Policy.Hash, "listBlockedAccounts");
+                .EmitDynamicCall(NativeContract.Policy.Hash, "getBlockedAccounts");
 
             var engine = ApplicationEngine.Run(sb.ToArray(), snapshot, null, block, TestBlockchain.GetSystem().Settings);
 
