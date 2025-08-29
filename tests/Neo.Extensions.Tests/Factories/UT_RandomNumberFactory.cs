@@ -43,7 +43,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextSByte(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -76,7 +76,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextByte(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -92,7 +92,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextInt16(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -105,7 +105,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextInt16(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -128,7 +128,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextUInt16(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -144,7 +144,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextInt32(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -177,7 +177,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextUInt32(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -193,7 +193,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextInt64(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -226,7 +226,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextUInt64(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -245,7 +245,7 @@ namespace Neo.Extensions.Tests.Factories
         public void CheckNextBigIntegerInRange()
         {
             var expectedMax = BigInteger.Pow(2, 100);
-            var expectedMin = BigInteger.Zero;
+            var expectedMin = BigInteger.Pow(2, 100);
 
             Assert.AreEqual(expectedMax, RandomNumberFactory.NextBigInteger(expectedMax, expectedMax));
             Assert.AreEqual(expectedMin, RandomNumberFactory.NextBigInteger(expectedMin, expectedMin));
@@ -254,7 +254,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextBigInteger(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -285,7 +285,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextBigInteger(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
 
         [TestMethod]
@@ -298,7 +298,7 @@ namespace Neo.Extensions.Tests.Factories
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
 
             actualValue = RandomNumberFactory.NextBigInteger(expectedMax);
-            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+            Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
         }
     }
 }
