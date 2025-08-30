@@ -420,11 +420,10 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private StorageIterator GetBlockedAccounts(ApplicationEngine engine)
+        private StorageIterator GetBlockedAccounts(DataCache snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
-            var enumerator = engine
-                .SnapshotCache
+            var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
                 .GetEnumerator();
             return new StorageIterator(enumerator, 1, options);
