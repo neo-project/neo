@@ -74,12 +74,7 @@ namespace Neo.IO.Caching
         }
 
         protected CacheItem Head { get; } = new(default!, default!);
-
-#if NET9_0_OR_GREATER
         private readonly Lock _lock = new();
-#else
-        private readonly object _lock = new();
-#endif
 
         private readonly Dictionary<TKey, CacheItem> _innerDictionary = new(comparer);
 

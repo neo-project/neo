@@ -18,10 +18,10 @@ namespace Neo.Plugins.RpcServer
         private readonly List<TreeNode<T>> children = new();
 
         public T Item { get; }
-        public TreeNode<T> Parent { get; }
+        public TreeNode<T>? Parent { get; }
         public IReadOnlyList<TreeNode<T>> Children => children;
 
-        internal TreeNode(T item, TreeNode<T> parent)
+        internal TreeNode(T item, TreeNode<T>? parent)
         {
             Item = item;
             Parent = parent;
@@ -38,8 +38,10 @@ namespace Neo.Plugins.RpcServer
         {
             yield return Item;
             foreach (var child in children)
+            {
                 foreach (T item in child.GetItems())
                     yield return item;
+            }
         }
     }
 }

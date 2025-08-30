@@ -22,7 +22,7 @@ namespace Neo.IO.Caching
     /// A cache that uses a hash set to store items.
     /// </summary>
     /// <typeparam name="T">The type of the items in the cache.</typeparam>
-    internal class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
+    internal class HashSetCache<T> : ICollection<T> where T : IEquatable<T>
     {
         private class Items(int initialCapacity) : KeyedCollectionSlim<T, T>(initialCapacity)
         {
@@ -36,6 +36,8 @@ namespace Neo.IO.Caching
         /// Gets the number of items in the cache.
         /// </summary>
         public int Count => _items.Count;
+
+        public bool IsReadOnly => false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HashSetCache{T}"/> class.
@@ -103,6 +105,34 @@ namespace Neo.IO.Caching
         /// </summary>
         /// <returns>An enumerator that can be used to iterate through the cache.</returns>
         IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
+
+        public void Add(T item)
+        {
+            _ = TryAdd(item);
+        }
+
+        public bool Remove(T item)
+        {
+            return _items.Remove(item);
+        }
+
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            if (array == null)
+                throw new ArgumentNullException(nameof(array));
+
+            if (arrayIndex < 0 || arrayIndex > array.Length)
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+
+            if (array.Length - arrayIndex < Count)
+                throw new ArgumentException("The number of elements in the source ICollection<T> is greater than the available space from arrayIndex to the end of the destination array.");
+
+            var i = arrayIndex;
+            foreach (var item in this)
+            {
+                array[i++] = item;
+            }
+        }
     }
 }
 

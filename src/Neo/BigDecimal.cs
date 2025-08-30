@@ -57,12 +57,8 @@ namespace Neo
         /// <param name="value">The value of the number.</param>
         public BigDecimal(decimal value)
         {
-#if NET5_0_OR_GREATER
             Span<int> span = stackalloc int[4];
             decimal.GetBits(value, span);
-#else
-            var span = decimal.GetBits(value);
-#endif
             var buffer = MemoryMarshal.AsBytes((ReadOnlySpan<int>)span);
             _value = new BigInteger(buffer[..12], isUnsigned: true);
 
@@ -77,12 +73,8 @@ namespace Neo
         /// <param name="decimals">The number of decimal places for this number.</param>
         public BigDecimal(decimal value, byte decimals)
         {
-#if NET5_0_OR_GREATER
             Span<int> span = stackalloc int[4];
             decimal.GetBits(value, span);
-#else
-            var span = decimal.GetBits(value);
-#endif
             var buffer = MemoryMarshal.AsBytes((ReadOnlySpan<int>)span);
             _value = new BigInteger(buffer[..12], isUnsigned: true);
             if (buffer[14] > decimals)

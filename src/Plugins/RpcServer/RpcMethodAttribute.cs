@@ -30,6 +30,6 @@ namespace Neo.Plugins.RpcServer
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class RpcMethodAttribute : Attribute
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }
