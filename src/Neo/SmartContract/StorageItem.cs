@@ -15,7 +15,9 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.VM;
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract
@@ -23,6 +25,7 @@ namespace Neo.SmartContract
     /// <summary>
     /// Represents the values in contract storage.
     /// </summary>
+    [DebuggerDisplay("{ToString()}")]
     public class StorageItem : ISerializable
     {
         private class SealInteroperable(StorageItem item) : IDisposable
@@ -297,6 +300,12 @@ namespace Neo.SmartContract
         public static implicit operator StorageItem(byte[] value)
         {
             return new StorageItem(value);
+        }
+
+        public override string ToString()
+        {
+            var valueArray = _value.ToArray();
+            return $"Value = {{ {string.Join(", ", valueArray.Select(static s => $"0x{s:x02}"))} }}";
         }
     }
 }

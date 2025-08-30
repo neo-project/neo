@@ -16,6 +16,8 @@ using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract
@@ -23,6 +25,7 @@ namespace Neo.SmartContract
     /// <summary>
     /// Represents the keys in contract storage.
     /// </summary>
+    [DebuggerDisplay("{ToString()}")]
     public sealed record StorageKey
     {
         /// <summary>
@@ -358,6 +361,12 @@ namespace Neo.SmartContract
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator StorageKey(ReadOnlySpan<byte> value) => new(value);
+
+        public override string ToString()
+        {
+            var keyArray = Key.ToArray();
+            return $"Id = {Id}, Prefix = {keyArray[0]}, Key = {{ {string.Join(", ", keyArray[1..].Select(static s => $"0x{s:x02}"))} }}";
+        }
     }
 }
 
