@@ -86,8 +86,7 @@ namespace Neo.SmartContract.Native
 
         internal bool Initialized(DataCache snapshot)
         {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             return snapshot.Find(CreateStorageKey(Prefix_Block)).Any();
         }
@@ -136,8 +135,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The hash of the block.</returns>
         public UInt256 GetBlockHash(IReadOnlyStore snapshot, uint index)
         {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             var key = CreateStorageKey(Prefix_BlockHash, index);
             return snapshot.TryGet(key, out var item) ? new UInt256(item.Value.Span) : null;
@@ -151,8 +149,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public UInt256 CurrentHash(IReadOnlyStore snapshot)
         {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             return snapshot[_currentBlock].GetInteroperable<HashIndexState>().Hash;
         }
@@ -165,8 +162,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint CurrentIndex(IReadOnlyStore snapshot)
         {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             return snapshot[_currentBlock].GetInteroperable<HashIndexState>().Index;
         }
@@ -181,8 +177,7 @@ namespace Neo.SmartContract.Native
         /// </returns>
         public bool ContainsBlock(IReadOnlyStore snapshot, UInt256 hash)
         {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             return snapshot.Contains(CreateStorageKey(Prefix_Block, hash));
         }
@@ -215,11 +210,9 @@ namespace Neo.SmartContract.Native
         /// </returns>
         public bool ContainsConflictHash(IReadOnlyStore snapshot, UInt256 hash, IEnumerable<UInt160> signers, uint maxTraceableBlocks)
         {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
-            if (signers is null)
-                throw new ArgumentNullException(nameof(signers));
+            ArgumentNullException.ThrowIfNull(signers);
 
             // Check the dummy stub firstly to define whether there's exist at least one conflict record.
             var key = CreateStorageKey(Prefix_Transaction, hash);
@@ -247,8 +240,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The trimmed block.</returns>
         public TrimmedBlock GetTrimmedBlock(IReadOnlyStore snapshot, UInt256 hash)
         {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             var key = CreateStorageKey(Prefix_Block, hash);
             if (snapshot.TryGet(key, out var item))
@@ -334,8 +326,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The <see cref="TransactionState"/> with the specified hash.</returns>
         public TransactionState GetTransactionState(IReadOnlyStore snapshot, UInt256 hash)
         {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             var key = CreateStorageKey(Prefix_Transaction, hash);
             var state = snapshot.TryGet(key, out var item) ? item.GetInteroperable<TransactionState>() : null;

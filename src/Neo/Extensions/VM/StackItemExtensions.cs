@@ -127,7 +127,7 @@ namespace Neo.Extensions
 
         public static ContractParameter ToParameter(this StackItem item, List<(StackItem, ContractParameter)> context)
         {
-            if (item is null) throw new ArgumentNullException(nameof(item));
+            ArgumentNullException.ThrowIfNull(item);
             ContractParameter parameter = null;
             switch (item)
             {
