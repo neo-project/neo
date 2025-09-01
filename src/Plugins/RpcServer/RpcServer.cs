@@ -40,7 +40,11 @@ namespace Neo.Plugins.RpcServer
         private const string HttpMethodGet = "GET";
         private const string HttpMethodPost = "POST";
 
-        private readonly Dictionary<string, Delegate> _methods = new();
+        internal record struct RpcParameter(string Name, Type Type, bool Required, object? DefaultValue);
+
+        private record struct RpcMethod(Delegate Delegate, RpcParameter[] Parameters);
+
+        private readonly Dictionary<string, RpcMethod> _methods = new();
 
         private IWebHost? host;
         private RpcServersSettings settings;
@@ -324,9 +328,9 @@ namespace Neo.Plugins.RpcServer
             {
                 (CheckAuth(context) && !settings.DisabledMethods.Contains(method)).True_Or(RpcError.AccessDenied);
 
-                if (_methods.TryGetValue(method, out var func))
+                if (_methods.TryGetValue(method, out var rpcMethod))
                 {
-                    response["result"] = ProcessParamsMethod(jsonParameters, func) switch
+                    response["result"] = ProcessParamsMethod(jsonParameters, rpcMethod) switch
                     {
                         JToken result => result,
                         Task<JToken> task => await task,
@@ -366,25 +370,24 @@ namespace Neo.Plugins.RpcServer
             }
         }
 
-        private object? ProcessParamsMethod(JArray arguments, Delegate func)
+        private object? ProcessParamsMethod(JArray arguments, RpcMethod rpcMethod)
         {
-            var parameterInfos = func.Method.GetParameters();
-            var args = new object?[parameterInfos.Length];
+            var args = new object?[rpcMethod.Parameters.Length];
 
             // If the method has only one parameter of type JArray, invoke the method directly with the arguments
-            if (parameterInfos.Length == 1 && parameterInfos[0].ParameterType == typeof(JArray))
+            if (rpcMethod.Parameters.Length == 1 && rpcMethod.Parameters[0].Type == typeof(JArray))
             {
-                return func.DynamicInvoke(arguments);
+                return rpcMethod.Delegate.DynamicInvoke(arguments);
             }
 
-            for (var i = 0; i < parameterInfos.Length; i++)
+            for (var i = 0; i < rpcMethod.Parameters.Length; i++)
             {
-                var param = parameterInfos[i];
+                var param = rpcMethod.Parameters[i];
                 if (arguments.Count > i && arguments[i] is not null) // Donot parse null values
                 {
                     try
                     {
-                        args[i] = ParameterConverter.AsParameter(arguments[i]!, param.ParameterType);
+                        args[i] = ParameterConverter.AsParameter(arguments[i]!, param.Type);
                     }
                     catch (Exception e) when (e is not RpcException)
                     {
@@ -393,22 +396,13 @@ namespace Neo.Plugins.RpcServer
                 }
                 else
                 {
-                    if (param.IsOptional)
-                    {
-                        args[i] = param.DefaultValue;
-                    }
-                    else if (param.ParameterType.IsValueType && Nullable.GetUnderlyingType(param.ParameterType) == null)
-                    {
+                    if (param.Required)
                         throw new ArgumentException($"Required parameter '{param.Name}' is missing");
-                    }
-                    else
-                    {
-                        args[i] = null;
-                    }
+                    args[i] = param.DefaultValue;
                 }
             }
 
-            return func.DynamicInvoke(args);
+            return rpcMethod.Delegate.DynamicInvoke(args);
         }
 
         public void RegisterMethods(object handler)
@@ -420,11 +414,35 @@ namespace Neo.Plugins.RpcServer
                 if (rpcMethod is null) continue;
 
                 var name = string.IsNullOrEmpty(rpcMethod.Name) ? method.Name.ToLowerInvariant() : rpcMethod.Name;
-                var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
-                var delegateType = Expression.GetDelegateType(parameters.Concat([method.ReturnType]).ToArray());
+                var delegateParams = method.GetParameters()
+                    .Select(p => p.ParameterType)
+                    .Concat([method.ReturnType])
+                    .ToArray();
+                var delegateType = Expression.GetDelegateType(delegateParams);
 
-                _methods[name] = Delegate.CreateDelegate(delegateType, handler, method);
+                _methods[name] = new RpcMethod(
+                    Delegate.CreateDelegate(delegateType, handler, method),
+                    method.GetParameters().Select(AsRpcParameter).ToArray()
+                );
             }
+        }
+
+        static internal RpcParameter AsRpcParameter(ParameterInfo param)
+        {
+            // Required if not optional and not nullable
+            // For reference types, if parameter has not default value and nullable is disabled, it is optional.
+            // For value types, if parameter has not default value, it is required.
+            var required = param.IsOptional ? false : NotNullParameter(param);
+            return new RpcParameter(param.Name ?? string.Empty, param.ParameterType, required, param.DefaultValue);
+        }
+
+        static private bool NotNullParameter(ParameterInfo param)
+        {
+            if (param.ParameterType.IsValueType) return Nullable.GetUnderlyingType(param.ParameterType) != null;
+
+            var context = new NullabilityInfoContext();
+            var nullabilityInfo = context.Create(param);
+            return nullabilityInfo.WriteState == NullabilityState.NotNull;
         }
     }
 }

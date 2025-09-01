@@ -244,8 +244,18 @@ namespace Neo.Plugins.RpcServer.Tests
 
         private class MockRpcMethods
         {
+#nullable enable
             [RpcMethod]
-            internal JToken GetMockMethod() => "mock";
+            public JToken GetMockMethod(string info) => $"mock {info}";
+
+            public JToken NullContextMethod(string? info) => $"mock {info}";
+#nullable restore
+
+#nullable disable
+            public JToken NullableMethod(string info) => $"mock {info}";
+
+            public JToken OptionalMethod(string info = "default") => $"mock {info}";
+#nullable restore
         }
 
         [TestMethod]
@@ -256,7 +266,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // Request ProcessAsync with a valid request
             var context = new DefaultHttpContext();
             var body = """
-            {"jsonrpc": "2.0", "method": "getmockmethod", "params": [], "id": 1 }
+            {"jsonrpc": "2.0", "method": "getmockmethod", "params": ["test"], "id": 1 }
             """;
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(body));
@@ -276,8 +286,37 @@ namespace Neo.Plugins.RpcServer.Tests
             // Parse the JSON response and check the result
             var responseJson = JToken.Parse(output);
             Assert.IsNotNull(responseJson["result"]);
-            Assert.AreEqual("mock", responseJson["result"].AsString());
+            Assert.AreEqual("mock test", responseJson["result"].AsString());
             Assert.AreEqual(200, context.Response.StatusCode);
+        }
+
+        [TestMethod]
+        public void TestNullableParameter()
+        {
+            var method = typeof(MockRpcMethods).GetMethod("GetMockMethod");
+            var parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsTrue(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("NullableMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("NullContextMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("OptionalMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+            Assert.AreEqual("default", parameter.DefaultValue);
         }
 
         [TestMethod]
