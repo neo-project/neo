@@ -73,28 +73,28 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 1 << 15, CallFlags.WriteStates);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Storage.GetLocal.
+        /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Get.
         /// Gets the entry with the specified key from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_GetLocal = Register("System.Storage.GetLocal", nameof(GetLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
+        public static readonly InteropDescriptor System_Storage_Local_Get = Register("System.Storage.Local.Get", nameof(GetLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Storage.FindLocal.
+        /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Find.
         /// Finds the entries from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_FindLocal = Register("System.Storage.FindLocal", nameof(FindLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
+        public static readonly InteropDescriptor System_Storage_Local_Find = Register("System.Storage.Local.Find", nameof(FindLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Storage.PutLocal.
+        /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Put.
         /// Puts a new entry into the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_PutLocal = Register("System.Storage.PutLocal", nameof(PutLocal), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
+        public static readonly InteropDescriptor System_Storage_Local_Put = Register("System.Storage.Local.Put", nameof(PutLocal), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Storage.DeleteLocal.
+        /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Delete.
         /// Deletes an entry from the storage.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_DeleteLocal = Register("System.Storage.DeleteLocal", nameof(DeleteLocal), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
+        public static readonly InteropDescriptor System_Storage_Local_Delete = Register("System.Storage.Local.Delete", nameof(DeleteLocal), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
 
         /// <summary>
         /// The implementation of System.Storage.GetContext.
@@ -160,7 +160,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of System.Storage.GetLocal.
+        /// The implementation of System.Storage.Local.Get.
         /// Gets the entry with the specified key from the storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
@@ -207,7 +207,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of System.Storage.FindLocal.
+        /// The implementation of System.Storage.Local.Find.
         /// Finds the entries from the storage.
         /// </summary>
         /// <param name="prefix">The prefix of keys to find.</param>
@@ -262,7 +262,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of System.Storage.PutLocal.
+        /// The implementation of System.Storage.Local.Put.
         /// Puts a new entry into the storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
@@ -289,7 +289,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of System.Storage.DeleteLocal.
+        /// The implementation of System.Storage.Local.Delete.
         /// Deletes an entry from the storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
