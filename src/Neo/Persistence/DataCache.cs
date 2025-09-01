@@ -271,11 +271,7 @@ namespace Neo.Persistence
             var seek_prefix = key_prefix;
             if (direction == SeekDirection.Backward)
             {
-                if (key_prefix == null)
-                {
-                    // Backwards seek for null prefix is not supported for now.
-                    throw new ArgumentNullException(nameof(key_prefix));
-                }
+                ArgumentNullException.ThrowIfNull(key_prefix);
                 if (key_prefix.Length == 0)
                 {
                     // Backwards seek for zero prefix is not supported for now.

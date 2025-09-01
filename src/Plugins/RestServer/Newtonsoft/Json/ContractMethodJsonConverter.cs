@@ -24,7 +24,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
         public override ContractMethodDescriptor ReadJson(JsonReader reader, Type objectType, ContractMethodDescriptor? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
         public override void WriteJson(JsonWriter writer, ContractMethodDescriptor? value, JsonSerializer serializer)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             var j = RestServerUtility.ContractMethodToJToken(value, serializer);
             j.WriteTo(writer);

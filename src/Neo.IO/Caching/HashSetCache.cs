@@ -118,8 +118,7 @@ namespace Neo.IO.Caching
 
         public void CopyTo(T[] array, int arrayIndex)
         {
-            if (array == null)
-                throw new ArgumentNullException(nameof(array));
+            ArgumentNullException.ThrowIfNull(array);
 
             if (arrayIndex < 0 || arrayIndex > array.Length)
                 throw new ArgumentOutOfRangeException(nameof(arrayIndex));

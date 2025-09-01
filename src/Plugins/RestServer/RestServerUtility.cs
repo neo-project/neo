@@ -250,8 +250,7 @@ namespace Neo.Plugins.RestServer
 
         public static InvokeParams ContractInvokeParametersFromJToken(JToken token)
         {
-            if (token is null)
-                throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(token);
             if (token.Type != JTokenType.Object)
                 throw new FormatException();
 
@@ -272,8 +271,7 @@ namespace Neo.Plugins.RestServer
 
         public static Signer SignerFromJToken(JToken? token)
         {
-            if (token is null)
-                throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(token);
             if (token.Type != JTokenType.Object)
                 throw new FormatException();
 
@@ -297,8 +295,7 @@ namespace Neo.Plugins.RestServer
 
         public static ContractParameter ContractParameterFromJToken(JToken? token)
         {
-            if (token is null)
-                throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(token);
             if (token.Type != JTokenType.Object)
                 throw new FormatException();
 

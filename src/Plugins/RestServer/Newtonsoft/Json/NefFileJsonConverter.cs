@@ -20,7 +20,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
         public override NefFile ReadJson(JsonReader reader, Type objectType, NefFile? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => throw new NotImplementedException();
         public override void WriteJson(JsonWriter writer, NefFile? value, global::Newtonsoft.Json.JsonSerializer serializer)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             var j = RestServerUtility.ContractNefFileToJToken(value, serializer);
             j.WriteTo(writer);

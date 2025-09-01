@@ -49,7 +49,7 @@ namespace Neo.Cryptography
         /// <returns>A byte array that is equivalent to <paramref name="input"/>.</returns>
         public static byte[] Base58CheckDecode(this string input)
         {
-            if (input is null) throw new ArgumentNullException(nameof(input));
+            ArgumentNullException.ThrowIfNull(input);
             byte[] buffer = Decode(input);
             if (buffer.Length < 4) throw new FormatException($"Invalid Base58Check format: decoded data length ({buffer.Length} bytes) is too short. Base58Check requires at least 4 bytes for the checksum.");
             byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
