@@ -438,8 +438,6 @@ namespace Neo.Plugins.RpcServer
 
         static private bool NotNullParameter(ParameterInfo param)
         {
-            if (param.ParameterType.IsValueType) return Nullable.GetUnderlyingType(param.ParameterType) != null;
-
             var context = new NullabilityInfoContext();
             var nullabilityInfo = context.Create(param);
             return nullabilityInfo.WriteState == NullabilityState.NotNull;
