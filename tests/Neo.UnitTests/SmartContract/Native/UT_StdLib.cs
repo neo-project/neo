@@ -430,5 +430,28 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual("U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t", engine.ResultStack.Pop<ByteString>().GetString());
             }
         }
+
+        [TestMethod]
+        public void TestHexEncodeDecode()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var expectedBytes = new byte[] { 0x00, 0x01, 0x02, 0x03 };
+            var expectedString = "00010203";
+
+            using (var script = new ScriptBuilder())
+            {
+                // Test encoding
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "hexEncode", expectedBytes);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "hexDecode", expectedString);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(2, engine.ResultStack);
+                Assert.AreEqual(expectedBytes, engine.ResultStack.Pop<ByteString>());
+                Assert.AreEqual(expectedString, engine.ResultStack.Pop<ByteString>());
+            }
+        }
     }
 }

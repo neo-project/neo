@@ -63,7 +63,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken ValidateAddress(string address)
         {
-            UInt160 scriptHash;
+            UInt160? scriptHash;
             try
             {
                 scriptHash = address.ToScriptHash(system.Settings.AddressVersion);

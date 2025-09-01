@@ -18,15 +18,11 @@ namespace Neo.Plugins.RpcServer
     {
         public Tree<UInt160> InvocationTree { get; } = new();
 
-        private TreeNode<UInt160> currentNodeOfInvocationTree = null;
+        private TreeNode<UInt160>? currentNodeOfInvocationTree = null;
 
-        public void Initialized(ApplicationEngine engine)
-        {
-        }
+        public void Initialized(ApplicationEngine engine) { }
 
-        public void Disposed()
-        {
-        }
+        public void Disposed() { }
 
         public void ContextLoaded(ExecutionContext context)
         {
@@ -39,15 +35,11 @@ namespace Neo.Plugins.RpcServer
 
         public void ContextUnloaded(ExecutionContext context)
         {
-            currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
+            currentNodeOfInvocationTree = currentNodeOfInvocationTree?.Parent;
         }
 
-        public void PreExecuteInstruction(Instruction instruction)
-        {
-        }
+        public void PreExecuteInstruction(Instruction instruction) { }
 
-        public void PostExecuteInstruction(Instruction instruction)
-        {
-        }
+        public void PostExecuteInstruction(Instruction instruction) { }
     }
 }
