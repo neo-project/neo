@@ -24,7 +24,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
         public override ContractPermission ReadJson(JsonReader reader, Type objectType, ContractPermission? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
         public override void WriteJson(JsonWriter writer, ContractPermission? value, JsonSerializer serializer)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             var j = RestServerUtility.ContractPermissionToJToken(value, serializer);
             j.WriteTo(writer);
