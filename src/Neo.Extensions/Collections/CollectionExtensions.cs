@@ -56,8 +56,7 @@ namespace Neo.Extensions
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the chunk size is less than or equal to 0.</exception>
         public static IEnumerable<T[]> Chunk<T>(this IReadOnlyCollection<T>? source, int chunkSize)
         {
-            if (source is null)
-                throw new ArgumentNullException(nameof(source));
+            ArgumentNullException.ThrowIfNull(source);
 
             if (chunkSize <= 0)
                 throw new ArgumentOutOfRangeException(nameof(chunkSize), "Chunk size must > 0.");

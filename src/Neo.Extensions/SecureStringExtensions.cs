@@ -19,8 +19,7 @@ namespace Neo.Extensions
     {
         public static string? GetClearText(this SecureString secureString)
         {
-            if (secureString is null)
-                throw new ArgumentNullException(nameof(secureString));
+            ArgumentNullException.ThrowIfNull(secureString);
 
             var unmanagedStringPtr = IntPtr.Zero;
 

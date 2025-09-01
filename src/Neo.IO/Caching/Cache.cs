@@ -188,7 +188,7 @@ namespace Neo.IO.Caching
 
         public void CopyTo(TValue[] array, int startIndex)
         {
-            if (array == null) throw new ArgumentNullException(nameof(array));
+            ArgumentNullException.ThrowIfNull(array);
             if (startIndex < 0) throw new ArgumentOutOfRangeException(nameof(startIndex));
 
             lock (_lock)

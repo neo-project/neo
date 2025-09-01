@@ -60,7 +60,7 @@ namespace Neo.Cryptography.ECC
 
         public int CompareTo(ECPoint? other)
         {
-            if (other == null) throw new ArgumentNullException(nameof(other));
+            ArgumentNullException.ThrowIfNull(other);
             if (!Curve.Equals(other.Curve)) throw new InvalidOperationException("Cannot compare ECPoints with different curves. Both points must use the same elliptic curve for comparison.");
             if (ReferenceEquals(this, other)) return 0;
             if (IsInfinity) return other.IsInfinity ? 0 : -1;
