@@ -44,7 +44,7 @@ namespace Neo.Sign
         public static void RegisterSigner(string name, ISigner signer)
         {
             if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
-            if (signer is null) throw new ArgumentNullException(nameof(signer));
+            ArgumentNullException.ThrowIfNull(signer);
 
             if (!s_signers.TryAdd(name, signer)) throw new InvalidOperationException($"Signer {name} already exists");
         }

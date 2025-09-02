@@ -214,7 +214,7 @@ namespace Neo.IO.Caching
         /// <param name="arrayIndex">The index in the destination to start copying at</param>
         public void CopyTo(T[] array, int arrayIndex)
         {
-            if (array is null) throw new ArgumentNullException(nameof(array));
+            ArgumentNullException.ThrowIfNull(array);
             if (arrayIndex < 0 || arrayIndex + _count > array.Length)
                 throw new ArgumentOutOfRangeException(nameof(arrayIndex));
             if (_head + _count <= _array.Length)

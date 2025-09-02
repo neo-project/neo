@@ -21,7 +21,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
         {
             var o = JToken.Load(reader);
             var value = o.ToObject<string>();
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             return Convert.FromBase64String(value);
         }
