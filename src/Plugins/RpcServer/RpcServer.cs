@@ -21,6 +21,7 @@ using Neo.Network.P2P;
 using Neo.Plugins.RpcServer.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -438,6 +439,12 @@ namespace Neo.Plugins.RpcServer
 
         static private bool NotNullParameter(ParameterInfo param)
         {
+            if (param.GetCustomAttribute<NotNullAttribute>() != null) return true;
+            if (param.GetCustomAttribute<DisallowNullAttribute>() != null) return true;
+
+            if (param.GetCustomAttribute<AllowNullAttribute>() != null) return false;
+            if (param.GetCustomAttribute<MaybeNullAttribute>() != null) return false;
+
             var context = new NullabilityInfoContext();
             var nullabilityInfo = context.Create(param);
             return nullabilityInfo.WriteState == NullabilityState.NotNull;

@@ -20,6 +20,7 @@ using Neo.UnitTests;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -246,15 +247,25 @@ namespace Neo.Plugins.RpcServer.Tests
         {
 #nullable enable
             [RpcMethod]
-            public JToken GetMockMethod(string info) => $"mock {info}";
+            public JToken GetMockMethod(string info) => $"string {info}";
 
-            public JToken NullContextMethod(string? info) => $"mock {info}";
+            public JToken NullContextMethod(string? info) => $"string-nullable {info}";
+
+            public JToken IntMethod(int info) => $"int {info}";
+
+            public JToken IntNullableMethod(int? info) => $"int-nullable {info}";
+
+            public JToken AllowNullMethod([AllowNull] string info) => $"string-allownull {info}";
 #nullable restore
 
 #nullable disable
-            public JToken NullableMethod(string info) => $"mock {info}";
+            public JToken NullableMethod(string info) => $"string-nullable {info}";
 
-            public JToken OptionalMethod(string info = "default") => $"mock {info}";
+            public JToken OptionalMethod(string info = "default") => $"string-default {info}";
+
+            public JToken NotNullMethod([NotNull] string info) => $"string-notnull {info}";
+
+            public JToken DisallowNullMethod([DisallowNull] string info) => $"string-disallownull {info}";
 #nullable restore
         }
 
@@ -286,7 +297,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // Parse the JSON response and check the result
             var responseJson = JToken.Parse(output);
             Assert.IsNotNull(responseJson["result"]);
-            Assert.AreEqual("mock test", responseJson["result"].AsString());
+            Assert.AreEqual("string test", responseJson["result"].AsString());
             Assert.AreEqual(200, context.Response.StatusCode);
         }
 
@@ -317,6 +328,36 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(typeof(string), parameter.Type);
             Assert.AreEqual("info", parameter.Name);
             Assert.AreEqual("default", parameter.DefaultValue);
+
+            method = typeof(MockRpcMethods).GetMethod("IntMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsTrue(parameter.Required);
+            Assert.AreEqual(typeof(int), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("IntNullableMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(int?), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("NotNullMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsTrue(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("AllowNullMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("DisallowNullMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsTrue(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
         }
 
         [TestMethod]
