@@ -33,7 +33,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
 
         public override void WriteJson(JsonWriter writer, ECPoint? value, JsonSerializer serializer)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             writer.WriteValue(value.ToString());
         }
