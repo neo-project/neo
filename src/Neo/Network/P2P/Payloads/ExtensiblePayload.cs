@@ -88,8 +88,7 @@ namespace Neo.Network.P2P.Payloads
             }
             set
             {
-                if (value is null)
-                    throw new ArgumentNullException(nameof(IVerifiable.Witnesses));
+                ArgumentNullException.ThrowIfNull(value, nameof(IVerifiable.Witnesses));
                 if (value.Length != 1)
                     throw new ArgumentException($"Expected 1 witness, got {value.Length}.", nameof(IVerifiable.Witnesses));
                 Witness = value[0];
