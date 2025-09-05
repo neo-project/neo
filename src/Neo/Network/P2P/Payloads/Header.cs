@@ -35,6 +35,7 @@ namespace Neo.Network.P2P.Payloads
         private uint index;
         private byte primaryIndex;
         private UInt160 nextConsensus;
+        private UInt256 prevStateRoot;
 
         /// <summary>
         /// The witness of the block.
@@ -113,6 +114,15 @@ namespace Neo.Network.P2P.Payloads
             set { nextConsensus = value; _hash = null; }
         }
 
+        /// <summary>
+        /// MPT root hash got after the previous block processing.
+        /// </summary>
+        public UInt256 PrevStateRoot
+        {
+            get => prevStateRoot;
+            set { prevStateRoot = value; _hash = null; }
+        }
+
         private UInt256 _hash = null;
 
         /// <inheritdoc/>
@@ -137,6 +147,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +      // Index
             sizeof(byte) +      // PrimaryIndex
             UInt160.Length +    // NextConsensus
+            (version == (uint)BlockVersion.V0 ? 0 : UInt256.Length) + // PrevStateRoot
             (Witness is null ? 1 : 1 + Witness.Size); // Witness, cannot be null for valid header
 
         Witness[] IVerifiable.Witnesses
@@ -166,7 +177,7 @@ namespace Neo.Network.P2P.Payloads
         {
             _hash = null;
             version = reader.ReadUInt32();
-            if (version > 0) throw new FormatException($"`version`({version}) in Header must be 0");
+            if (version > (uint)BlockVersion.V1) throw new FormatException($"`version`({version}) in Header must be 0 or 1");
             prevHash = reader.ReadSerializable<UInt256>();
             merkleRoot = reader.ReadSerializable<UInt256>();
             timestamp = reader.ReadUInt64();
@@ -174,6 +185,8 @@ namespace Neo.Network.P2P.Payloads
             index = reader.ReadUInt32();
             primaryIndex = reader.ReadByte();
             nextConsensus = reader.ReadSerializable<UInt160>();
+            if (version == (uint)BlockVersion.V1)
+                prevStateRoot = reader.ReadSerializable<UInt256>();
         }
 
         public bool Equals(Header other)
@@ -217,6 +230,8 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(index);
             writer.Write(primaryIndex);
             writer.Write(nextConsensus);
+            if (version == (uint)BlockVersion.V1)
+                writer.Write(prevStateRoot);
         }
 
         /// <summary>
@@ -238,12 +253,16 @@ namespace Neo.Network.P2P.Payloads
             json["primary"] = primaryIndex;
             json["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion);
             json["witnesses"] = new JArray(Witness.ToJson());
+            if (version == (uint)BlockVersion.V1)
+                json["previousstateroot"] = prevStateRoot.ToString();
             return json;
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
             if (primaryIndex >= settings.ValidatorsCount)
+                return false;
+            if (version != (uint)GetExpectedVersion(settings))
                 return false;
             TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) return false;
@@ -258,12 +277,19 @@ namespace Neo.Network.P2P.Payloads
         {
             Header prev = headerCache.Last;
             if (prev is null) return Verify(settings, snapshot);
+            if (version != (uint)GetExpectedVersion(settings))
+                return false;
             if (primaryIndex >= settings.ValidatorsCount)
                 return false;
             if (prev.Hash != prevHash) return false;
             if (prev.index + 1 != index) return false;
             if (prev.timestamp >= timestamp) return false;
             return this.VerifyWitness(settings, snapshot, prev.nextConsensus, Witness, 3_00000000L, out _);
+        }
+
+        private BlockVersion GetExpectedVersion(ProtocolSettings settings)
+        {
+            return settings.IsHardforkEnabled(Hardfork.HF_Faun, Index) ? BlockVersion.V1 : BlockVersion.V0;
         }
 
         public Header Clone()
@@ -278,6 +304,7 @@ namespace Neo.Network.P2P.Payloads
                 Index = index,
                 PrimaryIndex = primaryIndex,
                 NextConsensus = nextConsensus,
+                PrevStateRoot = prevStateRoot,
                 Witness = Witness?.Clone(),
                 _hash = _hash
             };

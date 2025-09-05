@@ -15,6 +15,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
@@ -110,8 +111,7 @@ namespace Neo.SmartContract.Native
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter,
-            [
+            var block = new List<StackItem>() {
                 // Computed properties
                 Header.Hash.ToArray(),
 
@@ -125,9 +125,14 @@ namespace Neo.SmartContract.Native
                 Header.PrimaryIndex,
                 Header.NextConsensus.ToArray(),
 
-                // Block properties
-                Hashes.Length
-            ]);
+            };
+            if (Header.Version == (uint)BlockVersion.V1)
+                block.Add(Header.PrevStateRoot.ToArray());
+
+            // Block properties
+            block.Add(Hashes.Length);
+
+            return new Array(referenceCounter, block);
         }
     }
 }

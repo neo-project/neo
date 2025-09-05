@@ -129,7 +129,7 @@ namespace Neo.Plugins.StateService.Storage
             return true;
         }
 
-        public void UpdateLocalStateRootSnapshot(uint height, IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changeSet)
+        public UInt256 UpdateLocalStateRootSnapshot(uint height, IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changeSet)
         {
             _stateSnapshot?.Dispose();
             _stateSnapshot = Singleton.GetSnapshot();
@@ -158,6 +158,7 @@ namespace Neo.Plugins.StateService.Storage
                 Witness = null,
             };
             _stateSnapshot.AddLocalStateRoot(stateRoot);
+            return rootHash;
         }
 
         public void UpdateLocalStateRoot(uint height)

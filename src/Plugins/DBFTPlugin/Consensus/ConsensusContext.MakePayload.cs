@@ -115,7 +115,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 PrevHash = Block.PrevHash,
                 Timestamp = Block.Timestamp,
                 Nonce = Block.Nonce,
-                TransactionHashes = TransactionHashes
+                TransactionHashes = TransactionHashes,
+                PrevStateRoot = Block.PrevStateRoot,
             });
         }
 
@@ -141,6 +142,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     Nonce = Block.Nonce,
                     BlockIndex = Block.Index,
                     ValidatorIndex = Block.PrimaryIndex,
+                    PrevStateRoot = Block.PrevStateRoot,
                     TransactionHashes = TransactionHashes
                 };
             }

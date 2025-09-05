@@ -164,6 +164,7 @@ namespace Neo
         {
             Header = new Header
             {
+                Version = settings.IsHardforkEnabled(Hardfork.HF_Faun, 0) ? (uint)BlockVersion.V1 : (uint)BlockVersion.V0,
                 PrevHash = UInt256.Zero,
                 MerkleRoot = UInt256.Zero,
                 Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
@@ -330,6 +331,17 @@ namespace Neo
         public bool ContainsConflictHash(UInt256 hash, IEnumerable<UInt160> signers)
         {
             return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers, this.GetMaxTraceableBlocks());
+        }
+
+        /// <summary>
+        /// Returns index of the latest block persisted to native Ledger contract.
+        /// </summary>
+        /// <returns>
+        /// Index of the latest persisted block.
+        /// </returns>
+        public uint CurrentIndex()
+        {
+            return NativeContract.Ledger.CurrentIndex(StoreView);
         }
     }
 }

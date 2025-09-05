@@ -1,0 +1,28 @@
+// Copyright (C) 2015-2025 The Neo Project.
+//
+// BlockVersion.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+namespace Neo.Network.P2P.Payloads
+{
+    /// <summary>
+    /// Represents the block version.
+    /// </summary>
+    public enum BlockVersion : byte
+    {
+        /// <summary>
+        /// Initial block version.
+        /// </summary>
+        V0,
+        /// <summary>
+        /// Block version 1 which adds PrevStateRoot field to the header.
+        /// </summary>
+        V1,
+    }
+}

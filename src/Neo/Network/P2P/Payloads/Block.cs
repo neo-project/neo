@@ -81,6 +81,11 @@ namespace Neo.Network.P2P.Payloads
         public UInt160 NextConsensus => Header.NextConsensus;
 
         /// <summary>
+        /// MPT root hash calculated after the previous block is persisted.
+        /// </summary>
+        public UInt256 PrevStateRoot => Header.PrevStateRoot;
+
+        /// <summary>
         /// The witness of the block.
         /// </summary>
         public Witness Witness => Header.Witness;

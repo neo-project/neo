@@ -34,6 +34,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // header 1
             Assert.AreEqual(113, uut.Size); // 105 + nonce
+
+            var h = TestUtils.MakeHeader(null, val256);
+            h.Version = (uint)BlockVersion.V1;
+            // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4 + 32
+            // header 1
+            Assert.AreEqual(145, h.Size); // 105 + nonce + prevHash
         }
 
         [TestMethod]
@@ -47,7 +53,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void TrimTest()
         {
-            var val256 = UInt256.Zero;
+            var randomBytes = new byte[UInt256.Length];
+            new Random(42).NextBytes(randomBytes);
+            var val256 = new UInt256(randomBytes);
             var snapshotCache = TestBlockchain.GetTestSnapshotCache().CloneCache();
             var uut = TestUtils.MakeHeader(null, val256);
             uut.Witness = Witness.Empty;
@@ -77,6 +85,39 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             CollectionAssert.AreEqual(uut.Witness.InvocationScript.ToArray(), header.Witness.InvocationScript.ToArray());
             CollectionAssert.AreEqual(uut.Witness.VerificationScript.ToArray(), header.Witness.VerificationScript.ToArray());
             Assert.IsEmpty(trim.Hashes);
+
+            uut = TestUtils.MakeHeader(null, val256);
+            uut.Witness = Witness.Empty;
+            uut.Version = (uint)BlockVersion.V1;
+            uut.PrevStateRoot = val256;
+            TestUtils.BlocksAdd(snapshotCache, uut.Hash, new TrimmedBlock()
+            {
+                Header = new Header
+                {
+                    Timestamp = uut.Timestamp,
+                    PrevHash = uut.PrevHash,
+                    MerkleRoot = uut.MerkleRoot,
+                    NextConsensus = uut.NextConsensus,
+                    Witness = uut.Witness,
+                    Version = uut.Version,
+                    PrevStateRoot = uut.PrevStateRoot,
+                },
+                Hashes = []
+            });
+
+            trim = NativeContract.Ledger.GetTrimmedBlock(snapshotCache, uut.Hash);
+            header = trim.Header;
+
+            Assert.AreEqual(uut.Version, header.Version);
+            Assert.AreEqual(uut.PrevHash, header.PrevHash);
+            Assert.AreEqual(uut.MerkleRoot, header.MerkleRoot);
+            Assert.AreEqual(uut.Timestamp, header.Timestamp);
+            Assert.AreEqual(uut.Index, header.Index);
+            Assert.AreEqual(uut.NextConsensus, header.NextConsensus);
+            Assert.AreEqual(uut.PrevStateRoot, header.PrevStateRoot);
+            CollectionAssert.AreEqual(uut.Witness.InvocationScript.ToArray(), header.Witness.InvocationScript.ToArray());
+            CollectionAssert.AreEqual(uut.Witness.VerificationScript.ToArray(), header.Witness.VerificationScript.ToArray());
+            Assert.IsEmpty(trim.Hashes);
         }
 
         [TestMethod]
@@ -103,6 +144,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Check not referenced
             uut.Witness.InvocationScript = new byte[123];
             CollectionAssert.AreNotEqual(clone.Witness.InvocationScript.ToArray(), uut.Witness.InvocationScript.ToArray());
+
+            // Check V1 format.
+            var randomBytes = new byte[UInt256.Length];
+            new Random(42).NextBytes(randomBytes);
+            var val256 = new UInt256(randomBytes);
+            uut = TestUtils.MakeHeader(null, UInt256.Zero);
+            uut.Version = (uint)BlockVersion.V1;
+            uut.PrevStateRoot = val256;
+            clone = uut.Clone();
+            CollectionAssert.AreEqual(uut.ToArray(), clone.ToArray());
         }
 
         [TestMethod]

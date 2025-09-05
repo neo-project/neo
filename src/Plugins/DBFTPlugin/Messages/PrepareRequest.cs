@@ -11,6 +11,7 @@
 
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Types;
 using System;
 using System.IO;
@@ -24,6 +25,7 @@ namespace Neo.Plugins.DBFTPlugin.Messages
         public UInt256 PrevHash;
         public ulong Timestamp;
         public ulong Nonce;
+        public UInt256 PrevStateRoot;
         public UInt256[] TransactionHashes;
 
         public override int Size => base.Size
@@ -31,6 +33,7 @@ namespace Neo.Plugins.DBFTPlugin.Messages
             + UInt256.Length                    //PrevHash
             + sizeof(ulong)                     //Timestamp
             + sizeof(ulong)                     // Nonce
+            + (Version == (uint)BlockVersion.V0 ? 0 : UInt256.Length) // PrevStateRoot
             + TransactionHashes.GetVarSize();   //TransactionHashes
 
         public PrepareRequest() : base(ConsensusMessageType.PrepareRequest) { }
@@ -42,6 +45,8 @@ namespace Neo.Plugins.DBFTPlugin.Messages
             PrevHash = reader.ReadSerializable<UInt256>();
             Timestamp = reader.ReadUInt64();
             Nonce = reader.ReadUInt64();
+            if (Version == (uint)BlockVersion.V1)
+                PrevStateRoot = reader.ReadSerializable<UInt256>();
             TransactionHashes = reader.ReadSerializableArray<UInt256>(ushort.MaxValue);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
@@ -60,6 +65,8 @@ namespace Neo.Plugins.DBFTPlugin.Messages
             writer.Write(PrevHash);
             writer.Write(Timestamp);
             writer.Write(Nonce);
+            if (Version == (uint)BlockVersion.V1)
+                writer.Write(PrevStateRoot);
             writer.Write(TransactionHashes);
         }
     }

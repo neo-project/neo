@@ -79,7 +79,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         {
             if (context.RequestSentOrReceived || context.NotAcceptingPayloadsDueToViewChanging) return;
             if (message.ValidatorIndex != context.Block.PrimaryIndex || message.ViewNumber != context.ViewNumber) return;
-            if (message.Version != context.Block.Version || message.PrevHash != context.Block.PrevHash) return;
+            if (message.Version != context.Block.Version || message.PrevHash != context.Block.PrevHash || message.PrevStateRoot != context.Block.PrevStateRoot) return;
             if (message.TransactionHashes.Length > neoSystem.Settings.MaxTransactionsPerBlock) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMilliseconds(8 * context.TimePerBlock.TotalMilliseconds).ToTimestampMS())

@@ -102,16 +102,30 @@ namespace Neo.Plugins.StateService
             IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != StateServiceSettings.Default.Network) return;
-            StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index,
+            var root = StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index,
                 snapshot.GetChangeSet()
                     .Where(p => p.Value.State != TrackState.None && p.Key.Id != NativeContract.Ledger.Id)
                     .ToList());
+            if (system.Settings.IsHardforkEnabled(Hardfork.HF_Faun, block.Index + 1))
+            {
+                var nextH = system.HeaderCache[block.Index + 1];
+                if (nextH is not null && root != nextH.PrevStateRoot)
+                    throw new InvalidOperationException($"Stateroot mismatch at {block.Index}: expected {nextH.PrevStateRoot}, got {root}");
+            }
         }
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
             if (system.Settings.Network != StateServiceSettings.Default.Network) return;
             StateStore.Singleton.UpdateLocalStateRoot(block.Index);
+        }
+
+        public static UInt256 GetStateRootHash(uint index)
+        {
+            using var snapshot = StateStore.Singleton.GetSnapshot();
+            var root = snapshot.GetStateRoot(index);
+            if (root is null) return null;
+            return root.RootHash;
         }
 
         private void CheckNetwork()

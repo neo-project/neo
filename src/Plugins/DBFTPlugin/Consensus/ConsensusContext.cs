@@ -199,16 +199,19 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 Snapshot?.Dispose();
                 Snapshot = neoSystem.GetSnapshotCache();
                 uint height = NativeContract.Ledger.CurrentIndex(Snapshot);
+                var isFaun = neoSystem.Settings.IsHardforkEnabled(Hardfork.HF_Faun, height + 1);
                 Block = new Block
                 {
                     Header = new Header
                     {
+                        Version = isFaun ? (uint)BlockVersion.V1 : (uint)BlockVersion.V0,
                         PrevHash = NativeContract.Ledger.CurrentHash(Snapshot),
                         Index = height + 1,
                         NextConsensus = Contract.GetBFTAddress(
                             NeoToken.ShouldRefreshCommittee(height + 1, neoSystem.Settings.CommitteeMembersCount) ?
                             NativeContract.NEO.ComputeNextBlockValidators(Snapshot, neoSystem.Settings) :
-                            NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount))
+                            NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount)),
+                        PrevStateRoot = isFaun ? StateService.StatePlugin.GetStateRootHash(height) : null
                     }
                 };
                 TimePerBlock = neoSystem.GetTimePerBlock();
@@ -294,6 +297,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             Block.Header.NextConsensus = reader.ReadSerializable<UInt160>();
             if (Block.NextConsensus.Equals(UInt160.Zero))
                 Block.Header.NextConsensus = null;
+            if (Block.Version == (uint)BlockVersion.V1)
+                Block.Header.PrevStateRoot = reader.ReadSerializable<UInt256>();
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>(ushort.MaxValue);
             Transaction[] transactions = reader.ReadSerializableArray<Transaction>(ushort.MaxValue);
@@ -320,6 +325,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             writer.Write(Block.Nonce);
             writer.Write(Block.PrimaryIndex);
             writer.Write(Block.NextConsensus ?? UInt160.Zero);
+            if (Block.Version == (uint)BlockVersion.V1)
+                writer.Write(Block.PrevStateRoot);
             writer.Write(ViewNumber);
             writer.Write(TransactionHashes ?? Array.Empty<UInt256>());
             writer.Write(Transactions?.Values.ToArray() ?? Array.Empty<Transaction>());
