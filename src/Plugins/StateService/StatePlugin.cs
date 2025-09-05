@@ -102,6 +102,25 @@ namespace Neo.Plugins.StateService
             IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != StateServiceSettings.Default.Network) return;
+
+            // Rebuild MPT from scratch on node bootstrap if StateService plugin is not up-to-date wrt the current block height.
+            if (block.Index > 0)
+            {
+                using var stateSnapshot = StateStore.Singleton.GetSnapshot();
+                var persistedHeight = block.Index - 1;
+                var stateRoot = stateSnapshot.GetStateRoot(persistedHeight);
+                if (stateRoot is null)
+                {
+                    using var coreSnapshot = system.GetSnapshotCache();
+                    StateStore.Singleton.UpdateLocalStateRootSnapshot(persistedHeight,
+                        coreSnapshot.Find(SeekDirection.Forward)
+                        .Where(si => si.Key.Id != NativeContract.Ledger.Id)
+                        .Select(si => new KeyValuePair<StorageKey, DataCache.Trackable>(si.Key, new DataCache.Trackable(si.Value, TrackState.Added)))
+                        .ToList());
+                    StateStore.Singleton.UpdateLocalStateRoot(persistedHeight);
+                }
+            }
+
             var root = StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index,
                 snapshot.GetChangeSet()
                     .Where(p => p.Value.State != TrackState.None && p.Key.Id != NativeContract.Ledger.Id)
