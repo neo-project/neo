@@ -11,7 +11,7 @@
 
 namespace Neo.Wallets.SQLite
 {
-    class Contract
+    internal class Contract
     {
         public byte[] RawData { get; set; }
         public byte[] ScriptHash { get; set; }
