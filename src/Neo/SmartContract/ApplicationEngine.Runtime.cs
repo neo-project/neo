@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
@@ -312,7 +313,16 @@ namespace Neo.SmartContract
             byte[] buffer;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             long price;
-            if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
+            if (IsHardforkEnabled(Hardfork.HF_Faun))
+            {
+                buffer = [
+                    .. nonceData,
+                    .. BitConverter.GetBytes(ProtocolSettings.Network + random_times++)
+                ];
+                buffer = buffer.Sha256();
+                price = 1 << 13;
+            }
+            else if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
                 buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
                 price = 1 << 13;

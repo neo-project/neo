@@ -18,7 +18,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Numerics;
 using Array = System.Array;
 
@@ -464,45 +463,50 @@ namespace Neo.UnitTests.SmartContract.Native
             using (var script = new ScriptBuilder())
             {
                 // Test encoding
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber));
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("10000000000000000000000000000"));
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Parse("100000000000000000000000"));
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 1_00000000);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 10);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 255) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 127) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 63) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 31) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 15) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 7) - BigInteger.One);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Zero);
 
                 var tx = TransactionBuilder.CreateEmpty()
                     .Nonce((uint)Random.Shared.Next())
                     .Build();
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default, gas: long.MaxValue);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(6, engine.ResultStack.Count);
+                Assert.AreEqual(7, engine.ResultStack.Count);
 
                 var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
                 Assert.IsTrue(actualValue <= 0);
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < 10);
+                Assert.IsTrue(actualValue < (BigInteger.One << 7) - BigInteger.One);
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < 1_00000000);
+                Assert.IsTrue(actualValue < (BigInteger.One << 15) - BigInteger.One);
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < BigInteger.Parse("100000000000000000000000"));
+                Assert.IsTrue(actualValue < (BigInteger.One << 31) - BigInteger.One);
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < BigInteger.Parse("10000000000000000000000000000"));
+                Assert.IsTrue(actualValue < (BigInteger.One << 63) - BigInteger.One);
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
 
                 actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < BigInteger.Parse("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber));
+                Assert.IsTrue(actualValue < (BigInteger.One << 127) - BigInteger.One);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue < (BigInteger.One << 255) - BigInteger.One);
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
             }
         }
