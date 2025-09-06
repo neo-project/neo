@@ -34,7 +34,7 @@ namespace Neo.Cryptography.ECC
         public int CompareTo(ECFieldElement? other)
         {
             if (ReferenceEquals(this, other)) return 0;
-            if (other == null) throw new ArgumentNullException(nameof(other));
+            ArgumentNullException.ThrowIfNull(other);
             if (!_curve.Equals(other._curve)) throw new InvalidOperationException("Cannot compare ECFieldElements from different curves. Both elements must belong to the same elliptic curve.");
             return Value.CompareTo(other.Value);
         }

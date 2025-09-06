@@ -54,8 +54,7 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this byte[]? value)
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             return Convert.ToHexStringLower(value);
         }
@@ -73,8 +72,7 @@ namespace Neo.Extensions
             if (!reverse)
                 return ToHexString(value);
 
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             return string.Create(value.Length * 2, value, (span, bytes) =>
             {

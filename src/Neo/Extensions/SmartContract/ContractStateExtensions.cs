@@ -31,11 +31,9 @@ namespace Neo.Extensions
         /// <exception cref="ArgumentNullException"><paramref name="contractState"/> or <paramref name="snapshot"/> is null</exception>
         public static StorageItem? GetStorage(this ContractState contractState, IReadOnlyStore snapshot, byte[] storageKey)
         {
-            if (contractState is null)
-                throw new ArgumentNullException(nameof(contractState));
+            ArgumentNullException.ThrowIfNull(contractState);
 
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             if (storageKey is null)
                 storageKey = [];
@@ -59,11 +57,9 @@ namespace Neo.Extensions
         /// <exception cref="ArgumentNullException"><paramref name="contractState"/> or <paramref name="snapshot"/> is null</exception>
         public static IEnumerable<(StorageKey Key, StorageItem Value)> FindStorage(this ContractState contractState, IReadOnlyStore snapshot, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward)
         {
-            if (contractState is null)
-                throw new ArgumentNullException(nameof(contractState));
+            ArgumentNullException.ThrowIfNull(contractState);
 
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             if (prefix is null)
                 prefix = [];
@@ -83,8 +79,7 @@ namespace Neo.Extensions
         /// <exception cref="ArgumentNullException"><paramref name="snapshot"/> is null</exception>
         public static IEnumerable<(StorageKey Key, StorageItem Value)> FindContractStorage(this ContractManagement contractManagement, IReadOnlyStore snapshot, int contractId, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward)
         {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             if (prefix is null)
                 prefix = [];
