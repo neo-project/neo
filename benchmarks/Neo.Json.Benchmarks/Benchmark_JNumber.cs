@@ -18,10 +18,8 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]
     public class Benchmark_JNumber
     {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-        private JNumber _maxInt;
-        private JNumber _zero;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JNumber _maxInt = new(JNumber.MAX_SAFE_INTEGER);
+        private JNumber _zero = new(0);
 
         [GlobalSetup]
         public void Setup()

@@ -18,11 +18,9 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]         // Markdown 格式导出
     public class Benchmark_JsonArray
     {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-        private JObject _alice;
-        private JObject _bob;
-        private JArray _jArray;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JObject _alice = new();
+        private JObject _bob = new();
+        private JArray _jArray = new();
 
         [GlobalSetup]
         public void Setup()
