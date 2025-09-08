@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#pragma warning disable CS1718
+#pragma warning disable CS1718 // Comparison made to same variable
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
