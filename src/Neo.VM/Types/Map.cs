@@ -188,10 +188,7 @@ namespace Neo.VM.Types
         /// <see langword="true" /> if the map contains an element that has the specified key;
         /// otherwise, <see langword="false"/>.
         /// </returns>
-// supress warning of value parameter nullability mismatch
-#pragma warning disable CS8767
         public bool TryGetValue(PrimitiveType key, [MaybeNullWhen(false)] out StackItem value)
-#pragma warning restore CS8767
         {
             if (key.Size > MaxKeySize)
                 throw new ArgumentException($"Key size {key.Size} bytes exceeds maximum allowed size of {MaxKeySize} bytes.", nameof(key));

@@ -11,9 +11,9 @@
 
 #pragma warning disable IDE0051
 
-using Akka.Dispatch;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Iterators;
 using System;
 using System.Numerics;
 
@@ -417,6 +417,16 @@ namespace Neo.SmartContract.Native
 
             engine.SnapshotCache.Delete(key);
             return true;
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private StorageIterator GetBlockedAccounts(DataCache snapshot)
+        {
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+            var enumerator = snapshot
+                .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
+                .GetEnumerator();
+            return new StorageIterator(enumerator, 1, options);
         }
     }
 }

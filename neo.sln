@@ -99,6 +99,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestServer", "src\Plugins\R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Plugins.StateService.Tests", "tests\Neo.Plugins.StateService.Tests\Neo.Plugins.StateService.Tests.csproj", "{229C7877-C0FA-4399-A0DB-96E714A59481}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Plugins.SQLiteWallet.Tests", "tests\Neo.Plugins.SQLiteWallet.Tests\Neo.Plugins.SQLiteWallet.Tests.csproj", "{92E091FE-C7E0-4526-8352-779B73F55F13}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -277,6 +279,10 @@ Global
 		{229C7877-C0FA-4399-A0DB-96E714A59481}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{229C7877-C0FA-4399-A0DB-96E714A59481}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{229C7877-C0FA-4399-A0DB-96E714A59481}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92E091FE-C7E0-4526-8352-779B73F55F13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92E091FE-C7E0-4526-8352-779B73F55F13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92E091FE-C7E0-4526-8352-779B73F55F13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92E091FE-C7E0-4526-8352-779B73F55F13}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -326,6 +332,7 @@ Global
 		{A7FE2B30-11F8-E88D-D5BF-AF1B11EFEC8E} = {7F257712-D033-47FF-B439-9D4320D06599}
 		{4865C487-C1A1-4E36-698D-1EC4CCF08FDB} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{229C7877-C0FA-4399-A0DB-96E714A59481} = {7F257712-D033-47FF-B439-9D4320D06599}
+		{92E091FE-C7E0-4526-8352-779B73F55F13} = {7F257712-D033-47FF-B439-9D4320D06599}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
