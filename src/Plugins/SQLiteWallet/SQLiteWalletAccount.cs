@@ -13,18 +13,13 @@ namespace Neo.Wallets.SQLite
 {
     internal sealed class SQLiteWalletAccount : WalletAccount
     {
-        public KeyPair Key;
+        public KeyPair? Key;
 
         public override bool HasKey => Key != null;
 
         public SQLiteWalletAccount(UInt160 scriptHash, ProtocolSettings settings)
-            : base(scriptHash, settings)
-        {
-        }
+            : base(scriptHash, settings) { }
 
-        public override KeyPair GetKey()
-        {
-            return Key;
-        }
+        public override KeyPair? GetKey() => Key;
     }
 }

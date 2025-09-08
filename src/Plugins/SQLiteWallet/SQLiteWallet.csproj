@@ -5,6 +5,7 @@
     <RootNamespace>Neo.Wallets.SQLite</RootNamespace>
     <PackageId>Neo.Wallets.SQLite</PackageId>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

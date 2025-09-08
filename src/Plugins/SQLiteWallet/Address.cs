@@ -13,6 +13,6 @@ namespace Neo.Wallets.SQLite
 {
     internal class Address
     {
-        public byte[] ScriptHash { get; set; }
+        public required byte[] ScriptHash { get; set; }
     }
 }
