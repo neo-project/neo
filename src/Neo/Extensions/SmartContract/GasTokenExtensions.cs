@@ -22,11 +22,9 @@ namespace Neo.Extensions
     {
         public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this GasToken gasToken, IReadOnlyStore snapshot)
         {
-            if (gasToken is null)
-                throw new ArgumentNullException(nameof(gasToken));
+            ArgumentNullException.ThrowIfNull(gasToken);
 
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot);
 
             var kb = StorageKey.Create(gasToken.Id, GasToken.Prefix_Account);
             var kbLength = kb.Length;

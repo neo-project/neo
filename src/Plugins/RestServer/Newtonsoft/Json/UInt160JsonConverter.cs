@@ -23,7 +23,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
         public override UInt160 ReadJson(JsonReader reader, Type objectType, UInt160? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             var value = reader.Value?.ToString();
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             try
             {
@@ -37,7 +37,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
 
         public override void WriteJson(JsonWriter writer, UInt160? value, JsonSerializer serializer)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             writer.WriteValue(value.ToString());
         }

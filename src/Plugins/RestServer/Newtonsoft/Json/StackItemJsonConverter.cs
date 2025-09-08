@@ -26,7 +26,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
 
         public override void WriteJson(JsonWriter writer, StackItem? value, JsonSerializer serializer)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             var t = RestServerUtility.StackItemToJToken(value, null, serializer);
             t.WriteTo(writer);

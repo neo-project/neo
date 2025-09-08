@@ -26,7 +26,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
 
         public override void WriteJson(JsonWriter writer, Signer? value, JsonSerializer serializer)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             var j = RestServerUtility.SignerToJToken(value, serializer);
             j.WriteTo(writer);

@@ -14,18 +14,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Neo.Wallets.SQLite
 {
-    class WalletDataContext : DbContext
+    internal class WalletDataContext : DbContext
     {
         public DbSet<Account> Accounts { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<Contract> Contracts { get; set; }
         public DbSet<Key> Keys { get; set; }
 
-        private readonly string filename;
+        private readonly string _filename;
 
         public WalletDataContext(string filename)
         {
-            this.filename = filename;
+            _filename = filename;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -33,7 +33,7 @@ namespace Neo.Wallets.SQLite
             base.OnConfiguring(optionsBuilder);
             var sb = new SqliteConnectionStringBuilder()
             {
-                DataSource = filename
+                DataSource = _filename
             };
             optionsBuilder.UseSqlite(sb.ToString());
         }
