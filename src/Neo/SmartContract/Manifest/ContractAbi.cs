@@ -79,7 +79,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Methods = ((JArray)json!["methods"]!)?.Select(u => ContractMethodDescriptor.FromJson((JObject)u!)).ToArray() ?? [],
                 Events = ((JArray)json!["events"]!)?.Select(u => ContractEventDescriptor.FromJson((JObject)u!)).ToArray() ?? [],
-                NamedTypes = ((JObject)json!["namedtypes"]!)?.Properties.ToDictionary(u => u.Key, u => ExtendedType.FromJson((JObject)u.Value!)) ?? []
+                NamedTypes = ((JObject)json!["namedtypes"]!)?.Properties.ToDictionary(u => u.Key, u => ExtendedType.FromJson((JObject)u.Value!))
             };
             if (abi.Methods.Length == 0) throw new FormatException();
             return abi;
