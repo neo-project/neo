@@ -64,7 +64,7 @@ namespace Neo.Plugins.RestServer.Tokens
             if (appEngine.State != VMState.HALT)
                 throw new NotSupportedException(nameof(ScriptHash));
 
-            Symbol = appEngine.ResultStack.Pop().GetString() ?? throw new ArgumentNullException();
+            Symbol = appEngine.ResultStack.Pop().GetString() ?? throw new ArgumentNullException(nameof(Symbol));
             Decimals = (byte)appEngine.ResultStack.Pop().GetInteger();
         }
 
@@ -163,7 +163,7 @@ namespace Neo.Plugins.RestServer.Tokens
         {
             ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));
             if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "properties", 1) == null)
-                throw new NotImplementedException();
+                throw new NotImplementedException("no 'properties' with 1 arguments method for NEP-11 contract");
             if (tokenId.Length > 64)
                 throw new ArgumentOutOfRangeException(nameof(tokenId));
             if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _snapshot, ScriptHash, "properties", out var results, tokenId))
