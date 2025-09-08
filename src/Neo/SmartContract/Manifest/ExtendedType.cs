@@ -179,9 +179,7 @@ namespace Neo.SmartContract.Manifest
             if (Value is null) array.Add(StackItem.Null);
             else
             {
-                var arrayValue = new Struct(referenceCounter);
-                Value.ToStackItem(referenceCounter, arrayValue);
-                array.Add(arrayValue);
+                array.Add(Value.ToStackItem(referenceCounter));
             }
             if (Fields is null) array.Add(StackItem.Null);
             else

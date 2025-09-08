@@ -260,11 +260,10 @@ namespace Neo.UnitTests.SmartContract.Manifest
             };
 
             var refCounter = new ReferenceCounter();
-            var structItem = new Struct(refCounter);
-            var stackItem = original.ToStackItem(refCounter, structItem);
+            var structItem = original.ToStackItem(refCounter);
 
             var copy = new ExtendedType();
-            copy.FromStackItem((VM.Types.Array)stackItem);
+            copy.FromStackItem((VM.Types.Array)structItem);
 
             Assert.AreEqual(original.Type, copy.Type);
             Assert.AreEqual(original.NamedType, copy.NamedType);

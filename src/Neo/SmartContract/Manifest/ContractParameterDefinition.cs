@@ -60,8 +60,7 @@ namespace Neo.SmartContract.Manifest
 
             if (ExtendedType != null)
             {
-                var structExtended = new Struct(referenceCounter);
-                item.Add(ExtendedType.ToStackItem(referenceCounter, structExtended));
+                item.Add(ExtendedType.ToStackItem(referenceCounter));
             }
 
             return item;
