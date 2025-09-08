@@ -162,6 +162,12 @@ namespace Neo.SmartContract.Manifest
             }
         }
 
+        internal StackItem ToStackItem(IReferenceCounter referenceCounter)
+        {
+            var array = new Struct(referenceCounter);
+            return ToStackItem(referenceCounter, array);
+        }
+
         internal StackItem ToStackItem(IReferenceCounter referenceCounter, Struct array)
         {
             array.Add((byte)Type);

@@ -17,6 +17,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
 
+#nullable enable
+
 namespace Neo.SmartContract.Manifest
 {
     /// <summary>
@@ -25,23 +27,33 @@ namespace Neo.SmartContract.Manifest
     /// <remarks>For more details, see NEP-14.</remarks>
     public class ContractAbi : IInteroperable
     {
-        private IReadOnlyDictionary<(string, int), ContractMethodDescriptor> methodDictionary;
+        private IReadOnlyDictionary<(string, int), ContractMethodDescriptor>? _methodDictionary;
 
         /// <summary>
         /// Gets the methods in the ABI.
         /// </summary>
-        public ContractMethodDescriptor[] Methods { get; set; }
+        public ContractMethodDescriptor[] Methods { get; set; } = [];
 
         /// <summary>
         /// Gets the events in the ABI.
         /// </summary>
-        public ContractEventDescriptor[] Events { get; set; }
+        public ContractEventDescriptor[] Events { get; set; } = [];
+
+        /// <summary>
+        /// An object with each member having a name (a string consisting of one or more identifiers joined by dots) and a value of ExtendedType object.
+        /// </summary>
+        public Dictionary<string, ExtendedType>? NamedTypes { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
-            Methods = ((Array)@struct[0]).Select(p => p.ToInteroperable<ContractMethodDescriptor>()).ToArray();
-            Events = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>()).ToArray();
+            var data = (Struct)stackItem;
+            Methods = [.. ((Array)data[0]).Select(p => p.ToInteroperable<ContractMethodDescriptor>())];
+            Events = [.. ((Array)data[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>())];
+
+            if (data.Count >= 3 && !data[2].IsNull)
+                NamedTypes = ((Map)data[2]).ToDictionary(p => p.Key.GetString()!, p => p.Value.ToInteroperable<ExtendedType>());
+            else
+                NamedTypes = null;
         }
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
@@ -50,6 +62,9 @@ namespace Neo.SmartContract.Manifest
             {
                 new Array(referenceCounter, Methods.Select(p => p.ToStackItem(referenceCounter))),
                 new Array(referenceCounter, Events.Select(p => p.ToStackItem(referenceCounter))),
+                NamedTypes != null ?
+                    new Map(NamedTypes.ToDictionary(p => (PrimitiveType)p.Key, p => (StackItem)p.Value.ToStackItem(referenceCounter)), referenceCounter) :
+                    StackItem.Null
             };
         }
 
@@ -62,8 +77,9 @@ namespace Neo.SmartContract.Manifest
         {
             ContractAbi abi = new()
             {
-                Methods = ((JArray)json!["methods"])?.Select(u => ContractMethodDescriptor.FromJson((JObject)u)).ToArray() ?? [],
-                Events = ((JArray)json!["events"])?.Select(u => ContractEventDescriptor.FromJson((JObject)u)).ToArray() ?? []
+                Methods = ((JArray)json!["methods"]!)?.Select(u => ContractMethodDescriptor.FromJson((JObject)u!)).ToArray() ?? [],
+                Events = ((JArray)json!["events"]!)?.Select(u => ContractEventDescriptor.FromJson((JObject)u!)).ToArray() ?? [],
+                NamedTypes = ((JObject)json!["namedtypes"]!)?.Properties.ToDictionary(u => u.Key, u => ExtendedType.FromJson((JObject)u.Value!)) ?? []
             };
             if (abi.Methods.Length == 0) throw new FormatException();
             return abi;
@@ -81,14 +97,14 @@ namespace Neo.SmartContract.Manifest
         /// The method that matches the specified name and number of parameters.
         /// If <paramref name="pcount"/> is set to -1, the first method with the specified name will be returned.
         /// </returns>
-        public ContractMethodDescriptor GetMethod(string name, int pcount)
+        public ContractMethodDescriptor? GetMethod(string name, int pcount)
         {
             if (pcount < -1 || pcount > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(pcount), $"`pcount` must be between [-1, {ushort.MaxValue}]");
             if (pcount >= 0)
             {
-                methodDictionary ??= Methods.ToDictionary(p => (p.Name, p.Parameters.Length));
-                methodDictionary.TryGetValue((name, pcount), out var method);
+                _methodDictionary ??= Methods.ToDictionary(p => (p.Name, p.Parameters.Length));
+                _methodDictionary.TryGetValue((name, pcount), out var method);
                 return method;
             }
             else
@@ -103,11 +119,20 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The ABI represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            return new JObject()
+            var ret = new JObject()
             {
-                ["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray()),
-                ["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray())
+                ["methods"] = new JArray([.. Methods.Select(u => u.ToJson())]),
+                ["events"] = new JArray([.. Events.Select(u => u.ToJson())])
             };
+
+            if (NamedTypes != null)
+            {
+                ret["namedtypes"] = new JObject(NamedTypes.ToDictionary(u => u.Key, u => (JToken?)u.Value.ToJson()));
+            }
+
+            return ret;
         }
     }
 }
+
+#nullable disable
