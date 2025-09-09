@@ -11,7 +11,7 @@
 
 namespace Neo.Wallets.SQLite
 {
-    sealed class SQLiteWalletAccount : WalletAccount
+    internal sealed class SQLiteWalletAccount : WalletAccount
     {
         public KeyPair Key;
 

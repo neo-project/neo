@@ -18,9 +18,7 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]
     public class Benchmark_JString
     {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-        private JString _testString;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JString _testString = new(string.Empty);
 
         [GlobalSetup]
         public void Setup()

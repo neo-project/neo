@@ -18,9 +18,7 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]
     public class Benchmark_JPath
     {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-        private JObject _json;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JObject _json = new();
 
         [GlobalSetup]
         public void Setup()
