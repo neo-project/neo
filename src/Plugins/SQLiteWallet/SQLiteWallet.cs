@@ -27,7 +27,7 @@ namespace Neo.Wallets.SQLite
     /// <summary>
     /// A wallet implementation that uses SQLite as the underlying storage.
     /// </summary>
-    class SQLiteWallet : Wallet
+    internal class SQLiteWallet : Wallet
     {
         private readonly Lock _lock = new();
         private readonly byte[] _iv;
@@ -57,28 +57,35 @@ namespace Neo.Wallets.SQLite
             }
         }
 
+        /// <summary>
+        /// Opens a wallet at the specified path.
+        /// </summary>
         private SQLiteWallet(string path, byte[] passwordKey, ProtocolSettings settings) : base(path, settings)
         {
+            if (!File.Exists(path)) throw new InvalidOperationException($"Wallet file {path} not found");
+
             using var ctx = new WalletDataContext(Path);
             _salt = LoadStoredData(ctx, "Salt")
                 ?? throw new FormatException("Salt was not found");
             var passwordHash = LoadStoredData(ctx, "PasswordHash")
                 ?? throw new FormatException("PasswordHash was not found");
             if (!passwordHash.SequenceEqual(passwordKey.Concat(_salt).ToArray().Sha256()))
-                throw new CryptographicException();
-            _iv = LoadStoredData(ctx, "IV")
-                ?? throw new FormatException("IV was not found");
+                throw new CryptographicException("Invalid password");
+
+            _iv = LoadStoredData(ctx, "IV") ?? throw new FormatException("IV was not found");
             _masterKey = Decrypt(LoadStoredData(ctx, "MasterKey")
                 ?? throw new FormatException("MasterKey was not found"), passwordKey, _iv);
-            _scrypt = new ScryptParameters
-                (
+            _scrypt = new ScryptParameters(
                 BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptN") ?? throw new FormatException("ScryptN was not found")),
                 BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptR") ?? throw new FormatException("ScryptR was not found")),
                 BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptP") ?? throw new FormatException("ScryptP was not found"))
-                );
+            );
             _accounts = LoadAccounts(ctx);
         }
 
+        /// <summary>
+        /// Creates a new wallet at the specified path.
+        /// </summary>
         private SQLiteWallet(string path, byte[] passwordKey, ProtocolSettings settings, ScryptParameters scrypt) : base(path, settings)
         {
             _iv = new byte[16];
@@ -397,7 +404,7 @@ namespace Neo.Wallets.SQLite
             return ToAesKey(password).Concat(_salt).ToArray().Sha256().SequenceEqual(hash);
         }
 
-        private static byte[] Encrypt(byte[] data, byte[] key, byte[] iv)
+        internal static byte[] Encrypt(byte[] data, byte[] key, byte[] iv)
         {
             ArgumentNullException.ThrowIfNull(data, nameof(data));
             ArgumentNullException.ThrowIfNull(key, nameof(key));
@@ -413,7 +420,7 @@ namespace Neo.Wallets.SQLite
             return encryptor.TransformFinalBlock(data, 0, data.Length);
         }
 
-        private static byte[] Decrypt(byte[] data, byte[] key, byte[] iv)
+        internal static byte[] Decrypt(byte[] data, byte[] key, byte[] iv)
         {
             ArgumentNullException.ThrowIfNull(data, nameof(data));
             ArgumentNullException.ThrowIfNull(key, nameof(key));
@@ -429,7 +436,7 @@ namespace Neo.Wallets.SQLite
             return decryptor.TransformFinalBlock(data, 0, data.Length);
         }
 
-        private static byte[] ToAesKey(string password)
+        internal static byte[] ToAesKey(string password)
         {
             var passwordBytes = Encoding.UTF8.GetBytes(password);
             var passwordHash = SHA256.HashData(passwordBytes);
