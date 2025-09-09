@@ -291,7 +291,7 @@ namespace Neo.SmartContract.Native
 
             var randomProduct = maxValue * engine.GetRandom();
 
-            var lowPart = randomProduct >> 256;
+            var lowPart = (randomProduct >> 255) & maxValueModulus;
 
             if (lowPart < maxValue)
             {
@@ -300,11 +300,11 @@ namespace Neo.SmartContract.Native
                 while (lowPart < remainder)
                 {
                     randomProduct = maxValue * engine.GetRandom();
-                    lowPart = randomProduct >> 256;
+                    lowPart = (randomProduct >> 255) & maxValueModulus;
                 }
             }
 
-            return randomProduct >> 256;
+            return randomProduct >> 255 & maxValueModulus;
         }
     }
 }

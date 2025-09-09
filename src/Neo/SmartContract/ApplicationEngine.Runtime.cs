@@ -315,12 +315,21 @@ namespace Neo.SmartContract
             long price;
             if (IsHardforkEnabled(Hardfork.HF_Faun))
             {
+                var A = new BigInteger(BitConverter.GetBytes(ProtocolSettings.Network), isUnsigned: true);
+                var C = new BigInteger(BitConverter.GetBytes(ProtocolSettings.TimePerBlock.TotalMilliseconds), isUnsigned: true);
+                var M = (BigInteger.One << 255) - BigInteger.One;
+
                 buffer = [
                     .. nonceData,
-                    .. BitConverter.GetBytes(ProtocolSettings.Network + random_times++)
+                    .. BitConverter.GetBytes(random_times++),
                 ];
-                buffer = buffer.Sha256();
+
+                var seed = new BigInteger(buffer.Sha256(), isUnsigned: true);
+                var state = (A * seed + C) % M;
                 price = 1 << 13;
+
+                AddFee(price * ExecFeeFactor);
+                return state;
             }
             else if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {

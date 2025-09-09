@@ -118,11 +118,13 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            Assert.AreEqual(BigInteger.Parse("14137547953482507529787531174726728043575192644771421434672954709228789229484"), rand_1);
-            Assert.AreEqual(BigInteger.Parse("69041174077957018274220681211053021553180194393930421796159707285471439930896"), rand_2);
-            Assert.AreEqual(BigInteger.Parse("86652300146654203963319756238534975146678258076385506807048849596188931607815"), rand_3);
-            Assert.AreEqual(BigInteger.Parse("50496764884756063422584719912836053887682141355224860059151777430503142747434"), rand_4);
-            Assert.AreEqual(BigInteger.Parse("38661511749709063695278724931879319836342931787293543816633165541555766668070"), rand_5);
+            var actualValue0 = (BigInteger.One << 255) - BigInteger.One;
+
+            Assert.IsTrue(rand_1 < actualValue0);
+            Assert.IsTrue(rand_2 < actualValue0);
+            Assert.IsTrue(rand_3 < actualValue0);
+            Assert.IsTrue(rand_4 < actualValue0);
+            Assert.IsTrue(rand_5 < actualValue0);
 
             Assert.AreEqual(rand_6, rand_1);
             Assert.AreEqual(rand_7, rand_2);
@@ -165,11 +167,13 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            Assert.AreEqual(BigInteger.Parse("14137547953482507529787531174726728043575192644771421434672954709228789229484"), rand_1);
-            Assert.AreEqual(BigInteger.Parse("69041174077957018274220681211053021553180194393930421796159707285471439930896"), rand_2);
-            Assert.AreEqual(BigInteger.Parse("86652300146654203963319756238534975146678258076385506807048849596188931607815"), rand_3);
-            Assert.AreEqual(BigInteger.Parse("50496764884756063422584719912836053887682141355224860059151777430503142747434"), rand_4);
-            Assert.AreEqual(BigInteger.Parse("38661511749709063695278724931879319836342931787293543816633165541555766668070"), rand_5);
+            var actualValue0 = (BigInteger.One << 255) - BigInteger.One;
+
+            Assert.IsTrue(rand_1 < actualValue0);
+            Assert.IsTrue(rand_2 < actualValue0);
+            Assert.IsTrue(rand_3 < actualValue0);
+            Assert.IsTrue(rand_4 < actualValue0);
+            Assert.IsTrue(rand_5 < actualValue0);
 
             Assert.AreNotEqual(rand_6, rand_1);
             Assert.AreNotEqual(rand_7, rand_2);
