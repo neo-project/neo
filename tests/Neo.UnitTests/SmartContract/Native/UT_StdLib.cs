@@ -510,42 +510,5 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.IsTrue(actualValue >= BigInteger.Zero);
             }
         }
-
-        [TestMethod]
-        public void MyTestMethod()
-        {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-
-            using (var script = new ScriptBuilder())
-            {
-                // Test encoding
-                script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
-                script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
-                script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
-                script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
-                script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
-                script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
-                script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
-
-                var tx = TransactionBuilder.CreateEmpty()
-                    .Nonce((uint)Random.Shared.Next(int.MaxValue))
-                    .Build();
-
-                using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default, gas: long.MaxValue);
-                engine.LoadScript(script.ToArray());
-
-                Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(7, engine.ResultStack.Count);
-
-                var actualValue0 = (BigInteger.One << 255) - BigInteger.One;
-                var actualValue1 = engine.ResultStack.Pop<Integer>().GetInteger();
-                var actualValue2 = engine.ResultStack.Pop<Integer>().GetInteger();
-                var actualValue3 = engine.ResultStack.Pop<Integer>().GetInteger();
-                var actualValue4 = engine.ResultStack.Pop<Integer>().GetInteger();
-                var actualValue5 = engine.ResultStack.Pop<Integer>().GetInteger();
-                var actualValue6 = engine.ResultStack.Pop<Integer>().GetInteger();
-                var actualValue7 = engine.ResultStack.Pop<Integer>().GetInteger();
-            }
-        }
     }
 }
