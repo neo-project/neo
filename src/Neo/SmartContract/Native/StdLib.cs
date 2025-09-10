@@ -286,12 +286,11 @@ namespace Neo.SmartContract.Native
             if (maxValue == BigInteger.Zero)
                 return BigInteger.Zero;
 
-            var maxValueBits = (maxValue.GetByteCount() * 8) - 1;
+            var maxValueBits = maxValue.GetByteCount() * 8;
             var maxValueModulus = (BigInteger.One << maxValueBits) - BigInteger.One;
 
             var randomProduct = maxValue * engine.GetRandom();
-
-            var lowPart = (randomProduct >> 255) & maxValueModulus;
+            var lowPart = randomProduct & maxValueModulus;
 
             if (lowPart < maxValue)
             {
@@ -300,11 +299,11 @@ namespace Neo.SmartContract.Native
                 while (lowPart < remainder)
                 {
                     randomProduct = maxValue * engine.GetRandom();
-                    lowPart = (randomProduct >> 255) & maxValueModulus;
+                    lowPart = randomProduct & maxValueModulus;
                 }
             }
 
-            return randomProduct >> 255 & maxValueModulus;
+            return randomProduct >> 255;
         }
     }
 }
