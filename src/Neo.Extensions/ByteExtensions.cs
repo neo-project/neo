@@ -88,14 +88,24 @@ namespace Neo.Extensions
         /// <param name="value">The byte array to convert.</param>
         /// <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
         /// <returns>The converted hex <see cref="string"/>.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this byte[]? value, bool reverse = false)
         {
-            if (!reverse)
-                return ToHexString(value);
-
             ArgumentNullException.ThrowIfNull(value);
+
+            return ToHexString(value.AsSpan(), reverse);
+        }
+
+        /// <summary>
+        /// Converts a byte span to hex <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
+        /// <returns>The converted hex <see cref="string"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ToHexString(this ReadOnlySpan<byte> value, bool reverse = false)
+        {
+            if (!reverse) return ToHexString(value);
 
             return string.Create(value.Length * 2, value, (span, bytes) =>
             {
