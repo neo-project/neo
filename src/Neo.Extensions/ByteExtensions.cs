@@ -67,8 +67,6 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this ReadOnlyMemory<byte> value)
         {
-            if (value is { IsEmpty: true })
-                throw new ArgumentNullException(nameof(value));
 
             return Convert.ToHexStringLower(value.ToArray());
         }
