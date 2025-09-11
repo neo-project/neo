@@ -67,8 +67,7 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this ReadOnlyMemory<byte> value)
         {
-
-            return Convert.ToHexStringLower(value.ToArray());
+            return Convert.ToHexStringLower(value.Span);
         }
 
         /// <summary>
@@ -80,8 +79,7 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this Memory<byte> value)
         {
-
-            return Convert.ToHexStringLower(value.ToArray());
+            return Convert.ToHexStringLower(value.Span);
         }
 
         /// <summary>
