@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Microsoft.EntityFrameworkCore;
 using Neo.Cryptography;
 using Neo.Extensions;
@@ -121,14 +119,14 @@ namespace Neo.Wallets.SQLite
         {
             lock (_lock)
             {
-                if (_accounts.TryGetValue(account.ScriptHash, out var account_old))
+                if (_accounts.TryGetValue(account.ScriptHash, out var accountOld))
                 {
-                    account.Contract ??= account_old.Contract;
+                    account.Contract ??= accountOld.Contract;
                 }
                 _accounts[account.ScriptHash] = account;
 
                 using var ctx = new WalletDataContext(Path);
-                if (account.HasKey)
+                if (account.Key is not null)
                 {
                     var dbAccount = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
                     if (dbAccount == null)
@@ -144,10 +142,13 @@ namespace Neo.Wallets.SQLite
                         dbAccount.Nep2key = account.Key.Export(_masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P);
                     }
                 }
-                if (account.Contract != null)
+                if (account.Contract is not null)
                 {
+                    if (account.Key is null) // If no Key, cannot get PublicKeyHash
+                        throw new InvalidOperationException("Account.Contract is not null when Account.Key is null");
+
                     var dbContract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
-                    if (dbContract != null)
+                    if (dbContract is not null)
                     {
                         dbContract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
                     }
@@ -161,7 +162,8 @@ namespace Neo.Wallets.SQLite
                         });
                     }
                 }
-                //add address
+
+                // add address
                 {
                     var dbAddress = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
                     if (dbAddress == null)
@@ -246,18 +248,18 @@ namespace Neo.Wallets.SQLite
 
         public override WalletAccount CreateAccount(SmartContract.Contract contract, KeyPair? key = null)
         {
-            if (contract is not VerificationContract verification_contract)
+            if (contract is not VerificationContract verificationContract)
             {
-                verification_contract = new VerificationContract
+                verificationContract = new()
                 {
                     Script = contract.Script,
                     ParameterList = contract.ParameterList
                 };
             }
-            var account = new SQLiteWalletAccount(verification_contract.ScriptHash, ProtocolSettings)
+            var account = new SQLiteWalletAccount(verificationContract.ScriptHash, ProtocolSettings)
             {
                 Key = key,
-                Contract = verification_contract
+                Contract = verificationContract
             };
             AddAccount(account);
             return account;
@@ -286,12 +288,12 @@ namespace Neo.Wallets.SQLite
                 if (_accounts.Remove(scriptHash, out var account))
                 {
                     using var ctx = new WalletDataContext(Path);
-                    if (account.HasKey)
+                    if (account.Key is not null)
                     {
                         var dbAccount = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
                         ctx.Accounts.Remove(dbAccount);
                     }
-                    if (account.Contract != null)
+                    if (account.Contract is not null)
                     {
                         var dbContract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
                         ctx.Contracts.Remove(dbContract);
@@ -320,7 +322,6 @@ namespace Neo.Wallets.SQLite
         public override IEnumerable<WalletAccount> GetAccounts()
         {
             SQLiteWalletAccount[] accounts;
-
             lock (_lock)
             {
                 accounts = [.. _accounts.Values];
@@ -331,14 +332,20 @@ namespace Neo.Wallets.SQLite
 
         private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts(WalletDataContext ctx)
         {
-            var accounts = ctx.Addresses.Select(p => new SQLiteWalletAccount(p.ScriptHash, ProtocolSettings))
+            var accounts = ctx.Addresses
+                .Select(p => new SQLiteWalletAccount(p.ScriptHash, ProtocolSettings))
                 .ToDictionary(p => p.ScriptHash);
             foreach (var dbContract in ctx.Contracts.Include(p => p.Account))
             {
                 var contract = dbContract.RawData.AsSerializable<VerificationContract>();
                 var account = accounts[contract.ScriptHash];
                 account.Contract = contract;
-                account.Key = new KeyPair(GetPrivateKeyFromNEP2(dbContract.Account.Nep2key, _masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P));
+                if (dbContract.Account is not null)
+                {
+                    var privateKey = GetPrivateKeyFromNEP2(dbContract.Account.Nep2key, _masterKey,
+                        ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P);
+                    account.Key = new KeyPair(privateKey);
+                }
             }
             return accounts;
         }
@@ -447,5 +454,3 @@ namespace Neo.Wallets.SQLite
         }
     }
 }
-
-#nullable disable
