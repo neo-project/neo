@@ -12,7 +12,6 @@
 using System;
 using System.IO.Hashing;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Neo.Extensions
 {
@@ -57,6 +56,30 @@ namespace Neo.Extensions
             ArgumentNullException.ThrowIfNull(value);
 
             return Convert.ToHexStringLower(value);
+        }
+
+        /// <summary>
+        /// Converts a byte array to hex <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <returns>The converted hex <see cref="string"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ToHexString(this ReadOnlyMemory<byte> value)
+        {
+            return Convert.ToHexStringLower(value.Span);
+        }
+
+        /// <summary>
+        /// Converts a byte array to hex <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <returns>The converted hex <see cref="string"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ToHexString(this Memory<byte> value)
+        {
+            return Convert.ToHexStringLower(value.Span);
         }
 
         /// <summary>
