@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -29,6 +30,7 @@ namespace Neo.Persistence
         /// <summary>
         /// Represents an entry in the cache.
         /// </summary>
+        [DebuggerDisplay("{Item.ToString()}, State = {State.ToString()}")]
         public class Trackable(StorageItem item, TrackState state)
         {
             /// <summary>
