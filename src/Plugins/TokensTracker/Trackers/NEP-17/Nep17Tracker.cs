@@ -37,15 +37,15 @@ namespace Neo.Plugins.Trackers.NEP_17
         private const byte Nep17TransferSentPrefix = 0xe9;
         private const byte Nep17TransferReceivedPrefix = 0xea;
         private uint _currentHeight;
-        private Block _currentBlock;
+        private Block? _currentBlock;
 
         public override string TrackName => nameof(Nep17Tracker);
 
-        public Nep17Tracker(IStore db, uint maxResult, bool shouldRecordHistory, NeoSystem system) : base(db, maxResult, shouldRecordHistory, system)
-        {
-        }
+        public Nep17Tracker(IStore db, uint maxResult, bool shouldRecordHistory, NeoSystem system)
+            : base(db, maxResult, shouldRecordHistory, system) { }
 
-        public override void OnPersist(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        public override void OnPersist(NeoSystem system, Block block, DataCache snapshot,
+            IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             _currentBlock = block;
             _currentHeight = block.Index;
@@ -90,7 +90,6 @@ namespace Neo.Plugins.Trackers.NEP_17
                 }
             }
         }
-
 
         private void HandleNotificationNep17(IVerifiable scriptContainer, UInt160 asset, Array stateItems, HashSet<BalanceChangeRecord> balanceChangeRecords, ref uint transferIndex)
         {
@@ -224,9 +223,9 @@ namespace Neo.Plugins.Trackers.NEP_17
             }
         }
 
-
         private void RecordTransferHistoryNep17(UInt160 scriptHash, UInt160 from, UInt160 to, BigInteger amount, UInt256 txHash, ref uint transferIndex)
         {
+            if (_currentBlock is null) return; // _currentBlock already set in OnPersist
             if (!_shouldTrackHistory) return;
             if (from != UInt160.Zero)
             {
