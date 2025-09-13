@@ -163,7 +163,7 @@ namespace Neo
 
         public override string ToString()
         {
-            return "0x" + this.ToArray().ToHexString(reverse: true);
+            return "0x" + GetSpan().ToHexString(reverse: true);
         }
 
         /// <summary>
