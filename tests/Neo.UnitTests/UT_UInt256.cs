@@ -49,6 +49,10 @@ namespace Neo.UnitTests.IO
             UInt256 uInt256 = "0xff00000000000000000000000000000000000000000000000000000000000001";
             Assert.IsNotNull(uInt256);
             Assert.AreEqual("0xff00000000000000000000000000000000000000000000000000000000000001", uInt256.ToString());
+
+            UInt256 value = "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20";
+            Assert.IsNotNull(value);
+            Assert.AreEqual("0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20", value.ToString());
         }
 
         [TestMethod]
