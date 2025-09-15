@@ -16,11 +16,12 @@ using System.Numerics;
 
 namespace Neo.Plugins.Trackers
 {
-    public class TokenTransfer : ISerializable
+    internal class TokenTransfer : ISerializable
     {
-        public UInt160 UserScriptHash;
+        // These fields are always set in TokensTracker. Give it a default value to avoid null warning when deserializing.
+        public UInt160 UserScriptHash = UInt160.Zero;
         public uint BlockIndex;
-        public UInt256 TxHash;
+        public UInt256 TxHash = UInt256.Zero;
         public BigInteger Amount;
 
         int ISerializable.Size =>
