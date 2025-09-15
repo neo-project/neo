@@ -34,7 +34,7 @@ namespace Neo.Plugins.Trackers.NEP_17
             AssetScriptHash = assetScriptHash;
         }
 
-        public int CompareTo(Nep17BalanceKey other)
+        public int CompareTo(Nep17BalanceKey? other)
         {
             if (other is null) return 1;
             if (ReferenceEquals(this, other)) return 0;
@@ -43,14 +43,14 @@ namespace Neo.Plugins.Trackers.NEP_17
             return AssetScriptHash.CompareTo(other.AssetScriptHash);
         }
 
-        public bool Equals(Nep17BalanceKey other)
+        public bool Equals(Nep17BalanceKey? other)
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
             return UserScriptHash.Equals(other.UserScriptHash) && AssetScriptHash.Equals(AssetScriptHash);
         }
 
-        public override bool Equals(Object other)
+        public override bool Equals(object? other)
         {
             return other is Nep17BalanceKey otherKey && Equals(otherKey);
         }
