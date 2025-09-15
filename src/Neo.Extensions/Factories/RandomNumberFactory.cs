@@ -222,7 +222,7 @@ namespace Neo.Extensions.Factories
             var maxValueBits = maxValue.GetByteCount() * 8;
             var maxValueModulus = (BigInteger.One << maxValueBits) - BigInteger.One;
 
-            var randomProduct = maxValue * NextBigInteger(256);
+            var randomProduct = maxValue * NextBigInteger(255);
             var lowPart = randomProduct & maxValueModulus;
 
             if (lowPart < maxValue)
@@ -231,7 +231,7 @@ namespace Neo.Extensions.Factories
 
                 while (lowPart < remainder)
                 {
-                    randomProduct = maxValue * NextBigInteger(256);
+                    randomProduct = maxValue * NextBigInteger(255);
                     lowPart = randomProduct & maxValueModulus;
                 }
             }
