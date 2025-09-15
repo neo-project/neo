@@ -22,16 +22,15 @@ namespace Neo.Plugins.Trackers.NEP_11
         public ByteString Token;
         public override int Size => base.Size + Token.GetVarSize();
 
-        public Nep11TransferKey() : this(new UInt160(), 0, new UInt160(), ByteString.Empty, 0)
-        {
-        }
+        public Nep11TransferKey() : this(UInt160.Zero, 0, UInt160.Zero, ByteString.Empty, 0) { }
 
-        public Nep11TransferKey(UInt160 userScriptHash, ulong timestamp, UInt160 assetScriptHash, ByteString tokenId, uint xferIndex) : base(userScriptHash, timestamp, assetScriptHash, xferIndex)
+        public Nep11TransferKey(UInt160 userScriptHash, ulong timestamp, UInt160 assetScriptHash, ByteString tokenId, uint xferIndex)
+            : base(userScriptHash, timestamp, assetScriptHash, xferIndex)
         {
             Token = tokenId;
         }
 
-        public int CompareTo(Nep11TransferKey other)
+        public int CompareTo(Nep11TransferKey? other)
         {
             if (other is null) return 1;
             if (ReferenceEquals(this, other)) return 0;
@@ -46,7 +45,7 @@ namespace Neo.Plugins.Trackers.NEP_11
             return (Token.GetInteger() - other.Token.GetInteger()).Sign;
         }
 
-        public bool Equals(Nep11TransferKey other)
+        public bool Equals(Nep11TransferKey? other)
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -56,14 +55,15 @@ namespace Neo.Plugins.Trackers.NEP_11
                    && BlockXferNotificationIndex.Equals(other.BlockXferNotificationIndex);
         }
 
-        public override bool Equals(Object other)
+        public override bool Equals(object? other)
         {
             return other is Nep11TransferKey otherKey && Equals(otherKey);
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(UserScriptHash.GetHashCode(), TimestampMS.GetHashCode(), AssetScriptHash.GetHashCode(), BlockXferNotificationIndex.GetHashCode(), Token.GetHashCode());
+            return HashCode.Combine(UserScriptHash.GetHashCode(), TimestampMS.GetHashCode(), AssetScriptHash.GetHashCode(),
+                BlockXferNotificationIndex.GetHashCode(), Token.GetHashCode());
         }
 
         public override void Serialize(BinaryWriter writer)

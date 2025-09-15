@@ -30,18 +30,17 @@ namespace Neo.UnitTests.Cryptography
         public void TestBase58CheckDecode()
         {
             string input = "3vQB7B6MrGQZaxCuFg4oh";
-            byte[] result = input.Base58CheckDecode();
+            var result = input.Base58CheckDecode();
             byte[] helloWorld = { 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 };
             CollectionAssert.AreEqual(helloWorld, result);
 
             input = "3v";
-            Action action = () => input.Base58CheckDecode();
+            var action = () => input.Base58CheckDecode();
             Assert.ThrowsExactly<FormatException>(action);
 
             input = "3vQB7B6MrGQZaxCuFg4og";
             action = () => input.Base58CheckDecode();
             Assert.ThrowsExactly<FormatException>(action);
-
             Assert.ThrowsExactly<FormatException>(() => _ = string.Empty.Base58CheckDecode());
         }
 
@@ -90,20 +89,22 @@ namespace Neo.UnitTests.Cryptography
         public void TestRIPEMD160()
         {
             ReadOnlySpan<byte> value = Encoding.ASCII.GetBytes("hello world");
-            byte[] result = value.RIPEMD160();
+            var result = value.RIPEMD160();
             Assert.AreEqual("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f", result.ToHexString());
         }
 
         [TestMethod]
         public void TestAESEncryptAndDecrypt()
         {
-            NEP6Wallet wallet = new NEP6Wallet("", "1", TestProtocolSettings.Default);
+            var wallet = new NEP6Wallet("", "1", TestProtocolSettings.Default);
             wallet.CreateAccount();
-            WalletAccount account = wallet.GetAccounts().ToArray()[0];
-            KeyPair key = account.GetKey();
-            Random random = new Random();
-            byte[] nonce = new byte[12];
+
+            var account = wallet.GetAccounts().ToArray()[0];
+            var key = account.GetKey();
+            var random = new Random();
+            var nonce = new byte[12];
             random.NextBytes(nonce);
+
             var cypher = Helper.AES256Encrypt(Encoding.UTF8.GetBytes("hello world"), key.PrivateKey, nonce);
             var m = Helper.AES256Decrypt(cypher, key.PrivateKey);
             var message2 = Encoding.UTF8.GetString(m);
@@ -113,25 +114,32 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestEcdhEncryptAndDecrypt()
         {
-            NEP6Wallet wallet = new NEP6Wallet("", "1", ProtocolSettings.Default);
+            var wallet = new NEP6Wallet("", "1", ProtocolSettings.Default);
             wallet.CreateAccount();
             wallet.CreateAccount();
-            WalletAccount account1 = wallet.GetAccounts().ToArray()[0];
-            KeyPair key1 = account1.GetKey();
-            WalletAccount account2 = wallet.GetAccounts().ToArray()[1];
-            KeyPair key2 = account2.GetKey();
+
+            var account1 = wallet.GetAccounts().ToArray()[0];
+            var key1 = account1.GetKey();
+            var account2 = wallet.GetAccounts().ToArray()[1];
+            var key2 = account2.GetKey();
             Console.WriteLine($"Account:{1},privatekey:{key1.PrivateKey.ToHexString()},publicKey:{key1.PublicKey.ToArray().ToHexString()}");
             Console.WriteLine($"Account:{2},privatekey:{key2.PrivateKey.ToHexString()},publicKey:{key2.PublicKey.ToArray().ToHexString()}");
+
             var secret1 = Helper.ECDHDeriveKey(key1, key2.PublicKey);
             var secret2 = Helper.ECDHDeriveKey(key2, key1.PublicKey);
             Assert.AreEqual(secret1.ToHexString(), secret2.ToHexString());
+
             var message = Encoding.ASCII.GetBytes("hello world");
-            Random random = new Random();
-            byte[] nonce = new byte[12];
+            var random = new Random();
+            var nonce = new byte[12];
             random.NextBytes(nonce);
+
             var cypher = message.AES256Encrypt(secret1, nonce);
             cypher.AES256Decrypt(secret2);
             Assert.AreEqual("hello world", Encoding.ASCII.GetString(cypher.AES256Decrypt(secret2)));
+
+            Assert.ThrowsExactly<ArgumentException>(() => Helper.AES256Decrypt(new byte[11], key1.PrivateKey));
+            Assert.ThrowsExactly<ArgumentException>(() => Helper.AES256Decrypt(new byte[11 + 16], key1.PrivateKey));
         }
 
         [TestMethod]
@@ -139,9 +147,8 @@ namespace Neo.UnitTests.Cryptography
         {
             int m = 7, n = 10;
             uint nTweak = 123456;
-            BloomFilter filter = new(m, n, nTweak);
-
-            Transaction tx = new()
+            var filter = new BloomFilter(m, n, nTweak);
+            var tx = new Transaction()
             {
                 Script = TestUtils.GetByteArray(32, 0x42),
                 SystemFee = 4200000000,
