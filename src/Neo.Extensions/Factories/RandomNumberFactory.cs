@@ -220,23 +220,23 @@ namespace Neo.Extensions.Factories
                 return BigInteger.Zero;
 
             var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxValueSize = BigInteger.Pow(2, maxValueBits) - BigInteger.One;
+            var maxValueModulus = (BigInteger.One << maxValueBits) - BigInteger.One;
 
-            var randomProduct = maxValue * NextBigInteger(128);
-            var lowPart = randomProduct >> maxValueBits;
+            var randomProduct = maxValue * NextBigInteger(256);
+            var lowPart = randomProduct & maxValueModulus;
 
             if (lowPart < maxValue)
             {
-                var remainder = maxValueSize % maxValue;
+                var remainder = (maxValueModulus - lowPart) % maxValue;
 
                 while (lowPart < remainder)
                 {
-                    randomProduct = maxValue * NextBigInteger(128);
-                    lowPart = randomProduct >> maxValueBits;
+                    randomProduct = maxValue * NextBigInteger(256);
+                    lowPart = randomProduct & maxValueModulus;
                 }
             }
 
-            return randomProduct >> 128;
+            return randomProduct >> 255;
         }
 
         public static BigInteger NextBigInteger(int sizeInBits)
