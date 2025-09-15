@@ -18,7 +18,7 @@ namespace Neo.Cryptography.MPTTrie
 {
     public partial class Node : ISerializable
     {
-        private UInt256 _hash;
+        private UInt256? _hash;
         public int Reference { get; internal set; }
         public UInt256 Hash => _hash ??= new UInt256(Crypto.Hash256(ToArrayWithoutReference()));
         public NodeType Type { get; internal set; }
@@ -185,7 +185,7 @@ namespace Neo.Cryptography.MPTTrie
                     {
                         Type = Type,
                         Key = Key,
-                        Next = Next.CloneAsChild(),
+                        Next = Next!.CloneAsChild(), // Next not null if ExtensionNode
                         Reference = Reference,
                     };
                 case NodeType.LeafNode:
