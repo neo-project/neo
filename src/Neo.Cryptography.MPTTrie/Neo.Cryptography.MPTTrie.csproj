@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>Neo.Cryptography.MPT</PackageId>
     <RootNamespace>Neo.Cryptography.MPTTrie</RootNamespace>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

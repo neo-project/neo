@@ -22,7 +22,7 @@ namespace Neo.Cryptography.MPTTrie
         private readonly Cache _cache;
         public Node Root => _root;
 
-        public Trie(IStoreSnapshot store, UInt256 root, bool fullState = false)
+        public Trie(IStoreSnapshot store, UInt256? root, bool fullState = false)
         {
             ArgumentNullException.ThrowIfNull(store);
             _cache = new Cache(store, Prefix);
