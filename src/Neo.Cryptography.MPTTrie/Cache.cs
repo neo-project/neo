@@ -13,8 +13,6 @@ using Neo.Extensions;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Security.Policy;
 
 namespace Neo.Cryptography.MPTTrie
 {
@@ -28,9 +26,9 @@ namespace Neo.Cryptography.MPTTrie
             Deleted
         }
 
-        private class Trackable(Node node, TrackState state)
+        private class Trackable(Node? node, TrackState state)
         {
-            public Node Node { get; internal set; } = node;
+            public Node? Node { get; internal set; } = node;
             public TrackState State { get; internal set; } = state;
         }
 
@@ -52,7 +50,7 @@ namespace Neo.Cryptography.MPTTrie
             return buffer;
         }
 
-        public Node Resolve(UInt256 hash) => ResolveInternal(hash).Node?.Clone();
+        public Node? Resolve(UInt256 hash) => ResolveInternal(hash).Node?.Clone();
 
         private Trackable ResolveInternal(UInt256 hash)
         {

@@ -13,12 +13,13 @@ using Neo.Extensions;
 using Neo.Persistence.Providers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Cryptography.MPTTrie
 {
     partial class Trie
     {
-        public bool TryGetProof(byte[] key, out HashSet<byte[]> proof)
+        public bool TryGetProof(byte[] key, [NotNull] out HashSet<byte[]> proof)
         {
             var path = ToNibbles(key);
             if (path.Length == 0)
@@ -65,7 +66,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.StartsWith(node.Key.Span))
                         {
                             set.Add(node.ToArrayWithoutReference());
-                            return GetProof(ref node._next, path[node.Key.Length..], set);
+                            return GetProof(ref node._next!, path[node.Key.Length..], set);
                         }
                         break;
                     }
