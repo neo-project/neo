@@ -184,6 +184,30 @@ find_dll() {
     fi
 }
 
+# Function to copy plugin dependencies
+copy_plugin_dependencies() {
+    local plugin_dll="$1"
+    local cli_output_dir="$2"
+    local project_name="$3"
+
+    local plugin_dir=$(dirname "$plugin_dll")
+    echo "Copying dependencies for $project_name from $plugin_dir to $cli_output_dir"
+
+    # Copy all DLL files from the plugin's output directory (except the main plugin DLL)
+    for dll_file in "$plugin_dir"/*.dll; do
+        if [ -f "$dll_file" ]; then
+            local dll_name=$(basename "$dll_file")
+            if [ "$dll_name" != "${project_name}.dll" ]; then
+                local dest_path="$cli_output_dir/$dll_name"
+                if [ ! -f "$dest_path" ]; then
+                    echo "Copying dependency: $dll_name"
+                    cp "$dll_file" "$dest_path"
+                fi
+            fi
+        fi
+    done
+}
+
 # Build Neo.CLI
 build_project "$CLI_PROJECT"
 
@@ -293,6 +317,9 @@ for plugin_dir in $PLUGIN_DIRS; do
                 echo "Error: Failed to copy $plugin_dll_name to $plugin_specific_dir" >> "$LOG_FILE"
                 exit 1
             fi
+
+            # Copy plugin dependencies
+            copy_plugin_dependencies "$plugin_dll" "$CLI_PLUGINS_DIR/.." "$plugin_name"
         else
             echo -e "${RED}Warning: Could not find DLL for $plugin_name${NC}"
             echo "Warning: Could not find DLL for $plugin_name" >> "$LOG_FILE"
