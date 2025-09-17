@@ -32,6 +32,8 @@ namespace Neo.Cryptography.MPTTrie
 
         private void SerializeHash(BinaryWriter writer)
         {
+            if (_hash is null)
+                throw new InvalidOperationException("SerializeHash but not hash node");
             writer.Write(_hash);
         }
 

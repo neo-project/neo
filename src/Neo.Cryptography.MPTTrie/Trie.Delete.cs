@@ -45,10 +45,10 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.StartsWith(node.Key.Span))
                         {
                             var oldHash = node.Hash;
-                            var result = TryDelete(ref node._next, path[node.Key.Length..]);
+                            var result = TryDelete(ref node._next!, path[node.Key.Length..]);
                             if (!result) return false;
                             if (!_full) _cache.DeleteNode(oldHash);
-                            if (node.Next.IsEmpty)
+                            if (node.Next!.IsEmpty)
                             {
                                 node = node.Next;
                                 return true;

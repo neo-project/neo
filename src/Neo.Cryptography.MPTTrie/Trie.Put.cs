@@ -60,7 +60,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.StartsWith(node.Key.Span))
                         {
                             var oldHash = node.Hash;
-                            Put(ref node._next, path[node.Key.Length..], val);
+                            Put(ref node._next!, path[node.Key.Length..], val);
                             if (!_full) _cache.DeleteNode(oldHash);
                             node.SetDirty();
                             _cache.PutNode(node);
@@ -74,11 +74,11 @@ namespace Neo.Cryptography.MPTTrie
                         var grandChild = new Node();
                         if (keyRemain.Length == 1)
                         {
-                            child.Children[keyRemain[0]] = node.Next;
+                            child.Children[keyRemain[0]] = node.Next!;
                         }
                         else
                         {
-                            var exNode = Node.NewExtension(keyRemain[1..].ToArray(), node.Next);
+                            var exNode = Node.NewExtension(keyRemain[1..].ToArray(), node.Next!);
                             _cache.PutNode(exNode);
                             child.Children[keyRemain[0]] = exNode;
                         }

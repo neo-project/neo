@@ -17,7 +17,7 @@ namespace Neo.Cryptography.MPTTrie
 {
     partial class Trie
     {
-        private ReadOnlySpan<byte> Seek(ref Node node, ReadOnlySpan<byte> path, out Node start)
+        private ReadOnlySpan<byte> Seek(ref Node node, ReadOnlySpan<byte> path, out Node? start)
         {
             switch (node.Type)
             {
@@ -57,7 +57,7 @@ namespace Neo.Cryptography.MPTTrie
                         }
                         if (path.StartsWith(node.Key.Span))
                         {
-                            return new([.. node.Key.Span, .. Seek(ref node._next, path[node.Key.Length..], out start)]);
+                            return new([.. node.Key.Span, .. Seek(ref node._next!, path[node.Key.Length..], out start)]);
                         }
                         if (node.Key.Span.StartsWith(path))
                         {
@@ -71,7 +71,7 @@ namespace Neo.Cryptography.MPTTrie
             return [];
         }
 
-        public IEnumerable<(ReadOnlyMemory<byte> Key, ReadOnlyMemory<byte> Value)> Find(ReadOnlySpan<byte> prefix, byte[] from = null)
+        public IEnumerable<(ReadOnlyMemory<byte> Key, ReadOnlyMemory<byte> Value)> Find(ReadOnlySpan<byte> prefix, byte[]? from = null)
         {
             var path = ToNibbles(prefix);
             var offset = 0;
@@ -104,7 +104,7 @@ namespace Neo.Cryptography.MPTTrie
             return Travers(start, path, from, offset).Select(p => (new ReadOnlyMemory<byte>(FromNibbles(p.Key.Span)), p.Value));
         }
 
-        private IEnumerable<(ReadOnlyMemory<byte> Key, ReadOnlyMemory<byte> Value)> Travers(Node node, byte[] path, byte[] from, int offset)
+        private IEnumerable<(ReadOnlyMemory<byte> Key, ReadOnlyMemory<byte> Value)> Travers(Node? node, byte[] path, byte[] from, int offset)
         {
             if (node is null) yield break;
             if (offset < 0) throw new InvalidOperationException("invalid offset");

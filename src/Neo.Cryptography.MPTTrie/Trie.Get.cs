@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Cryptography.MPTTrie
 {
@@ -30,7 +31,7 @@ namespace Neo.Cryptography.MPTTrie
             }
         }
 
-        public bool TryGetValue(byte[] key, out byte[] value)
+        public bool TryGetValue(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
             value = default;
             var path = ToNibbles(key);
@@ -78,7 +79,7 @@ namespace Neo.Cryptography.MPTTrie
                     {
                         if (path.StartsWith(node.Key.Span))
                         {
-                            return TryGet(ref node._next, path[node.Key.Length..], out value);
+                            return TryGet(ref node._next!, path[node.Key.Length..], out value);
                         }
                         break;
                     }
