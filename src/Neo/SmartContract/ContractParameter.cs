@@ -104,7 +104,7 @@ namespace Neo.SmartContract
             {
                 case ContractParameterType.Signature:
                     byte[] signature = text.HexToBytes();
-                    if (signature.Length != 64) throw new FormatException();
+                    if (signature.Length != 64) throw new FormatException($"Signature length({signature.Length}) is not 64");
                     Value = signature;
                     break;
                 case ContractParameterType.Boolean:

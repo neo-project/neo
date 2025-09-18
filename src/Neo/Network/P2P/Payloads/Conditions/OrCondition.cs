@@ -62,7 +62,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
             Expressions = DeserializeConditions(ref reader, maxNestDepth);
-            if (Expressions.Length == 0) throw new FormatException();
+            if (Expressions.Length == 0) throw new FormatException("`Expressions` in OrCondition is empty");
         }
 
         public override bool Match(ApplicationEngine engine)
@@ -78,9 +78,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
             JArray expressions = (JArray)json["expressions"];
-            if (expressions.Count > MaxSubitems) throw new FormatException();
+            if (expressions.Count > MaxSubitems)
+                throw new FormatException($"`expressions`({expressions.Count}) in OrCondition is out of range (max:{MaxSubitems})");
             Expressions = expressions.Select(p => FromJson((JObject)p, maxNestDepth - 1)).ToArray();
-            if (Expressions.Length == 0) throw new FormatException();
+            if (Expressions.Length == 0) throw new FormatException("`Expressions` in OrCondition is empty");
         }
 
         public override JObject ToJson()
