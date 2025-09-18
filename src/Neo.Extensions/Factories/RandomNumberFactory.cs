@@ -211,39 +211,34 @@ namespace Neo.Extensions.Factories
             return NextBigInteger(maxValue - minValue) + minValue;
         }
 
+        /// <summary>
+        /// Generates a random <see cref="BigInteger"/> value between [0, maxValue].
+        /// </summary>
+        /// <param name="maxValue">The maximum value for the random number.</param>
+        /// <returns>A random <see cref="BigInteger"/> value between [0, maxValue].</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when maxValue is negative.</exception>
         public static BigInteger NextBigInteger(BigInteger maxValue)
         {
             if (maxValue.Sign < 0)
-                throw new ArgumentOutOfRangeException(nameof(maxValue));
+                throw new ArgumentOutOfRangeException(nameof(maxValue), "cannot be negative.");
 
-            var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxValueSize = BigInteger.Pow(2, maxValueBits);
+            if (maxValue.GetBitLength() >= int.MaxValue) // A guardrail to avoid overflow
+                throw new ArgumentOutOfRangeException(nameof(maxValue), "too large.");
 
-            var randomProduct = maxValue * NextBigInteger(maxValueBits);
-            var randomProductBits = randomProduct.GetByteCount() * 8;
+            if (maxValue.IsZero) return BigInteger.Zero;
 
-            var lowPart = randomProduct.GetLowPart(maxValueBits);
-
-            if (lowPart < maxValue)
+            var exclusive = maxValue + 1;
+            var bits = exclusive.GetBitLength();
+            var power = BigInteger.One << (int)bits;
+            var max = power - BigInteger.One - (power % exclusive);
+            BigInteger random;
+            do
             {
-                var remainder = (maxValueSize - maxValue) % maxValue;
-
-                while (lowPart < remainder)
-                {
-                    randomProduct = maxValue * NextBigInteger(maxValueBits);
-                    randomProductBits = randomProduct.GetByteCount() * 8;
-                    lowPart = randomProduct.GetLowPart(maxValueBits);
-                }
+                random = NextBigInteger((int)bits);
             }
+            while (random > max);
 
-            var result = randomProduct >> (randomProductBits - maxValueBits);
-
-            // Since BigInteger doesn't have a max value or bit size
-            // anything over 'maxValue' return zero
-            if (result >= maxValue)
-                return BigInteger.Zero;
-
-            return result;
+            return random % exclusive;
         }
 
         public static BigInteger NextBigInteger(int sizeInBits)
