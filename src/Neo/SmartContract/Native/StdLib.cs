@@ -287,14 +287,15 @@ namespace Neo.SmartContract.Native
                 return BigInteger.Zero;
 
             var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxValueModulus = (BigInteger.One << maxValueBits) - BigInteger.One;
+            var maxValueModulus = BigInteger.One << maxValueBits;
 
             var randomProduct = maxValue * engine.GetRandom();
             var lowPart = randomProduct & maxValueModulus;
 
             if (lowPart < maxValue)
             {
-                var remainder = (maxValueModulus - lowPart) % maxValue;
+                var underflowMaxValue = (-maxValue + maxValueModulus) % maxValueModulus;
+                var remainder = underflowMaxValue % maxValue;
 
                 while (lowPart < remainder)
                 {
