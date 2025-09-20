@@ -14,10 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Protobuf Include="proto/signpb.proto" GrpcServices="Client" />
     <Protobuf Include="proto/servicepb.proto" GrpcServices="Client" AdditionalImportDirs="$(ProjectDir)/proto" />
 

@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Neo.Extensions\Neo.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\Neo.IO\Neo.IO.csproj" />
+    <ProjectReference Include="..\..\src\Neo.Json\Neo.Json.csproj" />
+    <ProjectReference Include="..\..\src\Neo.VM\Neo.VM.csproj" />
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
   </ItemGroup>
 

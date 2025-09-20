@@ -19,11 +19,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Neo.Cryptography.BLS12_381\Neo.Cryptography.BLS12_381.csproj" />
-    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
-    <ProjectReference Include="..\Neo.IO\Neo.IO.csproj" />
-    <ProjectReference Include="..\Neo.Json\Neo.Json.csproj" />
-    <ProjectReference Include="..\Neo.VM\Neo.VM.csproj" />
+    <ProjectReference Include="..\Neo.Cryptography.BLS12_381\Neo.Cryptography.BLS12_381.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\Neo.IO\Neo.IO.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\Neo.Json\Neo.Json.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\Neo.VM\Neo.VM.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

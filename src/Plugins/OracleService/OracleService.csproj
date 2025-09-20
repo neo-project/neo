@@ -10,7 +10,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
     <ProjectReference Include="..\RpcServer\RpcServer.csproj">
       <Private>false</Private>
       <ExcludeAssets>runtime</ExcludeAssets>
