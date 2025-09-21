@@ -139,9 +139,8 @@ namespace Neo.UnitTests.IO
         public void TestSpanAndSerialize()
         {
             // random data
-            var random = new Random();
             var data = new byte[UInt160.Length];
-            random.NextBytes(data);
+            Random.Shared.NextBytes(data);
 
             var value = new UInt160(data);
             var span = value.GetSpan();
@@ -160,9 +159,8 @@ namespace Neo.UnitTests.IO
         public void TestSpanAndSerializeLittleEndian()
         {
             // random data
-            var random = new Random();
             var data = new byte[UInt160.Length];
-            random.NextBytes(data);
+            Random.Shared.NextBytes(data);
 
             var value = new UInt160(data);
 

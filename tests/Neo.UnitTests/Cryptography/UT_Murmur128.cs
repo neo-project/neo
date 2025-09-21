@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using System;
 using System.Text;
 
@@ -76,12 +77,11 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestAppend()
         {
-            var random = new Random();
-            var buffer = new byte[random.Next(2, 2048)];
-            random.NextBytes(buffer);
+            var buffer = new byte[RandomNumberFactory.NextInt32(2, 2048)];
+            Random.Shared.NextBytes(buffer);
             for (int i = 0; i < 100; i++)
             {
-                int split = random.Next(1, buffer.Length - 1);
+                int split = RandomNumberFactory.NextInt32(1, buffer.Length - 1);
                 var murmur128 = new Murmur128(123u);
                 murmur128.Append(buffer.AsSpan(0, split));
                 murmur128.Append(buffer.AsSpan(split));

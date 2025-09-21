@@ -28,9 +28,8 @@ namespace Neo.UnitTests.Ledger
     {
         private static Transaction CreateTransactionWithFee(long networkFee, long systemFee)
         {
-            Random random = new();
             var randomBytes = new byte[16];
-            random.NextBytes(randomBytes);
+            Random.Shared.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<ClonedCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);

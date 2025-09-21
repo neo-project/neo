@@ -35,7 +35,7 @@ namespace Neo.UnitTests.SmartContract
         {
             _snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var pk = new byte[32];
-            new Random().NextBytes(pk);
+            Random.Shared.NextBytes(pk);
             _key = new KeyPair(pk);
         }
 
