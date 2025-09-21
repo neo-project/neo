@@ -176,7 +176,7 @@ namespace Neo.Extensions.Factories
 
         public static ulong NextUInt64(ulong maxValue)
         {
-            var randomProduct = BigMul(maxValue, NextUInt64(), out var lowPart);
+            var randomProduct = Math.BigMul(maxValue, NextUInt64(), out var lowPart);
 
             if (lowPart < maxValue)
             {
@@ -184,7 +184,7 @@ namespace Neo.Extensions.Factories
 
                 while (lowPart < remainder)
                 {
-                    randomProduct = BigMul(maxValue, NextUInt64(), out lowPart);
+                    randomProduct = Math.BigMul(maxValue, NextUInt64(), out lowPart);
                 }
             }
 
@@ -220,20 +220,19 @@ namespace Neo.Extensions.Factories
                 return BigInteger.Zero;
 
             var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxValueModulus = BigInteger.One << maxValueBits;
+            var maxMaxValue = BigInteger.One << maxValueBits;
 
             var randomProduct = maxValue * NextBigInteger(255);
-            var lowPart = randomProduct & maxValueModulus;
+            var lowPart = randomProduct & maxMaxValue;
 
             if (lowPart < maxValue)
             {
-                var underflowMaxValue = (-maxValue + maxValueModulus) % maxValueModulus;
-                var threshold = underflowMaxValue % maxValue;
+                var threshold = maxMaxValue - maxValue % maxValue;
 
                 while (lowPart < threshold)
                 {
                     randomProduct = maxValue * NextBigInteger(255);
-                    lowPart = randomProduct & maxValueModulus;
+                    lowPart = randomProduct & maxMaxValue;
                 }
             }
 
@@ -257,29 +256,6 @@ namespace Neo.Extensions.Factories
                 b[^1] &= (byte)((1 << sizeInBits % 8) - 1);
 
             return new BigInteger(b);
-        }
-
-        private static ulong BigMul(ulong a, ulong b, out ulong low)
-        {
-            // Adaptation of algorithm for multiplication
-            // of 32-bit unsigned integers described
-            // in Hacker's Delight by Henry S. Warren, Jr. (ISBN 0-201-91465-4), Chapter 8
-            // Basically, it's an optimized version of FOIL method applied to
-            // low and high dwords of each operand
-
-            // Use 32-bit uints to optimize the fallback for 32-bit platforms.
-            var al = (uint)a;
-            var ah = (uint)(a >> 32);
-            var bl = (uint)b;
-            var bh = (uint)(b >> 32);
-
-            var mull = ((ulong)al) * bl;
-            var t = ((ulong)ah) * bl + (mull >> 32);
-            var tl = ((ulong)al) * bh + (uint)t;
-
-            low = (tl << 32) | (uint)mull;
-
-            return ((ulong)ah) * bh + (t >> 32) + (tl >> 32);
         }
     }
 }
