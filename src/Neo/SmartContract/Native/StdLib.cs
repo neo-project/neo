@@ -287,7 +287,7 @@ namespace Neo.SmartContract.Native
                 return BigInteger.Zero;
 
             var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxMaxValue = (BigInteger.One << maxValueBits) - BigInteger.One;
+            var maxMaxValue = (BigInteger.One << maxValueBits - 1) - BigInteger.One; // maxValueBits - 1 for signed integers
 
             var randomProduct = maxValue * engine.GetRandom();
             var lowPart = randomProduct & maxMaxValue;
