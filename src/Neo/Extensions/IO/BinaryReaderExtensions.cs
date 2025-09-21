@@ -30,10 +30,9 @@ namespace Neo.Extensions
             while (size > 0)
             {
                 var bytesRead = reader.Read(data, index, size);
-
                 if (bytesRead <= 0)
                 {
-                    throw new FormatException();
+                    throw new FormatException($"BinaryReader.Read returned {bytesRead}");
                 }
 
                 size -= bytesRead;
@@ -72,7 +71,7 @@ namespace Neo.Extensions
                 value = reader.ReadUInt64();
             else
                 value = fb;
-            if (value > max) throw new FormatException();
+            if (value > max) throw new FormatException($"`value`({value}) is out of range (max:{max})");
             return value;
         }
     }

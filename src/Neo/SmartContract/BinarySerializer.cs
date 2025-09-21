@@ -121,10 +121,10 @@ namespace Neo.SmartContract
                         }
                         break;
                     default:
-                        throw new FormatException();
+                        throw new FormatException($"Invalid StackItemType({type})");
                 }
                 if (deserialized.Count > maxItems)
-                    throw new FormatException();
+                    throw new FormatException($"Deserialized count({deserialized.Count}) is out of range (max:{maxItems})");
             }
 
             var stackTemp = new Stack<StackItem>();
@@ -206,7 +206,7 @@ namespace Neo.SmartContract
             while (unserialized.Count > 0)
             {
                 if (--maxItems < 0)
-                    throw new FormatException();
+                    throw new FormatException("Too many items to serialize");
                 item = unserialized.Pop();
                 writer.Write((byte)item.Type);
                 switch (item)

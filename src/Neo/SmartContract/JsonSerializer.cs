@@ -67,7 +67,7 @@ namespace Neo.SmartContract
 
                         foreach (var entry in map)
                         {
-                            if (!(entry.Key is ByteString)) throw new FormatException();
+                            if (!(entry.Key is ByteString)) throw new FormatException("Key is not a ByteString");
 
                             var key = entry.Key.GetString();
                             var value = Serialize(entry.Value);
@@ -81,7 +81,7 @@ namespace Neo.SmartContract
                     {
                         return JToken.Null;
                     }
-                default: throw new FormatException();
+                default: throw new FormatException($"Invalid StackItemType({item.Type})");
             }
         }
 
@@ -133,7 +133,7 @@ namespace Neo.SmartContract
                         stack.Push(JsonTokenType.EndObject);
                         foreach (var pair in map.Reverse())
                         {
-                            if (!(pair.Key is ByteString)) throw new FormatException();
+                            if (!(pair.Key is ByteString)) throw new FormatException("Key is not a ByteString");
                             stack.Push(pair.Value);
                             stack.Push(pair.Key);
                             stack.Push(JsonTokenType.PropertyName);
@@ -149,7 +149,7 @@ namespace Neo.SmartContract
                         writer.WriteNullValue();
                         break;
                     default:
-                        throw new InvalidOperationException();
+                        throw new InvalidOperationException("Invalid StackItemType");
                 }
                 if (ms.Position + writer.BytesPending > maxSize) throw new InvalidOperationException();
             }
@@ -174,7 +174,7 @@ namespace Neo.SmartContract
 
         private static StackItem Deserialize(ApplicationEngine engine, JToken json, ref uint maxStackSize, IReferenceCounter referenceCounter)
         {
-            if (maxStackSize-- == 0) throw new FormatException();
+            if (maxStackSize-- == 0) throw new FormatException("Max stack size reached");
             switch (json)
             {
                 case null:
@@ -211,7 +211,7 @@ namespace Neo.SmartContract
 
                         foreach (var entry in obj.Properties)
                         {
-                            if (maxStackSize-- == 0) throw new FormatException();
+                            if (maxStackSize-- == 0) throw new FormatException("Max stack size reached");
 
                             var key = entry.Key;
                             var value = Deserialize(engine, entry.Value, ref maxStackSize, referenceCounter);
@@ -221,7 +221,7 @@ namespace Neo.SmartContract
 
                         return item;
                     }
-                default: throw new FormatException();
+                default: throw new FormatException($"Invalid JTokenType({json.GetType()})");
             }
         }
     }
