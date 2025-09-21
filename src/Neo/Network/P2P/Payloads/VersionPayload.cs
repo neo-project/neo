@@ -110,7 +110,7 @@ namespace Neo.Network.P2P.Payloads
                 Capabilities[x] = NodeCapability.DeserializeFrom(ref reader);
             var capabilities = Capabilities.Where(c => c is not UnknownCapability);
             if (capabilities.Select(p => p.Type).Distinct().Count() != capabilities.Count())
-                throw new FormatException();
+                throw new FormatException("Duplicating capabilities are included");
 
             AllowCompression = !capabilities.Any(u => u is DisableCompressionCapability);
         }

@@ -72,10 +72,16 @@ namespace Neo.SmartContract.Manifest
                 Offset = json["offset"].GetInt32(),
                 Safe = json["safe"].GetBoolean()
             };
-            if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
+
+            if (string.IsNullOrEmpty(descriptor.Name))
+                throw new FormatException("Name in ContractMethodDescriptor is empty");
+
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
-            if (!Enum.IsDefined(typeof(ContractParameterType), descriptor.ReturnType)) throw new FormatException();
-            if (descriptor.Offset < 0) throw new FormatException();
+
+            if (!Enum.IsDefined(typeof(ContractParameterType), descriptor.ReturnType))
+                throw new FormatException($"ReturnType({descriptor.ReturnType}) in ContractMethodDescriptor is not valid");
+            if (descriptor.Offset < 0)
+                throw new FormatException($"Offset({descriptor.Offset}) in ContractMethodDescriptor is not valid");
             return descriptor;
         }
 
