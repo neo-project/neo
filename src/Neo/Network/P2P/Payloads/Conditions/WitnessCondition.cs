@@ -40,7 +40,9 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            if (reader.ReadByte() != (byte)Type) throw new FormatException();
+            var readType = reader.ReadByte();
+            if (readType != (byte)Type)
+                throw new FormatException($"Read type({readType}) does not match WitnessConditionType({Type})");
             DeserializeWithoutType(ref reader, MaxNestingDepth);
         }
 
@@ -66,10 +68,11 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The deserialized <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition DeserializeFrom(ref MemoryReader reader, int maxNestDepth)
         {
-            if (maxNestDepth <= 0) throw new FormatException();
+            if (maxNestDepth <= 0)
+                throw new FormatException($"`maxNestDepth`({maxNestDepth}) in WitnessCondition is out of range (min:1)");
             WitnessConditionType type = (WitnessConditionType)reader.ReadByte();
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
-                throw new FormatException();
+                throw new FormatException($"Invalid WitnessConditionType({type})");
             condition.DeserializeWithoutType(ref reader, maxNestDepth);
             return condition;
         }
@@ -110,10 +113,11 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The converted <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition FromJson(JObject json, int maxNestDepth)
         {
-            if (maxNestDepth <= 0) throw new FormatException();
+            if (maxNestDepth <= 0)
+                throw new FormatException($"`maxNestDepth`({maxNestDepth}) in WitnessCondition is out of range (min:1)");
             WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
-                throw new FormatException("Invalid WitnessConditionType.");
+                throw new FormatException($"Invalid WitnessConditionType({type})");
             condition.ParseJson(json, maxNestDepth);
             return condition;
         }

@@ -76,7 +76,7 @@ namespace Neo.Network.P2P.Payloads
 
             Result = reader.ReadVarMemory(MaxResultSize);
             if (Code != OracleResponseCode.Success && Result.Length > 0)
-                throw new FormatException();
+                throw new FormatException($"Result is not empty({Result.Length}) for non-success response code({Code})");
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)

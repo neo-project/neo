@@ -60,7 +60,7 @@ namespace Neo.Network.P2P.Payloads
         {
             Filter = reader.ReadVarMemory(36000);
             K = reader.ReadByte();
-            if (K > 50) throw new FormatException();
+            if (K > 50) throw new FormatException($"`K`({K}) is out of range [0, 50]");
             Tweak = reader.ReadUInt32();
         }
 
