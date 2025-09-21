@@ -158,7 +158,7 @@ namespace Neo.Network.P2P.Payloads
         {
             ((IVerifiable)this).DeserializeUnsigned(ref reader);
             Witness[] witnesses = reader.ReadSerializableArray<Witness>(1);
-            if (witnesses.Length != 1) throw new FormatException();
+            if (witnesses.Length != 1) throw new FormatException($"Expected 1 witness in Header, got {witnesses.Length}.");
             Witness = witnesses[0];
         }
 
@@ -166,7 +166,7 @@ namespace Neo.Network.P2P.Payloads
         {
             _hash = null;
             version = reader.ReadUInt32();
-            if (version > 0) throw new FormatException();
+            if (version > 0) throw new FormatException($"`version`({version}) in Header must be 0");
             prevHash = reader.ReadSerializable<UInt256>();
             merkleRoot = reader.ReadSerializable<UInt256>();
             timestamp = reader.ReadUInt64();
