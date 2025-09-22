@@ -50,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
         {
             AddressList = reader.ReadSerializableArray<NetworkAddressWithTime>(MaxCountToSend);
             if (AddressList.Length == 0)
-                throw new FormatException();
+                throw new FormatException("`AddressList` in AddrPayload is empty");
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
