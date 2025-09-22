@@ -54,10 +54,12 @@ namespace Neo.Extensions
         public static byte[] DecompressLz4(this ReadOnlySpan<byte> data, int maxOutput)
         {
             var length = BinaryPrimitives.ReadInt32LittleEndian(data);
-            if (length < 0 || length > maxOutput) throw new FormatException();
+            if (length < 0 || length > maxOutput) throw new FormatException($"`length`({length}) is out of range [0, {maxOutput}]");
             var result = new byte[length];
-            if (LZ4Codec.Decode(data[4..], result) != length)
-                throw new FormatException();
+
+            var decoded = LZ4Codec.Decode(data[4..], result);
+            if (decoded != length)
+                throw new FormatException($"`length`({length}) does not match the decompressed data length({decoded})");
             return result;
         }
 
@@ -70,10 +72,11 @@ namespace Neo.Extensions
         public static byte[] DecompressLz4(this Span<byte> data, int maxOutput)
         {
             var length = BinaryPrimitives.ReadInt32LittleEndian(data);
-            if (length < 0 || length > maxOutput) throw new FormatException();
+            if (length < 0 || length > maxOutput) throw new FormatException($"`length`({length}) is out of range [0, {maxOutput}]");
             var result = new byte[length];
-            if (LZ4Codec.Decode(data[4..], result) != length)
-                throw new FormatException();
+            var decoded = LZ4Codec.Decode(data[4..], result);
+            if (decoded != length)
+                throw new FormatException($"`length`({length}) does not match the decompressed data length({decoded})");
             return result;
         }
     }

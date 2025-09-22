@@ -107,9 +107,9 @@ namespace Neo.Network.P2P.Payloads
             Account = reader.ReadSerializable<UInt160>();
             Scopes = (WitnessScope)reader.ReadByte();
             if ((Scopes & ~(WitnessScope.CalledByEntry | WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.WitnessRules | WitnessScope.Global)) != 0)
-                throw new FormatException();
+                throw new FormatException($"`Scopes`({Scopes}) in Signer is not valid");
             if (Scopes.HasFlag(WitnessScope.Global) && Scopes != WitnessScope.Global)
-                throw new FormatException();
+                throw new FormatException($"`Scopes`({Scopes}) in Signer is not valid");
             AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
                 ? reader.ReadSerializableArray<UInt160>(MaxSubitems) : [];
             AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)

@@ -63,12 +63,12 @@ namespace Neo.SmartContract.Manifest
             switch (json)
             {
                 case JString str:
-                    if (str.Value != "*") throw new FormatException();
+                    if (str.Value != "*") throw new FormatException($"Invalid wildcard('{str.Value}')");
                     return CreateWildcard();
                 case JArray array:
                     return Create(array.Select(p => elementSelector(p)).ToArray());
                 default:
-                    throw new FormatException();
+                    throw new FormatException($"Invalid json type for wildcard({json.GetType()})");
             }
         }
 
