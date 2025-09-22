@@ -13,6 +13,7 @@ using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract.Manifest
@@ -47,6 +48,7 @@ namespace Neo.SmartContract.Manifest
             {
                 ExtendedType = new ExtendedType();
                 ExtendedType.FromStackItem((VM.Types.Array)item[2]);
+                ExtendedType.ValidateForParameterOrReturn(Type, null);
             }
             else
             {
@@ -70,8 +72,9 @@ namespace Neo.SmartContract.Manifest
         /// Converts the parameter from a JSON object.
         /// </summary>
         /// <param name="json">The parameter represented by a JSON object.</param>
+        /// <param name="knownNamedTypes">Set of named type identifiers declared in the manifest, if any.</param>
         /// <returns>The converted parameter.</returns>
-        public static ContractParameterDefinition FromJson(JObject json)
+        public static ContractParameterDefinition FromJson(JObject json, ISet<string> knownNamedTypes = null)
         {
             ContractParameterDefinition parameter = new()
             {
@@ -83,6 +86,7 @@ namespace Neo.SmartContract.Manifest
                 throw new FormatException("Name in ContractParameterDefinition is empty");
             if (!Enum.IsDefined(typeof(ContractParameterType), parameter.Type) || parameter.Type == ContractParameterType.Void)
                 throw new FormatException($"Type({parameter.Type}) in ContractParameterDefinition is not valid");
+            parameter.ExtendedType?.ValidateForParameterOrReturn(parameter.Type, knownNamedTypes);
             return parameter;
         }
 

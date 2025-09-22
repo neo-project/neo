@@ -54,6 +54,8 @@ namespace Neo.SmartContract.Manifest
                 NamedTypes = ((Map)data[2]).ToDictionary(p => p.Key.GetString()!, p => p.Value.ToInteroperable<ExtendedType>());
             else
                 NamedTypes = null;
+
+            ValidateExtendedTypes();
         }
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
@@ -75,14 +77,68 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The converted ABI.</returns>
         public static ContractAbi FromJson(JObject json)
         {
+            Dictionary<string, ExtendedType>? namedTypes = null;
+            var knownNamedTypes = new HashSet<string>(StringComparer.Ordinal);
+            if (json!["namedtypes"] is JObject namedTypesJson)
+            {
+                foreach (var key in namedTypesJson.Properties.Keys)
+                {
+                    knownNamedTypes.Add(key);
+                }
+
+                namedTypes = new Dictionary<string, ExtendedType>(namedTypesJson.Properties.Count, StringComparer.Ordinal);
+                foreach (var (name, token) in namedTypesJson.Properties)
+                {
+                    if (token is not JObject valueObject)
+                        throw new FormatException("Named type definition must be a JSON object.");
+                    namedTypes[name] = ExtendedType.FromJson(valueObject);
+                }
+            }
+
             ContractAbi abi = new()
             {
-                Methods = ((JArray)json!["methods"]!)?.Select(u => ContractMethodDescriptor.FromJson((JObject)u!)).ToArray() ?? [],
-                Events = ((JArray)json!["events"]!)?.Select(u => ContractEventDescriptor.FromJson((JObject)u!)).ToArray() ?? [],
-                NamedTypes = ((JObject)json!["namedtypes"]!)?.Properties.ToDictionary(u => u.Key, u => ExtendedType.FromJson((JObject)u.Value!))
+                Methods = ((JArray)json!["methods"]!)?.Select(u => ContractMethodDescriptor.FromJson((JObject)u!, knownNamedTypes)).ToArray() ?? [],
+                Events = ((JArray)json!["events"]!)?.Select(u => ContractEventDescriptor.FromJson((JObject)u!, knownNamedTypes)).ToArray() ?? [],
+                NamedTypes = namedTypes
             };
             if (abi.Methods.Length == 0) throw new FormatException("Methods in ContractAbi is empty");
+
+            abi.ValidateExtendedTypes();
             return abi;
+        }
+
+        internal void ValidateExtendedTypes()
+        {
+            ISet<string> knownNamedTypes = NamedTypes != null
+                ? new HashSet<string>(NamedTypes.Keys, StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal);
+
+            if (NamedTypes != null)
+            {
+                foreach (var (name, type) in NamedTypes)
+                {
+                    ExtendedType.EnsureValidNamedTypeIdentifier(name);
+                    type.ValidateForNamedTypeDefinition(knownNamedTypes);
+                }
+            }
+
+            foreach (var method in Methods)
+            {
+                foreach (var parameter in method.Parameters)
+                {
+                    parameter.ExtendedType?.ValidateForParameterOrReturn(parameter.Type, knownNamedTypes);
+                }
+
+                method.ExtendedReturnType?.ValidateForParameterOrReturn(method.ReturnType, knownNamedTypes);
+            }
+
+            foreach (var ev in Events)
+            {
+                foreach (var parameter in ev.Parameters)
+                {
+                    parameter.ExtendedType?.ValidateForParameterOrReturn(parameter.Type, knownNamedTypes);
+                }
+            }
         }
 
         /// <summary>

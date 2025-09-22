@@ -13,6 +13,9 @@ using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -20,6 +23,52 @@ namespace Neo.SmartContract.Manifest
 
     public class ExtendedType : IInteroperable, IEquatable<ExtendedType>
     {
+        private static readonly Regex NamedTypePattern = new("^[A-Za-z][A-Za-z0-9.]{0,63}$", RegexOptions.Compiled);
+
+        private static readonly HashSet<ContractParameterType> LengthAllowedTypes = new()
+        {
+            ContractParameterType.Integer,
+            ContractParameterType.ByteArray,
+            ContractParameterType.String,
+            ContractParameterType.Array
+        };
+
+        private static readonly HashSet<ContractParameterType> ForbidNullAllowedTypes = new()
+        {
+            ContractParameterType.Hash160,
+            ContractParameterType.Hash256,
+            ContractParameterType.ByteArray,
+            ContractParameterType.String,
+            ContractParameterType.Array,
+            ContractParameterType.Map,
+            ContractParameterType.InteropInterface
+        };
+
+        private static readonly HashSet<ContractParameterType> MapKeyAllowedTypes = new()
+        {
+            ContractParameterType.Signature,
+            ContractParameterType.Boolean,
+            ContractParameterType.Integer,
+            ContractParameterType.Hash160,
+            ContractParameterType.Hash256,
+            ContractParameterType.ByteArray,
+            ContractParameterType.PublicKey,
+            ContractParameterType.String
+        };
+
+        private static FormatException Nep25Error(string message) => new($"Invalid NEP-25 extended type: {message}");
+
+        internal static bool IsValidNamedTypeIdentifier(string name)
+        {
+            return !string.IsNullOrEmpty(name) && NamedTypePattern.IsMatch(name);
+        }
+
+        internal static void EnsureValidNamedTypeIdentifier(string name)
+        {
+            if (!IsValidNamedTypeIdentifier(name))
+                throw Nep25Error($"Named type '{name}' must start with a letter, contain only alphanumeric characters or dots, and be at most 64 characters long.");
+        }
+
         /// <summary>
         /// The type of the parameter. It can be any value of <see cref="ContractParameterType"/> except <see cref="ContractParameterType.Void"/>.
         /// </summary>
@@ -214,6 +263,7 @@ namespace Neo.SmartContract.Manifest
                 NamedType = json["namedtype"]?.GetString(),
             };
             if (!Enum.IsDefined(typeof(ContractParameterType), type.Type)) throw new FormatException();
+            if (type.Type == ContractParameterType.Void) throw Nep25Error("Void type is not allowed.");
             if (json["length"] != null)
             {
                 type.Length = json["length"]!.GetInt32();
@@ -329,7 +379,120 @@ namespace Neo.SmartContract.Manifest
 
             return true;
         }
+
+        internal void ValidateForParameterOrReturn(ContractParameterType expectedType, ISet<string>? knownNamedTypes)
+        {
+            ValidateCore(expectedType, allowFields: false, knownNamedTypes, allowNamedTypeReference: true);
+        }
+
+        internal void ValidateForNamedTypeDefinition(ISet<string>? knownNamedTypes)
+        {
+            ValidateCore(expectedType: null, allowFields: true, knownNamedTypes, allowNamedTypeReference: true);
+        }
+
+        private void ValidateCore(ContractParameterType? expectedType, bool allowFields, ISet<string>? knownNamedTypes, bool allowNamedTypeReference)
+        {
+            if (expectedType.HasValue && Type != expectedType.Value)
+                throw Nep25Error($"Type mismatch. Expected '{expectedType.Value}', got '{Type}'.");
+
+            if (!Enum.IsDefined(typeof(ContractParameterType), Type) || Type == ContractParameterType.Void)
+                throw Nep25Error($"Unsupported type '{Type}'.");
+
+            if (Length.HasValue && !LengthAllowedTypes.Contains(Type))
+                throw Nep25Error($"length cannot be specified for type '{Type}'.");
+
+            if (ForbidNull.HasValue && !ForbidNullAllowedTypes.Contains(Type))
+                throw Nep25Error($"forbidnull cannot be specified for type '{Type}'.");
+
+            if (Interface.HasValue && Type != ContractParameterType.InteropInterface)
+                throw Nep25Error($"interface can only be used with InteropInterface type.");
+
+            if (Type == ContractParameterType.InteropInterface && !Interface.HasValue)
+                throw Nep25Error("interface is required for InteropInterface type.");
+
+            if (Key.HasValue && Type != ContractParameterType.Map)
+                throw Nep25Error($"key cannot be used with type '{Type}'.");
+
+            if (Key.HasValue && !MapKeyAllowedTypes.Contains(Key.Value))
+                throw Nep25Error($"key '{Key.Value}' is not allowed for map definitions.");
+
+            if (Type == ContractParameterType.Map && !Key.HasValue)
+                throw Nep25Error("key is required for Map type.");
+
+            if (NamedType != null)
+            {
+                if (!allowNamedTypeReference)
+                    throw Nep25Error("namedtype is not allowed in this context.");
+
+                if (Type != ContractParameterType.Array)
+                    throw Nep25Error("namedtype can only be used with Array type.");
+
+                EnsureValidNamedTypeIdentifier(NamedType);
+
+                if (Length.HasValue || ForbidNull.HasValue || Interface.HasValue || Key.HasValue || Value is not null || (Fields is not null && Fields.Length > 0))
+                    throw Nep25Error("namedtype cannot be combined with other modifiers.");
+
+                if (knownNamedTypes != null && !knownNamedTypes.Contains(NamedType))
+                    throw Nep25Error($"namedtype '{NamedType}' is not defined in the manifest.");
+            }
+
+            if (Value is not null)
+            {
+                if (Type != ContractParameterType.Array && Type != ContractParameterType.InteropInterface && Type != ContractParameterType.Map)
+                    throw Nep25Error("value can only be specified for Array, Map or InteropInterface types.");
+
+                if (Fields is not null && Fields.Length > 0)
+                    throw Nep25Error("value and fields cannot be used together.");
+
+                if (Type == ContractParameterType.InteropInterface && !Interface.HasValue)
+                    throw Nep25Error("interface must be provided when value is specified for InteropInterface type.");
+
+                if (Type == ContractParameterType.Map && !Key.HasValue)
+                    throw Nep25Error("key must be provided when value is specified for Map type.");
+
+                Value.ValidateCore(expectedType: null, allowFields, knownNamedTypes, allowNamedTypeReference);
+            }
+            else
+            {
+                if (Type == ContractParameterType.Map)
+                    throw Nep25Error("value is required for Map type.");
+
+                if (Type == ContractParameterType.InteropInterface)
+                    throw Nep25Error("value is required for InteropInterface type.");
+
+                if (Type == ContractParameterType.Array && NamedType is null && (Fields is null || Fields.Length == 0))
+                    throw Nep25Error("value, namedtype or fields must be provided for Array type to describe element type.");
+            }
+
+            if (Fields is not null && Fields.Length > 0)
+            {
+                if (!allowFields)
+                    throw Nep25Error("fields cannot be used in method parameters or return values.");
+
+                if (Type != ContractParameterType.Array)
+                    throw Nep25Error("fields can only be used with Array type.");
+
+                if (Value is not null)
+                    throw Nep25Error("fields and value cannot be used together.");
+
+                if (NamedType != null)
+                    throw Nep25Error("fields cannot be combined with namedtype.");
+
+                foreach (var field in Fields)
+                {
+                    field.ExtendedType?.ValidateCore(field.Type, allowFields: true, knownNamedTypes, allowNamedTypeReference);
+                }
+            }
+
+            if (!allowFields)
+            {
+                if (Fields is not null && Fields.Length > 0)
+                    throw Nep25Error("fields cannot be used in method parameters or return values.");
+
+                if (Value?.Fields is { Length: > 0 })
+                    throw Nep25Error("fields cannot be used in method parameters or return values.");
+            }
+        }
     }
 #nullable disable
 }
-
