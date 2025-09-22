@@ -35,6 +35,11 @@ namespace Neo.SmartContract.Native
         public const uint DefaultStoragePrice = 100000;
 
         /// <summary>
+        /// The default memory fee factor used for charging transient memory allocations.
+        /// </summary>
+        public const uint DefaultMemoryFeeFactor = 30;
+
+        /// <summary>
         /// The default network fee per byte of transactions.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
@@ -66,6 +71,11 @@ namespace Neo.SmartContract.Native
         public const uint MaxStoragePrice = 10000000;
 
         /// <summary>
+        /// The maximum memory fee factor that the committee can set.
+        /// </summary>
+        public const uint MaxMemoryFeeFactor = 1000;
+
+        /// <summary>
         /// The maximum block generation time that the committee can set in milliseconds.
         /// </summary>
         public const uint MaxMillisecondsPerBlock = 30_000;
@@ -86,6 +96,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
+        private const byte Prefix_MemoryFeeFactor = 24;
         private const byte Prefix_AttributeFee = 20;
         private const byte Prefix_MillisecondsPerBlock = 21;
         private const byte Prefix_MaxValidUntilBlockIncrement = 22;
@@ -94,6 +105,7 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
+        private readonly StorageKey _memoryFeeFactor;
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
@@ -112,6 +124,7 @@ namespace Neo.SmartContract.Native
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
             _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
             _storagePrice = CreateStorageKey(Prefix_StoragePrice);
+            _memoryFeeFactor = CreateStorageKey(Prefix_MemoryFeeFactor);
             _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
             _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
             _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
@@ -124,6 +137,7 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_feePerByte, new StorageItem(DefaultFeePerByte));
                 engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
                 engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
+                engine.SnapshotCache.Add(_memoryFeeFactor, new StorageItem(DefaultMemoryFeeFactor));
             }
             if (hardfork == Hardfork.HF_Echidna)
             {
@@ -166,6 +180,19 @@ namespace Neo.SmartContract.Native
         public uint GetStoragePrice(IReadOnlyStore snapshot)
         {
             return (uint)(BigInteger)snapshot[_storagePrice];
+        }
+
+        /// <summary>
+        /// Gets the memory fee factor.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The memory fee factor.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetMemoryFeeFactor(IReadOnlyStore snapshot)
+        {
+            return snapshot.TryGet(_memoryFeeFactor, out var item)
+                ? (uint)(BigInteger)item
+                : DefaultMemoryFeeFactor;
         }
 
         /// <summary>
@@ -355,6 +382,15 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {MaxStoragePrice}], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetMemoryFeeFactor(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxMemoryFeeFactor)
+                throw new ArgumentOutOfRangeException(nameof(value), $"MemoryFeeFactor must be between [1, {MaxMemoryFeeFactor}], got {value}");
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            engine.SnapshotCache.GetAndChange(_memoryFeeFactor, () => new StorageItem(DefaultMemoryFeeFactor)).Set(value);
         }
 
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

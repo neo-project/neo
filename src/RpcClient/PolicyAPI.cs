@@ -49,6 +49,16 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
+        /// Get Memory Fee Factor
+        /// </summary>
+        /// <returns></returns>
+        public async Task<uint> GetMemoryFeeFactorAsync()
+        {
+            var result = await TestInvokeAsync(scriptHash, "getMemoryFeeFactor").ConfigureAwait(false);
+            return (uint)result.Stack.Single().GetInteger();
+        }
+
+        /// <summary>
         /// Get Network Fee Per Byte
         /// </summary>
         /// <returns></returns>

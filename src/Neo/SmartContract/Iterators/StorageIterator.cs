@@ -22,12 +22,14 @@ namespace Neo.SmartContract.Iterators
         private readonly IEnumerator<(StorageKey Key, StorageItem Value)> enumerator;
         private readonly int prefixLength;
         private readonly FindOptions options;
+        private readonly ApplicationEngine engine;
 
-        public StorageIterator(IEnumerator<(StorageKey, StorageItem)> enumerator, int prefixLength, FindOptions options)
+        public StorageIterator(IEnumerator<(StorageKey, StorageItem)> enumerator, int prefixLength, FindOptions options, ApplicationEngine engine = null)
         {
             this.enumerator = enumerator;
             this.prefixLength = prefixLength;
             this.options = options;
+            this.engine = engine;
         }
 
         public void Dispose()
@@ -37,7 +39,16 @@ namespace Neo.SmartContract.Iterators
 
         public bool Next()
         {
-            return enumerator.MoveNext();
+            bool moved = enumerator.MoveNext();
+            if (moved && engine is not null)
+            {
+                ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
+                ReadOnlyMemory<byte> value = enumerator.Current.Value.Value;
+                int cpu = key.Length + value.Length;
+                if (cpu > 0)
+                    engine.ChargeCpu(cpu);
+            }
+            return moved;
         }
 
         public StackItem Value(IReferenceCounter referenceCounter)

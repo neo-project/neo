@@ -124,7 +124,7 @@ namespace Neo.SmartContract
             long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
                 : 1 << 8;
-            AddFee(fee * ExecFeeFactor);
+            ChargeCpu(fee);
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
@@ -141,7 +141,7 @@ namespace Neo.SmartContract
             long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice * pubKeys.Length
                 : 1 << 8;
-            AddFee(fee * ExecFeeFactor);
+            ChargeCpu(fee);
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 

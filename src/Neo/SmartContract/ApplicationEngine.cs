@@ -74,6 +74,7 @@ namespace Neo.SmartContract
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
         internal readonly uint ExecFeeFactor;
+        internal readonly uint MemoryFeeFactor;
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
@@ -211,11 +212,13 @@ namespace Neo.SmartContract
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
                 ExecFeeFactor = PolicyContract.DefaultExecFeeFactor;
+                MemoryFeeFactor = PolicyContract.DefaultMemoryFeeFactor;
                 StoragePrice = PolicyContract.DefaultStoragePrice;
             }
             else
             {
                 ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
+                MemoryFeeFactor = NativeContract.Policy.GetMemoryFeeFactor(snapshotCache);
                 StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
             }
 
@@ -657,11 +660,24 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * ExecFeeFactor);
+            if (descriptor.FixedPrice > 0)
+                ChargeCpu(descriptor.FixedPrice);
 
-            object[] parameters = new object[descriptor.Parameters.Count];
-            for (int i = 0; i < parameters.Length; i++)
-                parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
+            int parameterCount = descriptor.Parameters.Count;
+            StackItem[] rawArguments = parameterCount == 0 ? Array.Empty<StackItem>() : new StackItem[parameterCount];
+            for (int i = 0; i < parameterCount; i++)
+                rawArguments[i] = Pop();
+
+            if (descriptor.DynamicCostCalculator is not null)
+            {
+                var extraCost = descriptor.DynamicCostCalculator(this, rawArguments);
+                if (!extraCost.IsZero)
+                    AddResourceCost(extraCost);
+            }
+
+            object[] parameters = new object[parameterCount];
+            for (int i = 0; i < parameterCount; i++)
+                parameters[i] = Convert(rawArguments[i], descriptor.Parameters[i]);
 
             object returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
@@ -671,13 +687,508 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(ExecFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            long baseCpuUnits = OpCodePriceTable[(byte)instruction.OpCode];
+            if (baseCpuUnits > 0)
+                ChargeCpu(baseCpuUnits);
+
+            var dynamicCost = CalculateDynamicOpcodeCost(instruction);
+            if (!dynamicCost.IsZero)
+                AddResourceCost(dynamicCost);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
         {
             base.PostExecuteInstruction(instruction);
             Diagnostic?.PostExecuteInstruction(instruction);
+        }
+
+        private const long MaxDynamicCpuUnits = 1_000_000_000; // Guardrail to avoid overflow while still covering large payloads
+
+        private ResourceCost CalculateDynamicOpcodeCost(Instruction instruction)
+        {
+            if (CurrentContext is null)
+                return ResourceCost.Zero;
+
+            var stack = CurrentContext.EvaluationStack;
+            try
+            {
+                switch (instruction.OpCode)
+                {
+                    case OpCode.PUSHDATA1:
+                    case OpCode.PUSHDATA2:
+                    case OpCode.PUSHDATA4:
+                        return new ResourceCost(instruction.Operand.Length, instruction.Operand.Length, 0);
+
+                    case OpCode opCode when IsInlinePushBytesInstruction(opCode, instruction.Operand.Length):
+                        return EstimatePushBytesCost(instruction);
+
+                    case OpCode.CAT:
+                        return EstimateConcatCost(stack, 2);
+
+                    case OpCode.SUBSTR:
+                        return EstimateSubstrCost(stack);
+
+                    case OpCode.LEFT:
+                        return EstimateLeftRightCost(stack, isLeft: true);
+
+                    case OpCode.RIGHT:
+                        return EstimateLeftRightCost(stack, isLeft: false);
+
+                    case OpCode.MEMCPY:
+                        return EstimateMemcpyCost(stack);
+
+                    case OpCode.NEWBUFFER:
+                        return EstimateNewBufferCost(stack);
+
+                    case OpCode.PACK:
+                    case OpCode.PACKMAP:
+                    case OpCode.PACKSTRUCT:
+                        return EstimatePackCost(stack);
+
+                    case OpCode.NEWARRAY:
+                    case OpCode.NEWARRAY_T:
+                    case OpCode.NEWSTRUCT:
+                        return EstimateNewCollectionCost(stack);
+
+                    case OpCode.APPEND:
+                    case OpCode.SETITEM:
+                        return EstimateSetItemCost(stack);
+
+                    case OpCode.PICKITEM:
+                        return EstimatePickItemCost(stack);
+
+                    case OpCode.REVERSEITEMS:
+                        return EstimateReverseItemsCost(stack);
+
+                    case OpCode.VALUES:
+                    case OpCode.KEYS:
+                        return EstimateKeyValueProjectionCost(stack, instruction.OpCode);
+
+                    case OpCode.ADD:
+                    case OpCode.SUB:
+                    case OpCode.MAX:
+                    case OpCode.MIN:
+                        return EstimateBinaryNumericCost(stack, NumericOperationKind.Linear);
+
+                    case OpCode.MUL:
+                    case OpCode.DIV:
+                    case OpCode.MOD:
+                    case OpCode.MODMUL:
+                        return EstimateBinaryNumericCost(stack, NumericOperationKind.Multiplicative);
+
+                    case OpCode.POW:
+                    case OpCode.MODPOW:
+                        return EstimateBinaryNumericCost(stack, NumericOperationKind.Exponential);
+
+                    case OpCode.SQRT:
+                    case OpCode.ABS:
+                    case OpCode.NEGATE:
+                    case OpCode.INC:
+                    case OpCode.DEC:
+                    case OpCode.SIGN:
+                        return EstimateUnaryNumericCost(stack);
+
+                    case OpCode.AND:
+                    case OpCode.OR:
+                    case OpCode.XOR:
+                    case OpCode.INVERT:
+                    case OpCode.BOOLAND:
+                    case OpCode.BOOLOR:
+                        return EstimateBitOperationCost(stack, instruction.OpCode);
+
+                    case OpCode.SHL:
+                    case OpCode.SHR:
+                        return EstimateShiftOperationCost(stack);
+
+                    case OpCode.EQUAL:
+                    case OpCode.NOTEQUAL:
+                    case OpCode.NUMEQUAL:
+                    case OpCode.NUMNOTEQUAL:
+                    case OpCode.LT:
+                    case OpCode.LE:
+                    case OpCode.GT:
+                    case OpCode.GE:
+                    case OpCode.WITHIN:
+                        return EstimateComparisonCost(stack);
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore estimation errors; actual opcode execution will handle invalid states
+            }
+
+            return ResourceCost.Zero;
+        }
+
+        private static bool IsInlinePushBytesInstruction(OpCode opCode, int operandLength)
+        {
+            byte value = (byte)opCode;
+            return value is >= 0x01 and <= 0x4B && operandLength == value;
+        }
+
+        private static ResourceCost EstimatePushBytesCost(Instruction instruction)
+        {
+            int length = instruction.Operand.Length;
+            if (length <= 0)
+                return ResourceCost.Zero;
+
+            return new ResourceCost(ClampDynamicCpu(length), length, 0);
+        }
+
+        private static ResourceCost EstimateConcatCost(EvaluationStack stack, int itemCount)
+        {
+            if (stack.Count < itemCount)
+                return ResourceCost.Zero;
+
+            long totalInput = 0;
+            for (int i = 0; i < itemCount; i++)
+                totalInput += GetSpanLength(stack.Peek(i));
+
+            if (totalInput == 0)
+                return ResourceCost.Zero;
+
+            // Copying inputs plus creating the resulting buffer
+            return new ResourceCost(ClampDynamicCpu(totalInput * 2), totalInput, 0);
+        }
+
+        private static ResourceCost EstimateSubstrCost(EvaluationStack stack)
+        {
+            if (stack.Count < 3)
+                return ResourceCost.Zero;
+
+            var lengthItem = stack.Peek(0);
+            var startItem = stack.Peek(1);
+            var valueItem = stack.Peek(2);
+
+            if (!TryGetInt(lengthItem, out long length) || length <= 0)
+                return ResourceCost.Zero;
+
+            long available = GetSpanLength(valueItem);
+            long effective = Math.Min(Math.Max(length, 0), available);
+            if (effective <= 0)
+                return ResourceCost.Zero;
+
+            return new ResourceCost(ClampDynamicCpu(effective * 2), effective, 0);
+        }
+
+        private static ResourceCost EstimateLeftRightCost(EvaluationStack stack, bool isLeft)
+        {
+            if (stack.Count < 2)
+                return ResourceCost.Zero;
+
+            var lengthItem = stack.Peek(0);
+            var valueItem = stack.Peek(1);
+
+            if (!TryGetInt(lengthItem, out long length) || length <= 0)
+                return ResourceCost.Zero;
+
+            long available = GetSpanLength(valueItem);
+            long effective = Math.Min(Math.Max(length, 0), available);
+            if (effective <= 0)
+                return ResourceCost.Zero;
+
+            // Similar to substring; copying subset and allocating new bytes
+            return new ResourceCost(ClampDynamicCpu(effective * 2), effective, 0);
+        }
+
+        private static ResourceCost EstimateMemcpyCost(EvaluationStack stack)
+        {
+            if (stack.Count < 3)
+                return ResourceCost.Zero;
+
+            var countItem = stack.Peek(0);
+            if (!TryGetInt(countItem, out long length) || length <= 0)
+                return ResourceCost.Zero;
+
+            return new ResourceCost(ClampDynamicCpu(length * 3), 0, 0);
+        }
+
+        private static ResourceCost EstimateNewBufferCost(EvaluationStack stack)
+        {
+            if (stack.Count < 1)
+                return ResourceCost.Zero;
+
+            if (!TryGetInt(stack.Peek(0), out long size) || size <= 0)
+                return ResourceCost.Zero;
+
+            return new ResourceCost(ClampDynamicCpu(size), size, 0);
+        }
+
+        private static ResourceCost EstimatePackCost(EvaluationStack stack)
+        {
+            if (stack.Count < 1)
+                return ResourceCost.Zero;
+
+            if (!TryGetInt(stack.Peek(0), out long count) || count <= 0)
+                return ResourceCost.Zero;
+
+            long cpu = ClampDynamicCpu(count * 2);
+            long memory = count * AverageElementOverhead;
+            return new ResourceCost(cpu, memory, 0);
+        }
+
+        private static ResourceCost EstimateNewCollectionCost(EvaluationStack stack)
+        {
+            if (stack.Count < 1)
+                return ResourceCost.Zero;
+
+            if (!TryGetInt(stack.Peek(0), out long count) || count <= 0)
+                return ResourceCost.Zero;
+
+            long cpu = ClampDynamicCpu(count);
+            long memory = count * AverageElementOverhead;
+            return new ResourceCost(cpu, memory, 0);
+        }
+
+        private static ResourceCost EstimateSetItemCost(EvaluationStack stack)
+        {
+            if (stack.Count < 3)
+                return ResourceCost.Zero;
+
+            var container = stack.Peek(2);
+            var value = stack.Peek(0);
+            long valueSize = GetApproximateItemSize(value);
+            long cpu = ClampDynamicCpu(valueSize + AverageElementOverhead);
+            long memory = container.Type switch
+            {
+                StackItemType.Map => valueSize,
+                _ => 0
+            };
+            return new ResourceCost(Math.Max(cpu, 0), Math.Max(memory, 0), 0);
+        }
+
+        private static ResourceCost EstimatePickItemCost(EvaluationStack stack)
+        {
+            if (stack.Count < 2)
+                return ResourceCost.Zero;
+
+            var container = stack.Peek(1);
+            long elementSize = GetApproximateItemSize(container);
+            if (elementSize <= 0)
+                elementSize = AverageElementOverhead;
+            return new ResourceCost(elementSize, 0, 0);
+        }
+
+        private static ResourceCost EstimateReverseItemsCost(EvaluationStack stack)
+        {
+            if (stack.Count < 1)
+                return ResourceCost.Zero;
+
+            var arrayItem = stack.Peek(0);
+            if (arrayItem is VMArray array)
+            {
+                long count = array.Count;
+                return new ResourceCost(ClampDynamicCpu(count * 2), 0, 0);
+            }
+            return ResourceCost.Zero;
+        }
+
+        private static ResourceCost EstimateKeyValueProjectionCost(EvaluationStack stack, OpCode opCode)
+        {
+            if (stack.Count < 1)
+                return ResourceCost.Zero;
+
+            if (stack.Peek(0) is not Map map)
+                return ResourceCost.Zero;
+
+            long count = map.Count;
+            long cpu = ClampDynamicCpu(count * 2);
+            long memory = count * AverageElementOverhead;
+            return new ResourceCost(cpu, memory, 0);
+        }
+
+        private static bool TryGetInt(StackItem item, out long value)
+        {
+            try
+            {
+                value = (long)item.GetInteger();
+                return true;
+            }
+            catch
+            {
+                value = 0;
+                return false;
+            }
+        }
+
+        private const int AverageElementOverhead = 16;
+
+        private static long GetSpanLength(StackItem item)
+        {
+            try
+            {
+                return item.Type switch
+                {
+                    StackItemType.ByteString or StackItemType.Buffer => item.GetSpan().Length,
+                    _ => 0
+                };
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private static long GetApproximateItemSize(StackItem item, int depth = 0)
+        {
+            if (item is null)
+                return 0;
+
+            if (depth > 4)
+                return AverageElementOverhead;
+
+            try
+            {
+                return item.Type switch
+                {
+                    StackItemType.ByteString or StackItemType.Buffer => item.GetSpan().Length,
+                    StackItemType.Array or StackItemType.Struct => item is VMArray array ? SumArrayFootprint(array, depth + 1) : AverageElementOverhead,
+                    StackItemType.Map => item is Map map ? SumMapFootprint(map, depth + 1) : AverageElementOverhead,
+                    StackItemType.Integer => item.GetSpan().Length,
+                    _ => AverageElementOverhead
+                };
+            }
+            catch
+            {
+                return AverageElementOverhead;
+            }
+        }
+
+        private static long SumArrayFootprint(VMArray array, int depth)
+        {
+            long total = AverageElementOverhead;
+            foreach (var element in array)
+            {
+                total = AddWithCap(total, GetApproximateItemSize(element, depth));
+            }
+            return total;
+        }
+
+        private static long SumMapFootprint(Map map, int depth)
+        {
+            long total = AverageElementOverhead;
+            foreach (var (key, value) in map)
+            {
+                total = AddWithCap(total, GetApproximateItemSize(key, depth));
+                total = AddWithCap(total, GetApproximateItemSize(value, depth));
+            }
+            return total;
+        }
+
+        private static ResourceCost EstimateBinaryNumericCost(EvaluationStack stack, NumericOperationKind kind)
+        {
+            if (stack.Count < 2)
+                return ResourceCost.Zero;
+
+            long left = GetNumericOperandSize(stack.Peek(0));
+            long right = GetNumericOperandSize(stack.Peek(1));
+
+            long cpu = kind switch
+            {
+                NumericOperationKind.Linear => Math.Max(left, right),
+                NumericOperationKind.Multiplicative => MultiplyWithCap(left, right),
+                NumericOperationKind.Exponential =>
+                    MultiplyWithCap(left, MultiplyWithCap(Math.Max(right, 1), Math.Max(right, 1))),
+                _ => 0
+            };
+
+            return cpu > 0 ? ResourceCost.FromCpu(ClampDynamicCpu(cpu)) : ResourceCost.Zero;
+        }
+
+        private static ResourceCost EstimateUnaryNumericCost(EvaluationStack stack)
+        {
+            if (stack.Count < 1)
+                return ResourceCost.Zero;
+
+            long size = GetNumericOperandSize(stack.Peek(0));
+            return size > 0 ? ResourceCost.FromCpu(ClampDynamicCpu(size)) : ResourceCost.Zero;
+        }
+
+        private static ResourceCost EstimateBitOperationCost(EvaluationStack stack, OpCode opCode)
+        {
+            if (stack.Count < 1)
+                return ResourceCost.Zero;
+
+            long operandSize = GetSpanLength(stack.Peek(0));
+            if (opCode is OpCode.AND or OpCode.OR or OpCode.XOR)
+            {
+                if (stack.Count < 2)
+                    return ResourceCost.Zero;
+                operandSize = Math.Max(GetSpanLength(stack.Peek(0)), GetSpanLength(stack.Peek(1)));
+            }
+            return operandSize > 0 ? ResourceCost.FromCpu(ClampDynamicCpu(operandSize)) : ResourceCost.Zero;
+        }
+
+        private static ResourceCost EstimateShiftOperationCost(EvaluationStack stack)
+        {
+            if (stack.Count < 2)
+                return ResourceCost.Zero;
+
+            long valueSize = GetNumericOperandSize(stack.Peek(0));
+            long shift = Math.Max(0, GetNumericOperandSize(stack.Peek(1)));
+            long cpu = ClampDynamicCpu(MultiplyWithCap(valueSize, Math.Max(1, shift)));
+            return cpu > 0 ? ResourceCost.FromCpu(cpu) : ResourceCost.Zero;
+        }
+
+        private static ResourceCost EstimateComparisonCost(EvaluationStack stack)
+        {
+            if (stack.Count < 2)
+                return ResourceCost.Zero;
+
+            long left = GetApproximateItemSize(stack.Peek(0));
+            long right = GetApproximateItemSize(stack.Peek(1));
+            long cpu = ClampDynamicCpu(Math.Max(left, right));
+            return cpu > 0 ? ResourceCost.FromCpu(cpu) : ResourceCost.Zero;
+        }
+
+        private static long GetNumericOperandSize(StackItem item)
+        {
+            try
+            {
+                return item.Type switch
+                {
+                    StackItemType.Integer => Math.Max(1, item.GetSpan().Length),
+                    StackItemType.ByteString or StackItemType.Buffer => Math.Max(1, item.GetSpan().Length),
+                    _ => AverageElementOverhead
+                };
+            }
+            catch
+            {
+                return AverageElementOverhead;
+            }
+        }
+
+        private static long ClampDynamicCpu(long cpu)
+        {
+            if (cpu <= 0)
+                return 0;
+            return Math.Min(cpu, MaxDynamicCpuUnits);
+        }
+
+        private static long MultiplyWithCap(long left, long right)
+        {
+            if (left <= 0 || right <= 0)
+                return 0;
+            if (left > MaxDynamicCpuUnits)
+                return MaxDynamicCpuUnits;
+            if (right > MaxDynamicCpuUnits)
+                return MaxDynamicCpuUnits;
+            if (left > long.MaxValue / right)
+                return MaxDynamicCpuUnits;
+            return Math.Min(left * right, MaxDynamicCpuUnits);
+        }
+
+        private static long AddWithCap(long left, long right)
+        {
+            long result = left + right;
+            return result < left ? MaxDynamicCpuUnits : Math.Min(result, MaxDynamicCpuUnits);
+        }
+
+        private enum NumericOperationKind
+        {
+            Linear,
+            Multiplicative,
+            Exponential
         }
 
         private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
@@ -700,7 +1211,7 @@ namespace Neo.SmartContract
             };
         }
 
-        protected static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, Hardfork? hardfork = null)
+        protected static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, Hardfork? hardfork = null, Func<ApplicationEngine, StackItem[], ResourceCost> dynamicCost = null)
         {
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
             var method = typeof(ApplicationEngine).GetMethod(handler, flags)
@@ -711,7 +1222,8 @@ namespace Neo.SmartContract
                 Handler = method,
                 Hardfork = hardfork,
                 FixedPrice = fixedPrice,
-                RequiredCallFlags = requiredCallFlags
+                RequiredCallFlags = requiredCallFlags,
+                DynamicCostCalculator = dynamicCost
             };
             services ??= [];
             services.Add(descriptor.Hash, descriptor);

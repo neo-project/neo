@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.VM.Types;
+using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,6 +59,12 @@ namespace Neo.SmartContract
         /// The fixed price for calling the interoperable service. It can be 0 if the interoperable service has a variable price.
         /// </summary>
         public long FixedPrice { get; init; }
+
+        /// <summary>
+        /// An optional delegate used to compute dynamic resource cost for the interoperable service.
+        /// Receives the engine and the raw stack arguments popped for the call (top-first order).
+        /// </summary>
+        public Func<ApplicationEngine, StackItem[], ResourceCost> DynamicCostCalculator { get; init; }
 
         /// <summary>
         /// Required Hardfork to be active.

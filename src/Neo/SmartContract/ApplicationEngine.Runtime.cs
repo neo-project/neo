@@ -217,6 +217,12 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
 
+            if (script is not null && script.Length > 0)
+            {
+                ChargeCpu(script.Length);
+                ChargeMemory(script.Length);
+            }
+
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
             {
@@ -237,6 +243,8 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
+            if (hashOrPubkey is not null && hashOrPubkey.Length > 0)
+                ChargeCpu(hashOrPubkey.Length);
             UInt160 hash = hashOrPubkey.Length switch
             {
                 20 => new UInt160(hashOrPubkey),
@@ -322,7 +330,7 @@ namespace Neo.SmartContract
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
-            AddFee(price * ExecFeeFactor);
+            ChargeCpu(price);
             return new BigInteger(buffer, isUnsigned: true);
         }
 
@@ -335,6 +343,11 @@ namespace Neo.SmartContract
         {
             if (state.Length > MaxNotificationSize)
                 throw new ArgumentException($"Notification size {state.Length} exceeds maximum allowed size of {MaxNotificationSize} bytes", nameof(state));
+            if (state.Length > 0)
+            {
+                ChargeCpu(state.Length);
+                ChargeMemory(state.Length);
+            }
             try
             {
                 string message = state.ToStrictUtf8String();
@@ -361,6 +374,8 @@ namespace Neo.SmartContract
             }
             if (eventName.Length > MaxEventName)
                 throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
+            if (eventName.Length > 0)
+                ChargeCpu(eventName.Length);
 
             string name = eventName.ToStrictUtf8String();
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
@@ -380,6 +395,11 @@ namespace Neo.SmartContract
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
+            if (ms.Position > 0)
+            {
+                ChargeCpu((int)ms.Position);
+                ChargeMemory((int)ms.Position);
+            }
             SendNotification(CurrentScriptHash, name, state);
         }
 
@@ -389,9 +409,16 @@ namespace Neo.SmartContract
                 throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
             if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
+            if (eventName.Length > 0)
+                ChargeCpu(eventName.Length);
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
+            if (ms.Position > 0)
+            {
+                ChargeCpu((int)ms.Position);
+                ChargeMemory((int)ms.Position);
+            }
             SendNotification(CurrentScriptHash, eventName.ToStrictUtf8String(), state);
         }
 

@@ -58,6 +58,16 @@ namespace Neo.Network.RPC.Tests
         }
 
         [TestMethod]
+        public async Task TestGetMemoryFeeFactor()
+        {
+            byte[] testScript = NativeContract.Policy.Hash.MakeScript("getMemoryFeeFactor");
+            UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(30) });
+
+            var result = await policyAPI.GetMemoryFeeFactorAsync();
+            Assert.AreEqual(30u, result);
+        }
+
+        [TestMethod]
         public async Task TestGetFeePerByte()
         {
             byte[] testScript = NativeContract.Policy.Hash.MakeScript("getFeePerByte");

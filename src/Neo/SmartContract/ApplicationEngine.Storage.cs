@@ -152,11 +152,24 @@ namespace Neo.SmartContract
         /// <returns>The value of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
         protected internal ReadOnlyMemory<byte>? Get(StorageContext context, byte[] key)
         {
-            return SnapshotCache.TryGet(new StorageKey
+            if (key is not null && key.Length > 0)
+                ChargeCpu(key.Length);
+
+            var storageItem = SnapshotCache.TryGet(new StorageKey
             {
                 Id = context.Id,
                 Key = key
-            })?.Value;
+            });
+            if (storageItem is null)
+                return null;
+
+            var value = storageItem.Value;
+            if (!value.IsEmpty)
+            {
+                ChargeCpu(value.Length);
+                ChargeMemory(value.Length);
+            }
+            return value;
         }
 
         /// <summary>
@@ -201,9 +214,12 @@ namespace Neo.SmartContract
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
                 throw new ArgumentException("PickField0 or PickField1 requires DeserializeValues", nameof(options));
 
+            if (prefix.Length > 0)
+                ChargeCpu(prefix.Length);
+
             var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
             var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
-            return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options);
+            return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options, this);
         }
 
         /// <summary>
@@ -256,7 +272,8 @@ namespace Neo.SmartContract
                 else
                     newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
             }
-            AddFee(newDataSize * StoragePrice);
+            ChargeCpu(key.Length + value.Length);
+            ChargeStorage(newDataSize);
 
             item.Value = value;
         }
@@ -281,6 +298,8 @@ namespace Neo.SmartContract
         protected internal void Delete(StorageContext context, byte[] key)
         {
             if (context.IsReadOnly) throw new ArgumentException("StorageContext is read-only", nameof(context));
+            if (key is not null && key.Length > 0)
+                ChargeCpu(key.Length);
             SnapshotCache.Delete(new StorageKey
             {
                 Id = context.Id,
