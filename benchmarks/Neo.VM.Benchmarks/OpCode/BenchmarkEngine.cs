@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Benchmark.Infrastructure;
 using Neo.VM.Types;
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -22,7 +24,11 @@ namespace Neo.VM.Benchmark.OpCode
     {
         private readonly Dictionary<VM.OpCode, (int Count, TimeSpan TotalTime)> _opcodeStats = new();
         private readonly Dictionary<Script, HashSet<uint>> _breakPoints = new();
-        private long _gasConsumed = 0;
+        private long _gasConsumed;
+
+        public BenchmarkResultRecorder? Recorder { get; set; }
+        public Action<BenchmarkEngine, VM.Instruction>? BeforeInstruction { get; set; }
+        public Action<BenchmarkEngine, VM.Instruction>? AfterInstruction { get; set; }
 
         public BenchmarkEngine() : base(ComposeJumpTable()) { }
 
@@ -70,14 +76,8 @@ namespace Neo.VM.Benchmark.OpCode
         {
             while (State != VMState.HALT && State != VMState.FAULT)
             {
-#if DEBUG
-                var stopwatch = Stopwatch.StartNew();
-#endif
-                ExecuteNext();
-#if DEBUG
-                stopwatch.Stop();
-                UpdateOpcodeStats(CurrentContext!.CurrentInstruction!.OpCode, stopwatch.Elapsed);
-#endif
+                var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
+                ExecuteStep(instruction);
             }
 #if DEBUG
             PrintOpcodeStats();
@@ -87,76 +87,25 @@ namespace Neo.VM.Benchmark.OpCode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ExecuteOneGASBenchmark()
         {
-            while (State != VMState.HALT && State != VMState.FAULT)
-            {
-                var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
-                if (_gasConsumed >= Benchmark_Opcode.OneGasDatoshi)
-                {
-                    State = VMState.HALT;
-                }
-#if DEBUG
-                var stopwatch = Stopwatch.StartNew();
-#endif
-                ExecuteNext();
-#if DEBUG
-                stopwatch.Stop();
-                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
-#endif
-            }
-#if DEBUG
-            PrintOpcodeStats();
-#endif
+            ExecuteWithGasBudget(Benchmark_Opcode.OneGasDatoshi);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ExecuteTwentyGASBenchmark()
         {
-            while (State != VMState.HALT && State != VMState.FAULT)
-            {
-                var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
-                if (_gasConsumed >= 20 * Benchmark_Opcode.OneGasDatoshi)
-                {
-                    State = VMState.HALT;
-                }
-#if DEBUG
-                var stopwatch = Stopwatch.StartNew();
-#endif
-                ExecuteNext();
-#if DEBUG
-                stopwatch.Stop();
-                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
-#endif
-            }
-#if DEBUG
-            PrintOpcodeStats();
-#endif
+            ExecuteWithGasBudget(20 * Benchmark_Opcode.OneGasDatoshi);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ExecuteOpCodesBenchmark()
         {
-            while (State != VMState.HALT && State != VMState.FAULT)
-            {
-                var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
-                if (_gasConsumed >= Benchmark_Opcode.OneGasDatoshi)
-                {
-                    State = VMState.HALT;
-                }
-#if DEBUG
-                var stopwatch = Stopwatch.StartNew();
-#endif
-                ExecuteNext();
-#if DEBUG
-                stopwatch.Stop();
-                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
-#endif
-            }
-#if DEBUG
-            PrintOpcodeStats();
-#endif
+            ExecuteWithGasBudget(Benchmark_Opcode.OneGasDatoshi);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ExecuteUntilGas(long gasBudget)
+        {
+            ExecuteWithGasBudget(gasBudget);
         }
 
         protected override void OnFault(Exception ex)
@@ -195,6 +144,64 @@ namespace Neo.VM.Benchmark.OpCode
             JumpTable jumpTable = new JumpTable();
             jumpTable[VM.OpCode.SYSCALL] = OnSysCall;
             return jumpTable;
+        }
+
+        private void ExecuteWithGasBudget(long gasBudget)
+        {
+            _gasConsumed = 0;
+            while (State != VMState.HALT && State != VMState.FAULT)
+            {
+                var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
+                ExecuteStep(instruction);
+                if (State == VMState.HALT || State == VMState.FAULT)
+                    break;
+                if (ConsumeGas(instruction.OpCode, gasBudget))
+                    break;
+            }
+#if DEBUG
+            PrintOpcodeStats();
+#endif
+        }
+
+        private bool ConsumeGas(VM.OpCode opcode, long gasBudget)
+        {
+            if (gasBudget <= 0)
+                return true;
+            if (!Benchmark_Opcode.OpCodePrices.TryGetValue(opcode, out var price))
+                throw new KeyNotFoundException($"Missing benchmark gas price for opcode {opcode}.");
+            _gasConsumed += price;
+            if (_gasConsumed >= gasBudget)
+            {
+                State = VMState.HALT;
+                return true;
+            }
+            return false;
+        }
+
+        private void ExecuteStep(VM.Instruction instruction)
+        {
+            var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            Stopwatch? stopwatch = null;
+#if DEBUG
+            stopwatch = Stopwatch.StartNew();
+#else
+            if (Recorder is not null)
+                stopwatch = Stopwatch.StartNew();
+#endif
+            BeforeInstruction?.Invoke(this, instruction);
+            ExecuteNext();
+            var elapsed = stopwatch?.Elapsed ?? TimeSpan.Zero;
+            var allocatedAfter = GC.GetAllocatedBytesForCurrentThread();
+            var allocatedBytes = Math.Max(0, allocatedAfter - allocatedBefore);
+#if DEBUG
+            UpdateOpcodeStats(instruction.OpCode, elapsed);
+#endif
+            var stackDepth = CurrentContext?.EvaluationStack.Count ?? 0;
+            var altStackDepth = 0;
+            if (!Benchmark_Opcode.OpCodePrices.TryGetValue(instruction.OpCode, out var gas))
+                throw new KeyNotFoundException($"Missing benchmark gas price for opcode {instruction.OpCode}.");
+            Recorder?.RecordInstruction(instruction.OpCode, elapsed, allocatedBytes, stackDepth, altStackDepth, gas);
+            AfterInstruction?.Invoke(this, instruction);
         }
 
         private static void OnSysCall(ExecutionEngine engine, VM.Instruction instruction)
