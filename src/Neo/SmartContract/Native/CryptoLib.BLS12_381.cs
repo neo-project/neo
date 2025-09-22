@@ -97,11 +97,11 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        [ContractMethod(CpuFee = 1 << 19, Name = "bls12_g1add")]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19, Name = "bls12_g1add")]
         public static InteropInterface Bls12G1Add(InteropInterface x, InteropInterface y)
             => Bls12381Add(x, y);
 
-        [ContractMethod(CpuFee = 1 << 19, Name = "bls12_g2add")]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19, Name = "bls12_g2add")]
         public static InteropInterface Bls12G2Add(InteropInterface x, InteropInterface y)
             => Bls12381Add(x, y);
 
@@ -127,11 +127,11 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        [ContractMethod(CpuFee = 1 << 21, Name = "bls12_g1mul")]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21, Name = "bls12_g1mul")]
         public static InteropInterface Bls12G1Mul(InteropInterface x, byte[] mul, bool neg)
             => Bls12381Mul(x, mul, neg);
 
-        [ContractMethod(CpuFee = 1 << 21, Name = "bls12_g2mul")]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21, Name = "bls12_g2mul")]
         public static InteropInterface Bls12G2Mul(InteropInterface x, byte[] mul, bool neg)
             => Bls12381Mul(x, mul, neg);
 
@@ -159,7 +159,7 @@ namespace Neo.SmartContract.Native
             return new(Bls12.Pairing(in g1a, in g2a));
         }
 
-        [ContractMethod(CpuFee = 1 << 23, Name = "bls12_pairing")]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 23, Name = "bls12_pairing")]
         public static InteropInterface Bls12Pairing(InteropInterface g1, InteropInterface g2)
             => Bls12381Pairing(g1, g2);
     }
