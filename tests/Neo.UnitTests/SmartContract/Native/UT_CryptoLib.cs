@@ -18,6 +18,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.Persistence;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Org.BouncyCastle.Utilities.Encoders;
@@ -261,6 +262,33 @@ namespace Neo.UnitTests.SmartContract.Native
                 "089A1C5B46E5110B86750EC6A532348868A84045483C92B7AF5AF689452EAFABF1A8943E50439F1D59882A98EAA0170F" +
                 "1250EBD871FC0A92A7B2D83168D0D727272D441BEFA15C503DD8E90CE98DB3E7B6D194F60839C508A84305AACA1789B6";
             Assert.AreEqual(expected.ToLower(), result.GetInterface<Gt>().ToArray().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12AddAliases()
+        {
+            var expected = InvokeBlsAddMethod("bls12381Add");
+            foreach (var alias in new[] { "bls12_g1add", "bls12_g2add" })
+            {
+                CollectionAssert.AreEqual(expected, InvokeBlsAddMethod(alias));
+            }
+        }
+
+        [TestMethod]
+        public void TestBls12MulAliases()
+        {
+            var expected = InvokeBlsMulMethod("bls12381Mul", false);
+            foreach (var alias in new[] { "bls12_g1mul", "bls12_g2mul" })
+            {
+                CollectionAssert.AreEqual(expected, InvokeBlsMulMethod(alias, false));
+            }
+        }
+
+        [TestMethod]
+        public void TestBls12PairingAlias()
+        {
+            var expected = InvokeBlsPairingMethod("bls12381Pairing");
+            CollectionAssert.AreEqual(expected, InvokeBlsPairingMethod("bls12_pairing"));
         }
 
         [TestMethod]
@@ -1173,6 +1201,63 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 return engine.ResultStack.Pop().GetBoolean();
             }
+        }
+
+        private byte[] InvokeBlsAddMethod(string methodName)
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using ScriptBuilder script = new();
+            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
+            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
+            script.EmitPush(2);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(CallFlags.All);
+            script.EmitPush(methodName);
+            script.EmitPush(NativeContract.CryptoLib.Hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            return ExecuteBlsScript(script, snapshotCache);
+        }
+
+        private byte[] InvokeBlsMulMethod(string methodName, bool neg)
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using ScriptBuilder script = new();
+            byte[] data = new byte[32];
+            data[0] = 0x03;
+            script.EmitPush(neg);
+            script.EmitPush(data);
+            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
+            script.EmitPush(3);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(CallFlags.All);
+            script.EmitPush(methodName);
+            script.EmitPush(NativeContract.CryptoLib.Hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            return ExecuteBlsScript(script, snapshotCache);
+        }
+
+        private byte[] InvokeBlsPairingMethod(string methodName)
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using ScriptBuilder script = new();
+            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g2);
+            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
+            script.EmitPush(2);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(CallFlags.All);
+            script.EmitPush(methodName);
+            script.EmitPush(NativeContract.CryptoLib.Hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            return ExecuteBlsScript(script, snapshotCache);
+        }
+
+        private byte[] ExecuteBlsScript(ScriptBuilder script, StoreCache snapshotCache)
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
+                settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            return engine.ResultStack.Pop().GetInterface<Gt>().ToArray();
         }
     }
 }

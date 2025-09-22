@@ -97,6 +97,14 @@ namespace Neo.SmartContract.Native
             };
         }
 
+        [ContractMethod(CpuFee = 1 << 19, Name = "bls12_g1add")]
+        public static InteropInterface Bls12G1Add(InteropInterface x, InteropInterface y)
+            => Bls12381Add(x, y);
+
+        [ContractMethod(CpuFee = 1 << 19, Name = "bls12_g2add")]
+        public static InteropInterface Bls12G2Add(InteropInterface x, InteropInterface y)
+            => Bls12381Add(x, y);
+
         /// <summary>
         /// Mul operation of gt point and multiplier
         /// </summary>
@@ -118,6 +126,14 @@ namespace Neo.SmartContract.Native
                 _ => throw new ArgumentException("BLS12-381 type mismatch")
             };
         }
+
+        [ContractMethod(CpuFee = 1 << 21, Name = "bls12_g1mul")]
+        public static InteropInterface Bls12G1Mul(InteropInterface x, byte[] mul, bool neg)
+            => Bls12381Mul(x, mul, neg);
+
+        [ContractMethod(CpuFee = 1 << 21, Name = "bls12_g2mul")]
+        public static InteropInterface Bls12G2Mul(InteropInterface x, byte[] mul, bool neg)
+            => Bls12381Mul(x, mul, neg);
 
         /// <summary>
         /// Pairing operation of g1 and g2
@@ -142,5 +158,9 @@ namespace Neo.SmartContract.Native
             };
             return new(Bls12.Pairing(in g1a, in g2a));
         }
+
+        [ContractMethod(CpuFee = 1 << 23, Name = "bls12_pairing")]
+        public static InteropInterface Bls12Pairing(InteropInterface g1, InteropInterface g2)
+            => Bls12381Pairing(g1, g2);
     }
 }
