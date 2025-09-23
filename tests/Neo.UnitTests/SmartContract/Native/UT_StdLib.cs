@@ -18,7 +18,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Numerics;
 using Array = System.Array;
 
@@ -538,7 +537,6 @@ namespace Neo.UnitTests.SmartContract.Native
                 for (var i = 0; i < engine.ResultStack.Count; i++)
                 {
                     var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                    File.AppendAllLines(@"D:\tmp\demo.txt", [$"{actualValue}"]);
                     Assert.IsTrue(actualValue < 10);
                     Assert.IsTrue(actualValue >= BigInteger.Zero);
                 }
