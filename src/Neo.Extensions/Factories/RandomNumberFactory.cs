@@ -219,8 +219,7 @@ namespace Neo.Extensions.Factories
             if (maxValue == 0)
                 return BigInteger.Zero;
 
-            var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxMaxValue = (BigInteger.One << maxValueBits) - BigInteger.One;
+            var maxMaxValue = (BigInteger.One << 255) - BigInteger.One;
 
             var randomProduct = maxValue * NextBigInteger(255);
             var lowPart = randomProduct & maxMaxValue;
