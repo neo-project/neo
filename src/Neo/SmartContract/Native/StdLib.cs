@@ -289,7 +289,7 @@ namespace Neo.SmartContract.Native
             var maxMaxValue = (BigInteger.One << 255) - BigInteger.One;
 
             var randomProduct = maxValue * engine.GetRandom();
-            var lowPart = randomProduct & maxMaxValue;
+            var lowPart = randomProduct % UInt128.MaxValue;
 
             if (lowPart < maxValue)
             {
@@ -298,7 +298,7 @@ namespace Neo.SmartContract.Native
                 while (lowPart < threshold)
                 {
                     randomProduct = maxValue * engine.GetRandom();
-                    lowPart = randomProduct & maxMaxValue;
+                    lowPart = randomProduct % UInt128.MaxValue;
                 }
             }
 
