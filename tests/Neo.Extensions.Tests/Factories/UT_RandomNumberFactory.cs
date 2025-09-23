@@ -23,6 +23,8 @@
 
 using Neo.Extensions.Factories;
 using System;
+using System.IO;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.Extensions.Tests.Factories
@@ -299,6 +301,14 @@ namespace Neo.Extensions.Tests.Factories
 
             actualValue = RandomNumberFactory.NextBigInteger(expectedMax);
             Assert.IsTrue(actualValue >= 0 && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void MyTestMethod()
+        {
+            var j = new BigInteger[1024 * 1024];
+
+            File.WriteAllLines(@"D:\tmp\demo.txt", j.Select(s => $"{RandomNumberFactory.NextBigInteger((BigInteger)2)}"));
         }
     }
 }

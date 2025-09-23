@@ -216,13 +216,14 @@ namespace Neo.Extensions.Factories
             if (maxValue.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
 
-            if (maxValue == 0)
+            if (maxValue == 0 || maxValue == 1)
                 return BigInteger.Zero;
 
-            var maxMaxValue = (BigInteger.One << 255) - BigInteger.One;
+            var maxValueBits = maxValue.GetByteCount() * 8;
+            var maxMaxValue = (BigInteger.One << maxValueBits) - BigInteger.One;
 
-            var randomProduct = maxValue * NextBigInteger(255);
-            var lowPart = randomProduct & maxMaxValue;
+            var randomProduct = maxValue * NextBigInteger(maxValueBits);
+            var lowPart = randomProduct % maxMaxValue;
 
             if (lowPart < maxValue)
             {
@@ -230,12 +231,12 @@ namespace Neo.Extensions.Factories
 
                 while (lowPart < threshold)
                 {
-                    randomProduct = maxValue * NextBigInteger(255);
-                    lowPart = randomProduct & maxMaxValue;
+                    randomProduct = maxValue * NextBigInteger(maxValueBits);
+                    lowPart = randomProduct % maxMaxValue;
                 }
             }
 
-            return randomProduct >> 255;
+            return randomProduct >> maxValueBits;
         }
 
         public static BigInteger NextBigInteger(int sizeInBits)
