@@ -46,7 +46,7 @@ namespace Neo.Plugins.StateRpcPlugin.Tests
         {
             _memoryStore = new MemoryStore();
             _system = new TestBlockchain.TestNeoSystem(s_protocol);
-            
+
             // First load StateRootPlugin to initialize StateStore.Singleton
             _stateRootPlugin = new Neo.Plugins.StateRootPlugin.StateRootPlugin();
             var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;

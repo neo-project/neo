@@ -48,7 +48,7 @@ namespace Neo.Plugins.StateRpcPlugin
         [ConsoleCommand("get proof", Category = "StateRpc", Description = "Get proof of key and contract hash")]
         private void OnGetProof(UInt256 rootHash, UInt160 scriptHash, string key)
         {
-            
+
 
             try
             {
