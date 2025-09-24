@@ -156,6 +156,8 @@ jobs:
           ${{ github.workspace }}/TestResults/Neo.Plugins.RpcServer.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Plugins.Storage.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Plugins.ApplicationLogs.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.StateRootPlugin.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.StateRpcPlugin.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Extensions.Tests/coverage.info
 
   PublishPackage:
