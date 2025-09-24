@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <ProjectReference Include="..\..\Neo.Cryptography.MPTTrie\Neo.Cryptography.MPTTrie.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="StateRootPlugin.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(PackageId).Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+{
+  "PluginConfiguration": {
+    "FullState": false,
+    "Network": 860833102,
+    "MaxFindResultItems": 100,
+    "UnhandledExceptionPolicy": "StopPlugin"
+  },
+  "Dependency": [
+    "RpcServer",
+    "StateRootPlugin"
+  ]
+}

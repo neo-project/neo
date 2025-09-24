@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <ProjectReference Include="..\..\Neo.Cryptography.MPTTrie\Neo.Cryptography.MPTTrie.csproj" />
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj" />
+    <ProjectReference Include="..\StateRootPlugin\StateRootPlugin.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="StateRpcPlugin.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(PackageId).Tests" />
+  </ItemGroup>
+
+</Project>
