@@ -60,7 +60,8 @@ namespace Neo.SmartContract.Manifest
                 PubKey = ECPoint.Parse(json["pubkey"].GetString(), ECCurve.Secp256r1),
                 Signature = Convert.FromBase64String(json["signature"].GetString()),
             };
-            if (group.Signature.Length != 64) throw new FormatException();
+            if (group.Signature.Length != 64)
+                throw new FormatException($"Signature length({group.Signature.Length}) is not 64");
             return group;
         }
 
