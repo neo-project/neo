@@ -21,11 +21,12 @@ namespace Neo.CLI
     {
         public int OnStartWithCommandLine(string[] args)
         {
-            RootCommand rootCommand = new(Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyTitleAttribute>()!.Title)
+            var rootCommand = new RootCommand(Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyTitleAttribute>()!.Title)
             {
                 new Option<string>(["-c", "--config","/config"], "Specifies the config file."),
                 new Option<string>(["-w", "--wallet","/wallet"], "The path of the neo3 wallet [*.json]."),
                 new Option<string>(["-p", "--password" ,"/password"], "Password to decrypt the wallet, either from the command line or config file."),
+                new Option<bool>(["--background","/background"], "Run the service in background."),
                 new Option<string>(["--db-engine","/db-engine"], "Specify the db engine."),
                 new Option<string>(["--db-path","/db-path"], "Specify the db path."),
                 new Option<string>(["--noverify","/noverify"], "Indicates whether the blocks need to be verified when importing."),
@@ -39,6 +40,7 @@ namespace Neo.CLI
 
         private void Handle(RootCommand command, CommandLineOptions options, InvocationContext context)
         {
+            IsBackground = options.Background;
             Start(options);
         }
 
@@ -72,7 +74,9 @@ namespace Neo.CLI
 
         private static void CustomApplicationSettings(CommandLineOptions options, Settings settings)
         {
-            var tempSetting = string.IsNullOrEmpty(options.Config) ? settings : new Settings(new ConfigurationBuilder().AddJsonFile(options.Config, optional: true).Build().GetSection("ApplicationConfiguration"));
+            var tempSetting = string.IsNullOrEmpty(options.Config)
+                ? settings
+                : new Settings(new ConfigurationBuilder().AddJsonFile(options.Config, optional: true).Build().GetSection("ApplicationConfiguration"));
             var customSetting = new Settings
             {
                 Logger = tempSetting.Logger,
