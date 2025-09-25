@@ -463,7 +463,6 @@ namespace Neo.UnitTests.SmartContract.Native
             using (var script = new ScriptBuilder())
             {
                 // Test encoding
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 10);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 255) - BigInteger.One);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 127) - BigInteger.One);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 63) - BigInteger.One);

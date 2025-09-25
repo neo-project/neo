@@ -283,11 +283,11 @@ namespace Neo.SmartContract.Native
             if (maxValue.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
 
-            if (maxValue == BigInteger.Zero)
+            if (maxValue <= BigInteger.One)
                 return BigInteger.Zero;
 
             var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxMaxValue = (BigInteger.One << maxValueBits - 1) - BigInteger.One;
+            var maxMaxValue = BigInteger.One << maxValueBits;
 
             var randomProduct = maxValue * (engine.GetRandom() % maxMaxValue);
             var lowPart = randomProduct % maxMaxValue;
@@ -303,7 +303,7 @@ namespace Neo.SmartContract.Native
                 }
             }
 
-            return randomProduct >> maxValueBits - 1;
+            return randomProduct >> maxValueBits;
         }
     }
 }
