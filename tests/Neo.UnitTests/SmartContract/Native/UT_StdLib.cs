@@ -540,6 +540,27 @@ namespace Neo.UnitTests.SmartContract.Native
                     Assert.IsTrue(actualValue >= BigInteger.Zero);
                 }
             }
+
+        public void TestMemorySearch()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var expectedBytes = new byte[] { 0x00, 0x01, 0x02, 0x03 };
+            var expectedValue = new byte[] { 0x03 };
+
+            using var sb = new ScriptBuilder()
+                .EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", expectedBytes, expectedValue, 0, false)
+                .EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", expectedBytes, expectedValue, expectedBytes.Length - 1, false)
+                .EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", expectedBytes, expectedValue, expectedBytes.Length, true);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+            engine.LoadScript(sb.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(3, engine.ResultStack);
+
+            Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
+            Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
+            Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
         }
     }
 }
