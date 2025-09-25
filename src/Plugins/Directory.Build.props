@@ -9,31 +9,24 @@
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Neo/Neo.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="../../Neo.ConsoleService/Neo.ConsoleService.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="../../Neo.Cryptography.BLS12_381/Neo.Cryptography.BLS12_381.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="../../Neo.Extensions/Neo.Extensions.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="../../Neo.IO/Neo.IO.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="../../Neo.Json/Neo.Json.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="../../Neo.VM/Neo.VM.csproj">
-      <Private>false</Private>
-    </ProjectReference>
+    <PackageReference Include="Akka" Version="1.5.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.*" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Neo/Neo.csproj" ExcludeAssets="runtime" Private="false" />
+    <ProjectReference Include="../../Neo.ConsoleService/Neo.ConsoleService.csproj" ExcludeAssets="runtime" Private="false" />
+    <ProjectReference Include="../../Neo.Cryptography.BLS12_381/Neo.Cryptography.BLS12_381.csproj" ExcludeAssets="runtime" Private="false" />
+    <ProjectReference Include="../../Neo.Extensions/Neo.Extensions.csproj" ExcludeAssets="runtime" Private="false" />
+    <ProjectReference Include="../../Neo.IO/Neo.IO.csproj" ExcludeAssets="runtime" Private="false" />
+    <ProjectReference Include="../../Neo.Json/Neo.Json.csproj" ExcludeAssets="runtime" Private="false" />
+    <ProjectReference Include="../../Neo.VM/Neo.VM.csproj" ExcludeAssets="runtime" Private="false" />
   </ItemGroup>
 
   <ItemGroup>

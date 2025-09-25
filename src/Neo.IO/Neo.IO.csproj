@@ -7,15 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Neo" />
     <InternalsVisibleTo Include="Neo.UnitTests" />
     <InternalsVisibleTo Include="Neo.Extensions" />
     <InternalsVisibleTo Include="Neo.Extensions.Tests" />
     <InternalsVisibleTo Include="Neo.Benchmarks" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
   </ItemGroup>
 
 </Project>

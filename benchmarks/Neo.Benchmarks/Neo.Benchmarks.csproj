@@ -8,10 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IO.Hashing" Version="9.0.7" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.*" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
     <ProjectReference Include="..\..\src\Plugins\LevelDBStore\LevelDBStore.csproj" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
   </ItemGroup>
 
   <ItemGroup>

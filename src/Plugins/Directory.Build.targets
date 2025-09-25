@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <NeoCliBinDir>../../../bin/Neo.CLI</NeoCliBinDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PluginFiles Include="$(OutDir)/**/*.*" />
+    <PluginDstFiles Include="$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)/**/*.*" />
+  </ItemGroup>
+
+  <Target Name="CleanPlugins" AfterTargets="AfterClean">
+    <!-- Delete the plugin directory-->
+    <Delete Files="@(PluginDstFiles)" ContinueOnError="true" />
+    <!-- Print Message To Output Window -->
+    <Message Importance="high" Text="$(MSBuildProjectName) -> Deleted '$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)'"/>
+  </Target>
+
+  <Target Name="CopyPluginDlls" AfterTargets="AfterBuild;AfterRebuild">
+    <!-- Make Plugins directory for Neo.CLI -->
+    <MakeDir Condition=" Exists('$(NeoCliBinDir)/$(TargetFramework)/Plugins') == 'false' " Directories="$(NeoCliBinDir)/$(TargetFramework)/Plugins" />
+    <!-- Make project directory for Plugin directory -->
+    <MakeDir Condition=" Exists('$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)') == 'false' " Directories="$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)" />
+    <!-- Copy all project build files to dest folder -->
+    <Copy SourceFiles="@(PluginFiles)" DestinationFolder="$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)" OverwriteReadOnlyFiles="false" ContinueOnError="true" />
+    <!-- Print Message To Output Window -->
+    <Message Importance="high" Text="$(MSBuildProjectName) -> $(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)" />
+  </Target>
+
+</Project>

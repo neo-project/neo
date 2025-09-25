@@ -9,10 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\..\src\Neo.Json\Neo.Json.csproj" />
     <ProjectReference Include="..\..\src\Neo.VM\Neo.VM.csproj" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
   </ItemGroup>
 
 </Project>

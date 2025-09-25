@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Neo.Cryptography.MPTTrie\Neo.Cryptography.MPTTrie.csproj" />
-    <ProjectReference Include="..\RpcServer\RpcServer.csproj" />
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj" Private="false" />
   </ItemGroup>
 
   <ItemGroup>
