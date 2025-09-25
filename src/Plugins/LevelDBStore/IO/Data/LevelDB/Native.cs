@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -264,6 +265,27 @@ namespace Neo.IO.Storage.LevelDB
         internal static extern void leveldb_comparator_destroy(nint /* leveldb_comparator_t* */ cmp);
 
         #endregion
+
+        static Native()
+        {
+            NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, ImportResolver);
+        }
+
+        private static nint ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            var libHandle = nint.Zero;
+
+            if (libraryName == "libleveldb")
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    libHandle = NativeLibrary.Load(@"Plugins\LevelDBStore\libleveldb.dll");
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    libHandle = NativeLibrary.Load(@"Plugins\LevelDBStore\libleveldb.so");
+                else
+                    libHandle = NativeLibrary.Load(@"Plugins\LevelDBStore\libleveldb.dylib");
+            }
+            return libHandle;
+        }
     }
 
     internal static class NativeHelper
