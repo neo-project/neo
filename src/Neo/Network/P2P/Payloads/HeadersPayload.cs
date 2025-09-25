@@ -49,7 +49,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
             Headers = reader.ReadSerializableArray<Header>(MaxHeadersCount);
-            if (Headers.Length == 0) throw new FormatException();
+            if (Headers.Length == 0) throw new FormatException("`Headers` in HeadersPayload is empty");
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

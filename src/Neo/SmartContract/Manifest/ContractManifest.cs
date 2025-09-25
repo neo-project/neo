@@ -123,12 +123,12 @@ namespace Neo.SmartContract.Manifest
             };
 
             if (string.IsNullOrEmpty(manifest.Name))
-                throw new FormatException();
+                throw new FormatException("Name in ContractManifest is empty");
             _ = manifest.Groups.ToDictionary(p => p.PubKey);
             if (json["features"] is not JObject features || features.Count != 0)
-                throw new FormatException();
+                throw new FormatException("Features field must be empty");
             if (manifest.SupportedStandards.Any(string.IsNullOrEmpty))
-                throw new FormatException();
+                throw new FormatException("SupportedStandards in ContractManifest has empty string");
             _ = manifest.SupportedStandards.ToDictionary(p => p);
             _ = manifest.Permissions.ToDictionary(p => p.Contract);
             _ = manifest.Trusts.ToDictionary(p => p);

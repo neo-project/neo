@@ -79,7 +79,7 @@ namespace Neo.Network.P2P.Payloads
             // taken into account but still preserved to be able to share through the network.
             var capabilities = Capabilities.Where(c => c is not UnknownCapability);
             if (capabilities.Select(p => p.Type).Distinct().Count() != capabilities.Count())
-                throw new FormatException();
+                throw new FormatException("Duplicating capabilities are included");
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

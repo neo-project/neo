@@ -197,7 +197,8 @@ namespace Neo.Network.P2P.Payloads
             int startPosition = reader.Position;
             DeserializeUnsigned(ref reader);
             Witnesses = reader.ReadSerializableArray<Witness>(Signers.Length);
-            if (Witnesses.Length != Signers.Length) throw new FormatException();
+            if (Witnesses.Length != Signers.Length)
+                throw new FormatException($"Witnesses.Length({Witnesses.Length}) != Signers.Length({Signers.Length})");
             _size = reader.Position - startPosition;
         }
 
@@ -210,7 +211,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 TransactionAttribute attribute = TransactionAttribute.DeserializeFrom(ref reader);
                 if (!attribute.AllowMultiple && !hashset.Add(attribute.Type))
-                    throw new FormatException();
+                    throw new FormatException($"`{attribute.Type}` in Transaction is duplicate");
                 attributes[i] = attribute;
             }
             return attributes;
@@ -219,13 +220,13 @@ namespace Neo.Network.P2P.Payloads
         private static Signer[] DeserializeSigners(ref MemoryReader reader, int maxCount)
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
-            if (count == 0) throw new FormatException();
+            if (count == 0) throw new FormatException("Signers in Transaction is empty");
             Signer[] signers = new Signer[count];
             HashSet<UInt160> hashset = new();
             for (int i = 0; i < count; i++)
             {
                 Signer signer = reader.ReadSerializable<Signer>();
-                if (!hashset.Add(signer.Account)) throw new FormatException();
+                if (!hashset.Add(signer.Account)) throw new FormatException($"`{signer.Account}` in Transaction is duplicate");
                 signers[i] = signer;
             }
             return signers;
@@ -250,7 +251,7 @@ namespace Neo.Network.P2P.Payloads
             Signers = DeserializeSigners(ref reader, MaxTransactionAttributes);
             Attributes = DeserializeAttributes(ref reader, MaxTransactionAttributes - Signers.Length);
             Script = reader.ReadVarMemory(ushort.MaxValue);
-            if (Script.Length == 0) throw new FormatException();
+            if (Script.Length == 0) throw new FormatException("Script in Transaction is empty");
         }
 
         public bool Equals(Transaction other)

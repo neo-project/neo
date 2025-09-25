@@ -137,7 +137,7 @@ namespace Neo.SmartContract.Manifest
                 return Create(ECPoint.Parse(str, ECCurve.Secp256r1));
             if (str == "*")
                 return CreateWildcard();
-            throw new FormatException();
+            throw new FormatException($"Invalid ContractPermissionDescriptor({str})");
         }
 
         /// <summary>
