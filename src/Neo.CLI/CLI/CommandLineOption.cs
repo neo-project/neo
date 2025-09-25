@@ -21,6 +21,7 @@ namespace Neo.CLI
         public string? DBPath { get; init; }
         public LogLevel Verbose { get; init; } = LogLevel.Info;
         public bool? NoVerify { get; init; }
+        public bool Background { get; init; }
 
         /// <summary>
         /// Check if CommandLineOptions was configured
