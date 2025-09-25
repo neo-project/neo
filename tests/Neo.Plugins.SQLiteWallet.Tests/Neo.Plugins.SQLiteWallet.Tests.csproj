@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.*" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.*" />
   </ItemGroup>
 
   <ItemGroup>

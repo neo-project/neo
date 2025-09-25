@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -273,16 +274,33 @@ namespace Neo.IO.Storage.LevelDB
 
         private static nint ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
         {
+            var AppDir = Path.Combine(AppContext.BaseDirectory, "runtimes");
+            var searchDir = Path.Combine(AppContext.BaseDirectory, "Plugins", Path.GetFileNameWithoutExtension(assembly.ManifestModule.ScopeName));
             var libHandle = nint.Zero;
 
-            if (libraryName == "libleveldb")
+            if (libraryName == "libleveldb" && Directory.Exists(searchDir))
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    libHandle = NativeLibrary.Load(@"Plugins\LevelDBStore\libleveldb.dll");
+                    libHandle = NativeLibrary.Load(Path.Combine(searchDir, "libleveldb.dll"));
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    libHandle = NativeLibrary.Load(@"Plugins\LevelDBStore\libleveldb.so");
+                    libHandle = NativeLibrary.Load(Path.Combine(searchDir, "libleveldb.so"));
                 else
-                    libHandle = NativeLibrary.Load(@"Plugins\LevelDBStore\libleveldb.dylib");
+                    libHandle = NativeLibrary.Load(Path.Combine(searchDir, "libleveldb.dylib"));
+            }
+            else if (libraryName == "libleveldb" && Directory.Exists(AppDir))
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.OSArchitecture == Architecture.X64)
+                    libHandle = NativeLibrary.Load(Path.Combine(AppDir, "win-x64", "native", "libleveldb.dll"));
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                    libHandle = NativeLibrary.Load(Path.Combine(AppDir, "win-arm64", "native", "libleveldb.dll"));
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.OSArchitecture == Architecture.X64)
+                    libHandle = NativeLibrary.Load(Path.Combine(AppDir, "linux-x64", "native", "libleveldb.so"));
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                    libHandle = NativeLibrary.Load(Path.Combine(AppDir, "linux-arm64", "native", "libleveldb.so"));
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.OSArchitecture == Architecture.X64)
+                    libHandle = NativeLibrary.Load(Path.Combine(AppDir, "osx-x64", "native", "libleveldb.dylib"));
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                    libHandle = NativeLibrary.Load(Path.Combine(AppDir, "osx-arm64", "native", "libleveldb.dylib"));
             }
             return libHandle;
         }

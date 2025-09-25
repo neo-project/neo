@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.*" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Neo.VM\Neo.VM.csproj" />
   </ItemGroup>
 
@@ -13,10 +18,6 @@
     <None Update="Tests\**\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
   </ItemGroup>
 
 </Project>

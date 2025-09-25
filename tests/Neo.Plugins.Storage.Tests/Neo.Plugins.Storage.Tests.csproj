@@ -7,11 +7,20 @@
 
   <ItemGroup>
     <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.*" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Plugins\LevelDBStore\LevelDBStore.csproj" />
     <ProjectReference Include="..\..\src\Plugins\RocksDBStore\RocksDBStore.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <LevelDbFile Include="$(OutputPath)/$(TargetFramework)/runtimes/**/*.*" />
+  </ItemGroup>
+
+  <Target Name="CopyLevelDbFile" AfterTargets="AfterBuild">
+    <Copy SourceFiles="@(LevelDbFile)" DestinationFolder="$(OutDir)/runtimes/%(RecursiveDir)" />
+  </Target>
 
 </Project>
