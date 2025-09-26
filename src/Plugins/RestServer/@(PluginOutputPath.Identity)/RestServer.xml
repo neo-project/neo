@@ -1,0 +1,465 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>RestServer</name>
+    </assembly>
+    <members>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.ContractsController.Get(System.Int32,System.Int32)">
+            <summary>
+            Get all the smart contracts from the blockchain.
+            </summary>
+            <param name="skip" example="1">Page</param>
+            <param name="take" example="50">Page Size</param>
+            <returns>An array of Contract object.</returns>
+            <response code="204">No more pages.</response>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.ContractsController.GetCount">
+            <summary>
+            Gets count of total smart contracts on blockchain.
+            </summary>
+            <returns>Count Object</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.ContractsController.GetContractStorage(Neo.UInt160)">
+            <summary>
+            Get a smart contract's storage.
+            </summary>
+            <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+            <returns>An array of the Key (Base64) Value (Base64) Pairs objects.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.ContractsController.GetByScriptHash(Neo.UInt160)">
+            <summary>
+            Get a smart contract.
+            </summary>
+            <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+            <returns>Contract Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.ContractsController.GetContractAbi(Neo.UInt160)">
+            <summary>
+            Get abi of a smart contract.
+            </summary>
+            <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+            <returns>Contract Abi Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.ContractsController.GetContractManifest(Neo.UInt160)">
+            <summary>
+            Get manifest of a smart contract.
+            </summary>
+            <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+            <returns>Contract Manifest object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.ContractsController.GetContractNef(Neo.UInt160)">
+            <summary>
+            Get nef of a smart contract.
+            </summary>
+            <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+            <returns>Contract Nef object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.ContractsController.InvokeContract(Neo.UInt160,System.String,Neo.Plugins.RestServer.Models.Contract.InvokeParams)">
+            <summary>
+            Invoke a method as ReadOnly Flag on a smart contract.
+            </summary>
+            <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+            <param name="method" example="balanceOf">method name</param>
+            <param name="invokeParameters">JArray of the contract parameters.</param>
+            <returns>Execution Engine object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.ShowGasAccounts(System.Int32,System.Int32)">
+            <summary>
+            Gets all the accounts that hold gas on the blockchain.
+            </summary>
+            <returns>An array of account details object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.ShowNeoAccounts(System.Int32,System.Int32)">
+            <summary>
+            Get all the accounts that hold neo on the blockchain.
+            </summary>
+            <returns>An array of account details object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetBlocks(System.UInt32,System.UInt32)">
+            <summary>
+            Get blocks from the blockchain.
+            </summary>
+            <param name="skip" example="1">Page</param>
+            <param name="take" example="50">Page Size</param>
+            <returns>An array of Block Header Objects</returns>
+            <response code="204">No more pages.</response>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetCurrentBlockHeader">
+            <summary>
+            Gets the current block header of the connected node.
+            </summary>
+            <returns>Full Block Header Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetBlock(System.UInt32)">
+            <summary>
+            Gets a block by an its index.
+            </summary>
+            <param name="blockIndex" example="0">Block Index</param>
+            <returns>Full Block Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetBlockHeader(System.UInt32)">
+            <summary>
+            Gets a block header by block index.
+            </summary>
+            <param name="blockIndex" example="0">Blocks index.</param>
+            <returns>Block Header Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetBlockWitness(System.UInt32)">
+            <summary>
+            Gets the witness of the block
+            </summary>
+            <param name="blockIndex" example="0">Block Index.</param>
+            <returns>Witness Object</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetBlockTransactions(System.UInt32,System.Int32,System.Int32)">
+            <summary>
+            Gets the transactions of the block.
+            </summary>
+            <param name="blockIndex" example="0">Block Index.</param>
+            <param name="skip">Page</param>
+            <param name="take">Page Size</param>
+            <returns>An array of transaction object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetTransaction(Neo.UInt256)">
+            <summary>
+            Gets a transaction
+            </summary>
+            <param name="hash" example="0xad83d993ca2d9783ca86a000b39920c20508c8ccae7b7db11806646a4832bc50">Hash256</param>
+            <returns>Transaction object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetTransactionWitnesses(Neo.UInt256)">
+            <summary>
+            Gets the witness of a transaction.
+            </summary>
+            <param name="hash" example="0xad83d993ca2d9783ca86a000b39920c20508c8ccae7b7db11806646a4832bc50">Hash256</param>
+            <returns>An array of witness object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetTransactionSigners(Neo.UInt256)">
+            <summary>
+            Gets the signers of a transaction.
+            </summary>
+            <param name="hash" example="0xad83d993ca2d9783ca86a000b39920c20508c8ccae7b7db11806646a4832bc50">Hash256</param>
+            <returns>An array of Signer object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetTransactionAttributes(Neo.UInt256)">
+            <summary>
+            Gets the transaction attributes of a transaction.
+            </summary>
+            <param name="hash" example="0xad83d993ca2d9783ca86a000b39920c20508c8ccae7b7db11806646a4832bc50">Hash256</param>
+            <returns>An array of the transaction attributes object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetMemoryPool(System.Int32,System.Int32)">
+            <summary>
+            Gets memory pool.
+            </summary>
+            <param name="skip" example="1">Page</param>
+            <param name="take" example="50">Page Size.</param>
+            <returns>An array of the Transaction object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetMemoryPoolVerified(System.Int32,System.Int32)">
+            <summary>
+            Gets verified memory pool.
+            </summary>
+            <param name="skip" example="1">Page</param>
+            <param name="take" example="50">Page Size.</param>
+            <returns>An array of the Transaction object.</returns>
+            <response code="204">No more pages.</response>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.LedgerController.GetMemoryPoolUnVerified(System.Int32,System.Int32)">
+            <summary>
+            Gets unverified memory pool.
+            </summary>
+            <param name="skip" example="1">Page</param>
+            <param name="take" example="50">Page Size.</param>
+            <returns>An array of the Transaction object.</returns>
+            <response code="204">No more pages.</response>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.NodeController.GetPeers">
+            <summary>
+            Gets the connected remote nodes.
+            </summary>
+            <returns>An array of the Remote Node Objects.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.NodeController.GetPlugins">
+            <summary>
+            Gets all the loaded plugins of the current connected node.
+            </summary>
+            <returns>An array of the Plugin objects.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.NodeController.GetSettings">
+            <summary>
+            Gets the ProtocolSettings of the currently connected node.
+            </summary>
+            <returns>Protocol Settings Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.TokensController.GetNEP17(System.Int32,System.Int32)">
+            <summary>
+            Gets all Nep-17 valid contracts from the blockchain.
+            </summary>
+            <param name="skip" example="1">Page</param>
+            <param name="take" example="50">Page Size</param>
+            <returns>An array of the Nep-17 Token Object.</returns>
+            <response code="204">No more pages.</response>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.TokensController.GetNEP17(Neo.UInt160,Neo.UInt160)">
+            <summary>
+            Gets the balance of the Nep-17 contract by an address.
+            </summary>
+            <param name="tokenAddessOrScripthash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">Nep-17 ScriptHash</param>
+            <param name="lookupAddressOrScripthash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">Neo Address ScriptHash</param>
+            <returns>Token Balance Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.TokensController.GetNEP11(System.Int32,System.Int32)">
+            <summary>
+            Gets all the Nep-11 valid contracts on from the blockchain.
+            </summary>
+            <param name="skip" example="1">Page</param>
+            <param name="take" example="50">Page Size</param>
+            <returns>Nep-11 Token Object.</returns>
+            <response code="204">No more pages.</response>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.TokensController.GetNEP11(Neo.UInt160,Neo.UInt160)">
+            <summary>
+            Gets the balance of the Nep-11 contract by an address.
+            </summary>
+            <param name="sAddressHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">Nep-11 ScriptHash</param>
+            <param name="addressHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">Neo Address ScriptHash</param>
+            <returns>Token Balance Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.TokensController.GetBalances(Neo.UInt160)">
+            <summary>
+            Gets every single NEP17/NEP11 on the blockchain's balance by ScriptHash
+            </summary>
+            <param name="addressOrScripthash"></param>
+            <returns>Token Balance Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.UtilsController.ScriptHashToWalletAddress(Neo.UInt160)">
+            <summary>
+            Converts script to Neo address.
+            </summary>
+            <param name="ScriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+            <returns>Util Address Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.UtilsController.WalletAddressToScriptHash(System.String)">
+            <summary>
+            Converts Neo address to ScriptHash
+            </summary>
+            <param name="address" example="NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs">Neo Address</param>
+            <returns>Util ScriptHash Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="M:Neo.Plugins.RestServer.Controllers.v1.UtilsController.ValidateAddress(System.String)">
+            <summary>
+            Get whether or not a Neo address or ScriptHash is valid.
+            </summary>
+            <param name="AddressOrScriptHash"></param>
+            <returns>Util Address Valid Object.</returns>
+            <response code="200">Successful</response>
+            <response code="400">An error occurred. See Response for details.</response>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Blockchain.AccountDetails.ScriptHash">
+            <summary>
+            Scripthash
+            </summary>
+            <example>0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Blockchain.AccountDetails.Address">
+            <summary>
+            Wallet address.
+            </summary>
+            <example>NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Blockchain.AccountDetails.Balance">
+            <summary>
+            Balance of the account.
+            </summary>
+            <example>10000000</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Blockchain.AccountDetails.Decimals">
+            <summary>
+            Decimals of the token.
+            </summary>
+            <example>8</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.CountModel.Count">
+            <summary>
+            The count of how many objects.
+            </summary>
+            <example>378</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Error.ErrorModel.Code">
+            <summary>
+            Error's HResult Code.
+            </summary>
+            <example>1000</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Error.ErrorModel.Name">
+            <summary>
+            Error's name of the type.
+            </summary>
+            <example>GeneralException</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Error.ErrorModel.Message">
+            <summary>
+            Error's exception message.
+            </summary>
+            <example>An error occurred.</example>
+            <remarks>Could be InnerException message as well, If exists.</remarks>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Ledger.MemoryPoolCountModel.Count">
+            <summary>
+            Total count all transactions.
+            </summary>
+            <example>110</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Ledger.MemoryPoolCountModel.UnVerifiedCount">
+            <summary>
+            Count of unverified transactions
+            </summary>
+            <example>10</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Ledger.MemoryPoolCountModel.VerifiedCount">
+            <summary>
+            Count of verified transactions.
+            </summary>
+            <example>100</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Node.PluginModel.Name">
+            <summary>
+            Name
+            </summary>
+            <example>RestServer</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Node.PluginModel.Version">
+            <summary>
+            Version
+            </summary>
+            <example>3.5.0</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Node.PluginModel.Description">
+            <summary>
+            Description
+            </summary>
+            <example>Enables REST Web Sevices for the node</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Node.ProtocolSettingsModel.Network">
+            <summary>
+            Network
+            </summary>
+            <example>860833102</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Node.ProtocolSettingsModel.AddressVersion">
+            <summary>
+            AddressVersion
+            </summary>
+            <example>53</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Node.RemoteNodeModel.RemoteAddress">
+            <summary>
+            Remote peer's ip address.
+            </summary>
+            <example>10.0.0.100</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Node.RemoteNodeModel.RemotePort">
+            <summary>
+            Remote peer's port number.
+            </summary>
+            <example>20333</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Node.RemoteNodeModel.ListenTcpPort">
+            <summary>
+            Remote peer's listening tcp port.
+            </summary>
+            <example>20333</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Node.RemoteNodeModel.LastBlockIndex">
+            <summary>
+            Remote peer's last synced block height.
+            </summary>
+            <example>2584158</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Utils.UtilsAddressIsValidModel.IsValid">
+            <summary>
+            Indicates if address can be converted to ScriptHash or Neo Address.
+            </summary>
+            <example>true</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Utils.UtilsAddressModel.Address">
+            <summary>
+            Wallet address that was exported.
+            </summary>
+            <example>NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs</example>
+        </member>
+        <member name="P:Neo.Plugins.RestServer.Models.Utils.UtilsScriptHashModel.ScriptHash">
+            <summary>
+            Scripthash of the wallet account exported.
+            </summary>
+            <example>0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761</example>
+        </member>
+    </members>
+</doc>

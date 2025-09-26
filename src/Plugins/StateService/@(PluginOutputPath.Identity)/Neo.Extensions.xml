@@ -1,0 +1,399 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Neo.Extensions</name>
+    </assembly>
+    <members>
+        <member name="M:Neo.Extensions.BigIntegerExtensions.GetLowestSetBit(System.Numerics.BigInteger)">
+            <summary>
+            Finds the lowest set bit in the specified value. If value is zero, returns -1.
+            </summary>
+            <param name="value">The value to find the lowest set bit in. The value.GetBitLength cannot greater than 2Gib.</param>
+            <returns>The lowest set bit in the specified value.</returns>
+        </member>
+        <member name="M:Neo.Extensions.BigIntegerExtensions.Mod(System.Numerics.BigInteger,System.Numerics.BigInteger)">
+            <summary>
+            Computes the remainder of the division of the specified value by the modulus.
+            It's different from the `%` operator(see `BigInteger.Remainder`) if the dividend is negative.
+            It always returns a non-negative value even if the dividend is negative.
+            </summary>
+            <param name="x">The value to compute the remainder of(i.e. dividend).</param>
+            <param name="y">The modulus(i.e. divisor).</param>
+            <returns>The remainder of the division of the specified value by the modulus.</returns>
+            <exception cref="T:System.DivideByZeroException">Thrown when the divisor is zero.</exception>
+        </member>
+        <member name="M:Neo.Extensions.BigIntegerExtensions.ModInverse(System.Numerics.BigInteger,System.Numerics.BigInteger)">
+            <summary>
+            Computes the modular inverse of the specified value.
+            </summary>
+            <param name="value">The value to find the modular inverse of.</param>
+            <param name="modulus">The modulus.</param>
+            <returns>The modular inverse of the specified value.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the value or modulus is out of range.</exception>
+            <exception cref="T:System.ArithmeticException">
+            Thrown when no modular inverse exists for the given inputs. i.e. when the value and modulus are not coprime.
+            </exception>
+        </member>
+        <member name="M:Neo.Extensions.BigIntegerExtensions.TestBit(System.Numerics.BigInteger,System.Int32)">
+            <summary>
+            Tests whether the specified bit is set in the specified value.
+            If the value is negative and index exceeds the bit length, it returns true.
+            If the value is positive and index exceeds the bit length, it returns false.
+            If index is negative, it returns false always.
+            NOTE: the `value` is represented in sign-magnitude format,
+            so it's different from the bit value in two's complement format(int, long).
+            </summary>
+            <param name="value">The value to test.</param>
+            <param name="index">The index of the bit to test.</param>
+            <returns>True if the specified bit is set in the specified value, otherwise false.</returns>
+        </member>
+        <member name="M:Neo.Extensions.BigIntegerExtensions.Sum(System.Collections.Generic.IEnumerable{System.Numerics.BigInteger})">
+            <summary>
+            Finds the sum of the specified integers.
+            </summary>
+            <param name="source">The specified integers.</param>
+            <returns>The sum of the integers.</returns>
+        </member>
+        <member name="M:Neo.Extensions.BigIntegerExtensions.ToByteArrayStandard(System.Numerics.BigInteger)">
+            <summary>
+            Converts a <see cref="T:System.Numerics.BigInteger"/> to byte array in little-endian and eliminates all the leading zeros.
+            If the value is zero, it returns an empty byte array.
+            </summary>
+            <param name="value">The <see cref="T:System.Numerics.BigInteger"/> to convert.</param>
+            <returns>The converted byte array.</returns>
+        </member>
+        <member name="M:Neo.Extensions.BigIntegerExtensions.Sqrt(System.Numerics.BigInteger)">
+            <summary>
+            Computes the square root of the specified value.
+            </summary>
+            <param name="value">The value to compute the square root of.</param>
+            <returns>The square root of the specified value.</returns>
+            <exception cref="T:System.InvalidOperationException">Thrown when the value is negative.</exception>
+        </member>
+        <member name="M:Neo.Extensions.BigIntegerExtensions.GetBitLength(System.Numerics.BigInteger)">
+            <summary>
+            Gets the number of bits required for shortest two's complement representation of the current instance without the sign bit.
+            Note: This method is imprecise and might not work as expected with integers larger than 256 bits if less than .NET5.
+            </summary>
+            <returns>The minimum non-negative number of bits in two's complement notation without the sign bit.</returns>
+            <remarks>
+            This method returns 0 if the value of current object is equal to
+            <see cref="P:System.Numerics.BigInteger.Zero"/> or <see cref="P:System.Numerics.BigInteger.MinusOne"/>.
+            For positive integers the return value is equal to the ordinary binary representation string length.
+            </remarks>
+        </member>
+        <member name="M:Neo.Extensions.BigIntegerExtensions.BitLength(System.Numerics.BigInteger)">
+            <summary>
+            GetBitLength for earlier than .NET5.0
+            </summary>
+        </member>
+        <member name="T:Neo.Extensions.ByteArrayComparer">
+            <summary>
+            Defines methods to support the comparison of two <see cref="T:System.Byte"/>[].
+            </summary>
+        </member>
+        <member name="M:Neo.Extensions.ByteArrayComparer.Compare(System.Byte[],System.Byte[])">
+            <inheritdoc />
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.XxHash3_32(System.ReadOnlySpan{System.Byte},System.Int64)">
+            <summary>
+            Computes the 32-bit hash value for the specified byte array using the xxhash3 algorithm.
+            </summary>
+            <param name="value">The input to compute the hash code for.</param>
+            <param name="seed">The seed used by the xxhash3 algorithm.</param>
+            <returns>The computed hash code.</returns>
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.XxHash3_32(System.Byte[],System.Int64)">
+            <summary>
+            Computes the 32-bit hash value for the specified byte array using the xxhash3 algorithm.
+            </summary>
+            <param name="value">The input to compute the hash code for.</param>
+            <param name="seed">The seed used by the xxhash3 algorithm.</param>
+            <returns>The computed hash code.</returns>
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.ToHexString(System.Byte[])">
+            <summary>
+            Converts a byte array to hex <see cref="T:System.String"/>.
+            </summary>
+            <param name="value">The byte array to convert.</param>
+            <returns>The converted hex <see cref="T:System.String"/>.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.ToHexString(System.ReadOnlyMemory{System.Byte})">
+            <summary>
+            Converts a byte array to hex <see cref="T:System.String"/>.
+            </summary>
+            <param name="value">The byte array to convert.</param>
+            <returns>The converted hex <see cref="T:System.String"/>.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.ToHexString(System.Memory{System.Byte})">
+            <summary>
+            Converts a byte array to hex <see cref="T:System.String"/>.
+            </summary>
+            <param name="value">The byte array to convert.</param>
+            <returns>The converted hex <see cref="T:System.String"/>.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.ToHexString(System.Byte[],System.Boolean)">
+            <summary>
+            Converts a byte array to hex <see cref="T:System.String"/>.
+            </summary>
+            <param name="value">The byte array to convert.</param>
+            <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
+            <returns>The converted hex <see cref="T:System.String"/>.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.ToHexString(System.ReadOnlySpan{System.Byte},System.Boolean)">
+            <summary>
+            Converts a byte span to hex <see cref="T:System.String"/>.
+            </summary>
+            <param name="value">The byte array to convert.</param>
+            <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
+            <returns>The converted hex <see cref="T:System.String"/>.</returns>
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.ToHexString(System.ReadOnlySpan{System.Byte})">
+            <summary>
+            Converts a byte array to hex <see cref="T:System.String"/>.
+            </summary>
+            <param name="value">The byte array to convert.</param>
+            <returns>The converted hex <see cref="T:System.String"/>.</returns>
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.AsReadOnlySpan(System.Byte[])">
+            <summary>
+            Converts a byte array to a read-only span.
+            </summary>
+            <param name="value">The byte array to convert.</param>
+            <returns>The converted read-only span.</returns>
+        </member>
+        <member name="M:Neo.Extensions.ByteExtensions.NotZero(System.ReadOnlySpan{System.Byte})">
+            <summary>
+            All bytes are zero or not in a byte array
+            </summary>
+            <param name="x">The byte array</param>
+            <returns>false if all bytes are zero, true otherwise</returns>
+        </member>
+        <member name="M:Neo.Extensions.CollectionExtensions.RemoveWhere``2(System.Collections.Generic.IDictionary{``0,``1},System.Func{System.Collections.Generic.KeyValuePair{``0,``1},System.Boolean},System.Action{System.Collections.Generic.KeyValuePair{``0,``1}})">
+            <summary>
+            Removes the key-value pairs from the dictionary that match the specified predicate.
+            </summary>
+            <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
+            <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
+            <param name="dict">The dictionary to remove key-value pairs from.</param>
+            <param name="predicate">The predicate to match key-value pairs.</param>
+            <param name="afterRemoved">An action to perform after each key-value pair is removed.</param>
+        </member>
+        <member name="M:Neo.Extensions.CollectionExtensions.Chunk``1(System.Collections.Generic.IReadOnlyCollection{``0},System.Int32)">
+            <summary>
+            Chunks the source collection into chunks of the specified size.
+            For example, if the source collection is [1, 2, 3, 4, 5] and the chunk size is 3, the result will be [[1, 2, 3], [4, 5]].
+            </summary>
+            <typeparam name="T">The type of the elements in the collection.</typeparam>
+            <param name="source">The collection to chunk.</param>
+            <param name="chunkSize">The size of each chunk.</param>
+            <returns>An enumerable of arrays, each containing a chunk of the source collection.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when the source collection is null.</exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the chunk size is less than or equal to 0.</exception>
+        </member>
+        <member name="M:Neo.Extensions.DateTimeExtensions.ToTimestamp(System.DateTime)">
+            <summary>
+            Converts a <see cref="T:System.DateTime"/> to timestamp.
+            </summary>
+            <param name="time">The <see cref="T:System.DateTime"/> to convert.</param>
+            <returns>The converted timestamp.</returns>
+        </member>
+        <member name="M:Neo.Extensions.DateTimeExtensions.ToTimestampMS(System.DateTime)">
+            <summary>
+            Converts a <see cref="T:System.DateTime"/> to timestamp in milliseconds.
+            </summary>
+            <param name="time">The <see cref="T:System.DateTime"/> to convert.</param>
+            <returns>The converted timestamp.</returns>
+        </member>
+        <member name="M:Neo.Extensions.IntegerExtensions.GetVarSize(System.Int32)">
+            <summary>
+            Gets the size of variable-length of the data.
+            </summary>
+            <param name="value">The length of the data.</param>
+            <returns>The size of variable-length of the data.</returns>
+        </member>
+        <member name="M:Neo.Extensions.IntegerExtensions.GetVarSize(System.UInt16)">
+            <summary>
+            Gets the size of variable-length of the data.
+            </summary>
+            <param name="value">The length of the data.</param>
+            <returns>The size of variable-length of the data.</returns>
+        </member>
+        <member name="M:Neo.Extensions.IntegerExtensions.GetVarSize(System.UInt32)">
+            <summary>
+            Gets the size of variable-length of the data.
+            </summary>
+            <param name="value">The length of the data.</param>
+            <returns>The size of variable-length of the data.</returns>
+        </member>
+        <member name="M:Neo.Extensions.IntegerExtensions.GetVarSize(System.Int64)">
+            <summary>
+            Gets the size of variable-length of the data.
+            </summary>
+            <param name="value">The length of the data.</param>
+            <returns>The size of variable-length of the data.</returns>
+        </member>
+        <member name="M:Neo.Extensions.IpAddressExtensions.UnMap(System.Net.IPAddress)">
+            <summary>
+            Checks if address is IPv4 Mapped to IPv6 format, if so, Map to IPv4.
+            Otherwise, return current address.
+            </summary>
+        </member>
+        <member name="M:Neo.Extensions.IpAddressExtensions.UnMap(System.Net.IPEndPoint)">
+            <summary>
+            Checks if IPEndPoint is IPv4 Mapped to IPv6 format, if so, unmap to IPv4.
+            Otherwise, return current endpoint.
+            </summary>
+        </member>
+        <member name="P:Neo.Extensions.StringExtensions.StrictUTF8">
+            <summary>
+            A strict UTF8 encoding
+            </summary>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.TryToStrictUtf8String(System.ReadOnlySpan{System.Byte},System.String@)">
+            <summary>
+            Converts a byte span to a strict UTF8 string.
+            </summary>
+            <param name="bytes">The byte span to convert.</param>
+            <param name="value">The converted string.</param>
+            <returns>True if the conversion is successful, otherwise false.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.ToStrictUtf8String(System.ReadOnlySpan{System.Byte})">
+            <summary>
+            Converts a byte span to a strict UTF8 string.
+            </summary>
+            <param name="value">The byte span to convert.</param>
+            <returns>The converted string.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.ToStrictUtf8String(System.Byte[])">
+            <summary>
+            Converts a byte array to a strict UTF8 string.
+            </summary>
+            <param name="value">The byte array to convert.</param>
+            <returns>The converted string.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.ToStrictUtf8String(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Converts a byte array to a strict UTF8 string.
+            </summary>
+            <param name="value">The byte array to convert.</param>
+            <param name="start">The start index of the byte array.</param>
+            <param name="count">The count of the byte array.</param>
+            <returns>The converted string.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.ToStrictUtf8Bytes(System.String)">
+            <summary>
+            Converts a string to a strict UTF8 byte array.
+            </summary>
+            <param name="value">The string to convert.</param>
+            <returns>The converted byte array.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.GetStrictUtf8ByteCount(System.String)">
+            <summary>
+            Gets the size of the specified <see cref="T:System.String"/> encoded in strict UTF8.
+            </summary>
+            <param name="value">The specified <see cref="T:System.String"/>.</param>
+            <returns>The size of the <see cref="T:System.String"/>.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.IsHex(System.String)">
+            <summary>
+            Determines if the specified <see cref="T:System.String"/> is a valid hex string.
+            </summary>
+            <param name="value">The specified <see cref="T:System.String"/>.</param>
+            <returns>
+            True if the <see cref="T:System.String"/> is a valid hex string(or empty);
+            otherwise false(not valid hex string or null).
+            </returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.HexToBytes(System.String)">
+            <summary>
+            Converts a hex <see cref="T:System.String"/> to byte array.
+            </summary>
+            <param name="value">The hex <see cref="T:System.String"/> to convert.</param>
+            <returns>The converted byte array.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.HexToBytesReversed(System.ReadOnlySpan{System.Char})">
+            <summary>
+            Converts a hex <see cref="T:System.String"/> to byte array then reverses the order of the bytes.
+            </summary>
+            <param name="value">The hex <see cref="T:System.String"/> to convert.</param>
+            <returns>The converted reversed byte array.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.HexToBytes(System.ReadOnlySpan{System.Char})">
+            <summary>
+            Converts a hex <see cref="T:System.String"/> to byte array.
+            </summary>
+            <param name="value">The hex <see cref="T:System.String"/> to convert.</param>
+            <returns>The converted byte array.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.GetVarSize(System.String)">
+            <summary>
+            Gets the size of the specified <see cref="T:System.String"/> encoded in variable-length encoding.
+            </summary>
+            <param name="value">The specified <see cref="T:System.String"/>.</param>
+            <returns>The size of the <see cref="T:System.String"/>.</returns>
+        </member>
+        <member name="M:Neo.Extensions.StringExtensions.TrimStartIgnoreCase(System.ReadOnlySpan{System.Char},System.ReadOnlySpan{System.Char})">
+            <summary>
+            Trims the specified prefix from the start of the <see cref="T:System.String"/>, ignoring case.
+            </summary>
+            <param name="value">The <see cref="T:System.String"/> to trim.</param>
+            <param name="prefix">The prefix to trim.</param>
+            <returns>
+            The trimmed ReadOnlySpan without prefix. If no prefix is found, the input is returned unmodified.
+            </returns>
+        </member>
+        <member name="T:Neo.LogLevel">
+            <summary>
+            Represents the level of logs.
+            </summary>
+        </member>
+        <member name="F:Neo.LogLevel.Debug">
+            <summary>
+            The debug log level.
+            </summary>
+        </member>
+        <member name="F:Neo.LogLevel.Info">
+            <summary>
+            The information log level.
+            </summary>
+        </member>
+        <member name="F:Neo.LogLevel.Warning">
+            <summary>
+            The warning log level.
+            </summary>
+        </member>
+        <member name="F:Neo.LogLevel.Error">
+            <summary>
+            The error log level.
+            </summary>
+        </member>
+        <member name="F:Neo.LogLevel.Fatal">
+            <summary>
+            The fatal log level.
+            </summary>
+        </member>
+        <member name="T:Neo.Utility">
+            <summary>
+            A utility class that provides common functions.
+            </summary>
+        </member>
+        <member name="P:Neo.Utility.StrictUTF8">
+            <summary>
+            A strict UTF8 encoding used in NEO system.
+            </summary>
+        </member>
+        <member name="M:Neo.Utility.Log(System.String,Neo.LogLevel,System.Object)">
+            <summary>
+            Writes a log.
+            </summary>
+            <param name="source">The source of the log. Used to identify the producer of the log.</param>
+            <param name="level">The level of the log.</param>
+            <param name="message">The message of the log.</param>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>StorageDumper</name>
+    </assembly>
+    <members>
+        <member name="F:Neo.Plugins.StorageDumper.StorageDumper._currentBlock">
+            <summary>
+            _currentBlock stores the last cached item
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.StorageDumper.StorageDumper.OnDumpStorage(Neo.UInt160)">
+            <summary>
+            Process "dump contract-storage" command
+            </summary>
+        </member>
+        <member name="P:Neo.Plugins.StorageDumper.StorageSettings.BlockCacheSize">
+            <summary>
+            Amount of storages states (heights) to be dump in a given json file
+            </summary>
+        </member>
+        <member name="P:Neo.Plugins.StorageDumper.StorageSettings.HeightToBegin">
+            <summary>
+            Height to begin storage dump
+            </summary>
+        </member>
+        <member name="P:Neo.Plugins.StorageDumper.StorageSettings.StoragePerFolder">
+            <summary>
+            Default number of items per folder
+            </summary>
+        </member>
+    </members>
+</doc>

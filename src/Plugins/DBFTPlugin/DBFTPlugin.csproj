@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <PackageId>Neo.Consensus.DBFT</PackageId>
     <RootNamespace>Neo.Consensus</RootNamespace>
   </PropertyGroup>
@@ -11,9 +10,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="DBFTPlugin.json">
+    <Content Include="DBFTPlugin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>

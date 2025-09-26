@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <PackageId>Neo.Plugins.RestServer</PackageId>
     <RootNamespace>Neo.Plugins.RestServer</RootNamespace>
     <Nullable>enable</Nullable>
@@ -17,9 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="RestServer.json">
+    <Content Include="RestServer.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>

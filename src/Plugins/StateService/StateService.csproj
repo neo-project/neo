@@ -1,18 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-  </PropertyGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\..\Neo.Cryptography.MPTTrie\Neo.Cryptography.MPTTrie.csproj" />
-    <ProjectReference Include="..\RpcServer\RpcServer.csproj" Private="false" />
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj"  ExcludeAssets="runtime" Private="false" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="StateService.json">
+    <Content Include="StateService.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

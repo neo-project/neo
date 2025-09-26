@@ -1,22 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="NeoFS.API" Version="3.5.*" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.*" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RpcServer\RpcServer.csproj" Private="false" />
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj" ExcludeAssets="runtime" Private="false"/>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="OracleService.json">
+    <Content Include="OracleService.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

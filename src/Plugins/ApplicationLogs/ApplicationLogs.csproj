@@ -1,18 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\RpcServer\RpcServer.csproj" Private="false" />
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj" ExcludeAssets="runtime" Private="false" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="ApplicationLogs.json">
+    <Content Include="ApplicationLogs.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

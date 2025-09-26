@@ -1,18 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RpcServer\RpcServer.csproj" Private="false" />
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj" ExcludeAssets="runtime" Private="false" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="TokensTracker.json">
+    <Content Include="TokensTracker.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>

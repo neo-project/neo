@@ -1,0 +1,289 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>LevelDBStore</name>
+    </assembly>
+    <members>
+        <member name="T:Neo.IO.Storage.LevelDB.DB">
+            <summary>
+            A DB is a persistent ordered map from keys to values.
+            A DB is safe for concurrent access from multiple threads without any external synchronization.
+            <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.DB.Delete(Neo.IO.Storage.LevelDB.WriteOptions,System.Byte[])">
+            <summary>
+            Remove the database entry (if any) for "key".
+            It is not an error if "key" did not exist in the database.
+            Note: consider setting new WriteOptions{ Sync = true }.
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.DB.Get(Neo.IO.Storage.LevelDB.ReadOptions,System.Byte[])">
+            <summary>
+            If the database contains an entry for "key" return the value,
+            otherwise return null.
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.DB.Put(Neo.IO.Storage.LevelDB.WriteOptions,System.Byte[],System.Byte[])">
+            <summary>
+            Set the database entry for "key" to "value".
+            Note: consider setting new WriteOptions{ Sync = true }.
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.DB.Repair(System.String,Neo.IO.Storage.LevelDB.Options)">
+            <summary>
+            If a DB cannot be opened, you may attempt to call this method to
+            resurrect as much of the contents of the database as possible.
+            Some data may be lost, so be careful when calling this function
+            on a database that contains important information.
+            </summary>
+        </member>
+        <member name="T:Neo.IO.Storage.LevelDB.Iterator">
+            <summary>
+            An iterator yields a sequence of key/value pairs from a database.
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.Iterator.Key">
+            <summary>
+            Return the key for the current entry.
+            REQUIRES: Valid()
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.Iterator.Next">
+            <summary>
+            Moves to the next entry in the source.
+            After this call, Valid() is true if the iterator was not positioned at the last entry in the source.
+            REQUIRES: Valid()
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.Iterator.Seek(System.Byte[])">
+            <summary>
+            Position at the first key in the source that at or past target
+            The iterator is Valid() after this call if the source contains
+            an entry that comes at or past target.
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.Iterator.SeekToLast">
+            <summary>
+            Position at the last key in the source.
+            The iterator is Valid() after this call if the source is not empty.
+            </summary>
+        </member>
+        <member name="T:Neo.IO.Storage.LevelDB.LevelDBHandle">
+            <summary>
+            Base class for all LevelDB objects
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.LevelDBHandle.#ctor(System.IntPtr)">
+            <summary>
+            Base class for all LevelDB objects
+            </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.LevelDBHandle.IsDisposed">
+            <summary>
+            Return true if haven't got valid handle
+            </summary>
+        </member>
+        <member name="T:Neo.IO.Storage.LevelDB.Options">
+             <summary>
+             Options to control the behavior of a database (passed to Open)
+            
+             the setter methods for InfoLogger, Env, and Cache only "safe to clean up guarantee". Do not
+             use Option object if throws.
+             </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.Options.CreateIfMissing">
+            <summary>
+            If true, the database will be created if it is missing.
+            </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.Options.ErrorIfExists">
+            <summary>
+            If true, an error is raised if the database already exists.
+            </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.Options.ParanoidChecks">
+            <summary>
+            If true, the implementation will do aggressive checking of the
+            data it is processing and will stop early if it detects any
+            errors.  This may have unforeseen ramifications: for example, a
+            corruption of one DB entry may cause a large number of entries to
+            become unreadable or for the entire DB to become unopenable.
+            </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.Options.WriteBufferSize">
+             <summary>
+             Amount of data to build up in memory (backed by an unsorted log
+             on disk) before converting to a sorted on-disk file.
+            
+             Larger values increase performance, especially during bulk loads.
+             Up to two write buffers may be held in memory at the same time,
+             so you may wish to adjust this parameter to control memory usage.
+             Also, a larger write buffer will result in a longer recovery time
+             the next time the database is opened.
+            
+             Default: 4MB
+             </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.Options.MaxOpenFiles">
+             <summary>
+             Number of open files that can be used by the DB.  You may need to
+             increase this if your database has a large working set (budget
+             one open file per 2MB of working set).
+            
+             Default: 1000
+             </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.Options.BlockSize">
+             <summary>
+             Approximate size of user data packed per block.  Note that the
+             block size specified here corresponds to uncompressed data.  The
+             actual size of the unit read from disk may be smaller if
+             compression is enabled.  This parameter can be changed dynamically.
+            
+             Default: 4K
+             </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.Options.BlockRestartInterval">
+             <summary>
+             Number of keys between restart points for delta encoding of keys.
+             This parameter can be changed dynamically.
+             Most clients should leave this parameter alone.
+            
+             Default: 16
+             </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.Options.CompressionLevel">
+             <summary>
+             Compress blocks using the specified compression algorithm.
+             This parameter can be changed dynamically.
+            
+             Default: kSnappyCompression, which gives lightweight but fast compression.
+            
+             Typical speeds of kSnappyCompression on an Intel(R) Core(TM)2 2.4GHz:
+                ~200-500MB/s compression
+                ~400-800MB/s decompression
+             Note that these speeds are significantly faster than most
+             persistent storage speeds, and therefore it is typically never
+             worth switching to kNoCompression.  Even if the input data is
+             incompressible, the kSnappyCompression implementation will
+             efficiently detect that and will switch to uncompressed mode.
+             </summary>
+        </member>
+        <member name="T:Neo.IO.Storage.LevelDB.ReadOptions">
+            <summary>
+            Options that control read operations.
+            </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.ReadOptions.VerifyChecksums">
+            <summary>
+            If true, all data read from underlying storage will be
+            verified against corresponding checksums.
+            </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.ReadOptions.FillCache">
+            <summary>
+            Should the data read for this iteration be cached in memory?
+            Callers may wish to set this field to false for bulk scans.
+            Default: true
+            </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.ReadOptions.Snapshot">
+            <summary>
+            If "snapshot" is provided, read as of the supplied snapshot
+            (which must belong to the DB that is being read and which must
+            not have been released).
+            If "snapshot" is not set, use an implicit
+            snapshot of the state at the beginning of this read operation.
+            </summary>
+        </member>
+        <member name="T:Neo.IO.Storage.LevelDB.Snapshot">
+            <summary>
+            A Snapshot is an immutable object and can therefore be safely
+            accessed from multiple threads without any external synchronization.
+            </summary>
+        </member>
+        <member name="T:Neo.IO.Storage.LevelDB.WriteBatch">
+             <summary>
+             WriteBatch holds a collection of updates to apply atomically to a DB.
+            
+             The updates are applied in the order in which they are added
+             to the WriteBatch.  For example, the value of "key" will be "v3"
+             after the following batch is written:
+            
+                batch.Put("key", "v1");
+                batch.Delete("key");
+                batch.Put("key", "v2");
+                batch.Put("key", "v3");
+             </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.WriteBatch.Clear">
+            <summary>
+            Clear all updates buffered in this batch.
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.WriteBatch.Put(System.Byte[],System.Byte[])">
+            <summary>
+            Store the mapping "key->value" in the database.
+            </summary>
+        </member>
+        <member name="M:Neo.IO.Storage.LevelDB.WriteBatch.Delete(System.Byte[])">
+            <summary>
+            If the database contains a mapping for "key", erase it.
+            Else do nothing.
+            </summary>
+        </member>
+        <member name="T:Neo.IO.Storage.LevelDB.WriteOptions">
+            <summary>
+            Options that control write operations.
+            </summary>
+        </member>
+        <member name="P:Neo.IO.Storage.LevelDB.WriteOptions.Sync">
+             <summary>
+             If true, the write will be flushed from the operating system
+             buffer cache (by calling WritableFile::Sync()) before the write
+             is considered complete.  If this flag is true, writes will be
+             slower.
+            
+             If this flag is false, and the machine crashes, some recent
+             writes may be lost.  Note that if it is just the process that
+             crashes (i.e., the machine does not reboot), no writes will be
+             lost even if sync==false.
+            
+             In other words, a DB write with sync==false has similar
+             crash semantics as the "write()" system call.  A DB write
+             with sync==true has similar crash semantics to a "write()"
+             system call followed by "fsync()".
+             </summary>
+        </member>
+        <member name="T:Neo.Plugins.Storage.Snapshot">
+            <summary>
+            <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
+            <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.Storage.Snapshot.Commit">
+            <inheritdoc/>
+        </member>
+        <member name="M:Neo.Plugins.Storage.Snapshot.Delete(System.Byte[])">
+            <inheritdoc/>
+        </member>
+        <member name="M:Neo.Plugins.Storage.Snapshot.Put(System.Byte[],System.Byte[])">
+            <inheritdoc/>
+        </member>
+        <member name="M:Neo.Plugins.Storage.Snapshot.Find(System.Byte[],Neo.Persistence.SeekDirection)">
+            <inheritdoc/>
+        </member>
+        <member name="T:Neo.Plugins.Storage.Store">
+            <summary>
+            <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
+            </summary>
+        </member>
+        <member name="E:Neo.Plugins.Storage.Store.OnNewSnapshot">
+            <inheritdoc/>
+        </member>
+        <member name="M:Neo.Plugins.Storage.Store.Find(System.Byte[],Neo.Persistence.SeekDirection)">
+            <inheritdoc/>
+        </member>
+    </members>
+</doc>

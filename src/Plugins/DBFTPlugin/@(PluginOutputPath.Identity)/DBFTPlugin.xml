@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>DBFTPlugin</name>
+    </assembly>
+    <members>
+        <member name="F:Neo.Plugins.DBFTPlugin.Consensus.ConsensusContext.ConsensusStateKey">
+            <summary>
+            Key for saving consensus state.
+            </summary>
+        </member>
+        <member name="F:Neo.Plugins.DBFTPlugin.Consensus.ConsensusContext.VerificationContext">
+            <summary>
+            Store all verified unsorted transactions' senders' fee currently in the consensus context.
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.DBFTPlugin.Consensus.ConsensusContext.GetExpectedBlockSize">
+            <summary>
+            Return the expected block size
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.DBFTPlugin.Consensus.ConsensusContext.GetExpectedBlockSystemFee">
+            <summary>
+            Return the expected block system fee
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.DBFTPlugin.Consensus.ConsensusContext.GetExpectedBlockSizeWithoutTransactions(System.Int32)">
+            <summary>
+            Return the expected block size without txs
+            </summary>
+            <param name="expectedTransactions">Expected transactions</param>
+        </member>
+        <member name="M:Neo.Plugins.DBFTPlugin.Consensus.ConsensusContext.EnsureMaxBlockLimitation(Neo.Network.P2P.Payloads.Transaction[])">
+            <summary>
+            Prevent that block exceed the max size
+            </summary>
+            <param name="txs">Ordered transactions</param>
+        </member>
+        <member name="F:Neo.Plugins.DBFTPlugin.Consensus.ConsensusService.clock_started">
+            <summary>
+            This will record the information from last scheduled timer
+            </summary>
+        </member>
+        <member name="F:Neo.Plugins.DBFTPlugin.Consensus.ConsensusService.knownHashes">
+            <summary>
+            This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
+            responding to the same message.
+            </summary>
+        </member>
+        <member name="F:Neo.Plugins.DBFTPlugin.Consensus.ConsensusService.isRecovering">
+            <summary>
+            This variable is only true during OnRecoveryMessageReceived
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.DBFTPlugin.DBFTPlugin.OnStart(System.String)">
+            <summary>
+            Starts the consensus service.
+            If the signer name is provided, it will start with the specified signer.
+            Otherwise, it will start with the WalletProvider's wallet.
+            </summary>
+            <param name="signerName">The name of the signer to use.</param>
+        </member>
+        <member name="P:Neo.Plugins.DBFTPlugin.Messages.ChangeView.NewViewNumber">
+            <summary>
+            NewViewNumber is always set to the current ViewNumber asking changeview + 1
+            </summary>
+        </member>
+        <member name="F:Neo.Plugins.DBFTPlugin.Messages.ChangeView.Timestamp">
+            <summary>
+            Timestamp of when the ChangeView message was created. This allows receiving nodes to ensure
+            they only respond once to a specific ChangeView request (it thus prevents replay of the ChangeView
+            message from repeatedly broadcasting RecoveryMessages).
+            </summary>
+        </member>
+        <member name="F:Neo.Plugins.DBFTPlugin.Messages.ChangeView.Reason">
+            <summary>
+            Reason
+            </summary>
+        </member>
+        <member name="F:Neo.Plugins.DBFTPlugin.Messages.RecoveryMessage.PreparationHash">
+            The PreparationHash in case the PrepareRequest hasn't been received yet.
+            This can be null if the PrepareRequest information is present, since it can be derived in that case.
+        </member>
+        <member name="F:Neo.Plugins.DBFTPlugin.Messages.RecoveryRequest.Timestamp">
+            <summary>
+            Timestamp of when the ChangeView message was created. This allows receiving nodes to ensure
+            they only respond once to a specific RecoveryRequest request.
+            In this sense, it prevents replay of the RecoveryRequest message from the repeatedly broadcast of Recovery's messages.
+            </summary>
+        </member>
+    </members>
+</doc>

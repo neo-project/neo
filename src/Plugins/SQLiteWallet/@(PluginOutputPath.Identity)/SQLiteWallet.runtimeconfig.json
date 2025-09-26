@@ -1,0 +1,14 @@
+{
+  "runtimeOptions": {
+    "tfm": "net9.0",
+    "rollForward": "LatestMinor",
+    "framework": {
+      "name": "Microsoft.NETCore.App",
+      "version": "9.0.0"
+    },
+    "configProperties": {
+      "System.Reflection.NullabilityInfoContext.IsSupported": true,
+      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false
+    }
+  }
+}

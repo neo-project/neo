@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>RocksDBStore</name>
+    </assembly>
+    <members>
+        <member name="M:Neo.Plugins.Storage.RocksDBStore.GetStore(System.String)">
+            <summary>
+            Get store
+            </summary>
+            <returns>RocksDbStore</returns>
+        </member>
+        <member name="T:Neo.Plugins.Storage.Snapshot">
+            <summary>
+            <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.Storage.Snapshot.Find(System.Byte[],Neo.Persistence.SeekDirection)">
+            <inheritdoc/>
+        </member>
+        <member name="E:Neo.Plugins.Storage.Store.OnNewSnapshot">
+            <inheritdoc/>
+        </member>
+        <member name="M:Neo.Plugins.Storage.Store.Find(System.Byte[],Neo.Persistence.SeekDirection)">
+            <inheritdoc/>
+        </member>
+    </members>
+</doc>

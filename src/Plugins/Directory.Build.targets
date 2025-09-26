@@ -1,32 +1,64 @@
-<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <PropertyGroup>
-    <NeoCliBinDir>../../../bin/Neo.CLI</NeoCliBinDir>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PluginFiles Include="$(OutDir)/**/*.*" />
-    <PluginDstFiles Include="$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)/*.*" />
-  </ItemGroup>
-
-  <Target Name="CleanPlugins" AfterTargets="AfterClean">
+  <Target Name="CleanPluginFiles" AfterTargets="AfterClean">
+    <ItemGroup>
+      <PluginOutputFiles Include="$(PluginOutDir)/**/*.*" />
+    </ItemGroup>
+    
     <!-- Delete the plugin directory-->
-    <Delete Files="@(PluginDstFiles)" ContinueOnError="true" />
-    <Delete Files="@(PluginRuntimeDstFiles)" ContinueOnError="true" />
+    <Delete
+      Files="%(PluginOutputFiles.Identity)"
+      ContinueOnError="true" />
+
     <!-- Print Message To Output Window -->
-    <Message Importance="high" Text="$(MSBuildProjectName) -> Deleted '$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)'"/>
+    <Message
+      Condition=" '@(PluginOutputFiles)' != '' "
+      Text="$(MSBuildProjectName) -> Deleted %(PluginOutputFiles.Identity)"
+      Importance="high" />
   </Target>
 
-  <Target Name="CopyPluginDlls" AfterTargets="AfterBuild;AfterRebuild">
-    <!-- Make Plugins directory for Neo.CLI -->
-    <MakeDir Condition=" Exists('$(NeoCliBinDir)/$(TargetFramework)/Plugins') == 'false' " Directories="$(NeoCliBinDir)/$(TargetFramework)/Plugins" />
-    <!-- Make project directory for Plugin directory -->
-    <MakeDir Condition=" Exists('$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)') == 'false' " Directories="$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)" />
-    <!-- Copy all project build files to dest folder -->
-    <Copy SourceFiles="@(PluginFiles)" DestinationFolder="$(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)" OverwriteReadOnlyFiles="false" ContinueOnError="true" />
-    <!-- Print Message To Output Window -->
-    <Message Importance="high" Text="$(MSBuildProjectName) -> $(NeoCliBinDir)/$(TargetFramework)/Plugins/$(MSBuildProjectName)" />
+  <Target Name="CopyPluginOutDirFiles" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <PluginBinFiles Include="$(OutDir)/**/*.*" />
+      <PluginContentFiles Include="@(Content)" />
+      <PluginOutputPath Include="$(PluginOutDir)" />
+    </ItemGroup>
+    
+    <!-- Copy Dependencies -->
+    <Copy
+      SourceFiles="%(PluginBinFiles.Identity)"
+      DestinationFolder="@(PluginOutputPath)"
+      OverwriteReadOnlyFiles="false"
+      ContinueOnError="true"
+      SkipUnchangedFiles="true" />
+    <Message
+      Condition=" '%(PluginBinFiles.Identity)' != '' "
+      Text="$(MSBuildProjectName) -> '%(PluginBinFiles.Identity)'"
+      Importance="high" />
+
+    <!-- Copy Plugin Binary-->
+    <Copy
+      SourceFiles="$(TargetPath)"
+      DestinationFolder="@(PluginOutputPath)"
+      OverwriteReadOnlyFiles="false"
+      ContinueOnError="true"
+      SkipUnchangedFiles="true" />
+    <Message
+      Condition=" '$(TargetPath)' != '' "
+      Text="$(MSBuildProjectName) -> '$(TargetPath)'"
+      Importance="high" />
+
+    <!-- Copy Content Files -->
+    <Copy
+      SourceFiles="%(PluginContentFiles.Identity)"
+      DestinationFolder="@(PluginOutputPath)"
+      OverwriteReadOnlyFiles="false"
+      ContinueOnError="true"
+      SkipUnchangedFiles="true" />
+    <Message
+      Condition=" '%(PluginContentFiles.Identity)' != '' "
+      Text="$(MSBuildProjectName) -> '%(PluginContentFiles.Identity)'"
+      Importance="high" />
   </Target>
 
 </Project>

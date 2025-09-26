@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Neo.Cryptography.BLS12_381</name>
+    </assembly>
+    <members>
+        <member name="M:Neo.Cryptography.BLS12_381.MathUtility.BigMul(System.UInt64,System.UInt64,System.UInt64@)">
+            <summary>Produces the full product of two unsigned 64-bit numbers.</summary>
+            <param name="a">The first number to multiply.</param>
+            <param name="b">The second number to multiply.</param>
+            <param name="low">The low 64-bit of the product of the specified numbers.</param>
+            <returns>The high 64-bit of the product of the specified numbers.</returns>
+        </member>
+    </members>
+</doc>

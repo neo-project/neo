@@ -1,0 +1,385 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SignClient</name>
+    </assembly>
+    <members>
+        <member name="T:Neo.Plugins.SignClient.SignClient">
+            <summary>
+            A signer that uses a client to sign transactions.
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.SignClient.AccountStatusCommand(System.String)">
+            <summary>
+            Get account status command
+            </summary>
+            <param name="hexPublicKey">The hex public key, compressed or uncompressed</param>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.SignClient.ContainsSignable(Neo.Cryptography.ECC.ECPoint)">
+            <summary>
+            Check if the account is signable
+            </summary>
+            <param name="publicKey">The public key</param>
+            <returns>True if the account is signable, false otherwise</returns>
+            <exception cref="T:Neo.Sign.SignException">If no signer service is available, or other rpc error occurs.</exception>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.SignClient.SignExtensiblePayload(Neo.Network.P2P.Payloads.ExtensiblePayload,Neo.Persistence.DataCache,System.UInt32)">
+            <summary>
+            Signs the <see cref="T:Neo.Network.P2P.Payloads.ExtensiblePayload"/> with the signer.
+            </summary>
+            <param name="payload">The payload to sign</param>
+            <param name="dataCache">The data cache</param>
+            <param name="network">The network</param>
+            <returns>The witnesses</returns>
+            <exception cref="T:Neo.Sign.SignException">If no signer service is available, or other rpc error occurs.</exception>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.SignClient.SignBlock(Neo.Network.P2P.Payloads.Block,Neo.Cryptography.ECC.ECPoint,System.UInt32)">
+            <summary>
+            Signs the specified data with the corresponding private key of the specified public key.
+            </summary>
+            <param name="block">The block to sign</param>
+            <param name="publicKey">The public key</param>
+            <param name="network">The network</param>
+            <returns>The signature</returns>
+            <exception cref="T:Neo.Sign.SignException">If no signer service is available, or other rpc error occurs.</exception>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.SignClient.Configure">
+            <inheritdoc/>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.SignClient.Dispose">
+            <inheritdoc/>
+        </member>
+        <member name="P:Neo.Plugins.SignClient.SignSettings.Name">
+            <summary>
+            The name of the sign client(i.e. Signer).
+            </summary>
+        </member>
+        <member name="P:Neo.Plugins.SignClient.SignSettings.Endpoint">
+            <summary>
+            The host of the sign client(i.e. Signer).
+            The "Endpoint" should be "vsock://contextId:port" if use vsock.
+            The "Endpoint" should be "http://host:port" or "https://host:port" if use tcp.
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.SignSettings.#ctor(Microsoft.Extensions.Configuration.IConfigurationSection)">
+            <summary>
+            Create a new settings instance from the configuration section.
+            </summary>
+            <param name="section">The configuration section.</param>
+            <exception cref="T:System.FormatException">If the endpoint type or endpoint is invalid.</exception>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.SignSettings.GetVsockAddress">
+            <summary>
+            Get the vsock address from the endpoint.
+            </summary>
+            <returns>The vsock address. If the endpoint type is not vsock, return null.</returns>
+            <exception cref="T:System.FormatException">If the endpoint is invalid.</exception>
+        </member>
+        <member name="T:Neo.Plugins.SignClient.VsockAddress">
+            <summary>
+            The address of the vsock address.
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.VsockAddress.#ctor(System.Int32,System.Int32)">
+            <summary>
+            The address of the vsock address.
+            </summary>
+        </member>
+        <member name="T:Neo.Plugins.SignClient.Vsock">
+            <summary>
+            Grpc adapter for VSock. Only supported on Linux.
+            This is for the SignClient plugin to connect to the AWS Nitro Enclave.
+            </summary>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.Vsock.#ctor(Neo.Plugins.SignClient.VsockAddress)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Neo.Plugins.SignClient.Vsock"/> class.
+            </summary>
+            <param name="address">The vsock address.</param>
+        </member>
+        <member name="M:Neo.Plugins.SignClient.Vsock.CreateChannel(Neo.Plugins.SignClient.VsockAddress,Grpc.Net.Client.Configuration.ServiceConfig)">
+            <summary>
+            Creates a Grpc channel for the vsock endpoint.
+            </summary>
+            <param name="address">The vsock address.</param>
+            <param name="serviceConfig">The Grpc service config.</param>
+            <returns>The Grpc channel.</returns>
+        </member>
+        <member name="T:Signpb.SignpbReflection">
+            <summary>Holder for reflection information generated from proto/signpb.proto</summary>
+        </member>
+        <member name="P:Signpb.SignpbReflection.Descriptor">
+            <summary>File descriptor for proto/signpb.proto</summary>
+        </member>
+        <member name="F:Signpb.AccountStatus.NoSuchAccount">
+             <summary>
+            &#x2F; no such account
+             </summary>
+        </member>
+        <member name="F:Signpb.AccountStatus.NoPrivateKey">
+             <summary>
+            &#x2F; no private key
+             </summary>
+        </member>
+        <member name="F:Signpb.AccountStatus.Single">
+             <summary>
+            &#x2F; single sign
+             </summary>
+        </member>
+        <member name="F:Signpb.AccountStatus.Multiple">
+             <summary>
+            &#x2F; multiple signs, aka. multisig
+             </summary>
+        </member>
+        <member name="F:Signpb.AccountStatus.Locked">
+             <summary>
+            &#x2F; this key-pair is locked
+             </summary>
+        </member>
+        <member name="F:Signpb.BlockHeader.VersionFieldNumber">
+            <summary>Field number for the "version" field.</summary>
+        </member>
+        <member name="F:Signpb.BlockHeader.PrevHashFieldNumber">
+            <summary>Field number for the "prev_hash" field.</summary>
+        </member>
+        <member name="P:Signpb.BlockHeader.PrevHash">
+            <summary>
+            H256
+            </summary>
+        </member>
+        <member name="F:Signpb.BlockHeader.MerkleRootFieldNumber">
+            <summary>Field number for the "merkle_root" field.</summary>
+        </member>
+        <member name="P:Signpb.BlockHeader.MerkleRoot">
+            <summary>
+            H256
+            </summary>
+        </member>
+        <member name="F:Signpb.BlockHeader.TimestampFieldNumber">
+            <summary>Field number for the "timestamp" field.</summary>
+        </member>
+        <member name="P:Signpb.BlockHeader.Timestamp">
+            <summary>
+            i.e unix milliseconds
+            </summary>
+        </member>
+        <member name="F:Signpb.BlockHeader.NonceFieldNumber">
+            <summary>Field number for the "nonce" field.</summary>
+        </member>
+        <member name="F:Signpb.BlockHeader.IndexFieldNumber">
+            <summary>Field number for the "index" field.</summary>
+        </member>
+        <member name="F:Signpb.BlockHeader.PrimaryIndexFieldNumber">
+            <summary>Field number for the "primary_index" field.</summary>
+        </member>
+        <member name="F:Signpb.BlockHeader.NextConsensusFieldNumber">
+            <summary>Field number for the "next_consensus" field.</summary>
+        </member>
+        <member name="P:Signpb.BlockHeader.NextConsensus">
+            <summary>
+            H160
+            </summary>
+        </member>
+        <member name="F:Signpb.TrimmedBlock.HeaderFieldNumber">
+            <summary>Field number for the "header" field.</summary>
+        </member>
+        <member name="F:Signpb.TrimmedBlock.TxHashesFieldNumber">
+            <summary>Field number for the "tx_hashes" field.</summary>
+        </member>
+        <member name="P:Signpb.TrimmedBlock.TxHashes">
+            <summary>
+            H256 list, tx hash list
+            </summary>
+        </member>
+        <member name="F:Signpb.ExtensiblePayload.CategoryFieldNumber">
+            <summary>Field number for the "category" field.</summary>
+        </member>
+        <member name="F:Signpb.ExtensiblePayload.ValidBlockStartFieldNumber">
+            <summary>Field number for the "valid_block_start" field.</summary>
+        </member>
+        <member name="F:Signpb.ExtensiblePayload.ValidBlockEndFieldNumber">
+            <summary>Field number for the "valid_block_end" field.</summary>
+        </member>
+        <member name="F:Signpb.ExtensiblePayload.SenderFieldNumber">
+            <summary>Field number for the "sender" field.</summary>
+        </member>
+        <member name="P:Signpb.ExtensiblePayload.Sender">
+            <summary>
+            H160
+            </summary>
+        </member>
+        <member name="F:Signpb.ExtensiblePayload.DataFieldNumber">
+            <summary>Field number for the "data" field.</summary>
+        </member>
+        <member name="F:Signpb.AccountSign.SignatureFieldNumber">
+            <summary>Field number for the "signature" field.</summary>
+        </member>
+        <member name="P:Signpb.AccountSign.Signature">
+            <summary>
+            the signature
+            </summary>
+        </member>
+        <member name="F:Signpb.AccountSign.PublicKeyFieldNumber">
+            <summary>Field number for the "public_key" field.</summary>
+        </member>
+        <member name="P:Signpb.AccountSign.PublicKey">
+            <summary>
+            the compressed or uncompressed public key
+            </summary>
+        </member>
+        <member name="F:Signpb.AccountContract.ScriptFieldNumber">
+            <summary>Field number for the "script" field.</summary>
+        </member>
+        <member name="P:Signpb.AccountContract.Script">
+            <summary>
+            the contract script
+            </summary>
+        </member>
+        <member name="F:Signpb.AccountContract.ParametersFieldNumber">
+            <summary>Field number for the "parameters" field.</summary>
+        </member>
+        <member name="P:Signpb.AccountContract.Parameters">
+            <summary>
+            the contract parameters
+            </summary>
+        </member>
+        <member name="F:Signpb.AccountContract.DeployedFieldNumber">
+            <summary>Field number for the "deployed" field.</summary>
+        </member>
+        <member name="P:Signpb.AccountContract.Deployed">
+            <summary>
+            if the contract is deployed
+            </summary>
+        </member>
+        <member name="F:Signpb.AccountSigns.SignsFieldNumber">
+            <summary>Field number for the "signs" field.</summary>
+        </member>
+        <member name="P:Signpb.AccountSigns.Signs">
+            <summary>
+            if the status is Single, there is only one sign
+            if the status is Multiple, there are multiple signs
+            if the status is NoSuchAccount, NoPrivateKey or Locked, there are no signs
+            </summary>
+        </member>
+        <member name="F:Signpb.AccountSigns.ContractFieldNumber">
+            <summary>Field number for the "contract" field.</summary>
+        </member>
+        <member name="P:Signpb.AccountSigns.Contract">
+            <summary>
+            the account contract
+            If the account hasn't a contract, the contract is null
+            </summary>
+        </member>
+        <member name="F:Signpb.AccountSigns.StatusFieldNumber">
+            <summary>Field number for the "status" field.</summary>
+        </member>
+        <member name="P:Signpb.AccountSigns.Status">
+            <summary>
+            the account status
+            </summary>
+        </member>
+        <member name="F:Signpb.MultiAccountSigns.SignsFieldNumber">
+            <summary>Field number for the "signs" field.</summary>
+        </member>
+        <member name="T:Servicepb.ServicepbReflection">
+            <summary>Holder for reflection information generated from proto/servicepb.proto</summary>
+        </member>
+        <member name="P:Servicepb.ServicepbReflection.Descriptor">
+            <summary>File descriptor for proto/servicepb.proto</summary>
+        </member>
+        <member name="F:Servicepb.SignExtensiblePayloadRequest.PayloadFieldNumber">
+            <summary>Field number for the "payload" field.</summary>
+        </member>
+        <member name="P:Servicepb.SignExtensiblePayloadRequest.Payload">
+            <summary>
+            the payload to be signed
+            </summary>
+        </member>
+        <member name="F:Servicepb.SignExtensiblePayloadRequest.ScriptHashesFieldNumber">
+            <summary>Field number for the "script_hashes" field.</summary>
+        </member>
+        <member name="P:Servicepb.SignExtensiblePayloadRequest.ScriptHashes">
+            <summary>
+            script hashes, H160 list
+            </summary>
+        </member>
+        <member name="F:Servicepb.SignExtensiblePayloadRequest.NetworkFieldNumber">
+            <summary>Field number for the "network" field.</summary>
+        </member>
+        <member name="P:Servicepb.SignExtensiblePayloadRequest.Network">
+            <summary>
+            the network id
+            </summary>
+        </member>
+        <member name="F:Servicepb.SignExtensiblePayloadResponse.SignsFieldNumber">
+            <summary>Field number for the "signs" field.</summary>
+        </member>
+        <member name="P:Servicepb.SignExtensiblePayloadResponse.Signs">
+            <summary>
+            script hash -> account signs, one to one mapping
+            </summary>
+        </member>
+        <member name="F:Servicepb.SignBlockRequest.BlockFieldNumber">
+            <summary>Field number for the "block" field.</summary>
+        </member>
+        <member name="P:Servicepb.SignBlockRequest.Block">
+            <summary>
+            the block header to be signed
+            </summary>
+        </member>
+        <member name="F:Servicepb.SignBlockRequest.PublicKeyFieldNumber">
+            <summary>Field number for the "public_key" field.</summary>
+        </member>
+        <member name="P:Servicepb.SignBlockRequest.PublicKey">
+            <summary>
+            compressed or uncompressed public key
+            </summary>
+        </member>
+        <member name="F:Servicepb.SignBlockRequest.NetworkFieldNumber">
+            <summary>Field number for the "network" field.</summary>
+        </member>
+        <member name="P:Servicepb.SignBlockRequest.Network">
+            <summary>
+            the network id
+            </summary>
+        </member>
+        <member name="F:Servicepb.SignBlockResponse.SignatureFieldNumber">
+            <summary>Field number for the "signature" field.</summary>
+        </member>
+        <member name="F:Servicepb.GetAccountStatusRequest.PublicKeyFieldNumber">
+            <summary>Field number for the "public_key" field.</summary>
+        </member>
+        <member name="P:Servicepb.GetAccountStatusRequest.PublicKey">
+            <summary>
+            compressed or uncompressed public key
+            </summary>
+        </member>
+        <member name="F:Servicepb.GetAccountStatusResponse.StatusFieldNumber">
+            <summary>Field number for the "status" field.</summary>
+        </member>
+        <member name="P:Servicepb.SecureSign.Descriptor">
+            <summary>Service descriptor</summary>
+        </member>
+        <member name="T:Servicepb.SecureSign.SecureSignClient">
+            <summary>Client for SecureSign</summary>
+        </member>
+        <member name="M:Servicepb.SecureSign.SecureSignClient.#ctor(Grpc.Core.ChannelBase)">
+            <summary>Creates a new client for SecureSign</summary>
+            <param name="channel">The channel to use to make remote calls.</param>
+        </member>
+        <member name="M:Servicepb.SecureSign.SecureSignClient.#ctor(Grpc.Core.CallInvoker)">
+            <summary>Creates a new client for SecureSign that uses a custom <c>CallInvoker</c>.</summary>
+            <param name="callInvoker">The callInvoker to use to make remote calls.</param>
+        </member>
+        <member name="M:Servicepb.SecureSign.SecureSignClient.#ctor">
+            <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+        </member>
+        <member name="M:Servicepb.SecureSign.SecureSignClient.#ctor(Grpc.Core.ClientBase.ClientBaseConfiguration)">
+            <summary>Protected constructor to allow creation of configured clients.</summary>
+            <param name="configuration">The client configuration.</param>
+        </member>
+        <member name="M:Servicepb.SecureSign.SecureSignClient.NewInstance(Grpc.Core.ClientBase.ClientBaseConfiguration)">
+            <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
+        </member>
+    </members>
+</doc>
