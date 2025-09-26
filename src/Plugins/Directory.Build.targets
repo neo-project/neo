@@ -18,46 +18,37 @@
   </Target>
 
   <Target Name="CopyPluginOutDirFiles" AfterTargets="AfterBuild;AfterRebuild">
+    <PropertyGroup>
+      <PluginRuntimeId Condition=" '$(PluginRuntimeId)' == '' ">win-x64</PluginRuntimeId>
+    </PropertyGroup>
+    
     <ItemGroup>
-      <PluginBinFiles Include="$(OutDir)/**/*.*" />
-      <PluginContentFiles Include="@(Content)" />
-      <PluginOutputPath Include="$(PluginOutDir)" />
+      <PluginOutputFiles Include="$(OutDir)/*.*" />
+      <PluginRuntimeFiles Include="$(OutDir)/runtimes/$(PluginRuntimeId)/native/*.*" />
     </ItemGroup>
 
-    <!-- Copy Plugin Binary-->
+    <!-- Copy OutDir Contents -->
     <Copy
-      SourceFiles="$(TargetPath)"
-      DestinationFolder="@(PluginOutputPath)"
+      SourceFiles="%(PluginOutputFiles.Identity)"
+      DestinationFolder="$(PluginOutDir)"
       OverwriteReadOnlyFiles="false"
       ContinueOnError="true"
       SkipUnchangedFiles="true" />
     <Message
-      Condition=" '$(TargetPath)' != '' "
-      Text="$(MSBuildProjectName) -> '$(TargetPath)'"
+      Condition=" '%(PluginOutputFiles.Identity)' != '' "
+      Text="$(MSBuildProjectName) -> '%(PluginOutputFiles.Identity)'"
       Importance="high" />
 
-    <!-- Copy Content Files -->
+    <!-- Copy Runtime Dlls-->
     <Copy
-      SourceFiles="%(PluginContentFiles.Identity)"
-      DestinationFolder="@(PluginOutputPath)"
+      SourceFiles="%(PluginRuntimeFiles.Identity)"
+      DestinationFolder="$(PluginOutDir)"
       OverwriteReadOnlyFiles="false"
       ContinueOnError="true"
       SkipUnchangedFiles="true" />
     <Message
-      Condition=" '%(PluginContentFiles.Identity)' != '' "
-      Text="$(MSBuildProjectName) -> '%(PluginContentFiles.Identity)'"
-      Importance="high" />
-
-    <!-- Copy Dependencies -->
-    <Copy
-      SourceFiles="%(PluginBinFiles.Identity)"
-      DestinationFolder="@(PluginOutputPath)"
-      OverwriteReadOnlyFiles="false"
-      ContinueOnError="true"
-      SkipUnchangedFiles="true" />
-    <Message
-      Condition=" '%(PluginBinFiles.Identity)' != '' "
-      Text="$(MSBuildProjectName) -> '%(PluginBinFiles.Identity)'"
+      Condition=" '%(PluginRuntimeFiles.Identity)' != '' "
+      Text="$(MSBuildProjectName) -> '%(PluginRuntimeFiles.Identity)' to '$(PluginOutDir)'"
       Importance="high" />
   </Target>
 
