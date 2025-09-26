@@ -22,11 +22,11 @@
     <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-x64" Lib="libleveldb.dylib" />
     <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-arm64" Lib="libleveldb.dylib" />
 
-    <Content Include="@(NativeLib -> '$(IntermediateOutputPath)libleveldb-%(RuntimeId)/runtimes/%(RuntimeId)/native/%(Lib)')" PackagePath="runtimes/%(RuntimeId)/native/%(Lib)" Link="runtimes/%(RuntimeId)/native/%(Lib)">
+    <None Include="@(NativeLib -> '$(IntermediateOutputPath)libleveldb-%(RuntimeId)/runtimes/%(RuntimeId)/native/%(Lib)')" PackagePath="runtimes/%(RuntimeId)/native/%(Lib)" Link="runtimes/%(RuntimeId)/native/%(Lib)">
       <Pack>true</Pack>
       <Visible>false</Visible>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
   </ItemGroup>
 
 </Project>
