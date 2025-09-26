@@ -16,10 +16,10 @@
     <Protobuf Include="proto/signpb.proto" GrpcServices="Client" />
     <Protobuf Include="proto/servicepb.proto" GrpcServices="Client" AdditionalImportDirs="$(ProjectDir)/proto" />
 
-    <PackageReference Include="Google.Protobuf" Version="3.29.3" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.31.1" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
     <!-- NOTE: Need install rosetta2 on macOS ARM64 -->
-    <PackageReference Include="Grpc.Tools" Version="2.69.0" PrivateAssets="all" />
+    <PackageReference Include="Grpc.Tools" Version="2.72.0" PrivateAssets="all" />
     <PackageReference Include="Ookii.VmSockets" Version="1.0.0" />
   </ItemGroup>
 
