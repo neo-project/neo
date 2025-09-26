@@ -12,7 +12,7 @@
     <IsPackable>true</IsPackable>
     <PackageId>$(MSBuildProjectName)</PackageId>
     <PackageIcon>neo.png</PackageIcon>
-    <PackageOutputPath>../../pkgs/</PackageOutputPath>
+    <PackageOutputPath>$(MSBuildStartupDirectory)/pkgs/</PackageOutputPath>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -26,13 +26,13 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
-    <OutputPath>../../bin/$(PackageId)</OutputPath>
+    <OutputPath>$(MSBuildStartupDirectory)/bin/$(PackageId)</OutputPath>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../../.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
-    <None Include="../../.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(MSBuildStartupDirectory)/.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(MSBuildStartupDirectory)/.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
 </Project>

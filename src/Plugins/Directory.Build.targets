@@ -1,6 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Target Name="CleanProjectPluginFiles" AfterTargets="AfterClean">
+  <Target Condition=" '$(PluginOutDir)' != '' " Name="CleanPluginFiles" AfterTargets="AfterClean">
     <ItemGroup>
       <PluginOutputFiles Include="$(PluginOutDir)/**/*.*" />
     </ItemGroup>
@@ -13,21 +13,23 @@
     <!-- Print Message To Output Window -->
     <Message
       Condition=" '%(PluginOutputFiles.Identity)' != '' "
-      Text="$(MSBuildProjectName) -> '%(PluginOutputFiles.FullPath)'"
+      Text="$(MSBuildProjectName) -> Deleting: '%(PluginOutputFiles.FullPath)'"
       Importance="high" />
   </Target>
 
-  <Target Name="BeforeCopyProjectPluginFiles" AfterTargets="AfterBuild;AfterRebuild">
+  <Target Condition=" '$(PluginOutDir)' != '' " Name="BeforeCopyPluginFiles" AfterTargets="AfterBuild;AfterRebuild">
     <Message
-      Text="------ Plugin copy started: Plugin: $(MSBuildProjectName), Configuration: $(Configuration) $(Platform) ------"
+      Text="------ Plugin copy started: Plugin: $(MSBuildProjectName), Folder: '$(PluginOutDir)' ------"
       Importance="high" />
   </Target>
 
-  <Target Name="CopyProjectPluginFiles" AfterTargets="AfterBuild;AfterRebuild" DependsOnTargets="BeforeCopyProjectPluginFiles">
+  <Target Condition=" '$(PluginOutDir)' != '' " Name="CopyPluginFiles" AfterTargets="BeforeCopyPluginFiles">
     <PropertyGroup>
       <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == '' ">win-x64</RuntimeIdentifier>
-      <PluginOutDir Condition=" '$(PluginOutDir)' != '' ">$([System.IO.Path]::GetFullPath($(PluginOutDir)))</PluginOutDir>
+      <PluginOutDir Condition=" $([System.IO.Path]::IsPathRooted('$(PluginOutDir)')) != 'false' ">$([System.IO.Path]::GetFullPath('$(PluginOutDir)'))</PluginOutDir>
     </PropertyGroup>
+
+    <!--$(MSBuildStartupDirectory)-->
     
     <ItemGroup>
       <PluginOutputFiles Include="$(OutDir)/*.*" />
@@ -47,7 +49,7 @@
     </Copy>
     <Message
       Condition=" '%(PluginOutputFiles.Identity)' != '' "
-      Text="$(MSBuildProjectName) -> '%(PluginOutputFiles.FullPath)' to '$(PluginOutDir)'"
+      Text="$(MSBuildProjectName) -> Copying '%(PluginOutputFiles.FullPath)'"
       Importance="high" />
 
     <!-- Copy Runtime Dlls-->
@@ -63,11 +65,11 @@
     </Copy>
     <Message
       Condition=" '%(PluginNativeFiles.Identity)' != '' "
-      Text="$(MSBuildProjectName) -> '%(PluginNativeFiles.FullPath)' to '$(PluginOutDir)'"
+      Text="$(MSBuildProjectName) -> Copying '%(PluginNativeFiles.FullPath)'"
       Importance="high" />
   </Target>
 
-  <Target Name="AfterCopyProjectPluginFiles" AfterTargets="AfterBuild;AfterRebuild" DependsOnTargets="CopyProjectPluginFiles">
+  <Target Condition=" '$(PluginOutDir)' != '' " Name="AfterCopyPluginFiles" AfterTargets="CopyPluginFiles">
     <Message
       Text="========== Plugin copy completed: Plugin: $(MSBuildProjectName), Content: @(PluginOutputFilesCopiedFiles->Count()), Native: @(PluginNativeFiles->Count()) =========="
       Importance="high" />

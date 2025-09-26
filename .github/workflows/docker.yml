@@ -36,7 +36,6 @@ jobs:
           --output ${{ env.DIST_DIR }} \
           --verbosity normal \
           -p:VersionPrefix=${{ env.APP_VERSION }} \
-          -p:RuntimeIdentifier=linux-x64 \
           -p:SelfContained=true \
           -p:IncludeNativeLibrariesForSelfExtract=false \
           -p:PublishTrimmed=false \
@@ -56,12 +55,12 @@ jobs:
 
     - name: Build (LevelDbStore)
       run: |
-        dotnet build ./src/Plugins/LevelDBStore \
+        dotnet publish ./src/Plugins/LevelDBStore \
           --framework net9.0 \
           --configuration Release \
           --runtime linux-x64 \
-          --output ${{ env.DIST_DIR }}/Plugins/LevelDBStore \
           --verbosity normal \
+          -p:PluginOutDir=${{ env.DIST_DIR }}/Plugins/LevelDBStore \
           -p:VersionPrefix=${{ env.APP_VERSION }} \
           -p:DebugSymbols=false \
           -p:DebugType=none \
@@ -73,13 +72,6 @@ jobs:
           -p:PublishDocumentationFiles=false \
           -p:PublishReferencesDocumentationFiles=false \
           -p:GITHUB_ACTIONS=true
-
-    - name: Remove (junk)
-      working-directory: ${{ env.DIST_DIR }}/Plugins/LevelDBStore
-      run: |
-        rm -v -R runtimes
-        rm -v Neo*
-        rm -v $(ls *.dll | grep -v "LevelDBStore.dll")
 
     - name: Docker Login
       run: |
