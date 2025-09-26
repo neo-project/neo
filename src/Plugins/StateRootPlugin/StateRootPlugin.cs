@@ -11,20 +11,17 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
-using Neo.Cryptography.MPTTrie;
-using Neo.Extensions;
 using Neo.IEventHandlers;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.StateRootPlugin.Storage;
 using Neo.Plugins.StateRootPlugin.Verification;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.StateRootPlugin
 {
@@ -48,8 +45,8 @@ namespace Neo.Plugins.StateRootPlugin
 
         public StateRootPlugin()
         {
-            Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
-            Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
+            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         protected override void Configure()
@@ -87,14 +84,14 @@ namespace Neo.Plugins.StateRootPlugin
         public override void Dispose()
         {
             base.Dispose();
-            Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
-            Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
+            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
             if (Store is not null) _system.EnsureStopped(Store);
             if (Verifier is not null) _system.EnsureStopped(Verifier);
         }
 
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot,
-            IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+            IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != StateRootSettings.Default.Network) return;
             StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index,
