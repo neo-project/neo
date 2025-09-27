@@ -17,14 +17,14 @@
       Importance="high" />
   </Target>
 
-  <Target Condition=" '$(PluginOutDir)' != '' " Name="BeforeCopyPluginFiles" AfterTargets="AfterBuild;AfterRebuild">
+  <Target Condition=" '$(PluginOutDir)' != '' " Name="BeforeCopyPluginFiles" AfterTargets="Build">
     <Message
       Text="------ Plugin copy started: Plugin: $(MSBuildProjectName), Folder: '$(PluginOutDir)/$(MSBuildProjectName)' ------"
       Importance="high" />
   </Target>
 
   <Target Condition=" '$(PluginOutDir)' != '' " Name="CopyPluginFiles" AfterTargets="BeforeCopyPluginFiles">
-    <PropertyGroup>
+    <PropertyGroup Condition=" '$(RuntimeIdentifier)' == '' ">
       <SystemPlatform Condition=" '$(Platform)' == 'x64' ">x64</SystemPlatform>
       <SystemPlatform Condition=" '$(Platform)' == 'ARM64' ">arm64</SystemPlatform>
       <SystemPlatform Condition=" '$(Platform)' == 'AnyCPU' ">x64</SystemPlatform>
@@ -33,7 +33,10 @@
       <SystemOS Condition=" $([MSBuild]::IsOSPlatform('Linux')) == 'true' ">linux</SystemOS>
       <SystemOS Condition=" $([MSBuild]::IsOSPlatform('Windows')) == 'true' ">win</SystemOS>
       <SystemOS Condition=" '$(SystemOS)' == '' ">win</SystemOS>
-      <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == '' ">$(SystemOS)-$(SystemPlatform)</RuntimeIdentifier>
+      <RuntimeIdentifier>$(SystemOS)-$(SystemPlatform)</RuntimeIdentifier>
+    </PropertyGroup>
+    
+    <PropertyGroup>
       <PluginOutDir Condition=" $([System.IO.Path]::IsPathRooted('$(PluginOutDir)')) != 'false' ">$([System.IO.Path]::GetFullPath('$(PluginOutDir)'))</PluginOutDir>
     </PropertyGroup>
 
