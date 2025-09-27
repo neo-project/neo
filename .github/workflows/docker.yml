@@ -54,13 +54,15 @@ jobs:
 
     - name: Build (LevelDbStore)
       run: |
-        dotnet publish ./src/Plugins/LevelDBStore \
+        dotnet publish ./neo.sln \
           --framework net9.0 \
           --configuration Release \
           --runtime linux-x64 \
           --verbosity normal \
-          -p:PluginOutDir=${{ github.workspace }}/dist/Plugins/LevelDBStore \
+          -p:PluginOutDir=${{ github.workspace }}/dist/Plugins \
           -p:VersionPrefix=${{ env.APP_VERSION }} \
+          -p:RuntimeIdentifier=linux-x64 \
+          -p:PublishTrimmed=false \
           -p:DebugSymbols=false \
           -p:DebugType=none \
           -p:ServerGarbageCollection=true \

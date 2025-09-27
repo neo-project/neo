@@ -1,6 +1,6 @@
 FROM debian:stable-slim
 
-LABEL org.opencontainers.image.description "Neo N3 full node with no plugins."
+LABEL org.opencontainers.image.description "Neo N3 full node with All plugins."
 
 # Install the apt-get packages
 RUN apt-get update
