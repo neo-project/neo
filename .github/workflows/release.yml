@@ -69,13 +69,6 @@ jobs:
         -p:PublishReferencesDocumentationFiles=false \
         -p:GITHUB_ACTIONS=true
 
-    # Copy 'neo-cli' native library files
-    - name: Native Content (neo-cli)
-      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: |
-        mv -v ./runtimes/${{ matrix.runtime }}/native/* .
-        rm -v -R runtimes
-
     # Build the plugins
     - name: .NET Build (Plugins)
       run: |
