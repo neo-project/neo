@@ -6,7 +6,6 @@ on:
 
 env:
   DOTNET_VERSION: 9.0.x
-  DIST_DIR: /dist
 
 jobs:
   neo-cli-build:
@@ -33,7 +32,7 @@ jobs:
           --configuration Release \
           --runtime linux-x64 \
           --self-contained true \
-          --output ${{ env.DIST_DIR }} \
+          --output ${{ github.workspace }}/dist \
           --verbosity normal \
           -p:VersionPrefix=${{ env.APP_VERSION }} \
           -p:SelfContained=true \
@@ -60,7 +59,7 @@ jobs:
           --configuration Release \
           --runtime linux-x64 \
           --verbosity normal \
-          -p:PluginOutDir=${{ env.DIST_DIR }}/Plugins/LevelDBStore \
+          -p:PluginOutDir=${{ github.workspace }}/dist/Plugins/LevelDBStore \
           -p:VersionPrefix=${{ env.APP_VERSION }} \
           -p:DebugSymbols=false \
           -p:DebugType=none \
