@@ -76,11 +76,11 @@ jobs:
         --version-suffix ${{ matrix.runtime }} \
         --framework net9.0 \
         --configuration ${{ env.CONFIGURATION }} \
-        --runtime ${{ matrix.runtime }} \
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins \
         --verbosity normal \
         -p:PluginOutDir=${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins
         -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:RuntimeIdentifier=${{ matrix.runtime }} \
         -p:DebugSymbols=false \
         -p:DebugType=none \
         -p:ServerGarbageCollection=true \
