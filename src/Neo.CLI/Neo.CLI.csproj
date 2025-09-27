@@ -64,7 +64,7 @@
     
     <Message
         Condition=" '%(PluginFiles.Identity)' != '' "
-        Text="$(MSBuildProjectName) -> Copying '%(PluginFiles.FullPath)'"
+        Text="$(MSBuildProjectName) -> Copied '%(PluginFiles.FullPath)'"
         Importance="high" />
   </Target>
 
