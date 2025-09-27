@@ -540,6 +540,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     Assert.IsTrue(actualValue >= BigInteger.Zero);
                 }
             }
+        }
 
         public void TestMemorySearch()
         {
