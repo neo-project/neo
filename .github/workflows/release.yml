@@ -72,7 +72,7 @@ jobs:
     # Build the plugins
     - name: .NET Build (Plugins)
       run: |
-        dotnet publish neo.sln \
+        dotnet publish ./neo.sln \
         --version-suffix ${{ matrix.runtime }} \
         --framework net9.0 \
         --configuration ${{ env.CONFIGURATION }} \

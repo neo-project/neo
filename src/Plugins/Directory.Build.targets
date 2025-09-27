@@ -37,7 +37,7 @@
     <!-- Copy OutDir Contents -->
     <Copy
       SourceFiles="%(PluginOutputFiles.Identity)"
-      DestinationFolder="$(PluginOutDir)"
+      DestinationFolder="$(PluginOutDir)/$(MSBuildProjectName)"
       OverwriteReadOnlyFiles="false"
       ContinueOnError="true"
       SkipUnchangedFiles="true">
@@ -53,7 +53,7 @@
     <!-- Copy Runtime Dlls-->
     <Copy
       SourceFiles="%(PluginNativeFiles.Identity)"
-      DestinationFolder="$(PluginOutDir)"
+      DestinationFolder="$(PluginOutDir)/$(MSBuildProjectName)"
       OverwriteReadOnlyFiles="false"
       ContinueOnError="true"
       SkipUnchangedFiles="true">
