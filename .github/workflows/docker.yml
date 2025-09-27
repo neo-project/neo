@@ -6,7 +6,7 @@ on:
 
 env:
   DOTNET_VERSION: 9.0.x
-  DIST_DIR: ./dist
+  DIST_DIR: /dist
 
 jobs:
   neo-cli-build:

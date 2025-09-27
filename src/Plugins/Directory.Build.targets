@@ -4,7 +4,7 @@
     <ItemGroup>
       <PluginOutputFiles Include="$(PluginOutDir)/**/*.*" />
     </ItemGroup>
-    
+
     <!-- Delete the plugin directory-->
     <Delete
       Files="%(PluginOutputFiles.Identity)"
@@ -29,8 +29,6 @@
       <PluginOutDir Condition=" $([System.IO.Path]::IsPathRooted('$(PluginOutDir)')) != 'false' ">$([System.IO.Path]::GetFullPath('$(PluginOutDir)'))</PluginOutDir>
     </PropertyGroup>
 
-    <!--$(MSBuildStartupDirectory)-->
-    
     <ItemGroup>
       <PluginOutputFiles Include="$(OutDir)/*.*" />
       <PluginNativeFiles Include="$(OutDir)/runtimes/$(RuntimeIdentifier)/native/*.*" />
