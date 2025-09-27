@@ -37,6 +37,7 @@ jobs:
           -p:VersionPrefix=${{ env.APP_VERSION }} \
           -p:SelfContained=true \
           -p:IncludeNativeLibrariesForSelfExtract=false \
+          -p:RuntimeIdentifier=linux-x64 \
           -p:PublishTrimmed=false \
           -p:PublishSingleFile=true \
           -p:PublishReadyToRun=true \
@@ -52,7 +53,7 @@ jobs:
           -p:PublishReferencesDocumentationFiles=false \
           -p:GITHUB_ACTIONS=true
 
-    - name: Build (LevelDbStore)
+    - name: Build (All Plugins)
       run: |
         dotnet publish ./neo.sln \
           --framework net9.0 \
