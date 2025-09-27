@@ -19,7 +19,7 @@
 
   <Target Condition=" '$(PluginOutDir)' != '' " Name="BeforeCopyPluginFiles" AfterTargets="AfterBuild;AfterRebuild">
     <Message
-      Text="------ Plugin copy started: Plugin: $(MSBuildProjectName), Folder: '$(PluginOutDir)' ------"
+      Text="------ Plugin copy started: Plugin: $(MSBuildProjectName), Folder: '$(PluginOutDir)/$(MSBuildProjectName)' ------"
       Importance="high" />
   </Target>
 
