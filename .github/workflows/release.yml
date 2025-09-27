@@ -72,11 +72,11 @@ jobs:
     # Build the plugins
     - name: .NET Build (Plugins)
       run: |
-        dotnet build \
+        dotnet Publish \
         --version-suffix ${{ matrix.runtime }} \
         --framework net9.0 \
         --configuration ${{ env.CONFIGURATION }} \
-        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins \
+        --runtime ${{ matrix.runtime }} \
         --verbosity normal \
         -p:PluginOutDir=${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins \
         -p:VersionPrefix=${{ env.APP_VERSION }} \
