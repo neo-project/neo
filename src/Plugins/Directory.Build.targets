@@ -25,7 +25,15 @@
 
   <Target Condition=" '$(PluginOutDir)' != '' " Name="CopyPluginFiles" AfterTargets="BeforeCopyPluginFiles">
     <PropertyGroup>
-      <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == '' ">win-x64</RuntimeIdentifier>
+      <SystemPlatform Condition=" '$(Platform)' == 'x64' ">x64</SystemPlatform>
+      <SystemPlatform Condition=" '$(Platform)' == 'ARM64' ">arm64</SystemPlatform>
+      <SystemPlatform Condition=" '$(Platform)' == 'AnyCPU' ">x64</SystemPlatform>
+      <SystemPlatform Condition=" '$(SystemPlatform)' == '' ">x64</SystemPlatform>
+      <SystemOS Condition=" $([MSBuild]::IsOSPlatform('OSX')) == 'true' ">osx</SystemOS>
+      <SystemOS Condition=" $([MSBuild]::IsOSPlatform('Linux')) == 'true' ">linux</SystemOS>
+      <SystemOS Condition=" $([MSBuild]::IsOSPlatform('Windows')) == 'true' ">win</SystemOS>
+      <SystemOS Condition=" '$(SystemOS)' == '' ">win</SystemOS>
+      <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == '' ">$(SystemOS)-$(SystemPlatform)</RuntimeIdentifier>
       <PluginOutDir Condition=" $([System.IO.Path]::IsPathRooted('$(PluginOutDir)')) != 'false' ">$([System.IO.Path]::GetFullPath('$(PluginOutDir)'))</PluginOutDir>
     </PropertyGroup>
 

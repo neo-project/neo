@@ -180,7 +180,7 @@ jobs:
 
   code-sign:
     needs: [build-neo-cli]
-    name: CodeSign & Publish MacOS (neo-cli)
+    name: CodeSign & Publish ${{ matrix.runtime }}
     runs-on: macos-latest
     strategy:
       matrix:
