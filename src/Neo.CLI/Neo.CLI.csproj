@@ -46,5 +46,26 @@
     </None>
   </ItemGroup>
 
+  <Target Name="OnRunExecutable" BeforeTargets="PrepareForRun">
+    <ItemGroup>
+      <PluginFiles Include="$(MSBuildStartupDirectory)/bin/Plugins/**/*.*" />
+    </ItemGroup>
+
+    <Copy
+      SourceFiles="%(PluginFiles.Identity)"
+      DestinationFolder="$(OutDir)/Plugins/%(PluginFiles.RecursiveDir)"
+      OverwriteReadOnlyFiles="false"
+      ContinueOnError="true"
+      SkipUnchangedFiles="true">
+      <Output
+        TaskParameter="CopiedFiles"
+        ItemName="PluginFilesCopiedFiles" />
+    </Copy>
+    
+    <Message
+        Condition=" '%(PluginFiles.Identity)' != '' "
+        Text="$(MSBuildProjectName) -> Copying '%(PluginFiles.FullPath)'"
+        Importance="high" />
+  </Target>
 
 </Project>
