@@ -69,23 +69,24 @@ jobs:
         -p:PublishReferencesDocumentationFiles=false \
         -p:GITHUB_ACTIONS=true
 
-    # Copy 'libleveldb' library file
+    # Copy 'neo-cli' native library files
     - name: Native Content (neo-cli)
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: |
         mv -v ./runtimes/${{ matrix.runtime }}/native/* .
         rm -v -R runtimes
 
-    # Build the LevelDBStore plugin
-    - name: .NET Build (LevelDBStore)
+    # Build the plugins
+    - name: .NET Build (Plugins)
       run: |
-        dotnet build ./src/Plugins/LevelDBStore \
+        dotnet build \
         --version-suffix ${{ matrix.runtime }} \
         --framework net9.0 \
         --configuration ${{ env.CONFIGURATION }} \
         --runtime ${{ matrix.runtime }} \
-        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins \
         --verbosity normal \
+        -p:PluginOutDir=${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins
         -p:VersionPrefix=${{ env.APP_VERSION }} \
         -p:DebugSymbols=false \
         -p:DebugType=none \
@@ -96,13 +97,14 @@ jobs:
         -p:GenerateDocumentationFile=false \
         -p:GITHUB_ACTIONS=true
 
-    # Remove unnecessary files from the LevelDBStore plugin output
-    - name: Remove files (junk)
-      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore
-      run: |
-        rm -v -R runtimes
-        rm -v Neo*
-        rm -v $(ls *.dll | grep -v "LevelDBStore.dll") 
+    # Cache binary build files for macOS
+    - name: Cache Distribution
+      if: ${{ startsWith(matrix.runtime, 'osx') }}
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/*
+        key: neo-${{ matrix.runtime }}
+        enableCrossOsArchive: true
 
     # Create the distribution directory
     - name: Create Distribution Directory
@@ -113,14 +115,6 @@ jobs:
       if: ${{ startsWith(matrix.runtime, 'linux') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: tar -czvf ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.gz .
-
-    # Create a tarball file for macOS distributions
-    - name: Cache Distribution
-      uses: actions/cache/save@v4
-      with:
-        path: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/*
-        key: neo-${{ matrix.runtime }}
-        enableCrossOsArchive: true
 
     # Create a zip file for Windows distributions
     - name: Create Zip File (win)
