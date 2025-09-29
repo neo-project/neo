@@ -81,10 +81,10 @@ namespace Neo.Plugins.RpcServer
         {
             if (string.IsNullOrEmpty(settings.RpcUser)) return true;
 
-            string? reqauth = context.Request.Headers["Authorization"];
+            string? reqauth = context.Request.Headers.Authorization;
             if (string.IsNullOrEmpty(reqauth))
             {
-                context.Response.Headers["WWW-Authenticate"] = "Basic realm=\"Restricted\"";
+                context.Response.Headers.WWWAuthenticate = "Basic realm=\"Restricted\"";
                 context.Response.StatusCode = 401;
                 return false;
             }
