@@ -718,7 +718,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Check that proper amount of GAS was minted to block's Primary and the rest
             // is evenly devided between designated Notary nodes as a reward.
             // burn tx1 and tx2 network fee + mint primary reward + transfer reward to Notary1 and Notary2
-            Assert.AreEqual(2 + 1 + 2, engine.Notifications.Count());
+            Assert.AreEqual(2 + 1 + 2, engine.Notifications.Count);
             Assert.AreEqual(netFee1 + netFee2 - expectedNotaryReward, engine.Notifications[2].State[2]);
             Assert.AreEqual(netFee1 + netFee2 - expectedNotaryReward, NativeContract.GAS.BalanceOf(engine.SnapshotCache, primary));
             Assert.AreEqual(expectedNotaryReward / 2, engine.Notifications[3].State[2]);
