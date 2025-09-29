@@ -168,13 +168,13 @@ namespace Neo.Json.UnitTests
             };
 
             jArray.Insert(1, bob);
-            Assert.AreEqual(5, jArray.Count());
+            Assert.AreEqual(5, jArray.Count);
             Assert.AreEqual(alice, jArray[0]);
             Assert.AreEqual(bob, jArray[1]);
             Assert.AreEqual(alice, jArray[2]);
 
             jArray.Insert(5, bob);
-            Assert.AreEqual(6, jArray.Count());
+            Assert.AreEqual(6, jArray.Count);
             Assert.AreEqual(bob, jArray[5]);
         }
 
@@ -208,15 +208,15 @@ namespace Neo.Json.UnitTests
             {
                 alice
             };
-            Assert.AreEqual(1, jArray.Count());
+            Assert.AreEqual(1, jArray.Count);
             jArray.Remove(alice);
-            Assert.AreEqual(0, jArray.Count());
+            Assert.AreEqual(0, jArray.Count);
 
             jArray.Add(alice);
             jArray.Add(alice);
-            Assert.AreEqual(2, jArray.Count());
+            Assert.AreEqual(2, jArray.Count);
             jArray.Remove(alice);
-            Assert.AreEqual(1, jArray.Count());
+            Assert.AreEqual(1, jArray.Count);
         }
 
         [TestMethod]
@@ -229,7 +229,7 @@ namespace Neo.Json.UnitTests
                 alice
             };
             jArray.RemoveAt(1);
-            Assert.AreEqual(2, jArray.Count());
+            Assert.AreEqual(2, jArray.Count);
             Assert.DoesNotContain(bob, jArray);
         }
 
