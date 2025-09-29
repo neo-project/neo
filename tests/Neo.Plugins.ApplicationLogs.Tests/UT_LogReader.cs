@@ -196,7 +196,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             {
                 Assert.AreEqual(VMState.HALT, log.VmState);
                 Assert.IsTrue(log.Stack[0].GetBoolean());
-                Assert.AreEqual(2, log.Notifications.Count());
+                Assert.AreEqual(2, log.Notifications.Length);
                 Assert.AreEqual("Transfer", log.Notifications[0].EventName);
                 Assert.AreEqual(log.Notifications[0].ScriptHash, NativeContract.NEO.Hash);
                 Assert.AreEqual(1, log.Notifications[0].State[2]);
