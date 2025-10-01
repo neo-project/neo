@@ -1,0 +1,9 @@
+# It's better to create a venv for the integration tests
+# 
+#   python3 -m venv venv
+#   source venv/bin/activate
+#   pip3 install -r requirements.txt
+requests >= 2.32.0
+dataclasses_json >= 0.6
+cryptography >= 46.0.0
+neo-mamba >= 3.0.1

@@ -267,3 +267,5 @@ launchSettings.json
 # Benchmarks
 **/BenchmarkDotNet.Artifacts/
 /src/Neo.CLI/neo-cli/
+**/__pycache__
+**/venv
