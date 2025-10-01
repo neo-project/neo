@@ -268,12 +268,12 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool IsWhitelistedFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int pcount)
+        public bool IsWhitelistedFeeMethod(ApplicationEngine engine, UInt160 contractHash, string method, int pcount)
         {
-            return IsWhitelistedFeeContract(engine, contractHash, method, pcount, out _);
+            return IsWhitelistedFeeMethod(engine, contractHash, method, pcount, out _);
         }
 
-        public bool IsWhitelistedFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int pcount,
+        public bool IsWhitelistedFeeMethod(ApplicationEngine engine, UInt160 contractHash, string method, int pcount,
             [NotNullWhen(true)] out BigInteger fixedFee)
         {
             var item = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash));
