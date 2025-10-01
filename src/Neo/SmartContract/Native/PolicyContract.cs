@@ -15,6 +15,8 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -83,6 +85,7 @@ namespace Neo.SmartContract.Native
         public const uint MaxMaxTraceableBlocks = 2102400;
 
         private const byte Prefix_BlockedAccount = 15;
+        private const byte Prefix_WhitelistedFeeContracts = 16;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
@@ -258,6 +261,87 @@ namespace Neo.SmartContract.Native
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
         }
 
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public bool IsWhitelistedFeeContract(DataCache snapshot, UInt160 contractHash)
+        {
+            return snapshot.Contains(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash));
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public bool IsWhitelistedFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int pcount)
+        {
+            return IsWhitelistedFeeContract(engine, contractHash, method, pcount, out _);
+        }
+
+        public bool IsWhitelistedFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int pcount,
+            [NotNullWhen(true)] out BigInteger fixedFee)
+        {
+            var item = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash));
+
+            if (item != null)
+            {
+                var map = BinarySerializer.Deserialize(item.Value, engine.Limits) as VM.Types.Map;
+
+                if (map.TryGetValue($"{method}/{pcount}", out var value))
+                {
+                    fixedFee = value.GetInteger();
+                    return true;
+                }
+            }
+
+            fixedFee = 0;
+            return false;
+        }
+
+        /// <summary>
+        /// Set whitelisted Fee contracts
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="contractHash">The contract to set the whitelist</param>
+        /// <param name="methods">Dictionary (method,number of args => Fixed Fee)</param>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void WhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, VM.Types.Map methods = null)
+        {
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash);
+
+            if (methods == null || methods.Count == 0)
+            {
+                engine.SnapshotCache.Delete(key);
+            }
+            else
+            {
+                // Validate methods
+
+                var contract = NativeContract.ContractManagement.GetContract(engine.SnapshotCache, contractHash)
+                    ?? throw new InvalidOperationException("Is not a valid contract");
+
+                foreach (var method in methods)
+                {
+                    if (method.Key is not VM.Types.ByteString)
+                    {
+                        throw new InvalidOperationException($"The key is not a ByteString");
+                    }
+
+                    if (method.Value is not VM.Types.Integer)
+                    {
+                        throw new InvalidOperationException($"The value is not a Integer");
+                    }
+
+                    if (!contract.Manifest.Abi.Methods.Any(u => $"{u.Name}/{u.Parameters.Length}" == method.Key.GetString()))
+                    {
+                        throw new InvalidOperationException($"{method.Key.GetString()} Is not defined in Abi contract");
+                    }
+                }
+
+                // Set
+
+                engine.SnapshotCache.Delete(key);
+                engine.SnapshotCache.Add(key, new StorageItem(BinarySerializer.Serialize(methods, engine.Limits)));
+            }
+        }
+
         /// <summary>
         /// Sets the block generation time in milliseconds.
         /// </summary>
@@ -425,6 +509,16 @@ namespace Neo.SmartContract.Native
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
+                .GetEnumerator();
+            return new StorageIterator(enumerator, 1, options);
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private StorageIterator GetWhitelistedFeeContracts(DataCache snapshot)
+        {
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+            var enumerator = snapshot
+                .Find(CreateStorageKey(Prefix_WhitelistedFeeContracts), SeekDirection.Forward)
                 .GetEnumerator();
             return new StorageIterator(enumerator, 1, options);
         }
