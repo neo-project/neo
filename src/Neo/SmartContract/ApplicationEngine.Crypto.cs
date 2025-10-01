@@ -69,7 +69,7 @@ namespace Neo.SmartContract
             if (n == 0) throw new ArgumentException("pubkeys array cannot be empty.");
             if (m == 0) throw new ArgumentException("signatures array cannot be empty.");
             if (m > n) throw new ArgumentException($"signatures count ({m}) cannot be greater than pubkeys count ({n}).");
-            AddFee(CheckSigPrice * n * ExecFeeFactor);
+            AddFee(CheckSigPrice * n, FeeFactorType.Execution);
             try
             {
                 for (int i = 0, j = 0; i < m && j < n;)

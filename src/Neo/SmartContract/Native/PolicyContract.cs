@@ -132,6 +132,13 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
                 engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
             }
+            if (hardfork == Hardfork.HF_Faun)
+            {
+                // Add two decimals
+
+                var item = engine.SnapshotCache.GetOrAdd(_execFeeFactor, () => new StorageItem(DefaultExecFeeFactor));
+                engine.SnapshotCache.Add(_execFeeFactor, new StorageItem((uint)(BigInteger)item * 100));
+            }
             return ContractTask.CompletedTask;
         }
 

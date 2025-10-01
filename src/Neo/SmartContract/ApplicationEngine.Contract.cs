@@ -121,10 +121,10 @@ namespace Neo.SmartContract
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+            var fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
                 : 1 << 8;
-            AddFee(fee * ExecFeeFactor);
+            AddFee(fee, FeeFactorType.Execution);
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
@@ -138,10 +138,10 @@ namespace Neo.SmartContract
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+            var fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice * pubKeys.Length
                 : 1 << 8;
-            AddFee(fee * ExecFeeFactor);
+            AddFee(fee, FeeFactorType.Execution);
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 

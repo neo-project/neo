@@ -256,7 +256,7 @@ namespace Neo.SmartContract
                 else
                     newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
             }
-            AddFee(newDataSize * StoragePrice);
+            AddFee(newDataSize, FeeFactorType.Storage);
 
             item.Value = value;
         }

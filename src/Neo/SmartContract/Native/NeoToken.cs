@@ -371,7 +371,7 @@ namespace Neo.SmartContract.Native
                 !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            engine.AddFee(GetRegisterPrice(engine.SnapshotCache));
+            engine.AddFee(GetRegisterPrice(engine.SnapshotCache), FeeFactorType.None);
             return RegisterInternal(engine, pubkey);
         }
 
