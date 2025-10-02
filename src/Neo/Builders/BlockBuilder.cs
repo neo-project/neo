@@ -47,11 +47,11 @@ namespace Neo.Builders
                 .AddPrevHash(prevBlock.Hash)
                 .AddIndex(prevBlock.Index + 1);
 
-        public static BlockBuilder CreateNext(Block prevBlock, ulong MillisecondsPerBlock) =>
+        public static BlockBuilder CreateNext(Block prevBlock, ulong millisecondsPerBlock) =>
             new BlockBuilder()
                 .AddPrevHash(prevBlock.Hash)
                 .AddIndex(prevBlock.Index + 1)
-                .AddTimestamp(config => config += MillisecondsPerBlock);
+                .AddTimestamp(config => config += millisecondsPerBlock);
 
         public static BlockBuilder CreateNext(Block prevBlock, ProtocolSettings protocolSettings) =>
             new BlockBuilder()
