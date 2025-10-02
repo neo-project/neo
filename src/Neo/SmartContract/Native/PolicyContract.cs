@@ -299,7 +299,7 @@ namespace Neo.SmartContract.Native
         /// <param name="engine">The execution engine.</param>
         /// <param name="contractHash">The contract to set the whitelist</param>
         /// <param name="methods">Dictionary (method,number of args => Fixed Fee)</param>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void WhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, VM.Types.Map methods = null)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
