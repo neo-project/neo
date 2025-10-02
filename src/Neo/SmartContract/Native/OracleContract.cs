@@ -218,10 +218,10 @@ namespace Neo.SmartContract.Native
             if (gasForResponse < 0_10000000)
                 throw new ArgumentException($"gasForResponse {gasForResponse} must be at least 0.1 datoshi.");
 
-            engine.AddFee(GetPrice(engine.SnapshotCache), FeeFactorType.None);
+            engine.AddFee(GetPrice(engine.SnapshotCache));
 
             //Mint gas for the response
-            engine.AddFee(gasForResponse, FeeFactorType.None);
+            engine.AddFee(gasForResponse);
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id

@@ -297,27 +297,8 @@ namespace Neo.SmartContract
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
         /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
-        /// <param name="factorType">Factor type</param>
-        /// <param name="minimum">Minimum fee</param>
-        protected internal void AddFee(long datoshi, FeeFactorType factorType, long minimum = 0)
+        protected internal void AddFee(long datoshi)
         {
-            switch (factorType)
-            {
-                case FeeFactorType.Execution:
-                    {
-                        datoshi *= ExecFeeFactor;
-                        break;
-                    }
-                case FeeFactorType.Storage:
-                    {
-                        datoshi *= StoragePrice;
-                        break;
-                    }
-            }
-
-            // Ensure minimum
-            if (datoshi < minimum) datoshi = minimum;
-
 #pragma warning disable CS0618 // Type or member is obsolete
             FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -676,13 +657,13 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice, FeeFactorType.Execution);
+            AddFee(descriptor.FixedPrice * ExecFeeFactor);
 
-            var parameters = new object[descriptor.Parameters.Count];
-            for (var i = 0; i < parameters.Length; i++)
+            object[] parameters = new object[descriptor.Parameters.Count];
+            for (int i = 0; i < parameters.Length; i++)
                 parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
 
-            var returnValue = descriptor.Handler.Invoke(this, parameters);
+            object returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
         }
@@ -690,7 +671,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(OpCodePriceTable[(byte)instruction.OpCode], FeeFactorType.Execution);
+            AddFee(ExecFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
