@@ -351,8 +351,10 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetExecFeeFactor(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > MaxExecFeeFactor)
-                throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {MaxExecFeeFactor}], got {value}");
+            var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? ApplicationEngine.FeeFactor * MaxExecFeeFactor : MaxExecFeeFactor;
+
+            if (value == 0 || value > maxValue)
+                throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {maxValue}], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_execFeeFactor).Set(value);
         }
@@ -360,8 +362,10 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetStoragePrice(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > MaxStoragePrice)
-                throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {MaxStoragePrice}], got {value}");
+            var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? ApplicationEngine.FeeFactor * MaxStoragePrice : MaxStoragePrice;
+
+            if (value == 0 || value > maxValue)
+                throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {maxValue}], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
         }
