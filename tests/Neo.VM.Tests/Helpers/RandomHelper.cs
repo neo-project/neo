@@ -10,25 +10,12 @@
 // modifications are permitted.
 
 using Neo.Extensions.Factories;
-using System;
 
 namespace Neo.Test.Helpers
 {
     public class RandomHelper
     {
         private const string _randchars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-        /// <summary>
-        /// Get random buffer
-        /// </summary>
-        /// <param name="length">Length</param>
-        /// <returns>Buffer</returns>
-        public static byte[] RandBuffer(int length)
-        {
-            var buffer = new byte[length];
-            Random.Shared.NextBytes(buffer);
-            return buffer;
-        }
 
         /// <summary>
         /// Get random string

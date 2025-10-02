@@ -10,9 +10,9 @@
 // modifications are permitted.
 
 using Moq;
+using Neo.Extensions.Factories;
 using Neo.SmartContract;
 using Neo.Wallets;
-using System;
 
 namespace Neo.UnitTests
 {
@@ -35,8 +35,7 @@ namespace Neo.UnitTests
 
         static TestWalletAccount()
         {
-            byte[] prikey = new byte[32];
-            Random.Shared.NextBytes(prikey);
+            byte[] prikey = RandomNumberFactory.NextBytes(32);
             key = new KeyPair(prikey);
         }
     }

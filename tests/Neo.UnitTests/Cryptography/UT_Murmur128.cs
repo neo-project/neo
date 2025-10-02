@@ -77,8 +77,7 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestAppend()
         {
-            var buffer = new byte[RandomNumberFactory.NextInt32(2, 2048)];
-            Random.Shared.NextBytes(buffer);
+            var buffer = RandomNumberFactory.NextBytes(RandomNumberFactory.NextInt32(2, 2048));
             for (int i = 0; i < 100; i++)
             {
                 int split = RandomNumberFactory.NextInt32(1, buffer.Length - 1);

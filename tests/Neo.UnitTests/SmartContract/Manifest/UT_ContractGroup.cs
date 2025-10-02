@@ -11,10 +11,10 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Extensions.Factories;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
-using System;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -24,8 +24,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestClone()
         {
-            byte[] privateKey = new byte[32];
-            Random.Shared.NextBytes(privateKey);
+            byte[] privateKey = RandomNumberFactory.NextBytes(32);
             KeyPair keyPair = new(privateKey);
             ContractGroup contractGroup = new()
             {
@@ -41,8 +40,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestIsValid()
         {
-            var privateKey = new byte[32];
-            Random.Shared.NextBytes(privateKey);
+            var privateKey = RandomNumberFactory.NextBytes(32);
             KeyPair keyPair = new(privateKey);
             ContractGroup contractGroup = new()
             {

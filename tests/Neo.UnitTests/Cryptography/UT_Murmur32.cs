@@ -83,8 +83,7 @@ namespace Neo.UnitTests.Cryptography
             Assert.AreEqual(60539726u, murmur3.GetCurrentHashUInt32());
 
             // random data, random split
-            var data = new byte[RandomNumberFactory.NextInt32(2, 2048)];
-            Random.Shared.NextBytes(data);
+            var data = RandomNumberFactory.NextBytes(RandomNumberFactory.NextInt32(2, 2048));
             for (int i = 0; i < 100; i++)
             {
                 var split = RandomNumberFactory.NextInt32(1, data.Length - 1);

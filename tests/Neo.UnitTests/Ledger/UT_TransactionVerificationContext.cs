@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neo.Extensions.Factories;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -28,8 +29,7 @@ namespace Neo.UnitTests.Ledger
     {
         private static Transaction CreateTransactionWithFee(long networkFee, long systemFee)
         {
-            var randomBytes = new byte[16];
-            Random.Shared.NextBytes(randomBytes);
+            var randomBytes = RandomNumberFactory.NextBytes(16);
             Mock<Transaction> mock = new();
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<ClonedCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);

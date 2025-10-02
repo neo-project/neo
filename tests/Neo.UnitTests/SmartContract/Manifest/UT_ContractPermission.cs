@@ -11,11 +11,11 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions.Factories;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -63,8 +63,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.IsFalse(contractPermission2.IsAllowed(new() { Hash = UInt160.Zero, Manifest = contractManifest2 }, "AAA"));
             contractPermission2.Contract = ContractPermissionDescriptor.CreateWildcard();
 
-            byte[] privateKey3 = new byte[32];
-            Random.Shared.NextBytes(privateKey3);
+            byte[] privateKey3 = RandomNumberFactory.NextBytes(32);
             ECPoint publicKey3 = ECCurve.Secp256r1.G * privateKey3;
             ContractManifest contractManifest3 = TestUtils.CreateDefaultManifest();
             contractManifest3.Groups = [new ContractGroup() { PubKey = publicKey3 }];
@@ -73,11 +72,9 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.IsTrue(contractPermission3.IsAllowed(new() { Hash = UInt160.Zero, Manifest = contractManifest3 }, "AAA"));
             contractPermission3.Contract = ContractPermissionDescriptor.CreateWildcard();
 
-            byte[] privateKey41 = new byte[32];
-            Random.Shared.NextBytes(privateKey41);
+            byte[] privateKey41 = RandomNumberFactory.NextBytes(32);
             ECPoint publicKey41 = ECCurve.Secp256r1.G * privateKey41;
-            byte[] privateKey42 = new byte[32];
-            Random.Shared.NextBytes(privateKey42);
+            byte[] privateKey42 = RandomNumberFactory.NextBytes(32);
             ECPoint publicKey42 = ECCurve.Secp256r1.G * privateKey42;
             ContractManifest contractManifest4 = TestUtils.CreateDefaultManifest();
             contractManifest4.Groups = [new ContractGroup() { PubKey = publicKey42 }];

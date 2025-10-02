@@ -69,8 +69,7 @@ namespace Neo.UnitTests.Ledger
 
         private Transaction CreateTransactionWithFee(long fee)
         {
-            var randomBytes = new byte[16];
-            Random.Shared.NextBytes(randomBytes);
+            var randomBytes = RandomNumberFactory.NextBytes(16);
             Mock<Transaction> mock = new();
             mock.Setup(p => p.VerifyStateDependent(
                     It.IsAny<ProtocolSettings>(),
@@ -89,8 +88,7 @@ namespace Neo.UnitTests.Ledger
 
         private Transaction CreateTransactionWithFeeAndBalanceVerify(long fee)
         {
-            var randomBytes = new byte[16];
-            Random.Shared.NextBytes(randomBytes);
+            var randomBytes = RandomNumberFactory.NextBytes(16);
             Mock<Transaction> mock = new();
             UInt160 sender = senderAccount;
             mock.Setup(p => p.VerifyStateDependent(

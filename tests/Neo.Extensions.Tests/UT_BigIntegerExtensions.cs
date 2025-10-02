@@ -253,10 +253,7 @@ namespace Neo.Extensions.Tests
         private static byte[] GetRandomByteArray()
         {
             var byteValue = RandomNumberFactory.NextInt32(0, 32);
-            var value = new byte[byteValue];
-
-            Random.Shared.NextBytes(value);
-            return value;
+            return RandomNumberFactory.NextBytes(byteValue);
         }
 
         private void VerifyGetBitLength(BigInteger value, long expected)

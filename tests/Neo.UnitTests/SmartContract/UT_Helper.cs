@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -34,8 +35,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestSetup()
         {
             _snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var pk = new byte[32];
-            Random.Shared.NextBytes(pk);
+            var pk = RandomNumberFactory.NextBytes(32);
             _key = new KeyPair(pk);
         }
 
