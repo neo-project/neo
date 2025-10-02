@@ -163,7 +163,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(0, state.UpdateCounter);
             snapshotCache.UpdateContract(state.Hash, nef.ToArray(), manifest.ToJson().ToByteArray(false));
             var ret = NativeContract.ContractManagement.GetContract(snapshotCache, state.Hash);
-            Assert.AreEqual(1, snapshotCache.Find(BitConverter.GetBytes(state.Id)).ToList().Count());
+            Assert.AreEqual(1, snapshotCache.Find(BitConverter.GetBytes(state.Id)).ToList().Count);
             Assert.AreEqual(1, ret.UpdateCounter);
             Assert.AreEqual(state.Id, ret.Id);
             Assert.AreEqual(manifest.ToJson().ToString(), ret.Manifest.ToJson().ToString());
