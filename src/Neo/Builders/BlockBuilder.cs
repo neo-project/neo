@@ -47,7 +47,7 @@ namespace Neo.Builders
                 .AddPrevHash(prevBlock.Hash)
                 .AddIndex(prevBlock.Index + 1);
 
-        public static BlockBuilder CreateNext(Block prevBlock, ulong millisecondsPerBlock) =>
+        public static BlockBuilder CreateNext(Block prevBlock, uint millisecondsPerBlock) =>
             new BlockBuilder()
                 .AddPrevHash(prevBlock.Hash)
                 .AddIndex(prevBlock.Index + 1)
