@@ -65,8 +65,11 @@ namespace Neo.SmartContract
 
         private static Dictionary<uint, InteropDescriptor> services;
         // Total amount of GAS spent to execute.
-        // In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
-        private readonly long _feeAmount;
+        // In the unit of datoshi with two decimals, 1 datoshi = 1e-10 GAS, 1 GAS = 1e10 datoshi
+        private readonly BigInteger _feeAmount;
+        private BigInteger _feeConsumed;
+        // Decimals for fee calculation
+        public const byte FeeFactor = 100;
         private Dictionary<Type, object> states;
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs> notifications;
@@ -131,19 +134,19 @@ namespace Neo.SmartContract
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
         [Obsolete("This property is deprecated. Use FeeConsumed instead.")]
-        public long GasConsumed { get; protected set; } = 0;
+        public long GasConsumed => FeeConsumed;
 
         /// <summary>
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed { get; protected set; } = 0;
+        public long FeeConsumed => (long)(_feeConsumed / FeeFactor);
 
         /// <summary>
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => _feeAmount - FeeConsumed;
+        public long GasLeft => (long)((_feeAmount / FeeFactor) - FeeConsumed);
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
@@ -205,18 +208,28 @@ namespace Neo.SmartContract
             originalSnapshotCache = snapshotCache;
             PersistingBlock = persistingBlock;
             ProtocolSettings = settings;
-            _feeAmount = gas;
+            _feeAmount = gas * FeeFactor;
             Diagnostic = diagnostic;
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
-                ExecFeeFactor = PolicyContract.DefaultExecFeeFactor;
-                StoragePrice = PolicyContract.DefaultStoragePrice;
+                ExecFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
+                StoragePrice = PolicyContract.DefaultStoragePrice * FeeFactor;
             }
             else
             {
-                ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
-                StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
+                if (!settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingBlock?.Index ?? 0))
+                {
+                    // The values doesn't have the decimals stored
+                    ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache) * FeeFactor;
+                    StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache) * FeeFactor;
+                }
+                else
+                {
+                    // The values have the decimals stored
+                    ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
+                    StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
+                }
             }
 
             if (persistingBlock is not null)
@@ -299,10 +312,8 @@ namespace Neo.SmartContract
         /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
         protected internal void AddFee(long datoshi)
         {
-#pragma warning disable CS0618 // Type or member is obsolete
-            FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
-#pragma warning restore CS0618 // Type or member is obsolete
-            if (FeeConsumed > _feeAmount)
+            _feeConsumed = checked(_feeConsumed + datoshi);
+            if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
