@@ -98,18 +98,26 @@ namespace Neo.SmartContract.Manifest
                 if (Length < 0) throw new FormatException("Length must be non-negative.");
                 if (Length > ExecutionEngineLimits.Default.MaxItemSize) throw new FormatException($"Length must less than {ExecutionEngineLimits.Default.MaxItemSize}.");
             }
-            else
+            else if (array[startIndex - 1] is null)
             {
                 Length = null;
+            }
+            else
+            {
+                throw new FormatException("Length must be Integer or null");
             }
 
             if (array[startIndex++] is VM.Types.Boolean forbidnull)
             {
                 ForbidNull = forbidnull.GetBoolean();
             }
-            else
+            else if (array[startIndex - 1] is null)
             {
                 ForbidNull = null;
+            }
+            else
+            {
+                throw new FormatException("ForbidNull must be Boolean or null");
             }
 
             if (array[startIndex++] is ByteString interf)
@@ -119,9 +127,13 @@ namespace Neo.SmartContract.Manifest
 
                 Interface = inferValue;
             }
-            else
+            else if (array[startIndex - 1] is null)
             {
                 Interface = null;
+            }
+            else
+            {
+                throw new FormatException("Interface must be ByteString or null");
             }
 
             if (array[startIndex++] is ByteString key)
@@ -131,9 +143,13 @@ namespace Neo.SmartContract.Manifest
 
                 Key = keyValue;
             }
-            else
+            else if (array[startIndex - 1] is null)
             {
                 Key = null;
+            }
+            else
+            {
+                throw new FormatException("Key must be ByteString or null");
             }
 
             if (array[startIndex++] is Struct value)
@@ -141,9 +157,13 @@ namespace Neo.SmartContract.Manifest
                 Value = new ExtendedType();
                 Value.FromStackItem(value);
             }
-            else
+            else if (array[startIndex - 1] is null)
             {
                 Value = null;
+            }
+            else
+            {
+                throw new FormatException("Value must be Struct or null");
             }
 
             if (array[startIndex++] is VM.Types.Array fields)
@@ -156,9 +176,13 @@ namespace Neo.SmartContract.Manifest
                     Fields[i] = field;
                 }
             }
-            else
+            else if (array[startIndex - 1] is null)
             {
                 Fields = null;
+            }
+            else
+            {
+                throw new FormatException("Fields must be Array or null");
             }
         }
 
