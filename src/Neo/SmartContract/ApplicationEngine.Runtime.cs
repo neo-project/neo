@@ -447,7 +447,7 @@ namespace Neo.SmartContract
         {
             if (datoshi <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
-            AddFee(datoshi);
+            AddFee(datoshi * FeeFactor);
         }
 
         /// <summary>

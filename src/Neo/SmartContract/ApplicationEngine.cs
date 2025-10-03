@@ -69,7 +69,7 @@ namespace Neo.SmartContract
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
-        public const short FeeFactor = 10000;
+        public const int FeeFactor = 10000;
         private Dictionary<Type, object> states;
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs> notifications;
@@ -309,10 +309,10 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
-        protected internal void AddFee(long datoshi)
+        /// <param name="picoDatoshi">The amount of GAS, in the unit of pico-datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
+        protected internal void AddFee(long picoDatoshi)
         {
-            _feeConsumed = checked(_feeConsumed + datoshi);
+            _feeConsumed = checked(_feeConsumed + picoDatoshi);
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
