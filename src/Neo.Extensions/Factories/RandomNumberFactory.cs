@@ -290,7 +290,7 @@ namespace Neo.Extensions.Factories
 
         public static byte[] NextBytes(int length, bool cryptography = false)
         {
-            ArgumentOutOfRangeException.ThrowIfLessThan(length, 1, nameof(length));
+            ArgumentOutOfRangeException.ThrowIfLessThan(length, 0, nameof(length));
 
             var bytes = new byte[length];
 
