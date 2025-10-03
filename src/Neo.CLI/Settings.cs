@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence.Providers;
 using System;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 
@@ -46,7 +47,8 @@ namespace Neo
             {
                 if (s_default == null)
                 {
-                    var config = new ConfigurationBuilder().AddJsonFile("config.json", optional: true).Build();
+                    var configFile = ProtocolSettings.FindFile("config.json", Environment.CurrentDirectory);
+                    var config = new ConfigurationBuilder().AddJsonFile(configFile, optional: true).Build();
                     Initialize(config);
                 }
                 return Custom ?? s_default!;

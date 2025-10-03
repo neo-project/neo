@@ -53,7 +53,7 @@ namespace Neo.Plugins.RestServer.Tests
                         options.OnRejected = async (context, token) =>
                         {
                             context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                            context.HttpContext.Response.Headers["Retry-After"] = "10";
+                            context.HttpContext.Response.Headers.RetryAfter = "10";
                             await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
                         };
                     });
