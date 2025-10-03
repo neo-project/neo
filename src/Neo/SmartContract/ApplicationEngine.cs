@@ -69,7 +69,7 @@ namespace Neo.SmartContract
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
-        public const int FeeFactor = 10000;
+        public const uint FeeFactor = 10000;
         private Dictionary<Type, object> states;
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs> notifications;
@@ -140,13 +140,13 @@ namespace Neo.SmartContract
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed => (long)(_feeConsumed / FeeFactor);
+        public long FeeConsumed => (long)_feeConsumed.CeilingDivide(FeeFactor);
 
         /// <summary>
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => (long)((_feeAmount / FeeFactor) - FeeConsumed);
+        public long GasLeft => (long)(_feeAmount.CeilingDivide(FeeFactor) - FeeConsumed);
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.

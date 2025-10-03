@@ -18,6 +18,22 @@ namespace Neo.Extensions
 {
     public static class BigIntegerExtensions
     {
+        /// <summary>
+        /// Performs integer division with ceiling (rounding up).
+        /// Example: 10 / 3 = 4 instead of 3.
+        /// </summary>
+        /// <param name="a">The dividend.</param>
+        /// <param name="b">The divisor (must be greater than zero).</param>
+        /// <returns>The result of division rounded up.</returns>
+        /// <exception cref="ArgumentException">Thrown when divisor is zero or negative.</exception>
+        public static BigInteger CeilingDivide(this BigInteger a, BigInteger b)
+        {
+            if (b <= 0)
+                throw new ArgumentException("Divider must be greater than zero.", nameof(b));
+
+            return (a + b - 1) / b;
+        }
+
         internal static int TrailingZeroCount(byte[] b)
         {
             var w = 0;

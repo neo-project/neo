@@ -367,7 +367,7 @@ namespace Neo.SmartContract.Native
         private void SetStoragePrice(ApplicationEngine engine, uint value)
         {
             // After FAUN hardfork, the max exec fee factor is with decimals defined in ApplicationEngine.FeeFactor
-            var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? ApplicationEngine.FeeFactor * MaxStoragePrice : MaxStoragePrice;
+            var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? (ulong)ApplicationEngine.FeeFactor * MaxStoragePrice : MaxStoragePrice;
 
             if (value == 0 || value > maxValue)
                 throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {maxValue}], got {value}");
