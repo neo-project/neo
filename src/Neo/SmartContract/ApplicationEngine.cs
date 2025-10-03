@@ -65,11 +65,11 @@ namespace Neo.SmartContract
 
         private static Dictionary<uint, InteropDescriptor> services;
         // Total amount of GAS spent to execute.
-        // In the unit of datoshi with two decimals, 1 datoshi = 1e-10 GAS, 1 GAS = 1e10 datoshi
+        // In the unit of pico-datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
-        public const byte FeeFactor = 100;
+        public const short FeeFactor = 10000;
         private Dictionary<Type, object> states;
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs> notifications;
