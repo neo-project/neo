@@ -135,11 +135,14 @@ namespace Neo.SmartContract.Native
             if (hardfork == Hardfork.HF_Faun)
             {
                 // Add decimals to exec fee factor
-                var item = engine.SnapshotCache.GetOrAdd(_execFeeFactor, () => new StorageItem(DefaultExecFeeFactor));
-                engine.SnapshotCache.Add(_execFeeFactor, new StorageItem((uint)(BigInteger)item * ApplicationEngine.FeeFactor));
+                var item = engine.SnapshotCache.TryGet(_execFeeFactor) ??
+                    throw new InvalidOperationException("Policy was not initialized");
+                item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
+
                 // Add decimals to storage price
-                item = engine.SnapshotCache.GetOrAdd(_storagePrice, () => new StorageItem(DefaultStoragePrice));
-                engine.SnapshotCache.Add(_storagePrice, new StorageItem((uint)(BigInteger)item * ApplicationEngine.FeeFactor));
+                item = engine.SnapshotCache.TryGet(_storagePrice) ??
+                    throw new InvalidOperationException("Policy was not initialized");
+                item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
             }
             return ContractTask.CompletedTask;
         }
