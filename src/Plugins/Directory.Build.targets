@@ -80,7 +80,7 @@
 
   <Target Condition=" '$(PluginOutDir)' != '' " Name="AfterCopyPluginFiles" AfterTargets="CopyPluginFiles">
     <Message
-      Text="========== Plugin copy completed: Plugin: $(MSBuildProjectName), Content: @(PluginOutputFilesCopiedFiles->Count()) files, Native: @(PluginNativeFiles->Count()) files =========="
+      Text="========== Plugin copy completed: Plugin: $(MSBuildProjectName), Content: @(PluginOutputFilesCopiedFiles->Count()) files, Native: @(PluginNativeFilesCopiedFiles->Count()) files =========="
       Importance="high" />
   </Target>
 
