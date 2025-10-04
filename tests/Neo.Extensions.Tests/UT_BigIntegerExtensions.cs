@@ -21,6 +21,14 @@ namespace Neo.Extensions.Tests
     public class UT_BigIntegerExtensions
     {
         [TestMethod]
+        public void CeilingDivide_NegativeNumerator()
+        {
+            var numerator = new BigInteger(-7);
+            var denominator = new BigInteger(3);
+            var result = BigIntegerExtensions.CeilingDivide(numerator, denominator);
+            Assert.AreEqual(-2, result);
+        }    
+        [TestMethod]
         public void CeilingDivide_DividesExactly()
         {
             var result = BigIntegerExtensions.CeilingDivide(9, 3);
