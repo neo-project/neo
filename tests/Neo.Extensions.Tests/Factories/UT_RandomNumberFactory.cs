@@ -291,15 +291,12 @@ namespace Neo.Extensions.Tests.Factories
         [TestMethod]
         public void CheckNextBytes()
         {
-            var actualValue = RandomNumberFactory.NextBytes(10);
-            Assert.AreEqual(10, actualValue.Length);
-            foreach (var b in actualValue)
-                Assert.AreNotEqual(0, b);
+            var a = RandomNumberFactory.NextBytes(10);
+            Assert.AreEqual(10, a.Length);
 
-            actualValue = RandomNumberFactory.NextBytes(10, cryptography: true);
-            Assert.AreEqual(10, actualValue.Length);
-            foreach (var b in actualValue)
-                Assert.AreNotEqual(0, b);
+            var b = RandomNumberFactory.NextBytes(10, cryptography: true);
+            Assert.AreEqual(10, b.Length);
+            CollectionAssert.AreNotEqual(a, b);
         }
     }
 }
