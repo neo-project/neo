@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -578,13 +579,12 @@ namespace Neo.Wallets
             TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balancesGas,
             long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
         {
-            Random rand = new();
             foreach (var (account, value) in balancesGas)
             {
                 Transaction tx = new()
                 {
                     Version = 0,
-                    Nonce = (uint)rand.Next(),
+                    Nonce = RandomNumberFactory.NextUInt32(),
                     Script = script,
                     ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + snapshot.GetMaxValidUntilBlockIncrement(ProtocolSettings),
                     Signers = GetSigners(account, cosigners),
