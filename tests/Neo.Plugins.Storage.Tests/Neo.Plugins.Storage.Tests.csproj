@@ -15,12 +15,4 @@
     <ProjectReference Include="..\..\src\Plugins\RocksDBStore\RocksDBStore.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <LevelDbFile Include="$(OutputPath)/$(TargetFramework)/runtimes/**/*.*" />
-  </ItemGroup>
-
-  <Target Name="CopyLevelDbFile" AfterTargets="AfterBuild">
-    <Copy SourceFiles="@(LevelDbFile)" DestinationFolder="$(OutDir)/runtimes/%(RecursiveDir)" />
-  </Target>
-
 </Project>
