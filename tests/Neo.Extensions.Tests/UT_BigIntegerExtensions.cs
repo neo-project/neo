@@ -22,6 +22,57 @@ namespace Neo.Extensions.Tests
     public class UT_BigIntegerExtensions
     {
         [TestMethod]
+        public void CeilingDivide_NegativeNumerator()
+        {
+            var numerator = new BigInteger(-7);
+            var denominator = new BigInteger(3);
+            var result = BigIntegerExtensions.CeilingDivide(numerator, denominator);
+            Assert.AreEqual(-2, result);
+        }
+        [TestMethod]
+        public void CeilingDivide_DividesExactly()
+        {
+            var result = BigIntegerExtensions.CeilingDivide(9, 3);
+            Assert.AreEqual(3, result);
+        }
+
+        [TestMethod]
+        public void CeilingDivide_RoundsUp()
+        {
+            var result = BigIntegerExtensions.CeilingDivide(10, 3);
+            Assert.AreEqual(4, result);
+        }
+
+        [TestMethod]
+        public void CeilingDivide_LargeNumbers()
+        {
+            var a = BigInteger.Parse("1000000000000000000000000000000000");
+            var b = new BigInteger(7);
+            var result = BigIntegerExtensions.CeilingDivide(a, b);
+
+            Assert.AreEqual((a + b - 1) / b, result);
+        }
+
+        [TestMethod]
+        public void CeilingDivide_DivisorOne()
+        {
+            var result = BigIntegerExtensions.CeilingDivide(12345, 1);
+            Assert.AreEqual(12345, result);
+        }
+
+        [TestMethod]
+        public void CeilingDivide_ThrowsOnZeroDivisor()
+        {
+            Assert.Throws<ArgumentException>(() => BigIntegerExtensions.CeilingDivide(10, 0));
+        }
+
+        [TestMethod]
+        public void CeilingDivide_ThrowsOnNegativeDivisor()
+        {
+            Assert.Throws<ArgumentException>(() => BigIntegerExtensions.CeilingDivide(10, -5));
+        }
+
+        [TestMethod]
         public void TestGetLowestSetBit()
         {
             var big1 = new BigInteger(0);
