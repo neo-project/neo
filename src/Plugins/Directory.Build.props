@@ -13,11 +13,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.*" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.*" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.*" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.*" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Akka" Version="1.5.46" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.7" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.7" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.7" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.7" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>
