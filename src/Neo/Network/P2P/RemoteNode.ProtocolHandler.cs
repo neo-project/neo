@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Neo.Cryptography;
+using Neo.Extensions.Factories;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
@@ -166,11 +167,10 @@ namespace Neo.Network.P2P
         /// </summary>
         private void OnGetAddrMessageReceived()
         {
-            Random rand = new();
             IEnumerable<RemoteNode> peers = _localNode.RemoteNodes.Values
                 .Where(p => p.ListenerTcpPort > 0)
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
-                .OrderBy(p => rand.Next())
+                .OrderBy(p => RandomNumberFactory.NextInt32())
                 .Take(AddrPayload.MaxCountToSend);
             NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
             if (networkAddresses.Length == 0) return;
