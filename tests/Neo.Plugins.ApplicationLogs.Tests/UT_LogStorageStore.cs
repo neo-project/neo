@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.IO;
 using Neo.Persistence.Providers;
 using Neo.Plugins.ApplicationLogs;
@@ -209,8 +210,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             using var lss = new LogStorageStore(snapshot);
 
             // random 32 bytes
-            var bytes = new byte[32];
-            Random.Shared.NextBytes(bytes);
+            var bytes = RandomNumberFactory.NextBytes(32);
 
             var hash = new UInt256(bytes);
             var ok = lss.TryGetTransactionState(hash, out var actualState);
@@ -282,8 +282,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             Assert.IsNull(actualState);
 
             // random 32 bytes
-            var bytes = new byte[32];
-            Random.Shared.NextBytes(bytes);
+            var bytes = RandomNumberFactory.NextBytes(32);
 
             // ContractLogState.Serialize
             using var stream = new MemoryStream();
