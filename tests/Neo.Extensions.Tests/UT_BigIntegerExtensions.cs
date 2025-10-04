@@ -28,7 +28,7 @@ namespace Neo.Extensions.Tests
             var denominator = new BigInteger(3);
             var result = BigIntegerExtensions.CeilingDivide(numerator, denominator);
             Assert.AreEqual(-2, result);
-        }    
+        }
         [TestMethod]
         public void CeilingDivide_DividesExactly()
         {
