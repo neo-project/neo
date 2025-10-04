@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IO.Hashing" Version="9.0.*" PrivateAssets="all" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.7" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

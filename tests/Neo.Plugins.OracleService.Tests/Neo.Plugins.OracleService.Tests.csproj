@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit" Version="1.5.*" />
-    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.*" />
-    <PackageReference Include="System.IO.Hashing" Version="9.0.*" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.43" />
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.7" />
     <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
   </ItemGroup>
 
