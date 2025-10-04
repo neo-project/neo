@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="NeoFS.API" Version="3.8.*" />
+    <PackageReference Include="Neo.FileStorage.API" Version="3.8.*" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.*" />
   </ItemGroup>
 

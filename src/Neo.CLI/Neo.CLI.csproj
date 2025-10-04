@@ -56,11 +56,7 @@
       DestinationFolder="$(OutDir)/Plugins/%(PluginFiles.RecursiveDir)"
       OverwriteReadOnlyFiles="false"
       ContinueOnError="true"
-      SkipUnchangedFiles="true">
-      <Output
-        TaskParameter="CopiedFiles"
-        ItemName="PluginFilesCopiedFiles" />
-    </Copy>
+      SkipUnchangedFiles="true" />
     
     <Message
         Condition=" '%(PluginFiles.Identity)' != '' "
