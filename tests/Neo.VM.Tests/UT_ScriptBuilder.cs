@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions.Factories;
 using Neo.Test.Extensions;
 using Neo.Test.Helpers;
 using Neo.VM;
@@ -286,7 +287,7 @@ namespace Neo.Test
 
             using (var script = new ScriptBuilder())
             {
-                var data = RandomHelper.RandBuffer(0x4C);
+                var data = RandomNumberFactory.NextBytes(0x4C);
 
                 script.EmitPush(data);
                 var expected = new byte[] { (byte)OpCode.PUSHDATA1, (byte)data.Length }.Concat(data).ToArray();
@@ -295,7 +296,7 @@ namespace Neo.Test
 
             using (var script = new ScriptBuilder())
             {
-                var data = RandomHelper.RandBuffer(0x100);
+                var data = RandomNumberFactory.NextBytes(0x100);
 
                 script.EmitPush(data);
                 var expected = new byte[] { (byte)OpCode.PUSHDATA2 }
@@ -307,7 +308,7 @@ namespace Neo.Test
 
             using (var script = new ScriptBuilder())
             {
-                var data = RandomHelper.RandBuffer(0x10000);
+                var data = RandomNumberFactory.NextBytes(0x10000);
 
                 script.EmitPush(data);
                 var expected = new byte[] { (byte)OpCode.PUSHDATA4 }
