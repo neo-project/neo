@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Neo.Extensions.Exceptions;
+using Neo.Extensions.Factories;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
@@ -79,8 +80,7 @@ namespace Neo.Network.P2P
 
         static LocalNode()
         {
-            Random rand = new();
-            Nonce = (uint)rand.Next();
+            Nonce = RandomNumberFactory.NextUInt32();
             UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)}/";
         }
 
@@ -210,8 +210,7 @@ namespace Neo.Network.P2P
                 // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
                 // It will try to add those, sequentially, to the list of currently unconnected ones.
 
-                Random rand = new();
-                AddPeers(SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count));
+                AddPeers(SeedList.Where(u => u != null).OrderBy(p => RandomNumberFactory.NextInt32()).Take(count));
             }
         }
 

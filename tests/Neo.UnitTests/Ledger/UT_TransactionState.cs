@@ -10,14 +10,13 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions.Factories;
 using Neo.IO;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
-using System.Diagnostics.Contracts;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -35,7 +34,7 @@ namespace Neo.UnitTests.Ledger
                 BlockIndex = 1,
                 Transaction = new Transaction()
                 {
-                    Nonce = (uint)new Random().Next(),
+                    Nonce = RandomNumberFactory.NextUInt32(),
                     Attributes = [],
                     Script = new byte[] { (byte)OpCode.PUSH1 },
                     Signers = [new() { Account = UInt160.Zero }],
@@ -94,7 +93,7 @@ namespace Neo.UnitTests.Ledger
                 BlockIndex = 2,
                 Transaction = new Transaction()
                 {
-                    Nonce = (uint)new Random().Next(),
+                    Nonce = RandomNumberFactory.NextUInt32(),
                     NetworkFee = _origin.Transaction.NetworkFee++, // more fee
                     Attributes = [],
                     Script = new byte[] { (byte)OpCode.PUSH1 },
