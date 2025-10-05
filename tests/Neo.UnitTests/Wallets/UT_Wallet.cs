@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Sign;
@@ -25,7 +26,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Helper = Neo.SmartContract.Helper;
-using RandomNumberGenerator = System.Security.Cryptography.RandomNumberGenerator;
 
 namespace Neo.UnitTests.Wallets
 {
@@ -519,7 +519,7 @@ namespace Neo.UnitTests.Wallets
         public void TestMultiSigAccount()
         {
             var expectedWallet = new MyWallet();
-            var expectedPrivateKey = RandomNumberGenerator.GetBytes(32);
+            var expectedPrivateKey = RandomNumberFactory.NextBytes(32, cryptography: true);
 
             var expectedWalletAccount = expectedWallet.CreateAccount(expectedPrivateKey);
             var expectedAccountKey = expectedWalletAccount.GetKey();
