@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Plugins\LevelDBStore\LevelDBStore.csproj" />
     <ProjectReference Include="..\..\src\Plugins\StateService\StateService.csproj" />
     <ProjectReference Include="..\..\tests\Neo.UnitTests\Neo.UnitTests.csproj" />
   </ItemGroup>
