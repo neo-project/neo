@@ -63,7 +63,7 @@ namespace Neo.Plugins.OracleService
             AllowPrivateHost = section.GetValue("AllowPrivateHost", false);
             AllowedContentTypes = section.GetSection("AllowedContentTypes").GetChildren().Select(p => p.Get<string>()).ToArray();
             ExceptionPolicy = section.GetValue("UnhandledExceptionPolicy", UnhandledExceptionPolicy.Ignore);
-            if (AllowedContentTypes.Count() == 0)
+            if (AllowedContentTypes.Length == 0)
                 AllowedContentTypes = AllowedContentTypes.Concat("application/json").ToArray();
             Https = new HttpsSettings(section.GetSection("Https"));
             NeoFS = new NeoFSSettings(section.GetSection("NeoFS"));

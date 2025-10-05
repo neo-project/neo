@@ -13,6 +13,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.IO;
 using System;
 using System.IO;
@@ -174,9 +175,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestSpanAndSerialize()
         {
-            var random = new Random();
-            var data = new byte[UInt256.Length];
-            random.NextBytes(data);
+            var data = RandomNumberFactory.NextBytes(UInt256.Length);
 
             var value = new UInt256(data);
             var span = value.GetSpan();
@@ -194,9 +193,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestSpanAndSerializeLittleEndian()
         {
-            var random = new Random();
-            var data = new byte[UInt256.Length];
-            random.NextBytes(data);
+            var data = RandomNumberFactory.NextBytes(UInt256.Length);
 
             var value = new UInt256(data);
             var spanLittleEndian = value.GetSpanLittleEndian();

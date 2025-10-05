@@ -710,8 +710,8 @@ namespace Neo.Plugins.RpcServer
             var contract = NativeContract.ContractManagement.GetContract(snapshot, scriptHash)
                 .NotNull_Or(RpcError.UnknownContract);
 
-            var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, args.Count())
-                .NotNull_Or(RpcErrorFactory.InvalidContractVerification(contract.Hash, args.Count()));
+            var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, args.Length)
+                .NotNull_Or(RpcErrorFactory.InvalidContractVerification(contract.Hash, args.Length));
 
             (md.ReturnType == ContractParameterType.Boolean)
                 .True_Or(RpcErrorFactory.InvalidContractVerification("The verify method doesn't return boolean value."));
