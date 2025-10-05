@@ -257,5 +257,19 @@ namespace Neo.Extensions.Factories
 
             return new BigInteger(b);
         }
+
+        public static byte[] NextBytes(int length, bool cryptography = false)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(length, 0, nameof(length));
+
+            var bytes = new byte[length];
+
+            if (cryptography)
+                RandomNumberGenerator.Fill(bytes);
+            else
+                Random.Shared.NextBytes(bytes);
+
+            return bytes;
+        }
     }
 }

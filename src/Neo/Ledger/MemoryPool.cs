@@ -447,7 +447,7 @@ namespace Neo.Ledger
                 if (_conflicts.TryGetValue(h, out var conflicts))
                 {
                     conflicts.Remove(item.Tx.Hash);
-                    if (conflicts.Count() == 0)
+                    if (conflicts.Count == 0)
                     {
                         _conflicts.Remove(h);
                     }

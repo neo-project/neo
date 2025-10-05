@@ -103,7 +103,7 @@ namespace Neo.ConsoleService
                 do
                 {
                     key = Console.ReadKey(true);
-                    if (PrintableASCIIChars.IndexOf(key.KeyChar) != -1)
+                    if (PrintableASCIIChars.Contains(key.KeyChar))
                     {
                         sb.Append(key.KeyChar);
                         Console.Write(password ? '*' : key.KeyChar);
@@ -138,7 +138,7 @@ namespace Neo.ConsoleService
             do
             {
                 key = Console.ReadKey(true);
-                if (PrintableASCIIChars.IndexOf(key.KeyChar) != -1)
+                if (PrintableASCIIChars.Contains(key.KeyChar))
                 {
                     securePwd.AppendChar(key.KeyChar);
                     Console.Write('*');
