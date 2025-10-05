@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using Neo.VM.Types;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace Neo.Test
@@ -93,10 +94,11 @@ namespace Neo.Test
 
             itemA = new Map { [true] = false, [0] = 1 };
             itemB = new Map { [true] = false, [0] = 1 };
-            itemC = new Map { [true] = false, [0] = 2 };
+            itemC = new Map(new Dictionary<PrimitiveType, StackItem>() { [true] = false, [0] = 2 });
 
             Assert.AreEqual(itemB.GetHashCode(), itemA.GetHashCode());
             Assert.AreNotEqual(itemC.GetHashCode(), itemA.GetHashCode());
+            Assert.HasCount(2, itemC as Map);
 
             // Test CompoundType GetHashCode for subitems
             var junk = new Array { true, false, 0 };
