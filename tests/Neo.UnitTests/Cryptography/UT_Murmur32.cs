@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Extensions.Factories;
 using System;
 using System.Buffers.Binary;
 
@@ -82,12 +83,10 @@ namespace Neo.UnitTests.Cryptography
             Assert.AreEqual(60539726u, murmur3.GetCurrentHashUInt32());
 
             // random data, random split
-            var random = new Random();
-            var data = new byte[random.Next(2, 2048)];
-            random.NextBytes(data);
+            var data = RandomNumberFactory.NextBytes(RandomNumberFactory.NextInt32(2, 2048));
             for (int i = 0; i < 100; i++)
             {
-                var split = random.Next(1, data.Length - 1);
+                var split = RandomNumberFactory.NextInt32(1, data.Length - 1);
                 murmur3.Reset();
                 murmur3.Append(data.AsSpan(0, split));
                 murmur3.Append(data.AsSpan(split));
