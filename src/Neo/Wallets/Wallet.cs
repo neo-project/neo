@@ -136,6 +136,17 @@ namespace Neo.Wallets
             Path = path;
         }
 
+        public WalletAccount CreateMultiSigAccount(ECPoint[] publicKeys)
+        {
+            var contract = Contract.CreateMultiSigContract(publicKeys.Length, publicKeys);
+            var account = GetAccounts().FirstOrDefault(
+                f =>
+                    f.HasKey &&
+                    f.Lock == false &&
+                    publicKeys.Contains(f.GetKey().PublicKey));
+            return CreateAccount(contract, account?.GetKey());
+        }
+
         /// <summary>
         /// Creates a standard account for the wallet.
         /// </summary>
@@ -236,6 +247,12 @@ namespace Neo.Wallets
             }
             return result;
         }
+
+        public IEnumerable<WalletAccount> GetMultiSigAccounts() =>
+            GetAccounts()
+                .Where(static w =>
+                    w.Lock == false &&
+                    IsMultiSigContract(w.Contract.Script));
 
         /// <summary>
         /// Gets the account with the specified public key.

@@ -22,7 +22,10 @@ using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
+using Helper = Neo.SmartContract.Helper;
+using RandomNumberGenerator = System.Security.Cryptography.RandomNumberGenerator;
 
 namespace Neo.UnitTests.Wallets
 {
@@ -510,6 +513,23 @@ namespace Neo.UnitTests.Wallets
             wallet.GetAccount(scriptHash).Lock = true;
             contains = wallet.ContainsSignable(pair.PublicKey);
             Assert.IsFalse(contains); // locked
+        }
+
+        [TestMethod]
+        public void TestCreateMultiSigAccount()
+        {
+            var expectedWallet = new MyWallet();
+            var expectedPrivateKey = RandomNumberGenerator.GetBytes(32);
+
+            var expectedWalletAccount = expectedWallet.CreateAccount(expectedPrivateKey);
+            var expectedAccountKey = expectedWalletAccount.GetKey();
+            var actualMultiSigAccount = expectedWallet.CreateMultiSigAccount([expectedAccountKey.PublicKey]);
+
+            Assert.IsNotNull(actualMultiSigAccount);
+            Assert.AreNotEqual(expectedWalletAccount.ScriptHash, actualMultiSigAccount.ScriptHash);
+            Assert.AreEqual(expectedAccountKey.PublicKey, actualMultiSigAccount.GetKey().PublicKey);
+            Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount.Contract.Script));
+            Assert.IsTrue(expectedWallet.GetMultiSigAccounts().Contains(actualMultiSigAccount));
         }
     }
 }
