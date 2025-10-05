@@ -516,7 +516,7 @@ namespace Neo.UnitTests.Wallets
         }
 
         [TestMethod]
-        public void TestCreateMultiSigAccount()
+        public void TestMultiSigAccount()
         {
             var expectedWallet = new MyWallet();
             var expectedPrivateKey = RandomNumberGenerator.GetBytes(32);
