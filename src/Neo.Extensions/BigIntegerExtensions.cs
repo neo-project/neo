@@ -23,7 +23,7 @@ namespace Neo.Extensions
         /// Example: 10 / 3 = 4 instead of 3.
         /// </summary>
         /// <param name="dividend">The dividend.</param>
-        /// <param name="divisor">The divisor (must be greater than zero).</param>
+        /// <param name="divisor">The divisor (must be nonzero).</param>
         /// <returns>The result of division rounded up.</returns>
         /// <exception cref="ArgumentException">Thrown when divisor is zero or negative.</exception>
         public static BigInteger DivideCeiling(this BigInteger dividend, BigInteger divisor)
