@@ -25,7 +25,7 @@ namespace Neo.Extensions
         /// <param name="dividend">The dividend.</param>
         /// <param name="divisor">The divisor (must be nonzero).</param>
         /// <returns>The result of division rounded up.</returns>
-        /// <exception cref="ArgumentException">Thrown when divisor is zero or negative.</exception>
+        /// <exception cref="ArgumentException">Thrown when divisor is zero.</exception>
         public static BigInteger DivideCeiling(this BigInteger dividend, BigInteger divisor)
         {
             var v = divisor > 0 ?
