@@ -140,7 +140,7 @@ namespace Neo.Json
             try
             {
                 var json = Read(ref reader);
-                if (reader.Read()) throw new FormatException();
+                if (reader.Read()) throw new FormatException("Read json token failed");
                 return json;
             }
             catch (JsonException ex)
@@ -162,7 +162,7 @@ namespace Neo.Json
 
         private static JToken? Read(ref Utf8JsonReader reader, bool skipReading = false)
         {
-            if (!skipReading && !reader.Read()) throw new FormatException();
+            if (!skipReading && !reader.Read()) throw new FormatException("Read json token failed");
             return reader.TokenType switch
             {
                 JsonTokenType.False => false,

@@ -286,7 +286,10 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         public void Deserialize(ref MemoryReader reader)
         {
             Reset(0);
-            if (reader.ReadUInt32() != Block.Version) throw new FormatException();
+
+            var blockVersion = reader.ReadUInt32();
+            if (blockVersion != Block.Version) throw new FormatException($"Invalid block version: {blockVersion}");
+
             if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
             Block.Header.Timestamp = reader.ReadUInt64();
             Block.Header.Nonce = reader.ReadUInt64();
