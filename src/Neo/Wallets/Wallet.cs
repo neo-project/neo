@@ -136,9 +136,36 @@ namespace Neo.Wallets
             Path = path;
         }
 
+        /// <summary>
+        /// Constructs a special contract with empty script, will get the script with
+        /// scriptHash from blockchain when doing the verification.
+        /// <code>
+        /// Note:
+        ///   Creates "m" out of "n" type verification script using <paramref name="publicKeys"/> length
+        ///   with the default BFT assumptions of Ceiling(n - (n-1) / 3) for "m".
+        /// </code>
+        /// </summary>
+        /// <param name="publicKeys">The public keys of the contract.</param>
+        /// <returns>Multi-Signature contract <see cref="WalletAccount"/>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///   <paramref name="publicKeys" /> is empty.
+        /// </exception>
+        /// <seealso cref="CreateMultiSigAccount(int, ECPoint[])"/>
         public WalletAccount CreateMultiSigAccount(params ECPoint[] publicKeys) =>
-            CreateMultiSigAccount(publicKeys.Length, publicKeys);
+            CreateMultiSigAccount(1, publicKeys);
 
+        /// <summary>
+        /// Constructs a special contract with empty script, will get the script with
+        /// scriptHash from blockchain when doing the verification.
+        /// </summary>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="publicKeys">The public keys of the contract.</param>
+        /// <returns>Multi-Signature contract <see cref="WalletAccount"/>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///   <paramref name="publicKeys" /> is empty or <paramref name="m"/> is greater than <paramref name="publicKeys"/> length or
+        ///   <paramref name="m"/> is less than 1 or <paramref name="m"/> is greater than 1024.
+        /// </exception>
+        /// <seealso cref="CreateMultiSigAccount(ECPoint[])"/>
         public WalletAccount CreateMultiSigAccount(int m, params ECPoint[] publicKeys)
         {
             ArgumentOutOfRangeException.ThrowIfEqual(publicKeys.Length, 0, nameof(publicKeys));
