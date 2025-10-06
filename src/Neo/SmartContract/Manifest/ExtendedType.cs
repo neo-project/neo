@@ -132,120 +132,138 @@ namespace Neo.SmartContract.Manifest
 
         public void FromStackItem(StackItem stackItem)
         {
-            if (stackItem is not VM.Types.Array array) throw new FormatException("Array type was expected");
+            if (stackItem is not Map map) throw new FormatException("Map type was expected");
 
-            var startIndex = 0;
-            Type = (ContractParameterType)(byte)array[startIndex++].GetInteger();
+            if (!map.TryGetValue("type", out var type)) throw new FormatException("Incorrect Type");
+
+            Type = (ContractParameterType)(byte)type.GetInteger();
             if (!Enum.IsDefined(typeof(ContractParameterType), Type)) throw new FormatException("Incorrect Type");
             if (Type == ContractParameterType.Void) throw new FormatException("Void Type is not allowed in NEP-25");
 
-            NamedType = array[startIndex++].GetString();
-
-            if (array[startIndex++] is Integer length)
+            if (map.TryGetValue("namedtype", out var val))
             {
-                Length = checked((int)length.GetInteger());
-                if (Length < 0) throw new FormatException("Length must be non-negative.");
-                if (Length > ExecutionEngineLimits.Default.MaxItemSize) throw new FormatException($"Length must less than {ExecutionEngineLimits.Default.MaxItemSize}.");
-            }
-            else
-            {
-                Length = null;
+                NamedType = val.GetString();
             }
 
-            if (array[startIndex++] is VM.Types.Boolean forbidnull)
+            if (map.TryGetValue("length", out val))
             {
-                ForbidNull = forbidnull.GetBoolean();
-            }
-            else
-            {
-                ForbidNull = null;
-            }
-
-            if (array[startIndex++] is ByteString interf)
-            {
-                if (!Enum.TryParse<Nep25Interface>(interf.GetString(), false, out var inferValue))
-                    throw new FormatException("Incorrect NEP-25 interface");
-
-                Interface = inferValue;
-            }
-            else
-            {
-                Interface = null;
-            }
-
-            if (array[startIndex++] is ByteString key)
-            {
-                if (!Enum.TryParse<ContractParameterType>(key.GetString(), false, out var keyValue))
-                    throw new FormatException("Incorrect Parameter Type");
-
-                Key = keyValue;
-            }
-            else
-            {
-                Key = null;
-            }
-
-            if (array[startIndex++] is Struct value)
-            {
-                Value = new ExtendedType();
-                Value.FromStackItem(value);
-            }
-            else
-            {
-                Value = null;
-            }
-
-            if (array[startIndex++] is VM.Types.Array fields)
-            {
-                Fields = new ContractParameterDefinition[fields.Count];
-                for (var i = 0; i < fields.Count; i++)
+                if (val is Integer length)
+                    Length = checked((int)length.GetInteger());
+                else
                 {
-                    var field = new ContractParameterDefinition();
-                    field.FromStackItem((VM.Types.Array)fields[i]);
-                    Fields[i] = field;
+                    Length = null;
+                    if (val is not null) throw new FormatException("Length must be Integer or null");
                 }
             }
-            else
+
+            if (map.TryGetValue("forbidnull", out val))
             {
-                Fields = null;
+                if (val is VM.Types.Boolean forbidnull)
+                    ForbidNull = forbidnull.GetBoolean();
+                else
+                {
+                    ForbidNull = null;
+                    if (val is not null) throw new FormatException("ForbidNull must be Boolean or null");
+                }
+            }
+
+            if (map.TryGetValue("interface", out val))
+            {
+                if (val is ByteString interf)
+                {
+                    if (!Enum.TryParse<Nep25Interface>(interf.GetString(), false, out var inferValue))
+                        throw new FormatException("Incorrect NEP-25 interface");
+
+                    Interface = inferValue;
+                }
+                else
+                {
+                    Interface = null;
+                    if (val is not null) throw new FormatException("Interface must be ByteString or null");
+                }
+            }
+
+            if (map.TryGetValue("key", out val))
+            {
+                if (val is ByteString key)
+                {
+                    if (!Enum.TryParse<ContractParameterType>(key.GetString(), false, out var keyValue))
+                        throw new FormatException("Incorrect Parameter Type");
+
+                    Key = keyValue;
+                }
+                else
+                {
+                    Key = null;
+                    if (val is not null) throw new FormatException("Key must be ByteString or null");
+                }
+            }
+
+            if (map.TryGetValue("value", out val))
+            {
+                if (val is Struct value)
+                {
+                    Value = new ExtendedType();
+                    Value.FromStackItem(value);
+                }
+                else
+                {
+                    Value = null;
+                    if (val is not null) throw new FormatException("Value must be Struct or null");
+                }
+            }
+
+            if (map.TryGetValue("fields", out val))
+            {
+                if (val is VM.Types.Array fields)
+                {
+                    Fields = new ContractParameterDefinition[fields.Count];
+                    for (var i = 0; i < fields.Count; i++)
+                    {
+                        var field = new ContractParameterDefinition();
+                        field.FromStackItem((VM.Types.Array)fields[i]);
+                        Fields[i] = field;
+                    }
+                }
+                else
+                {
+                    Fields = null;
+                    if (val is not null) throw new FormatException("Fields must be Array or null");
+                }
             }
         }
 
         internal StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            var array = new Struct(referenceCounter);
-            return ToStackItem(referenceCounter, array);
+            var map = new Map(referenceCounter);
+            return ToStackItem(referenceCounter, map);
         }
 
-        internal StackItem ToStackItem(IReferenceCounter referenceCounter, Struct array)
+        internal Map ToStackItem(IReferenceCounter referenceCounter, Map map)
         {
-            array.Add((byte)Type);
-            array.Add(NamedType ?? StackItem.Null);
-            array.Add(Length ?? StackItem.Null);
-            array.Add(ForbidNull ?? StackItem.Null);
-            array.Add(Interface?.ToString() ?? StackItem.Null);
-            array.Add(Key?.ToString() ?? StackItem.Null);
-            if (Value is null) array.Add(StackItem.Null);
-            else
+            map["type"] = (byte)Type;
+
+            if (NamedType != null) map["namedtype"] = NamedType;
+            if (Length != null) map["length"] = Length;
+            if (ForbidNull != null) map["forbidnull"] = ForbidNull;
+            if (Interface != null) map["interface"] = Interface.ToString()!;
+            if (Key != null) map["key"] = Key.ToString()!;
+            if (Value != null) map["value"] = Value.ToStackItem(referenceCounter);
+            if (Fields != null)
             {
-                array.Add(Value.ToStackItem(referenceCounter));
-            }
-            if (Fields is null) array.Add(StackItem.Null);
-            else
-            {
-                var arrayValue = new VM.Types.Array(referenceCounter);
+                var fields = new VM.Types.Array(referenceCounter);
                 foreach (var field in Fields)
                 {
-                    arrayValue.Add(field.ToStackItem(referenceCounter));
+                    fields.Add(field.ToStackItem(referenceCounter));
                 }
-                array.Add(arrayValue);
+                map["fields"] = fields;
             }
-            return array;
+            return map;
         }
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            var item = new Struct(referenceCounter);
+            var item = new Map(referenceCounter);
             ToStackItem(referenceCounter, item);
             return item;
         }

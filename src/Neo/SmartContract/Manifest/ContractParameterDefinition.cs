@@ -47,7 +47,7 @@ namespace Neo.SmartContract.Manifest
             if (item.Count >= 3)
             {
                 ExtendedType = new ExtendedType();
-                ExtendedType.FromStackItem((VM.Types.Array)item[2]);
+                ExtendedType.FromStackItem(item[2]);
                 ExtendedType.ValidateForParameterOrReturn(Type, null);
             }
             else

@@ -60,14 +60,18 @@ namespace Neo.SmartContract.Manifest
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter)
+            var ret = new Struct(referenceCounter)
             {
                 new Array(referenceCounter, Methods.Select(p => p.ToStackItem(referenceCounter))),
-                new Array(referenceCounter, Events.Select(p => p.ToStackItem(referenceCounter))),
-                NamedTypes != null ?
-                    new Map(NamedTypes.ToDictionary(p => (PrimitiveType)p.Key, p => (StackItem)p.Value.ToStackItem(referenceCounter)), referenceCounter) :
-                    StackItem.Null
+                new Array(referenceCounter, Events.Select(p => p.ToStackItem(referenceCounter)))
             };
+
+            if (NamedTypes != null)
+            {
+                ret.Add(new Map(NamedTypes.ToDictionary(p => (PrimitiveType)p.Key, p => (StackItem)p.Value.ToStackItem(referenceCounter)), referenceCounter));
+            }
+
+            return ret;
         }
 
         /// <summary>
