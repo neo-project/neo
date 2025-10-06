@@ -86,7 +86,7 @@ namespace Neo.SmartContract.Manifest
                     knownNamedTypes.Add(key);
                 }
 
-                namedTypes = new Dictionary<string, ExtendedType>(namedTypesJson.Properties.Count, StringComparer.Ordinal);
+                namedTypes = new(namedTypesJson.Properties.Count, StringComparer.Ordinal);
                 foreach (var (name, token) in namedTypesJson.Properties)
                 {
                     if (token is not JObject valueObject)
