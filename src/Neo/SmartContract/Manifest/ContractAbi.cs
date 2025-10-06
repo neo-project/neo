@@ -105,7 +105,7 @@ namespace Neo.SmartContract.Manifest
                 Events = ((JArray)json!["events"]!)?.Select(u => ContractEventDescriptor.FromJson((JObject)u!, knownNamedTypes)).ToArray() ?? [],
                 NamedTypes = namedTypes
             };
-            if (abi.Methods.Length == 0) throw new FormatException("Methods in ContractAbi is empty");
+            if (abi.Methods.Length == 0) throw new FormatException("Methods in ContractAbi are empty");
 
             abi.ValidateExtendedTypes();
             return abi;
