@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -31,7 +32,7 @@ namespace Neo.UnitTests
     {
         public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, WalletAccount account)
         {
-            return CreateValidTx(snapshot, wallet, account.ScriptHash, (uint)new Random().Next());
+            return CreateValidTx(snapshot, wallet, account.ScriptHash, RandomNumberFactory.NextUInt32());
         }
 
         public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
@@ -158,13 +159,12 @@ namespace Neo.UnitTests
 
         public static Transaction CreateInvalidTransaction(DataCache snapshot, NEP6Wallet wallet, WalletAccount account, InvalidTransactionType type, UInt256 conflict = null)
         {
-            var rand = new Random();
             var sender = account.ScriptHash;
 
             var tx = new Transaction
             {
                 Version = 0,
-                Nonce = (uint)rand.Next(),
+                Nonce = RandomNumberFactory.NextUInt32(),
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + wallet.ProtocolSettings.MaxValidUntilBlockIncrement,
                 Signers = [new Signer { Account = sender, Scopes = WitnessScope.CalledByEntry }],
                 Attributes = [],

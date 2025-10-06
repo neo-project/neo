@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions.Factories;
 using Neo.Wallets;
 using System;
 using System.Linq;
@@ -24,10 +25,9 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestConstructor()
         {
-            Random random = new Random();
             byte[] privateKey = new byte[32];
             for (int i = 0; i < privateKey.Length; i++)
-                privateKey[i] = (byte)random.Next(256);
+                privateKey[i] = RandomNumberFactory.NextByte();
             KeyPair keyPair = new KeyPair(privateKey);
             ECPoint publicKey = ECCurve.Secp256r1.G * privateKey;
             CollectionAssert.AreEqual(privateKey, keyPair.PrivateKey);
@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Wallets
 
             byte[] privateKey96 = new byte[96];
             for (int i = 0; i < privateKey96.Length; i++)
-                privateKey96[i] = (byte)random.Next(256);
+                privateKey96[i] = RandomNumberFactory.NextByte();
             keyPair = new KeyPair(privateKey96);
             publicKey = ECPoint.DecodePoint(new byte[] { 0x04 }.Concat(privateKey96.Skip(privateKey96.Length - 96).Take(64)).ToArray(), ECCurve.Secp256r1);
             CollectionAssert.AreEqual(privateKey96.Skip(64).Take(32).ToArray(), keyPair.PrivateKey);
@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Wallets
 
             byte[] privateKey31 = new byte[31];
             for (int i = 0; i < privateKey31.Length; i++)
-                privateKey31[i] = (byte)random.Next(256);
+                privateKey31[i] = RandomNumberFactory.NextByte();
             Action action = () => new KeyPair(privateKey31);
             Assert.ThrowsExactly<ArgumentException>(action);
         }
@@ -51,10 +51,9 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestEquals()
         {
-            Random random = new Random();
             byte[] privateKey = new byte[32];
             for (int i = 0; i < privateKey.Length; i++)
-                privateKey[i] = (byte)random.Next(256);
+                privateKey[i] = RandomNumberFactory.NextByte();
             KeyPair keyPair = new KeyPair(privateKey);
             KeyPair keyPair2 = keyPair;
             Assert.IsTrue(keyPair.Equals(keyPair2));
@@ -74,10 +73,9 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestEqualsWithObj()
         {
-            Random random = new Random();
             byte[] privateKey = new byte[32];
             for (int i = 0; i < privateKey.Length; i++)
-                privateKey[i] = (byte)random.Next(256);
+                privateKey[i] = RandomNumberFactory.NextByte();
             KeyPair keyPair = new KeyPair(privateKey);
             Object keyPair2 = keyPair;
             Assert.IsTrue(keyPair.Equals(keyPair2));
