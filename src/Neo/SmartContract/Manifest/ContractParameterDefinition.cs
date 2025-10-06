@@ -83,7 +83,7 @@ namespace Neo.SmartContract.Manifest
                 ExtendedType = json["extendedtype"] != null ? ExtendedType.FromJson((JObject)json["extendedtype"]) : null
             };
             if (string.IsNullOrEmpty(parameter.Name))
-                throw new FormatException("Name in ContractParameterDefinition is empty");
+                throw new FormatException("Name in ContractParameterDefinition are empty");
             if (!Enum.IsDefined(typeof(ContractParameterType), parameter.Type) || parameter.Type == ContractParameterType.Void)
                 throw new FormatException($"Type({parameter.Type}) in ContractParameterDefinition are not valid");
             parameter.ExtendedType?.ValidateForParameterOrReturn(parameter.Type, knownNamedTypes);
