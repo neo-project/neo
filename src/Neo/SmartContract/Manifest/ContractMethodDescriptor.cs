@@ -101,7 +101,7 @@ namespace Neo.SmartContract.Manifest
 
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
             if (!Enum.IsDefined(typeof(ContractParameterType), descriptor.ReturnType))
-                throw new FormatException($"ReturnType({descriptor.ReturnType}) in ContractMethodDescriptor is not valid");
+                throw new FormatException($"ReturnType({descriptor.ReturnType}) in ContractMethodDescriptor are not valid");
             if (descriptor.Offset < 0)
                 throw new FormatException($"Offset({descriptor.Offset}) in ContractMethodDescriptor is not valid");
             descriptor.ExtendedReturnType?.ValidateForParameterOrReturn(descriptor.ReturnType, knownNamedTypes);
