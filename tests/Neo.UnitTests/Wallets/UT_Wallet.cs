@@ -530,6 +530,12 @@ namespace Neo.UnitTests.Wallets
             Assert.AreEqual(expectedAccountKey.PublicKey, actualMultiSigAccount.GetKey().PublicKey);
             Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount.Contract.Script));
             Assert.IsTrue(expectedWallet.GetMultiSigAccounts().Contains(actualMultiSigAccount));
+
+            var notExpectedAccountKeys = new ECPoint[1025];
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount());
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount(2, [expectedAccountKey.PublicKey]));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount(0, [expectedAccountKey.PublicKey]));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount(1025, notExpectedAccountKeys));
         }
     }
 }

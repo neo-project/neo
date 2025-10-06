@@ -136,17 +136,23 @@ namespace Neo.Wallets
             Path = path;
         }
 
-        public WalletAccount CreateMultiSigAccount(ECPoint[] publicKeys) =>
+        public WalletAccount CreateMultiSigAccount(params ECPoint[] publicKeys) =>
             CreateMultiSigAccount(publicKeys.Length, publicKeys);
 
-        public WalletAccount CreateMultiSigAccount(int m, ECPoint[] publicKeys)
+        public WalletAccount CreateMultiSigAccount(int m, params ECPoint[] publicKeys)
         {
+            ArgumentOutOfRangeException.ThrowIfEqual(publicKeys.Length, 0, nameof(publicKeys));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(m, publicKeys.Length, nameof(publicKeys));
+            ArgumentOutOfRangeException.ThrowIfLessThan(m, 1, nameof(m));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(m, 1024, nameof(m));
+
             var contract = Contract.CreateMultiSigContract(m, publicKeys);
             var account = GetAccounts().FirstOrDefault(
                 f =>
                     f.HasKey &&
                     f.Lock == false &&
                     publicKeys.Contains(f.GetKey().PublicKey));
+
             return CreateAccount(contract, account?.GetKey());
         }
 
