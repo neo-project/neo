@@ -139,9 +139,9 @@ namespace Neo.Wallets
         public WalletAccount CreateMultiSigAccount(ECPoint[] publicKeys) =>
             CreateMultiSigAccount(publicKeys.Length, publicKeys);
 
-        public WalletAccount CreateMultiSigAccount(int verifyAmount, ECPoint[] publicKeys)
+        public WalletAccount CreateMultiSigAccount(int m, ECPoint[] publicKeys)
         {
-            var contract = Contract.CreateMultiSigContract(verifyAmount, publicKeys);
+            var contract = Contract.CreateMultiSigContract(m, publicKeys);
             var account = GetAccounts().FirstOrDefault(
                 f =>
                     f.HasKey &&
