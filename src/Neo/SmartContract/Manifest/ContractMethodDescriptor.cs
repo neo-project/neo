@@ -13,6 +13,7 @@ using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -56,6 +57,7 @@ namespace Neo.SmartContract.Manifest
             {
                 ExtendedReturnType = new ExtendedType();
                 ExtendedReturnType.FromStackItem(item[5]);
+                ExtendedReturnType.ValidateForParameterOrReturn(ReturnType, null);
             }
             else
             {
@@ -80,13 +82,14 @@ namespace Neo.SmartContract.Manifest
         /// Converts the method from a JSON object.
         /// </summary>
         /// <param name="json">The method represented by a JSON object.</param>
+        /// <param name="knownNamedTypes">Set of named type identifiers declared in the manifest, if any.</param>
         /// <returns>The converted method.</returns>
-        public new static ContractMethodDescriptor FromJson(JObject json)
+        public new static ContractMethodDescriptor FromJson(JObject json, ISet<string> knownNamedTypes = null)
         {
             ContractMethodDescriptor descriptor = new()
             {
                 Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
+                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u, knownNamedTypes)).ToArray(),
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
                 Offset = json["offset"].GetInt32(),
                 Safe = json["safe"].GetBoolean(),
@@ -97,11 +100,11 @@ namespace Neo.SmartContract.Manifest
                 throw new FormatException("Name in ContractMethodDescriptor is empty");
 
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
-
             if (!Enum.IsDefined(typeof(ContractParameterType), descriptor.ReturnType))
                 throw new FormatException($"ReturnType({descriptor.ReturnType}) in ContractMethodDescriptor is not valid");
             if (descriptor.Offset < 0)
                 throw new FormatException($"Offset({descriptor.Offset}) in ContractMethodDescriptor is not valid");
+            descriptor.ExtendedReturnType?.ValidateForParameterOrReturn(descriptor.ReturnType, knownNamedTypes);
             return descriptor;
         }
 
