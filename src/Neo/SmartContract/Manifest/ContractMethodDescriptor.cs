@@ -97,7 +97,7 @@ namespace Neo.SmartContract.Manifest
             };
 
             if (string.IsNullOrEmpty(descriptor.Name))
-                throw new FormatException("Name in ContractMethodDescriptor is empty");
+                throw new FormatException("Name in ContractMethodDescriptor are empty");
 
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
             if (!Enum.IsDefined(typeof(ContractParameterType), descriptor.ReturnType))
