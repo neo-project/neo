@@ -92,20 +92,20 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void FromStackItem_ShouldHandleNullFields()
         {
             var refCounter = new ReferenceCounter();
-            var structItem = new Struct(refCounter)
+            var map = new Map(refCounter)
             {
-                (byte)ContractParameterType.String, // Type
-                StackItem.Null, // NamedType
-                StackItem.Null, // Length
-                StackItem.Null, // ForbidNull
-                StackItem.Null, // Interface
-                StackItem.Null, // Key
-                StackItem.Null, // Value
-                StackItem.Null  // Fields
+                [(PrimitiveType)"type"] = (byte)ContractParameterType.String,
+                [(PrimitiveType)"fields"] = StackItem.Null,
+                [(PrimitiveType)"forbidnull"] = StackItem.Null,
+                [(PrimitiveType)"interface"] = StackItem.Null,
+                [(PrimitiveType)"key"] = StackItem.Null,
+                [(PrimitiveType)"length"] = StackItem.Null,
+                [(PrimitiveType)"namedtype"] = StackItem.Null,
+                [(PrimitiveType)"value"] = StackItem.Null,
             };
 
             var extended = new ExtendedType();
-            extended.FromStackItem(structItem);
+            extended.FromStackItem(map);
 
             Assert.AreEqual(ContractParameterType.String, extended.Type);
             Assert.IsNull(extended.NamedType);
