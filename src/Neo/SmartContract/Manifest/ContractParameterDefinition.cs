@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Manifest
             if (string.IsNullOrEmpty(parameter.Name))
                 throw new FormatException("Name in ContractParameterDefinition is empty");
             if (!Enum.IsDefined(typeof(ContractParameterType), parameter.Type) || parameter.Type == ContractParameterType.Void)
-                throw new FormatException($"Type({parameter.Type}) in ContractParameterDefinition is not valid");
+                throw new FormatException($"Type({parameter.Type}) in ContractParameterDefinition are not valid");
             parameter.ExtendedType?.ValidateForParameterOrReturn(parameter.Type, knownNamedTypes);
             return parameter;
         }
