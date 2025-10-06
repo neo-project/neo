@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions.Factories;
 using Neo.Json;
 using System;
 using System.Buffers.Binary;
@@ -20,6 +21,15 @@ namespace Neo.Extensions.Tests
     [TestClass]
     public class UT_BigIntegerExtensions
     {
+        [TestMethod]
+        public void CeilingDivide_NegativeNumerator()
+        {
+            var numerator = new BigInteger(-7);
+            var denominator = new BigInteger(3);
+            var result = BigIntegerExtensions.CeilingDivide(numerator, denominator);
+            Assert.AreEqual(-2, result);
+        }
+
         [TestMethod]
         public void CeilingDivide_DividesExactly()
         {
@@ -292,13 +302,10 @@ namespace Neo.Extensions.Tests
             Assert.AreEqual(new BigInteger(9), new BigInteger(81).Sqrt());
         }
 
-        private static byte[] GetRandomByteArray(Random random)
+        private static byte[] GetRandomByteArray()
         {
-            var byteValue = random.Next(0, 32);
-            var value = new byte[byteValue];
-
-            random.NextBytes(value);
-            return value;
+            var byteValue = RandomNumberFactory.NextInt32(0, 32);
+            return RandomNumberFactory.NextBytes(byteValue);
         }
 
         private void VerifyGetBitLength(BigInteger value, long expected)
@@ -312,8 +319,6 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestGetBitLength()
         {
-            var random = new Random();
-
             // Big Number (net standard didn't work)
             Assert.ThrowsExactly<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
 
@@ -341,7 +346,7 @@ namespace Neo.Extensions.Tests
             // Random cases
             for (uint i = 0; i < 1000; i++)
             {
-                var b = new BigInteger(GetRandomByteArray(random));
+                var b = new BigInteger(GetRandomByteArray());
                 Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.GetBitLength(b), message: $"Error comparing: {b}");
                 Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.BitLength(b), message: $"Error comparing: {b}");
             }

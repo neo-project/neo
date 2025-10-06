@@ -31,7 +31,13 @@ namespace Neo.Extensions
             if (b <= 0)
                 throw new ArgumentException("Divider must be greater than zero.", nameof(b));
 
-            return (a + b - 1) / b;
+            var divPart = a / b;
+            var remainder = a % b;
+
+            if (remainder == 0)
+                return divPart;
+
+            return a > 0 ? divPart + 1 : divPart;
         }
 
         internal static int TrailingZeroCount(byte[] b)
