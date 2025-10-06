@@ -35,6 +35,15 @@ namespace Neo.Extensions.Tests
 
             actual = BigIntegerExtensions.DivideCeiling(-1, 3);
             Assert.AreEqual(0, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(1, -3);
+            Assert.AreEqual(0, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(7, -3);
+            Assert.AreEqual(-2, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(12345, -1234);
+            Assert.AreEqual(-10, actual);
         }
 
         [TestMethod]
