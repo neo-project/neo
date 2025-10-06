@@ -395,7 +395,7 @@ namespace Neo.SmartContract.Manifest
             if (expectedType.HasValue && Type != expectedType.Value)
                 throw Nep25Error($"Type mismatch. Expected '{expectedType.Value}', got '{Type}'.");
 
-            if (!Enum.IsDefined(typeof(ContractParameterType), Type) || Type == ContractParameterType.Void)
+            if (!Enum.IsDefined<ContractParameterType>(Type) || Type == ContractParameterType.Void)
                 throw Nep25Error($"Unsupported type '{Type}'.");
 
             if (Length.HasValue && !LengthAllowedTypes.Contains(Type))
