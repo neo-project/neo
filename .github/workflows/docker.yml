@@ -28,6 +28,8 @@ jobs:
     - name: Build (neo-cli)
       run: |
         dotnet publish ./src/Neo.CLI \
+          --disable-parallel \
+          -m:1 \
           --framework net9.0 \
           --configuration Release \
           --runtime linux-x64 \
@@ -56,6 +58,8 @@ jobs:
     - name: Build (All Plugins)
       run: |
         dotnet publish ./neo.sln \
+          --disable-parallel \
+          -m:1 \
           --framework net9.0 \
           --configuration Release \
           --runtime linux-x64 \

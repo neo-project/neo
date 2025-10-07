@@ -43,6 +43,8 @@ jobs:
     - name: .NET Publish (neo-cli)
       run: |
         dotnet publish ./src/Neo.CLI \
+        --disable-parallel \
+        -m:1 \
         --version-suffix ${{ matrix.runtime }} \
         --framework net9.0 \
         --configuration ${{ env.CONFIGURATION }} \
@@ -73,6 +75,8 @@ jobs:
     - name: .NET Build (Plugins)
       run: |
         dotnet publish ./neo.sln \
+        --disable-parallel \
+        -m:1 \
         --version-suffix ${{ matrix.runtime }} \
         --framework net9.0 \
         --configuration ${{ env.CONFIGURATION }} \
