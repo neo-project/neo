@@ -262,18 +262,18 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool IsWhitelistedFeeContract(DataCache snapshot, UInt160 contractHash)
+        public bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash)
         {
             return snapshot.Contains(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash));
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool IsWhitelistedFeeMethod(ApplicationEngine engine, UInt160 contractHash, string method, int pcount)
+        public bool IsWhitelistFeeMethod(ApplicationEngine engine, UInt160 contractHash, string method, int pcount)
         {
             return IsWhitelistedFeeMethod(engine, contractHash, method, pcount, out _);
         }
 
-        public bool IsWhitelistedFeeMethod(ApplicationEngine engine, UInt160 contractHash, string method, int pcount,
+        public bool IsWhitelistFeeMethod(ApplicationEngine engine, UInt160 contractHash, string method, int pcount,
             [NotNullWhen(true)] out BigInteger fixedFee)
         {
             var item = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash));
@@ -300,7 +300,7 @@ namespace Neo.SmartContract.Native
         /// <param name="contractHash">The contract to set the whitelist</param>
         /// <param name="methods">Dictionary (method,number of args => Fixed Fee)</param>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void WhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, VM.Types.Map methods = null)
+        private void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, VM.Types.Map methods = null)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
@@ -514,7 +514,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private StorageIterator GetWhitelistedFeeContracts(DataCache snapshot)
+        public StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
             var enumerator = snapshot
