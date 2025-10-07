@@ -286,7 +286,7 @@ start_node() {
     echo $pid > neo.pid
 
     # Wait a moment and check if process is still running
-    sleep 2
+    sleep 1
     if kill -0 $pid 2>/dev/null; then
         log_success "Node $node_id started (PID: $pid)"
     else
