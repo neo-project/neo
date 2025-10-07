@@ -262,34 +262,32 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash)
+        public bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, [NotNullWhen(true)] out VM.Types.Map whiteList)
         {
-            return snapshot.Contains(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash));
-        }
+            // Check contract existence
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool IsWhitelistFeeMethod(ApplicationEngine engine, UInt160 contractHash, string method, int pcount)
-        {
-            return IsWhitelistedFeeMethod(engine, contractHash, method, pcount, out _);
-        }
+            var currentContract = ContractManagement.GetContract(snapshot, contractHash);
 
-        public bool IsWhitelistFeeMethod(ApplicationEngine engine, UInt160 contractHash, string method, int pcount,
-            [NotNullWhen(true)] out BigInteger fixedFee)
-        {
-            var item = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash));
-
-            if (item != null)
+            if (currentContract != null)
             {
-                var map = BinarySerializer.Deserialize(item.Value, engine.Limits) as VM.Types.Map;
+                // Check state existence
 
-                if (map.TryGetValue($"{method}/{pcount}", out var value))
+                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash))
+                    ?.GetInteroperable<WhitelistedFeeContract>();
+
+                if (item != null)
                 {
-                    fixedFee = value.GetInteger();
-                    return true;
+                    // Check UpdateCounter
+
+                    if (item.UpdateCounter == currentContract.UpdateCounter)
+                    {
+                        whiteList = (VM.Types.Map)item.WhiteList.DeepCopy();
+                        return true;
+                    }
                 }
             }
 
-            fixedFee = 0;
+            whiteList = null;
             return false;
         }
 
@@ -338,7 +336,7 @@ namespace Neo.SmartContract.Native
                 // Set
 
                 engine.SnapshotCache.Delete(key);
-                engine.SnapshotCache.Add(key, new StorageItem(BinarySerializer.Serialize(methods, engine.Limits)));
+                engine.SnapshotCache.Add(key, new StorageItem(new WhitelistedFeeContract() { UpdateCounter = contract.UpdateCounter, WhiteList = methods }));
             }
         }
 
