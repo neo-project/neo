@@ -514,7 +514,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
+        internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
             var enumerator = snapshot
