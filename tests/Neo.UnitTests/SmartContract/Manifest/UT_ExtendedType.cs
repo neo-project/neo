@@ -131,18 +131,13 @@ namespace Neo.UnitTests.SmartContract.Manifest
             };
 
             var refCounter = new ReferenceCounter();
-            var result = ((IInteroperable)extended).ToStackItem(refCounter) as Struct;
+            var result = ((IInteroperable)extended).ToStackItem(refCounter) as Map;
 
             Assert.IsNotNull(result);
-            Assert.AreEqual(8, result.Count);
-            Assert.AreEqual((byte)ContractParameterType.String, result[0].GetInteger());
-            Assert.IsTrue(result[1].IsNull);
-            Assert.IsTrue(result[2].IsNull);
-            Assert.IsTrue(result[3].IsNull);
-            Assert.IsTrue(result[4].IsNull);
-            Assert.IsTrue(result[5].IsNull);
-            Assert.IsTrue(result[6].IsNull);
-            Assert.IsTrue(result[7].IsNull);
+            Assert.HasCount(1, result);
+
+            var type = result.Single(it => it.Key.GetString() == "type");
+            Assert.AreEqual((byte)ContractParameterType.String, type.Value.GetInteger());
         }
 
         [TestMethod]
@@ -263,7 +258,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var structItem = original.ToStackItem(refCounter);
 
             var copy = new ExtendedType();
-            copy.FromStackItem((VM.Types.Array)structItem);
+            copy.FromStackItem(structItem);
 
             Assert.AreEqual(original.Type, copy.Type);
             Assert.AreEqual(original.NamedType, copy.NamedType);
