@@ -152,7 +152,7 @@ namespace Neo.Wallets
         /// </exception>
         /// <seealso cref="CreateMultiSigAccount(int, ECPoint[])"/>
         public WalletAccount CreateMultiSigAccount(params ECPoint[] publicKeys) =>
-            CreateMultiSigAccount(1, publicKeys);
+            CreateMultiSigAccount((int)Math.Ceiling((2 * publicKeys.Length + 1) / 3m), publicKeys);
 
         /// <summary>
         /// Constructs a special contract with empty script, will get the script with
