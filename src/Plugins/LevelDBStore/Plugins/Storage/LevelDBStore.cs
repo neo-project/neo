@@ -16,7 +16,7 @@ using System.Linq;
 
 namespace Neo.Plugins.Storage
 {
-    public class LevelDBStore : Plugin, IStoreProvider
+    public class LevelDBStore : NeoPlugin, IStoreProvider
     {
         public override string Description => "Uses LevelDB to store the blockchain data";
 

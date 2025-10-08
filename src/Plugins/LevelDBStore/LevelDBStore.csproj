@@ -30,4 +30,8 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Neo.Plugins\Neo.Plugins.csproj" />
+  </ItemGroup>
+
 </Project>
