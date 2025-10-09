@@ -288,7 +288,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             Reset(0);
 
             var blockVersion = reader.ReadUInt32();
-            if (blockVersion != Block.Version) throw new FormatException($"Invalid block version: {blockVersion}");
+            if (blockVersion != Block.Version)
+                throw new FormatException($"Invalid block version: {blockVersion}/{Block.Version}");
 
             if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
             Block.Header.Timestamp = reader.ReadUInt64();
