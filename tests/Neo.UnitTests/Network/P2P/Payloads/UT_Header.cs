@@ -146,8 +146,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             CollectionAssert.AreNotEqual(clone.Witness.InvocationScript.ToArray(), uut.Witness.InvocationScript.ToArray());
 
             // Check V1 format.
-            var randomBytes = new byte[UInt256.Length];
-            new Random(42).NextBytes(randomBytes);
+            var randomBytes = RandomNumberFactory.NextBytes(UInt256.Length);
             var val256 = new UInt256(randomBytes);
             uut = TestUtils.MakeHeader(null, UInt256.Zero);
             uut.Version = (uint)BlockVersion.V1;
