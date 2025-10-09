@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -38,7 +39,7 @@ namespace Neo.UnitTests.Wallets.NEP6
 
         public static string GetRandomPath(string ext = null)
         {
-            var rnd = new Random().Next(1, 1000000);
+            var rnd = RandomNumberFactory.NextUInt32(1000000);
             var threadName = Environment.CurrentManagedThreadId.ToString();
             return Path.GetFullPath($"Wallet_{rnd:X8}{threadName}{ext}");
         }
