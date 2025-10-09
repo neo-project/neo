@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging.EventLog;
 using Neo.App.Configuration;
 using Neo.App.Configuration.Converters;
 using Neo.App.Options;
+using Neo.App.Services;
 using Neo.Cryptography.ECC;
 using System;
 using System.ComponentModel;
@@ -61,7 +62,7 @@ namespace Neo.App.Extensions
 
                 logging.AddDebug();
                 logging.AddEventSourceLogger();
-                //logging.AddNeoConsole();
+                logging.AddNeoConsole();
 
                 if (isWindows)
                     logging.AddEventLog();
@@ -88,6 +89,8 @@ namespace Neo.App.Extensions
             hostBuilder.ConfigureServices(static (context, services) =>
             {
                 // Add default services here
+                services.AddSingleton<NeoSystemHostedService>();
+                services.AddHostedService(provider => provider.GetRequiredService<NeoSystemHostedService>());
             });
 
             // Register Type Converters for IConfiguration.Get<T>()

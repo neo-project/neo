@@ -11,6 +11,8 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Systemd;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Neo.App.Configuration;
 using System;
 using System.Collections;
@@ -63,6 +65,10 @@ namespace Neo.App.Providers
 
             Load(Environment.GetEnvironmentVariables(EnvironmentVariableTarget.User));
             Load(Environment.GetEnvironmentVariables(EnvironmentVariableTarget.Process));
+
+            Data.Add(HostConfigurationNames.WindowsServiceKey, $"{WindowsServiceHelpers.IsWindowsService()}");
+            Data.Add(HostConfigurationNames.SystemdServiceKey, $"{SystemdHelpers.IsSystemdService()}");
+            Data.Add(HostConfigurationNames.UserInteractiveKey, $"{Environment.UserInteractive}");
         }
 
         private void Load(IDictionary envVariables)

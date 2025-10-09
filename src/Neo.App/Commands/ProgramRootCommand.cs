@@ -14,6 +14,7 @@ using Neo.App.Options;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.App.Commands
@@ -59,6 +60,10 @@ namespace Neo.App.Commands
                 context.Console.WriteLine("           ValidatorsCount: {0}", _neoConfiguration.ProtocolConfiguration.ValidatorsCount);
                 context.Console.WriteLine("                  SeedList: [{0}]", string.Join(", ", _neoConfiguration.ProtocolConfiguration.SeedList.Select(static s => $"\"{s}\"")));
                 context.Console.WriteLine("          StandbyCommittee: [{0}]", string.Join(", ", _neoConfiguration.ProtocolConfiguration.StandbyCommittee.Select(static s => $"\"{s}\"")));
+
+                var token = context.GetCancellationToken();
+                while (token.IsCancellationRequested == false)
+                    Thread.Sleep(1000);
 
                 return Task.FromResult(0);
             }

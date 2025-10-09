@@ -12,7 +12,6 @@
 using Microsoft.Extensions.Hosting;
 using Neo.App.Commands;
 using Neo.App.Extensions;
-using Neo.Plugins;
 using System;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
@@ -27,14 +26,16 @@ namespace Neo.App
     {
         internal static async Task<int> Main(string[] args)
         {
-            NeoPlugin.LoadPlugins();
-
             var rootCommand = new ProgramRootCommand();
             var parser = new CommandLineBuilder(rootCommand)
                 .UseHost(DefaultCommandLineHostFactory, builder =>
                 {
                     // Commands here
                     builder.UseCommandHandler<ProgramRootCommand, ProgramRootCommand.Handler>();
+
+                    // Running as Services
+                    builder.UseSystemd();
+                    builder.UseWindowsService();
                 })
                 .UseDefaults()
                 .UseExceptionHandler(DefaultExceptionFilterHandler)
