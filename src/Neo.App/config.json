@@ -10,6 +10,7 @@
       "Path": "Data_LevelDB_{0}"
     },
     "P2P": {
+      "Listen": "0.0.0.0",
       "Port": 10333,
       "EnableCompression": true,
       "MinDesiredConnections": 10,

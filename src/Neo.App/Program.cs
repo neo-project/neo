@@ -60,6 +60,7 @@ namespace Neo.App
         }
 
         private static IHostBuilder DefaultCommandLineHostFactory(string[] args) =>
-            new HostBuilder();
+            new HostBuilder()
+            .UseNeoConfiguration();
     }
 }
