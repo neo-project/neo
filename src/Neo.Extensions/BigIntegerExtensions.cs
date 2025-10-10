@@ -28,6 +28,7 @@ namespace Neo.Extensions
         /// <exception cref="ArgumentException">Thrown when divisor is zero.</exception>
         public static BigInteger DivideCeiling(this BigInteger dividend, BigInteger divisor)
         {
+            // If it's 0, it will automatically throw DivideByZeroException
             var v = divisor > 0 ?
                 BigInteger.DivRem(dividend, divisor, out var r) :
                 BigInteger.DivRem(-dividend, -divisor, out r);
