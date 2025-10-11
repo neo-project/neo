@@ -96,13 +96,13 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var map = new Map(refCounter)
             {
                 [(PrimitiveType)"type"] = (byte)ContractParameterType.String,
-                [(PrimitiveType)"fields"] = StackItem.Null,
-                [(PrimitiveType)"forbidnull"] = StackItem.Null,
-                [(PrimitiveType)"interface"] = StackItem.Null,
-                [(PrimitiveType)"key"] = StackItem.Null,
-                [(PrimitiveType)"length"] = StackItem.Null,
-                [(PrimitiveType)"namedtype"] = StackItem.Null,
-                [(PrimitiveType)"value"] = StackItem.Null,
+                [(PrimitiveType)"fields"] = null,
+                [(PrimitiveType)"forbidnull"] = null,
+                [(PrimitiveType)"interface"] = null,
+                [(PrimitiveType)"key"] = null,
+                [(PrimitiveType)"length"] = null,
+                [(PrimitiveType)"namedtype"] = null,
+                [(PrimitiveType)"value"] = null,
             };
 
             var extended = new ExtendedType();
