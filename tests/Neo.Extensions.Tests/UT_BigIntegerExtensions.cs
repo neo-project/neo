@@ -24,24 +24,40 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void CeilingDivide_NegativeNumerator()
         {
-            var numerator = new BigInteger(-7);
-            var denominator = new BigInteger(3);
-            var result = BigIntegerExtensions.CeilingDivide(numerator, denominator);
-            Assert.AreEqual(-2, result);
+            var actual = BigIntegerExtensions.DivideCeiling(-7, 3);
+            Assert.AreEqual(-2, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(-7, -3);
+            Assert.AreEqual(3, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(-1, -3);
+            Assert.AreEqual(1, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(-1, 3);
+            Assert.AreEqual(0, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(1, -3);
+            Assert.AreEqual(0, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(7, -3);
+            Assert.AreEqual(-2, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(12345, -1234);
+            Assert.AreEqual(-10, actual);
         }
 
         [TestMethod]
         public void CeilingDivide_DividesExactly()
         {
-            var result = BigIntegerExtensions.CeilingDivide(9, 3);
-            Assert.AreEqual(3, result);
+            var actual = BigIntegerExtensions.DivideCeiling(9, 3);
+            Assert.AreEqual(3, actual);
         }
 
         [TestMethod]
         public void CeilingDivide_RoundsUp()
         {
-            var result = BigIntegerExtensions.CeilingDivide(10, 3);
-            Assert.AreEqual(4, result);
+            var actual = BigIntegerExtensions.DivideCeiling(10, 3);
+            Assert.AreEqual(4, actual);
         }
 
         [TestMethod]
@@ -49,28 +65,22 @@ namespace Neo.Extensions.Tests
         {
             var a = BigInteger.Parse("1000000000000000000000000000000000");
             var b = new BigInteger(7);
-            var result = BigIntegerExtensions.CeilingDivide(a, b);
+            var actual = BigIntegerExtensions.DivideCeiling(a, b);
 
-            Assert.AreEqual((a + b - 1) / b, result);
+            Assert.AreEqual((a + b - 1) / b, actual);
         }
 
         [TestMethod]
         public void CeilingDivide_DivisorOne()
         {
-            var result = BigIntegerExtensions.CeilingDivide(12345, 1);
-            Assert.AreEqual(12345, result);
+            var actual = BigIntegerExtensions.DivideCeiling(12345, 1);
+            Assert.AreEqual(12345, actual);
         }
 
         [TestMethod]
         public void CeilingDivide_ThrowsOnZeroDivisor()
         {
-            Assert.Throws<ArgumentException>(() => BigIntegerExtensions.CeilingDivide(10, 0));
-        }
-
-        [TestMethod]
-        public void CeilingDivide_ThrowsOnNegativeDivisor()
-        {
-            Assert.Throws<ArgumentException>(() => BigIntegerExtensions.CeilingDivide(10, -5));
+            Assert.Throws<DivideByZeroException>(() => BigIntegerExtensions.DivideCeiling(10, 0));
         }
 
         [TestMethod]
