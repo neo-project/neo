@@ -36,7 +36,7 @@ namespace Neo.Plugins
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
         public static readonly string PluginsDirectory =
-            Combine(GetDirectoryName(AppContext.BaseDirectory)!, "Plugins");
+            Combine(AppContext.BaseDirectory, "Plugins");
 
         private static readonly FileSystemWatcher? s_configWatcher;
 
@@ -96,7 +96,7 @@ namespace Neo.Plugins
             s_configWatcher.Created += ConfigWatcher_Changed;
             s_configWatcher.Renamed += ConfigWatcher_Changed;
             s_configWatcher.Deleted += ConfigWatcher_Changed;
-            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+            //AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
         /// <summary>
@@ -126,36 +126,6 @@ namespace Neo.Plugins
             }
         }
 
-        private static Assembly? CurrentDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
-        {
-            if (args.Name.Contains(".resources"))
-                return null;
-
-            AssemblyName an = new(args.Name);
-
-            var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
-                           AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
-            if (assembly != null) return assembly;
-
-            var filename = an.Name + ".dll";
-            var path = filename;
-            if (!File.Exists(path)) path = Combine(GetDirectoryName(AppContext.BaseDirectory)!, filename);
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
-            if (!File.Exists(path) && !string.IsNullOrEmpty(args.RequestingAssembly?.GetName().Name))
-                path = Combine(PluginsDirectory, args.RequestingAssembly!.GetName().Name!, filename);
-            if (!File.Exists(path)) return null;
-
-            try
-            {
-                return Assembly.Load(File.ReadAllBytes(path));
-            }
-            catch (Exception ex)
-            {
-                Utility.Log(nameof(Plugin), LogLevel.Error, ex);
-                return null;
-            }
-        }
-
         public virtual void Dispose() { }
 
         /// <summary>
@@ -168,46 +138,53 @@ namespace Neo.Plugins
                 .GetSection("PluginConfiguration");
         }
 
-        private static void LoadPlugin(Assembly assembly)
-        {
-            foreach (var type in assembly.ExportedTypes)
-            {
-                if (!type.IsSubclassOf(typeof(Plugin))) continue;
-                if (type.IsAbstract) continue;
-
-                var constructor = type.GetConstructor(Type.EmptyTypes);
-                if (constructor == null) continue;
-
-                try
-                {
-                    constructor.Invoke(null);
-                }
-                catch (Exception ex)
-                {
-                    Utility.Log(nameof(Plugin), LogLevel.Error, ex);
-                }
-            }
-        }
-
         internal static void LoadPlugins()
         {
-            if (!Directory.Exists(PluginsDirectory)) return;
-            List<Assembly> assemblies = [];
-            foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
-            {
-                foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
-                {
-                    try
-                    {
-                        assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
-                    }
-                    catch { }
-                }
-            }
+            if (Directory.Exists(PluginsDirectory) == false)
+                return;
 
-            foreach (var assembly in assemblies)
+            foreach (var pluginPath in Directory.GetDirectories(PluginsDirectory))
             {
-                LoadPlugin(assembly);
+                var pluginName = GetFileName(pluginPath);
+                var pluginFileName = Combine(PluginsDirectory, $"{pluginName}", $"{pluginName}.dll");
+
+                if (File.Exists(pluginFileName) == false)
+                    continue;
+
+                // Provides isolated, dynamic loading and unloading of assemblies and
+                // their dependencies. Each ALC instance manages the resolution and
+                // loading of assemblies and supports loading multiple versions of the
+                // same assembly within a process by isolating them in different contexts.
+                var assemblyName = new AssemblyName(pluginName);
+                var pluginAssemblyContext = new PluginAssemblyLoadContext(assemblyName);
+                var pluginAssembly = pluginAssemblyContext.LoadFromAssemblyName(assemblyName);
+
+                var neoPluginClassType = pluginAssembly.ExportedTypes
+                    .FirstOrDefault(
+                        static f =>
+                            f.IsAssignableTo(typeof(Plugin)) && f.IsAbstract == false
+                    );
+
+                if (neoPluginClassType is null)
+                    pluginAssemblyContext.Unload();
+                else
+                {
+                    var pluginClassConstructor = neoPluginClassType.GetConstructor(Type.EmptyTypes);
+
+                    if (pluginClassConstructor is null)
+                        pluginAssemblyContext.Unload();
+                    else
+                    {
+                        try
+                        {
+                            pluginClassConstructor.Invoke(null);
+                        }
+                        catch (Exception)
+                        {
+                            pluginAssemblyContext.Unload();
+                        }
+                    }
+                }
             }
         }
 
