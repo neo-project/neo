@@ -142,7 +142,7 @@ namespace Neo.SmartContract.Manifest
 
             if (map.TryGetValue("namedtype", out var val))
             {
-                NamedType = val.GetString();
+                NamedType = val?.GetString();
             }
 
             if (map.TryGetValue("length", out val))
