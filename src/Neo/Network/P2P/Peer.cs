@@ -317,9 +317,7 @@ namespace Neo.Network.P2P
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(Config.MinDesiredConnections - ConnectedPeers.Count);
 
-            var endpoints = UnconnectedPeers.OrderBy(u => RandomNumberFactory.NextInt32())
-                .Take(Config.MinDesiredConnections - ConnectedPeers.Count)
-                .ToArray();
+            var endpoints = UnconnectedPeers.Sample(Config.MinDesiredConnections - ConnectedPeers.Count);
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (var endpoint in endpoints)
             {
