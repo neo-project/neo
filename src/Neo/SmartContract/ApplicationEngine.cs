@@ -140,13 +140,13 @@ namespace Neo.SmartContract
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed => (long)_feeConsumed.CeilingDivide(FeeFactor);
+        public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor);
 
         /// <summary>
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => (long)(_feeAmount.CeilingDivide(FeeFactor) - FeeConsumed);
+        public long GasLeft => (long)(_feeAmount.DivideCeiling(FeeFactor) - FeeConsumed);
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
