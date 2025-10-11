@@ -12,10 +12,10 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Builders;
 using Neo.Cryptography.ECC;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.VM;
-using System;
 
 namespace Neo.UnitTests.Builders
 {
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestNonce()
         {
-            var expectedNonce = (uint)Random.Shared.Next();
+            var expectedNonce = RandomNumberFactory.NextUInt32();
             var tx = TransactionBuilder.CreateEmpty()
                 .Nonce(expectedNonce)
                 .Build();
@@ -66,7 +66,7 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestSystemFee()
         {
-            var expectedSystemFee = (uint)Random.Shared.Next();
+            var expectedSystemFee = RandomNumberFactory.NextUInt32();
             var tx = TransactionBuilder.CreateEmpty()
                 .SystemFee(expectedSystemFee)
                 .Build();
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestNetworkFee()
         {
-            var expectedNetworkFee = (uint)Random.Shared.Next();
+            var expectedNetworkFee = RandomNumberFactory.NextUInt32();
             var tx = TransactionBuilder.CreateEmpty()
                 .NetworkFee(expectedNetworkFee)
                 .Build();
@@ -90,7 +90,7 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestValidUntilBlock()
         {
-            var expectedValidUntilBlock = (uint)Random.Shared.Next();
+            var expectedValidUntilBlock = RandomNumberFactory.NextUInt32();
             var tx = TransactionBuilder.CreateEmpty()
                 .ValidUntil(expectedValidUntilBlock)
                 .Build();

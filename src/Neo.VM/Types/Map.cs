@@ -89,6 +89,20 @@ namespace Neo.VM.Types
         /// <param name="referenceCounter">The reference counter to be used.</param>
         public Map(IReferenceCounter? referenceCounter = null) : base(referenceCounter) { }
 
+        /// <summary>
+        /// Create a new map with the specified dictionary and reference counter.
+        /// </summary>
+        /// <param name="dictionary">Dictionary</param>
+        /// <param name="referenceCounter">Reference Counter</param>
+        public Map(IDictionary<PrimitiveType, StackItem> dictionary, IReferenceCounter? referenceCounter = null)
+            : this(referenceCounter)
+        {
+            foreach (var (k, v) in dictionary)
+            {
+                this[k] = v;
+            }
+        }
+
         public override void Clear()
         {
             if (IsReadOnly) throw new InvalidOperationException("The map is readonly, can not clear.");

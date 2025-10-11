@@ -166,7 +166,7 @@ namespace Neo.Plugins.RestServer
                             options.OnRejected = async (context, token) =>
                             {
                                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                                context.HttpContext.Response.Headers["Retry-After"] = _settings.RateLimitWindowSeconds.ToString();
+                                context.HttpContext.Response.Headers.RetryAfter = _settings.RateLimitWindowSeconds.ToString();
                                 context.HttpContext.Response.ContentType = "text/plain";
 
                                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))

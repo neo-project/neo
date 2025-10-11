@@ -5,9 +5,8 @@ Visit the [documentation](https://docs.neo.org/docs/en-us/index.html) to get sta
 ## Related projects
 Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler. 
 
-- [neo:](https://github.com/neo-project/neo/) Neo core library, contains base classes, including ledger, p2p and IO modules.
-- [neo-modules:](https://github.com/neo-project/neo-modules/) Neo modules include additional tools and plugins to be used with Neo.
-- [neo-devpack-dotnet:](https://github.com/neo-project/neo-devpack-dotnet/) These are the official tools used to convert a C# smart-contract into a *neo executable file*.
+- [neo:](https://github.com/neo-project/neo/) Neo core library, contains base classes, including ledger, Peer-to-Peer, IO, plugins and more.
+- [neo-devpack-dotnet:](https://github.com/neo-project/neo-devpack-dotnet/) These are the official tools used to convert C# smart-contract into *neo vm executable file*.
 
 ## Opening a new issue
 Please feel free to create new issues to suggest features or ask questions.

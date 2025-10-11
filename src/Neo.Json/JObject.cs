@@ -47,6 +47,23 @@ namespace Neo.Json
         public override IReadOnlyList<JToken?> Children => _properties.Values;
 
         /// <summary>
+        /// Constructor
+        /// </summary>
+        public JObject() { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="properties">Properties</param>
+        public JObject(IDictionary<string, JToken?> properties)
+        {
+            foreach (var (key, value) in properties)
+            {
+                Properties[key] = value;
+            }
+        }
+
+        /// <summary>
         /// Determines whether the JSON object contains a property with the specified name.
         /// </summary>
         /// <param name="key">The property name to locate in the JSON object.</param>
