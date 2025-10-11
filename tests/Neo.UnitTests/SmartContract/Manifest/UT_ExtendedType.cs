@@ -268,5 +268,21 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.AreEqual(original.Interface, copy.Interface);
             Assert.AreEqual(original.Key, copy.Key);
         }
+
+        [TestMethod]
+        public void FromStackItem_ShouldTHrow_WhenNotMap()
+        {
+            var ext = new ExtendedType();
+            Assert.ThrowsExactly<FormatException>(() => ext.FromStackItem(new Integer(1)));
+        }
+
+        [TestMethod]
+        public void FromStackItem_ShouldThrow_WhenTypeMissing()
+        {
+            var refCounter = new ReferenceCounter();
+            var map = new Map(refCounter);
+            var ext = new ExtendedType();
+            Assert.ThrowsExactly<FormatException>(() => ext.FromStackItem(map));
+        }
     }
 }
