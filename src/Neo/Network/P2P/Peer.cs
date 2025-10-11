@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -316,10 +317,7 @@ namespace Neo.Network.P2P
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(Config.MinDesiredConnections - ConnectedPeers.Count);
 
-            var rand = new Random();
-            var endpoints = UnconnectedPeers.OrderBy(u => rand.Next())
-                .Take(Config.MinDesiredConnections - ConnectedPeers.Count)
-                .ToArray();
+            var endpoints = UnconnectedPeers.Sample(Config.MinDesiredConnections - ConnectedPeers.Count);
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (var endpoint in endpoints)
             {
