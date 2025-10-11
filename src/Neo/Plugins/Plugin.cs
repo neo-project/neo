@@ -96,7 +96,6 @@ namespace Neo.Plugins
             s_configWatcher.Created += ConfigWatcher_Changed;
             s_configWatcher.Renamed += ConfigWatcher_Changed;
             s_configWatcher.Deleted += ConfigWatcher_Changed;
-            //AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
         /// <summary>
