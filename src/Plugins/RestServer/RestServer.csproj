@@ -4,7 +4,6 @@
     <PackageId>Neo.Plugins.RestServer</PackageId>
     <RootNamespace>Neo.Plugins.RestServer</RootNamespace>
     <Nullable>enable</Nullable>
-    <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

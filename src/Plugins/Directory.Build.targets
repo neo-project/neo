@@ -1,6 +1,10 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Target Condition=" '$(PluginOutDir)' != '' " Name="CleanPluginFiles" AfterTargets="AfterClean">
+  <Target Condition=" '$(PluginOutDir)' != '' " Name="CleanPluginFiles" BeforeTargets="AfterClean">
+    <PropertyGroup>
+      <PluginOutDir>$([System.IO.Path]::GetFullPath('$(PluginOutDir)'))</PluginOutDir>
+    </PropertyGroup>
+
     <ItemGroup>
       <PluginOutputFiles Include="$(PluginOutDir)/**/*.*" />
     </ItemGroup>
@@ -17,28 +21,21 @@
       Importance="high" />
   </Target>
 
-  <Target Condition=" '$(PluginOutDir)' != '' " Name="BeforeCopyPluginFiles" AfterTargets="AfterBuild">
+  <Target Condition=" '$(PluginOutDir)' != '' " Name="BeforeCopyPluginFiles" BeforeTargets="AfterBuild">
     <Message
       Text="------ Plugin copy started: Plugin: $(MSBuildProjectName), Folder: '$(PluginOutDir)/$(MSBuildProjectName)' ------"
       Importance="high" />
   </Target>
 
   <Target Condition=" '$(PluginOutDir)' != '' " Name="CopyPluginFiles" AfterTargets="BeforeCopyPluginFiles">
-    <PropertyGroup Condition=" '$(RuntimeIdentifier)' == '' ">
-      <SystemPlatform Condition=" '$(Platform)' == 'x64' ">x64</SystemPlatform>
-      <SystemPlatform Condition=" '$(Platform)' == 'ARM64' ">arm64</SystemPlatform>
-      <SystemPlatform Condition=" '$(Platform)' == 'AnyCPU' ">x64</SystemPlatform>
-      <SystemPlatform Condition=" '$(SystemPlatform)' == '' ">x64</SystemPlatform>
-      <SystemOS Condition=" $([MSBuild]::IsOSPlatform('OSX')) == 'true' ">osx</SystemOS>
-      <SystemOS Condition=" $([MSBuild]::IsOSPlatform('Linux')) == 'true' ">linux</SystemOS>
-      <SystemOS Condition=" $([MSBuild]::IsOSPlatform('Windows')) == 'true' ">win</SystemOS>
-      <SystemOS Condition=" '$(SystemOS)' == '' ">win</SystemOS>
-      <RuntimeIdentifier>$(SystemOS)-$(SystemPlatform)</RuntimeIdentifier>
+    <PropertyGroup>
+      <OutDir>$([System.IO.Path]::GetFullPath('$(OutDir)'))</OutDir>
+      <PluginOutDir>$([System.IO.Path]::GetFullPath('$(PluginOutDir)'))</PluginOutDir>
     </PropertyGroup>
 
     <ItemGroup>
       <PluginOutputFiles Include="$(OutDir)/*.*" />
-      <PluginNativeFiles Include="$(OutDir)/runtimes/$(RuntimeIdentifier)/native/*.*" />
+      <PluginNativeFiles Include="$(OutDir)/runtimes/**" />
     </ItemGroup>
 
     <!-- Copy OutDir Contents -->
@@ -60,7 +57,7 @@
     <!-- Copy Runtime Dlls-->
     <Copy
       SourceFiles="%(PluginNativeFiles.Identity)"
-      DestinationFolder="$(PluginOutDir)/$(MSBuildProjectName)"
+      DestinationFolder="$(PluginOutDir)/$(MSBuildProjectName)/runtimes/%(PluginNativeFiles.RecursiveDir)"
       OverwriteReadOnlyFiles="false"
       ContinueOnError="true"
       SkipUnchangedFiles="true">

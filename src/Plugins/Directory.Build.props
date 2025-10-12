@@ -5,11 +5,11 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>Neo.Plugins.$(MSBuildProjectName)</PackageId>
-    <PackageOutputPath>$(MSBuildStartupDirectory)/pkgs/</PackageOutputPath>
-    <OutputPath>$(MSBuildStartupDirectory)/bin/$(PackageId)</OutputPath>
+    <PackageOutputPath>../../../pkgs/</PackageOutputPath>
+    <OutputPath>../../../bin/$(PackageId)</OutputPath>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
-    <PluginOutDir>$(MSBuildStartupDirectory)/bin/Plugins</PluginOutDir>
+    <PluginOutDir>../../../bin/Plugins</PluginOutDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,6 +28,11 @@
     <ProjectReference Include="../../Neo.IO/Neo.IO.csproj" ExcludeAssets="runtime" Private="false" />
     <ProjectReference Include="../../Neo.Json/Neo.Json.csproj" ExcludeAssets="runtime" Private="false" />
     <ProjectReference Include="../../Neo.VM/Neo.VM.csproj" ExcludeAssets="runtime" Private="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../../.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="../../../.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
 </Project>
