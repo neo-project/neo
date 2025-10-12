@@ -97,13 +97,13 @@ namespace Neo.SmartContract.Manifest
             };
 
             if (string.IsNullOrEmpty(descriptor.Name))
-                throw new FormatException("Name in ContractMethodDescriptor are empty");
+                throw new FormatException("Name in ContractMethodDescriptor is empty");
 
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
             if (!Enum.IsDefined(typeof(ContractParameterType), descriptor.ReturnType))
-                throw new FormatException($"ReturnType({descriptor.ReturnType}) in ContractMethodDescriptor are not valid");
+                throw new FormatException($"ReturnType({descriptor.ReturnType}) in ContractMethodDescriptor is not valid");
             if (descriptor.Offset < 0)
-                throw new FormatException($"Offset({descriptor.Offset}) in ContractMethodDescriptor are not valid");
+                throw new FormatException($"Offset({descriptor.Offset}) in ContractMethodDescriptor is not valid");
             descriptor.ExtendedReturnType?.ValidateForParameterOrReturn(descriptor.ReturnType, knownNamedTypes);
             return descriptor;
         }
