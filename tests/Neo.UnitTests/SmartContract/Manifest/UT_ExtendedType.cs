@@ -92,8 +92,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void FromStackItem_ShouldHandleNullFields()
         {
-            var refCounter = new ReferenceCounter();
-            var map = new Map(refCounter)
+            var map = new Map(new ReferenceCounter())
             {
                 [(PrimitiveType)"type"] = (byte)ContractParameterType.String,
                 [(PrimitiveType)"fields"] = null,
@@ -109,11 +108,34 @@ namespace Neo.UnitTests.SmartContract.Manifest
             extended.FromStackItem(map);
 
             Assert.AreEqual(ContractParameterType.String, extended.Type);
-            Assert.IsNull(extended.NamedType);
-            Assert.IsNull(extended.Length);
+            Assert.IsNull(extended.Fields);
             Assert.IsNull(extended.ForbidNull);
             Assert.IsNull(extended.Interface);
             Assert.IsNull(extended.Key);
+            Assert.IsNull(extended.Length);
+            Assert.IsNull(extended.NamedType);
+            Assert.IsNull(extended.Value);
+        }
+
+        [TestMethod]
+        public void FromStackItem_ShouldHandleUnExistenceFields()
+        {
+            var map = new Map(new ReferenceCounter())
+            {
+                [(PrimitiveType)"type"] = (byte)ContractParameterType.String,
+            };
+
+            var extended = new ExtendedType();
+            extended.FromStackItem(map);
+
+            Assert.AreEqual(ContractParameterType.String, extended.Type);
+            Assert.IsNull(extended.Fields);
+            Assert.IsNull(extended.ForbidNull);
+            Assert.IsNull(extended.Interface);
+            Assert.IsNull(extended.Key);
+            Assert.IsNull(extended.Length);
+            Assert.IsNull(extended.NamedType);
+            Assert.IsNull(extended.Value);
         }
 
         [TestMethod]
