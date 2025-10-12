@@ -95,6 +95,7 @@ jobs:
         -p:GenerateDocumentationFile=false \
         -p:PublishDocumentationFiles=false \
         -p:PublishReferencesDocumentationFiles=false \
+        -p:IncludeNativeLibrariesForSelfExtract=false \
         -p:GITHUB_ACTIONS=true
 
     # Cache binary build files for macOS
