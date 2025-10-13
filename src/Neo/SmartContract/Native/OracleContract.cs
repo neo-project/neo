@@ -51,6 +51,11 @@ namespace Neo.SmartContract.Native
             "OriginalTx", ContractParameterType.Hash256)]
         internal OracleContract() : base() { }
 
+        /// <summary>
+        /// Sets the price for an Oracle request. Only committee members can call this method.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="price">The price for an Oracle request.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetPrice(ApplicationEngine engine, long price)
         {
@@ -71,6 +76,11 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_Price)];
         }
 
+        /// <summary>
+        /// Finishes an Oracle response.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <returns><see langword="true"/> if the response is finished; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private ContractTask Finish(ApplicationEngine engine)
         {
@@ -225,9 +235,9 @@ namespace Neo.SmartContract.Native
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
-            var item_id = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId));
-            var id = (ulong)(BigInteger)item_id;
-            item_id.Add(1);
+            var itemId = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId));
+            var id = (ulong)(BigInteger)itemId;
+            itemId.Add(1);
 
             //Put the request to storage
             if (!ContractManagement.IsContract(engine.SnapshotCache, engine.CallingScriptHash))

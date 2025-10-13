@@ -42,7 +42,7 @@ namespace Neo.SmartContract
         /// </summary>
         public const int MaxNotificationCount = 512;
 
-        private uint random_times = 0;
+        private uint randomTimes = 0;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Platform.
@@ -344,7 +344,7 @@ namespace Neo.SmartContract
             }
             else if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
-                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
+                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++);
                 price = 1 << 13;
             }
             else
