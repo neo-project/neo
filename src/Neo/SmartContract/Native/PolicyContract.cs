@@ -53,7 +53,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
-        public const uint MaxExecFeeFactor = 100;
+        public const ulong MaxExecFeeFactor = 100;
 
         /// <summary>
         /// The maximum fee for attribute that the committee can set.
@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The maximum storage price that the committee can set.
         /// </summary>
-        public const uint MaxStoragePrice = 10000000;
+        public const ulong MaxStoragePrice = 10000000;
 
         /// <summary>
         /// The maximum block generation time that the committee can set in milliseconds.
