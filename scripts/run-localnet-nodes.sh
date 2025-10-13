@@ -363,9 +363,22 @@ stop_nodes() {
 # Show status of all nodes
 show_status() {
     log_info "Localnet nodes status:"
-    echo "----------------------------------------"
-    printf "%-8s %-8s %-12s %-8s %-8s\n" "Node" "Status" "PID" "Port" "RPC"
-    echo "----------------------------------------"
+    echo "----------------------------------------------"
+
+    # if RpcServer plugin not installed, don't show RPC port
+    show_rpc_port=false
+    if [ ! -f "$NEO_CLI_DIR/Plugins/RpcServer/RpcServer.json" ]; then
+        show_rpc_port=false
+    else
+        show_rpc_port=true
+    fi
+
+    if [ "$show_rpc_port" = "true" ]; then
+        printf "%-8s %-8s %-12s %-8s %-8s\n" "Node" "Status" "PID" "Port" "RPC"
+    else
+        printf "%-8s %-8s %-12s %-8s\n" "Node" "Status" "PID" "Port"
+    fi
+    echo "----------------------------------------------"
 
     for i in $(seq 0 $((NODE_COUNT-1))); do
         local pid_file="$BASE_DATA_DIR/node_$i/neo.pid"
@@ -374,12 +387,20 @@ show_status() {
         
         if [ -f "$pid_file" ] && kill -0 "$(cat "$pid_file")" 2>/dev/null; then
             local pid=$(cat "$pid_file")
-            printf "%-8s %-8s %-12s %-8s %-8s\n" "Node$i" "Running" "$pid" "$port" "$rpc_port"
+            if [ "$show_rpc_port" = "false" ]; then
+                printf "%-8s %-8s %-12s %-8s\n" "Node$i" "Running" "$pid" "$port"
+            else
+                printf "%-8s %-8s %-12s %-8s %-8s\n" "Node$i" "Running" "$pid" "$port" "$rpc_port"
+            fi
         else
-            printf "%-8s %-8s %-12s %-8s %-8s\n" "Node$i" "Stopped" "-" "$port" "$rpc_port"
+            if [ "$show_rpc_port" = "false" ]; then
+                printf "%-8s %-8s %-12s %-8s\n" "Node$i" "Stopped" "-" "$port"
+            else
+                printf "%-8s %-8s %-12s %-8s %-8s\n" "Node$i" "Stopped" "-" "$port" "$rpc_port"
+            fi
         fi
     done
-    echo "----------------------------------------"
+    echo "----------------------------------------------"
 }
 
 # Clean up all data
