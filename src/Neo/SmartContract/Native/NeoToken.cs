@@ -412,52 +412,53 @@ namespace Neo.SmartContract.Native
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
-            NeoAccountState state_account = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
-            if (state_account is null) return false;
-            if (state_account.Balance == 0) return false;
-            CandidateState validator_new = null;
+            NeoAccountState stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
+            if (stateAccount is null) return false;
+            if (stateAccount.Balance == 0) return false;
+
+            CandidateState validatorNew = null;
             if (voteTo != null)
             {
-                validator_new = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Candidate, voteTo))?.GetInteroperable<CandidateState>();
-                if (validator_new is null) return false;
-                if (!validator_new.Registered) return false;
+                validatorNew = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Candidate, voteTo))?.GetInteroperable<CandidateState>();
+                if (validatorNew is null) return false;
+                if (!validatorNew.Registered) return false;
             }
-            if (state_account.VoteTo is null ^ voteTo is null)
+            if (stateAccount.VoteTo is null ^ voteTo is null)
             {
                 StorageItem item = engine.SnapshotCache.GetAndChange(_votersCount);
-                if (state_account.VoteTo is null)
-                    item.Add(state_account.Balance);
+                if (stateAccount.VoteTo is null)
+                    item.Add(stateAccount.Balance);
                 else
-                    item.Add(-state_account.Balance);
+                    item.Add(-stateAccount.Balance);
             }
-            GasDistribution gasDistribution = DistributeGas(engine, account, state_account);
-            if (state_account.VoteTo != null)
+            GasDistribution gasDistribution = DistributeGas(engine, account, stateAccount);
+            if (stateAccount.VoteTo != null)
             {
-                StorageKey key = CreateStorageKey(Prefix_Candidate, state_account.VoteTo);
-                StorageItem storage_validator = engine.SnapshotCache.GetAndChange(key);
-                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
-                state_validator.Votes -= state_account.Balance;
-                CheckCandidate(engine.SnapshotCache, state_account.VoteTo, state_validator);
+                StorageKey key = CreateStorageKey(Prefix_Candidate, stateAccount.VoteTo);
+                StorageItem storageValidator = engine.SnapshotCache.GetAndChange(key);
+                CandidateState stateValidator = storageValidator.GetInteroperable<CandidateState>();
+                stateValidator.Votes -= stateAccount.Balance;
+                CheckCandidate(engine.SnapshotCache, stateAccount.VoteTo, stateValidator);
             }
-            if (voteTo != null && voteTo != state_account.VoteTo)
+            if (voteTo != null && voteTo != stateAccount.VoteTo)
             {
                 StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteTo);
                 var latestGasPerVote = engine.SnapshotCache.TryGet(voterRewardKey) ?? BigInteger.Zero;
-                state_account.LastGasPerVote = latestGasPerVote;
+                stateAccount.LastGasPerVote = latestGasPerVote;
             }
-            ECPoint from = state_account.VoteTo;
-            state_account.VoteTo = voteTo;
+            ECPoint from = stateAccount.VoteTo;
+            stateAccount.VoteTo = voteTo;
 
-            if (validator_new != null)
+            if (validatorNew != null)
             {
-                validator_new.Votes += state_account.Balance;
+                validatorNew.Votes += stateAccount.Balance;
             }
             else
             {
-                state_account.LastGasPerVote = 0;
+                stateAccount.LastGasPerVote = 0;
             }
             engine.SendNotification(Hash, "Vote",
-                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, state_account.Balance });
+                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, stateAccount.Balance });
             if (gasDistribution is not null)
                 await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
             return true;
