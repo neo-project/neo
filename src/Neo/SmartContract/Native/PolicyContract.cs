@@ -203,7 +203,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the fee for attribute before Echidna hardfork.
+        /// Gets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
@@ -215,7 +215,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the fee for attribute after Echidna hardfork.
+        /// Gets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type</param>
@@ -280,7 +280,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Sets the fee for attribute before Echidna hardfork.
+        /// Sets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
@@ -293,7 +293,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Sets the fee for attribute after Echidna hardfork.
+        /// Sets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>

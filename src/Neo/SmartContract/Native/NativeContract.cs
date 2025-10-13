@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native
         private readonly ImmutableHashSet<Hardfork> _usedHardforks;
         private readonly ReadOnlyCollection<ContractMethodMetadata> _methodDescriptors;
         private readonly ReadOnlyCollection<ContractEventAttribute> _eventsDescriptors;
-        private static int id_counter = 0;
+        private static int idCounter = 0;
 
         #region Named Native Contracts
 
@@ -134,7 +134,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The id of the native contract.
         /// </summary>
-        public int Id { get; } = --id_counter;
+        public int Id { get; } = --idCounter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NativeContract"/> class.
