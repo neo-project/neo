@@ -16,7 +16,6 @@ using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -26,6 +25,8 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class PolicyContract : NativeContract
     {
+        private const FindOptions FindOption = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+
         /// <summary>
         /// The default execution fee factor.
         /// </summary>
@@ -262,7 +263,8 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, [NotNullWhen(true)] out VM.Types.Map whiteList)
+        public bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, string method, int argCount,
+            [NotNullWhen(true)] out BigInteger? fixedFee)
         {
             // Check contract existence
 
@@ -272,7 +274,7 @@ namespace Neo.SmartContract.Native
             {
                 // Check state existence
 
-                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash))
+                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount))
                     ?.GetInteroperable<WhitelistedFeeContract>();
 
                 if (item != null)
@@ -281,13 +283,13 @@ namespace Neo.SmartContract.Native
 
                     if (item.UpdateCounter == currentContract.UpdateCounter)
                     {
-                        whiteList = (VM.Types.Map)item.WhiteList.DeepCopy();
+                        fixedFee = item.FixedFee;
                         return true;
                     }
                 }
             }
 
-            whiteList = null;
+            fixedFee = null;
             return false;
         }
 
@@ -296,15 +298,17 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="contractHash">The contract to set the whitelist</param>
-        /// <param name="methods">Dictionary (method,number of args => Fixed Fee)</param>
+        /// <param name="method">Method</param>
+        /// <param name="argCount">Argument count</param>
+        /// <param name="fixedFee">Fixed execution fee</param>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, VM.Types.Map methods = null)
+        private void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, BigInteger? fixedFee)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
-            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash);
+            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
 
-            if (methods == null || methods.Count == 0)
+            if (fixedFee == null)
             {
                 engine.SnapshotCache.Delete(key);
             }
@@ -315,28 +319,14 @@ namespace Neo.SmartContract.Native
                 var contract = NativeContract.ContractManagement.GetContract(engine.SnapshotCache, contractHash)
                     ?? throw new InvalidOperationException("Is not a valid contract");
 
-                foreach (var method in methods)
-                {
-                    if (method.Key is not VM.Types.ByteString)
-                    {
-                        throw new InvalidOperationException($"The key is not a ByteString");
-                    }
-
-                    if (method.Value is not VM.Types.Integer)
-                    {
-                        throw new InvalidOperationException($"The value is not a Integer");
-                    }
-
-                    if (!contract.Manifest.Abi.Methods.Any(u => $"{u.Name}/{u.Parameters.Length}" == method.Key.GetString()))
-                    {
-                        throw new InvalidOperationException($"{method.Key.GetString()} Is not defined in Abi contract");
-                    }
-                }
-
                 // Set
 
                 engine.SnapshotCache.Delete(key);
-                engine.SnapshotCache.Add(key, new StorageItem(new WhitelistedFeeContract() { UpdateCounter = contract.UpdateCounter, WhiteList = methods }));
+                engine.SnapshotCache.Add(key, new StorageItem(new WhitelistedFeeContract()
+                {
+                    UpdateCounter = contract.UpdateCounter,
+                    FixedFee = fixedFee.Value
+                }));
             }
         }
 
@@ -504,21 +494,20 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private StorageIterator GetBlockedAccounts(DataCache snapshot)
         {
-            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
                 .GetEnumerator();
-            return new StorageIterator(enumerator, 1, options);
+            return new StorageIterator(enumerator, 1, FindOption);
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
         {
-            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_WhitelistedFeeContracts), SeekDirection.Forward)
                 .GetEnumerator();
-            return new StorageIterator(enumerator, 1, options);
+
+            return new StorageIterator(enumerator, 1, FindOption);
         }
     }
 }

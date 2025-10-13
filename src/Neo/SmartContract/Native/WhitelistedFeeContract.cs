@@ -11,6 +11,7 @@
 
 using Neo.VM;
 using Neo.VM.Types;
+using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
@@ -22,19 +23,19 @@ namespace Neo.SmartContract.Native
         public uint UpdateCounter;
 
         /// <summary>
-        /// The WhiteList (method,pcount/Fee)
+        /// Fixed execution fee
         /// </summary>
-        public VM.Types.Map WhiteList;
+        public BigInteger FixedFee;
 
         public virtual void FromStackItem(StackItem stackItem)
         {
             UpdateCounter = (uint)((Array)stackItem)[0].GetInteger();
-            WhiteList = ((Array)stackItem)[1] as Map;
+            FixedFee = ((Array)stackItem)[1].GetInteger();
         }
 
         public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter) { UpdateCounter, WhiteList.DeepCopy() };
+            return new Struct(referenceCounter) { UpdateCounter, FixedFee };
         }
     }
 }

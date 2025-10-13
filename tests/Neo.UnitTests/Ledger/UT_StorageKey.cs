@@ -14,6 +14,7 @@ using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.SmartContract;
 using System;
+using System.Text;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -75,6 +76,15 @@ namespace Neo.UnitTests.Ledger
             CollectionAssert.AreEqual(key.ToArray(), StorageKey.Create(1, 2,
                 UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"),
                 UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302")).ToArray());
+
+            // UInt160+String+Int
+            key = new KeyBuilder(1, 2);
+            key.Add(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
+            key.AddBigEndian((int)3); // arg count
+            key.Add(Encoding.UTF8.GetBytes("hello world"));
+
+            CollectionAssert.AreEqual(key.ToArray(), StorageKey.Create(1, 2,
+                UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"), "hello world", 3).ToArray());
 
             // ISerializable
             key = new KeyBuilder(1, 2);

@@ -389,6 +389,9 @@ namespace Neo.SmartContract.Native
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => StorageKey.Create(Id, prefix, hash, signer);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, string methodName, int bigEndianKey) => StorageKey.Create(Id, prefix, hash, methodName, bigEndianKey);
+
         #endregion
 
         /// <summary>
