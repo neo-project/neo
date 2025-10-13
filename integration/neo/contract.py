@@ -13,8 +13,7 @@ import hashlib
 from typing import Self
 from dataclasses import asdict, dataclass
 
-from neo3.core.types import UInt160
-from neo3.contracts.callflags import CallFlags
+from neo import UInt160, CallFlags
 
 NEO_CONTRACT_HASH = "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5"
 GAS_CONTRACT_HASH = "0xd2a4cff31913016155e38e474a2c06d08be276cf"

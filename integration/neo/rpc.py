@@ -12,8 +12,7 @@
 import requests
 import base64
 
-from neo3.core.types import UInt160
-
+from neo import UInt160
 from neo.contract import ContractParameter, GAS_CONTRACT_HASH, NEO_CONTRACT_HASH
 
 

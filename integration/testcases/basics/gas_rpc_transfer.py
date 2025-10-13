@@ -11,9 +11,7 @@
 
 import base64
 
-from neo3.core.types import UInt160
-from neo3.contracts.callflags import CallFlags
-
+from neo import UInt160, CallFlags
 from neo.contract import GAS_CONTRACT_HASH, ScriptBuilder
 from testcases.testing import Testing
 

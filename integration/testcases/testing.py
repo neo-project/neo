@@ -19,11 +19,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 from cryptography.hazmat.backends import default_backend
 
-from neo3.network.payloads.transaction import Transaction
-from neo3.network.payloads.verification import Signer, Witness, WitnessScope
-from neo3.core.serialization import BinaryWriter
-from neo3.core.types import UInt160
-
+from neo import *
 from neo.contract import ScriptBuilder
 from neo.rpc import RpcClient
 from env import Env
@@ -47,10 +43,15 @@ class Testing:
             if block_index > current_block_index:
                 break
             if time.time() - start_time > max_wait_seconds:
-                raise TimeoutError(f"Timeout waiting for next block after {max_wait_seconds} seconds")
+                raise TimeoutError(
+                    f"Timeout waiting for next block of {current_block_index} after {max_wait_seconds} seconds")
             time.sleep(2)
-            self.logger.info(f"Waiting {(time.time() - start_time):.2f} seconds for next block while {wait_while}")
-        self.logger.info(f"Waited {(time.time() - start_time):.2f} seconds for next block while {wait_while}")
+
+            elapsed = time.time() - start_time
+            self.logger.info(f"Waiting {elapsed:.2f}s for next block of {current_block_index} while {wait_while}")
+
+        elapsed = time.time() - start_time
+        self.logger.info(f"Waited {elapsed:.2f}s for next block of {current_block_index} while {wait_while}")
         return block_index
 
     def sign(self, private_key: str, data: bytes) -> bytes:
