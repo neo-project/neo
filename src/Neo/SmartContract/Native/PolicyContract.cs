@@ -352,7 +352,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetExecFeeFactor(ApplicationEngine engine, uint value)
+        private void SetExecFeeFactor(ApplicationEngine engine, ulong value)
         {
             // After FAUN hardfork, the max exec fee factor is with decimals defined in ApplicationEngine.FeeFactor
             var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? ApplicationEngine.FeeFactor * MaxExecFeeFactor : MaxExecFeeFactor;
@@ -364,7 +364,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetStoragePrice(ApplicationEngine engine, uint value)
+        private void SetStoragePrice(ApplicationEngine engine, ulong value)
         {
             // After FAUN hardfork, the max exec fee factor is with decimals defined in ApplicationEngine.FeeFactor
             var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? (ulong)ApplicationEngine.FeeFactor * MaxStoragePrice : MaxStoragePrice;
