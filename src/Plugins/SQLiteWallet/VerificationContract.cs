@@ -27,7 +27,7 @@ namespace Neo.Wallets.SQLite
             {
                 ParameterList[i] = (ContractParameterType)span[i];
                 if (!Enum.IsDefined(ParameterList[i]))
-                    throw new FormatException();
+                    throw new FormatException($"Invalid ContractParameterType: {ParameterList[i]}");
             }
             Script = reader.ReadVarMemory().ToArray();
         }
