@@ -276,6 +276,11 @@ namespace Neo.SmartContract.Native
             }
         }
 
+        /// <summary>
+        /// Sets the amount of GAS generated in each block. Only committee members can call this method.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="gasPerBlock">The amount of GAS generated in each block.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
@@ -299,6 +304,11 @@ namespace Neo.SmartContract.Native
             return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
         }
 
+        /// <summary>
+        /// Sets the fees to be paid to register as a candidate. Only committee members can call this method.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="registerPrice">The fees to be paid to register as a candidate.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetRegisterPrice(ApplicationEngine engine, long registerPrice)
         {
@@ -344,6 +354,13 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
+        /// <summary>
+        /// Handles the payment of GAS.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="from">The account that is paying the GAS.</param>
+        /// <param name="amount">The amount of GAS being paid.</param>
+        /// <param name="data">The data of the payment.</param>
         [ContractMethod(Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
         {
@@ -361,6 +378,12 @@ namespace Neo.SmartContract.Native
             await GAS.Burn(engine, Hash, amount);
         }
 
+        /// <summary>
+        /// Registers a candidate.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="pubkey">The public key of the candidate.</param>
+        /// <returns><see langword="true"/> if the candidate is registered; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(true, Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States)]
         [ContractMethod(Hardfork.HF_Echidna, /* */ RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
@@ -389,6 +412,12 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        /// <summary>
+        /// Unregisters a candidate.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="pubkey">The public key of the candidate.</param>
+        /// <returns><see langword="true"/> if the candidate is unregistered; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
         [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
@@ -407,6 +436,13 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        /// <summary>
+        /// Votes for a candidate.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="account">The account that is voting.</param>
+        /// <param name="voteTo">The candidate to vote for.</param>
+        /// <returns><see langword="true"/> if the vote is successful; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
         [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
@@ -583,6 +619,11 @@ namespace Neo.SmartContract.Native
                 .Take(settings.CommitteeMembersCount);
         }
 
+        /// <summary>
+        /// Gets the validators of the next block.
+        /// </summary>
+        /// <param name="engine">The engine used to read data.</param>
+        /// <returns>The public keys of the validators.</returns>
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
         private ECPoint[] GetNextBlockValidators(ApplicationEngine engine)
         {
