@@ -14,7 +14,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Neo.SmartContract.Manifest
@@ -400,15 +399,15 @@ namespace Neo.SmartContract.Manifest
 
         internal void ValidateForParameterOrReturn(ContractParameterType expectedType, ISet<string>? knownNamedTypes)
         {
-            ValidateCore(expectedType, allowFields: false, knownNamedTypes, allowNamedTypeReference: true);
+            ValidateCore(expectedType, allowFields: false, knownNamedTypes);
         }
 
         internal void ValidateForNamedTypeDefinition(ISet<string>? knownNamedTypes)
         {
-            ValidateCore(expectedType: null, allowFields: true, knownNamedTypes, allowNamedTypeReference: true);
+            ValidateCore(expectedType: null, allowFields: true, knownNamedTypes);
         }
 
-        private void ValidateCore(ContractParameterType? expectedType, bool allowFields, ISet<string>? knownNamedTypes, bool allowNamedTypeReference)
+        private void ValidateCore(ContractParameterType? expectedType, bool allowFields, ISet<string>? knownNamedTypes)
         {
             if (expectedType.HasValue && Type != expectedType.Value)
                 throw Nep25Error($"Type mismatch. Expected '{expectedType.Value}', got '{Type}'.");
@@ -439,9 +438,6 @@ namespace Neo.SmartContract.Manifest
 
             if (NamedType != null)
             {
-                if (!allowNamedTypeReference)
-                    throw Nep25Error("namedtype is not allowed in this context.");
-
                 if (Type != ContractParameterType.Array)
                     throw Nep25Error("namedtype can only be used with Array type.");
 
@@ -468,7 +464,7 @@ namespace Neo.SmartContract.Manifest
                 if (Type == ContractParameterType.Map && !Key.HasValue)
                     throw Nep25Error("key must be provided when value is specified for Map type.");
 
-                Value.ValidateCore(expectedType: null, allowFields, knownNamedTypes, allowNamedTypeReference);
+                Value.ValidateCore(expectedType: null, allowFields, knownNamedTypes);
             }
             else
             {
@@ -498,7 +494,7 @@ namespace Neo.SmartContract.Manifest
 
                 foreach (var field in Fields)
                 {
-                    field.ExtendedType?.ValidateCore(field.Type, allowFields: true, knownNamedTypes, allowNamedTypeReference);
+                    field.ExtendedType?.ValidateCore(field.Type, allowFields: true, knownNamedTypes);
                 }
             }
 
