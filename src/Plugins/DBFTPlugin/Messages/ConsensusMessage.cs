@@ -39,8 +39,9 @@ namespace Neo.Plugins.DBFTPlugin.Messages
 
         public virtual void Deserialize(ref MemoryReader reader)
         {
-            if (Type != (ConsensusMessageType)reader.ReadByte())
-                throw new FormatException();
+            var type = reader.ReadByte();
+            if (Type != (ConsensusMessageType)type)
+                throw new FormatException($"Invalid consensus message type: {type}");
             BlockIndex = reader.ReadUInt32();
             ValidatorIndex = reader.ReadByte();
             ViewNumber = reader.ReadByte();
@@ -51,7 +52,7 @@ namespace Neo.Plugins.DBFTPlugin.Messages
             ConsensusMessageType type = (ConsensusMessageType)data.Span[0];
             Type t = typeof(ConsensusMessage);
             t = t.Assembly.GetType($"{t.Namespace}.{type}", false);
-            if (t is null) throw new FormatException();
+            if (t is null) throw new FormatException($"Invalid consensus message type: {type}");
             return (ConsensusMessage)data.AsSerializable(t);
         }
 
