@@ -11,7 +11,6 @@
 
 using Akka.TestKit;
 using Akka.TestKit.MsTest;
-using Microsoft.Extensions.Primitives;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
