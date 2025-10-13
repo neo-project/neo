@@ -137,7 +137,6 @@ namespace Neo.SmartContract.Manifest
 
             Type = (ContractParameterType)(byte)type.GetInteger();
             if (!Enum.IsDefined(typeof(ContractParameterType), Type)) throw new FormatException("Incorrect Type");
-            if (Type == ContractParameterType.Void) throw new FormatException("Void Type is not allowed in NEP-25");
 
             if (map.TryGetValue("namedtype", out var val))
             {
