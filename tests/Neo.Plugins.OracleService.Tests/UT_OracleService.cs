@@ -51,7 +51,7 @@ namespace Neo.Plugins.OracleService.Tests
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
-            Assert.AreEqual((uint)30, executionFactor);
+            Assert.AreEqual((uint)30_0000, executionFactor);
 
             var feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             Assert.AreEqual(1000, feePerByte);
@@ -78,7 +78,7 @@ namespace Neo.Plugins.OracleService.Tests
             ECPoint[] oracleNodes = [ECCurve.Secp256r1.G];
             var tx = OracleService.CreateResponseTx(snapshotCache, request, response, oracleNodes, ProtocolSettings.Default);
 
-            Assert.AreEqual(166, tx.Size);
+            Assert.AreEqual(165, tx.Size);
             Assert.AreEqual(2198650, tx.NetworkFee);
             Assert.AreEqual(97801350, tx.SystemFee);
 
