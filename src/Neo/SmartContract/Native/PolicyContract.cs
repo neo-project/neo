@@ -264,7 +264,7 @@ namespace Neo.SmartContract.Native
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, string method, int argCount,
-            [NotNullWhen(true)] out BigInteger? fixedFee)
+            [NotNullWhen(true)] out long? fixedFee)
         {
             // Check contract existence
 
@@ -302,7 +302,7 @@ namespace Neo.SmartContract.Native
         /// <param name="argCount">Argument count</param>
         /// <param name="fixedFee">Fixed execution fee</param>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, BigInteger? fixedFee)
+        private void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long? fixedFee)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 

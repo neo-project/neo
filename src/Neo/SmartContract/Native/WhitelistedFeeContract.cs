@@ -11,7 +11,6 @@
 
 using Neo.VM;
 using Neo.VM.Types;
-using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
@@ -25,12 +24,12 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Fixed execution fee
         /// </summary>
-        public BigInteger FixedFee;
+        public long FixedFee;
 
         public virtual void FromStackItem(StackItem stackItem)
         {
             UpdateCounter = (uint)((Array)stackItem)[0].GetInteger();
-            FixedFee = ((Array)stackItem)[1].GetInteger();
+            FixedFee = (long)((Array)stackItem)[1].GetInteger();
         }
 
         public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
