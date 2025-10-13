@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.7" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.7" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.13.0" />
+    <PackageReference Include="Namotion.Reflection" Version="3.4.3" />
   </ItemGroup>
 
   <ItemGroup>
