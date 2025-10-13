@@ -44,7 +44,7 @@ namespace Neo.Plugins.DBFTPlugin.Messages
             Nonce = reader.ReadUInt64();
             TransactionHashes = reader.ReadSerializableArray<UInt256>(ushort.MaxValue);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
-                throw new FormatException();
+                throw new FormatException($"Transaction hashes are duplicate");
         }
 
         public override bool Verify(ProtocolSettings protocolSettings)
