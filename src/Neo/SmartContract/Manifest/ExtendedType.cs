@@ -136,7 +136,7 @@ namespace Neo.SmartContract.Manifest
             if (!map.TryGetValue("type", out var type)) throw new FormatException("Incorrect Type");
 
             Type = (ContractParameterType)(byte)type.GetInteger();
-            if (!Enum.IsDefined(typeof(ContractParameterType), Type)) throw new FormatException("Incorrect Type");
+            if (!Enum.IsDefined(Type)) throw new FormatException("Incorrect Type");
 
             if (map.TryGetValue("namedtype", out var val))
             {
