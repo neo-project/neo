@@ -20,6 +20,7 @@ class Hardfork:
     HF_Cockatrice: int = 1
     HF_Domovoi: int = 1
     HF_Echidna: int = 1
+    HF_Faun: int = 1
 
 
 # It contains the environment variables for the tests.

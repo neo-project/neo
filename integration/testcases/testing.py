@@ -43,8 +43,7 @@ class Testing:
             if block_index > current_block_index:
                 break
             if time.time() - start_time > max_wait_seconds:
-                raise TimeoutError(
-                    f"Timeout waiting for next block of {current_block_index} after {max_wait_seconds} seconds")
+                raise TimeoutError(f"Timeout waiting for next block of {current_block_index} after {max_wait_seconds}s")
             time.sleep(2)
 
             elapsed = time.time() - start_time
