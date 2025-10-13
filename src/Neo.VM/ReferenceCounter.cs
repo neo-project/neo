@@ -154,7 +154,7 @@ namespace Neo.VM
                 for (var node = _cachedComponents.First; node != null;)
                 {
                     var component = node.Value;
-                    bool on_stack = false;
+                    bool onStack = false;
 
                     // Check if any item in the SCC is still on the stack.
                     foreach (StackItem item in component)
@@ -162,13 +162,13 @@ namespace Neo.VM
                         // An item is considered 'on stack' if it has stack references or if its parent items are still on stack.
                         if (item.StackReferences > 0 || item.ObjectReferences?.Values.Any(p => p.References > 0 && p.Item.OnStack) == true)
                         {
-                            on_stack = true;
+                            onStack = true;
                             break;
                         }
                     }
 
                     // If any item in the component is on stack, mark all items in the component as on stack.
-                    if (on_stack)
+                    if (onStack)
                     {
                         foreach (StackItem item in component)
                             item.OnStack = true;
