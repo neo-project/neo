@@ -22,22 +22,21 @@ namespace Neo.Extensions
         /// Performs integer division with ceiling (rounding up).
         /// Example: 10 / 3 = 4 instead of 3.
         /// </summary>
-        /// <param name="a">The dividend.</param>
-        /// <param name="b">The divisor (must be greater than zero).</param>
+        /// <param name="dividend">The dividend.</param>
+        /// <param name="divisor">The divisor (must be nonzero).</param>
         /// <returns>The result of division rounded up.</returns>
-        /// <exception cref="ArgumentException">Thrown when divisor is zero or negative.</exception>
-        public static BigInteger CeilingDivide(this BigInteger a, BigInteger b)
+        /// <exception cref="ArgumentException">Thrown when divisor is zero.</exception>
+        public static BigInteger DivideCeiling(this BigInteger dividend, BigInteger divisor)
         {
-            if (b <= 0)
-                throw new ArgumentException("Divider must be greater than zero.", nameof(b));
+            // If it's 0, it will automatically throw DivideByZeroException
+            var v = divisor > 0 ?
+                BigInteger.DivRem(dividend, divisor, out var r) :
+                BigInteger.DivRem(-dividend, -divisor, out r);
 
-            var divPart = a / b;
-            var remainder = a % b;
+            if (r > 0)
+                return v + BigInteger.One;
 
-            if (remainder == 0)
-                return divPart;
-
-            return a > 0 ? divPart + 1 : divPart;
+            return v;
         }
 
         internal static int TrailingZeroCount(byte[] b)
