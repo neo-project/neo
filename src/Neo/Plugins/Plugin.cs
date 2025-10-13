@@ -145,7 +145,7 @@ namespace Neo.Plugins
             foreach (var pluginPath in Directory.GetDirectories(PluginsDirectory))
             {
                 var pluginName = GetFileName(pluginPath);
-                var pluginFileName = Combine(PluginsDirectory, $"{pluginName}", $"{pluginName}.dll");
+                var pluginFileName = Combine(PluginsDirectory, pluginName, $"{pluginName}.dll");
 
                 if (File.Exists(pluginFileName) == false)
                     continue;
