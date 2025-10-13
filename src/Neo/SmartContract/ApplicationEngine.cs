@@ -65,7 +65,7 @@ namespace Neo.SmartContract
 
         private static Dictionary<uint, InteropDescriptor> services;
         // Total amount of GAS spent to execute.
-        // In the unit of pico-datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
+        // In the unit of pico GAS
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
@@ -309,10 +309,10 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="picoDatoshi">The amount of GAS, in the unit of pico-datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
-        protected internal void AddFee(long picoDatoshi)
+        /// <param name="picoGas">The amount of GAS, in the unit of pico-gas to be added.</param>
+        protected internal void AddFee(long picoGas)
         {
-            _feeConsumed = checked(_feeConsumed + picoDatoshi);
+            _feeConsumed = checked(_feeConsumed + picoGas);
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
