@@ -375,12 +375,8 @@ namespace Neo.Plugins.RpcServer
             if (!transContext.Completed) return transContext.ToJson();
 
             tx.Witnesses = transContext.GetWitnesses();
-            if (tx.Size > 1024)
-            {
-                long calFee = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot) + 100000;
-                if (tx.NetworkFee < calFee)
-                    tx.NetworkFee = calFee;
-            }
+            EnsureNetworkFee(snapshot, tx);
+
             (tx.NetworkFee <= settings.MaxFee).True_Or(RpcError.WalletFeeLimit);
             return SignAndRelay(snapshot, tx);
         }
@@ -492,12 +488,8 @@ namespace Neo.Plugins.RpcServer
             if (!transContext.Completed) return transContext.ToJson();
 
             tx.Witnesses = transContext.GetWitnesses();
-            if (tx.Size > 1024)
-            {
-                long calFee = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot) + 100000;
-                if (tx.NetworkFee < calFee)
-                    tx.NetworkFee = calFee;
-            }
+            EnsureNetworkFee(snapshot, tx);
+
             (tx.NetworkFee <= settings.MaxFee).True_Or(RpcError.WalletFeeLimit);
             return SignAndRelay(snapshot, tx);
         }
@@ -555,14 +547,28 @@ namespace Neo.Plugins.RpcServer
                 return transContext.ToJson();
 
             tx.Witnesses = transContext.GetWitnesses();
-            if (tx.Size > 1024)
-            {
-                long calFee = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot) + 100000;
-                if (tx.NetworkFee < calFee)
-                    tx.NetworkFee = calFee;
-            }
+            EnsureNetworkFee(snapshot, tx);
+
             (tx.NetworkFee <= settings.MaxFee).True_Or(RpcError.WalletFeeLimit);
             return SignAndRelay(snapshot, tx);
+        }
+
+        private void EnsureNetworkFee(StoreCache snapshot, Transaction tx)
+        {
+            if (tx.Size > 1024)
+            {
+                var calFee = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
+
+                if (system.Settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
+                {
+                    calFee = calFee.DivideCeiling(ApplicationEngine.FeeFactor);
+                }
+
+                calFee += 100000;
+
+                if (tx.NetworkFee < calFee)
+                    tx.NetworkFee = (long)calFee;
+            }
         }
 
         /// <summary>
