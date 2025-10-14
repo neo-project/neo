@@ -76,8 +76,9 @@ namespace Neo.SmartContract
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
+        // In the unit of pico-Gas
         private readonly BigInteger _execFeeFactor;
-        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+        // In the unit of pico-Gas
         private readonly BigInteger _storagePrice;
         private byte[] nonceData;
 
@@ -137,12 +138,12 @@ namespace Neo.SmartContract
         public long GasConsumed => FeeConsumed;
 
         /// <summary>
-        /// Exec Fee Factor
+        /// Exec Fee Factor. In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         internal long ExecFeeFactor => (long)_execFeeFactor.DivideCeiling(FeeFactor);
 
         /// <summary>
-        /// Storage Price
+        /// Storage Price. In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         internal long StoragePrice => (long)_storagePrice.DivideCeiling(FeeFactor);
 
