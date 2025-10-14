@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using static Neo.SmartContract.Helper;
 using Array = Neo.VM.Types.Array;
 
@@ -387,7 +388,14 @@ namespace Neo.Network.P2P.Payloads
                     return VerifyResult.InvalidAttribute;
                 attributesFee += attribute.CalculateNetworkFee(snapshot, this);
             }
-            long netFeeDatoshi = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
+            BigInteger feePerSize = Size * NativeContract.Policy.GetFeePerByte(snapshot);
+
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, NativeContract.Ledger.CurrentIndex(snapshot) + 1))
+            {
+                feePerSize = feePerSize.DivideCeiling(ApplicationEngine.FeeFactor);
+            }
+
+            long netFeeDatoshi = NetworkFee - (long)feePerSize - attributesFee;
             if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 
             if (netFeeDatoshi > MaxVerificationGas) netFeeDatoshi = MaxVerificationGas;

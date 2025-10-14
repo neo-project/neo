@@ -143,6 +143,11 @@ namespace Neo.SmartContract.Native
                 item = engine.SnapshotCache.TryGet(_storagePrice) ??
                     throw new InvalidOperationException("Policy was not initialized");
                 item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
+
+                // Add decimals to fee per Byte
+                item = engine.SnapshotCache.TryGet(_feePerByte) ??
+                    throw new InvalidOperationException("Policy was not initialized");
+                item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
             }
             return ContractTask.CompletedTask;
         }

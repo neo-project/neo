@@ -21,6 +21,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Numerics;
 using static Neo.SmartContract.Helper;
 using Array = System.Array;
 
@@ -119,7 +120,7 @@ namespace Neo.Wallets
                 + tx.Script.GetVarSize() + hashes.Length.GetVarSize();
             int index = -1;
             var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
-            long networkFee = 0;
+            BigInteger networkFee = 0;
             foreach (var hash in hashes)
             {
                 index++;
@@ -228,7 +229,15 @@ namespace Neo.Wallets
             {
                 networkFee += attr.CalculateNetworkFee(snapshot, tx);
             }
-            return networkFee;
+
+            // Check FAUN hardfork
+
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, NativeContract.Ledger.CurrentIndex(snapshot) + 1))
+            {
+                networkFee = networkFee.DivideCeiling(ApplicationEngine.FeeFactor);
+            }
+
+            return (long)networkFee;
         }
     }
 }
