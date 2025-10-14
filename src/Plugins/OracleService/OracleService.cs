@@ -33,6 +33,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -440,30 +441,38 @@ namespace Neo.Plugins.OracleService
             if (engine.Execute() != VMState.HALT) return null;
             tx.NetworkFee += engine.FeeConsumed;
 
-            var executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
-            var networkFee = executionFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
-            tx.NetworkFee += networkFee;
-
             // Base size for transaction: includes const_header + signers + script + hashes + witnesses, except attributes
 
             int sizeInv = 66 * m;
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Script.GetVarSize()
                 + hashes.Length.GetVarSize() + witnessDict[NativeContract.Oracle.Hash].Size
-                + sizeInv.GetVarSize() + sizeInv + oracleSignContract.Script.GetVarSize();
+                + sizeInv.GetVarSize() + sizeInv + oracleSignContract.Script.GetVarSize()
+                + tx.Attributes.GetVarSize();
 
-            var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
+            BigInteger executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            BigInteger feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
+
+            var networkFee = executionFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
+            var sizeFee = size * feePerByte;
+
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, NativeContract.Ledger.CurrentIndex(snapshot) + 1))
+            {
+                networkFee = networkFee.DivideCeiling(ApplicationEngine.FeeFactor);
+                sizeFee = sizeFee.DivideCeiling(ApplicationEngine.FeeFactor);
+            }
+
+            tx.NetworkFee += (long)(networkFee + sizeFee);
+
             if (response.Result.Length > OracleResponse.MaxResultSize)
             {
                 response.Code = OracleResponseCode.ResponseTooLarge;
                 response.Result = Array.Empty<byte>();
             }
-            else if (tx.NetworkFee + (size + tx.Attributes.GetVarSize()) * feePerByte > request.GasForResponse)
+            else if (tx.NetworkFee > request.GasForResponse)
             {
                 response.Code = OracleResponseCode.InsufficientFunds;
                 response.Result = Array.Empty<byte>();
             }
-            size += tx.Attributes.GetVarSize();
-            tx.NetworkFee += size * feePerByte;
 
             // Calcualte system fee
 

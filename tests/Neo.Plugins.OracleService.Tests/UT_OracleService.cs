@@ -54,7 +54,7 @@ namespace Neo.Plugins.OracleService.Tests
             Assert.AreEqual((uint)30_0000, executionFactor);
 
             var feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
-            Assert.AreEqual(1000, feePerByte);
+            Assert.AreEqual(1000_0000, feePerByte);
 
             OracleRequest request = new OracleRequest
             {
@@ -78,7 +78,7 @@ namespace Neo.Plugins.OracleService.Tests
             ECPoint[] oracleNodes = [ECCurve.Secp256r1.G];
             var tx = OracleService.CreateResponseTx(snapshotCache, request, response, oracleNodes, ProtocolSettings.Default);
 
-            Assert.AreEqual(165, tx.Size);
+            Assert.AreEqual(166, tx.Size);
             Assert.AreEqual(2198650, tx.NetworkFee);
             Assert.AreEqual(97801350, tx.SystemFee);
 
