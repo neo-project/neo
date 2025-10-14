@@ -20,29 +20,26 @@ namespace Neo.Plugins
 {
     internal class PluginAssemblyLoadContext : AssemblyLoadContext
     {
-        private readonly string _pluginName;
+        private readonly string[] _searchPluginPaths;
 
-        public PluginAssemblyLoadContext(AssemblyName pluginAssemblyName) : base(isCollectible: true)
+        public PluginAssemblyLoadContext(
+            string[] searchPaths) : base(isCollectible: true)
         {
-            _pluginName = pluginAssemblyName.Name!;
+            _searchPluginPaths = searchPaths;
         }
 
         [return: MaybeNull]
         protected override Assembly Load(AssemblyName assemblyName)
         {
-            // Attempt to load the assembly from the specified plugin path
-            var assemblyFile = Path.Combine(Plugin.PluginsDirectory, _pluginName, $"{assemblyName.Name}.dll");
 
-            if (File.Exists(assemblyFile))
+            foreach (var path in _searchPluginPaths)
             {
-                return LoadFromAssemblyPath(assemblyFile);
-            }
+                var assemblyFile = Path.Combine(path, $"{assemblyName.Name}.dll");
 
-            // Load plugin dependencies
-            assemblyFile = Path.Combine(Plugin.PluginsDirectory, $"{assemblyName.Name}", $"{assemblyName.Name}.dll");
-            if (File.Exists(assemblyFile))
-            {
-                return LoadFromAssemblyPath(assemblyFile);
+                if (File.Exists(assemblyFile))
+                {
+                    return LoadFromAssemblyPath(assemblyFile);
+                }
             }
 
             // If not found in the plugin path, defer to the default load context
@@ -54,17 +51,33 @@ namespace Neo.Plugins
         {
             var unmanagedDllFilename = GetUnmanagedDllFilename(Path.GetFileNameWithoutExtension(unmanagedDllName));
 
-            // Checks "Plugins\<Plugin Name>" directory
-            var unmanagedDllFile = Path.Combine(Plugin.PluginsDirectory, _pluginName, unmanagedDllFilename);
-            if (File.Exists(unmanagedDllFile))
+            string unmanagedDllFile;
+
+            foreach (var path in _searchPluginPaths)
             {
-                return LoadUnmanagedDllFromPath(unmanagedDllFile);
+                // Checks "Plugins\<Plugin Name>" directory
+                unmanagedDllFile = Path.Combine(path, unmanagedDllFilename);
+                if (File.Exists(unmanagedDllFile))
+                {
+                    return LoadUnmanagedDllFromPath(unmanagedDllFile);
+                }
+
+                // Checks "Plugins\<Plugin Name>\runtimes" directory
+                unmanagedDllFile = Path.Combine(
+                    path,
+                    "runtimes",
+                    RuntimeInformation.RuntimeIdentifier,
+                    "native",
+                    unmanagedDllFilename);
+                if (File.Exists(unmanagedDllFile))
+                {
+                    return LoadUnmanagedDllFromPath(unmanagedDllFile);
+                }
             }
 
-            // Checks "Plugins\<Plugin Name>\runtimes" directory
+            // Fallback to `neo-cli` base directory.
             unmanagedDllFile = Path.Combine(
-                Plugin.PluginsDirectory,
-                _pluginName,
+                AppContext.BaseDirectory,
                 "runtimes",
                 RuntimeInformation.RuntimeIdentifier,
                 "native",
@@ -74,22 +87,8 @@ namespace Neo.Plugins
                 return LoadUnmanagedDllFromPath(unmanagedDllFile);
             }
 
-            // Checks "runtimes" directory
-            unmanagedDllFile = Path.Combine(
-                AppContext.BaseDirectory,
-                "runtimes",
-                RuntimeInformation.RuntimeIdentifier,
-                "native",
-                unmanagedDllFilename);
-            if (File.Exists(unmanagedDllFile))
-            {
-                return LoadUnmanagedDllFromPath(unmanagedDllFile);
-            }
 
-            // Checks "base" directory
-            unmanagedDllFile = Path.Combine(
-                AppContext.BaseDirectory,
-                unmanagedDllFilename);
+            unmanagedDllFile = Path.Combine(AppContext.BaseDirectory, unmanagedDllFilename);
             if (File.Exists(unmanagedDllFile))
             {
                 return LoadUnmanagedDllFromPath(unmanagedDllFile);

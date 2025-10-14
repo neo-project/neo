@@ -142,10 +142,13 @@ namespace Neo.Plugins
             if (Directory.Exists(PluginsDirectory) == false)
                 return;
 
-            foreach (var pluginPath in Directory.GetDirectories(PluginsDirectory))
+            var pluginDirs = Directory.GetDirectories(PluginsDirectory);
+            var pluginAssemblyContext = new PluginAssemblyLoadContext(pluginDirs);
+
+            foreach (var pluginPath in pluginDirs)
             {
                 var pluginName = GetFileName(pluginPath);
-                var pluginFileName = Combine(PluginsDirectory, pluginName, $"{pluginName}.dll");
+                var pluginFileName = Combine(pluginPath, $"{pluginName}.dll");
 
                 if (File.Exists(pluginFileName) == false)
                     continue;
@@ -155,7 +158,6 @@ namespace Neo.Plugins
                 // loading of assemblies and supports loading multiple versions of the
                 // same assembly within a process by isolating them in different contexts.
                 var assemblyName = new AssemblyName(pluginName);
-                var pluginAssemblyContext = new PluginAssemblyLoadContext(assemblyName);
                 var pluginAssembly = pluginAssemblyContext.LoadFromAssemblyName(assemblyName);
 
                 var neoPluginClassType = pluginAssembly.ExportedTypes
