@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.IO;
-using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -49,8 +49,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The created payload.</returns>
         public static PingPayload Create(uint height)
         {
-            Random rand = new();
-            return Create(height, (uint)rand.Next());
+            return Create(height, RandomNumberFactory.NextUInt32());
         }
 
         /// <summary>

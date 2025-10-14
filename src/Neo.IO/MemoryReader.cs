@@ -33,7 +33,8 @@ namespace Neo.IO
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private readonly void EnsurePosition(int move)
         {
-            if (_pos + move > _span.Length) throw new FormatException();
+            if (_pos + move > _span.Length)
+                throw new FormatException($"Position {_pos} + Wanted {move} is exceeded boundary({_span.Length})");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -46,11 +47,12 @@ namespace Neo.IO
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ReadBoolean()
         {
-            return ReadByte() switch
+            var value = ReadByte();
+            return value switch
             {
                 0 => false,
                 1 => true,
-                _ => throw new FormatException()
+                _ => throw new FormatException($"Invalid boolean value: {value}")
             };
         }
 
@@ -188,7 +190,7 @@ namespace Neo.IO
                 0xff => ReadUInt64(),
                 _ => b
             };
-            if (value > max) throw new FormatException();
+            if (value > max) throw new FormatException($"VarInt value is greater than max: {value}/{max}");
             return value;
         }
 
@@ -201,8 +203,10 @@ namespace Neo.IO
             while (i < end && _span[i] != 0) i++;
             var data = _span[_pos..i];
             for (; i < end; i++)
+            {
                 if (_span[i] != 0)
-                    throw new FormatException();
+                    throw new FormatException($"The padding is not 0 at fixed string offset {i}");
+            }
             _pos = end;
             return data.ToStrictUtf8String();
         }

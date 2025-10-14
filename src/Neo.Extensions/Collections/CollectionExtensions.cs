@@ -10,8 +10,10 @@
 // modifications are permitted.
 
 
+using Neo.Extensions.Factories;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Extensions
 {
@@ -75,6 +77,44 @@ namespace Neo.Extensions
                 remain -= chunk.Length;
                 yield return chunk;
             }
+        }
+
+        /// <summary>
+        /// Randomly samples a specified number of elements from the collection using reservoir sampling algorithm.
+        /// This method ensures each element has an equal probability of being selected, regardless of the collection size.
+        /// If the count is greater than the collection size, the entire collection will be returned.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the collection.</typeparam>
+        /// <param name="collection">The collection to sample from.</param>
+        /// <param name="count">The number of elements to sample.</param>
+        /// <returns>An array containing the randomly sampled elements.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the collection is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the count is less than 0</exception>
+        [return: NotNull]
+        public static T[] Sample<T>(this IReadOnlyCollection<T> collection, int count)
+        {
+            ArgumentNullException.ThrowIfNull(collection);
+            ArgumentOutOfRangeException.ThrowIfLessThan(count, 0, nameof(count));
+
+            if (count == 0) return [];
+
+            var reservoir = new T[Math.Min(count, collection.Count)];
+            var currentIndex = 0;
+            foreach (var item in collection)
+            {
+                if (currentIndex < reservoir.Length)
+                {
+                    reservoir[currentIndex] = item;
+                }
+                else
+                {
+                    var randomIndex = RandomNumberFactory.NextInt32(0, currentIndex + 1);
+                    if (randomIndex < reservoir.Length) reservoir[randomIndex] = item;
+                }
+                currentIndex++;
+            }
+
+            return reservoir;
         }
     }
 }

@@ -51,8 +51,8 @@ namespace Neo.VM.Types
                 if (IsReadOnly) throw new InvalidOperationException("The map is readonly, can not set value.");
                 if (ReferenceCounter != null)
                 {
-                    if (_dict.TryGetValue(key, out StackItem? old_value))
-                        ReferenceCounter.RemoveReference(old_value, this);
+                    if (_dict.TryGetValue(key, out StackItem? oldValue))
+                        ReferenceCounter.RemoveReference(oldValue, this);
                     else
                         ReferenceCounter.AddReference(key, this);
                     if (value is CompoundType { ReferenceCounter: null })
@@ -88,6 +88,20 @@ namespace Neo.VM.Types
         /// </summary>
         /// <param name="referenceCounter">The reference counter to be used.</param>
         public Map(IReferenceCounter? referenceCounter = null) : base(referenceCounter) { }
+
+        /// <summary>
+        /// Create a new map with the specified dictionary and reference counter.
+        /// </summary>
+        /// <param name="dictionary">Dictionary</param>
+        /// <param name="referenceCounter">Reference Counter</param>
+        public Map(IDictionary<PrimitiveType, StackItem> dictionary, IReferenceCounter? referenceCounter = null)
+            : this(referenceCounter)
+        {
+            foreach (var (k, v) in dictionary)
+            {
+                this[k] = v;
+            }
+        }
 
         public override void Clear()
         {

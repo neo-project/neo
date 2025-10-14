@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -349,26 +350,32 @@ namespace Neo.Wallets
         {
             ArgumentNullException.ThrowIfNull(nep2);
             ArgumentNullException.ThrowIfNull(passphrase);
+
             byte[] data = nep2.Base58CheckDecode();
             if (data.Length != 39 || data[0] != 0x01 || data[1] != 0x42 || data[2] != 0xe0)
-                throw new FormatException();
+                throw new FormatException("Invalid NEP-2 key");
+
             byte[] addresshash = new byte[4];
             Buffer.BlockCopy(data, 3, addresshash, 0, 4);
+
             byte[] derivedkey = SCrypt.Generate(passphrase, addresshash, N, r, p, 64);
             byte[] derivedhalf1 = derivedkey[..32];
             byte[] derivedhalf2 = derivedkey[32..];
             Array.Clear(derivedkey, 0, derivedkey.Length);
+
             byte[] encryptedkey = new byte[32];
             Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
             Array.Clear(data, 0, data.Length);
+
             byte[] prikey = XOR(Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
             Array.Clear(derivedhalf1, 0, derivedhalf1.Length);
             Array.Clear(derivedhalf2, 0, derivedhalf2.Length);
+
             ECPoint pubkey = ECCurve.Secp256r1.G * prikey;
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             string address = script_hash.ToAddress(version);
             if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().AsSpan(0, 4).SequenceEqual(addresshash))
-                throw new FormatException();
+                throw new FormatException("The address hash in NEP-2 key is not valid");
             return prikey;
         }
 
@@ -381,8 +388,10 @@ namespace Neo.Wallets
         {
             ArgumentNullException.ThrowIfNull(wif);
             byte[] data = wif.Base58CheckDecode();
+
             if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
-                throw new FormatException();
+                throw new FormatException("Invalid WIF key");
+
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
@@ -578,13 +587,12 @@ namespace Neo.Wallets
             TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balancesGas,
             long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
         {
-            Random rand = new();
             foreach (var (account, value) in balancesGas)
             {
                 Transaction tx = new()
                 {
                     Version = 0,
-                    Nonce = (uint)rand.Next(),
+                    Nonce = RandomNumberFactory.NextUInt32(),
                     Script = script,
                     ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + snapshot.GetMaxValidUntilBlockIncrement(ProtocolSettings),
                     Signers = GetSigners(account, cosigners),

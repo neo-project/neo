@@ -287,5 +287,16 @@ namespace Neo.Extensions.Tests.Factories
             actualValue = RandomNumberFactory.NextBigInteger(expectedMax);
             Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
         }
+
+        [TestMethod]
+        public void CheckNextBytes()
+        {
+            var a = RandomNumberFactory.NextBytes(10);
+            Assert.AreEqual(10, a.Length);
+
+            var b = RandomNumberFactory.NextBytes(10, cryptography: true);
+            Assert.AreEqual(10, b.Length);
+            CollectionAssert.AreNotEqual(a, b);
+        }
     }
 }
