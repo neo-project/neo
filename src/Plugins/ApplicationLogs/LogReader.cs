@@ -94,6 +94,17 @@ namespace Neo.Plugins.ApplicationLogs
 
         #region JSON RPC Methods
 
+        /// <summary>
+        /// Gets the block or the transaction execution log. The execution logs are stored if the ApplicationLogs plugin is enabled.
+        /// </summary>
+        /// <param name="hash">The block hash or the transaction hash(UInt256)</param>
+        /// <param name="triggerType">
+        /// The trigger type(string), optional, default is "" and means no filter trigger type.
+        /// It can be "OnPersist", "PostPersist", "Verification", "Application", "System" or "All"(see TriggerType).
+        /// If want to filter by trigger type, need to set the trigger type.
+        /// </param>
+        /// <returns>The block or the transaction execution log.</returns>
+        /// <exception cref="RpcException">Thrown when the hash is invalid or the trigger type is invalid.</exception>
         [RpcMethod]
         public JToken GetApplicationLog(UInt256 hash, string triggerType = "")
         {
