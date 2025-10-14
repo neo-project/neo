@@ -169,9 +169,9 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The execution fee factor.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetExecFeeFactor(IReadOnlyStore snapshot)
+        public long GetExecFeeFactor(IReadOnlyStore snapshot)
         {
-            return (uint)(BigInteger)snapshot[_execFeeFactor];
+            return (long)(BigInteger)snapshot[_execFeeFactor];
         }
 
         /// <summary>
@@ -180,9 +180,9 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The storage price.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetStoragePrice(IReadOnlyStore snapshot)
+        public long GetStoragePrice(IReadOnlyStore snapshot)
         {
-            return (uint)(BigInteger)snapshot[_storagePrice];
+            return (long)(BigInteger)snapshot[_storagePrice];
         }
 
         /// <summary>
