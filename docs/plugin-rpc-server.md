@@ -1,6 +1,7 @@
 # Plugin RpcServer Documentation
 
 This document provides a comprehensive reference for the plugin RpcServer.
+Including how to enable RPC server, and RPC method definitions from RpcServer plugin and other plugins.
 
 ## Table of Contents
 
@@ -10,6 +11,7 @@ This document provides a comprehensive reference for the plugin RpcServer.
 3. [Smart Contract Methods](#smart-contract-methods)
 4. [Wallet Methods](#wallet-methods)
 5. [Utility Methods](#utility-methods)
+6. [RpcMethods from other Plugins](#rpcmethods-from-other-plugins)
 
 ---
 
@@ -19,7 +21,8 @@ This document provides a comprehensive reference for the plugin RpcServer.
 
 1. **Start the `neo-cli`**: Just run `neo-cli` in the terminal.
 2. **Download the Plugin**: Run `help install` to get help about how to install plugin.
-3. **Configure the Plugin**: Create or modify the `RpcServer.json` configuration file in the `neo-cli` binary directory (`Plugins/RpcServer`) if needed.
+3. **Configure the Plugin**: Create or modify the `RpcServer.json` configuration file in the `neo-cli` binary directory (`Plugins/RpcServer`) if needed. 
+If want to use RPC methods from other plugins, need to enable the plugin first.
 
 
 ### Compile Manually
@@ -286,7 +289,7 @@ Gets a block by its hash or index.
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "hash": "The block hash(UInt256)",
+    "hash": "The block hash(UInt256)", // Hex-encoded UInt256 with 0x prefix
     "size": 697, // The size of the block
     "version": 0, // The version of the block
     "previousblockhash": "The previous block hash(UInt256)",
@@ -1506,5 +1509,528 @@ Validates an address.
   "jsonrpc": "2.0",
   "id": 1,
   "result": {"address": "The Base58Check address", "isvalid": true}
+}
+```
+
+# RpcMethods from other Plugins
+
+## Plugin: ApplicationLogs
+
+### getppplicationlog
+Gets the block or the transaction execution log. The execution logs are stored if the ApplicationLogs plugin is enabled.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getppplicationlog",
+  "params": [
+    "The block hash or the transaction hash(UInt256)", // Hex-encoded UInt256 with 0x prefix
+    "The trigger type(string)" // The trigger type, optional, default is "" and means no filter trigger type. It can be "OnPersist", "PostPersist", "Verification", "Application", "System" or "All"(enum TriggerType). If want to filter by trigger type, need to set the trigger type.
+  ]
+}
+```
+
+**Response:**
+If the block hash is provided, the response is a block execution log.
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "blockhash": "The block hash(UInt256)", // Hex-encoded UInt256 with 0x prefix
+    "executions": [ // The execution logs of OnPersist or PostPersist
+      {
+        "trigger": "The trigger type(string)", // see TriggerType
+        "vmstate": "The VM state(string)", // see VMState
+        "gasconsumed": "The gas consumed(number in string)",
+        "stack": [{"type": "The stack item type", "value": "The stack item value"}], // The stack of the execution, optional. No stack if get stack failed.
+        "exception": "The exception message", // The exception message if get stack failed, optional
+        "notifications": [
+          {
+            "contract": "The contract hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+            "eventname": "The event name",
+            "state": { //  Object if the state or 'error: recursive reference' if get state failed.
+              "type": "Array", // always "Array" now.
+              "value": [
+                {
+                  "type": "The stack item type", // see StackItemType
+                  "value": "The stack item value" // see StackItem, maybe Integer, Boolean, String, Array, Map, etc.
+                }
+                // ...
+              ]
+            }
+          }
+          // ...
+        ],
+        "logs": [ // The logs of the execution, optional. Only Debug option is enabled, the logs will be returned.
+          {
+            "contract": "The contract hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+            "message": "The message"
+          }
+          // ...
+        ]
+      }
+      // ...
+    ] // The execution logs of OnPersist or PostPersist
+  }
+}
+```
+
+If the transaction hash is provided, the response is a transaction execution log.
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "txid": "The transaction hash(UInt256)", // Hex-encoded UInt256 with 0x prefix
+    "executions": [ // The execution log of Verification or Application
+      {
+        "trigger": "The trigger type(string)", // see TriggerType
+        "vmstate": "The VM state(string)", // see VMState
+        "gasconsumed": "The gas consumed(number in string)",
+        "stack": [{"type": "The stack item type", "value": "The stack item value"}], // The stack of the execution, optional. No stack if get stack failed.
+        "exception": "The exception message", // The exception message if get stack failed, optional
+        "notifications": [
+          {
+            "contract": "The contract hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+            "eventname": "The event name",
+            "state": { //  Object if the state or 'error: recursive reference' if get state failed.
+              "type": "Array", // always "Array" now.
+              "value": [
+                {
+                  "type": "The stack item type", // see StackItemType
+                  "value": "The stack item value" // see StackItem, maybe Integer, Boolean, String, Array, Map, etc.
+                }
+                // ...
+              ]
+            }
+          }
+          // ...
+        ],
+        "logs": [ // The logs of the execution, optional. Only Debug option is enabled, the logs will be returned.
+          {
+            "contract": "The contract hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+            "message": "The message"
+          }
+          // ...
+        ]
+      }
+      // ...
+    ] // The execution log of Verification or Application
+  }
+}
+```
+
+## Plugin: OracleService
+
+### submitoracleresponse
+Submits the oracle response of an Oracle request.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "submitoracleresponse",
+  "params": [
+    "The oracle public key(byte[])", // Base64-encoded if access from json-rpc
+    "The request id(ulong)", // The Oracle request id
+    "The transaction signature(byte[])", // Base64-encoded if access from json-rpc
+    "The message signature(byte[])" // Base64-encoded if access from json-rpc
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {} // Empty object if success
+}
+```
+
+## Plugin: StateService
+
+### getstateroot
+Gets the state root by index.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getstateroot",
+  "params": [
+    1 // It's an uint number, the index of the state root
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "version": 0, // A byte number, the version of the state root
+    "index": 1, // An uint number, the index of the state root
+    "roothash": "The state root hash(UInt256)", // Hex-encoded UInt256 with 0x prefix
+    "witnesses": [{"invocation": "A Base64 encoded string", "verification": "A Base64 encoded string"}]
+  }
+}
+```
+
+### getproof
+Gets the proof of a key
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getproof",
+  "params": [
+    "The state root hash(UInt256)", // Hex-encoded UInt256 with 0x prefix
+    "The contract hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+    "The key(Base64-encoded string)" // The key of the storage
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": "The proof(Base64-encoded string)" // var-bytes storage-key + var-int proof-count + var-bytes proof-item
+}
+```
+
+### verifyproof
+Verifies the proof of a key
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "verifyproof",
+  "params": [
+    "The state root hash(UInt256)", // Hex-encoded UInt256 with 0x prefix
+    "The proof(Base64-encoded string)" // var-bytes storage-key + var-int proof-count + var-bytes proof-item
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": "The verify result(Base64-encoded string)"
+}
+```
+
+### getstateheight
+Gets the current state height information
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getstateheight"
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "localrootindex": 1, // An uint number, optional, the index of the local state root
+    "validatedrootindex": 1 // An uint number, optional, the index of the validated state root
+  }
+}
+```
+
+### findstates
+List the states of a key prefix
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "findstates",
+  "params": [
+    "The state root hash(UInt256)", // Hex-encoded UInt256 with 0x prefix
+    "The contract hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+    "The key prefix(Base64-encoded string)", // The key prefix of the storage
+    "The key(Base64-encoded string)", // The key of the storage
+    "The count(int)" // The count of the results, If not set or greater than the MaxFindResultItems, the MaxFindResultItems will be used
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "firstproof": "The proof of the first key(Base64-encoded string)", // Optional, if the results are not empty, the proof of the first key will be returned
+    "lastproof": "The proof of the last key(Base64-encoded string)", // Optional, if the results length is greater than 1, the proof of the last key will be returned
+    "truncated": true, // Whether the results are truncated
+    "results": [
+      {"key": "The key(Base64-encoded string)", "value": "The value(Base64-encoded string)"} // The key-value pair of the state
+    ]
+  }
+}
+```
+
+### getstate
+Gets the state of a key
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getstate",
+  "params": [
+    "The state root hash(UInt256)", // Hex-encoded UInt256 with 0x prefix
+    "The contract hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+    "The key(Base64-encoded string)" // The key of the state
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": "The state value(Base64-encoded string)" // The value of the state
+}
+```
+
+## Plugin: TokensTracker
+
+### getnep11transfers
+Gets the transfers of NEP-11 token
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getnep11transfers",
+  "params": [
+    "The address(Address)", // UInt160 or Base58Check-encoded address
+    0, // It's an ulong number, the unix timestamp in milliseconds, optional, default to 1 week ago
+    0 // It's an ulong number, the unix timestamp in milliseconds, optional, default to now
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "address": "The address(Address)", // UInt160 or Base58Check-encoded address
+    "sent": [
+      {
+        "tokenid": "The token id(Hex-encoded string)",
+        "timestamp": 123000, // The unix timestamp in milliseconds
+        "assethash": "The asset hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+        "transferaddress": "The transfer address(UInt160)", // The address of the transfer, null if no transfer address
+        "amount": "The amount(integer number in string)",
+        "blockindex": 123, // The block index
+        "transfernotifyindex": 123, // The transfer notify index
+        "txhash": "The transaction hash(UInt256)" // Hex-encoded UInt256 with 0x prefix
+      }
+      // ...
+    ],
+    "received": [
+      {
+        "tokenid": "The token id(Hex-encoded string)",
+        "timestamp": 123000, // The unix timestamp in milliseconds
+        "assethash": "The asset hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+        "transferaddress": "The transfer address(UInt160)", // The address of the transfer, null if no transfer address
+        "amount": "The amount(integer number in string)",
+        "blockindex": 123, // The block index
+        "transfernotifyindex": 123, // The transfer notify index
+        "txhash": "The transaction hash(UInt256)" // Hex-encoded UInt256 with 0x prefix
+      }
+      // ...
+    ]
+  }
+}
+```
+
+### getnep11balances
+Gets the balances of NEP-11 token
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getnep11balances",
+  "params": [
+    "The address(Address)" // UInt160 or Base58Check-encoded address
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "address": "The address", 
+    "balance": [
+      {
+        "assethash": "The asset hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+        "name": "The name(string)",
+        "symbol": "The symbol(string)",
+        "decimals": "The decimals(integer number in string)",
+        "tokens": [
+          {
+            "tokenid": "The token id(Hex-encoded string)",
+            "amount": "The amount(integer number in string)",
+            "lastupdatedblock": 123 // The block index
+          }
+          // ...
+        ]
+      }
+      // ...
+    ]
+  }
+}
+```
+
+### getnep11properties
+Gets the properties of NEP-11 token
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getnep11properties",
+  "params": [
+    "The address(Address)", // UInt160 or Base58Check-encoded address
+    "The token id(Hex-encoded string)" // The token id of the NEP-11 token
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    // The properties of the NEP-11 token
+  }
+}
+```
+
+### getnep17transfers
+Gets the transfers of NEP-17 token
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getnep17transfers",
+  "params": [
+    "The address(Address)", // UInt160 or Base58Check-encoded address
+    0, // It's an ulong number, the unix timestamp in milliseconds, optional, default to 1 week ago
+    0 // It's an ulong number, the unix timestamp in milliseconds, optional, default to now
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "address": "The address(Address)", // UInt160 or Base58Check-encoded address
+    "sent": [
+      {
+        "tokenid": "The token id(Hex-encoded string)",
+        "timestamp": 123000, // The unix timestamp in milliseconds
+        "assethash": "The asset hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+        "transferaddress": "The transfer address(UInt160)", // The address of the transfer, null if no transfer address
+        "amount": "The amount(integer number in string)",
+        "blockindex": 123, // The block index
+        "transfernotifyindex": 123, // The transfer notify index
+        "txhash": "The transaction hash(UInt256)" // Hex-encoded UInt256 with 0x prefix
+      }
+      // ...
+    ],
+    "received": [
+      {
+        "tokenid": "The token id(Hex-encoded string)",
+        "timestamp": 123000, // The unix timestamp in milliseconds
+        "assethash": "The asset hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+        "transferaddress": "The transfer address(UInt160)", // The address of the transfer, null if no transfer address
+        "amount": "The amount(integer number in string)",
+        "blockindex": 123, // The block index
+        "transfernotifyindex": 123, // The transfer notify index
+        "txhash": "The transaction hash(UInt256)" // Hex-encoded UInt256 with 0x prefix
+      }
+      // ...
+    ]
+  }
+}
+```
+
+### getnep17balances
+Gets the balances of NEP-17 token
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getnep17balances",
+  "params": [
+    "The address(Address)" // UInt160 or Base58Check-encoded address
+  ]
+}
+```
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "address": "The address(Address)", // UInt160 or Base58Check-encoded address
+    "balance": [
+      {
+        "assethash": "The asset hash(UInt160)", // Hex-encoded UInt160 with 0x prefix
+        "name": "The name(string)",
+        "symbol": "The symbol(string)",
+        "decimals": "The decimals(integer number in string)",
+        "amount": "The amount(integer number in string)",
+        "lastupdatedblock": 123 // The block index
+      }
+      // ...
+    ]
+  }
 }
 ```
