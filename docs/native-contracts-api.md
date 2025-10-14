@@ -160,7 +160,7 @@ When calling a native contract method by transaction script, there are several t
 | setMillisecondsPerBlock | Sets the block generation time in milliseconds. | UInt32(*value*) | Void | 1<<15 | 0 | States,AllowNotify | HF_Echidna |
 | setAttributeFee | Sets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported. | Byte(*attributeType*), UInt32(*value*) | Void | 1<<15 | 0 | States | Deprecated in HF_Echidna |
 | setAttributeFee | Sets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported. | Byte(*attributeType*), UInt32(*value*) | Void | 1<<15 | 0 | States | HF_Echidna |
-| setFeePerByte | -- | Int64(*value*) | Void | 1<<15 | 0 | States | -- |
+| setFeePerByte | -- | UInt64(*value*) | Void | 1<<15 | 0 | States | -- |
 | setExecFeeFactor | -- | UInt64(*value*) | Void | 1<<15 | 0 | States | -- |
 | setStoragePrice | -- | UInt64(*value*) | Void | 1<<15 | 0 | States | -- |
 | setMaxValidUntilBlockIncrement | -- | UInt32(*value*) | Void | 1<<15 | 0 | States | HF_Echidna |

@@ -390,7 +390,7 @@ namespace Neo.Network.P2P.Payloads
             }
             BigInteger feePerSize = Size * NativeContract.Policy.GetFeePerByte(snapshot);
 
-            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, NativeContract.Ledger.CurrentIndex(snapshot) + 1))
+            if (settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
             {
                 feePerSize = feePerSize.DivideCeiling(ApplicationEngine.FeeFactor);
             }

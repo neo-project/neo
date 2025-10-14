@@ -443,8 +443,8 @@ namespace Neo.Plugins.OracleService
 
             // Base size for transaction: includes const_header + signers + script + hashes + witnesses, except attributes
 
-            int sizeInv = 66 * m;
-            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Script.GetVarSize()
+            var sizeInv = 66 * m;
+            var size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Script.GetVarSize()
                 + hashes.Length.GetVarSize() + witnessDict[NativeContract.Oracle.Hash].Size
                 + sizeInv.GetVarSize() + sizeInv + oracleSignContract.Script.GetVarSize()
                 + tx.Attributes.GetVarSize();
@@ -455,7 +455,7 @@ namespace Neo.Plugins.OracleService
             var networkFee = executionFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
             var sizeFee = size * feePerByte;
 
-            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, NativeContract.Ledger.CurrentIndex(snapshot) + 1))
+            if (settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
             {
                 networkFee = networkFee.DivideCeiling(ApplicationEngine.FeeFactor);
                 sizeFee = sizeFee.DivideCeiling(ApplicationEngine.FeeFactor);
