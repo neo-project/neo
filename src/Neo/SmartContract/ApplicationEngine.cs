@@ -76,9 +76,9 @@ namespace Neo.SmartContract
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
-        internal readonly uint ExecFeeFactor;
+        private readonly BigInteger _execFeeFactor;
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-        internal readonly uint StoragePrice;
+        private readonly BigInteger _storagePrice;
         private byte[] nonceData;
 
         /// <summary>
@@ -135,6 +135,16 @@ namespace Neo.SmartContract
         /// </summary>
         [Obsolete("This property is deprecated. Use FeeConsumed instead.")]
         public long GasConsumed => FeeConsumed;
+
+        /// <summary>
+        /// Exec Fee Factor
+        /// </summary>
+        internal long ExecFeeFactor => (long)_execFeeFactor.DivideCeiling(FeeFactor);
+
+        /// <summary>
+        /// Storage Price
+        /// </summary>
+        internal long StoragePrice => (long)_storagePrice.DivideCeiling(FeeFactor);
 
         /// <summary>
         /// GAS spent to execute.
@@ -213,22 +223,22 @@ namespace Neo.SmartContract
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
-                ExecFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
-                StoragePrice = PolicyContract.DefaultStoragePrice * FeeFactor;
+                _execFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
+                _storagePrice = PolicyContract.DefaultStoragePrice * FeeFactor;
             }
             else
             {
                 if (settings != null && !settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingBlock?.Index ?? 0))
                 {
                     // The values doesn't have the decimals stored
-                    ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache) * FeeFactor;
-                    StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache) * FeeFactor;
+                    _execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache) * FeeFactor;
+                    _storagePrice = NativeContract.Policy.GetStoragePrice(snapshotCache) * FeeFactor;
                 }
                 else
                 {
                     // The values have the decimals stored
-                    ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
-                    StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
+                    _execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
+                    _storagePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
                 }
             }
 
@@ -310,9 +320,9 @@ namespace Neo.SmartContract
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
         /// <param name="picoGas">The amount of GAS, in the unit of pico-gas to be added.</param>
-        protected internal void AddFee(long picoGas)
+        protected internal void AddFee(BigInteger picoGas)
         {
-            _feeConsumed = checked(_feeConsumed + picoGas);
+            _feeConsumed = _feeConsumed + picoGas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
@@ -669,7 +679,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * ExecFeeFactor);
+            AddFee(descriptor.FixedPrice * _execFeeFactor);
 
             object[] parameters = new object[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -683,7 +693,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(ExecFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
