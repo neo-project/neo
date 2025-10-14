@@ -349,10 +349,18 @@ namespace Neo.SmartContract
             else
             {
                 var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
-                ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
-                : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
+                    ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
+                    : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
                 if (executingContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
+            }
+
+            // Check whitelist
+
+            if (NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method.Name, method.Parameters.Length, out var fixedFee))
+            {
+                AddFee(fixedFee.Value);
+                state.WhiteListed = true;
             }
 
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))

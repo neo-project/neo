@@ -76,22 +76,14 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
-            var contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash)
-                ?? throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
-            var md = contract.Manifest.Abi.GetMethod(method, args.Count)
-                ?? throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
-            var hasReturnValue = md.ReturnType != ContractParameterType.Void;
-            var context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
-            var state = context.GetState<ExecutionContextState>();
-            state.IsDynamicCall = true;
+            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
+            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count);
+            if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
+            bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
-            // Check whitelist
-
-            if (NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contractHash, method, args.Count, out var fixedFee))
-            {
-                AddFee(fixedFee.Value);
-                state.WhiteListed = true;
-            }
+            ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
+            context.GetState<ExecutionContextState>().IsDynamicCall = true;
         }
 
         /// <summary>
