@@ -132,6 +132,9 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
                 engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
             }
+
+            // After Faun Hardfork the unit it's pico-gas, before it was datoshi
+
             if (hardfork == Hardfork.HF_Faun)
             {
                 // Add decimals to exec fee factor
@@ -154,6 +157,7 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Gets the network fee per transaction byte.
+        /// Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The network fee per transaction byte.</returns>
@@ -165,6 +169,7 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
+        /// Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The execution fee factor.</returns>
@@ -176,6 +181,7 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Gets the storage price.
+        /// Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The storage price.</returns>
