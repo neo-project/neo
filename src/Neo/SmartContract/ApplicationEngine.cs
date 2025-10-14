@@ -218,7 +218,7 @@ namespace Neo.SmartContract
             }
             else
             {
-                if (settings != null && !settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingBlock?.Index ?? 0))
+                if (!settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingBlock?.Index ?? 0))
                 {
                     // The values doesn't have the decimals stored
                     ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache) * FeeFactor;

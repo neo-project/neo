@@ -390,10 +390,7 @@ namespace Neo.Network.P2P.Payloads
             long netFeeDatoshi = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
             if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 
-            // Unsure set to set max to..
-            var maxVerificationGas = settings.IsHardforkEnabled(Hardfork.HF_Faun, height) ? MaxVerificationGas * ApplicationEngine.FeeFactor : MaxVerificationGas;
-
-            if (netFeeDatoshi > maxVerificationGas) netFeeDatoshi = MaxVerificationGas;
+            if (netFeeDatoshi > MaxVerificationGas) netFeeDatoshi = MaxVerificationGas;
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
