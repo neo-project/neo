@@ -348,9 +348,12 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetFeePerByte(ApplicationEngine engine, long value)
+        private void SetFeePerByte(ApplicationEngine engine, ulong value)
         {
-            if (value < 0 || value > 1_00000000)
+            BigInteger maxValue = 1_00000000;
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun)) maxValue *= ApplicationEngine.FeeFactor;
+
+            if (value < 0 || value > maxValue)
                 throw new ArgumentOutOfRangeException(nameof(value), $"FeePerByte must be between [0, 100000000], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);

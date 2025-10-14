@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
@@ -299,8 +298,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // I + II + III + IV
             Assert.AreEqual(25 + 22 + 1 + 88 + 109, tx.Size);
 
-            Assert.AreEqual(1000, NativeContract.Policy.GetFeePerByte(snapshotCache));
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            Assert.AreEqual(1000_0000, NativeContract.Policy.GetFeePerByte(snapshotCache));
+            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache) / ApplicationEngine.FeeFactor;
 
             // final check: verification_cost and tx_size
             Assert.AreEqual(245000, sizeGas);
@@ -383,7 +382,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache) / ApplicationEngine.FeeFactor;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1228520, verificationGas + sizeGas);
             // final assert
@@ -464,7 +463,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache) / ApplicationEngine.FeeFactor;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1249520, verificationGas + sizeGas);
             // final assert
@@ -549,7 +548,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache) / ApplicationEngine.FeeFactor;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1249520, verificationGas + sizeGas);
             // final assert
@@ -681,7 +680,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache) / ApplicationEngine.FeeFactor;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1269520, verificationGas + sizeGas);
             // final assert
@@ -1067,7 +1066,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache) / ApplicationEngine.FeeFactor;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1228520, verificationGas + sizeGas);
             // final assert
