@@ -446,33 +446,34 @@ namespace Neo.Plugins.OracleService
             var sizeInv = 66 * m;
             var size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Script.GetVarSize()
                 + hashes.Length.GetVarSize() + witnessDict[NativeContract.Oracle.Hash].Size
-                + sizeInv.GetVarSize() + sizeInv + oracleSignContract.Script.GetVarSize()
-                + tx.Attributes.GetVarSize();
+                + sizeInv.GetVarSize() + sizeInv + oracleSignContract.Script.GetVarSize();
 
             BigInteger executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             BigInteger feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
 
-            var networkFee = executionFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
-            var sizeFee = size * feePerByte;
-
             if (settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
             {
-                networkFee = networkFee.DivideCeiling(ApplicationEngine.FeeFactor);
-                sizeFee = sizeFee.DivideCeiling(ApplicationEngine.FeeFactor);
+                executionFactor = executionFactor.DivideCeiling(ApplicationEngine.FeeFactor);
+                feePerByte = feePerByte.DivideCeiling(ApplicationEngine.FeeFactor);
             }
 
-            tx.NetworkFee += (long)(networkFee + sizeFee);
+            var networkFee = executionFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
 
             if (response.Result.Length > OracleResponse.MaxResultSize)
             {
                 response.Code = OracleResponseCode.ResponseTooLarge;
                 response.Result = Array.Empty<byte>();
             }
-            else if (tx.NetworkFee > request.GasForResponse)
+            else if (tx.NetworkFee + (size + tx.Attributes.GetVarSize()) * feePerByte > request.GasForResponse)
             {
                 response.Code = OracleResponseCode.InsufficientFunds;
                 response.Result = Array.Empty<byte>();
             }
+
+            size += tx.Attributes.GetVarSize();
+            var sizeFee = size * feePerByte;
+
+            tx.NetworkFee += (long)(networkFee + sizeFee);
 
             // Calcualte system fee
 

@@ -94,7 +94,8 @@ namespace Neo.UnitTests.SmartContract
             var manifest = TestUtils.CreateDefaultManifest();
             Assert.ThrowsExactly<InvalidOperationException>(() => _ = snapshotCache.DeployContract(null, nefFile, manifest.ToJson().ToByteArray(false)));
             Assert.ThrowsExactly<ArgumentException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, nefFile, new byte[ContractManifest.MaxLength + 1]));
-            Assert.ThrowsExactly<InvalidOperationException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(true), 10000000));
+            var insufficientGas = 10000000 / ApplicationEngine.FeeFactor;
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(true), insufficientGas));
 
             var scriptExceedMaxLength = new NefFile()
             {

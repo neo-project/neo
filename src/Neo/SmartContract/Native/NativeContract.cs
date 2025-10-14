@@ -18,6 +18,7 @@ using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -428,7 +429,12 @@ namespace Neo.SmartContract.Native
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-                engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
+                var cpuFeeDatoshi = method.CpuFee * engine.ExecFeeFactor;
+                var storageFeeDatoshi = method.StorageFee * engine.StoragePrice;
+                var totalFee = (BigInteger)cpuFeeDatoshi + storageFeeDatoshi;
+                if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                    totalFee *= ApplicationEngine.FeeFactor;
+                engine.AddFee(totalFee);
                 List<object> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);

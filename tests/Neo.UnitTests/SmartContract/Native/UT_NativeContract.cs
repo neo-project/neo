@@ -299,7 +299,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var currentDir = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
-            Assert.AreEqual(currentDir.Name, "neo");  // neo/bin/tests/Neo.UnitTests/net9.0
+            CollectionAssert.Contains(new[] { "neo", "neo-exec" }, currentDir.Name);  // accommodate worktrees
 
             var outputPath = Path.Combine(currentDir.FullName, "docs", "native-contracts-api.md");
             using (var writer = new StreamWriter(outputPath))

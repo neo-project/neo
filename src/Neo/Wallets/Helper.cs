@@ -115,11 +115,20 @@ namespace Neo.Wallets
         {
             var hashes = tx.GetScriptHashesForVerifying(snapshot);
 
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
+            var faunActive = settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot);
+
+            if (faunActive)
+            {
+                execFeeFactor = execFeeFactor.DivideCeiling(ApplicationEngine.FeeFactor);
+                feePerByte = feePerByte.DivideCeiling(ApplicationEngine.FeeFactor);
+            }
+
             // base size for transaction: includes const_header + signers + attributes + script + hashes
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize()
                 + tx.Script.GetVarSize() + hashes.Length.GetVarSize();
             int index = -1;
-            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             BigInteger networkFee = 0;
             foreach (var hash in hashes)
             {
@@ -225,14 +234,7 @@ namespace Neo.Wallets
                 }
             }
 
-            var sizeFee = size * NativeContract.Policy.GetFeePerByte(snapshot);
-
-            // Check FAUN hardfork
-
-            if (settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
-            {
-                sizeFee = sizeFee.DivideCeiling(ApplicationEngine.FeeFactor);
-            }
+            var sizeFee = size * feePerByte;
 
             networkFee += sizeFee;
             foreach (var attr in tx.Attributes)
