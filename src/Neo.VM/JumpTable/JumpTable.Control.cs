@@ -534,21 +534,21 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Ret(ExecutionEngine engine, Instruction instruction)
         {
-            var context_pop = engine.InvocationStack.Pop();
-            var stack_eval = engine.InvocationStack.Count == 0 ? engine.ResultStack : engine.InvocationStack.Peek().EvaluationStack;
-            if (context_pop.EvaluationStack != stack_eval)
+            var contextPop = engine.InvocationStack.Pop();
+            var stackEval = engine.InvocationStack.Count == 0 ? engine.ResultStack : engine.InvocationStack.Peek().EvaluationStack;
+            if (contextPop.EvaluationStack != stackEval)
             {
-                if (context_pop.RVCount >= 0 && context_pop.EvaluationStack.Count != context_pop.RVCount)
+                if (contextPop.RVCount >= 0 && contextPop.EvaluationStack.Count != contextPop.RVCount)
                     // This exception indicates a mismatch between the expected and actual number of stack items.
                     // It typically occurs due to compilation errors caused by potential issues in the compiler, resulting in either too many or too few
                     // items left on the stack compared to what was anticipated by the return value count.
                     // When you run into this problem, try to reach core-devs at https://github.com/neo-project/neo for help.
-                    throw new InvalidOperationException($"Return value count mismatch: expected {context_pop.RVCount}, but got {context_pop.EvaluationStack.Count} items on the evaluation stack");
-                context_pop.EvaluationStack.CopyTo(stack_eval);
+                    throw new InvalidOperationException($"Return value count mismatch: expected {contextPop.RVCount}, but got {contextPop.EvaluationStack.Count} items on the evaluation stack");
+                contextPop.EvaluationStack.CopyTo(stackEval);
             }
             if (engine.InvocationStack.Count == 0)
                 engine.State = VMState.HALT;
-            engine.UnloadContext(context_pop);
+            engine.UnloadContext(contextPop);
             engine.isJumping = true;
         }
 
