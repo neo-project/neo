@@ -224,17 +224,20 @@ namespace Neo.Wallets
                     }
                 }
             }
-            networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            foreach (var attr in tx.Attributes)
-            {
-                networkFee += attr.CalculateNetworkFee(snapshot, tx);
-            }
+
+            var sizeFee = size * NativeContract.Policy.GetFeePerByte(snapshot);
 
             // Check FAUN hardfork
 
-            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, NativeContract.Ledger.CurrentIndex(snapshot) + 1))
+            if (settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
             {
-                networkFee = networkFee.DivideCeiling(ApplicationEngine.FeeFactor);
+                sizeFee = sizeFee.DivideCeiling(ApplicationEngine.FeeFactor);
+            }
+
+            networkFee += sizeFee;
+            foreach (var attr in tx.Attributes)
+            {
+                networkFee += attr.CalculateNetworkFee(snapshot, tx);
             }
 
             return (long)networkFee;

@@ -388,20 +388,21 @@ namespace Neo.Network.P2P.Payloads
                     return VerifyResult.InvalidAttribute;
                 attributesFee += attribute.CalculateNetworkFee(snapshot, this);
             }
-            BigInteger feePerSize = Size * NativeContract.Policy.GetFeePerByte(snapshot);
+            var isFaunActive = settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot);
+            var feePerSize = Size * NativeContract.Policy.GetFeePerByte(snapshot);
 
-            if (settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
+            if (isFaunActive)
             {
                 feePerSize = feePerSize.DivideCeiling(ApplicationEngine.FeeFactor);
             }
 
-            long netFeeDatoshi = NetworkFee - (long)feePerSize - attributesFee;
+            var netFeeDatoshi = NetworkFee - (long)feePerSize - attributesFee;
             if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 
             if (netFeeDatoshi > MaxVerificationGas) netFeeDatoshi = MaxVerificationGas;
-            BigInteger execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
 
-            if (settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
+            if (isFaunActive)
             {
                 execFeeFactor = execFeeFactor.DivideCeiling(ApplicationEngine.FeeFactor);
             }
