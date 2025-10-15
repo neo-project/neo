@@ -316,8 +316,11 @@ namespace Neo.SmartContract.Native
             {
                 // Validate methods
 
-                var contract = NativeContract.ContractManagement.GetContract(engine.SnapshotCache, contractHash)
+                var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
                     ?? throw new InvalidOperationException("Is not a valid contract");
+
+                if (contract.Manifest.Abi.GetMethod(method, argCount) == null)
+                    throw new InvalidOperationException($"{method} with {argCount} args is not a valid method of {contractHash}");
 
                 // Set
 
