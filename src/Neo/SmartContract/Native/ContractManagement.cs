@@ -269,7 +269,7 @@ namespace Neo.SmartContract.Native
 
             engine.AddFee(Math.Max(
                 engine.StoragePrice * (nefFile.Length + manifest.Length),
-                GetMinimumDeploymentFee(engine.SnapshotCache)
+                GetMinimumDeploymentFee(engine.SnapshotCache) * ApplicationEngine.FeeFactor
                 ));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
