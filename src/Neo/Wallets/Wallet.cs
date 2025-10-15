@@ -174,11 +174,12 @@ namespace Neo.Wallets
             ArgumentOutOfRangeException.ThrowIfGreaterThan(m, 1024, nameof(m));
 
             var contract = Contract.CreateMultiSigContract(m, publicKeys);
-            var account = GetAccounts().FirstOrDefault(
-                f =>
-                    f.HasKey &&
-                    f.Lock == false &&
-                    publicKeys.Contains(f.GetKey().PublicKey));
+            var account = GetAccounts()
+                .FirstOrDefault(
+                    f =>
+                        f.HasKey &&
+                        f.Lock == false &&
+                        publicKeys.Contains(f.GetKey().PublicKey));
 
             return CreateAccount(contract, account?.GetKey());
         }
