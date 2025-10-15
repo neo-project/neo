@@ -557,17 +557,12 @@ namespace Neo.Plugins.RpcServer
         {
             if (tx.Size > 1024)
             {
-                var calFee = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
-
-                if (system.Settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
-                {
-                    calFee = calFee.DivideCeiling(ApplicationEngine.FeeFactor);
-                }
-
-                calFee += 100000;
+                var index = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
+                var calFee = tx.Size *
+                    NativeContract.Policy.GetFeePerByte(system.Settings, snapshot, index) + 100000;
 
                 if (tx.NetworkFee < calFee)
-                    tx.NetworkFee = (long)calFee;
+                    tx.NetworkFee = calFee;
             }
         }
 

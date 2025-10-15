@@ -119,7 +119,7 @@ namespace Neo.Wallets
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize()
                 + tx.Script.GetVarSize() + hashes.Length.GetVarSize();
             int index = -1;
-            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(settings, snapshot, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
             BigInteger networkFee = 0;
             foreach (var hash in hashes)
             {
@@ -224,22 +224,11 @@ namespace Neo.Wallets
                     }
                 }
             }
-
-            var sizeFee = size * NativeContract.Policy.GetFeePerByte(snapshot);
-
-            // Check FAUN hardfork
-
-            if (settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
-            {
-                sizeFee = sizeFee.DivideCeiling(ApplicationEngine.FeeFactor);
-            }
-
-            networkFee += sizeFee;
+            networkFee += size * NativeContract.Policy.GetFeePerByte(settings, snapshot, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
             foreach (var attr in tx.Attributes)
             {
                 networkFee += attr.CalculateNetworkFee(snapshot, tx);
             }
-
             return (long)networkFee;
         }
     }

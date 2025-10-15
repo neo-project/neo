@@ -157,38 +157,98 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Gets the network fee per transaction byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <returns>The network fee per transaction byte.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public long GetFeePerByte(ApplicationEngine engine)
+        {
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                return (long)((BigInteger)engine.SnapshotCache[_feePerByte] / ApplicationEngine.FeeFactor);
+
+            return (long)(BigInteger)engine.SnapshotCache[_feePerByte];
+        }
+
+        public long GetFeePerByte(ProtocolSettings settings, IReadOnlyStore snapshot, uint index)
+        {
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, index))
+                return (long)((BigInteger)snapshot[_feePerByte] / ApplicationEngine.FeeFactor);
+
+            return (long)(BigInteger)snapshot[_feePerByte];
+        }
+
+        /// <summary>
+        /// Gets the network fee per transaction byte.
         /// Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>The network fee per transaction byte.</returns>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetFeePerByte(IReadOnlyStore snapshot)
+        /// <returns>The network fee per transaction byte in the unit of pico Gas.</returns>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetPicoFeePerByte(IReadOnlyStore snapshot)
         {
             return (BigInteger)snapshot[_feePerByte];
         }
 
         /// <summary>
         /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
-        /// Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The execution engine.</param>
         /// <returns>The execution fee factor.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetExecFeeFactor(IReadOnlyStore snapshot)
+        public uint GetExecFeeFactor(ApplicationEngine engine)
         {
-            return (BigInteger)snapshot[_execFeeFactor];
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                return (uint)((BigInteger)engine.SnapshotCache[_execFeeFactor] / ApplicationEngine.FeeFactor);
+
+            return (uint)(BigInteger)engine.SnapshotCache[_execFeeFactor];
+        }
+
+        public long GetExecFeeFactor(ProtocolSettings settings, IReadOnlyStore snapshot, uint index)
+        {
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, index))
+                return (long)((BigInteger)snapshot[_execFeeFactor] / ApplicationEngine.FeeFactor);
+
+            return (long)(BigInteger)snapshot[_execFeeFactor];
+        }
+
+        /// <summary>
+        /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
+        /// Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <returns>The execution fee factor in the unit of pico Gas.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetExecPicoFeeFactor(ApplicationEngine engine)
+        {
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                return (BigInteger)engine.SnapshotCache[_execFeeFactor] / ApplicationEngine.FeeFactor;
+
+            return (BigInteger)engine.SnapshotCache[_execFeeFactor];
         }
 
         /// <summary>
         /// Gets the storage price.
-        /// Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The execution engine.</param>
         /// <returns>The storage price.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetStoragePrice(IReadOnlyStore snapshot)
+        public uint GetStoragePrice(ApplicationEngine engine)
         {
-            return (BigInteger)snapshot[_storagePrice];
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                return (uint)((BigInteger)engine.SnapshotCache[_storagePrice] / ApplicationEngine.FeeFactor);
+
+            return (uint)(BigInteger)engine.SnapshotCache[_storagePrice];
+        }
+
+        /// <summary>
+        /// Gets the storage price.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <returns>The storage price in the unit of pico Gas.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetStoragePicoPrice(ApplicationEngine engine)
+        {
+            return (BigInteger)engine.SnapshotCache[_storagePrice];
         }
 
         /// <summary>

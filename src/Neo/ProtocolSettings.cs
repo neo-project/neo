@@ -12,8 +12,6 @@
 using Microsoft.Extensions.Configuration;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
-using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -281,17 +279,6 @@ namespace Neo
                     throw new ArgumentException($"Invalid hardfork configuration: {sortedHardforks[i]} is configured to activate at block {settings.Hardforks[sortedHardforks[i]]}, which is greater than {sortedHardforks[i + 1]} at block {settings.Hardforks[sortedHardforks[i + 1]]}. Earlier hardforks must activate at lower block numbers than later hardforks.");
                 }
             }
-        }
-
-        /// <summary>
-        /// Check if the Hardfork is Enabled
-        /// </summary>
-        /// <param name="hardfork">Hardfork</param>
-        /// <param name="snapshot">Read only store for get the current index</param>
-        /// <returns>True if enabled</returns>
-        public bool IsHardforkEnabledInNextBlock(Hardfork hardfork, IReadOnlyStore snapshot)
-        {
-            return IsHardforkEnabled(hardfork, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
         }
 
         /// <summary>
