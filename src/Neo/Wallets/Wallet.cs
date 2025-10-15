@@ -148,7 +148,7 @@ namespace Neo.Wallets
         /// <param name="publicKeys">The public keys of the contract.</param>
         /// <returns>Multi-Signature contract <see cref="WalletAccount"/>.</returns>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///   <paramref name="publicKeys" /> is empty.
+        ///   <paramref name="publicKeys" /> is empty or <paramref name="publicKeys"/> length is greater than 1024.
         /// </exception>
         /// <seealso cref="CreateMultiSigAccount(int, ECPoint[])"/>
         public WalletAccount CreateMultiSigAccount(params ECPoint[] publicKeys) =>
