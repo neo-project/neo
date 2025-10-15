@@ -220,9 +220,6 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetExecPicoFeeFactor(ApplicationEngine engine)
         {
-            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
-                return (BigInteger)engine.SnapshotCache[_execFeeFactor] / ApplicationEngine.FeeFactor;
-
             return (BigInteger)engine.SnapshotCache[_execFeeFactor];
         }
 

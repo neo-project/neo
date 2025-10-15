@@ -229,7 +229,7 @@ namespace Neo.SmartContract
             }
             else
             {
-                if (settings != null && !settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingBlock?.Index ?? 0))
+                if (settings != null && !settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshotCache)))
                 {
                     // The values doesn't have the decimals stored
                     _execFeeFactor = NativeContract.Policy.GetExecFeeFactor(this) * FeeFactor;
@@ -238,8 +238,8 @@ namespace Neo.SmartContract
                 else
                 {
                     // The values have the decimals stored
-                    _execFeeFactor = NativeContract.Policy.GetExecFeeFactor(this);
-                    _storagePrice = NativeContract.Policy.GetStoragePrice(this);
+                    _execFeeFactor = NativeContract.Policy.GetExecPicoFeeFactor(this);
+                    _storagePrice = NativeContract.Policy.GetStoragePicoPrice(this);
                 }
             }
 
