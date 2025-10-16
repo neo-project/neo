@@ -212,7 +212,6 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
-        /// Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <returns>The execution fee factor in the unit of pico Gas.</returns>
