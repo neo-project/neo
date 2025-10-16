@@ -154,6 +154,16 @@ namespace Neo.SmartContract
         public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor);
 
         /// <summary>
+        /// Exec Fee Factor. In the unit of datoshi, 1 datoshi = 1e-8 GAS
+        /// </summary>
+        internal BigInteger ExecFeePicoFactor => _execFeeFactor;
+
+        /// <summary>
+        /// Storage Price. In the unit of picoGas
+        /// </summary>
+        internal BigInteger StoragePicoPrice => _storagePrice;
+
+        /// <summary>
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
