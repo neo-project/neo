@@ -12,7 +12,6 @@
 using Microsoft.Extensions.Configuration;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
-
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
