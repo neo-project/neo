@@ -149,7 +149,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // With signature
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
+                "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1_0000 });
             Assert.IsTrue(ret.IsNull);
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
@@ -186,7 +186,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            Assert.AreEqual(30_0000, ret.GetInteger());
+            Assert.AreEqual(30, ret.GetInteger());
 
             // With signature, wrong value
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
@@ -198,11 +198,11 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            Assert.AreEqual(30_0000, ret.GetInteger());
+            Assert.AreEqual(30, ret.GetInteger());
 
             // Proper set
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
+                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50_0000 });
             Assert.IsTrue(ret.IsNull);
 
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
@@ -236,7 +236,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            Assert.AreEqual(100000_0000, ret.GetInteger());
+            Assert.AreEqual(100000, ret.GetInteger());
 
             // With signature, wrong value
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
@@ -248,7 +248,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            Assert.AreEqual(100000_0000, ret.GetInteger());
+            Assert.AreEqual(100000, ret.GetInteger());
 
             // Proper set
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
@@ -257,7 +257,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            Assert.AreEqual(300300_0000, ret.GetInteger());
+            Assert.AreEqual(300300, ret.GetInteger());
         }
 
         [TestMethod]

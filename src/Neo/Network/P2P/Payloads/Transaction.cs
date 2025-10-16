@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using static Neo.SmartContract.Helper;
 using Array = Neo.VM.Types.Array;
 
@@ -388,32 +387,18 @@ namespace Neo.Network.P2P.Payloads
                     return VerifyResult.InvalidAttribute;
                 attributesFee += attribute.CalculateNetworkFee(snapshot, this);
             }
-            var isFaunActive = settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot);
-            var feePerSize = Size * NativeContract.Policy.GetFeePerByte(snapshot);
-
-            if (isFaunActive)
-            {
-                feePerSize = feePerSize.DivideCeiling(ApplicationEngine.FeeFactor);
-            }
-
-            var netFeeDatoshi = NetworkFee - (long)feePerSize - attributesFee;
+            var netFeeDatoshi = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(settings, snapshot, height)) - attributesFee;
             if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 
             if (netFeeDatoshi > MaxVerificationGas) netFeeDatoshi = MaxVerificationGas;
-            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
-
-            if (isFaunActive)
-            {
-                execFeeFactor = execFeeFactor.DivideCeiling(ApplicationEngine.FeeFactor);
-            }
-
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(settings, snapshot, height);
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (IsSignatureContract(witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(witnesses[i].InvocationScript, out var _))
-                    netFeeDatoshi -= (long)execFeeFactor * SignatureContractCost();
+                    netFeeDatoshi -= execFeeFactor * SignatureContractCost();
                 else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n) && IsMultiSignatureInvocationScript(m, witnesses[i].InvocationScript, out var _))
                 {
-                    netFeeDatoshi -= (long)execFeeFactor * MultiSignatureContractCost(m, n);
+                    netFeeDatoshi -= execFeeFactor * MultiSignatureContractCost(m, n);
                 }
                 else
                 {

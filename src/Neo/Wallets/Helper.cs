@@ -115,20 +115,11 @@ namespace Neo.Wallets
         {
             var hashes = tx.GetScriptHashesForVerifying(snapshot);
 
-            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
-            var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
-            var faunActive = settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot);
-
-            if (faunActive)
-            {
-                execFeeFactor = execFeeFactor.DivideCeiling(ApplicationEngine.FeeFactor);
-                feePerByte = feePerByte.DivideCeiling(ApplicationEngine.FeeFactor);
-            }
-
             // base size for transaction: includes const_header + signers + attributes + script + hashes
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize()
                 + tx.Script.GetVarSize() + hashes.Length.GetVarSize();
             int index = -1;
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(settings, snapshot, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
             BigInteger networkFee = 0;
             foreach (var hash in hashes)
             {
@@ -233,15 +224,11 @@ namespace Neo.Wallets
                     }
                 }
             }
-
-            var sizeFee = size * feePerByte;
-
-            networkFee += sizeFee;
+            networkFee += size * NativeContract.Policy.GetFeePerByte(settings, snapshot, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
             foreach (var attr in tx.Attributes)
             {
                 networkFee += attr.CalculateNetworkFee(snapshot, tx);
             }
-
             return (long)networkFee;
         }
     }
