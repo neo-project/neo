@@ -12,7 +12,6 @@
 using Neo.Extensions;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -27,7 +26,7 @@ namespace Neo.VM
         private int _hashCode = 0;
         private readonly ReadOnlyMemory<byte> _value;
         private readonly bool _strictMode;
-        private readonly Dictionary<int, Instruction> _instructions = [];
+        private readonly Instruction?[] _instructionCache;
 
         /// <summary>
         /// Empty script
@@ -74,63 +73,85 @@ namespace Neo.VM
         {
             _value = script;
             Length = _value.Length;
-            if (strictMode)
+            _instructionCache = new Instruction?[Length > 0 ? Length : 1];
+            if (Length > 0)
             {
-                for (var ip = 0; ip < script.Length; ip += GetInstruction(ip).Size) { }
-                foreach (var (ip, instruction) in _instructions)
+                if (strictMode)
                 {
-                    switch (instruction.OpCode)
+                    for (var ip = 0; ip < Length;)
+                        ip += DecodeAndCacheInstruction(ip).Size;
+
+                    for (var ip = 0; ip < Length;)
                     {
-                        case OpCode.JMP:
-                        case OpCode.JMPIF:
-                        case OpCode.JMPIFNOT:
-                        case OpCode.JMPEQ:
-                        case OpCode.JMPNE:
-                        case OpCode.JMPGT:
-                        case OpCode.JMPGE:
-                        case OpCode.JMPLT:
-                        case OpCode.JMPLE:
-                        case OpCode.CALL:
-                        case OpCode.ENDTRY:
-                            if (!_instructions.ContainsKey(checked(ip + instruction.TokenI8)))
-                                throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
-                            break;
-                        case OpCode.PUSHA:
-                        case OpCode.JMP_L:
-                        case OpCode.JMPIF_L:
-                        case OpCode.JMPIFNOT_L:
-                        case OpCode.JMPEQ_L:
-                        case OpCode.JMPNE_L:
-                        case OpCode.JMPGT_L:
-                        case OpCode.JMPGE_L:
-                        case OpCode.JMPLT_L:
-                        case OpCode.JMPLE_L:
-                        case OpCode.CALL_L:
-                        case OpCode.ENDTRY_L:
-                            if (!_instructions.ContainsKey(checked(ip + instruction.TokenI32)))
-                                throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
-                            break;
-                        case OpCode.TRY:
-                            if (!_instructions.ContainsKey(checked(ip + instruction.TokenI8)))
-                                throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
-                            if (!_instructions.ContainsKey(checked(ip + instruction.TokenI8_1)))
-                                throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
-                            break;
-                        case OpCode.TRY_L:
-                            if (!_instructions.ContainsKey(checked(ip + instruction.TokenI32)))
-                                throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
-                            if (!_instructions.ContainsKey(checked(ip + instruction.TokenI32_1)))
-                                throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
-                            break;
-                        case OpCode.NEWARRAY_T:
-                        case OpCode.ISTYPE:
-                        case OpCode.CONVERT:
-                            var type = (StackItemType)instruction.TokenU8;
-                            if (!Enum.IsDefined(typeof(StackItemType), type))
-                                throw new BadScriptException();
-                            if (instruction.OpCode != OpCode.NEWARRAY_T && type == StackItemType.Any)
-                                throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
-                            break;
+                        var instruction = _instructionCache[ip]!;
+                        switch (instruction.OpCode)
+                        {
+                            case OpCode.JMP:
+                            case OpCode.JMPIF:
+                            case OpCode.JMPIFNOT:
+                            case OpCode.JMPEQ:
+                            case OpCode.JMPNE:
+                            case OpCode.JMPGT:
+                            case OpCode.JMPGE:
+                            case OpCode.JMPLT:
+                            case OpCode.JMPLE:
+                            case OpCode.CALL:
+                            case OpCode.ENDTRY:
+                                {
+                                    var target = checked(ip + instruction.TokenI8);
+                                    if ((uint)target >= (uint)Length || _instructionCache[target] is null)
+                                        throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
+                                }
+                                break;
+                            case OpCode.PUSHA:
+                            case OpCode.JMP_L:
+                            case OpCode.JMPIF_L:
+                            case OpCode.JMPIFNOT_L:
+                            case OpCode.JMPEQ_L:
+                            case OpCode.JMPNE_L:
+                            case OpCode.JMPGT_L:
+                            case OpCode.JMPGE_L:
+                            case OpCode.JMPLT_L:
+                            case OpCode.JMPLE_L:
+                            case OpCode.CALL_L:
+                            case OpCode.ENDTRY_L:
+                                {
+                                    var target = checked(ip + instruction.TokenI32);
+                                    if ((uint)target >= (uint)Length || _instructionCache[target] is null)
+                                        throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
+                                }
+                                break;
+                            case OpCode.TRY:
+                                {
+                                    var tryTarget = checked(ip + instruction.TokenI8);
+                                    var handlerTarget = checked(ip + instruction.TokenI8_1);
+                                    if ((uint)tryTarget >= (uint)Length || _instructionCache[tryTarget] is null)
+                                        throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
+                                    if ((uint)handlerTarget >= (uint)Length || _instructionCache[handlerTarget] is null)
+                                        throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
+                                }
+                                break;
+                            case OpCode.TRY_L:
+                                {
+                                    var tryTarget = checked(ip + instruction.TokenI32);
+                                    var handlerTarget = checked(ip + instruction.TokenI32_1);
+                                    if ((uint)tryTarget >= (uint)Length || _instructionCache[tryTarget] is null)
+                                        throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
+                                    if ((uint)handlerTarget >= (uint)Length || _instructionCache[handlerTarget] is null)
+                                        throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
+                                }
+                                break;
+                            case OpCode.NEWARRAY_T:
+                            case OpCode.ISTYPE:
+                            case OpCode.CONVERT:
+                                var type = (StackItemType)instruction.TokenU8;
+                                if (!Enum.IsDefined(typeof(StackItemType), type))
+                                    throw new BadScriptException();
+                                if (instruction.OpCode != OpCode.NEWARRAY_T && type == StackItemType.Any)
+                                    throw new BadScriptException($"ip: {ip}, opcode: {instruction.OpCode}");
+                                break;
+                        }
+                        ip += instruction.Size;
                     }
                 }
             }
@@ -146,13 +167,27 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Instruction GetInstruction(int ip)
         {
-            if (!_instructions.TryGetValue(ip, out var instruction))
+            if ((uint)ip >= (uint)Length)
+                throw new ArgumentOutOfRangeException(nameof(ip));
+            var instruction = _instructionCache[ip];
+            if (instruction is null)
             {
-                if (ip >= Length) throw new ArgumentOutOfRangeException(nameof(ip));
-                if (_strictMode) throw new ArgumentException($"Instruction not found at position {ip} in strict mode.", nameof(ip));
-                instruction = new Instruction(_value, ip);
-                _instructions.Add(ip, instruction);
+                if (_strictMode)
+                    throw new ArgumentException($"Instruction not found at position {ip} in strict mode.", nameof(ip));
+                instruction = DecodeAndCacheInstruction(ip);
             }
+            return instruction;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Instruction DecodeAndCacheInstruction(int ip)
+        {
+            var instruction = _instructionCache[ip];
+            if (instruction is not null)
+                return instruction;
+
+            instruction = new Instruction(_value, ip);
+            _instructionCache[ip] = instruction;
             return instruction;
         }
 

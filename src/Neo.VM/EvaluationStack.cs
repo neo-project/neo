@@ -48,10 +48,16 @@ namespace Neo.VM
                 if (start > end)
                     throw new ArgumentOutOfRangeException("Range start must be less than or equal to end.");
 
-                StackItem[] copyList = [.. _innerList];
-                List<StackItem> reverseList = [.. copyList.Reverse()];
+                var length = end - start;
+                if (length == 0)
+                    return System.Array.Empty<StackItem>();
 
-                return reverseList.GetRange(start, end - start);
+                StackItem[] result = new StackItem[length];
+                var sourceIndex = _innerList.Count - start - 1;
+                for (int i = 0; i < length; i++)
+                    result[i] = _innerList[sourceIndex - i];
+
+                return result;
             }
         }
 
@@ -72,10 +78,23 @@ namespace Neo.VM
             if (count < -1 || count > _innerList.Count)
                 throw new ArgumentOutOfRangeException(nameof(count), $"Out of stack bounds: {count}/{_innerList.Count}");
             if (count == 0) return;
+            int toCopy = count == -1 ? _innerList.Count : count;
+            if (toCopy == 0)
+                return;
+
+            stack._innerList.EnsureCapacity(stack._innerList.Count + toCopy);
+
             if (count == -1 || count == _innerList.Count)
-                stack._innerList.AddRange(_innerList);
+            {
+                for (int i = 0; i < _innerList.Count; i++)
+                    stack._innerList.Add(_innerList[i]);
+            }
             else
-                stack._innerList.AddRange(_innerList.Skip(_innerList.Count - count));
+            {
+                var startIndex = _innerList.Count - count;
+                for (int i = startIndex; i < _innerList.Count; i++)
+                    stack._innerList.Add(_innerList[i]);
+            }
         }
 
         public IEnumerator<StackItem> GetEnumerator()
