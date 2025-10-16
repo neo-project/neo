@@ -27,7 +27,6 @@ namespace Neo.UnitTests.GasTests
         public class PreExecutionData
         {
             public Dictionary<string, string> Storage { get; set; } = [];
-
         }
 
         public class NeoExecution
