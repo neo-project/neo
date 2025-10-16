@@ -112,7 +112,7 @@ generate_node_config() {
   "ApplicationConfiguration": {
     "Logger": {
       "Path": "Logs",
-      "ConsoleOutput": false,
+      "ConsoleOutput": true,
       "Active": true
     },
     "Storage": {
