@@ -17,7 +17,7 @@
     <None Update="SmartContract\Manifest\TestFile\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="GasTests\Fixtures\StdLib.json">
+    <None Update="GasTests\Fixtures\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="test.config.json">
