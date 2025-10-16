@@ -44,10 +44,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            var feePerByte = ret.GetInteger();
-            if (TestBlockchain.GetSystem().Settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
-                feePerByte = feePerByte.DivideCeiling(ApplicationEngine.FeeFactor);
-            Assert.AreEqual(1000, feePerByte);
+            Assert.AreEqual(1000, ret.GetInteger());
 
             ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)TransactionAttributeType.Conflicts });
             Assert.IsInstanceOfType(ret, typeof(Integer));
@@ -141,10 +138,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            var feePerByte = ret.GetInteger();
-            if (TestBlockchain.GetSystem().Settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
-                feePerByte = feePerByte.DivideCeiling(ApplicationEngine.FeeFactor);
-            Assert.AreEqual(1000, feePerByte);
+            Assert.AreEqual(1000, ret.GetInteger());
 
             // With signature
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
@@ -154,10 +148,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            feePerByte = ret.GetInteger();
-            if (TestBlockchain.GetSystem().Settings.IsHardforkEnabledInNextBlock(Hardfork.HF_Faun, snapshot))
-                feePerByte = feePerByte.DivideCeiling(ApplicationEngine.FeeFactor);
-            Assert.AreEqual(1, feePerByte);
+            Assert.AreEqual(1, ret.GetInteger());
         }
 
         [TestMethod]
