@@ -14,6 +14,8 @@ This script helps you create and manage multiple Neo localnet nodes for developm
 
 ### Basic Commands
 
+The DBFT and RpcServer plugins should be installed.
+
 ```bash
 # Start 7 nodes (default)
 ./run-localnet-nodes.sh start
@@ -92,7 +94,7 @@ localnet_nodes/
 
 ## Development Tips
 
-1. **Start with Fewer Nodes**: For development, 3-5 nodes are usually sufficient
+1. **Start with 7 Nodes**: For development, 7 nodes is best configuration for testing.
 2. **Monitor Logs**: Check individual node logs for debugging
 3. **Clean Restart**: Use `clean` command to start fresh
 4. **Network Connectivity**: Nodes automatically discover each other via seed list

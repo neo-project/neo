@@ -433,12 +433,14 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  $0 start                    # Start 7 nodes with default ports"
-    echo "  $0 start 5                  # Start 5 nodes with default ports"
     echo "  $0 start 7 30000 20000      # Start 7 nodes with P2P ports 30000-30006, RPC ports 20000-20006"
     echo "  $0 status                   # Show status"
     echo "  $0 stop                     # Stop all nodes"
     echo "  $0 regenerate               # Force regenerate all configurations"
     echo "  NEO_CLI_DIR=/path/to/neo-cli $0 start  # Use custom neo-cli path"
+    echo ""
+    echo "Tips:"
+    echo "  The DBFT and RpcServer plugins should be installed."
 }
 
 # Main script logic
