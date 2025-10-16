@@ -179,7 +179,6 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Gets the network fee per transaction byte.
-        /// Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The network fee per transaction byte in the unit of pico Gas.</returns>
