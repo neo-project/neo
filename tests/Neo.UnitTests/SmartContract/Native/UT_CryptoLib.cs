@@ -21,11 +21,14 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
+using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -265,30 +268,98 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void TestBls12AddAliases()
+        public void TestBls12381MultiExpG1()
         {
-            var expected = InvokeBlsAddMethod("bls12381Add");
-            foreach (var alias in new[] { "bls12_g1add", "bls12_g2add" })
+            var g1Point = G1Affine.FromCompressed(g1);
+            var pair1 = new VMArray(new StackItem[]
             {
-                CollectionAssert.AreEqual(expected, InvokeBlsAddMethod(alias));
-            }
+                StackItem.FromInterface(g1Point),
+                new ByteString(CreateScalarBytes(1))
+            });
+            var pair2 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(g1Point),
+                new ByteString(CreateScalarBytes(2))
+            });
+            var pairs = new VMArray(new StackItem[] { pair1, pair2 });
+
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = result.GetInterface<G1Projective>();
+
+            var expected = new G1Projective(g1Point) * CreateScalar(3);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
         }
 
         [TestMethod]
-        public void TestBls12MulAliases()
+        public void TestBls12381MultiExpG2()
         {
-            var expected = InvokeBlsMulMethod("bls12381Mul", false);
-            foreach (var alias in new[] { "bls12_g1mul", "bls12_g2mul" })
+            var g2Point = G2Affine.FromCompressed(g2);
+            var pair = new VMArray(new StackItem[]
             {
-                CollectionAssert.AreEqual(expected, InvokeBlsMulMethod(alias, false));
-            }
+                StackItem.FromInterface(new G2Projective(g2Point)),
+                new ByteString(CreateScalarBytes(5))
+            });
+            var pairs = new VMArray(new StackItem[] { pair });
+
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = result.GetInterface<G2Projective>();
+
+            var expected = new G2Projective(g2Point) * CreateScalar(5);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
         }
 
         [TestMethod]
-        public void TestBls12PairingAlias()
+        public void TestBls12381MultiExpReducesScalar()
         {
-            var expected = InvokeBlsPairingMethod("bls12381Pairing");
-            CollectionAssert.AreEqual(expected, InvokeBlsPairingMethod("bls12_pairing"));
+            var g1Point = G1Affine.FromCompressed(g1);
+            var oversized = (BigInteger.One << 260) + 5;
+            var scalarBytes = CreateScalarBytes(oversized);
+            var pair = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(g1Point),
+                new ByteString(scalarBytes)
+            });
+            var pairs = new VMArray(new StackItem[] { pair });
+
+            var wide = new byte[Scalar.Size * 2];
+            System.Array.Copy(scalarBytes, wide, scalarBytes.Length);
+            var reducedScalar = Scalar.FromBytesWide(wide);
+
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = result.GetInterface<G1Projective>();
+
+            var expected = new G1Projective(g1Point) * reducedScalar;
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpMixedGroupFails()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+            var pair1 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(g1Point),
+                new ByteString(CreateScalarBytes(1))
+            });
+            var pair2 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(g2Point),
+                new ByteString(CreateScalarBytes(1))
+            });
+            var pairs = new VMArray(new StackItem[] { pair1, pair2 });
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381MultiExp(pairs));
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpEmptyFails()
+        {
+            var pairs = new VMArray();
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381MultiExp(pairs));
         }
 
         [TestMethod]
@@ -1153,7 +1224,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             // byte[] privateKey = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60".HexToBytes();
             byte[] publicKey = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a".HexToBytes();
-            byte[] message = Array.Empty<byte>();
+            byte[] message = System.Array.Empty<byte>();
             byte[] signature = ("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155" +
                                 "5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b").HexToBytes();
 
@@ -1169,13 +1240,13 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Test with an invalid signature
             byte[] invalidSignature = new byte[signature.Length];
-            Array.Copy(signature, invalidSignature, signature.Length);
+            System.Array.Copy(signature, invalidSignature, signature.Length);
             invalidSignature[0] ^= 0x01; // Flip one bit
             Assert.IsFalse(CallVerifyWithEd25519(message, publicKey, invalidSignature));
 
             // Test with an invalid public key
             byte[] invalidPublicKey = new byte[publicKey.Length];
-            Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
+            System.Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
             invalidPublicKey[0] ^= 0x01; // Flip one bit
             Assert.IsFalse(CallVerifyWithEd25519(message, invalidPublicKey, signature));
         }
@@ -1203,61 +1274,22 @@ namespace Neo.UnitTests.SmartContract.Native
             }
         }
 
-        private byte[] InvokeBlsAddMethod(string methodName)
+        private static byte[] CreateScalarBytes(BigInteger value)
         {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            using ScriptBuilder script = new();
-            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
-            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
-            script.EmitPush(2);
-            script.Emit(OpCode.PACK);
-            script.EmitPush(CallFlags.All);
-            script.EmitPush(methodName);
-            script.EmitPush(NativeContract.CryptoLib.Hash);
-            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            return ExecuteBlsScript(script, snapshotCache);
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value));
+
+            var bytes = new byte[Scalar.Size];
+            var mask = (BigInteger.One << (Scalar.Size * 8)) - BigInteger.One;
+            var truncated = value & mask;
+            if (!truncated.TryWriteBytes(bytes, out _, isBigEndian: false))
+                throw new InvalidOperationException("Unable to encode scalar value.");
+            return bytes;
         }
 
-        private byte[] InvokeBlsMulMethod(string methodName, bool neg)
-        {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            using ScriptBuilder script = new();
-            byte[] data = new byte[32];
-            data[0] = 0x03;
-            script.EmitPush(neg);
-            script.EmitPush(data);
-            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
-            script.EmitPush(3);
-            script.Emit(OpCode.PACK);
-            script.EmitPush(CallFlags.All);
-            script.EmitPush(methodName);
-            script.EmitPush(NativeContract.CryptoLib.Hash);
-            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            return ExecuteBlsScript(script, snapshotCache);
-        }
+        private static byte[] CreateScalarBytes(uint value) => CreateScalarBytes(new BigInteger(value));
 
-        private byte[] InvokeBlsPairingMethod(string methodName)
-        {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            using ScriptBuilder script = new();
-            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g2);
-            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
-            script.EmitPush(2);
-            script.Emit(OpCode.PACK);
-            script.EmitPush(CallFlags.All);
-            script.EmitPush(methodName);
-            script.EmitPush(NativeContract.CryptoLib.Hash);
-            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            return ExecuteBlsScript(script, snapshotCache);
-        }
+        private static Scalar CreateScalar(uint value) => Scalar.FromBytes(CreateScalarBytes(value));
 
-        private byte[] ExecuteBlsScript(ScriptBuilder script, StoreCache snapshotCache)
-        {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
-                settings: TestProtocolSettings.Default);
-            engine.LoadScript(script.ToArray());
-            Assert.AreEqual(VMState.HALT, engine.Execute());
-            return engine.ResultStack.Pop().GetInterface<Gt>().ToArray();
-        }
     }
 }

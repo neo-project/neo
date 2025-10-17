@@ -12,6 +12,8 @@
 using Neo.Cryptography.BLS12_381;
 using Neo.VM.Types;
 using System;
+using Array = Neo.VM.Types.Array;
+using VMBuffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract.Native
 {
@@ -97,14 +99,6 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19, Name = "bls12_g1add")]
-        public static InteropInterface Bls12G1Add(InteropInterface x, InteropInterface y)
-            => Bls12381Add(x, y);
-
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19, Name = "bls12_g2add")]
-        public static InteropInterface Bls12G2Add(InteropInterface x, InteropInterface y)
-            => Bls12381Add(x, y);
-
         /// <summary>
         /// Mul operation of gt point and multiplier
         /// </summary>
@@ -127,13 +121,76 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21, Name = "bls12_g1mul")]
-        public static InteropInterface Bls12G1Mul(InteropInterface x, byte[] mul, bool neg)
-            => Bls12381Mul(x, mul, neg);
+        /// <summary>
+        /// Multi exponentiation operation for bls12381 points.
+        /// </summary>
+        /// <param name="pairs">Array of [point, scalar] pairs.</param>
+        /// <returns>The accumulated point.</returns>
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 23)]
+        public static InteropInterface Bls12381MultiExp(Array pairs)
+        {
+            if (pairs is null || pairs.Count == 0)
+                throw new ArgumentException("BLS12-381 multi exponent requires at least one pair");
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21, Name = "bls12_g2mul")]
-        public static InteropInterface Bls12G2Mul(InteropInterface x, byte[] mul, bool neg)
-            => Bls12381Mul(x, mul, neg);
+            bool? useG2 = null;
+            G1Projective g1Accumulator = G1Projective.Identity;
+            G2Projective g2Accumulator = G2Projective.Identity;
+
+            foreach (StackItem item in pairs)
+            {
+                if (item is not Array pair || pair.Count != 2)
+                    throw new ArgumentException("BLS12-381 multi exponent pair must contain point and scalar");
+
+                if (pair[0] is not InteropInterface pointInterface)
+                    throw new ArgumentException("BLS12-381 multi exponent requires interop points");
+
+                var point = pointInterface.GetInterface<object>();
+                switch (point)
+                {
+                    case G1Affine g1Affine:
+                        EnsureGroupType(ref useG2, false);
+                        {
+                            var scalar = ParseScalar(pair[1]);
+                            if (!scalar.IsZero)
+                                g1Accumulator += new G1Projective(g1Affine) * scalar;
+                        }
+                        break;
+                    case G1Projective g1Projective:
+                        EnsureGroupType(ref useG2, false);
+                        {
+                            var scalar = ParseScalar(pair[1]);
+                            if (!scalar.IsZero)
+                                g1Accumulator += g1Projective * scalar;
+                        }
+                        break;
+                    case G2Affine g2Affine:
+                        EnsureGroupType(ref useG2, true);
+                        {
+                            var scalar = ParseScalar(pair[1]);
+                            if (!scalar.IsZero)
+                                g2Accumulator += new G2Projective(g2Affine) * scalar;
+                        }
+                        break;
+                    case G2Projective g2Projective:
+                        EnsureGroupType(ref useG2, true);
+                        {
+                            var scalar = ParseScalar(pair[1]);
+                            if (!scalar.IsZero)
+                                g2Accumulator += g2Projective * scalar;
+                        }
+                        break;
+                    default:
+                        throw new ArgumentException("BLS12-381 type mismatch");
+                }
+            }
+
+            if (useG2 is null)
+                throw new ArgumentException("BLS12-381 multi exponent requires at least one valid pair");
+
+            return useG2.Value
+                ? new InteropInterface(g2Accumulator)
+                : new InteropInterface(g1Accumulator);
+        }
 
         /// <summary>
         /// Pairing operation of g1 and g2
@@ -159,8 +216,40 @@ namespace Neo.SmartContract.Native
             return new(Bls12.Pairing(in g1a, in g2a));
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 23, Name = "bls12_pairing")]
-        public static InteropInterface Bls12Pairing(InteropInterface g1, InteropInterface g2)
-            => Bls12381Pairing(g1, g2);
+        private static void EnsureGroupType(ref bool? current, bool isG2)
+        {
+            if (current is null)
+            {
+                current = isG2;
+            }
+            else if (current.Value != isG2)
+            {
+                throw new ArgumentException("BLS12-381 multi exponent cannot mix groups");
+            }
+        }
+
+        private static Scalar ParseScalar(StackItem scalarItem)
+        {
+            ReadOnlySpan<byte> data = scalarItem switch
+            {
+                ByteString bs when bs.GetSpan().Length == Scalar.Size => bs.GetSpan(),
+                VMBuffer buffer when buffer.Size == Scalar.Size => buffer.InnerBuffer.Span,
+                _ => throw new ArgumentException("BLS12-381 scalar must be 32 bytes"),
+            };
+
+            Span<byte> littleEndian = stackalloc byte[Scalar.Size];
+            data.CopyTo(littleEndian);
+
+            try
+            {
+                return Scalar.FromBytes(littleEndian);
+            }
+            catch (FormatException)
+            {
+                var wide = new byte[Scalar.Size * 2];
+                littleEndian.CopyTo(wide);
+                return Scalar.FromBytesWide(wide);
+            }
+        }
     }
 }
