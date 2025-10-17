@@ -148,12 +148,12 @@ namespace Neo
             var index = s.IndexOfAny(['e', 'E']);
             if (index >= 0)
             {
-                if (!sbyte.TryParse(s[(index + 1)..], out var e_temp))
+                if (!sbyte.TryParse(s[(index + 1)..], out var eTemp))
                 {
                     result = default;
                     return false;
                 }
-                e = e_temp;
+                e = eTemp;
                 s = s[..index];
             }
             index = s.IndexOf('.');

@@ -277,15 +277,15 @@ namespace Neo.Ledger
             _blockCache.TryAdd(blockHash, block);
             if (block.Index == currentHeight + 1)
             {
-                var block_persist = block;
+                var blockPersist = block;
                 var blocksToPersistList = new List<Block>();
                 while (true)
                 {
-                    blocksToPersistList.Add(block_persist);
-                    if (block_persist.Index + 1 > headerHeight) break;
-                    var header = _system.HeaderCache[block_persist.Index + 1];
+                    blocksToPersistList.Add(blockPersist);
+                    if (blockPersist.Index + 1 > headerHeight) break;
+                    var header = _system.HeaderCache[blockPersist.Index + 1];
                     if (header == null) break;
-                    if (!_blockCache.TryGetValue(header.Hash, out block_persist)) break;
+                    if (!_blockCache.TryGetValue(header.Hash, out blockPersist)) break;
                 }
 
                 var blocksPersisted = 0;
@@ -443,7 +443,7 @@ namespace Neo.Ledger
         {
             using (var snapshot = _system.GetSnapshotCache())
             {
-                var all_application_executed = new List<ApplicationExecuted>();
+                var allApplicationExecuted = new List<ApplicationExecuted>();
                 TransactionState[] transactionStates;
                 using (var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, _system.Settings, 0))
                 {
@@ -454,11 +454,14 @@ namespace Neo.Ledger
                             throw engine.FaultException;
                         throw new InvalidOperationException();
                     }
-                    ApplicationExecuted application_executed = new(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
+
+                    var applicationExecuted = new ApplicationExecuted(engine);
+                    Context.System.EventStream.Publish(applicationExecuted);
+
+                    allApplicationExecuted.Add(applicationExecuted);
                     transactionStates = engine.GetState<TransactionState[]>();
                 }
+
                 var clonedSnapshot = snapshot.CloneCache();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (var transactionState in transactionStates)
@@ -475,10 +478,12 @@ namespace Neo.Ledger
                     {
                         clonedSnapshot = snapshot.CloneCache();
                     }
-                    ApplicationExecuted application_executed = new(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
+
+                    var applicationExecuted = new ApplicationExecuted(engine);
+                    Context.System.EventStream.Publish(applicationExecuted);
+                    allApplicationExecuted.Add(applicationExecuted);
                 }
+
                 using (var engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, _system.Settings, 0))
                 {
                     engine.LoadScript(s_postPersistScript);
@@ -488,13 +493,16 @@ namespace Neo.Ledger
                             throw engine.FaultException;
                         throw new InvalidOperationException();
                     }
-                    ApplicationExecuted application_executed = new(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
+
+                    var applicationExecuted = new ApplicationExecuted(engine);
+                    Context.System.EventStream.Publish(applicationExecuted);
+                    allApplicationExecuted.Add(applicationExecuted);
                 }
-                InvokeCommitting(_system, block, snapshot, all_application_executed);
+
+                InvokeCommitting(_system, block, snapshot, allApplicationExecuted);
                 snapshot.Commit();
             }
+
             InvokeCommitted(_system, block);
             _system.MemPool.UpdatePoolForBlockPersisted(block, _system.StoreView);
             _extensibleWitnessWhiteList = null;
