@@ -33,11 +33,11 @@ namespace Neo.UnitTests.GasTests
 
         public static void TestFixture(string file)
         {
-            file = Path.GetFullPath(file);
-            file = File.ReadAllText(file);
+            var pathFile = Path.GetFullPath(file);
+            var json = File.ReadAllText(pathFile);
 
             var store = TestBlockchain.GetTestSnapshotCache();
-            var fixtures = JsonConvert.DeserializeObject<GasTestFixture[]>(file);
+            var fixtures = JsonConvert.DeserializeObject<GasTestFixture[]>(json);
 
             foreach (var fixture in fixtures)
             {
@@ -70,7 +70,7 @@ namespace Neo.UnitTests.GasTests
 
             if (fixture.Signature != null)
             {
-                if (fixture.Signature.SignedByCommitee)
+                if (fixture.Signature.SignedByCommittee)
                 {
                     signatures.Add(NativeContract.NEO.GetCommitteeAddress(snapshot));
                 }

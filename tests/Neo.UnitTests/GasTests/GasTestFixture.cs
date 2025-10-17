@@ -21,7 +21,7 @@ namespace Neo.UnitTests.GasTests
     {
         public class SignatureData
         {
-            public bool SignedByCommitee { get; set; } = false;
+            public bool SignedByCommittee { get; set; } = false;
         }
 
         public class PreExecutionData
