@@ -176,7 +176,7 @@ namespace Neo.Extensions.Factories
 
         public static ulong NextUInt64(ulong maxValue)
         {
-            var randomProduct = BigMul(maxValue, NextUInt64(), out var lowPart);
+            var randomProduct = Math.BigMul(maxValue, NextUInt64(), out var lowPart);
 
             if (lowPart < maxValue)
             {
@@ -184,7 +184,7 @@ namespace Neo.Extensions.Factories
 
                 while (lowPart < remainder)
                 {
-                    randomProduct = BigMul(maxValue, NextUInt64(), out lowPart);
+                    randomProduct = Math.BigMul(maxValue, NextUInt64(), out lowPart);
                 }
             }
 
@@ -216,34 +216,27 @@ namespace Neo.Extensions.Factories
             if (maxValue.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxValue));
 
+            if (maxValue == 0 || maxValue == 1)
+                return BigInteger.Zero;
+
             var maxValueBits = maxValue.GetByteCount() * 8;
-            var maxValueSize = BigInteger.Pow(2, maxValueBits);
+            var maxMaxValue = BigInteger.One << maxValueBits;
 
             var randomProduct = maxValue * NextBigInteger(maxValueBits);
-            var randomProductBits = randomProduct.GetByteCount() * 8;
-
-            var lowPart = randomProduct.GetLowPart(maxValueBits);
+            var lowPart = randomProduct % maxMaxValue;
 
             if (lowPart < maxValue)
             {
-                var remainder = (maxValueSize - maxValue) % maxValue;
+                var threshold = (maxMaxValue - maxValue) % maxValue;
 
-                while (lowPart < remainder)
+                while (lowPart < threshold)
                 {
                     randomProduct = maxValue * NextBigInteger(maxValueBits);
-                    randomProductBits = randomProduct.GetByteCount() * 8;
-                    lowPart = randomProduct.GetLowPart(maxValueBits);
+                    lowPart = randomProduct % maxMaxValue;
                 }
             }
 
-            var result = randomProduct >> (randomProductBits - maxValueBits);
-
-            // Since BigInteger doesn't have a max value or bit size
-            // anything over 'maxValue' return zero
-            if (result >= maxValue)
-                return BigInteger.Zero;
-
-            return result;
+            return randomProduct >> maxValueBits;
         }
 
         public static BigInteger NextBigInteger(int sizeInBits)
@@ -263,29 +256,6 @@ namespace Neo.Extensions.Factories
                 b[^1] &= (byte)((1 << sizeInBits % 8) - 1);
 
             return new BigInteger(b);
-        }
-
-        private static ulong BigMul(ulong a, ulong b, out ulong low)
-        {
-            // Adaptation of algorithm for multiplication
-            // of 32-bit unsigned integers described
-            // in Hacker's Delight by Henry S. Warren, Jr. (ISBN 0-201-91465-4), Chapter 8
-            // Basically, it's an optimized version of FOIL method applied to
-            // low and high dwords of each operand
-
-            // Use 32-bit uints to optimize the fallback for 32-bit platforms.
-            var al = (uint)a;
-            var ah = (uint)(a >> 32);
-            var bl = (uint)b;
-            var bh = (uint)(b >> 32);
-
-            var mull = ((ulong)al) * bl;
-            var t = ((ulong)ah) * bl + (mull >> 32);
-            var tl = ((ulong)al) * bh + (uint)t;
-
-            low = (tl << 32) | (uint)mull;
-
-            return ((ulong)ah) * bh + (t >> 32) + (tl >> 32);
         }
 
         public static byte[] NextBytes(int length, bool cryptography = false)
