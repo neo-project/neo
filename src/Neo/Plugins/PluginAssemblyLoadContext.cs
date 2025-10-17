@@ -18,7 +18,7 @@ using System.Runtime.Loader;
 
 namespace Neo.Plugins
 {
-    internal class PluginAssemblyLoadContext : AssemblyLoadContext
+    internal sealed class PluginAssemblyLoadContext : AssemblyLoadContext
     {
         private readonly string[] _searchPluginPaths;
 
