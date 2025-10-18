@@ -10,8 +10,10 @@ BASE_PORT=${3:-20333}  # Default P2P port, can be overridden
 BASE_RPC_PORT=${4:-10330}  # Default RPC port, can be overridden
 BASE_DATA_DIR="localnet_nodes"
 
+DOTNET_VERSION="net9.0"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NEO_CLI_DIR="${NEO_CLI_DIR:-$SCRIPT_DIR/../bin/Neo.CLI/net9.0}"
+NEO_CLI_DIR="${NEO_CLI_DIR:-$SCRIPT_DIR/../bin/Neo.CLI/$DOTNET_VERSION}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -56,7 +58,7 @@ ADDRESSES=(
     "NfGwaZPHGXLqZ17U7p5hqkZGivArXbXUbL"
     "NjCgqnnJpCsRQwEayWy1cZSWVwQ7eRejRq"
     "NYXoVMFa3ekGUnX4qzk8DTD2hhs5aSh2k4"
-    "NVBkHV59hTDxXAGas51eMtWhfxa6VDxf38"
+    "NQSjfdeawkxqcUXQ3Vvbka66Frr4hQJoBr"
 )
 
 # An Array of keys
@@ -67,7 +69,7 @@ KEYS=(
     "6PYUCCNgCrVrB5vpCbsFwzEA7d2SkCzCTYMyhYw2TL51CaGeie2UWyehzw"
     "6PYQpWR6CGrWDKauPWfVEfmwMKp2xKFod4X1AvV39ud5qhaSkrsFQeCBPy"
     "6PYTm6sJLR1oWX2svdJkzWhkbqTAGurEybDdcCTBa19WNzDuFXURX2NAaE"
-    "6PYLnvLHYiVfxzKYMFtaZakWxkyj3WDX86PwBBYrYgkotBms6MWjfA2WHU"
+    "6PYQM2Tdkon4kqzYSboctKLEXyLLub4vQFSXVwwgtSPcPTsqC2VhQXwf5R"
 )
 
 # An Array of scripts
@@ -78,7 +80,7 @@ SCRIPTS=(
     "DCEDabXhB8SMjperdGnbbr8JAZz7MiPToYxK+iFwQoE9+d5BVuezJw=="
     "DCECnkPTdNxK3KFYu0ZbSthBegdmQaU5UOPLccY0PdJYk9RBVuezJw=="
     "DCEChLsd71mcGde7lMvdiOx+1IXbId6mTIa7kXYi+1ac6cpBVuezJw=="
-    "DCECwt/bG9EMosR8IoCV7biuh20TLuae8H4/+okS2TPWhq9BVuezJw=="
+    "DCED5FrD4mtUqJfwU41g1MwcKIS43Zk78Ie+REaoLdQE/9hBVuezJw=="
 )
 
 
@@ -159,11 +161,11 @@ generate_node_config() {
     "StandbyCommittee": [
       "0285265dc8859d05e1e42a90d6c29a9de15531eac182489743e6a947817d2a9f66",
       "02a332b25dbf6118fc25bf64f0d8300bbb623b78344371acf0cb50727df32d9db3",
-      "03a1abc97625d45b74e1b862410245338bf64e742984b87ddfaa3e92a4c810450d",
       "02aa022c2bc3614d23afc1216fc43dad90720d1e296b4e09b7ee2cd9beb80d9bea",
       "0369b5e107c48c8e97ab7469db6ebf09019cfb3223d3a18c4afa217042813df9de",
       "029e43d374dc4adca158bb465b4ad8417a076641a53950e3cb71c6343dd25893d4",
-      "0284bb1def599c19d7bb94cbdd88ec7ed485db21dea64c86bb917622fb569ce9ca"
+      "0284bb1def599c19d7bb94cbdd88ec7ed485db21dea64c86bb917622fb569ce9ca",
+      "03e45ac3e26b54a897f0538d60d4cc1c2884b8dd993bf087be4446a82dd404ffd8"
     ],
     "SeedList": [
       $seed_list
@@ -192,6 +194,24 @@ EOF
 EOF
 
     log_success "Generated config for node $node_id"
+}
+
+
+initialize_plugins() {
+    for plugin in "DBFTPlugin" "RpcServer" "ApplicationLogs"; do
+        plugin_dir="$NEO_CLI_DIR/../../Neo.Plugins.$plugin/$DOTNET_VERSION"
+        if [ ! -d "$NEO_CLI_DIR/Plugins/$plugin" ]; then
+            mkdir -p "$NEO_CLI_DIR/Plugins/$plugin"
+        fi
+
+        if [ -f "$plugin_dir/$plugin.dll" ]; then
+            cp "$plugin_dir/$plugin.dll" "$NEO_CLI_DIR/Plugins/$plugin/$plugin.dll"
+        fi
+
+        if [ -f "$plugin_dir/$plugin.json" ]; then
+            cp "$plugin_dir/$plugin.json" "$NEO_CLI_DIR/Plugins/$plugin/$plugin.json"
+        fi
+    done
 }
 
 # Update plugin configuration files to use local test network ID
@@ -304,13 +324,10 @@ start_node() {
 start_nodes() {
     log_info "Starting $NODE_COUNT localnet nodes..."
 
-    check_neo_cli
-
-    # Always generate configs to ensure they're up to date
-    generate_configs
-
-    # Update plugin configuration files to use local test network ID
-    update_plugin_configs
+    check_neo_cli # Check if neo-cli exists
+    initialize_plugins # Initialize required plugins
+    generate_configs # Always generate configs to ensure they're up to date
+    update_plugin_configs # Update plugin configuration files to use local test network ID
 
     # Start each node
     for i in $(seq 0 $((NODE_COUNT-1))); do
@@ -429,7 +446,7 @@ show_usage() {
     echo "  base_rpc_port Starting RPC port (default: 10330)"
     echo ""
     echo "Environment Variables:"
-    echo "  NEO_CLI_DIR    Path to neo-cli directory (default: ../bin/Neo.CLI/net9.0)"
+    echo "  NEO_CLI_DIR    Path to neo-cli directory (default: ../bin/Neo.CLI/$DOTNET_VERSION)"
     echo ""
     echo "Examples:"
     echo "  $0 start                    # Start 7 nodes with default ports"
@@ -439,8 +456,6 @@ show_usage() {
     echo "  $0 regenerate               # Force regenerate all configurations"
     echo "  NEO_CLI_DIR=/path/to/neo-cli $0 start  # Use custom neo-cli path"
     echo ""
-    echo "Tips:"
-    echo "  The DBFT and RpcServer plugins should be installed."
 }
 
 # Main script logic
