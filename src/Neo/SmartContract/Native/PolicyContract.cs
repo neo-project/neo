@@ -25,8 +25,6 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class PolicyContract : NativeContract
     {
-        private const FindOptions FindOption = FindOptions.RemovePrefix | FindOptions.KeysOnly;
-
         /// <summary>
         /// The default execution fee factor.
         /// </summary>
@@ -497,20 +495,22 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private StorageIterator GetBlockedAccounts(DataCache snapshot)
         {
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
                 .GetEnumerator();
-            return new StorageIterator(enumerator, 1, FindOption);
+            return new StorageIterator(enumerator, 1, options);
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
         {
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_WhitelistedFeeContracts), SeekDirection.Forward)
                 .GetEnumerator();
 
-            return new StorageIterator(enumerator, 1, FindOption);
+            return new StorageIterator(enumerator, 1, options);
         }
     }
 }
