@@ -22,18 +22,20 @@ namespace Neo.SmartContract.Manifest
 
     public class ExtendedType : IInteroperable, IEquatable<ExtendedType>
     {
-        private static readonly Regex NamedTypePattern = new("^[A-Za-z][A-Za-z0-9.]{0,63}$", RegexOptions.Compiled);
+#pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
+        private static readonly Regex s_namedTypePattern = new("^[A-Za-z][A-Za-z0-9.]{0,63}$", RegexOptions.Compiled);
+#pragma warning restore SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
 
-        private static readonly HashSet<ContractParameterType> LengthAllowedTypes = new()
-        {
+        private static readonly HashSet<ContractParameterType> s_lengthAllowedTypes =
+        [
             ContractParameterType.Integer,
             ContractParameterType.ByteArray,
             ContractParameterType.String,
             ContractParameterType.Array
-        };
+        ];
 
-        private static readonly HashSet<ContractParameterType> ForbidNullAllowedTypes = new()
-        {
+        private static readonly HashSet<ContractParameterType> s_forbidNullAllowedTypes =
+        [
             ContractParameterType.Hash160,
             ContractParameterType.Hash256,
             ContractParameterType.ByteArray,
@@ -41,10 +43,10 @@ namespace Neo.SmartContract.Manifest
             ContractParameterType.Array,
             ContractParameterType.Map,
             ContractParameterType.InteropInterface
-        };
+        ];
 
-        private static readonly HashSet<ContractParameterType> MapKeyAllowedTypes = new()
-        {
+        private static readonly HashSet<ContractParameterType> s_mapKeyAllowedTypes =
+        [
             ContractParameterType.Signature,
             ContractParameterType.Boolean,
             ContractParameterType.Integer,
@@ -53,13 +55,13 @@ namespace Neo.SmartContract.Manifest
             ContractParameterType.ByteArray,
             ContractParameterType.PublicKey,
             ContractParameterType.String
-        };
+        ];
 
         private static FormatException Nep25Error(string message) => new($"Invalid NEP-25 extended type: {message}");
 
         internal static bool IsValidNamedTypeIdentifier(string name)
         {
-            return !string.IsNullOrEmpty(name) && NamedTypePattern.IsMatch(name);
+            return !string.IsNullOrEmpty(name) && s_namedTypePattern.IsMatch(name);
         }
 
         internal static void EnsureValidNamedTypeIdentifier(string name)
@@ -278,7 +280,7 @@ namespace Neo.SmartContract.Manifest
                 Type = Enum.Parse<ContractParameterType>(json["type"]?.GetString() ?? throw new FormatException()),
                 NamedType = json["namedtype"]?.GetString(),
             };
-            if (!Enum.IsDefined(typeof(ContractParameterType), type.Type)) throw new FormatException();
+            if (!Enum.IsDefined(type.Type)) throw new FormatException();
             if (type.Type == ContractParameterType.Void) throw Nep25Error("Void type is not allowed.");
             if (json["length"] != null)
             {
@@ -414,10 +416,10 @@ namespace Neo.SmartContract.Manifest
             if (!Enum.IsDefined<ContractParameterType>(Type) || Type == ContractParameterType.Void)
                 throw Nep25Error($"Unsupported type '{Type}'.");
 
-            if (Length.HasValue && !LengthAllowedTypes.Contains(Type))
+            if (Length.HasValue && !s_lengthAllowedTypes.Contains(Type))
                 throw Nep25Error($"length cannot be specified for type '{Type}'.");
 
-            if (ForbidNull.HasValue && !ForbidNullAllowedTypes.Contains(Type))
+            if (ForbidNull.HasValue && !s_forbidNullAllowedTypes.Contains(Type))
                 throw Nep25Error($"forbidnull cannot be specified for type '{Type}'.");
 
             if (Interface.HasValue && Type != ContractParameterType.InteropInterface)
@@ -429,7 +431,7 @@ namespace Neo.SmartContract.Manifest
             if (Key.HasValue && Type != ContractParameterType.Map)
                 throw Nep25Error($"key cannot be used with type '{Type}'.");
 
-            if (Key.HasValue && !MapKeyAllowedTypes.Contains(Key.Value))
+            if (Key.HasValue && !s_mapKeyAllowedTypes.Contains(Key.Value))
                 throw Nep25Error($"key '{Key.Value}' is not allowed for map definitions.");
 
             if (Type == ContractParameterType.Map && !Key.HasValue)
@@ -463,6 +465,9 @@ namespace Neo.SmartContract.Manifest
                 if (Type == ContractParameterType.Map && !Key.HasValue)
                     throw Nep25Error("key must be provided when value is specified for Map type.");
 
+                if (!allowFields && Value.Fields is { Length: > 0 })
+                    throw Nep25Error("fields cannot be used in method parameters or return values.");
+
                 Value.ValidateCore(expectedType: null, allowFields, knownNamedTypes);
             }
             else
@@ -495,15 +500,6 @@ namespace Neo.SmartContract.Manifest
                 {
                     field.ExtendedType?.ValidateCore(field.Type, allowFields: true, knownNamedTypes);
                 }
-            }
-
-            if (!allowFields)
-            {
-                if (Fields is not null && Fields.Length > 0)
-                    throw Nep25Error("fields cannot be used in method parameters or return values.");
-
-                if (Value?.Fields is { Length: > 0 })
-                    throw Nep25Error("fields cannot be used in method parameters or return values.");
             }
         }
     }
