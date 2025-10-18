@@ -149,9 +149,9 @@ When calling a native contract method by transaction script, there are several t
 | Method | Summary | Parameters | Return Value | CPU fee | Storage fee | Call Flags | Hardfork |
 |--------|---------|------------|--------------|---------|-------------|------------|----------|
 | getFeePerByte | Gets the network fee per transaction byte. | -- | Int64 | 1<<15 | 0 | ReadStates | -- |
-| getPicoFeePerByte | Gets the network fee per transaction byte. Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi | -- | BigInteger | 1<<15 | 0 | ReadStates | HF_Faun |
+| getPicoFeePerByte | Gets the network fee per transaction byte. | -- | BigInteger | 1<<15 | 0 | ReadStates | HF_Faun |
 | getExecFeeFactor | Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions. | -- | UInt32 | 1<<15 | 0 | ReadStates | -- |
-| getExecPicoFeeFactor | Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions. Note: After Faun Hardfork the unit it's pico-gas, before it was datoshi | -- | BigInteger | 1<<15 | 0 | ReadStates | -- |
+| getExecPicoFeeFactor | Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions. | -- | BigInteger | 1<<15 | 0 | ReadStates | -- |
 | getStoragePrice | Gets the storage price. | -- | UInt32 | 1<<15 | 0 | ReadStates | -- |
 | getStoragePicoPrice | Gets the storage price. | -- | BigInteger | 1<<15 | 0 | ReadStates | -- |
 | getMillisecondsPerBlock | Gets the block generation time in milliseconds. | -- | UInt32 | 1<<15 | 0 | ReadStates | HF_Echidna |
