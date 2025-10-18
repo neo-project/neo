@@ -322,12 +322,12 @@ namespace Neo.SmartContract.Native
 
                 // Set
 
-                engine.SnapshotCache.Delete(key);
-                engine.SnapshotCache.Add(key, new StorageItem(new WhitelistedFeeContract()
-                {
-                    UpdateCounter = contract.UpdateCounter,
-                    FixedFee = fixedFee.Value
-                }));
+                var entry = engine.SnapshotCache
+                    .GetAndChange(key, () => new StorageItem(new WhitelistedFeeContract()))
+                    .GetInteroperable<WhitelistedFeeContract>();
+
+                entry.UpdateCounter = contract.UpdateCounter;
+                entry.FixedFee = fixedFee.Value;
             }
         }
 
