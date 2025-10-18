@@ -121,7 +121,7 @@ namespace Neo.SmartContract.Manifest
             {
                 foreach (var (name, type) in NamedTypes)
                 {
-                    ExtendedType.EnsureValidNamedTypeIdentifier(name);
+                    ExtendedType.EnsureValidNamedTypeIdentifier(name, []);
                     type.ValidateForNamedTypeDefinition(knownNamedTypes);
                 }
             }
