@@ -20,7 +20,6 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
-using Org.BouncyCastle.Asn1.X509;
 using System;
 using System.Linq;
 using System.Numerics;
