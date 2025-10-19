@@ -15,13 +15,16 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
+using Org.BouncyCastle.Asn1.X509;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -30,11 +33,13 @@ namespace Neo.UnitTests.SmartContract.Native
     public class UT_PolicyContract
     {
         private DataCache _snapshotCache;
+        private ApplicationEngine _engine;
 
         [TestInitialize]
         public void TestSetup()
         {
             _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            _engine = ApplicationEngine.Create(TriggerType.Application, null, _snapshotCache, settings: TestProtocolSettings.Default);
         }
 
         [TestMethod]
@@ -585,6 +590,72 @@ namespace Neo.UnitTests.SmartContract.Native
             var iter = engine.ResultStack[0].GetInterface<object>() as StorageIterator;
             Assert.IsTrue(iter.Next());
             Assert.AreEqual(new UInt160(iter.Value(new ReferenceCounter()).GetSpan()), UInt160.Zero);
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractNegativeFixedFee()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+
+            // Get committe public keys and calculate m
+            var committee = NativeContract.NEO.GetCommittee(snapshotCache);
+            var m = (committee.Length / 2) + 1;
+            var committeeContract = Contract.CreateMultiSigContract(m, committee);
+
+            // Create Tx needed for CheckWitness / CheckCommittee
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                Signers = [new() { Account = committeeContract.ScriptHash, Scopes = WitnessScope.Global }],
+                Attributes = [],
+                Witnesses = [new Witness { InvocationScript = new byte[1], VerificationScript = committeeContract.Script }],
+                Script = new byte[1],
+                NetworkFee = 0,
+                SystemFee = 0,
+                ValidUntilBlock = 0
+            };
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+
+            // Register a dummy contract
+            UInt160 contractHash;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.Emit(OpCode.RET);
+                var script = sb.ToArray();
+                contractHash = script.ToScriptHash();
+                snapshotCache.DeleteContract(contractHash);
+                var manifest = TestUtils.CreateManifest("dummy", ContractParameterType.Any);
+                manifest.Abi.Methods = [
+                    new ContractMethodDescriptor
+                    {
+                        Name = "foo",
+                        Parameters = [],
+                        ReturnType = ContractParameterType.Any,
+                        Offset = 0,
+                        Safe = false
+                    }
+                ];
+
+                var contract = TestUtils.GetContract(script, manifest);
+                snapshotCache.AddContract(contractHash, contract);
+            }
+
+            // Invoke SetWhiteListFeeContract with fixedFee negative
+            var mi = NativeContract.Policy.GetType().GetMethod("SetWhitelistFeeContract", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.IsNotNull(mi, "SetWhitelistFeeContract not found");
+
+            try
+            {
+                mi!.Invoke(NativeContract.Policy, [engine, contractHash, "foo", 1, -1L]);
+                Assert.Fail("Expected negative fixedFee exception");
+            }
+            catch (TargetInvocationException tie)
+            {
+                Assert.IsNotNull(tie.InnerException, "InnerException should not be null");
+                Assert.Contains("fixedFee", tie.InnerException!.Message, "InnerException should contain fixedFee");
+            }
         }
     }
 }
