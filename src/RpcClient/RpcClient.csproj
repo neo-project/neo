@@ -14,8 +14,4 @@
     <InternalsVisibleTo Include="Neo.RpcClient.Tests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-
 </Project>

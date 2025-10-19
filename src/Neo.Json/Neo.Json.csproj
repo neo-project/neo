@@ -15,8 +15,4 @@
     <InternalsVisibleTo Include="Neo.Json.UnitTests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-
 </Project>
