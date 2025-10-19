@@ -33,13 +33,11 @@ namespace Neo.UnitTests.SmartContract.Native
     public class UT_PolicyContract
     {
         private DataCache _snapshotCache;
-        private ApplicationEngine _engine;
 
         [TestInitialize]
         public void TestSetup()
         {
             _snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            _engine = ApplicationEngine.Create(TriggerType.Application, null, _snapshotCache, settings: TestProtocolSettings.Default);
         }
 
         [TestMethod]
