@@ -12,6 +12,7 @@
 using System;
 using System.Buffers.Binary;
 using System.IO.Hashing;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -103,8 +104,8 @@ namespace Neo.Cryptography
                 var tail = _tail.AsSpan();
                 ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(tail);
                 ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(tail[8..]);
-                H2 ^= Helper.RotateLeft(k2 * c2, r2) * c1;
-                H1 ^= Helper.RotateLeft(k1 * c1, r1) * c2;
+                H2 ^= BitOperations.RotateLeft(k2 * c2, r2) * c1;
+                H1 ^= BitOperations.RotateLeft(k1 * c1, r1) * c2;
             }
 
             H1 ^= (ulong)_length;
@@ -139,12 +140,12 @@ namespace Neo.Cryptography
             ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(source);
             ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(source[8..]);
 
-            H1 ^= Helper.RotateLeft(k1 * c1, r1) * c2;
-            H1 = Helper.RotateLeft(H1, 27) + H2;
+            H1 ^= BitOperations.RotateLeft(k1 * c1, r1) * c2;
+            H1 = BitOperations.RotateLeft(H1, 27) + H2;
             H1 = H1 * m + n1;
 
-            H2 ^= Helper.RotateLeft(k2 * c2, r2) * c1;
-            H2 = Helper.RotateLeft(H2, 31) + H1;
+            H2 ^= BitOperations.RotateLeft(k2 * c2, r2) * c1;
+            H2 = BitOperations.RotateLeft(H2, 31) + H1;
             H2 = H2 * m + n2;
         }
 
