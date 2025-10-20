@@ -292,6 +292,21 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Remove whitelisted Fee contracts
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="contractHash">The contract to set the whitelist</param>
+        /// <param name="method">Method</param>
+        /// <param name="argCount">Argument count</param>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void RemoveWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount)
+        {
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+            engine.SnapshotCache.Delete(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount));
+        }
+
+        /// <summary>
         /// Set whitelisted Fee contracts
         /// </summary>
         /// <param name="engine">The execution engine.</param>
@@ -300,19 +315,13 @@ namespace Neo.SmartContract.Native
         /// <param name="argCount">Argument count</param>
         /// <param name="fixedFee">Fixed execution fee</param>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        internal void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long? fixedFee)
+        internal void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long fixedFee)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(fixedFee, nameof(fixedFee));
+
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
             var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
-
-            if (fixedFee == null)
-            {
-                engine.SnapshotCache.Delete(key);
-                return;
-            }
-
-            ArgumentOutOfRangeException.ThrowIfNegative(fixedFee.Value, nameof(fixedFee));
 
             // Validate methods
             var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
@@ -327,7 +336,7 @@ namespace Neo.SmartContract.Native
                     .GetInteroperable<WhitelistedFeeContract>();
 
             entry.UpdateCounter = contract.UpdateCounter;
-            entry.FixedFee = fixedFee.Value;
+            entry.FixedFee = fixedFee;
         }
 
         /// <summary>
