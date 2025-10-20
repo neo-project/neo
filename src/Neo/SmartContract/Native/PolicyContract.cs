@@ -298,7 +298,7 @@ namespace Neo.SmartContract.Native
         /// <param name="contractHash">The contract to set the whitelist</param>
         /// <param name="method">Method</param>
         /// <param name="argCount">Argument count</param>
-        /// <param name="fixedFee">Fixed execution fee non negative</param>
+        /// <param name="fixedFee">Fixed execution fee</param>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         internal void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long? fixedFee)
         {
