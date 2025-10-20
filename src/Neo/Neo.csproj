@@ -33,6 +33,8 @@
     <InternalsVisibleTo Include="Neo.Plugins.RpcServer.Tests" />
     <InternalsVisibleTo Include="Neo.Plugins.OracleService.Tests" />
     <InternalsVisibleTo Include="Neo.Plugins.DBFTPlugin.Tests" />
+    <InternalsVisibleTo Include="neodebug-3-adapter" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
 </Project>

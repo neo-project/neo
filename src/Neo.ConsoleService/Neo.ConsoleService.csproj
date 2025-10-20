@@ -10,4 +10,8 @@
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neo.ConsoleService.Tests" />
+  </ItemGroup>
+
 </Project>
