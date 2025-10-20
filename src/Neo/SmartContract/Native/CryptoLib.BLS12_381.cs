@@ -126,7 +126,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="pairs">Array of [point, scalar] pairs.</param>
         /// <returns>The accumulated point.</returns>
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 23)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 23)]
         public static InteropInterface Bls12381MultiExp(Array pairs)
         {
             if (pairs is null || pairs.Count == 0)
