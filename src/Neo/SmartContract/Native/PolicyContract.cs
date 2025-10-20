@@ -300,7 +300,7 @@ namespace Neo.SmartContract.Native
         /// <param name="argCount">Argument count</param>
         /// <param name="fixedFee">Fixed execution fee</param>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long? fixedFee)
+        internal void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long? fixedFee)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
@@ -309,26 +309,25 @@ namespace Neo.SmartContract.Native
             if (fixedFee == null)
             {
                 engine.SnapshotCache.Delete(key);
+                return;
             }
-            else
-            {
-                // Validate methods
 
-                var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
+            ArgumentOutOfRangeException.ThrowIfNegative(fixedFee.Value, nameof(fixedFee));
+
+            // Validate methods
+            var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
                     ?? throw new InvalidOperationException("Is not a valid contract");
 
-                if (contract.Manifest.Abi.GetMethod(method, argCount) == null)
-                    throw new InvalidOperationException($"{method} with {argCount} args is not a valid method of {contractHash}");
+            if (contract.Manifest.Abi.GetMethod(method, argCount) == null)
+                throw new InvalidOperationException($"{method} with {argCount} args is not a valid method of {contractHash}");
 
-                // Set
-
-                var entry = engine.SnapshotCache
+            // Set
+            var entry = engine.SnapshotCache
                     .GetAndChange(key, () => new StorageItem(new WhitelistedFeeContract()))
                     .GetInteroperable<WhitelistedFeeContract>();
 
-                entry.UpdateCounter = contract.UpdateCounter;
-                entry.FixedFee = fixedFee.Value;
-            }
+            entry.UpdateCounter = contract.UpdateCounter;
+            entry.FixedFee = fixedFee.Value;
         }
 
         /// <summary>
