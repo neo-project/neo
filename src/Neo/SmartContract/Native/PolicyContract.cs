@@ -355,6 +355,7 @@ namespace Neo.SmartContract.Native
             entry.FixedFee = fixedFee;
 
             // Emit event
+
             engine.SendNotification(Hash, WhitelistChangedEventName,
                 [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
                 new VM.Types.Integer(argCount), new VM.Types.Integer(fixedFee)]);

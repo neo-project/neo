@@ -591,9 +591,46 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestWhiteListFee()
+        {
+            // Create script
+
+            var snapshotCache = _snapshotCache.CloneCache();
+
+            byte[] script;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.EmitDynamicCall(NativeContract.NEO.Hash, "balanceOf", NativeContract.NEO.GetCommitteeAddress(_snapshotCache.CloneCache()));
+                script = sb.ToArray();
+            }
+
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+            // Not whitelisted
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(2028330, engine.FeeConsumed);
+
+            // Whitelist
+
+            engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 1, 0);
+            engine.SnapshotCache.Commit();
+
+            // Whitelisted
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1045290, engine.FeeConsumed);
+        }
+
+        [TestMethod]
         public void TestSetWhiteListFeeContractNegativeFixedFee()
         {
-            var (engine, snapshotCache) = CreateEngineWithCommitteeSigner();
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
 
             // Register a dummy contract
             UInt160 contractHash;
@@ -620,25 +657,15 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             // Invoke SetWhiteListFeeContract with fixedFee negative
-            var mi = NativeContract.Policy.GetType().GetMethod("SetWhitelistFeeContract", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            Assert.IsNotNull(mi, "SetWhitelistFeeContract not found");
 
-            try
-            {
-                mi!.Invoke(NativeContract.Policy, [engine, contractHash, "foo", 1, -1L]);
-                Assert.Fail("Expected negative fixedFee exception");
-            }
-            catch (TargetInvocationException tie)
-            {
-                Assert.IsNotNull(tie.InnerException, "InnerException should not be null");
-                Assert.Contains("fixedFee", tie.InnerException!.Message, "InnerException should contain fixedFee");
-            }
+            Assert.Throws<ArgumentOutOfRangeException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, contractHash, "foo", 1, -1L));
         }
 
         [TestMethod]
         public void TestSetWhiteListFeeContractWhenContractNotFound()
         {
-            var (engine, _) = CreateEngineWithCommitteeSigner();
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
             var randomHash = new UInt160(Crypto.Hash160([1, 2, 3]).ToArray());
             Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, randomHash, "transfer", 3, 10));
         }
@@ -646,14 +673,16 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestSetWhiteListFeeContractWhenContractNotInAbi()
         {
-            var (engine, _) = CreateEngineWithCommitteeSigner();
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
             Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "noexists", 0, 10));
         }
 
         [TestMethod]
         public void TestSetWhiteListFeeContractWhenArgCountMismatch()
         {
-            var (engine, _) = CreateEngineWithCommitteeSigner();
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
             // transfer exists with 4 args
             Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 0, 10));
         }
@@ -682,16 +711,16 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestSetWhiteListFeeContractSetContract()
         {
-            var (engine, snapshotCache) = CreateEngineWithCommitteeSigner();
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
             NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 123_456);
-            Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(snapshotCache, NativeContract.NEO.Hash, "transfer", 4, out var fixedFee));
+
+            Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(engine.SnapshotCache, NativeContract.NEO.Hash, "transfer", 4, out var fixedFee));
             Assert.AreEqual(123_456, fixedFee);
         }
 
-        private (ApplicationEngine Engine, DataCache Snapshot) CreateEngineWithCommitteeSigner()
+        private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[] script = null)
         {
-            var snapshotCache = _snapshotCache.CloneCache();
-
             // Get committe public keys and calculate m
             var committee = NativeContract.NEO.GetCommittee(snapshotCache);
             var m = (committee.Length / 2) + 1;
@@ -705,14 +734,16 @@ namespace Neo.UnitTests.SmartContract.Native
                 Signers = [new() { Account = committeeContract.ScriptHash, Scopes = WitnessScope.Global }],
                 Attributes = [],
                 Witnesses = [new Witness { InvocationScript = new byte[1], VerificationScript = committeeContract.Script }],
-                Script = new byte[1],
+                Script = script ?? [(byte)OpCode.NOP],
                 NetworkFee = 0,
                 SystemFee = 0,
                 ValidUntilBlock = 0
             };
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
-            return (engine, snapshotCache);
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+            engine.LoadScript(tx.Script);
+
+            return engine;
         }
     }
 }

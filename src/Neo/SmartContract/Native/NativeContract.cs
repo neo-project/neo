@@ -430,8 +430,17 @@ namespace Neo.SmartContract.Native
                 var state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
-                // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-                engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
+                // Check native-whitelist
+                if (engine.IsHardforkEnabled(Hardfork.HF_Faun) && Policy.IsWhitelistFeeContract(engine.SnapshotCache, Hash, method.Name, method.Parameters.Length, out var fixedFee))
+                {
+                    // Whitelisted In the unit of datoshi, 1 datoshi = 1e-8 GAS
+                    engine.AddFee(fixedFee.Value);
+                }
+                else
+                {
+                    // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+                    engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
+                }
                 List<object> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
