@@ -17,6 +17,8 @@ namespace Neo.Network.Messages.Requests
     {
         public const string GetExternalIpAddressActionName = "GetExternalIpAddress";
         public const string AddPortMappingActionName = "AddPortMapping";
+        public const string GetGenericPortMappingEntryActionName = "GetGenericPortMappingEntry";
+        public const string DeletePortMappingActionName = "DeletePortMapping";
 
         public abstract IDictionary<string, object> ToXml();
     }

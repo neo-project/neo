@@ -213,7 +213,7 @@ namespace Neo.Network
             var locationUri = new Uri(location);
             var deviceInfo = BuildUpnpNatDeviceInfo(localAddress, locationUri);
 
-            s_devices.Add(locationUri, deviceInfo);
+            _ = s_devices.TryAdd(locationUri, deviceInfo);
 
             return deviceInfo;
         }
