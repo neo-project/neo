@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -592,28 +593,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestSetWhiteListFeeContractNegativeFixedFee()
         {
-            var snapshotCache = _snapshotCache.CloneCache();
-
-            // Get committe public keys and calculate m
-            var committee = NativeContract.NEO.GetCommittee(snapshotCache);
-            var m = (committee.Length / 2) + 1;
-            var committeeContract = Contract.CreateMultiSigContract(m, committee);
-
-            // Create Tx needed for CheckWitness / CheckCommittee
-            var tx = new Transaction
-            {
-                Version = 0,
-                Nonce = 1,
-                Signers = [new() { Account = committeeContract.ScriptHash, Scopes = WitnessScope.Global }],
-                Attributes = [],
-                Witnesses = [new Witness { InvocationScript = new byte[1], VerificationScript = committeeContract.Script }],
-                Script = new byte[1],
-                NetworkFee = 0,
-                SystemFee = 0,
-                ValidUntilBlock = 0
-            };
-
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+            var (engine, snapshotCache) = CreateEngineWithCommitteeSigner();
 
             // Register a dummy contract
             UInt160 contractHash;
@@ -653,6 +633,86 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.IsNotNull(tie.InnerException, "InnerException should not be null");
                 Assert.Contains("fixedFee", tie.InnerException!.Message, "InnerException should contain fixedFee");
             }
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenContractNotFound()
+        {
+            var (engine, _) = CreateEngineWithCommitteeSigner();
+            var randomHash = new UInt160(Crypto.Hash160([1, 2, 3]).ToArray());
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, randomHash, "transfer", 3, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenContractNotInAbi()
+        {
+            var (engine, _) = CreateEngineWithCommitteeSigner();
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "noexists", 0, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenArgCountMismatch()
+        {
+            var (engine, _) = CreateEngineWithCommitteeSigner();
+            // transfer exists with 4 args
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 0, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenNotCommittee()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                Signers = [new() { Account = UInt160.Zero, Scopes = WitnessScope.Global }],
+                Attributes = [],
+                Witnesses = [new Witness { }],
+                Script = new byte[1],
+                NetworkFee = 0,
+                SystemFee = 0,
+                ValidUntilBlock = 0
+            };
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractSetContract()
+        {
+            var (engine, snapshotCache) = CreateEngineWithCommitteeSigner();
+            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 123_456);
+            Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(snapshotCache, NativeContract.NEO.Hash, "transfer", 4, out var fixedFee));
+            Assert.AreEqual(123_456, fixedFee);
+        }
+
+        private (ApplicationEngine Engine, DataCache Snapshot) CreateEngineWithCommitteeSigner()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+
+            // Get committe public keys and calculate m
+            var committee = NativeContract.NEO.GetCommittee(snapshotCache);
+            var m = (committee.Length / 2) + 1;
+            var committeeContract = Contract.CreateMultiSigContract(m, committee);
+
+            // Create Tx needed for CheckWitness / CheckCommittee
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                Signers = [new() { Account = committeeContract.ScriptHash, Scopes = WitnessScope.Global }],
+                Attributes = [],
+                Witnesses = [new Witness { InvocationScript = new byte[1], VerificationScript = committeeContract.Script }],
+                Script = new byte[1],
+                NetworkFee = 0,
+                SystemFee = 0,
+                ValidUntilBlock = 0
+            };
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+            return (engine, snapshotCache);
         }
     }
 }
