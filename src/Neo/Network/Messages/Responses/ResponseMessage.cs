@@ -33,7 +33,7 @@ namespace Neo.Network.Messages.Responses
             nsm.AddNamespace("responseNs", _serviceType);
 
             var typeName = _typeName;
-            var messageName = typeName.Substring(0, typeName.Length - "Message".Length);
+            var messageName = typeName[..^"Message".Length];
             var node = _document.SelectSingleNode("//responseNs:" + messageName, nsm) ??
                 throw new InvalidOperationException("The response is invalid: " + messageName);
 

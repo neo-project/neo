@@ -15,7 +15,6 @@ namespace Neo.Network.Messages.Requests
 {
     internal class GetExternalIPAddressRequestMessage : RequestMessage
     {
-        public override Dictionary<string, object> ToXml() =>
-            [];
+        public override Dictionary<string, object> ToXml() => [];
     }
 }
