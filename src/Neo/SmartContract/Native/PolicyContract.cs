@@ -11,6 +11,7 @@
 
 #pragma warning disable IDE0051
 
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
@@ -105,9 +106,17 @@ namespace Neo.SmartContract.Native
         /// </summary>
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
 
+        private const string WhitelistChangedEventName = "whitelistChanged";
+
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
             "old", ContractParameterType.Integer,
             "new", ContractParameterType.Integer
+        )]
+        [ContractEvent(Hardfork.HF_Faun, 0, name: WhitelistChangedEventName,
+            "contract", ContractParameterType.Hash160,
+            "method", ContractParameterType.String,
+            "argCount", ContractParameterType.Integer,
+            "fee", ContractParameterType.Any
         )]
         internal PolicyContract() : base()
         {
@@ -260,9 +269,7 @@ namespace Neo.SmartContract.Native
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, string method, int argCount,
-            [NotNullWhen(true)] out long? fixedFee)
+        internal bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, string method, int argCount, [NotNullWhen(true)] out long? fixedFee)
         {
             // Check contract existence
 
@@ -303,7 +310,16 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
-            engine.SnapshotCache.Delete(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount));
+            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
+
+            if (!engine.SnapshotCache.Contains(key)) throw new InvalidOperationException("Whitelist not found");
+
+            engine.SnapshotCache.Delete(key);
+
+            // Emit event
+            engine.SendNotification(Hash, WhitelistChangedEventName,
+                [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
+                new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
         }
 
         /// <summary>
@@ -337,6 +353,11 @@ namespace Neo.SmartContract.Native
 
             entry.UpdateCounter = contract.UpdateCounter;
             entry.FixedFee = fixedFee;
+
+            // Emit event
+            engine.SendNotification(Hash, WhitelistChangedEventName,
+                [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
+                new VM.Types.Integer(argCount), new VM.Types.Integer(fixedFee)]);
         }
 
         /// <summary>
