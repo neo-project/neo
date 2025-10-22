@@ -21,7 +21,7 @@ namespace Neo.Network.Messages
 
         public DiscoveryResponseMessage(string message)
         {
-            var lines = message.Split(["\r\n"], StringSplitOptions.RemoveEmptyEntries);
+            var lines = message.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries);
             var headers = from h in lines.Skip(1)
                           let c = h.Split(':')
                           let key = c[0]
