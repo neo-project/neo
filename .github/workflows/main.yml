@@ -142,7 +142,7 @@ jobs:
       if: always()
       with:
         paths: |
-          ${{ github.workspace }}/TestResults/tests-${{ matrix.os }}.xml
+          TestResults/**/*.xml
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
