@@ -23,6 +23,7 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Xml;
 
 namespace Neo.Network
@@ -232,7 +233,13 @@ namespace Neo.Network
         public static IReadOnlyDictionary<Uri, UpnpNatDeviceInfo> Search()
         {
             Discover();
-            Receive();
+
+            for (var i = 0; i < 3; i++)
+            {
+                Receive();
+                Thread.Sleep(1000);
+            }
+
             CloseUdpClients();
 
             return s_devices;
