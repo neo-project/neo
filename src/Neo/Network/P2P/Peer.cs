@@ -236,7 +236,7 @@ namespace Neo.Network.P2P
                     }
                     catch (Exception ex)
                     {
-                        Utility.Log(nameof(Peer), LogLevel.Error, ex.Message);
+                        Utility.Log(nameof(UPnP), LogLevel.Error, ex.Message);
                     }
                 });
 

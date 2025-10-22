@@ -37,6 +37,7 @@ namespace Neo.Network
             var bodyContent = new StringContent(messageBody, Encoding.UTF8, "text/xml");
 
             using var response = request.PostAsync(_url, bodyContent).GetAwaiter().GetResult();
+            response.EnsureSuccessStatusCode();
 
             var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             var responseXml = GetXmlDocument(responseBody);

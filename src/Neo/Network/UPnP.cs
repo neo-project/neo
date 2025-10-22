@@ -75,6 +75,7 @@ namespace Neo.Network
         private static List<UdpClient> CreateUdpClients()
         {
             var clients = new List<UdpClient>();
+
             try
             {
                 var ips = UnicastAddresses();
@@ -86,16 +87,19 @@ namespace Neo.Network
                         var udpClient = new UdpClient(ipEndPoint);
                         clients.Add(udpClient);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        continue;
+                        var error = string.Format("[{0}] {1}", ipAddress, ex.Message);
+                        Utility.Log(nameof(UPnP), LogLevel.Warning, error);
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Utility.Log(nameof(UPnP), LogLevel.Warning, ex.Message);
                 clients.Add(new UdpClient(0));
             }
+
             return clients;
         }
 
@@ -182,8 +186,8 @@ namespace Neo.Network
                     Discover,
                     (c, e) =>
                     {
-                        var error = string.Format("[{0}] {1}", (IPEndPoint)c.Client.LocalEndPoint, e);
-                        Utility.Log(nameof(UPnP), LogLevel.Error, error);
+                        var error = string.Format("[{0}] {1}", (IPEndPoint)c.Client.LocalEndPoint, e.Message);
+                        Utility.Log(nameof(UPnP), LogLevel.Warning, error);
                     }
                 );
             }
