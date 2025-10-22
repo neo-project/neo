@@ -166,23 +166,19 @@ namespace Neo.Plugins
                             f.IsAssignableTo(typeof(Plugin)) && f.IsAbstract == false
                     );
 
-                if (neoPluginClassType is null)
-                    pluginAssemblyContext.Unload();
-                else
+                if (neoPluginClassType is not null)
                 {
                     var pluginClassConstructor = neoPluginClassType.GetConstructor(Type.EmptyTypes);
 
-                    if (pluginClassConstructor is null)
-                        pluginAssemblyContext.Unload();
-                    else
+                    if (pluginClassConstructor is not null)
                     {
                         try
                         {
                             pluginClassConstructor.Invoke(null);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            pluginAssemblyContext.Unload();
+                            Utility.Log($"{nameof(Plugin)}:{pluginName}", LogLevel.Error, ex.Message);
                         }
                     }
                 }
