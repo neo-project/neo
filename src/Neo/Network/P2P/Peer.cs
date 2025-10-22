@@ -21,6 +21,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -212,29 +213,32 @@ namespace Neo.Network.P2P
             _timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
             if (ListenerTcpPort > 0)
             {
-                try
+                Task.Factory.StartNew(() =>
                 {
-                    // Opens port on all NAT devices
-                    var natDevices = UPnP.Search();
-
-                    foreach (var (_, device) in natDevices)
+                    try
                     {
-                        var soapClient = new SoapClient(device.ServiceControlUri, device.ServiceType);
-                        var externalIpMessage = new GetExternalIPAddressRequestMessage();
-                        var responseData = soapClient.Invoke(RequestMessage.GetExternalIpAddressActionName, externalIpMessage.ToXml());
+                        // Opens port on all NAT devices
+                        var natDevices = UPnP.Search();
 
-                        var response = new GetExternalIPAddressResponseMessage(responseData, device.ServiceType);
-                        var publicIp = response.ExternalIPAddress.Equals(IPAddress.None) ? string.Empty : $"{response.ExternalIPAddress}";
-                        var port = $"{ListenerTcpPort}";
-                        var portMessage = new CreatePortMappingRequestMessage(publicIp, port, port, $"{device.LocalAddress}", "NEO Tcp");
+                        foreach (var (_, device) in natDevices)
+                        {
+                            var soapClient = new SoapClient(device.ServiceControlUri, device.ServiceType);
+                            var externalIpMessage = new GetExternalIPAddressRequestMessage();
+                            var responseData = soapClient.Invoke(RequestMessage.GetExternalIpAddressActionName, externalIpMessage.ToXml());
 
-                        _ = soapClient.Invoke(RequestMessage.AddPortMappingActionName, portMessage.ToXml());
+                            var response = new GetExternalIPAddressResponseMessage(responseData, device.ServiceType);
+                            var publicIp = response.ExternalIPAddress.Equals(IPAddress.None) ? string.Empty : $"{response.ExternalIPAddress}";
+                            var port = $"{ListenerTcpPort}";
+                            var portMessage = new CreatePortMappingRequestMessage(publicIp, port, port, $"{device.LocalAddress}", "NEO Tcp");
+
+                            _ = soapClient.Invoke(RequestMessage.AddPortMappingActionName, portMessage.ToXml());
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Utility.Log(nameof(Peer), LogLevel.Error, ex.Message);
-                }
+                    catch (Exception ex)
+                    {
+                        Utility.Log(nameof(Peer), LogLevel.Error, ex.Message);
+                    }
+                });
 
                 s_tcpManager.Tell(new Tcp.Bind(Self, config.Tcp, options: [new Inet.SO.ReuseAddress(true)]));
             }
