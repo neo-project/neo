@@ -22,8 +22,8 @@ namespace Neo.Plugins
     {
         private readonly string[] _searchPluginPaths;
 
-        public PluginAssemblyLoadContext(
-            string[] searchPaths) : base(isCollectible: true)
+        public PluginAssemblyLoadContext(string[] searchPaths) 
+            : base(isCollectible: true)
         {
             _searchPluginPaths = searchPaths;
         }
@@ -31,7 +31,6 @@ namespace Neo.Plugins
         [return: MaybeNull]
         protected override Assembly Load(AssemblyName assemblyName)
         {
-
             foreach (var path in _searchPluginPaths)
             {
                 var assemblyFile = Path.Combine(path, $"{assemblyName.Name}.dll");
@@ -86,7 +85,6 @@ namespace Neo.Plugins
             {
                 return LoadUnmanagedDllFromPath(unmanagedDllFile);
             }
-
 
             unmanagedDllFile = Path.Combine(AppContext.BaseDirectory, unmanagedDllFilename);
             if (File.Exists(unmanagedDllFile))
