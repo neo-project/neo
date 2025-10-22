@@ -178,7 +178,14 @@ namespace Neo.Network
 
             foreach (var socket in s_udpClients)
             {
-                socket.TryCatch(Discover);
+                socket.TryCatch<UdpClient, Exception>(
+                    Discover,
+                    (c, e) =>
+                    {
+                        var error = string.Format("[{0}] {1}", (IPEndPoint)c.Client.LocalEndPoint, e);
+                        Utility.Log(nameof(UPnP), LogLevel.Error, error);
+                    }
+                );
             }
         }
 

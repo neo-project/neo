@@ -21,6 +21,8 @@ namespace Neo.Extensions.Tests.Net
     [TestClass]
     public class UT_UPnP
     {
+        public TestContext TestContext { get; set; }
+
         private TestUPnPMockServer _server;
         private TestUPnPServerConfig _serverConfig;
 
@@ -30,12 +32,19 @@ namespace Neo.Extensions.Tests.Net
             _serverConfig = new();
             _server = new(_serverConfig);
             _server.Start();
+            Utility.Logging += TestUpnp_Logging;
+        }
+
+        private void TestUpnp_Logging(string source, LogLevel level, object message)
+        {
+            TestContext.WriteLine("[{0}] {1}: {2}", level, source, message);
         }
 
         [TestCleanup]
         public void Clean()
         {
             _server.Dispose();
+            Utility.Logging -= TestUpnp_Logging;
         }
 
         [TestMethod]

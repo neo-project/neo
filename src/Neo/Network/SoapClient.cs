@@ -48,7 +48,7 @@ namespace Neo.Network
         {
             var request = new HttpClient()
             {
-                Timeout = TimeSpan.FromSeconds(1),
+                Timeout = TimeSpan.FromSeconds(30),
             };
 
             request.DefaultRequestHeaders.TryAddWithoutValidation("SOAPACTION", "\"" + _serviceType + "#" + operationName + "\"");
