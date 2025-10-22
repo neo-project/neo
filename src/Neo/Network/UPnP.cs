@@ -153,6 +153,7 @@ namespace Neo.Network
 
         private static void Discover(UdpClient client)
         {
+            Discover(client, IPAddress.Loopback);
             Discover(client, IPAddress.Broadcast);
             Discover(client, s_ipv4MulticastAddress);
             if (Socket.OSSupportsIPv6)
