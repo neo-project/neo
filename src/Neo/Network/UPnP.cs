@@ -23,7 +23,6 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Xml;
 
 namespace Neo.Network
@@ -71,7 +70,7 @@ namespace Neo.Network
             NetworkInterface.GetAllNetworkInterfaces()
             .Where(w => w.OperationalStatus == OperationalStatus.Up || w.OperationalStatus == OperationalStatus.Unknown)
             .SelectMany(sm => ipExtractor(sm.GetIPProperties()))
-            .Where(w => w.AddressFamily == AddressFamily.InterNetwork || w.AddressFamily == AddressFamily.InterNetworkV6);
+            .Where(w => w.AddressFamily == AddressFamily.InterNetwork || w.AddressFamily == AddressFamily.InterNetworkV6 | w.AddressFamily == AddressFamily.AppleTalk);
 
         private static List<UdpClient> CreateUdpClients()
         {
@@ -233,13 +232,7 @@ namespace Neo.Network
         public static IReadOnlyDictionary<Uri, UpnpNatDeviceInfo> Search()
         {
             Discover();
-
-            for (var i = 0; i < 3; i++)
-            {
-                Receive();
-                Thread.Sleep(1000);
-            }
-
+            Receive();
             CloseUdpClients();
 
             return s_devices;
