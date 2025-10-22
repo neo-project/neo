@@ -22,7 +22,7 @@ namespace Neo.Plugins
     {
         private readonly string[] _searchPluginPaths;
 
-        public PluginAssemblyLoadContext(string[] searchPaths) 
+        public PluginAssemblyLoadContext(string[] searchPaths)
             : base(isCollectible: true)
         {
             _searchPluginPaths = searchPaths;
