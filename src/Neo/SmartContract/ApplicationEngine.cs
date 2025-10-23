@@ -65,7 +65,7 @@ namespace Neo.SmartContract
 
         private static Dictionary<uint, InteropDescriptor> services;
         // Total amount of GAS spent to execute.
-        // In the unit of pico GAS
+        // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
@@ -76,9 +76,9 @@ namespace Neo.SmartContract
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
-        // In the unit of pico-Gas
+        // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
         private readonly BigInteger _execFeeFactor;
-        // In the unit of pico-Gas
+        // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
         private readonly BigInteger _storagePrice;
         private byte[] nonceData;
 
@@ -330,7 +330,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="picoGas">The amount of GAS, in the unit of pico-gas to be added.</param>
+        /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
         protected internal void AddFee(BigInteger picoGas)
         {
             _feeConsumed = _feeConsumed + picoGas;
