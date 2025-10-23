@@ -9,9 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 using Neo.VM;
+using System.IO;
+using System.Linq;
 
 namespace Neo.VM.Benchmark
 {
@@ -33,10 +35,20 @@ namespace Neo.VM.Benchmark
 
             // Run benchmarks
             Console.WriteLine("=== Running BenchmarkDotNet Benchmarks ===");
-            var summary = BenchmarkRunner.Run<TestRunner>();
+            var projectDirectory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+            var artifactsPath = Path.Combine(projectDirectory, "BenchmarkDotNet.Artifacts");
+            var config = DefaultConfig.Instance.WithArtifactsPath(artifactsPath);
+            var switcher = BenchmarkSwitcher.FromAssembly(typeof(BenchmarkProgram).Assembly);
+            var summaries = args is { Length: > 0 }
+                ? switcher.Run(args, config).ToArray()
+                : switcher.RunAll(config).ToArray();
 
             Console.WriteLine("\n=== Benchmark Execution Complete ===");
-            Console.WriteLine($"Results saved to: {summary.ResultsDirectoryPath}");
+            if (summaries.Length > 0)
+            {
+                // All summaries write to the same directory; report the first one.
+                Console.WriteLine($"Results saved to: {summaries[0].ResultsDirectoryPath}");
+            }
         }
     }
 }

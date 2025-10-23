@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
 using Neo.VM;
+using System;
 using System.Diagnostics;
 
 namespace Neo.VM.Benchmark
@@ -31,119 +31,75 @@ namespace Neo.VM.Benchmark
         }
 
         [Benchmark]
-        public void SimplePushAdd()
+        public void SimplePushAdd() => Execute(builder =>
         {
-            using var engine = new ExecutionEngine();
-
-            // Simple script: PUSH1, PUSH2, ADD, DROP
-            var script = new byte[]
-            {
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.PUSH2,
-                (byte)Neo.VM.OpCode.ADD,
-                (byte)Neo.VM.OpCode.DROP
-            };
-
-            engine.LoadScript(script);
-            engine.Execute();
-
-            Debug.Assert(engine.State == VMState.HALT);
-        }
+            builder.EmitPush(1);
+            builder.EmitPush(2);
+            builder.Emit(OpCode.ADD);
+            builder.Emit(OpCode.DROP);
+        });
 
         [Benchmark]
-        public void SimpleMathOperations()
+        public void SimpleMathOperations() => Execute(builder =>
         {
-            using var engine = new ExecutionEngine();
-
-            // Multiple math operations
-            var script = new byte[]
-            {
-                (byte)Neo.VM.OpCode.PUSH5,
-                (byte)Neo.VM.OpCode.PUSH3,
-                (byte)Neo.VM.OpCode.MUL,
-                (byte)Neo.VM.OpCode.PUSH10,
-                (byte)Neo.VM.OpCode.ADD,
-                (byte)Neo.VM.OpCode.DROP
-            };
-
-            engine.LoadScript(script);
-            engine.Execute();
-
-            Debug.Assert(engine.State == VMState.HALT);
-        }
+            builder.EmitPush(5);
+            builder.EmitPush(3);
+            builder.Emit(OpCode.MUL);
+            builder.EmitPush(10);
+            builder.Emit(OpCode.ADD);
+            builder.Emit(OpCode.DROP);
+        });
 
         [Benchmark]
-        public void StackOperations()
+        public void StackOperations() => Execute(builder =>
         {
-            using var engine = new ExecutionEngine();
-
-            // Stack manipulation operations
-            var script = new byte[]
-            {
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.PUSH2,
-                (byte)Neo.VM.OpCode.PUSH3,
-                (byte)Neo.VM.OpCode.DUP,
-                (byte)Neo.VM.OpCode.SWAP,
-                (byte)Neo.VM.OpCode.DROP,
-                (byte)Neo.VM.OpCode.DROP,
-                (byte)Neo.VM.OpCode.DROP
-            };
-
-            engine.LoadScript(script);
-            engine.Execute();
-
-            Debug.Assert(engine.State == VMState.HALT);
-        }
+            builder.EmitPush(1);
+            builder.EmitPush(2);
+            builder.EmitPush(3);
+            builder.Emit(OpCode.DUP);
+            builder.Emit(OpCode.SWAP);
+            builder.Emit(OpCode.DROP);
+            builder.Emit(OpCode.DROP);
+            builder.Emit(OpCode.DROP);
+        });
 
         [Benchmark]
-        public void ControlFlow()
+        public void ControlFlow() => Execute(builder =>
         {
-            using var engine = new ExecutionEngine();
-
-            // Simple control flow
-            var script = new byte[]
-            {
-                (byte)Neo.VM.OpCode.PUSH0,
-                (byte)Neo.VM.OpCode.JMPIF, 0x02, // Jump 2 bytes forward
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.DROP,
-                (byte)Neo.VM.OpCode.PUSH2,
-                (byte)Neo.VM.OpCode.DROP
-            };
-
-            engine.LoadScript(script);
-            engine.Execute();
-
-            Debug.Assert(engine.State == VMState.HALT);
-        }
+            builder.EmitPush(0);
+            builder.Emit(OpCode.JMPIF, new[] { (byte)0x02 });
+            builder.EmitPush(1);
+            builder.Emit(OpCode.DROP);
+            builder.EmitPush(2);
+            builder.Emit(OpCode.DROP);
+        });
 
         [Benchmark]
-        public void ArrayOperations()
+        public void ArrayOperations() => Execute(builder =>
         {
-            using var engine = new ExecutionEngine();
-
-            // Array creation and manipulation
-            var script = new byte[]
-            {
-                (byte)Neo.VM.OpCode.NEWARRAY0,
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.PACK,
-                (byte)Neo.VM.OpCode.SIZE,
-                (byte)Neo.VM.OpCode.DROP
-            };
-
-            engine.LoadScript(script);
-            engine.Execute();
-
-            Debug.Assert(engine.State == VMState.HALT);
-        }
+            builder.Emit(OpCode.NEWARRAY0);
+            builder.EmitPush(1);
+            builder.EmitPush(1);
+            builder.Emit(OpCode.PACK);
+            builder.Emit(OpCode.SIZE);
+            builder.Emit(OpCode.DROP);
+        });
 
         [GlobalCleanup]
         public void Cleanup()
         {
             Console.WriteLine("=== Neo VM Benchmark Execution Complete ===");
+        }
+
+        private static void Execute(Action<ScriptBuilder> emitter)
+        {
+            using var builder = new ScriptBuilder();
+            emitter(builder);
+            builder.Emit(OpCode.RET);
+
+            using var engine = new ExecutionEngine();
+            engine.LoadScript(builder.ToArray());
+            Debug.Assert(engine.Execute() == VMState.HALT);
         }
     }
 }

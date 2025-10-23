@@ -11,8 +11,10 @@
 
 using BenchmarkDotNet.Attributes;
 using Neo.VM;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Numerics;
 
 namespace Neo.VM.Benchmark
 {
@@ -61,19 +63,7 @@ namespace Neo.VM.Benchmark
         [Arguments(OpCode.PUSH14)]
         [Arguments(OpCode.PUSH15)]
         [Arguments(OpCode.PUSH16)]
-        public void ConstantOpcodes(OpCode opcode)
-        {
-            // Create script with just the opcode + RET
-            var script = new List<byte>
-            {
-                (byte)opcode,
-                0x40 // RET
-            };
-
-            using var engine = new ExecutionEngine();
-            engine.LoadScript(script.ToArray());
-            engine.Execute();
-        }
+        public void ConstantOpcodes(OpCode opcode) => ExecuteScript(BuildConstantScript(opcode));
 
         #endregion
 
@@ -81,76 +71,31 @@ namespace Neo.VM.Benchmark
 
         [Benchmark]
         [Arguments(OpCode.NOP)]
-        public void FlowControlOpcodes(OpCode opcode)
-        {
-            var script = new List<byte>
-            {
-                (byte)opcode,
-                0x40 // RET
-            };
-
-            using var engine = new ExecutionEngine();
-            engine.LoadScript(script.ToArray());
-            engine.Execute();
-        }
+        public void FlowControlOpcodes(OpCode opcode) => ExecuteScript(BuildScript(builder => builder.Emit(opcode)));
 
         [Benchmark]
         [Arguments(OpCode.JMP)]
         [Arguments(OpCode.JMPIF)]
         [Arguments(OpCode.JMPIFNOT)]
-        public void JumpOpcodes(OpCode opcode)
+        public void JumpOpcodes(OpCode opcode) => ExecuteScript(BuildScript(builder =>
         {
-            var script = new List<byte>
-            {
-                0x10, // PUSH0 (false for conditional jumps)
-                (byte)opcode,
-                0x02, // Jump offset 2 bytes
-                0x10, // PUSH0 (target)
-                0x45, // DROP
-                0x40 // RET
-            };
-
-            using var engine = new ExecutionEngine();
-            engine.LoadScript(script.ToArray());
-            engine.Execute();
-        }
+            builder.EmitPush(0);
+            builder.Emit(opcode, new[] { (byte)0x02 });
+            builder.EmitPush(0);
+            builder.Emit(OpCode.DROP);
+        }));
 
         [Benchmark]
-        public void CALL()
+        public void CALL() => ExecuteScript(new byte[]
         {
-            // Simple call to function that just returns
-            var script = new List<byte>
-            {
-                0x31, // CALL
-                0x05, // offset to function
-                0x00,
-                0x00,
-                0x00,
-                0x40, // RET from main
-
-                // Simple function
-                0x10, // PUSH0
-                0x40  // RET from function
-            };
-
-            using var engine = new ExecutionEngine();
-            engine.LoadScript(script.ToArray());
-            engine.Execute();
-        }
+            (byte)OpCode.CALL, 0x01,
+            (byte)OpCode.RET,
+            (byte)OpCode.PUSH0,
+            (byte)OpCode.RET
+        });
 
         [Benchmark]
-        public void RET()
-        {
-            var script = new List<byte>
-            {
-                0x10, // PUSH0 (return value)
-                0x40  // RET
-            };
-
-            using var engine = new ExecutionEngine();
-            engine.LoadScript(script.ToArray());
-            engine.Execute();
-        }
+        public void RET() => ExecuteScript(BuildScript(builder => builder.EmitPush(0)));
 
         #endregion
 
@@ -604,6 +549,81 @@ namespace Neo.VM.Benchmark
             engine.LoadScript(script.ToArray());
             engine.Execute();
         }
+
+        #endregion
+
+        #region Helpers
+
+        private static byte[] BuildScript(Action<ScriptBuilder> emitter)
+        {
+            using var builder = new ScriptBuilder();
+            emitter(builder);
+            builder.Emit(OpCode.RET);
+            return builder.ToArray();
+        }
+
+        private static byte[] BuildConstantScript(OpCode opcode) => BuildScript(builder =>
+        {
+            switch (opcode)
+            {
+                case OpCode.PUSHINT8:
+                    builder.EmitPush((sbyte)42);
+                    break;
+                case OpCode.PUSHINT16:
+                    builder.EmitPush((short)0x1234);
+                    break;
+                case OpCode.PUSHINT32:
+                    builder.EmitPush(0x12345678);
+                    break;
+                case OpCode.PUSHINT64:
+                    builder.EmitPush(0x123456789ABCDEF0L);
+                    break;
+                case OpCode.PUSHINT128:
+                    builder.EmitPush(new BigInteger(new byte[]
+                    {
+                        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
+                    }));
+                    break;
+                case OpCode.PUSHINT256:
+                    builder.EmitPush(new BigInteger(new byte[]
+                    {
+                        1, 2, 3, 4, 5, 6, 7, 8,
+                        9, 10, 11, 12, 13, 14, 15, 16,
+                        17, 18, 19, 20, 21, 22, 23, 24,
+                        25, 26, 27, 28, 29, 30, 31, 32
+                    }));
+                    break;
+                case OpCode.PUSHT:
+                    builder.EmitPush(true);
+                    break;
+                case OpCode.PUSHF:
+                    builder.EmitPush(false);
+                    break;
+                case OpCode.PUSHNULL:
+                    builder.Emit(OpCode.PUSHNULL);
+                    break;
+                case OpCode.PUSHM1:
+                    builder.EmitPush(-1);
+                    break;
+                case var op when op >= OpCode.PUSH0 && op <= OpCode.PUSH16:
+                    builder.EmitPush((int)(op - OpCode.PUSH0));
+                    break;
+                default:
+                    builder.Emit(opcode);
+                    break;
+            }
+        });
+
+        private static void ExecuteScript(byte[] script)
+        {
+            using var engine = new ExecutionEngine();
+            engine.LoadScript(script);
+            var state = engine.Execute();
+            if (state != VMState.HALT)
+                throw new InvalidOperationException($"Benchmark script exited with state {state}.");
+        }
+
+        private static void ExecuteScript(ReadOnlySpan<byte> script) => ExecuteScript(script.ToArray());
 
         #endregion
 

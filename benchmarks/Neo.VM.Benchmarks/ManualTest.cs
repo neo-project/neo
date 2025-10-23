@@ -39,92 +39,79 @@ namespace Neo.VM.Benchmark
         {
             Console.WriteLine("Testing simple arithmetic...");
 
-            using var engine = new ExecutionEngine();
-
-            // PUSH1, PUSH2, ADD, DROP
-            var script = new byte[]
+            var state = RunScript(builder =>
             {
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.PUSH2,
-                (byte)Neo.VM.OpCode.ADD,
-                (byte)Neo.VM.OpCode.DROP
-            };
+                builder.EmitPush(1);
+                builder.EmitPush(2);
+                builder.Emit(OpCode.ADD);
+                builder.Emit(OpCode.DROP);
+            });
 
-            engine.LoadScript(script);
-            engine.Execute();
-
-            Console.WriteLine($"Result: {engine.State} (Expected: HALT)");
+            Console.WriteLine($"Result: {state} (Expected: HALT)");
         }
 
         private static void TestStackOperations()
         {
             Console.WriteLine("Testing stack operations...");
 
-            using var engine = new ExecutionEngine();
-
-            // PUSH1, PUSH2, PUSH3, DUP, SWAP, DROP, DROP, DROP
-            var script = new byte[]
+            var state = RunScript(builder =>
             {
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.PUSH2,
-                (byte)Neo.VM.OpCode.PUSH3,
-                (byte)Neo.VM.OpCode.DUP,
-                (byte)Neo.VM.OpCode.SWAP,
-                (byte)Neo.VM.OpCode.DROP,
-                (byte)Neo.VM.OpCode.DROP,
-                (byte)Neo.VM.OpCode.DROP
-            };
+                builder.EmitPush(1);
+                builder.EmitPush(2);
+                builder.EmitPush(3);
+                builder.Emit(OpCode.DUP);
+                builder.Emit(OpCode.SWAP);
+                builder.Emit(OpCode.DROP);
+                builder.Emit(OpCode.DROP);
+                builder.Emit(OpCode.DROP);
+            });
 
-            engine.LoadScript(script);
-            engine.Execute();
-
-            Console.WriteLine($"Result: {engine.State} (Expected: HALT)");
+            Console.WriteLine($"Result: {state} (Expected: HALT)");
         }
 
         private static void TestControlFlow()
         {
             Console.WriteLine("Testing control flow...");
 
-            using var engine = new ExecutionEngine();
-
-            // PUSH0, JMPIF 3, PUSH1, DROP, PUSH2, DROP
-            var script = new byte[]
+            var state = RunScript(builder =>
             {
-                (byte)Neo.VM.OpCode.PUSH0,
-                (byte)Neo.VM.OpCode.JMPIF, 0x02, // Jump 2 bytes forward
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.DROP,
-                (byte)Neo.VM.OpCode.PUSH2,
-                (byte)Neo.VM.OpCode.DROP
-            };
+                builder.EmitPush(0);
+                builder.Emit(OpCode.JMPIF, new[] { (byte)0x02 });
+                builder.EmitPush(1);
+                builder.Emit(OpCode.DROP);
+                builder.EmitPush(2);
+                builder.Emit(OpCode.DROP);
+            });
 
-            engine.LoadScript(script);
-            engine.Execute();
-
-            Console.WriteLine($"Result: {engine.State} (Expected: HALT)");
+            Console.WriteLine($"Result: {state} (Expected: HALT)");
         }
 
         private static void TestArrayOperations()
         {
             Console.WriteLine("Testing array operations...");
 
-            using var engine = new ExecutionEngine();
-
-            // NEWARRAY0, PUSH1, PUSH1, PACK, SIZE, DROP
-            var script = new byte[]
+            var state = RunScript(builder =>
             {
-                (byte)Neo.VM.OpCode.NEWARRAY0,
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.PUSH1,
-                (byte)Neo.VM.OpCode.PACK,
-                (byte)Neo.VM.OpCode.SIZE,
-                (byte)Neo.VM.OpCode.DROP
-            };
+                builder.Emit(OpCode.NEWARRAY0);
+                builder.EmitPush(1);
+                builder.EmitPush(1);
+                builder.Emit(OpCode.PACK);
+                builder.Emit(OpCode.SIZE);
+                builder.Emit(OpCode.DROP);
+            });
 
-            engine.LoadScript(script);
-            engine.Execute();
+            Console.WriteLine($"Result: {state} (Expected: HALT)");
+        }
 
-            Console.WriteLine($"Result: {engine.State} (Expected: HALT)");
+        private static VMState RunScript(Action<ScriptBuilder> emitter)
+        {
+            using var builder = new ScriptBuilder();
+            emitter(builder);
+            builder.Emit(OpCode.RET);
+
+            using var engine = new ExecutionEngine();
+            engine.LoadScript(builder.ToArray());
+            return engine.Execute();
         }
     }
 }
