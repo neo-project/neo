@@ -369,6 +369,11 @@ namespace Neo.SmartContract.Native
             }
             Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
+
+            // Clean whitelist
+
+            Policy.CleanWhitelist(engine.SnapshotCache, contract.Hash);
+
             return OnDeployAsync(engine, contract, data, true);
         }
 

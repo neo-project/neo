@@ -611,6 +611,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(2028330, engine.FeeConsumed);
+            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(snapshotCache, NativeContract.NEO.Hash));
 
             // Whitelist
 
@@ -624,6 +625,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1045290, engine.FeeConsumed);
+            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(snapshotCache, NativeContract.NEO.Hash));
         }
 
         [TestMethod]

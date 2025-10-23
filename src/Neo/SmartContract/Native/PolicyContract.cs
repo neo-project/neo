@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native
         public const uint MaxMaxTraceableBlocks = 2102400;
 
         private const byte Prefix_BlockedAccount = 15;
-        private const byte Prefix_WhitelistedFeeContracts = 16;
+        internal const byte Prefix_WhitelistedFeeContracts = 16;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
@@ -279,18 +279,14 @@ namespace Neo.SmartContract.Native
             {
                 // Check state existence
 
-                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount))
-                    ?.GetInteroperable<WhitelistedFeeContract>();
+                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount));
 
                 if (item != null)
                 {
                     // Check UpdateCounter
 
-                    if (item.UpdateCounter == currentContract.UpdateCounter)
-                    {
-                        fixedFee = item.FixedFee;
-                        return true;
-                    }
+                    fixedFee = (long)(BigInteger)item;
+                    return true;
                 }
             }
 
@@ -322,6 +318,20 @@ namespace Neo.SmartContract.Native
                 new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
         }
 
+        internal int CleanWhitelist(DataCache snapshot, UInt160 contractHash)
+        {
+            var count = 0;
+            var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash);
+
+            foreach ((var key, _) in snapshot.Find(searchKey, SeekDirection.Forward))
+            {
+                snapshot.Delete(key);
+                count++;
+            }
+
+            return count;
+        }
+
         /// <summary>
         /// Set whitelisted Fee contracts
         /// </summary>
@@ -348,11 +358,9 @@ namespace Neo.SmartContract.Native
 
             // Set
             var entry = engine.SnapshotCache
-                    .GetAndChange(key, () => new StorageItem(new WhitelistedFeeContract()))
-                    .GetInteroperable<WhitelistedFeeContract>();
+                    .GetAndChange(key, () => new StorageItem(fixedFee));
 
-            entry.UpdateCounter = contract.UpdateCounter;
-            entry.FixedFee = fixedFee;
+            entry.Set(fixedFee);
 
             // Emit event
 
