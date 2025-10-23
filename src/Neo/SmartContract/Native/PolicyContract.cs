@@ -181,7 +181,7 @@ namespace Neo.SmartContract.Native
         /// Gets the network fee per transaction byte.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>The network fee per transaction byte in the unit of pico Gas.</returns>
+        /// <returns>The network fee per transaction byte in the unit of pico Gas. 1 picoGAS = 1e-12 GAS</returns>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetPicoFeePerByte(IReadOnlyStore snapshot)
         {
@@ -214,7 +214,7 @@ namespace Neo.SmartContract.Native
         /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
         /// </summary>
         /// <param name="engine">The execution engine.</param>
-        /// <returns>The execution fee factor in the unit of pico Gas.</returns>
+        /// <returns>The execution fee factor in the unit of pico Gas. 1 picoGAS = 1e-12 GAS</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetExecPicoFeeFactor(ApplicationEngine engine)
         {
@@ -239,7 +239,7 @@ namespace Neo.SmartContract.Native
         /// Gets the storage price.
         /// </summary>
         /// <param name="engine">The execution engine.</param>
-        /// <returns>The storage price in the unit of pico Gas.</returns>
+        /// <returns>The storage price in the unit of pico Gas. 1 picoGAS = 1e-12 GAS</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetStoragePicoPrice(ApplicationEngine engine)
         {
