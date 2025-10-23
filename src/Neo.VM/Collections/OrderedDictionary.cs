@@ -32,6 +32,7 @@ namespace Neo.VM.Collections
         }
 
         private readonly InternalCollection _collection = new();
+        private int _version;
         private KeyCollection? _keys;
         private ValueCollection? _values;
 
@@ -39,9 +40,9 @@ namespace Neo.VM.Collections
 
         public bool IsReadOnly => false;
 
-        public ICollection<TKey> Keys => _keys ??= new KeyCollection(_collection);
+        public ICollection<TKey> Keys => _keys ??= new KeyCollection(this);
 
-        public ICollection<TValue> Values => _values ??= new ValueCollection(_collection);
+        public ICollection<TValue> Values => _values ??= new ValueCollection(this);
 
 
         public TValue this[TKey key]
@@ -53,7 +54,10 @@ namespace Neo.VM.Collections
             set
             {
                 if (_collection.TryGetValue(key, out var entry))
+                {
                     entry.Value = value;
+                    _version++;
+                }
                 else
                     Add(key, value);
             }
@@ -62,6 +66,7 @@ namespace Neo.VM.Collections
         public void Add(TKey key, TValue value)
         {
             _collection.Add(new TItem(key, value));
+            _version++;
         }
 
         public bool ContainsKey(TKey key)
@@ -71,7 +76,12 @@ namespace Neo.VM.Collections
 
         public bool Remove(TKey key)
         {
-            return _collection.Remove(key);
+            if (_collection.Remove(key))
+            {
+                _version++;
+                return true;
+            }
+            return false;
         }
 
         public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
@@ -92,7 +102,10 @@ namespace Neo.VM.Collections
 
         public void Clear()
         {
+            if (_collection.Count == 0)
+                return;
             _collection.Clear();
+            _version++;
         }
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item)
@@ -102,35 +115,44 @@ namespace Neo.VM.Collections
 
         void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
+            if (array is null)
+                throw new ArgumentNullException(nameof(array));
+            if ((uint)arrayIndex > (uint)array.Length)
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            if (array.Length - arrayIndex < _collection.Count)
+                throw new ArgumentException("The destination array is not long enough to copy all the items.");
+
             for (int i = 0; i < _collection.Count; i++)
                 array[i + arrayIndex] = new KeyValuePair<TKey, TValue>(_collection[i].Key, _collection[i].Value);
         }
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
         {
-            return _collection.Remove(item.Key);
+            return Remove(item.Key);
         }
 
         IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
         {
-            return new Enumerator(_collection);
+            return new Enumerator(this);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return new Enumerator(_collection);
+            return new Enumerator(this);
         }
 
         private sealed class KeyCollection : ICollection<TKey>
         {
-            private readonly InternalCollection _collection;
+            private readonly OrderedDictionary<TKey, TValue> _owner;
 
-            public KeyCollection(InternalCollection collection)
+            private InternalCollection Collection => _owner._collection;
+
+            public KeyCollection(OrderedDictionary<TKey, TValue> owner)
             {
-                _collection = collection;
+                _owner = owner;
             }
 
-            public int Count => _collection.Count;
+            public int Count => Collection.Count;
 
             public bool IsReadOnly => true;
 
@@ -138,34 +160,40 @@ namespace Neo.VM.Collections
 
             public void Clear() => throw new NotSupportedException();
 
-            public bool Contains(TKey item) => _collection.Contains(item);
+            public bool Contains(TKey item) => Collection.Contains(item);
 
             public void CopyTo(TKey[] array, int arrayIndex)
             {
                 if (array is null)
                     throw new ArgumentNullException(nameof(array));
+                if ((uint)arrayIndex > (uint)array.Length)
+                    throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+                if (array.Length - arrayIndex < Collection.Count)
+                    throw new ArgumentException("The destination array is not long enough to copy all the keys.");
 
-                for (int i = 0; i < _collection.Count; i++)
-                    array[arrayIndex + i] = _collection[i].Key;
+                for (int i = 0; i < Collection.Count; i++)
+                    array[arrayIndex + i] = Collection[i].Key;
             }
 
             public bool Remove(TKey item) => throw new NotSupportedException();
 
-            public IEnumerator<TKey> GetEnumerator() => new KeyEnumerator(_collection);
+            public IEnumerator<TKey> GetEnumerator() => new KeyEnumerator(_owner);
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
         private sealed class ValueCollection : ICollection<TValue>
         {
-            private readonly InternalCollection _collection;
+            private readonly OrderedDictionary<TKey, TValue> _owner;
 
-            public ValueCollection(InternalCollection collection)
+            private InternalCollection Collection => _owner._collection;
+
+            public ValueCollection(OrderedDictionary<TKey, TValue> owner)
             {
-                _collection = collection;
+                _owner = owner;
             }
 
-            public int Count => _collection.Count;
+            public int Count => Collection.Count;
 
             public bool IsReadOnly => true;
 
@@ -176,9 +204,9 @@ namespace Neo.VM.Collections
             public bool Contains(TValue item)
             {
                 var comparer = EqualityComparer<TValue>.Default;
-                for (int i = 0; i < _collection.Count; i++)
+                for (int i = 0; i < Collection.Count; i++)
                 {
-                    if (comparer.Equals(_collection[i].Value, item))
+                    if (comparer.Equals(Collection[i].Value, item))
                         return true;
                 }
                 return false;
@@ -188,26 +216,34 @@ namespace Neo.VM.Collections
             {
                 if (array is null)
                     throw new ArgumentNullException(nameof(array));
+                if ((uint)arrayIndex > (uint)array.Length)
+                    throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+                if (array.Length - arrayIndex < Collection.Count)
+                    throw new ArgumentException("The destination array is not long enough to copy all the values.");
 
-                for (int i = 0; i < _collection.Count; i++)
-                    array[arrayIndex + i] = _collection[i].Value;
+                for (int i = 0; i < Collection.Count; i++)
+                    array[arrayIndex + i] = Collection[i].Value;
             }
 
             public bool Remove(TValue item) => throw new NotSupportedException();
 
-            public IEnumerator<TValue> GetEnumerator() => new ValueEnumerator(_collection);
+            public IEnumerator<TValue> GetEnumerator() => new ValueEnumerator(_owner);
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
         private struct Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>
         {
+            private readonly OrderedDictionary<TKey, TValue> _owner;
             private readonly InternalCollection _collection;
+            private readonly int _version;
             private int _index;
 
-            internal Enumerator(InternalCollection collection)
+            internal Enumerator(OrderedDictionary<TKey, TValue> owner)
             {
-                _collection = collection;
+                _owner = owner;
+                _collection = owner._collection;
+                _version = owner._version;
                 _index = -1;
                 Current = default;
             }
@@ -216,8 +252,15 @@ namespace Neo.VM.Collections
 
             readonly object IEnumerator.Current => Current;
 
+            private readonly void EnsureNotModified()
+            {
+                if (_version != _owner._version)
+                    throw new InvalidOperationException("Collection was modified; enumeration operation may not execute.");
+            }
+
             public bool MoveNext()
             {
+                EnsureNotModified();
                 if (++_index >= _collection.Count)
                     return false;
 
@@ -228,6 +271,7 @@ namespace Neo.VM.Collections
 
             public void Reset()
             {
+                EnsureNotModified();
                 _index = -1;
                 Current = default;
             }
@@ -239,12 +283,16 @@ namespace Neo.VM.Collections
 
         private struct KeyEnumerator : IEnumerator<TKey>
         {
+            private readonly OrderedDictionary<TKey, TValue> _owner;
             private readonly InternalCollection _collection;
+            private readonly int _version;
             private int _index;
 
-            internal KeyEnumerator(InternalCollection collection)
+            internal KeyEnumerator(OrderedDictionary<TKey, TValue> owner)
             {
-                _collection = collection;
+                _owner = owner;
+                _collection = owner._collection;
+                _version = owner._version;
                 _index = -1;
                 Current = default!;
             }
@@ -253,8 +301,15 @@ namespace Neo.VM.Collections
 
             readonly object IEnumerator.Current => Current!;
 
+            private readonly void EnsureNotModified()
+            {
+                if (_version != _owner._version)
+                    throw new InvalidOperationException("Collection was modified; enumeration operation may not execute.");
+            }
+
             public bool MoveNext()
             {
+                EnsureNotModified();
                 if (++_index >= _collection.Count)
                     return false;
 
@@ -264,6 +319,7 @@ namespace Neo.VM.Collections
 
             public void Reset()
             {
+                EnsureNotModified();
                 _index = -1;
                 Current = default!;
             }
@@ -275,12 +331,16 @@ namespace Neo.VM.Collections
 
         private struct ValueEnumerator : IEnumerator<TValue>
         {
+            private readonly OrderedDictionary<TKey, TValue> _owner;
             private readonly InternalCollection _collection;
+            private readonly int _version;
             private int _index;
 
-            internal ValueEnumerator(InternalCollection collection)
+            internal ValueEnumerator(OrderedDictionary<TKey, TValue> owner)
             {
-                _collection = collection;
+                _owner = owner;
+                _collection = owner._collection;
+                _version = owner._version;
                 _index = -1;
                 Current = default!;
             }
@@ -289,8 +349,15 @@ namespace Neo.VM.Collections
 
             readonly object IEnumerator.Current => Current!;
 
+            private readonly void EnsureNotModified()
+            {
+                if (_version != _owner._version)
+                    throw new InvalidOperationException("Collection was modified; enumeration operation may not execute.");
+            }
+
             public bool MoveNext()
             {
+                EnsureNotModified();
                 if (++_index >= _collection.Count)
                     return false;
 
@@ -300,6 +367,7 @@ namespace Neo.VM.Collections
 
             public void Reset()
             {
+                EnsureNotModified();
                 _index = -1;
                 Current = default!;
             }

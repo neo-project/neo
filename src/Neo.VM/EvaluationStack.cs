@@ -82,16 +82,19 @@ namespace Neo.VM
             if (toCopy == 0)
                 return;
 
-            stack._innerList.EnsureCapacity(stack._innerList.Count + toCopy);
-
-            if (count == -1 || count == _innerList.Count)
+            var startIndex = _innerList.Count - toCopy;
+            // Guard against copying onto the same stack instance by materializing the segment first.
+            if (ReferenceEquals(this, stack))
             {
-                for (int i = 0; i < _innerList.Count; i++)
-                    stack._innerList.Add(_innerList[i]);
+                var buffer = new StackItem[toCopy];
+                stack._innerList.EnsureCapacity(stack._innerList.Count + toCopy);
+                for (int i = 0; i < toCopy; i++)
+                    buffer[i] = _innerList[startIndex + i];
+                stack._innerList.AddRange(buffer);
             }
             else
             {
-                var startIndex = _innerList.Count - count;
+                stack._innerList.EnsureCapacity(stack._innerList.Count + toCopy);
                 for (int i = startIndex; i < _innerList.Count; i++)
                     stack._innerList.Add(_innerList[i]);
             }
