@@ -19,6 +19,8 @@ namespace Neo.SmartContract.Native
 {
     partial class CryptoLib
     {
+        private const int Bls12381MultiExpMaxPairs = 128;
+
         /// <summary>
         /// Serialize a bls12381 point.
         /// </summary>
@@ -131,6 +133,8 @@ namespace Neo.SmartContract.Native
         {
             if (pairs is null || pairs.Count == 0)
                 throw new ArgumentException("BLS12-381 multi exponent requires at least one pair");
+            if (pairs.Count > Bls12381MultiExpMaxPairs)
+                throw new ArgumentOutOfRangeException(nameof(pairs), $"BLS12-381 multi exponent supports at most {Bls12381MultiExpMaxPairs} pairs");
 
             bool? useG2 = null;
             G1Projective g1Accumulator = G1Projective.Identity;
@@ -148,6 +152,7 @@ namespace Neo.SmartContract.Native
                 switch (point)
                 {
                     case G1Affine g1Affine:
+                        EnsureG1PointValid(in g1Affine);
                         EnsureGroupType(ref useG2, false);
                         {
                             var scalar = ParseScalar(pair[1]);
@@ -156,6 +161,7 @@ namespace Neo.SmartContract.Native
                         }
                         break;
                     case G1Projective g1Projective:
+                        EnsureG1PointValid(new G1Affine(g1Projective));
                         EnsureGroupType(ref useG2, false);
                         {
                             var scalar = ParseScalar(pair[1]);
@@ -164,6 +170,7 @@ namespace Neo.SmartContract.Native
                         }
                         break;
                     case G2Affine g2Affine:
+                        EnsureG2PointValid(in g2Affine);
                         EnsureGroupType(ref useG2, true);
                         {
                             var scalar = ParseScalar(pair[1]);
@@ -172,6 +179,7 @@ namespace Neo.SmartContract.Native
                         }
                         break;
                     case G2Projective g2Projective:
+                        EnsureG2PointValid(new G2Affine(g2Projective));
                         EnsureGroupType(ref useG2, true);
                         {
                             var scalar = ParseScalar(pair[1]);
@@ -250,6 +258,22 @@ namespace Neo.SmartContract.Native
                 littleEndian.CopyTo(wide);
                 return Scalar.FromBytesWide(wide);
             }
+        }
+
+        private static void EnsureG1PointValid(in G1Affine point)
+        {
+            if (point.IsIdentity)
+                return;
+            if (!point.IsOnCurve || !point.IsTorsionFree)
+                throw new ArgumentException("BLS12-381 point must be on-curve and in the prime-order subgroup");
+        }
+
+        private static void EnsureG2PointValid(in G2Affine point)
+        {
+            if (point.IsIdentity)
+                return;
+            if (!point.IsOnCurve || !point.IsTorsionFree)
+                throw new ArgumentException("BLS12-381 point must be on-curve and in the prime-order subgroup");
         }
     }
 }

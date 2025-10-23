@@ -363,6 +363,23 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestBls12381MultiExpTooManyPairsFails()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var pairs = new VMArray();
+            for (int i = 0; i < 129; i++)
+            {
+                pairs.Add(new VMArray(new StackItem[]
+                {
+                    StackItem.FromInterface(g1Point),
+                    new ByteString(CreateScalarBytes(1))
+                }));
+            }
+
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => CryptoLib.Bls12381MultiExp(pairs));
+        }
+
+        [TestMethod]
         public void Bls12381Equal()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();

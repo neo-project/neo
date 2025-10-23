@@ -298,8 +298,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 markdownTables[(contract.Id, contract.Name)] = GenMarkdownTable(contractName, contractMethods);
             }
 
-            var currentDir = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
-            Assert.AreEqual(currentDir.Name, "neo");  // neo/bin/tests/Neo.UnitTests/net9.0
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (currentDir is not null && !Directory.Exists(Path.Combine(currentDir.FullName, "docs")))
+            {
+                currentDir = currentDir.Parent;
+            }
+            Assert.IsNotNull(currentDir, "Unable to locate repository root containing a docs directory.");
 
             var outputPath = Path.Combine(currentDir.FullName, "docs", "native-contracts-api.md");
             using (var writer = new StreamWriter(outputPath))
