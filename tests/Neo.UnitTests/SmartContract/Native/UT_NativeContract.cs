@@ -298,10 +298,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 markdownTables[(contract.Id, contract.Name)] = GenMarkdownTable(contractName, contractMethods);
             }
 
-            var currentDir = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
-            Assert.AreEqual(currentDir.Name, "neo");  // neo/bin/tests/Neo.UnitTests/net9.0
-
-            var outputPath = Path.Combine(currentDir.FullName, "docs", "native-contracts-api.md");
+            var docsDirectory = LocateDocsDirectory(new DirectoryInfo(Directory.GetCurrentDirectory()));
+            var outputPath = Path.Combine(docsDirectory.FullName, "native-contracts-api.md");
             using (var writer = new StreamWriter(outputPath))
             {
                 writer.WriteLine("""
@@ -334,6 +332,17 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             Assert.IsTrue(File.Exists(outputPath), $"Generated file should exist at {outputPath}");
+        }
+
+        private static DirectoryInfo LocateDocsDirectory(DirectoryInfo start)
+        {
+            for (var current = start; current is not null; current = current.Parent)
+            {
+                var candidate = new DirectoryInfo(Path.Combine(current.FullName, "docs"));
+                if (candidate.Exists)
+                    return candidate;
+            }
+            throw new DirectoryNotFoundException($"Unable to locate 'docs' directory starting from '{start.FullName}'.");
         }
 
         private static string GenMarkdownTable(string contractName, List<ContractMethodMetadata> methods)
