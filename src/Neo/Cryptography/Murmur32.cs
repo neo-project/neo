@@ -12,6 +12,7 @@
 using System;
 using System.Buffers.Binary;
 using System.IO.Hashing;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography
@@ -109,7 +110,7 @@ namespace Neo.Cryptography
         internal uint GetCurrentHashUInt32()
         {
             if (_tailLength > 0)
-                _hash ^= Helper.RotateLeft(_tail * c1, r1) * c2;
+                _hash ^= BitOperations.RotateLeft(_tail * c1, r1) * c2;
 
             var state = _hash ^ (uint)_length;
             state ^= state >> 16;
@@ -124,10 +125,10 @@ namespace Neo.Cryptography
         private void Mix(uint k)
         {
             k *= c1;
-            k = Helper.RotateLeft(k, r1);
+            k = BitOperations.RotateLeft(k, r1);
             k *= c2;
             _hash ^= k;
-            _hash = Helper.RotateLeft(_hash, r2);
+            _hash = BitOperations.RotateLeft(_hash, r2);
             _hash = _hash * m + n;
         }
 
