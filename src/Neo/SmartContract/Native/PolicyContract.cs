@@ -343,7 +343,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         internal void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long fixedFee)
         {
-            ArgumentOutOfRangeException.ThrowIfLessThan(fixedFee, 1, nameof(fixedFee));
+            ArgumentOutOfRangeException.ThrowIfNegative(fixedFee, nameof(fixedFee));
 
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
