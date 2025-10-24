@@ -267,10 +267,10 @@ namespace Neo.SmartContract.Native
             if (manifest.Length == 0)
                 throw new ArgumentException($"Manifest length cannot be zero.");
 
-            engine.AddFee(BigInteger.Max(
-                engine.StoragePrice * (nefFile.Length + manifest.Length) * ApplicationEngine.FeeFactor,
-                GetMinimumDeploymentFee(engine.SnapshotCache) * ApplicationEngine.FeeFactor
-                ));
+            // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+            engine.AddFee(BigInteger.Max(engine.StoragePrice * (nefFile.Length + manifest.Length),
+                GetMinimumDeploymentFee(engine.SnapshotCache))
+                * ApplicationEngine.FeeFactor);
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);

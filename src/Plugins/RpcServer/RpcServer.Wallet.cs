@@ -553,11 +553,10 @@ namespace Neo.Plugins.RpcServer
             return SignAndRelay(snapshot, tx);
         }
 
-        private void EnsureNetworkFee(StoreCache snapshot, Transaction tx)
+        private static void EnsureNetworkFee(StoreCache snapshot, Transaction tx)
         {
             if (tx.Size > 1024)
             {
-                var index = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 var calFee = tx.Size *
                     NativeContract.Policy.GetFeePerByte(snapshot) + 100000;
 
