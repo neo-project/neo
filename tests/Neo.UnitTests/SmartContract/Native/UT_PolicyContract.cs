@@ -617,14 +617,15 @@ namespace Neo.UnitTests.SmartContract.Native
 
             engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
 
-            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 1, 0);
+            Assert.Throws<ArgumentOutOfRangeException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 1, 0));
+            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 1, 1);
             engine.SnapshotCache.Commit();
 
             // Whitelisted
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
-            Assert.AreEqual(1045290, engine.FeeConsumed);
+            Assert.AreEqual(1045292, engine.FeeConsumed);
             Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(snapshotCache, NativeContract.NEO.Hash));
         }
 
