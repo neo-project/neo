@@ -542,7 +542,8 @@ namespace Neo.Ledger
                 }
                 catch (Exception ex) when (handler.Target is Plugin plugin)
                 {
-                    Utility.Log(nameof(plugin), LogLevel.Error, ex);
+                    var cause = ex.InnerException ?? ex;
+                    Utility.Log(nameof(plugin.Name), LogLevel.Error, $"{plugin.Name} exception: {cause.Message}{Environment.NewLine}{cause.StackTrace}");
                     switch (plugin.ExceptionPolicy)
                     {
                         case UnhandledExceptionPolicy.StopNode:
@@ -555,8 +556,7 @@ namespace Neo.Ledger
                             // Log the exception and continue with the next handler
                             break;
                         default:
-                            throw new InvalidCastException(
-                                $"The exception policy {plugin.ExceptionPolicy} is not valid.");
+                            throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
                     }
                 }
             }
