@@ -542,7 +542,8 @@ namespace Neo.Ledger
                 }
                 catch (Exception ex) when (handler.Target is Plugin plugin)
                 {
-                    Utility.Log(nameof(plugin.Name), LogLevel.Error, $"{plugin.Name} exception: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                    var cause = ex.InnerException ?? ex;
+                    Utility.Log(nameof(plugin.Name), LogLevel.Error, $"{plugin.Name} exception: {cause.Message}{Environment.NewLine}{cause.StackTrace}");
                     switch (plugin.ExceptionPolicy)
                     {
                         case UnhandledExceptionPolicy.StopNode:
