@@ -64,13 +64,16 @@ namespace Neo.SmartContract.Manifest
             return !string.IsNullOrEmpty(name) && s_namedTypePattern.IsMatch(name);
         }
 
-        internal static void EnsureValidNamedTypeIdentifier(string name, HashSet<string> circularNamedTypes)
+        internal static void EnsureValidNamedTypeIdentifier(string name)
         {
             if (!IsValidNamedTypeIdentifier(name))
                 throw Nep25Error($"Named type '{name}' must start with a letter, contain only alphanumeric characters or dots, and be at most 64 characters long.");
+        }
 
-            if (!circularNamedTypes.Add(name))
-                throw Nep25Error("Circular NamedType detected.");
+        internal static void EnsureNotCircularReferences(string? typeName, string name)
+        {
+            if (!string.IsNullOrEmpty(typeName) && name.Equals(typeName))
+                throw Nep25Error($"Circular reference for '{typeName}'.");
         }
 
         /// <summary>
@@ -403,15 +406,15 @@ namespace Neo.SmartContract.Manifest
 
         internal void ValidateForParameterOrReturn(ContractParameterType expectedType, ISet<string>? knownNamedTypes)
         {
-            ValidateCore(expectedType, allowFields: false, knownNamedTypes, []);
+            ValidateCore(expectedType, allowFields: false, null, knownNamedTypes);
         }
 
-        internal void ValidateForNamedTypeDefinition(ISet<string>? knownNamedTypes)
+        internal void ValidateForNamedTypeDefinition(string typeName, ISet<string>? knownNamedTypes)
         {
-            ValidateCore(expectedType: null, allowFields: true, knownNamedTypes, []);
+            ValidateCore(expectedType: null, allowFields: true, typeName, knownNamedTypes);
         }
 
-        private void ValidateCore(ContractParameterType? expectedType, bool allowFields, ISet<string>? knownNamedTypes, HashSet<string> circularNamedTypes)
+        private void ValidateCore(ContractParameterType? expectedType, bool allowFields, string? typeName, ISet<string>? knownNamedTypes)
         {
             if (expectedType.HasValue && Type != expectedType.Value)
                 throw Nep25Error($"Type mismatch. Expected '{expectedType.Value}', got '{Type}'.");
@@ -445,7 +448,8 @@ namespace Neo.SmartContract.Manifest
                 if (Type != ContractParameterType.Array)
                     throw Nep25Error("namedtype can only be used with Array type.");
 
-                EnsureValidNamedTypeIdentifier(NamedType, circularNamedTypes);
+                EnsureValidNamedTypeIdentifier(NamedType);
+                EnsureNotCircularReferences(typeName, NamedType);
 
                 if (Length.HasValue || ForbidNull.HasValue || Interface.HasValue || Key.HasValue || Value is not null || (Fields is not null && Fields.Length > 0))
                     throw Nep25Error("namedtype cannot be combined with other modifiers.");
@@ -471,7 +475,7 @@ namespace Neo.SmartContract.Manifest
                 if (!allowFields && Value.Fields is { Length: > 0 })
                     throw Nep25Error("fields cannot be used in method parameters or return values.");
 
-                Value.ValidateCore(expectedType: null, allowFields, knownNamedTypes, circularNamedTypes);
+                Value.ValidateCore(expectedType: null, allowFields, null, knownNamedTypes);
             }
             else
             {
@@ -501,7 +505,7 @@ namespace Neo.SmartContract.Manifest
 
                 foreach (var field in Fields)
                 {
-                    field.ExtendedType?.ValidateCore(field.Type, allowFields: true, knownNamedTypes, circularNamedTypes);
+                    field.ExtendedType?.ValidateCore(field.Type, allowFields: true, field.Name, knownNamedTypes);
                 }
             }
         }
