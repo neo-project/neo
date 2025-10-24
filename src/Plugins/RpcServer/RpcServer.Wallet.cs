@@ -559,7 +559,7 @@ namespace Neo.Plugins.RpcServer
             {
                 var index = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 var calFee = tx.Size *
-                    NativeContract.Policy.GetFeePerByte(system.Settings, snapshot, index) + 100000;
+                    NativeContract.Policy.GetFeePerByte(snapshot) + 100000;
 
                 if (tx.NetworkFee < calFee)
                     tx.NetworkFee = calFee;

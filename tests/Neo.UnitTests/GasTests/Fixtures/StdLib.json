@@ -17,8 +17,8 @@
     "Environment": {
       "Policy": {
         "ExecutionFee": 150000,
-        "StorageFee": 1000000000,
-        "FeePerByte": 10000000
+        "StorageFee": 100000,
+        "FeePerByte": 1000
       }
     },
     "Execute": [

@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The maximum storage price that the committee can set.
         /// </summary>
-        public const ulong MaxStoragePrice = 10000000;
+        public const uint MaxStoragePrice = 10000000;
 
         /// <summary>
         /// The maximum block generation time that the committee can set in milliseconds.
@@ -141,16 +141,6 @@ namespace Neo.SmartContract.Native
                 var item = engine.SnapshotCache.TryGet(_execFeeFactor) ??
                     throw new InvalidOperationException("Policy was not initialized");
                 item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
-
-                // Add decimals to storage price
-                item = engine.SnapshotCache.TryGet(_storagePrice) ??
-                    throw new InvalidOperationException("Policy was not initialized");
-                item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
-
-                // Add decimals to fee per Byte
-                item = engine.SnapshotCache.TryGet(_feePerByte) ??
-                    throw new InvalidOperationException("Policy was not initialized");
-                item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
             }
             return ContractTask.CompletedTask;
         }
@@ -158,34 +148,12 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the network fee per transaction byte.
         /// </summary>
-        /// <param name="engine">The execution engine.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The network fee per transaction byte.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public long GetFeePerByte(ApplicationEngine engine)
+        public long GetFeePerByte(IReadOnlyStore snapshot)
         {
-            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
-                return (long)((BigInteger)engine.SnapshotCache[_feePerByte] / ApplicationEngine.FeeFactor);
-
-            return (long)(BigInteger)engine.SnapshotCache[_feePerByte];
-        }
-
-        public long GetFeePerByte(ProtocolSettings settings, IReadOnlyStore snapshot, uint index)
-        {
-            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, index))
-                return (long)((BigInteger)snapshot[_feePerByte] / ApplicationEngine.FeeFactor);
-
             return (long)(BigInteger)snapshot[_feePerByte];
-        }
-
-        /// <summary>
-        /// Gets the network fee per transaction byte.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>The network fee per transaction byte in the unit of pico Gas. 1 picoGAS = 1e-12 GAS</returns>
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetPicoFeePerByte(IReadOnlyStore snapshot)
-        {
-            return (BigInteger)snapshot[_feePerByte];
         }
 
         /// <summary>
@@ -224,26 +192,12 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the storage price.
         /// </summary>
-        /// <param name="engine">The execution engine.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The storage price.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetStoragePrice(ApplicationEngine engine)
+        public uint GetStoragePrice(IReadOnlyStore snapshot)
         {
-            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
-                return (uint)((BigInteger)engine.SnapshotCache[_storagePrice] / ApplicationEngine.FeeFactor);
-
-            return (uint)(BigInteger)engine.SnapshotCache[_storagePrice];
-        }
-
-        /// <summary>
-        /// Gets the storage price.
-        /// </summary>
-        /// <param name="engine">The execution engine.</param>
-        /// <returns>The storage price in the unit of pico Gas. 1 picoGAS = 1e-12 GAS</returns>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetStoragePicoPrice(ApplicationEngine engine)
-        {
-            return (BigInteger)engine.SnapshotCache[_storagePrice];
+            return (uint)(BigInteger)snapshot[_storagePrice];
         }
 
         /// <summary>
@@ -409,12 +363,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetFeePerByte(ApplicationEngine engine, ulong value)
+        private void SetFeePerByte(ApplicationEngine engine, long value)
         {
-            BigInteger maxValue = 1_00000000;
-            if (engine.IsHardforkEnabled(Hardfork.HF_Faun)) maxValue *= ApplicationEngine.FeeFactor;
-
-            if (value < 0 || value > maxValue)
+            if (value < 0 || value > 1_00000000)
                 throw new ArgumentOutOfRangeException(nameof(value), $"FeePerByte must be between [0, 100000000], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);
@@ -433,13 +384,10 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetStoragePrice(ApplicationEngine engine, ulong value)
+        private void SetStoragePrice(ApplicationEngine engine, uint value)
         {
-            // After FAUN hardfork, the max exec fee factor is with decimals defined in ApplicationEngine.FeeFactor
-            var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? (ulong)ApplicationEngine.FeeFactor * MaxStoragePrice : MaxStoragePrice;
-
-            if (value == 0 || value > maxValue)
-                throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {maxValue}], got {value}");
+            if (value == 0 || value > MaxStoragePrice)
+                throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {MaxStoragePrice}], got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
         }

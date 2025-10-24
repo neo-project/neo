@@ -440,7 +440,7 @@ namespace Neo.Plugins.OracleService
             if (engine.Execute() != VMState.HALT) return null;
             tx.NetworkFee += engine.FeeConsumed;
 
-            var feePerByte = NativeContract.Policy.GetFeePerByte(engine);
+            var feePerByte = NativeContract.Policy.GetFeePerByte(engine.SnapshotCache);
             var executionFactor = NativeContract.Policy.GetExecFeeFactor(engine);
 
             var networkFee = executionFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);

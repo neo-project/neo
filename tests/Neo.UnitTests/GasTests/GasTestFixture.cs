@@ -31,8 +31,8 @@ namespace Neo.UnitTests.GasTests
         public class PolicyValues
         {
             public BigInteger ExecutionFee { get; set; } = PolicyContract.DefaultExecFeeFactor * ApplicationEngine.FeeFactor;
-            public BigInteger StorageFee { get; set; } = PolicyContract.DefaultStoragePrice * ApplicationEngine.FeeFactor;
-            public BigInteger FeePerByte { get; set; } = PolicyContract.DefaultFeePerByte * ApplicationEngine.FeeFactor;
+            public BigInteger StorageFee { get; set; } = PolicyContract.DefaultStoragePrice;
+            public BigInteger FeePerByte { get; set; } = PolicyContract.DefaultFeePerByte;
         }
 
         public class EnvironmentState

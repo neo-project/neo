@@ -78,8 +78,8 @@ namespace Neo.SmartContract
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
         // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
         private readonly BigInteger _execFeeFactor;
-        // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
-        private readonly BigInteger _storagePrice;
+        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+        internal readonly uint StoragePrice;
         private byte[] nonceData;
 
         /// <summary>
@@ -143,11 +143,6 @@ namespace Neo.SmartContract
         internal long ExecFeeFactor => (long)_execFeeFactor.DivideCeiling(FeeFactor);
 
         /// <summary>
-        /// Storage Price. In the unit of datoshi, 1 datoshi = 1e-8 GAS
-        /// </summary>
-        internal long StoragePrice => (long)_storagePrice.DivideCeiling(FeeFactor);
-
-        /// <summary>
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
@@ -157,11 +152,6 @@ namespace Neo.SmartContract
         /// Exec Fee Factor. In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         internal BigInteger ExecFeePicoFactor => _execFeeFactor;
-
-        /// <summary>
-        /// Storage Price. In the unit of picoGas
-        /// </summary>
-        internal BigInteger StoragePicoPrice => _storagePrice;
 
         /// <summary>
         /// The remaining GAS that can be spent in order to complete the execution.
@@ -235,7 +225,7 @@ namespace Neo.SmartContract
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
                 _execFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
-                _storagePrice = PolicyContract.DefaultStoragePrice * FeeFactor;
+                StoragePrice = PolicyContract.DefaultStoragePrice;
             }
             else
             {
@@ -243,14 +233,14 @@ namespace Neo.SmartContract
                 {
                     // The values doesn't have the decimals stored
                     _execFeeFactor = NativeContract.Policy.GetExecFeeFactor(this) * FeeFactor;
-                    _storagePrice = NativeContract.Policy.GetStoragePrice(this) * FeeFactor;
                 }
                 else
                 {
                     // The values have the decimals stored
                     _execFeeFactor = NativeContract.Policy.GetExecPicoFeeFactor(this);
-                    _storagePrice = NativeContract.Policy.GetStoragePicoPrice(this);
                 }
+
+                StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
             }
 
             if (persistingBlock is not null)

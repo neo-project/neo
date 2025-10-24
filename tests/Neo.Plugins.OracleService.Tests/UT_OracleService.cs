@@ -55,7 +55,7 @@ namespace Neo.Plugins.OracleService.Tests
             var executionFactor = NativeContract.Policy.GetExecFeeFactor(TestUtils.settings, snapshotCache, index);
             Assert.AreEqual(30, executionFactor);
 
-            var feePerByte = NativeContract.Policy.GetFeePerByte(TestUtils.settings, snapshotCache, index);
+            var feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             Assert.AreEqual(1000, feePerByte);
 
             OracleRequest request = new OracleRequest

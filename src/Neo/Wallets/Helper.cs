@@ -224,7 +224,7 @@ namespace Neo.Wallets
                     }
                 }
             }
-            networkFee += size * NativeContract.Policy.GetFeePerByte(settings, snapshot, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
+            networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
             foreach (var attr in tx.Attributes)
             {
                 networkFee += attr.CalculateNetworkFee(snapshot, tx);
