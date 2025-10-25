@@ -14,7 +14,6 @@ using Neo.Cryptography.MPTTrie;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence.Providers;
 using Neo.Plugins.RpcServer;
 using Neo.Plugins.StateService.Network;
 using Neo.Plugins.StateService.Storage;
@@ -23,7 +22,6 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.VM;
-using System.Reflection;
 
 namespace Neo.Plugins.StateService.Tests
 {
@@ -38,22 +36,11 @@ namespace Neo.Plugins.StateService.Tests
 
         private StatePlugin? _statePlugin;
         private TestBlockchain.TestNeoSystem? _system;
-        private MemoryStore? _memoryStore;
 
         [TestInitialize]
         public void Setup()
         {
-            _memoryStore = new MemoryStore();
-            _system = new TestBlockchain.TestNeoSystem(s_protocol);
             _statePlugin = new StatePlugin();
-
-            // Use reflection to call the protected OnSystemLoaded method
-            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-            var onSystemLoaded = typeof(StatePlugin).GetMethod("OnSystemLoaded", bindingFlags);
-            Assert.IsNotNull(onSystemLoaded, "OnSystemLoaded method not found via reflection.");
-
-            onSystemLoaded.Invoke(_statePlugin, [_system]);
-
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
@@ -64,13 +51,16 @@ namespace Neo.Plugins.StateService.Tests
                 .GetSection("PluginConfiguration");
             StateServiceSettings.Load(config);
             Assert.IsTrue(StateServiceSettings.Default.FullState);
+
+            // StatePlugin.OnSystemLoaded it's called during the NeoSystem constructor
+            _system = new TestBlockchain.TestNeoSystem(s_protocol);
         }
 
         [TestCleanup]
         public void Cleanup()
         {
             _statePlugin?.Dispose();
-            _memoryStore?.Dispose();
+            _system?.Dispose();
         }
 
         [TestMethod]
@@ -79,10 +69,9 @@ namespace Neo.Plugins.StateService.Tests
             var result = _statePlugin!.GetStateHeight();
 
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result, typeof(JObject));
+            Assert.IsInstanceOfType<JObject>(result);
 
-            Assert.IsNull(result!["localrootindex"]);
-            Assert.IsNull(result!["validatedrootindex"]);
+            Assert.AreEqual("{\"localrootindex\":0,\"validatedrootindex\":null}", result.ToString());
         }
 
         [TestMethod]
@@ -120,7 +109,7 @@ namespace Neo.Plugins.StateService.Tests
             var result = _statePlugin!.GetStateRoot(1);
 
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result, typeof(JObject));
+            Assert.IsInstanceOfType<JObject>(result);
 
             var json = (JObject)result;
             Assert.AreEqual(0x00, json["version"]?.AsNumber());
@@ -141,7 +130,7 @@ namespace Neo.Plugins.StateService.Tests
             var result = _statePlugin!.GetProof(rootHash, scriptHash, Convert.ToBase64String([0x01, 0x02]));
 
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result, typeof(JString));
+            Assert.IsInstanceOfType<JString>(result);
 
             var proof = ((JString)result).Value; // long string
             Assert.IsFalse(string.IsNullOrEmpty(proof));
@@ -157,7 +146,7 @@ namespace Neo.Plugins.StateService.Tests
 
             var result = _statePlugin!.GetState(rootHash, scriptHash, [0x01, 0x02]);
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result, typeof(JString));
+            Assert.IsInstanceOfType<JString>(result);
             Assert.AreEqual("aabb", Convert.FromBase64String(result.AsString() ?? "").ToHexString());
         }
 
@@ -170,14 +159,14 @@ namespace Neo.Plugins.StateService.Tests
 
             var result = _statePlugin!.FindStates(rootHash, scriptHash, []);
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result, typeof(JObject));
+            Assert.IsInstanceOfType<JObject>(result);
 
             var jsonResult = (JObject)result;
             Assert.IsNotNull(jsonResult["results"]);
-            Assert.IsInstanceOfType(jsonResult["results"], typeof(JArray));
+            Assert.IsInstanceOfType<JArray>(jsonResult["results"]);
 
             var results = (JArray)jsonResult["results"]!;
-            Assert.AreEqual(2, results.Count);
+            Assert.HasCount(2, results);
 
             Assert.AreEqual("0102", Convert.FromBase64String(results[0]?["key"]?.AsString() ?? "").ToHexString());
             Assert.AreEqual("0304", Convert.FromBase64String(results[1]?["key"]?.AsString() ?? "").ToHexString());
@@ -186,7 +175,7 @@ namespace Neo.Plugins.StateService.Tests
             Assert.IsFalse(jsonResult["truncated"]?.AsBoolean());
         }
 
-        private void SetupMockStateRoot(uint index, UInt256 rootHash)
+        private static void SetupMockStateRoot(uint index, UInt256 rootHash)
         {
             var stateRoot = new StateRoot { Index = index, RootHash = rootHash, Witness = Witness.Empty };
             using var store = StateStore.Singleton.GetSnapshot();
@@ -194,7 +183,7 @@ namespace Neo.Plugins.StateService.Tests
             store.Commit();
         }
 
-        private UInt256 SetupMockContractAndStorage(UInt160 scriptHash)
+        private static UInt256 SetupMockContractAndStorage(UInt160 scriptHash)
         {
             var nef = new NefFile { Compiler = "mock", Source = "mock", Tokens = [], Script = new byte[] { 0x01 } };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
