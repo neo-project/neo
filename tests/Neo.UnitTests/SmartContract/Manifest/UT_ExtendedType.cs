@@ -306,5 +306,25 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var ext = new ExtendedType();
             Assert.ThrowsExactly<FormatException>(() => ext.FromStackItem(map));
         }
+
+        [TestMethod]
+        public void FromJson_Circular_Reference_ShouldThrow()
+        {
+            var json = (JObject)JToken.Parse(@"
+            {
+                ""methods"": [
+                    { ""name"": ""_deploy"", ""parameters"": [], ""returntype"": ""Void"", ""offset"": 0, ""safe"": true}
+                ],
+                ""events"": [],
+                ""namedtypes"": {
+                  ""boo"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""boo""
+                }
+              }
+            }");
+
+            Assert.ThrowsExactly<FormatException>(() => ContractAbi.FromJson(json));
+        }
     }
 }
