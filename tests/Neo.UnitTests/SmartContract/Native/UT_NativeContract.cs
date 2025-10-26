@@ -298,11 +298,9 @@ namespace Neo.UnitTests.SmartContract.Native
                 markdownTables[(contract.Id, contract.Name)] = GenMarkdownTable(contractName, contractMethods);
             }
 
-            var currentDir = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
-            Assert.AreEqual(currentDir.Name, "neo");  // neo/bin/tests/Neo.UnitTests/net9.0
-
-            var outputPath = Path.Combine(currentDir.FullName, "docs", "native-contracts-api.md");
-            using (var writer = new StreamWriter(outputPath))
+            var docsDirectory = LocateDocsDirectory(new DirectoryInfo(Directory.GetCurrentDirectory()));
+            var outputPath = Path.Combine(docsDirectory.FullName, "native-contracts-api.md");
+            using (var writer = new StreamWriter(outputPath) { NewLine = "\n" })
             {
                 writer.WriteLine("""
                 # Native Contracts API
@@ -336,11 +334,22 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(File.Exists(outputPath), $"Generated file should exist at {outputPath}");
         }
 
+        private static DirectoryInfo LocateDocsDirectory(DirectoryInfo start)
+        {
+            for (var current = start; current is not null; current = current.Parent)
+            {
+                var candidate = new DirectoryInfo(Path.Combine(current.FullName, "docs"));
+                if (candidate.Exists)
+                    return candidate;
+            }
+            throw new DirectoryNotFoundException($"Unable to locate 'docs' directory starting from '{start.FullName}'.");
+        }
+
         private static string GenMarkdownTable(string contractName, List<ContractMethodMetadata> methods)
         {
             var table = new System.Text.StringBuilder();
-            table.AppendLine("| Method | Summary | Parameters | Return Value | CPU fee | Storage fee | Call Flags | Hardfork |");
-            table.AppendLine("|--------|---------|------------|--------------|---------|-------------|------------|----------|");
+            table.Append("| Method | Summary | Parameters | Return Value | CPU fee | Storage fee | Call Flags | Hardfork |\n");
+            table.Append("|--------|---------|------------|--------------|---------|-------------|------------|----------|\n");
 
             foreach (var method in methods)
             {
@@ -354,7 +363,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 var storageFee = FormatPowerOfTwo(method.StorageFee);
                 var callFlags = FormatCallFlags(method.RequiredCallFlags);
                 var hardfork = FormatHardfork(method.ActiveIn, method.DeprecatedIn);
-                table.AppendLine($"| {methodName} | {summary} | {parameters} | {returnType} | {cpuFee} | {storageFee} | {callFlags} | {hardfork} |");
+                table.Append($"| {methodName} | {summary} | {parameters} | {returnType} | {cpuFee} | {storageFee} | {callFlags} | {hardfork} |\n");
             }
 
             return table.ToString();

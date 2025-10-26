@@ -15,4 +15,8 @@
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neo.Cryptography.BLS12_381.Tests" />
+  </ItemGroup>
+
 </Project>

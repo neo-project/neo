@@ -14,4 +14,8 @@
     <ProjectReference Include="..\Neo\Neo.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neo.RpcClient.Tests" />
+  </ItemGroup>
+
 </Project>
