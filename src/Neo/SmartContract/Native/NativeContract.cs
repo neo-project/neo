@@ -354,6 +354,12 @@ namespace Neo.SmartContract.Native
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
+        protected static void AssertCommittee(ApplicationEngine engine)
+        {
+            if (!CheckCommittee(engine))
+                throw new InvalidOperationException("Invalid committee signature. It should be a multisig(len(committee) - (len(committee) - 1) / 2)).");
+        }
+
         #region Storage keys
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
