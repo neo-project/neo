@@ -254,6 +254,11 @@ namespace Neo.Network.P2P
                     break;
 
                 case Terminated terminated:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTerminated(terminated.ActorRef);
                     break;
             }
