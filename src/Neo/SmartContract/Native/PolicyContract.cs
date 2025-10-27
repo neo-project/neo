@@ -283,8 +283,6 @@ namespace Neo.SmartContract.Native
 
                 if (item != null)
                 {
-                    // Check UpdateCounter
-
                     fixedFee = (long)(BigInteger)item;
                     return true;
                 }
