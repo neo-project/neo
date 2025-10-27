@@ -190,6 +190,11 @@ namespace Neo.Network.P2P
                     ConnectToPeer(connect.EndPoint, connect.IsTrusted);
                     break;
                 case Tcp.Connected connected:
+                    if (connected.RemoteAddress is null)
+                    {
+                        Sender.Tell(Tcp.Abort.Instance);
+                        break;
+                    }
                     OnTcpConnected(((IPEndPoint)connected.RemoteAddress).UnMap(), ((IPEndPoint)connected.LocalAddress).UnMap());
                     break;
                 case Tcp.Bound _:
@@ -253,6 +258,12 @@ namespace Neo.Network.P2P
         /// <param name="local">The local endpoint of TCP connection.</param>
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
+            if (Config is null) // OnStart is not called yet
+            {
+                Sender.Tell(Tcp.Abort.Instance);
+                return;
+            }
+
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             if (Config.MaxConnections != -1 && ConnectedPeers.Count >= Config.MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
