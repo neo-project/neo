@@ -112,7 +112,7 @@ namespace Neo.SmartContract.Native
             "old", ContractParameterType.Integer,
             "new", ContractParameterType.Integer
         )]
-        [ContractEvent(Hardfork.HF_Faun, 0, name: WhitelistChangedEventName,
+        [ContractEvent(Hardfork.HF_Faun, 1, name: WhitelistChangedEventName,
             "contract", ContractParameterType.Hash160,
             "method", ContractParameterType.String,
             "argCount", ContractParameterType.Integer,
@@ -301,7 +301,7 @@ namespace Neo.SmartContract.Native
         /// <param name="contractHash">The contract to set the whitelist</param>
         /// <param name="method">Method</param>
         /// <param name="argCount">Argument count</param>
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void RemoveWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
@@ -340,7 +340,7 @@ namespace Neo.SmartContract.Native
         /// <param name="method">Method</param>
         /// <param name="argCount">Argument count</param>
         /// <param name="fixedFee">Fixed execution fee</param>
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         internal void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long fixedFee)
         {
             ArgumentOutOfRangeException.ThrowIfNegative(fixedFee, nameof(fixedFee));
