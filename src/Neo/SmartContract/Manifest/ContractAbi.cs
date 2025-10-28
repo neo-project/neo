@@ -12,7 +12,6 @@
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
-using Org.BouncyCastle.Tls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
