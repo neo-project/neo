@@ -59,9 +59,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetPrice(ApplicationEngine engine, long price)
         {
-            if (price <= 0)
-                throw new ArgumentOutOfRangeException(nameof(price), "Price must be positive");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (price <= 0) throw new ArgumentOutOfRangeException(nameof(price), "Price must be positive");
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Price)).Set(price);
         }
 

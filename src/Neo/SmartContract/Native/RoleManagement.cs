@@ -68,14 +68,15 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentException($"Nodes count {nodes.Length} must be between 1 and 32", nameof(nodes));
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role), $"Role {role} is not valid");
-            if (!CheckCommittee(engine))
-                throw new InvalidOperationException("Invalid committee signature");
+            AssertCommittee(engine);
+
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException("Persisting block is null");
             var index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role, index);
             if (engine.SnapshotCache.Contains(key))
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Role already designated");
+
             NodeList list = new();
             list.AddRange(nodes);
             list.Sort();
