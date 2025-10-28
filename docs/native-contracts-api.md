@@ -157,8 +157,8 @@ When calling a native contract method by transaction script, there are several t
 | getAttributeFee | Gets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported. | Byte(*attributeType*) | UInt32 | 1<<15 | 0 | ReadStates | Deprecated in HF_Echidna |
 | getAttributeFee | Gets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported. | Byte(*attributeType*) | UInt32 | 1<<15 | 0 | ReadStates | HF_Echidna |
 | isBlocked | Determines whether the specified account is blocked. | UInt160(*account*) | Boolean | 1<<15 | 0 | ReadStates | -- |
-| removeWhitelistFeeContract | Remove whitelisted Fee contracts | UInt160(*contractHash*), String(*method*), Int32(*argCount*) | Void | 1<<15 | 0 | States | HF_Faun |
-| setWhitelistFeeContract | Set whitelisted Fee contracts | UInt160(*contractHash*), String(*method*), Int32(*argCount*), Int64(*fixedFee*) | Void | 1<<15 | 0 | States | HF_Faun |
+| removeWhitelistFeeContract | Remove whitelisted Fee contracts | UInt160(*contractHash*), String(*method*), Int32(*argCount*) | Void | 1<<15 | 0 | States,AllowNotify | HF_Faun |
+| setWhitelistFeeContract | Set whitelisted Fee contracts | UInt160(*contractHash*), String(*method*), Int32(*argCount*), Int64(*fixedFee*) | Void | 1<<15 | 0 | States,AllowNotify | HF_Faun |
 | setMillisecondsPerBlock | Sets the block generation time in milliseconds. | UInt32(*value*) | Void | 1<<15 | 0 | States,AllowNotify | HF_Echidna |
 | setAttributeFee | Sets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported. | Byte(*attributeType*), UInt32(*value*) | Void | 1<<15 | 0 | States | Deprecated in HF_Echidna |
 | setAttributeFee | Sets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported. | Byte(*attributeType*), UInt32(*value*) | Void | 1<<15 | 0 | States | HF_Echidna |
