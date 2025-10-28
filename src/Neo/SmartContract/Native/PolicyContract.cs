@@ -269,8 +269,8 @@ namespace Neo.SmartContract.Native
         public void SetMillisecondsPerBlock(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxMillisecondsPerBlock)
-                throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock must be between 1 and {MaxMillisecondsPerBlock}, got {value}");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+                throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock must be between [1, {MaxMillisecondsPerBlock}], got {value}");
+            AssertCommittee(engine);
 
             var oldTime = GetMillisecondsPerBlock(engine.SnapshotCache);
             engine.SnapshotCache.GetAndChange(_millisecondsPerBlock).Set(value);
@@ -325,7 +325,7 @@ namespace Neo.SmartContract.Native
             if (value > MaxAttributeFee)
                 throw new ArgumentOutOfRangeException(nameof(value), $"AttributeFee must be less than {MaxAttributeFee}");
 
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
 
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee, attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
         }
@@ -335,7 +335,8 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0 || value > 1_00000000)
                 throw new ArgumentOutOfRangeException(nameof(value), $"FeePerByte must be between [0, 100000000], got {value}");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);
         }
 
@@ -344,7 +345,8 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxExecFeeFactor)
                 throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {MaxExecFeeFactor}], got {value}");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_execFeeFactor).Set(value);
         }
 
@@ -353,7 +355,8 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxStoragePrice)
                 throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {MaxStoragePrice}], got {value}");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
         }
 
@@ -365,7 +368,8 @@ namespace Neo.SmartContract.Native
             var mtb = GetMaxTraceableBlocks(engine.SnapshotCache);
             if (value >= mtb)
                 throw new InvalidOperationException($"MaxValidUntilBlockIncrement must be lower than MaxTraceableBlocks ({value} vs {mtb})");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement).Set(value);
         }
 
@@ -379,26 +383,31 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxMaxTraceableBlocks)
                 throw new ArgumentOutOfRangeException(nameof(value), $"MaxTraceableBlocks must be between [1, {MaxMaxTraceableBlocks}], got {value}");
+
             var oldVal = GetMaxTraceableBlocks(engine.SnapshotCache);
             if (value > oldVal)
                 throw new InvalidOperationException($"MaxTraceableBlocks can not be increased (old {oldVal}, new {value})");
+
             var mVUBIncrement = GetMaxValidUntilBlockIncrement(engine.SnapshotCache);
             if (value <= mVUBIncrement)
                 throw new InvalidOperationException($"MaxTraceableBlocks must be larger than MaxValidUntilBlockIncrement ({value} vs {mVUBIncrement})");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_maxTraceableBlocks).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
             return BlockAccount(engine.SnapshotCache, account);
         }
 
         internal bool BlockAccount(DataCache snapshot, UInt160 account)
         {
-            if (IsNative(account)) throw new InvalidOperationException("It's impossible to block a native contract.");
+            if (IsNative(account)) throw new InvalidOperationException("Cannot block a native contract.");
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (snapshot.Contains(key)) return false;
@@ -410,7 +419,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (!engine.SnapshotCache.Contains(key)) return false;

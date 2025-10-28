@@ -286,7 +286,7 @@ namespace Neo.SmartContract.Native
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
                 throw new ArgumentOutOfRangeException(nameof(gasPerBlock), $"GasPerBlock must be between [0, {10 * GAS.Factor}]");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
 
             var index = engine.PersistingBlock.Index + 1;
             var entry = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_GasPerBlock, index), () => new StorageItem(gasPerBlock));
@@ -314,7 +314,8 @@ namespace Neo.SmartContract.Native
         {
             if (registerPrice <= 0)
                 throw new ArgumentOutOfRangeException(nameof(registerPrice), "RegisterPrice must be positive");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_registerPrice).Set(registerPrice);
         }
 
