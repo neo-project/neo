@@ -259,7 +259,7 @@ namespace Neo.SmartContract.Native
             if (value > maxVUBIncrement / 2 || value < ProtocolSettings.Default.ValidatorsCount)
             {
                 throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}",
-                 maxVUBIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
+                   maxVUBIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
             }
             AssertCommittee(engine);
 

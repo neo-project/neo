@@ -348,12 +348,14 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="engine">The <see cref="ApplicationEngine"/> that is executing the contract.</param>
         /// <returns><see langword="true"/> if the committee has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static bool CheckCommittee(ApplicationEngine engine)
         {
-            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.SnapshotCache);
+            var committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.SnapshotCache);
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static void AssertCommittee(ApplicationEngine engine)
         {
             if (!CheckCommittee(engine))
