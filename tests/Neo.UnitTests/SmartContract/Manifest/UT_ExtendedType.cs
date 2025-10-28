@@ -308,7 +308,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         }
 
         [TestMethod]
-        public void FromJson_Circular_Reference_ShouldThrow()
+        public void FromJson_Circular_Reference_A_A_ShouldThrow()
         {
             var json = (JObject)JToken.Parse(@"
             {
@@ -325,6 +325,111 @@ namespace Neo.UnitTests.SmartContract.Manifest
             }");
 
             Assert.ThrowsExactly<FormatException>(() => ContractAbi.FromJson(json));
+        }
+
+        [TestMethod]
+        public void FromJson_Circular_Reference_A_B_B_A_ShouldThrow()
+        {
+            var json = (JObject)JToken.Parse(@"
+            {
+                ""methods"": [
+                    { ""name"": ""_deploy"", ""parameters"": [], ""returntype"": ""Void"", ""offset"": 0, ""safe"": true}
+                ],
+                ""events"": [],
+                ""namedtypes"": {
+                  ""boo"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""alice""
+                },
+                  ""alice"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""boo""
+                }
+              }
+            }");
+
+            Assert.ThrowsExactly<FormatException>(() => ContractAbi.FromJson(json));
+        }
+        [TestMethod]
+        public void FromJson_Circular_Reference_A_B_C_A_ShouldThrow()
+        {
+            var json = (JObject)JToken.Parse(@"
+            {
+                ""methods"": [
+                    { ""name"": ""_deploy"", ""parameters"": [], ""returntype"": ""Void"", ""offset"": 0, ""safe"": true}
+                ],
+                ""events"": [],
+                ""namedtypes"": {
+                  ""boo"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""alice""
+                },
+                  ""alice"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""toc""
+                },
+                  ""toc"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""boo""
+                }
+              }
+            }");
+
+            Assert.ThrowsExactly<FormatException>(() => ContractAbi.FromJson(json));
+        }
+        [TestMethod]
+        public void FromJson_Circular_Reference_A_B_C_B_ShouldThrow()
+        {
+            var json = (JObject)JToken.Parse(@"
+            {
+                ""methods"": [
+                    { ""name"": ""_deploy"", ""parameters"": [], ""returntype"": ""Void"", ""offset"": 0, ""safe"": true}
+                ],
+                ""events"": [],
+                ""namedtypes"": {
+                  ""boo"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""alice""
+                },
+                  ""alice"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""toc""
+                },
+                  ""toc"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""alice""
+                }
+              }
+            }");
+
+            Assert.ThrowsExactly<FormatException>(() => ContractAbi.FromJson(json));
+        }
+        [TestMethod]
+        public void FromJson_No_Circular_Reference_A_B_C()
+        {
+            var json = (JObject)JToken.Parse(@"
+            {
+                ""methods"": [
+                    { ""name"": ""_deploy"", ""parameters"": [], ""returntype"": ""Void"", ""offset"": 0, ""safe"": true}
+                ],
+                ""events"": [],
+                ""namedtypes"": {
+                  ""boo"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""alice""
+                },
+                  ""alice"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""toc""
+                },
+                  ""toc"":{
+                    ""type"": ""Array"",
+                    ""value"": {""type"": ""Integer"" }
+                }
+              }
+            }");
+
+            ContractAbi.FromJson(json);
         }
     }
 }

@@ -12,6 +12,7 @@
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
+using Org.BouncyCastle.Tls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +29,7 @@ namespace Neo.SmartContract.Manifest
     public class ContractAbi : IInteroperable
     {
         private IReadOnlyDictionary<(string, int), ContractMethodDescriptor>? _methodDictionary;
-
+        private enum CheckState { UNCHECK, CHECKING, CHECK };
         /// <summary>
         /// Gets the methods in the ABI.
         /// </summary>
@@ -111,6 +112,26 @@ namespace Neo.SmartContract.Manifest
             return abi;
         }
 
+        private static bool HasCircularReference(string name, IReadOnlyDictionary<string, ExtendedType> namedTypes, Dictionary<string, CheckState> states)
+        {
+            if (!states.TryGetValue(name, out var state))
+                state = CheckState.UNCHECK;
+
+            if (state == CheckState.CHECKING) return true;
+            if (state == CheckState.CHECK) return false;
+
+            states[name] = CheckState.CHECKING;
+
+            var next = namedTypes[name].NamedType;
+            if (next is not null && namedTypes.ContainsKey(next))
+            {
+                if (HasCircularReference(next, namedTypes, states))
+                    return true;
+            }
+
+            states[name] = CheckState.CHECK;
+            return false;
+        }
         internal void ValidateExtendedTypes()
         {
             ISet<string> knownNamedTypes = NamedTypes != null
@@ -119,9 +140,15 @@ namespace Neo.SmartContract.Manifest
 
             if (NamedTypes != null)
             {
+                var states = new Dictionary<string, CheckState>(NamedTypes.Count, StringComparer.Ordinal);
                 foreach (var (name, type) in NamedTypes)
                 {
                     ExtendedType.EnsureValidNamedTypeIdentifier(name);
+                    if (HasCircularReference(name, NamedTypes, states))
+                    {
+                        throw new FormatException($"Circular reference in namedtypes starting at '{name}'");
+                    }
+
                     type.ValidateForNamedTypeDefinition(name, knownNamedTypes);
                 }
             }
