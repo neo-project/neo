@@ -350,6 +350,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             Assert.ThrowsExactly<FormatException>(() => ContractAbi.FromJson(json));
         }
+
         [TestMethod]
         public void FromJson_Circular_Reference_A_B_C_A_ShouldThrow()
         {
@@ -377,6 +378,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             Assert.ThrowsExactly<FormatException>(() => ContractAbi.FromJson(json));
         }
+
         [TestMethod]
         public void FromJson_Circular_Reference_A_B_C_B_ShouldThrow()
         {
@@ -404,6 +406,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             Assert.ThrowsExactly<FormatException>(() => ContractAbi.FromJson(json));
         }
+
         [TestMethod]
         public void FromJson_No_Circular_Reference_A_B_C()
         {
@@ -425,6 +428,81 @@ namespace Neo.UnitTests.SmartContract.Manifest
                   ""toc"":{
                     ""type"": ""Array"",
                     ""value"": {""type"": ""Integer"" }
+                }
+              }
+            }");
+
+            ContractAbi.FromJson(json);
+        }
+
+        [TestMethod]
+        public void FromJson_Circular_Reference_A_NO_B_A_C_A()
+        {
+            // A => No namedtype
+            // B => A
+            // C => A
+            var json = (JObject)JToken.Parse(@"
+            {
+                ""methods"": [
+                    { ""name"": ""_deploy"", ""parameters"": [], ""returntype"": ""Void"", ""offset"": 0, ""safe"": true}
+                ],
+                ""events"": [],
+                ""namedtypes"": {
+                  ""boo"": {
+                    ""type"": ""Array"",
+                    ""value"": {""type"": ""Integer"" }
+                },
+                  ""alice"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""boo""
+                },
+                  ""toc"": {
+                    ""type"": ""Array"",
+                    ""namedtype"": ""boo""
+                }
+              }
+            }");
+
+            ContractAbi.FromJson(json);
+        }
+
+        [TestMethod]
+        public void FromJson_Circular_Reference_A_VALUE_A()
+        {
+            var json = (JObject)JToken.Parse(@"
+            {
+                ""methods"": [
+                    { ""name"": ""_deploy"", ""parameters"": [], ""returntype"": ""Void"", ""offset"": 0, ""safe"": true}
+                ],
+                ""events"": [],
+                ""namedtypes"": {
+                  ""boo"": {
+                    ""type"": ""Array"",
+                    ""value"": {""type"":""Array"",""namedtype"": ""boo"" }
+                }
+              }
+            }");
+
+            ContractAbi.FromJson(json);
+        }
+
+        [TestMethod]
+        public void FromJson_Circular_Reference_A_VALUE_B_B_VALUE_A()
+        {
+            var json = (JObject)JToken.Parse(@"
+            {
+                ""methods"": [
+                    { ""name"": ""_deploy"", ""parameters"": [], ""returntype"": ""Void"", ""offset"": 0, ""safe"": true}
+                ],
+                ""events"": [],
+                ""namedtypes"": {
+                  ""boo"": {
+                    ""type"": ""Array"",
+                    ""value"": {""type"":""Array"",""namedtype"": ""alice"" }
+                },
+                  ""alice"": {
+                    ""type"": ""Array"",
+                    ""value"": {""type"":""Array"",""namedtype"": ""boo"" }
                 }
               }
             }");

@@ -28,7 +28,10 @@ namespace Neo.SmartContract.Manifest
     public class ContractAbi : IInteroperable
     {
         private IReadOnlyDictionary<(string, int), ContractMethodDescriptor>? _methodDictionary;
-        private enum CheckState { UNCHECK, CHECKING, CHECK };
+        private const int STATE_UNCHECK = 0;
+        private const int STATE_CHECKING = 1;
+        private const int STATE_CHECK = 2;
+
         /// <summary>
         /// Gets the methods in the ABI.
         /// </summary>
@@ -111,15 +114,15 @@ namespace Neo.SmartContract.Manifest
             return abi;
         }
 
-        private static bool HasCircularReference(string name, IReadOnlyDictionary<string, ExtendedType> namedTypes, Dictionary<string, CheckState> states)
+        private static bool HasCircularReference(string name, IReadOnlyDictionary<string, ExtendedType> namedTypes, Dictionary<string, int> states)
         {
             if (!states.TryGetValue(name, out var state))
-                state = CheckState.UNCHECK;
+                state = STATE_UNCHECK;
 
-            if (state == CheckState.CHECKING) return true;
-            if (state == CheckState.CHECK) return false;
+            if (state == STATE_CHECKING) return true;
+            if (state == STATE_CHECK) return false;
 
-            states[name] = CheckState.CHECKING;
+            states[name] = STATE_CHECKING;
 
             var next = namedTypes[name].NamedType;
             if (next is not null && namedTypes.ContainsKey(next))
@@ -128,9 +131,10 @@ namespace Neo.SmartContract.Manifest
                     return true;
             }
 
-            states[name] = CheckState.CHECK;
+            states[name] = STATE_CHECK;
             return false;
         }
+
         internal void ValidateExtendedTypes()
         {
             ISet<string> knownNamedTypes = NamedTypes != null
@@ -139,7 +143,7 @@ namespace Neo.SmartContract.Manifest
 
             if (NamedTypes != null)
             {
-                var states = new Dictionary<string, CheckState>(NamedTypes.Count, StringComparer.Ordinal);
+                var states = new Dictionary<string, int>(NamedTypes.Count, StringComparer.Ordinal);
                 foreach (var (name, type) in NamedTypes)
                 {
                     ExtendedType.EnsureValidNamedTypeIdentifier(name);
