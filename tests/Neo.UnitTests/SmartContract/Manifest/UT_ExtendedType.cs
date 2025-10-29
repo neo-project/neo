@@ -432,7 +432,10 @@ namespace Neo.UnitTests.SmartContract.Manifest
               }
             }");
 
-            ContractAbi.FromJson(json);
+            var result = ContractAbi.FromJson(json);
+            Assert.IsTrue(result.NamedTypes.ContainsKey("boo"));
+            Assert.IsTrue(result.NamedTypes.ContainsKey("alice"));
+            Assert.IsTrue(result.NamedTypes.ContainsKey("toc"));
         }
 
         [TestMethod]
@@ -463,7 +466,10 @@ namespace Neo.UnitTests.SmartContract.Manifest
               }
             }");
 
-            ContractAbi.FromJson(json);
+            var result = ContractAbi.FromJson(json);
+            Assert.IsTrue(result.NamedTypes.ContainsKey("boo"));
+            Assert.IsTrue(result.NamedTypes.ContainsKey("alice"));
+            Assert.IsTrue(result.NamedTypes.ContainsKey("toc"));
         }
 
         [TestMethod]
@@ -483,7 +489,8 @@ namespace Neo.UnitTests.SmartContract.Manifest
               }
             }");
 
-            ContractAbi.FromJson(json);
+            var result = ContractAbi.FromJson(json);
+            Assert.IsTrue(result.NamedTypes.ContainsKey("boo"));
         }
 
         [TestMethod]
@@ -507,7 +514,9 @@ namespace Neo.UnitTests.SmartContract.Manifest
               }
             }");
 
-            ContractAbi.FromJson(json);
+            var result = ContractAbi.FromJson(json);
+            Assert.IsTrue(result.NamedTypes.ContainsKey("boo"));
+            Assert.IsTrue(result.NamedTypes.ContainsKey("alice"));
         }
     }
 }
