@@ -16,6 +16,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using System;
+using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
@@ -316,15 +317,25 @@ namespace Neo.SmartContract.Native
                 new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
         }
 
-        internal int CleanWhitelist(DataCache snapshot, UInt160 contractHash)
+        internal int CleanWhitelist(ApplicationEngine engine, UInt160 contractHash)
         {
             var count = 0;
             var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash);
 
-            foreach ((var key, _) in snapshot.Find(searchKey, SeekDirection.Forward))
+            foreach ((var key, _) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
             {
-                snapshot.Delete(key);
+                engine.SnapshotCache.Delete(key);
                 count++;
+
+                // Emit event recovering the values from the Key
+
+                var keyData = key.ToArray().AsSpan();
+                var argCount = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(StorageKey.UInt160Length, 4));
+                var method = keyData[(StorageKey.UInt160Length + 4)..];
+
+                engine.SendNotification(Hash, WhitelistChangedEventName,
+                    [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToArray()),
+                    new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
             }
 
             return count;

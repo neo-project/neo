@@ -611,7 +611,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(2028330, engine.FeeConsumed);
-            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(snapshotCache, NativeContract.NEO.Hash));
+            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.Hash));
+            Assert.IsEmpty(engine.Notifications);
 
             // Whitelist
 
@@ -622,10 +623,18 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Whitelisted
 
+            Assert.HasCount(1, engine.Notifications); // Whitelist changed
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1045290, engine.FeeConsumed);
-            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(snapshotCache, NativeContract.NEO.Hash));
+
+            // Clean white list
+
+            engine.SnapshotCache.Commit();
+            engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.Hash));
+            Assert.HasCount(1, engine.Notifications); // Whitelist deleted
         }
 
         [TestMethod]

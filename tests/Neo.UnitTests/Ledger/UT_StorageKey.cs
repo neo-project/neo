@@ -14,6 +14,7 @@ using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.SmartContract;
 using System;
+using System.Buffers.Binary;
 using System.Text;
 
 namespace Neo.UnitTests.Ledger
@@ -85,6 +86,15 @@ namespace Neo.UnitTests.Ledger
 
             CollectionAssert.AreEqual(key.ToArray(), StorageKey.Create(1, 2,
                 UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"), "hello world", 3).ToArray());
+
+            // Recover method and arg count
+
+            var keyB = new StorageKey(key.ToArray()).ToArray().AsSpan();
+            var argCount = BinaryPrimitives.ReadInt32BigEndian(keyB.Slice(StorageKey.UInt160Length, 4));
+            var method = keyB[(StorageKey.UInt160Length + 4)..];
+
+            Assert.AreEqual(3, argCount);
+            Assert.AreEqual("hello world", Encoding.UTF8.GetString(method));
 
             // ISerializable
             key = new KeyBuilder(1, 2);

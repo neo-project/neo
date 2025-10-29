@@ -77,7 +77,7 @@ namespace Neo.SmartContract
         private const int ByteLength = PrefixLength + sizeof(byte);
         private const int Int32Length = PrefixLength + sizeof(int);
         private const int Int64Length = PrefixLength + sizeof(long);
-        private const int UInt160Length = PrefixLength + UInt160.Length;
+        internal const int UInt160Length = PrefixLength + UInt160.Length;
         private const int UInt256Length = PrefixLength + UInt256.Length;
         private const int UInt256UInt160Length = PrefixLength + UInt256.Length + UInt160.Length;
 
