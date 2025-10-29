@@ -150,7 +150,7 @@ When calling a native contract method by transaction script, there are several t
 |--------|---------|------------|--------------|---------|-------------|------------|----------|
 | getFeePerByte | Gets the network fee per transaction byte. | -- | Int64 | 1<<15 | 0 | ReadStates | -- |
 | getExecFeeFactor | Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions. | -- | UInt32 | 1<<15 | 0 | ReadStates | -- |
-| getExecPicoFeeFactor | Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions. | -- | BigInteger | 1<<15 | 0 | ReadStates | -- |
+| getExecPicoFeeFactor | Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions. | -- | BigInteger | 1<<15 | 0 | ReadStates | HF_Faun |
 | getStoragePrice | Gets the storage price. | -- | UInt32 | 1<<15 | 0 | ReadStates | -- |
 | getMillisecondsPerBlock | Gets the block generation time in milliseconds. | -- | UInt32 | 1<<15 | 0 | ReadStates | HF_Echidna |
 | getMaxValidUntilBlockIncrement | Gets the upper increment size of blockchain height (in blocks) exceeding that a transaction should fail validation. | -- | UInt32 | 1<<15 | 0 | ReadStates | HF_Echidna |
