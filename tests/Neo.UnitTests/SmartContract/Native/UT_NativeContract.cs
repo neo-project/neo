@@ -300,6 +300,8 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var docsDirectory = LocateDocsDirectory(new DirectoryInfo(Directory.GetCurrentDirectory()));
             var outputPath = Path.Combine(docsDirectory.FullName, "native-contracts-api.md");
+            var previousContent = File.Exists(outputPath) ? File.ReadAllText(outputPath) : "";
+
             using (var writer = new StreamWriter(outputPath) { NewLine = "\n" })
             {
                 writer.WriteLine("""
@@ -332,6 +334,11 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             Assert.IsTrue(File.Exists(outputPath), $"Generated file should exist at {outputPath}");
+
+            if (!string.IsNullOrEmpty(previousContent))
+            {
+                Assert.AreEqual(previousContent.Trim(), File.ReadAllText(outputPath).Trim(), "Native contract api file was changed!");
+            }
         }
 
         private static DirectoryInfo LocateDocsDirectory(DirectoryInfo start)
