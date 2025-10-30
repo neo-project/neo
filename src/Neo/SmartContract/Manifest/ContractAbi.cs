@@ -28,6 +28,9 @@ namespace Neo.SmartContract.Manifest
     public class ContractAbi : IInteroperable
     {
         private IReadOnlyDictionary<(string, int), ContractMethodDescriptor>? _methodDictionary;
+        private const int STATE_UNCHECK = 0;
+        private const int STATE_CHECKING = 1;
+        private const int STATE_CHECK = 2;
 
         /// <summary>
         /// Gets the methods in the ABI.
@@ -111,6 +114,27 @@ namespace Neo.SmartContract.Manifest
             return abi;
         }
 
+        private static bool HasCircularReference(string name, IReadOnlyDictionary<string, ExtendedType> namedTypes, Dictionary<string, int> states)
+        {
+            if (!states.TryGetValue(name, out var state))
+                state = STATE_UNCHECK;
+
+            if (state == STATE_CHECKING) return true;
+            if (state == STATE_CHECK) return false;
+
+            states[name] = STATE_CHECKING;
+
+            var next = namedTypes[name].NamedType;
+            if (next is not null && namedTypes.ContainsKey(next))
+            {
+                if (HasCircularReference(next, namedTypes, states))
+                    return true;
+            }
+
+            states[name] = STATE_CHECK;
+            return false;
+        }
+
         internal void ValidateExtendedTypes()
         {
             ISet<string> knownNamedTypes = NamedTypes != null
@@ -119,9 +143,15 @@ namespace Neo.SmartContract.Manifest
 
             if (NamedTypes != null)
             {
+                var states = new Dictionary<string, int>(NamedTypes.Count, StringComparer.Ordinal);
                 foreach (var (name, type) in NamedTypes)
                 {
                     ExtendedType.EnsureValidNamedTypeIdentifier(name);
+                    if (HasCircularReference(name, NamedTypes, states))
+                    {
+                        throw new FormatException($"Circular reference in namedtypes starting at '{name}'");
+                    }
+
                     type.ValidateForNamedTypeDefinition(name, knownNamedTypes);
                 }
             }
