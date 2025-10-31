@@ -106,26 +106,26 @@ namespace Neo.Wallets.NEP6
         {
             lock (accounts)
             {
-                if (accounts.TryGetValue(account.ScriptHash, out NEP6Account account_old))
+                if (accounts.TryGetValue(account.ScriptHash, out var accountOld))
                 {
-                    account.Label = account_old.Label;
-                    account.IsDefault = account_old.IsDefault;
-                    account.Lock = account_old.Lock;
+                    account.Label = accountOld.Label;
+                    account.IsDefault = accountOld.IsDefault;
+                    account.Lock = accountOld.Lock;
                     if (account.Contract == null)
                     {
-                        account.Contract = account_old.Contract;
+                        account.Contract = accountOld.Contract;
                     }
                     else
                     {
-                        NEP6Contract contract_old = (NEP6Contract)account_old.Contract;
-                        if (contract_old != null)
+                        var contractOld = (NEP6Contract)accountOld.Contract;
+                        if (contractOld != null)
                         {
                             NEP6Contract contract = (NEP6Contract)account.Contract;
-                            contract.ParameterNames = contract_old.ParameterNames;
-                            contract.Deployed = contract_old.Deployed;
+                            contract.ParameterNames = contractOld.ParameterNames;
+                            contract.Deployed = contractOld.Deployed;
                         }
                     }
-                    account.Extra = account_old.Extra;
+                    account.Extra = accountOld.Extra;
                 }
                 accounts[account.ScriptHash] = account;
             }
@@ -141,7 +141,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
-            if (privateKey is null) throw new ArgumentNullException(nameof(privateKey));
+            ArgumentNullException.ThrowIfNull(privateKey);
             KeyPair key = new(privateKey);
             if (key.PublicKey.IsInfinity) throw new ArgumentException("Invalid private key provided. The private key does not correspond to a valid public key on the elliptic curve.", nameof(privateKey));
             NEP6Contract contract = new()

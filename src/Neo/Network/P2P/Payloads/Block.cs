@@ -114,7 +114,7 @@ namespace Neo.Network.P2P.Payloads
                 {
                     var tx = reader.ReadSerializable<Transaction>();
                     if (!hashset.Add(tx.Hash))
-                        throw new FormatException();
+                        throw new FormatException($"TxHash({tx.Hash}) in Block is duplicate");
                     txs[i] = tx;
                     hashes[i] = tx.Hash;
                 }

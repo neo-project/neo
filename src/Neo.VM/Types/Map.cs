@@ -51,8 +51,8 @@ namespace Neo.VM.Types
                 if (IsReadOnly) throw new InvalidOperationException("The map is readonly, can not set value.");
                 if (ReferenceCounter != null)
                 {
-                    if (_dict.TryGetValue(key, out StackItem? old_value))
-                        ReferenceCounter.RemoveReference(old_value, this);
+                    if (_dict.TryGetValue(key, out StackItem? oldValue))
+                        ReferenceCounter.RemoveReference(oldValue, this);
                     else
                         ReferenceCounter.AddReference(key, this);
                     if (value is CompoundType { ReferenceCounter: null })
@@ -88,6 +88,20 @@ namespace Neo.VM.Types
         /// </summary>
         /// <param name="referenceCounter">The reference counter to be used.</param>
         public Map(IReferenceCounter? referenceCounter = null) : base(referenceCounter) { }
+
+        /// <summary>
+        /// Create a new map with the specified dictionary and reference counter.
+        /// </summary>
+        /// <param name="dictionary">Dictionary</param>
+        /// <param name="referenceCounter">Reference Counter</param>
+        public Map(IDictionary<PrimitiveType, StackItem> dictionary, IReferenceCounter? referenceCounter = null)
+            : this(referenceCounter)
+        {
+            foreach (var (k, v) in dictionary)
+            {
+                this[k] = v;
+            }
+        }
 
         public override void Clear()
         {
@@ -174,10 +188,7 @@ namespace Neo.VM.Types
         /// <see langword="true" /> if the map contains an element that has the specified key;
         /// otherwise, <see langword="false"/>.
         /// </returns>
-// supress warning of value parameter nullability mismatch
-#pragma warning disable CS8767
         public bool TryGetValue(PrimitiveType key, [MaybeNullWhen(false)] out StackItem value)
-#pragma warning restore CS8767
         {
             if (key.Size > MaxKeySize)
                 throw new ArgumentException($"Key size {key.Size} bytes exceeds maximum allowed size of {MaxKeySize} bytes.", nameof(key));

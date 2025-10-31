@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -136,6 +137,54 @@ namespace Neo.Wallets
         }
 
         /// <summary>
+        /// Constructs a special contract with empty script, will get the script with
+        /// scriptHash from blockchain when doing the verification.
+        /// <code>
+        /// Note:
+        ///   Creates "m" out of "n" type verification script using <paramref name="publicKeys"/> length
+        ///   with the default BFT assumptions of Ceiling(n - (n-1) / 3) for "m".
+        /// </code>
+        /// </summary>
+        /// <param name="publicKeys">The public keys of the contract.</param>
+        /// <returns>Multi-Signature contract <see cref="WalletAccount"/>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///   <paramref name="publicKeys" /> is empty or <paramref name="publicKeys"/> length is greater than 1024.
+        /// </exception>
+        /// <seealso cref="CreateMultiSigAccount(int, ECPoint[])"/>
+        public WalletAccount CreateMultiSigAccount(params ECPoint[] publicKeys) =>
+            CreateMultiSigAccount((int)Math.Ceiling((2 * publicKeys.Length + 1) / 3m), publicKeys);
+
+        /// <summary>
+        /// Constructs a special contract with empty script, will get the script with
+        /// scriptHash from blockchain when doing the verification.
+        /// </summary>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="publicKeys">The public keys of the contract.</param>
+        /// <returns>Multi-Signature contract <see cref="WalletAccount"/>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///   <paramref name="publicKeys" /> is empty or <paramref name="m"/> is greater than <paramref name="publicKeys"/> length or
+        ///   <paramref name="m"/> is less than 1 or <paramref name="m"/> is greater than 1024.
+        /// </exception>
+        /// <seealso cref="CreateMultiSigAccount(ECPoint[])"/>
+        public WalletAccount CreateMultiSigAccount(int m, params ECPoint[] publicKeys)
+        {
+            ArgumentOutOfRangeException.ThrowIfEqual(publicKeys.Length, 0, nameof(publicKeys));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(m, publicKeys.Length, nameof(publicKeys));
+            ArgumentOutOfRangeException.ThrowIfLessThan(m, 1, nameof(m));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(m, 1024, nameof(m));
+
+            var contract = Contract.CreateMultiSigContract(m, publicKeys);
+            var account = GetAccounts()
+                .FirstOrDefault(
+                    f =>
+                        f.HasKey &&
+                        f.Lock == false &&
+                        publicKeys.Contains(f.GetKey().PublicKey));
+
+            return CreateAccount(contract, account?.GetKey());
+        }
+
+        /// <summary>
         /// Creates a standard account for the wallet.
         /// </summary>
         /// <returns>The created account.</returns>
@@ -235,6 +284,12 @@ namespace Neo.Wallets
             }
             return result;
         }
+
+        public IEnumerable<WalletAccount> GetMultiSigAccounts() =>
+            GetAccounts()
+                .Where(static w =>
+                    w.Lock == false &&
+                    IsMultiSigContract(w.Contract.Script));
 
         /// <summary>
         /// Gets the account with the specified public key.
@@ -347,28 +402,34 @@ namespace Neo.Wallets
         /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromNEP2(string nep2, byte[] passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
-            if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
-            if (passphrase == null) throw new ArgumentNullException(nameof(passphrase));
+            ArgumentNullException.ThrowIfNull(nep2);
+            ArgumentNullException.ThrowIfNull(passphrase);
+
             byte[] data = nep2.Base58CheckDecode();
             if (data.Length != 39 || data[0] != 0x01 || data[1] != 0x42 || data[2] != 0xe0)
-                throw new FormatException();
+                throw new FormatException("Invalid NEP-2 key");
+
             byte[] addresshash = new byte[4];
             Buffer.BlockCopy(data, 3, addresshash, 0, 4);
+
             byte[] derivedkey = SCrypt.Generate(passphrase, addresshash, N, r, p, 64);
             byte[] derivedhalf1 = derivedkey[..32];
             byte[] derivedhalf2 = derivedkey[32..];
             Array.Clear(derivedkey, 0, derivedkey.Length);
+
             byte[] encryptedkey = new byte[32];
             Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
             Array.Clear(data, 0, data.Length);
+
             byte[] prikey = XOR(Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
             Array.Clear(derivedhalf1, 0, derivedhalf1.Length);
             Array.Clear(derivedhalf2, 0, derivedhalf2.Length);
+
             ECPoint pubkey = ECCurve.Secp256r1.G * prikey;
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             string address = script_hash.ToAddress(version);
             if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().AsSpan(0, 4).SequenceEqual(addresshash))
-                throw new FormatException();
+                throw new FormatException("The address hash in NEP-2 key is not valid");
             return prikey;
         }
 
@@ -379,10 +440,12 @@ namespace Neo.Wallets
         /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromWIF(string wif)
         {
-            if (wif is null) throw new ArgumentNullException(nameof(wif));
+            ArgumentNullException.ThrowIfNull(wif);
             byte[] data = wif.Base58CheckDecode();
+
             if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
-                throw new FormatException();
+                throw new FormatException("Invalid WIF key");
+
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
@@ -578,13 +641,12 @@ namespace Neo.Wallets
             TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balancesGas,
             long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
         {
-            Random rand = new();
             foreach (var (account, value) in balancesGas)
             {
                 Transaction tx = new()
                 {
                     Version = 0,
-                    Nonce = (uint)rand.Next(),
+                    Nonce = RandomNumberFactory.NextUInt32(),
                     Script = script,
                     ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + snapshot.GetMaxValidUntilBlockIncrement(ProtocolSettings),
                     Signers = GetSigners(account, cosigners),
@@ -675,7 +737,7 @@ namespace Neo.Wallets
         /// <exception cref="ArgumentNullException">Thrown when the payload is null.</exception>
         public Witness SignExtensiblePayload(ExtensiblePayload payload, DataCache snapshot, uint network)
         {
-            if (payload is null) throw new ArgumentNullException(nameof(payload));
+            ArgumentNullException.ThrowIfNull(payload);
 
             var context = new ContractParametersContext(snapshot, payload, network);
             Sign(context);
@@ -697,8 +759,8 @@ namespace Neo.Wallets
         /// </exception>
         public ReadOnlyMemory<byte> SignBlock(Block block, ECPoint publicKey, uint network)
         {
-            if (block is null) throw new ArgumentNullException(nameof(block));
-            if (publicKey is null) throw new ArgumentNullException(nameof(publicKey));
+            ArgumentNullException.ThrowIfNull(block);
+            ArgumentNullException.ThrowIfNull(publicKey);
             if (network != ProtocolSettings.Network)
                 throw new SignException($"Network is not matching({ProtocolSettings.Network} != {network})");
 

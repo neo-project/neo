@@ -58,11 +58,11 @@ namespace Neo.SmartContract
         {
             Hash = reader.ReadSerializable<UInt160>();
             Method = reader.ReadVarString(32);
-            if (Method.StartsWith('_')) throw new FormatException();
+            if (Method.StartsWith('_')) throw new FormatException($"Method('{Method}') cannot start with '_'");
             ParametersCount = reader.ReadUInt16();
             HasReturnValue = reader.ReadBoolean();
             CallFlags = (CallFlags)reader.ReadByte();
-            if ((CallFlags & ~CallFlags.All) != 0) throw new FormatException();
+            if ((CallFlags & ~CallFlags.All) != 0) throw new FormatException($"CallFlags({CallFlags}) is not valid");
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

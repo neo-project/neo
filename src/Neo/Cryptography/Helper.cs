@@ -32,6 +32,9 @@ namespace Neo.Cryptography
     {
         private static readonly bool s_isOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
+        private const int AesNonceSizeBytes = 12;
+        private const int AesTagSizeBytes = 16;
+
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
         /// </summary>
@@ -107,12 +110,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value)
         {
-#if !NET5_0_OR_GREATER
-            using var sha256 = SHA256.Create();
-            return sha256.ComputeHash(value);
-#else
             return SHA256.HashData(value);
-#endif
         }
 
         /// <summary>
@@ -123,12 +121,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha512(this byte[] value)
         {
-#if !NET5_0_OR_GREATER
-            using var sha512 = SHA512.Create();
-            return sha512.ComputeHash(value);
-#else
             return SHA512.HashData(value);
-#endif
         }
 
         /// <summary>
@@ -141,12 +134,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
-#if !NET5_0_OR_GREATER
-            using var sha256 = SHA256.Create();
-            return sha256.ComputeHash(value, offset, count);
-#else
             return SHA256.HashData(value.AsSpan(offset, count));
-#endif
         }
 
         /// <summary>
@@ -159,12 +147,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha512(this byte[] value, int offset, int count)
         {
-#if !NET5_0_OR_GREATER
-            using var sha512 = SHA512.Create();
-            return sha512.ComputeHash(value, offset, count);
-#else
             return SHA512.HashData(value.AsSpan(offset, count));
-#endif
         }
 
         /// <summary>
@@ -176,12 +159,7 @@ namespace Neo.Cryptography
         public static byte[] Sha256(this ReadOnlySpan<byte> value)
         {
             var buffer = new byte[32];
-#if !NET5_0_OR_GREATER
-            using var sha256 = SHA256.Create();
-            sha256.TryComputeHash(value, buffer, out _);
-#else
             SHA256.HashData(value, buffer);
-#endif
             return buffer;
         }
 
@@ -194,12 +172,7 @@ namespace Neo.Cryptography
         public static byte[] Sha512(this ReadOnlySpan<byte> value)
         {
             var buffer = new byte[64];
-#if !NET5_0_OR_GREATER
-            using var sha512 = SHA512.Create();
-            sha512.TryComputeHash(value, buffer, out _);
-#else
             SHA512.HashData(value, buffer);
-#endif
             return buffer;
         }
 
@@ -259,14 +232,14 @@ namespace Neo.Cryptography
 
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
-            if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce), "`nonce` must be 12 bytes");
-            var tag = new byte[16];
+            if (nonce.Length != AesNonceSizeBytes)
+                throw new ArgumentOutOfRangeException(nameof(nonce), $"`nonce` must be {AesNonceSizeBytes} bytes");
+
+            var tag = new byte[AesTagSizeBytes];
             var cipherBytes = new byte[plainData.Length];
             if (!s_isOSX)
             {
-#pragma warning disable SYSLIB0053 // Type or member is obsolete
-                using var cipher = new AesGcm(key);
-#pragma warning restore SYSLIB0053 // Type or member is obsolete
+                using var cipher = new AesGcm(key, AesTagSizeBytes);
                 cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
             }
             else
@@ -274,7 +247,7 @@ namespace Neo.Cryptography
                 var cipher = new GcmBlockCipher(new AesEngine());
                 var parameters = new AeadParameters(
                     new KeyParameter(key),
-                    128, //128 = 16 * 8 => (tag size * 8)
+                    AesTagSizeBytes * 8, // 128 = 16 * 8 => (tag size * 8)
                     nonce,
                     associatedData);
                 cipher.Init(true, parameters);
@@ -287,16 +260,17 @@ namespace Neo.Cryptography
 
         public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
         {
+            if (encryptedData.Length < AesNonceSizeBytes + AesTagSizeBytes)
+                throw new ArgumentException($"The encryptedData.Length must be greater than {AesNonceSizeBytes} + {AesTagSizeBytes}");
+
             ReadOnlySpan<byte> encrypted = encryptedData;
-            var nonce = encrypted[..12];
-            var cipherBytes = encrypted[12..^16];
-            var tag = encrypted[^16..];
+            var nonce = encrypted[..AesNonceSizeBytes];
+            var cipherBytes = encrypted[AesNonceSizeBytes..^AesTagSizeBytes];
+            var tag = encrypted[^AesTagSizeBytes..];
             var decryptedData = new byte[cipherBytes.Length];
             if (!s_isOSX)
             {
-#pragma warning disable SYSLIB0053 // Type or member is obsolete
-                using var cipher = new AesGcm(key);
-#pragma warning restore SYSLIB0053 // Type or member is obsolete
+                using var cipher = new AesGcm(key, AesTagSizeBytes);
                 cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
             }
             else
@@ -304,7 +278,7 @@ namespace Neo.Cryptography
                 var cipher = new GcmBlockCipher(new AesEngine());
                 var parameters = new AeadParameters(
                     new KeyParameter(key),
-                    128,  //128 = 16 * 8 => (tag size * 8)
+                    AesTagSizeBytes * 8,  // 128 = 16 * 8 => (tag size * 8)
                     nonce.ToArray(),
                     associatedData);
                 cipher.Init(false, parameters);
@@ -348,29 +322,5 @@ namespace Neo.Cryptography
                 return true;
             return false;
         }
-
-        /// <summary>
-        /// Rotates the specified value left by the specified number of bits.
-        /// Similar in behavior to the x86 instruction ROL.
-        /// </summary>
-        /// <param name="value">The value to rotate.</param>
-        /// <param name="offset">The number of bits to rotate by.
-        /// Any value outside the range [0..31] is treated as congruent mod 32.</param>
-        /// <returns>The rotated value.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint RotateLeft(uint value, int offset)
-            => (value << offset) | (value >> (32 - offset));
-
-        /// <summary>
-        /// Rotates the specified value left by the specified number of bits.
-        /// Similar in behavior to the x86 instruction ROL.
-        /// </summary>
-        /// <param name="value">The value to rotate.</param>
-        /// <param name="offset">The number of bits to rotate by.
-        /// Any value outside the range [0..63] is treated as congruent mod 64.</param>
-        /// <returns>The rotated value.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong RotateLeft(ulong value, int offset)
-            => (value << offset) | (value >> (64 - offset));
     }
 }

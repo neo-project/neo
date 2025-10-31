@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
+    <TargetFramework>net9.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
   </PropertyGroup>
@@ -27,11 +27,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Neo.UnitTests" />
     <InternalsVisibleTo Include="Neo.SmartContract.Testing" />
     <InternalsVisibleTo Include="Neo.SmartContract.TestEngine" />
     <InternalsVisibleTo Include="Neo.Plugins.RpcServer.Tests" />
     <InternalsVisibleTo Include="Neo.Plugins.OracleService.Tests" />
     <InternalsVisibleTo Include="Neo.Plugins.DBFTPlugin.Tests" />
+    <InternalsVisibleTo Include="neodebug-3-adapter" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
 </Project>

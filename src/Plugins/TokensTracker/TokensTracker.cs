@@ -27,14 +27,14 @@ namespace Neo.Plugins
 {
     public class TokensTracker : Plugin, ICommittingHandler, ICommittedHandler
     {
-        private string _dbPath;
+        private string _dbPath = "TokensBalanceData";
         private bool _shouldTrackHistory;
         private uint _maxResults;
         private uint _network;
-        private string[] _enabledTrackers;
-        private IStore _db;
+        private string[] _enabledTrackers = [];
+        private IStore? _db;
         private UnhandledExceptionPolicy _exceptionPolicy;
-        private NeoSystem neoSystem;
+        private NeoSystem? neoSystem;
         private readonly List<TrackerBase> trackers = new();
         protected override UnhandledExceptionPolicy ExceptionPolicy => _exceptionPolicy;
 
@@ -61,7 +61,11 @@ namespace Neo.Plugins
             _shouldTrackHistory = config.GetValue("TrackHistory", true);
             _maxResults = config.GetValue("MaxResults", 1000u);
             _network = config.GetValue("Network", 860833102u);
-            _enabledTrackers = config.GetSection("EnabledTrackers").GetChildren().Select(p => p.Value).ToArray();
+            _enabledTrackers = config.GetSection("EnabledTrackers")
+                .GetChildren()
+                .Select(p => p.Value)
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToArray()!;
             var policyString = config.GetValue(nameof(UnhandledExceptionPolicy), nameof(UnhandledExceptionPolicy.StopNode));
             if (Enum.TryParse(policyString, true, out UnhandledExceptionPolicy policy))
             {
@@ -91,7 +95,8 @@ namespace Neo.Plugins
             }
         }
 
-        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot,
+            IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != _network) return;
             // Start freshly with a new DBCache for each block.

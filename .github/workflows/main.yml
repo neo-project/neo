@@ -136,7 +136,7 @@ jobs:
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b
+      uses: coverallsapp/github-action@v2.3.6
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         debug: false
@@ -156,6 +156,7 @@ jobs:
           ${{ github.workspace }}/TestResults/Neo.Plugins.RpcServer.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Plugins.Storage.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Plugins.ApplicationLogs.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.StateService.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Extensions.Tests/coverage.info
 
   PublishPackage:

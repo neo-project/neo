@@ -9,10 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#pragma warning disable CS1718
+#pragma warning disable CS1718 // Comparison made to same variable
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.IO;
 using System;
 using System.IO;
@@ -49,6 +50,10 @@ namespace Neo.UnitTests.IO
             UInt256 uInt256 = "0xff00000000000000000000000000000000000000000000000000000000000001";
             Assert.IsNotNull(uInt256);
             Assert.AreEqual("0xff00000000000000000000000000000000000000000000000000000000000001", uInt256.ToString());
+
+            UInt256 value = "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20";
+            Assert.IsNotNull(value);
+            Assert.AreEqual("0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20", value.ToString());
         }
 
         [TestMethod]
@@ -170,9 +175,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestSpanAndSerialize()
         {
-            var random = new Random();
-            var data = new byte[UInt256.Length];
-            random.NextBytes(data);
+            var data = RandomNumberFactory.NextBytes(UInt256.Length);
 
             var value = new UInt256(data);
             var span = value.GetSpan();
@@ -190,9 +193,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestSpanAndSerializeLittleEndian()
         {
-            var random = new Random();
-            var data = new byte[UInt256.Length];
-            random.NextBytes(data);
+            var data = RandomNumberFactory.NextBytes(UInt256.Length);
 
             var value = new UInt256(data);
             var spanLittleEndian = value.GetSpanLittleEndian();

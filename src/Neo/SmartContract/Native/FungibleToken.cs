@@ -131,42 +131,43 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private protected async ContractTask<bool> Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
         {
-            if (from is null) throw new ArgumentNullException(nameof(from));
-            if (to is null) throw new ArgumentNullException(nameof(to));
+            ArgumentNullException.ThrowIfNull(from);
+            ArgumentNullException.ThrowIfNull(to);
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount), "cannot be negative");
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
-            StorageKey key_from = CreateStorageKey(Prefix_Account, from);
-            StorageItem storage_from = engine.SnapshotCache.GetAndChange(key_from);
+
+            StorageKey keyFrom = CreateStorageKey(Prefix_Account, from);
+            StorageItem storageFrom = engine.SnapshotCache.GetAndChange(keyFrom);
             if (amount.IsZero)
             {
-                if (storage_from != null)
+                if (storageFrom != null)
                 {
-                    TState state_from = storage_from.GetInteroperable<TState>();
-                    OnBalanceChanging(engine, from, state_from, amount);
+                    TState stateFrom = storageFrom.GetInteroperable<TState>();
+                    OnBalanceChanging(engine, from, stateFrom, amount);
                 }
             }
             else
             {
-                if (storage_from is null) return false;
-                TState state_from = storage_from.GetInteroperable<TState>();
-                if (state_from.Balance < amount) return false;
+                if (storageFrom is null) return false;
+                TState stateFrom = storageFrom.GetInteroperable<TState>();
+                if (stateFrom.Balance < amount) return false;
                 if (from.Equals(to))
                 {
-                    OnBalanceChanging(engine, from, state_from, BigInteger.Zero);
+                    OnBalanceChanging(engine, from, stateFrom, BigInteger.Zero);
                 }
                 else
                 {
-                    OnBalanceChanging(engine, from, state_from, -amount);
-                    if (state_from.Balance == amount)
-                        engine.SnapshotCache.Delete(key_from);
+                    OnBalanceChanging(engine, from, stateFrom, -amount);
+                    if (stateFrom.Balance == amount)
+                        engine.SnapshotCache.Delete(keyFrom);
                     else
-                        state_from.Balance -= amount;
-                    StorageKey key_to = CreateStorageKey(Prefix_Account, to);
-                    StorageItem storage_to = engine.SnapshotCache.GetAndChange(key_to, () => new StorageItem(new TState()));
-                    TState state_to = storage_to.GetInteroperable<TState>();
-                    OnBalanceChanging(engine, to, state_to, amount);
-                    state_to.Balance += amount;
+                        stateFrom.Balance -= amount;
+                    StorageKey keyTo = CreateStorageKey(Prefix_Account, to);
+                    StorageItem storageTo = engine.SnapshotCache.GetAndChange(keyTo, () => new StorageItem(new TState()));
+                    TState stateTo = storageTo.GetInteroperable<TState>();
+                    OnBalanceChanging(engine, to, stateTo, amount);
+                    stateTo.Balance += amount;
                 }
             }
             await PostTransferAsync(engine, from, to, amount, data, true);

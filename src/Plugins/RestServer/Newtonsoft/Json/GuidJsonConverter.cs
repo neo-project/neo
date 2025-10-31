@@ -19,7 +19,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
         public override Guid ReadJson(JsonReader reader, Type objectType, Guid existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             var value = reader.Value?.ToString();
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            if (value is null) throw new ArgumentNullException(nameof(value), "reader.Value is null");
 
             return Guid.Parse(value);
         }

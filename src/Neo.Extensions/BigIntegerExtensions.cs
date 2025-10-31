@@ -18,6 +18,27 @@ namespace Neo.Extensions
 {
     public static class BigIntegerExtensions
     {
+        /// <summary>
+        /// Performs integer division with ceiling (rounding up).
+        /// Example: 10 / 3 = 4 instead of 3.
+        /// </summary>
+        /// <param name="dividend">The dividend.</param>
+        /// <param name="divisor">The divisor (must be nonzero).</param>
+        /// <returns>The result of division rounded up.</returns>
+        /// <exception cref="ArgumentException">Thrown when divisor is zero.</exception>
+        public static BigInteger DivideCeiling(this BigInteger dividend, BigInteger divisor)
+        {
+            // If it's 0, it will automatically throw DivideByZeroException
+            var v = divisor > 0 ?
+                BigInteger.DivRem(dividend, divisor, out var r) :
+                BigInteger.DivRem(-dividend, -divisor, out r);
+
+            if (r > 0)
+                return v + BigInteger.One;
+
+            return v;
+        }
+
         internal static int TrailingZeroCount(byte[] b)
         {
             var w = 0;
@@ -40,11 +61,7 @@ namespace Neo.Extensions
         {
             if (value.Sign == 0) return -1; // special case for zero. TrailingZeroCount returns 32 in standard library.
 
-#if NET7_0_OR_GREATER
             return (int)BigInteger.TrailingZeroCount(value);
-#else
-            return TrailingZeroCount(value.ToByteArray());
-#endif
         }
 
         /// <summary>
@@ -160,12 +177,6 @@ namespace Neo.Extensions
             return z;
         }
 
-        internal static BigInteger GetLowPart(this BigInteger value, int bitCount)
-        {
-            var mask = (BigInteger.One << bitCount) - 1;
-            return value & mask;
-        }
-
         /// <summary>
         /// Gets the number of bits required for shortest two's complement representation of the current instance without the sign bit.
         /// Note: This method is imprecise and might not work as expected with integers larger than 256 bits if less than .NET5.
@@ -179,11 +190,7 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long GetBitLength(this BigInteger value)
         {
-#if NET5_0_OR_GREATER
             return value.GetBitLength();
-#else
-            return BitLength(value);
-#endif
         }
 
         /// <summary>

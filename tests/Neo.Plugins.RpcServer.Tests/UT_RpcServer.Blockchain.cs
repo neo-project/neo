@@ -345,8 +345,10 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.Commit();
 
             var result = _rpcServer.GetRawTransaction(tx.Hash, true);
-            var json = Utility.TransactionToJson(tx, _neoSystem.Settings);
+            var json = tx.ToJson(_neoSystem.Settings);
             Assert.AreEqual(json.ToString(), result.ToString());
+            Assert.IsTrue(json.ContainsProperty("sysfee"));
+            Assert.IsTrue(json.ContainsProperty("netfee"));
 
             result = _rpcServer.GetRawTransaction(tx.Hash, false);
             var tx2 = Convert.FromBase64String(result.AsString()).AsSerializable<Transaction>();
@@ -373,7 +375,8 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test verbose
             var resultVerbose = _rpcServer.GetRawTransaction(tx.Hash, true);
-            var expectedJson = Utility.TransactionToJson(tx, _neoSystem.Settings);
+            var expectedJson = tx.ToJson(_neoSystem.Settings);
+
             // Add expected block-related fields
             expectedJson["blockhash"] = block.Hash.ToString();
             expectedJson["confirmations"] = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView) - block.Index + 1;

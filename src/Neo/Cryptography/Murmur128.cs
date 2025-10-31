@@ -12,6 +12,7 @@
 using System;
 using System.Buffers.Binary;
 using System.IO.Hashing;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -38,7 +39,6 @@ namespace Neo.Cryptography
         [Obsolete("Use HashSizeInBits instead")]
         public int HashSize => HashSizeInBits;
 
-#if NET8_0_OR_GREATER
         // The Tail struct is used to store up to 16 bytes of unprocessed data
         // when computing the hash. It leverages the InlineArray attribute for
         // efficient memory usage in .NET 8.0 or greater, avoiding heap allocations
@@ -51,9 +51,7 @@ namespace Neo.Cryptography
         }
 
         private Tail _tail = new(); // cannot be readonly here
-#else
-        private readonly byte[] _tail = new byte[HashSizeInBits / 8];
-#endif
+
         private int _tailLength;
 
         private ulong H1 { get; set; }
@@ -106,8 +104,8 @@ namespace Neo.Cryptography
                 var tail = _tail.AsSpan();
                 ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(tail);
                 ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(tail[8..]);
-                H2 ^= Helper.RotateLeft(k2 * c2, r2) * c1;
-                H1 ^= Helper.RotateLeft(k1 * c1, r1) * c2;
+                H2 ^= BitOperations.RotateLeft(k2 * c2, r2) * c1;
+                H1 ^= BitOperations.RotateLeft(k1 * c1, r1) * c2;
             }
 
             H1 ^= (ulong)_length;
@@ -142,12 +140,12 @@ namespace Neo.Cryptography
             ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(source);
             ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(source[8..]);
 
-            H1 ^= Helper.RotateLeft(k1 * c1, r1) * c2;
-            H1 = Helper.RotateLeft(H1, 27) + H2;
+            H1 ^= BitOperations.RotateLeft(k1 * c1, r1) * c2;
+            H1 = BitOperations.RotateLeft(H1, 27) + H2;
             H1 = H1 * m + n1;
 
-            H2 ^= Helper.RotateLeft(k2 * c2, r2) * c1;
-            H2 = Helper.RotateLeft(H2, 31) + H1;
+            H2 ^= BitOperations.RotateLeft(k2 * c2, r2) * c1;
+            H2 = BitOperations.RotateLeft(H2, 31) + H1;
             H2 = H2 * m + n2;
         }
 

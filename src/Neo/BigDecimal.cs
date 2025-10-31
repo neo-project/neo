@@ -57,12 +57,8 @@ namespace Neo
         /// <param name="value">The value of the number.</param>
         public BigDecimal(decimal value)
         {
-#if NET5_0_OR_GREATER
             Span<int> span = stackalloc int[4];
             decimal.GetBits(value, span);
-#else
-            var span = decimal.GetBits(value);
-#endif
             var buffer = MemoryMarshal.AsBytes((ReadOnlySpan<int>)span);
             _value = new BigInteger(buffer[..12], isUnsigned: true);
 
@@ -77,12 +73,8 @@ namespace Neo
         /// <param name="decimals">The number of decimal places for this number.</param>
         public BigDecimal(decimal value, byte decimals)
         {
-#if NET5_0_OR_GREATER
             Span<int> span = stackalloc int[4];
             decimal.GetBits(value, span);
-#else
-            var span = decimal.GetBits(value);
-#endif
             var buffer = MemoryMarshal.AsBytes((ReadOnlySpan<int>)span);
             _value = new BigInteger(buffer[..12], isUnsigned: true);
             if (buffer[14] > decimals)
@@ -156,12 +148,12 @@ namespace Neo
             var index = s.IndexOfAny(['e', 'E']);
             if (index >= 0)
             {
-                if (!sbyte.TryParse(s[(index + 1)..], out var e_temp))
+                if (!sbyte.TryParse(s[(index + 1)..], out var eTemp))
                 {
                     result = default;
                     return false;
                 }
-                e = e_temp;
+                e = eTemp;
                 s = s[..index];
             }
             index = s.IndexOf('.');

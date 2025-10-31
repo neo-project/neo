@@ -117,6 +117,11 @@ namespace Neo.SmartContract.Native
             }
         }
 
+        /// <summary>
+        /// Gets the minimum deployment fee for deploying a contract.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The minimum deployment fee for deploying a contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private long GetMinimumDeploymentFee(IReadOnlyStore snapshot)
         {
@@ -124,11 +129,18 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
         }
 
+        /// <summary>
+        /// Sets the minimum deployment fee for deploying a contract. Only committee members can call this method.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="value">The minimum deployment fee for deploying a contract.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value/* In the unit of datoshi, 1 datoshi = 1e-8 GAS*/)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "cannot be negative");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
         }
 
@@ -217,12 +229,27 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperableClone<ContractState>(false));
         }
 
+        /// <summary>
+        /// Deploys a contract. It needs to pay the deployment fee and storage fee.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="nefFile">The NEF file of the contract.</param>
+        /// <param name="manifest">The manifest of the contract.</param>
+        /// <returns>The deployed contract.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
+        /// <summary>
+        /// Deploys a contract. It needs to pay the deployment fee and storage fee.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="nefFile">The NEF file of the contract.</param>
+        /// <param name="manifest">The manifest of the contract.</param>
+        /// <param name="data">The data of the contract.</param>
+        /// <returns>The deployed contract.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
@@ -275,12 +302,27 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
+        /// <summary>
+        /// Updates a contract. It needs to pay the storage fee.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="nefFile">The NEF file of the contract.</param>
+        /// <param name="manifest">The manifest of the contract.</param>
+        /// <returns>The updated contract.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Update(engine, nefFile, manifest, StackItem.Null);
         }
 
+        /// <summary>
+        /// Updates a contract. It needs to pay the storage fee.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="nefFile">The NEF file of the contract.</param>
+        /// <param name="manifest">The manifest of the contract.</param>
+        /// <param name="data">The data of the contract.</param>
+        /// <returns>The updated contract.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
@@ -330,6 +372,10 @@ namespace Neo.SmartContract.Native
             return OnDeployAsync(engine, contract, data, true);
         }
 
+        /// <summary>
+        /// Destroys a contract.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {

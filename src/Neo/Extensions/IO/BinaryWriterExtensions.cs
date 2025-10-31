@@ -39,7 +39,7 @@ namespace Neo.Extensions
         public static void Write<T>(this BinaryWriter writer, IReadOnlyCollection<T> value)
             where T : ISerializable
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             writer.WriteVarInt(value.Count);
             foreach (T item in value)
@@ -56,7 +56,7 @@ namespace Neo.Extensions
         /// <param name="length">The fixed size of the <see cref="string"/>.</param>
         public static void WriteFixedString(this BinaryWriter writer, string value, int length)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             if (value.Length > length)
                 throw new ArgumentException($"The string value length ({value.Length} characters) exceeds the maximum allowed length of {length} characters.", nameof(value));
 
@@ -77,7 +77,7 @@ namespace Neo.Extensions
         public static void WriteNullableArray<T>(this BinaryWriter writer, T[] value)
             where T : class, ISerializable
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             writer.WriteVarInt(value.Length);
             foreach (var item in value)

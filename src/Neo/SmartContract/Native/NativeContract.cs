@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native
         private readonly ImmutableHashSet<Hardfork> _usedHardforks;
         private readonly ReadOnlyCollection<ContractMethodMetadata> _methodDescriptors;
         private readonly ReadOnlyCollection<ContractEventAttribute> _eventsDescriptors;
-        private static int id_counter = 0;
+        private static int idCounter = 0;
 
         #region Named Native Contracts
 
@@ -134,7 +134,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The id of the native contract.
         /// </summary>
-        public int Id { get; } = --id_counter;
+        public int Id { get; } = --idCounter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NativeContract"/> class.
@@ -348,10 +348,18 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="engine">The <see cref="ApplicationEngine"/> that is executing the contract.</param>
         /// <returns><see langword="true"/> if the committee has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static bool CheckCommittee(ApplicationEngine engine)
         {
-            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.SnapshotCache);
+            var committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.SnapshotCache);
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static void AssertCommittee(ApplicationEngine engine)
+        {
+            if (!CheckCommittee(engine))
+                throw new InvalidOperationException("Invalid committee signature. It should be a multisig(len(committee) - (len(committee) - 1) / 2)).");
         }
 
         #region Storage keys

@@ -94,38 +94,44 @@ namespace Neo.Plugins.ApplicationLogs
 
         #region JSON RPC Methods
 
+        /// <summary>
+        /// Gets the block or the transaction execution log. The execution logs are stored if the ApplicationLogs plugin is enabled.
+        /// </summary>
+        /// <param name="hash">The block hash or the transaction hash(UInt256)</param>
+        /// <param name="triggerType">
+        /// The trigger type(string), optional, default is "" and means no filter trigger type.
+        /// It can be "OnPersist", "PostPersist", "Verification", "Application", "System" or "All"(see TriggerType).
+        /// If want to filter by trigger type, need to set the trigger type.
+        /// </param>
+        /// <returns>The block or the transaction execution log.</returns>
+        /// <exception cref="RpcException">Thrown when the hash is invalid or the trigger type is invalid.</exception>
         [RpcMethod]
-        public JToken GetApplicationLog(JArray _params)
+        public JToken GetApplicationLog(UInt256 hash, string triggerType = "")
         {
-            if (_params == null || _params.Count == 0)
-                throw new RpcException(RpcError.InvalidParams);
-            if (UInt256.TryParse(_params[0]!.AsString(), out var hash))
+            var raw = BlockToJObject(hash);
+            if (raw == null)
             {
-                var raw = BlockToJObject(hash);
-                if (raw == null)
-                    raw = TransactionToJObject(hash);
-                if (raw == null)
-                    throw new RpcException(RpcError.InvalidParams.WithData("Unknown transaction/blockhash"));
+                raw = TransactionToJObject(hash);
+                if (raw == null) throw new RpcException(RpcError.InvalidParams.WithData("Unknown transaction/blockhash"));
+            }
 
-                if (_params.Count >= 2 && Enum.TryParse(_params[1]!.AsString(), true, out TriggerType triggerType))
+            if (!string.IsNullOrEmpty(triggerType) && Enum.TryParse(triggerType, true, out TriggerType _))
+            {
+                var executions = raw["executions"] as JArray;
+                if (executions != null)
                 {
-                    var executions = raw["executions"] as JArray;
-                    if (executions != null)
+                    for (var i = 0; i < executions.Count;)
                     {
-                        for (var i = 0; i < executions.Count;)
-                        {
-                            if (executions[i]!["trigger"]?.AsString().Equals(triggerType.ToString(), StringComparison.OrdinalIgnoreCase) == false)
-                                executions.RemoveAt(i);
-                            else
-                                i++;
-                        }
+                        if (executions[i]!["trigger"]?.AsString().Equals(triggerType, StringComparison.OrdinalIgnoreCase) == false)
+                            executions.RemoveAt(i);
+                        else
+                            i++;
                     }
                 }
-
-                return raw;
             }
-            else
-                throw new RpcException(RpcError.InvalidParams);
+
+            return raw;
+
         }
 
         #endregion
@@ -215,7 +221,8 @@ namespace Neo.Plugins.ApplicationLogs
 
         #region Blockchain Events
 
-        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot,
+            IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != ApplicationLogsSettings.Default.Network)
                 return;

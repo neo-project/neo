@@ -33,35 +33,35 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
 
         public override void WriteJson(JsonWriter writer, WitnessCondition? value, JsonSerializer serializer)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             var j = RestServerUtility.WitnessConditionToJToken(value, serializer);
             j.WriteTo(writer);
         }
 
-        public static WitnessCondition FromJson(JObject o)
+        public static WitnessCondition FromJson(JObject json)
         {
-            ArgumentNullException.ThrowIfNull(o, nameof(o));
+            ArgumentNullException.ThrowIfNull(json, nameof(json));
 
-            var typeProp = o.Properties().Single(s => EqualsIgnoreCase(s.Name, "type"));
+            var typeProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "type"));
             var typeValue = typeProp.Value<string>();
 
             try
             {
-                if (typeValue is null) throw new ArgumentNullException();
+                if (typeValue is null) throw new ArgumentNullException(nameof(json), "no 'type' in json");
 
                 var type = Enum.Parse<WitnessConditionType>(typeValue);
 
                 switch (type)
                 {
                     case WitnessConditionType.Boolean:
-                        var valueProp = o.Properties().Single(s => EqualsIgnoreCase(s.Name, "expression"));
+                        var valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "expression"));
                         return new BooleanCondition() { Expression = valueProp.Value<bool>() };
                     case WitnessConditionType.Not:
-                        valueProp = o.Properties().Single(s => EqualsIgnoreCase(s.Name, "expression"));
+                        valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "expression"));
                         return new NotCondition() { Expression = FromJson((JObject)valueProp.Value) };
                     case WitnessConditionType.And:
-                        valueProp = o.Properties().Single(s => EqualsIgnoreCase(s.Name, "expressions"));
+                        valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "expressions"));
                         if (valueProp.Type == JTokenType.Array)
                         {
                             var array = (JArray)valueProp.Value;
@@ -69,7 +69,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
                         }
                         break;
                     case WitnessConditionType.Or:
-                        valueProp = o.Properties().Single(s => EqualsIgnoreCase(s.Name, "expressions"));
+                        valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "expressions"));
                         if (valueProp.Type == JTokenType.Array)
                         {
                             var array = (JArray)valueProp.Value;
@@ -77,18 +77,18 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
                         }
                         break;
                     case WitnessConditionType.ScriptHash:
-                        valueProp = o.Properties().Single(s => EqualsIgnoreCase(s.Name, "hash"));
+                        valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "hash"));
                         return new ScriptHashCondition() { Hash = UInt160.Parse(valueProp.Value<string>()) };
                     case WitnessConditionType.Group:
-                        valueProp = o.Properties().Single(s => EqualsIgnoreCase(s.Name, "group"));
+                        valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "group"));
                         return new GroupCondition() { Group = ECPoint.Parse(valueProp.Value<string>() ?? throw new NullReferenceException("In the witness json data, group is null."), ECCurve.Secp256r1) };
                     case WitnessConditionType.CalledByEntry:
                         return new CalledByEntryCondition();
                     case WitnessConditionType.CalledByContract:
-                        valueProp = o.Properties().Single(s => EqualsIgnoreCase(s.Name, "hash"));
+                        valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "hash"));
                         return new CalledByContractCondition { Hash = UInt160.Parse(valueProp.Value<string>()) };
                     case WitnessConditionType.CalledByGroup:
-                        valueProp = o.Properties().Single(s => EqualsIgnoreCase(s.Name, "group"));
+                        valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "group"));
                         return new CalledByGroupCondition { Group = ECPoint.Parse(valueProp.Value<string>() ?? throw new NullReferenceException("In the witness json data, group is null."), ECCurve.Secp256r1) };
                 }
             }

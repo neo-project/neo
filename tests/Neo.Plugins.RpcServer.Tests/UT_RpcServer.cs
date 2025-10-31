@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.Persistence.Providers;
@@ -19,8 +20,10 @@ using Neo.UnitTests;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -36,9 +39,6 @@ namespace Neo.Plugins.RpcServer.Tests
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
-
-        const byte NativePrefixAccount = 20;
-        const byte NativePrefixTotalSupply = 11;
 
         [TestInitialize]
         public void TestSetup()
@@ -80,7 +80,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             // Arrange
             var context = new DefaultHttpContext();
-            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
+            context.Request.Headers.Authorization = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
             // Act
             var result = _rpcServer.CheckAuth(context);
             // Assert
@@ -104,27 +104,27 @@ namespace Neo.Plugins.RpcServer.Tests
             var rpcServer = new RpcServer(neoSystem, rpcServerSettings);
 
             var context = new DefaultHttpContext();
-            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
+            context.Request.Headers.Authorization = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
             var result = rpcServer.CheckAuth(context);
             Assert.IsTrue(result);
 
-            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:wrongpass"));
+            context.Request.Headers.Authorization = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:wrongpass"));
             result = rpcServer.CheckAuth(context);
             Assert.IsFalse(result);
 
-            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("wronguser:testpass"));
+            context.Request.Headers.Authorization = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("wronguser:testpass"));
             result = rpcServer.CheckAuth(context);
             Assert.IsFalse(result);
 
-            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:"));
+            context.Request.Headers.Authorization = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:"));
             result = rpcServer.CheckAuth(context);
             Assert.IsFalse(result);
 
-            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(":testpass"));
+            context.Request.Headers.Authorization = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(":testpass"));
             result = rpcServer.CheckAuth(context);
             Assert.IsFalse(result);
 
-            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(""));
+            context.Request.Headers.Authorization = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(""));
             result = rpcServer.CheckAuth(context);
             Assert.IsFalse(result);
         }
@@ -245,8 +245,28 @@ namespace Neo.Plugins.RpcServer.Tests
 
         private class MockRpcMethods
         {
+#nullable enable
             [RpcMethod]
-            internal JToken GetMockMethod() => "mock";
+            public JToken GetMockMethod(string info) => $"string {info}";
+
+            public JToken NullContextMethod(string? info) => $"string-nullable {info}";
+
+            public JToken IntMethod(int info) => $"int {info}";
+
+            public JToken IntNullableMethod(int? info) => $"int-nullable {info}";
+
+            public JToken AllowNullMethod([AllowNull] string info) => $"string-allownull {info}";
+#nullable restore
+
+#nullable disable
+            public JToken NullableMethod(string info) => $"string-nullable {info}";
+
+            public JToken OptionalMethod(string info = "default") => $"string-default {info}";
+
+            public JToken NotNullMethod([NotNull] string info) => $"string-notnull {info}";
+
+            public JToken DisallowNullMethod([DisallowNull] string info) => $"string-disallownull {info}";
+#nullable restore
         }
 
         [TestMethod]
@@ -257,7 +277,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // Request ProcessAsync with a valid request
             var context = new DefaultHttpContext();
             var body = """
-            {"jsonrpc": "2.0", "method": "getmockmethod", "params": [], "id": 1 }
+            {"jsonrpc": "2.0", "method": "getmockmethod", "params": ["test"], "id": 1 }
             """;
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(body));
@@ -277,8 +297,105 @@ namespace Neo.Plugins.RpcServer.Tests
             // Parse the JSON response and check the result
             var responseJson = JToken.Parse(output);
             Assert.IsNotNull(responseJson["result"]);
-            Assert.AreEqual("mock", responseJson["result"].AsString());
+            Assert.AreEqual("string test", responseJson["result"].AsString());
             Assert.AreEqual(200, context.Response.StatusCode);
+        }
+
+        [TestMethod]
+        public void TestNullableParameter()
+        {
+            var method = typeof(MockRpcMethods).GetMethod("GetMockMethod");
+            var parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsTrue(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("NullableMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("NullContextMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("OptionalMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+            Assert.AreEqual("default", parameter.DefaultValue);
+
+            method = typeof(MockRpcMethods).GetMethod("IntMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsTrue(parameter.Required);
+            Assert.AreEqual(typeof(int), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("IntNullableMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(int?), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("NotNullMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsTrue(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("AllowNullMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsFalse(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+
+            method = typeof(MockRpcMethods).GetMethod("DisallowNullMethod");
+            parameter = RpcServer.AsRpcParameter(method.GetParameters()[0]);
+            Assert.IsTrue(parameter.Required);
+            Assert.AreEqual(typeof(string), parameter.Type);
+            Assert.AreEqual("info", parameter.Name);
+        }
+
+        [TestMethod]
+        public void TestRpcServerSettings_Load()
+        {
+            var config = new ConfigurationBuilder()
+                .AddJsonFile("RpcServer.json")
+                .Build()
+                .GetSection("PluginConfiguration")
+                .GetSection("Servers")
+                .GetChildren()
+                .First();
+
+            var settings = RpcServersSettings.Load(config);
+            Assert.AreEqual(860833102u, settings.Network);
+            Assert.AreEqual(10332, settings.Port);
+            Assert.AreEqual(IPAddress.Parse("127.0.0.1"), settings.BindAddress);
+            Assert.AreEqual(string.Empty, settings.SslCert);
+            Assert.AreEqual(string.Empty, settings.SslCertPassword);
+            Assert.AreEqual(0, settings.TrustedAuthorities.Length);
+            Assert.AreEqual(string.Empty, settings.RpcUser);
+            Assert.AreEqual(string.Empty, settings.RpcPass);
+            Assert.AreEqual(true, settings.EnableCors);
+            Assert.AreEqual(20_00000000, settings.MaxGasInvoke);
+            Assert.AreEqual(TimeSpan.FromSeconds(60), settings.SessionExpirationTime);
+            Assert.AreEqual(false, settings.SessionEnabled);
+            Assert.AreEqual(true, settings.EnableCors);
+            Assert.AreEqual(0, settings.AllowOrigins.Length);
+            Assert.AreEqual(60, settings.KeepAliveTimeout);
+            Assert.AreEqual(15u, settings.RequestHeadersTimeout);
+            Assert.AreEqual(1000_0000, settings.MaxFee); // 0.1 * 10^8
+            Assert.AreEqual(100, settings.MaxIteratorResultItems);
+            Assert.AreEqual(65535, settings.MaxStackSize);
+            Assert.AreEqual(1, settings.DisabledMethods.Length);
+            Assert.AreEqual("openwallet", settings.DisabledMethods[0]);
+            Assert.AreEqual(40, settings.MaxConcurrentConnections);
+            Assert.AreEqual(5 * 1024 * 1024, settings.MaxRequestBodySize);
+            Assert.AreEqual(50, settings.FindStoragePageSize);
         }
     }
 }

@@ -13,6 +13,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.IO;
 using System;
 
@@ -47,6 +48,10 @@ namespace Neo.UnitTests.IO
             UInt160 uInt160 = "0xff00000000000000000000000000000000000001";
             Assert.IsNotNull(uInt160);
             Assert.AreEqual("0xff00000000000000000000000000000000000001", uInt160.ToString());
+
+            UInt160 value = "0x0102030405060708090a0b0c0d0e0f1011121314";
+            Assert.IsNotNull(value);
+            Assert.AreEqual("0x0102030405060708090a0b0c0d0e0f1011121314", value.ToString());
         }
 
         [TestMethod]
@@ -135,9 +140,7 @@ namespace Neo.UnitTests.IO
         public void TestSpanAndSerialize()
         {
             // random data
-            var random = new Random();
-            var data = new byte[UInt160.Length];
-            random.NextBytes(data);
+            var data = RandomNumberFactory.NextBytes(UInt160.Length);
 
             var value = new UInt160(data);
             var span = value.GetSpan();
@@ -156,9 +159,7 @@ namespace Neo.UnitTests.IO
         public void TestSpanAndSerializeLittleEndian()
         {
             // random data
-            var random = new Random();
-            var data = new byte[UInt160.Length];
-            random.NextBytes(data);
+            var data = RandomNumberFactory.NextBytes(UInt160.Length);
 
             var value = new UInt160(data);
 

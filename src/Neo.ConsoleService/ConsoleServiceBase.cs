@@ -35,6 +35,8 @@ namespace Neo.ConsoleService
 
         protected bool ShowPrompt { get; set; } = true;
 
+        protected bool IsBackground { get; set; } = false;
+
         private bool _running;
         private readonly CancellationTokenSource _shutdownTokenSource = new();
         private readonly CountdownEvent _shutdownAcknowledged = new(1);
@@ -522,7 +524,7 @@ namespace Neo.ConsoleService
             }
 
             string arguments;
-            if (action == "/install")
+            if (action == "install")
             {
                 var fileName = Process.GetCurrentProcess().MainModule!.FileName;
                 arguments = $"create {ServiceName} start= auto binPath= \"{fileName}\"";
@@ -551,26 +553,51 @@ namespace Neo.ConsoleService
             }
         }
 
+        private void WaitForShutdown()
+        {
+            _running = true;
+            try
+            {
+                _shutdownTokenSource.Token.WaitHandle.WaitOne();
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when shutdown is triggered
+            }
+            _running = false;
+        }
+
         public void Run(string[] args)
         {
             if (Environment.UserInteractive)
             {
-                if (args.Length == 1 && (args[0] == "/install" || args[0] == "/uninstall"))
+                if (args.Length == 1 && (args[0] == "--install" || args[0] == "/install"))
                 {
-                    OnScCommand(args[0]);
+                    OnScCommand("install");
+                }
+                else if (args.Length == 1 && (args[0] == "--uninstall" || args[0] == "/uninstall"))
+                {
+                    OnScCommand("uninstall");
                 }
                 else
                 {
-                    if (OnStart(args)) RunConsole();
+                    if (OnStart(args))
+                    {
+                        if (IsBackground) WaitForShutdown();
+                        else RunConsole();
+                    }
                     OnStop();
                 }
             }
             else
             {
-                Debug.Assert(Environment.OSVersion.Platform == PlatformID.Win32NT);
-#pragma warning disable CA1416
+                if (!OperatingSystem.IsWindows())
+                {
+                    ConsoleHelper.Error("ServiceProxy only runs on Windows platforms.");
+                    return;
+                }
+
                 ServiceBase.Run(new ServiceProxy(this));
-#pragma warning restore CA1416
             }
         }
 
