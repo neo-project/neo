@@ -451,7 +451,7 @@ namespace Neo.SmartContract.Manifest
                 EnsureValidNamedTypeIdentifier(NamedType);
                 EnsureNotCircularReferences(typeName, NamedType);
 
-                if (Length.HasValue || ForbidNull.HasValue || Interface.HasValue || Key.HasValue || Value is not null || (Fields is not null && Fields.Length > 0))
+                if (Length.HasValue || ForbidNull.HasValue || Interface.HasValue || Key.HasValue || Value is not null || Fields is not null)
                     throw Nep25Error("namedtype cannot be combined with other modifiers.");
 
                 if (knownNamedTypes != null && !knownNamedTypes.Contains(NamedType))
@@ -463,7 +463,7 @@ namespace Neo.SmartContract.Manifest
                 if (Type != ContractParameterType.Array && Type != ContractParameterType.InteropInterface && Type != ContractParameterType.Map)
                     throw Nep25Error("value can only be specified for Array, Map or InteropInterface types.");
 
-                if (Fields is not null && Fields.Length > 0)
+                if (Fields is not null)
                     throw Nep25Error("value and fields cannot be used together.");
 
                 if (Type == ContractParameterType.InteropInterface && !Interface.HasValue)
@@ -485,7 +485,7 @@ namespace Neo.SmartContract.Manifest
                 if (Type == ContractParameterType.InteropInterface)
                     throw Nep25Error("value is required for InteropInterface type.");
 
-                if (Type == ContractParameterType.Array && NamedType is null && (Fields is null || Fields.Length == 0))
+                if (Type == ContractParameterType.Array && NamedType is null && Fields is null)
                     throw Nep25Error("value, namedtype or fields must be provided for Array type to describe element type.");
             }
 
