@@ -20,27 +20,48 @@ namespace Neo.Cryptography.MPTTrie
     partial class Node
     {
         public const int MaxKeyLength = (ApplicationEngine.MaxStorageKeySize + sizeof(int)) * 2;
-        public ReadOnlyMemory<byte> Key;
-        public Node Next;
+        public ReadOnlyMemory<byte> Key { get; set; } = ReadOnlyMemory<byte>.Empty;
+
+        // Not null when Type is ExtensionNode, null if not ExtensionNode
+        internal Node? _next;
+
+        // Not null when Type is ExtensionNode, null if not  ExtensionNode
+        public Node? Next
+        {
+            get => _next;
+            set { _next = value; }
+        }
 
         public static Node NewExtension(byte[] key, Node next)
         {
-            if (key is null || next is null) throw new ArgumentNullException(nameof(NewExtension));
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(next);
+
             if (key.Length == 0) throw new InvalidOperationException(nameof(NewExtension));
-            var n = new Node
+
+            return new Node
             {
-                type = NodeType.ExtensionNode,
+                Type = NodeType.ExtensionNode,
                 Key = key,
                 Next = next,
                 Reference = 1,
             };
-            return n;
         }
 
-        protected int ExtensionSize => Key.GetVarSize() + Next.SizeAsChild;
+        protected int ExtensionSize
+        {
+            get
+            {
+                if (Next is null)
+                    throw new InvalidOperationException("ExtensionSize but not extension node");
+                return Key.GetVarSize() + Next.SizeAsChild;
+            }
+        }
 
         private void SerializeExtension(BinaryWriter writer)
         {
+            if (Next is null)
+                throw new InvalidOperationException("SerializeExtension but not extension node");
             writer.WriteVarBytes(Key.Span);
             Next.SerializeAsChild(writer);
         }

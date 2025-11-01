@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Cryptography.MPTTrie
 {
@@ -22,22 +23,22 @@ namespace Neo.Cryptography.MPTTrie
             {
                 var path = ToNibbles(key);
                 if (path.Length == 0)
-                    throw new ArgumentException("could not be empty", nameof(key));
+                    throw new ArgumentException("The key cannot be empty. A valid key must contain at least one nibble.", nameof(key));
                 if (path.Length > Node.MaxKeyLength)
-                    throw new ArgumentException("exceeds limit", nameof(key));
+                    throw new ArgumentException($"Key length {path.Length} exceeds the maximum allowed length of {Node.MaxKeyLength} nibbles.", nameof(key));
                 var result = TryGet(ref _root, path, out var value);
                 return result ? value.ToArray() : throw new KeyNotFoundException();
             }
         }
 
-        public bool TryGetValue(byte[] key, out byte[] value)
+        public bool TryGetValue(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
             value = default;
             var path = ToNibbles(key);
             if (path.Length == 0)
-                throw new ArgumentException("could not be empty", nameof(key));
+                throw new ArgumentException("The key cannot be empty. A valid key must contain at least one nibble.", nameof(key));
             if (path.Length > Node.MaxKeyLength)
-                throw new ArgumentException("exceeds limit", nameof(key));
+                throw new ArgumentException($"Key length {path.Length} exceeds the maximum allowed length of {Node.MaxKeyLength} nibbles.", nameof(key));
             var result = TryGet(ref _root, path, out var val);
             if (result)
                 value = val.ToArray();
@@ -61,8 +62,8 @@ namespace Neo.Cryptography.MPTTrie
                     break;
                 case NodeType.HashNode:
                     {
-                        var newNode = _cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt get");
+                        var newNode = _cache.Resolve(node.Hash)
+                            ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt get");
                         node = newNode;
                         return TryGet(ref node, path, out value);
                     }
@@ -78,7 +79,7 @@ namespace Neo.Cryptography.MPTTrie
                     {
                         if (path.StartsWith(node.Key.Span))
                         {
-                            return TryGet(ref node.Next, path[node.Key.Length..], out value);
+                            return TryGet(ref node._next!, path[node.Key.Length..], out value);
                         }
                         break;
                     }

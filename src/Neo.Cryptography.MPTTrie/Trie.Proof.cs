@@ -13,18 +13,19 @@ using Neo.Extensions;
 using Neo.Persistence.Providers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Cryptography.MPTTrie
 {
     partial class Trie
     {
-        public bool TryGetProof(byte[] key, out HashSet<byte[]> proof)
+        public bool TryGetProof(byte[] key, [NotNull] out HashSet<byte[]> proof)
         {
             var path = ToNibbles(key);
             if (path.Length == 0)
-                throw new ArgumentException("could not be empty", nameof(key));
+                throw new ArgumentException("The key cannot be empty. A valid key must contain at least one nibble.", nameof(key));
             if (path.Length > Node.MaxKeyLength)
-                throw new ArgumentException("exceeds limit", nameof(key));
+                throw new ArgumentException($"Key length {path.Length} exceeds the maximum allowed length of {Node.MaxKeyLength} nibbles.", nameof(key));
             proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
             return GetProof(ref _root, path, proof);
         }
@@ -46,8 +47,8 @@ namespace Neo.Cryptography.MPTTrie
                     break;
                 case NodeType.HashNode:
                     {
-                        var newNode = _cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt getproof");
+                        var newNode = _cache.Resolve(node.Hash)
+                            ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt getproof");
                         node = newNode;
                         return GetProof(ref node, path, set);
                     }
@@ -65,7 +66,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.StartsWith(node.Key.Span))
                         {
                             set.Add(node.ToArrayWithoutReference());
-                            return GetProof(ref node.Next, path[node.Key.Length..], set);
+                            return GetProof(ref node._next!, path[node.Key.Length..], set);
                         }
                         break;
                     }
@@ -75,7 +76,7 @@ namespace Neo.Cryptography.MPTTrie
 
         private static byte[] Key(byte[] hash)
         {
-            byte[] buffer = new byte[hash.Length + 1];
+            var buffer = new byte[hash.Length + 1];
             buffer[0] = Prefix;
             Buffer.BlockCopy(hash, 0, buffer, 1, hash.Length);
             return buffer;
@@ -84,7 +85,7 @@ namespace Neo.Cryptography.MPTTrie
         public static byte[] VerifyProof(UInt256 root, byte[] key, HashSet<byte[]> proof)
         {
             using var memoryStore = new MemoryStore();
-            foreach (byte[] data in proof)
+            foreach (var data in proof)
                 memoryStore.Put(Key(Crypto.Hash256(data)), [.. data, .. new byte[] { 1 }]);
             using var snapshot = memoryStore.GetSnapshot();
             var trie = new Trie(snapshot, root, false);
