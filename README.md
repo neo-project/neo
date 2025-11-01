@@ -131,6 +131,7 @@ An overview of the project folders can be seen below.
 |[/src/Neo.Json/](https://github.com/neo-project/neo/tree/master/src/Neo.Json)| Neo's JSON specification.|
 |[/src/Neo.VM/](https://github.com/neo-project/neo/tree/master/src/Neo.VM)|Neo virtual machine.|
 |[/src/plugins/](https://github.com/neo-project/neo/tree/master/src/Plugins)| Include `ApplicationLogs`, `LevelDBStore`, `RpcServer`, `OracleService`, `DBFTPlugin` and more.|
+|[/docs/](https://github.com/neo-project/neo/tree/master/docs)|Architecture notes and operational guides, including [OpenTelemetry integration](docs/opentelemetry.md).|
 |[/tests/](https://github.com/neo-project/neo/tree/master/tests)|All unit tests.|
 
 ## Related projects
