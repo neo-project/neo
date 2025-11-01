@@ -11,12 +11,11 @@
 
 using Neo.ConsoleService;
 using Neo.IEventHandlers;
+using Serilog.Events;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
-using static System.IO.Path;
 
 namespace Neo.CLI
 {
@@ -33,6 +32,8 @@ namespace Neo.CLI
 
         private void Initialize_Logger()
         {
+            if (!string.IsNullOrEmpty(Settings.Default.Logger.Path))
+                Log.LogDirectory = Settings.Default.Logger.Path;
             Utility.Logging += ((ILoggingHandler)this).Utility_Logging_Handler;
         }
 
@@ -91,9 +92,9 @@ namespace Neo.CLI
                 message = sb.ToString();
             }
 
+            var now = DateTime.Now;
             lock (syncRoot)
             {
-                var now = DateTime.Now;
                 var log = $"[{now.TimeOfDay:hh\\:mm\\:ss\\.fff}]";
                 if (_showLog)
                 {
@@ -123,23 +124,21 @@ namespace Neo.CLI
                     currentColor.Apply();
                     Console.WriteLine();
                 }
-
-                if (string.IsNullOrEmpty(Settings.Default.Logger.Path)) return;
-                var sb = new StringBuilder(source);
-                foreach (var c in GetInvalidFileNameChars())
-                    sb.Replace(c, '-');
-                var path = Combine(Settings.Default.Logger.Path, sb.ToString());
-                Directory.CreateDirectory(path);
-                path = Combine(path, $"{now:yyyy-MM-dd}.log");
-                try
-                {
-                    File.AppendAllLines(path, new[] { $"[{level}]{log} {message}" });
-                }
-                catch (IOException)
-                {
-                    Console.WriteLine("Error writing the log file: " + path);
-                }
             }
+
+            if (string.IsNullOrEmpty(Settings.Default.Logger.Path)) return;
+
+            var logEventLevel = level switch
+            {
+                LogLevel.Debug => LogEventLevel.Debug,
+                LogLevel.Info => LogEventLevel.Information,
+                LogLevel.Warning => LogEventLevel.Warning,
+                LogLevel.Error => LogEventLevel.Error,
+                LogLevel.Fatal => LogEventLevel.Fatal,
+                _ => LogEventLevel.Information,
+            };
+
+            Log.GetLogger(source).Write(logEventLevel, "{message}", message);
         }
 
         /// <summary>
