@@ -12,27 +12,35 @@ This directory contains monitoring configurations for the Neo OpenTelemetry plug
 
 ### 1. Configure the Plugin
 
-Ensure your Neo node has the OTelPlugin enabled with proper configuration in `config.json`:
+Ensure your Neo node has the OpenTelemetry plugin enabled via `Plugins/OTelPlugin/OTelPlugin.json`:
 
 ```json
 {
   "PluginConfiguration": {
-    "OTelPlugin": {
+    "Enabled": true,
+    "Metrics": {
       "Enabled": true,
-      "Metrics": {
+      "Categories": {
+        "Blockchain": true,
+        "Mempool": true,
+        "Network": true,
+        "System": true,
+        "Consensus": true,
+        "State": true,
+        "Vm": true,
+        "Rpc": true
+      },
+      "PrometheusExporter": {
         "Enabled": true,
-        "Exporters": {
-          "Prometheus": {
-            "Enabled": true,
-            "Port": 9090,
-            "Path": "/metrics"
-          }
-        }
+        "Port": 9090,
+        "Path": "/metrics"
       }
     }
   }
 }
 ```
+
+Set any category to `false` to remove the corresponding panels/alerts from the stack (e.g., disable `Vm` for lightweight nodes).
 
 ### 2. Start Monitoring Stack
 
@@ -61,43 +69,52 @@ docker-compose up -d
 
 Alerts are automatically loaded when Prometheus starts. To receive notifications:
 
-1. Configure Alertmanager (see `alertmanager-config.yml.example`)
+1. Configure Alertmanager (see `alertmanager.yml.example`)
 2. Set up notification channels (email, Slack, PagerDuty, etc.)
 3. Restart the monitoring stack
 
 ## Dashboard Panels
 
-The Grafana dashboard includes:
+The primary Grafana dashboard ships with dedicated rows for:
 
-- **Blockchain Height** - Current blockchain height and sync status
-- **Connected Peers** - Number of connected P2P peers
-- **Block Processing Rate** - Blocks processed per second
-- **MemPool Size** - Current mempool status (total, verified, unverified)
-- **CPU Usage** - Process and system CPU utilization
-- **Memory Usage** - Working set and GC heap size
-- **Transaction Processing Rate** - Transactions per second
-- **Block Processing Time** - p50, p95, p99 latencies
+- **Node & System** – Height, sync status, peer counts, CPU, memory, descriptors, disk usage
+- **Consensus** – Round/view gauges, message counters, finality latency
+- **State Service** – Root height, validation lag, snapshot durations, health ratio
+- **RPC** – Active requests, throughput/error rates, p95 latency, optimisation playbook
+- **VM Performance** – Instruction rate/latency, stack depth, hot trace ratios, super-instruction plans
+- **Mempool & Transactions** – Size breakdown, conflicts, verification failures
+
+Import `neo-dashboard.json` (or the provisioning bundle) to get the full layout.
 
 ## Alert Rules
 
 ### Critical Alerts
-- **NeoNodeDown** - Node is unreachable for 2+ minutes
-- **NeoBlockchainNotSyncing** - No new blocks for 10+ minutes
-- **NeoNoPeers** - No connected peers for 5+ minutes
-- **NeoStorageErrors** - Storage system errors detected
+- **NeoNodeDown** – Node is unreachable for 2+ minutes
+- **NeoBlockchainNotSyncing** – No new blocks for 10+ minutes
+- **NeoNoPeers** – No connected peers for 5+ minutes
+- **NeoStorageErrors** – Storage system errors detected
 
 ### Warning Alerts
-- **NeoLowPeerCount** - Less than 3 connected peers
-- **NeoHighMemoryUsage** - Memory usage above 4GB
-- **NeoHighCPUUsage** - CPU usage above 80%
-- **NeoMemPoolFull** - MemPool above 90% capacity
-- **NeoSlowBlockProcessing** - Block processing p95 > 1s
-- **NeoHighTransactionFailureRate** - Transaction failure rate > 10%
+- **NeoLowPeerCount** – Less than 3 connected peers
+- **NeoHighMemoryUsage** – Memory usage above 4 GB
+- **NeoHighCPUUsage** – CPU usage above 80 %
+- **NeoMemPoolFull** – MemPool above 90 % capacity
+- **NeoSlowBlockProcessing** – Block processing p95 > 1 s
+- **NeoHighTransactionFailureRate** – Transaction failure rate > 10 %
+- **NeoStateLagging** – State root lag exceeds 12 blocks
+- **NeoStateHealthDegraded** – State snapshot health below 85 %
+- **NeoStateValidationStalled** – No state validation progress for 15 min
+- **NeoDiskCapacityLow** – Less than 50 GB free on the data volume
+- **NeoFileDescriptorsHigh** – Process file descriptor count above 2000
+- **NeoRpcErrorRateHigh** – RPC error rate above 5 %
+- **NeoRpcLatencyHigh** – RPC p95 latency above 500 ms
+- **NeoRpcBacklog** – More than 25 in-flight RPC requests
 
 ### Info Alerts
-- **NeoNodeRestarted** - Node restarted in last 5 minutes
-- **NeoBlockchainResyncing** - Node is syncing blockchain
-- **NeoHighNetworkTraffic** - Network traffic > 10MB/s
+- **NeoNodeRestarted** – Node restarted in the last 5 minutes
+- **NeoBlockchainResyncing** – Node is currently syncing
+- **NeoPeerChurn** – Significant peer delta within 5 minutes
+- **NeoConsensusViewFlapping** – View changes exceeded normal cadence
 
 ## Customization
 

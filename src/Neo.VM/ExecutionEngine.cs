@@ -12,6 +12,7 @@
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.VM
@@ -22,6 +23,8 @@ namespace Neo.VM
     public class ExecutionEngine : IDisposable
     {
         private VMState _state = VMState.BREAK;
+        private ExecutionEngineEventSource.TelemetryRegistration? _telemetry;
+        private bool _emitDispatchCounters;
 
         internal bool isJumping = false;
 
@@ -101,10 +104,17 @@ namespace Neo.VM
             Limits = limits;
             ReferenceCounter = referenceCounter;
             ResultStack = new(referenceCounter);
+            if (ExecutionEngineEventSource.Log.IsEnabled())
+            {
+                _telemetry = ExecutionEngineEventSource.Log.Register(this);
+                _emitDispatchCounters = true;
+            }
         }
 
         public virtual void Dispose()
         {
+            _telemetry?.Dispose();
+            _telemetry = null;
             InvocationStack.Clear();
         }
 
@@ -129,39 +139,94 @@ namespace Neo.VM
             if (InvocationStack.Count == 0)
             {
                 State = VMState.HALT;
+                return;
             }
-            else
+            try
             {
-                try
+                ExecutionContext context = CurrentContext!;
+                var plannedLength = GetPlannedWindowLength(context);
+
+                if (plannedLength > 1)
                 {
-                    ExecutionContext context = CurrentContext!;
-                    Instruction instruction = context.CurrentInstruction ?? Instruction.RET;
-                    PreExecuteInstruction(instruction);
-#if VMPERF
-                    Console.WriteLine("op:["
-                                      + this.CurrentContext.InstructionPointer.ToString("X04")
-                                      + "]"
-                                      + this.CurrentContext.CurrentInstruction?.OpCode
-                                      + " "
-                                      + this.CurrentContext.EvaluationStack);
-#endif
-                    try
+                    for (int i = 0; i < plannedLength; i++)
                     {
-                        JumpTable[instruction.OpCode](this, instruction);
+                        var current = CurrentContext;
+                        if (current is null)
+                            break;
+
+                        var currentInstruction = current.CurrentInstruction ?? Instruction.RET;
+                        ExecuteInstructionCore(current, currentInstruction);
+
+                        if (State == VMState.FAULT || State == VMState.HALT || InvocationStack.Count == 0)
+                            break;
+
+                        if (!ReferenceEquals(CurrentContext, context))
+                            break;
                     }
-                    catch (CatchableException ex) when (Limits.CatchEngineExceptions)
-                    {
-                        JumpTable.ExecuteThrow(this, ex.Message);
-                    }
-                    PostExecuteInstruction(instruction);
-                    if (!isJumping) context.MoveNext();
-                    isJumping = false;
                 }
-                catch (Exception e)
+                else
                 {
-                    OnFault(e);
+                    var instruction = context.CurrentInstruction ?? Instruction.RET;
+                    ExecuteInstructionCore(context, instruction);
                 }
             }
+            catch (Exception e)
+            {
+                OnFault(e);
+            }
+        }
+
+        private static int GetPlannedWindowLength(ExecutionContext context)
+        {
+            return context is null ? 0 : VmSuperInstructionPlanner.TryGetPlanLength(context);
+        }
+
+        private void ExecuteInstructionCore(ExecutionContext context, Instruction instruction)
+        {
+            if (!_emitDispatchCounters && ExecutionEngineEventSource.Log.IsEnabled())
+            {
+                _telemetry = ExecutionEngineEventSource.Log.Register(this);
+                _emitDispatchCounters = _telemetry != null;
+            }
+
+            long instructionStartTimestamp = 0;
+            if (_emitDispatchCounters)
+                instructionStartTimestamp = Stopwatch.GetTimestamp();
+
+            _telemetry?.BeforeInstruction();
+            PreExecuteInstruction(instruction);
+#if VMPERF
+            Console.WriteLine("op:["
+                              + context.InstructionPointer.ToString("X04")
+                              + "]"
+                              + instruction.OpCode
+                              + " "
+                              + context.EvaluationStack);
+#endif
+            try
+            {
+                JumpTable[instruction.OpCode](this, instruction);
+            }
+            catch (CatchableException ex) when (Limits.CatchEngineExceptions)
+            {
+                JumpTable.ExecuteThrow(this, ex.Message);
+            }
+            PostExecuteInstruction(instruction);
+            _telemetry?.AfterInstruction();
+
+            if (VmTraceProfiler.IsEnabled)
+            {
+                VmTraceProfiler.GetTraceContext(context).Record(instruction.OpCode);
+            }
+
+            if (_emitDispatchCounters)
+            {
+                var elapsed = (Stopwatch.GetTimestamp() - instructionStartTimestamp) * 1000.0 / Stopwatch.Frequency;
+                ExecutionEngineEventSource.Log.InstructionDispatched(elapsed);
+            }
+
+            if (!isJumping) context.MoveNext();
+            isJumping = false;
         }
 
         /// <summary>
@@ -198,6 +263,10 @@ namespace Neo.VM
             }
             context.LocalVariables?.ClearReferences();
             context.Arguments?.ClearReferences();
+            if (VmTraceProfiler.IsEnabled)
+            {
+                VmTraceProfiler.FinalizeTrace(context);
+            }
         }
 
         /// <summary>

@@ -37,21 +37,9 @@ namespace Neo.Plugins.OpenTelemetry
         // Network/P2P metrics
         public const string P2PConnectedPeers = "neo.p2p.connected_peers";
         public const string P2PUnconnectedPeers = "neo.p2p.unconnected_peers";
-        public const string P2PPeerConnectedTotal = "neo.p2p.peer_connected_total";
-        public const string P2PPeerDisconnectedTotal = "neo.p2p.peer_disconnected_total";
-        public const string P2PBytesSentTotal = "neo.p2p.bytes_sent_total";
-        public const string P2PBytesReceivedTotal = "neo.p2p.bytes_received_total";
-        public const string P2PMessagesReceivedTotal = "neo.p2p.messages_received_total";
-        public const string P2PMessagesSentTotal = "neo.p2p.messages_sent_total";
 
         // Transaction metrics
-        public const string TransactionVerificationTime = "neo.transaction.verification_time";
         public const string TransactionVerificationFailuresTotal = "neo.transaction.verification_failures_total";
-
-        // Error metrics
-        public const string ProtocolErrorsTotal = "neo.protocol.errors_total";
-        public const string NetworkErrorsTotal = "neo.network.errors_total";
-        public const string StorageErrorsTotal = "neo.storage.errors_total";
 
         // System metrics
         public const string ProcessCpuUsage = "process.cpu.usage";

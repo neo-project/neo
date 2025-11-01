@@ -11,9 +11,11 @@
 
 using Akka.Actor;
 using Neo.Extensions;
+using Neo.IEventHandlers;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
 using Neo.Sign;
@@ -38,6 +40,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private uint prepareRequestReceivedBlockIndex;
         private uint block_received_index;
         private bool started = false;
+        private ChangeViewReason lastChangeViewReason;
+        private bool hasLastChangeViewReason;
 
         /// <summary>
         /// This will record the information from last scheduled timer
@@ -72,9 +76,37 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             Context.System.EventStream.Subscribe(Self, typeof(RelayResult));
         }
 
+        private void PublishConsensusTelemetry(
+            ConsensusTelemetryEventType eventType,
+            uint height,
+            byte viewNumber,
+            string reason = null,
+            TimeSpan? duration = null,
+            ConsensusMessageKind? messageKind = null,
+            bool? messageSent = null)
+        {
+            if (!Plugin.Plugins.Any(static plugin => plugin is IConsensusDiagnosticsHandler)) return;
+
+            int validatorCount = context.Validators?.Length ?? 0;
+            int primaryIndex = context.Block?.PrimaryIndex ?? -1;
+            var args = new ConsensusTelemetryEventArgs(eventType, height, viewNumber, validatorCount, primaryIndex, duration, reason, messageKind, messageSent);
+            foreach (var handler in Plugin.Plugins.OfType<IConsensusDiagnosticsHandler>())
+            {
+                handler.OnConsensusTelemetry(args);
+            }
+        }
+
         private void OnPersistCompleted(Block block)
         {
             Log($"Persisted {nameof(Block)}: height={block.Index} hash={block.Hash} tx={block.Transactions.Length} nonce={block.Nonce}");
+            TimeSpan? finality = null;
+            if (prepareRequestReceivedBlockIndex == block.Index && prepareRequestReceivedTime != default)
+            {
+                finality = TimeProvider.Current.UtcNow - prepareRequestReceivedTime;
+                prepareRequestReceivedTime = default;
+                prepareRequestReceivedBlockIndex = 0;
+            }
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.BlockPersisted, block.Index, context.ViewNumber, duration: finality);
             knownHashes.Clear();
             InitializeConsensus(0);
         }
@@ -85,6 +117,12 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (viewNumber > 0)
                 Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
             Log($"Initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.ConsensusStarted, context.Block.Index, viewNumber);
+            if (viewNumber > 0)
+            {
+                PublishConsensusTelemetry(ConsensusTelemetryEventType.ViewChanged, context.Block.Index, viewNumber, hasLastChangeViewReason ? lastChangeViewReason.ToString() : null);
+                hasLastChangeViewReason = false;
+            }
             if (context.WatchOnly) return;
             if (context.IsPrimary)
             {
@@ -146,6 +184,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         {
             Log("OnStart");
             started = true;
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.ConsensusStarted, context.Block.Index, context.ViewNumber);
             if (!dbftSettings.IgnoreRecoveryLogs && context.Load())
             {
                 if (context.Transactions != null)
@@ -202,6 +241,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         {
             Log($"Sending {nameof(PrepareRequest)}: height={context.Block.Index} view={context.ViewNumber}");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+            prepareRequestReceivedTime = TimeProvider.Current.UtcNow;
+            prepareRequestReceivedBlockIndex = context.Block.Index;
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageSent, context.Block.Index, context.ViewNumber, messageKind: ConsensusMessageKind.PrepareRequest, messageSent: true);
 
             if (context.Validators.Length == 1)
                 CheckPreparations();
@@ -217,6 +259,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void RequestRecovery()
         {
             Log($"Sending {nameof(RecoveryRequest)}: height={context.Block.Index} view={context.ViewNumber} nc={context.CountCommitted} nf={context.CountFailed}");
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.RecoveryRequested, context.Block.Index, context.ViewNumber);
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageSent, context.Block.Index, context.ViewNumber, messageKind: ConsensusMessageKind.RecoveryRequest, messageSent: true);
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryRequest() });
         }
 
@@ -236,7 +280,10 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             else
             {
                 Log($"Sending {nameof(ChangeView)}: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
+                lastChangeViewReason = reason;
+                hasLastChangeViewReason = true;
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(reason) });
+                PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageSent, context.Block.Index, context.ViewNumber, messageKind: ConsensusMessageKind.ChangeView, messageSent: true, reason: reason.ToString());
                 CheckExpectedView(expectedView);
             }
         }

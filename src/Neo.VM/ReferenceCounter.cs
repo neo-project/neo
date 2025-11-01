@@ -207,6 +207,11 @@ namespace Neo.VM
                         _cachedComponents.Remove(nodeToRemove);
                     }
                 }
+
+                if (ExecutionEngineEventSource.Log.IsEnabled())
+                {
+                    ExecutionEngineEventSource.Log.ReferenceSweepCompleted();
+                }
             }
 
             // Return the current total reference count.

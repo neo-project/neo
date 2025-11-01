@@ -9,9 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Plugins;
 using Neo.Plugins.OpenTelemetry;
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace Neo.Plugins.OTelPlugin.Tests
 {
@@ -52,6 +56,143 @@ namespace Neo.Plugins.OTelPlugin.Tests
             var pluginType = typeof(OpenTelemetryPlugin);
             Assert.IsNotNull(pluginType);
             Assert.AreEqual("OpenTelemetryPlugin", pluginType.Name);
+        }
+
+        [TestMethod]
+        public void InitializeMetrics_AllCategoriesDisabled_SkipsInstruments()
+        {
+            var plugin = new OpenTelemetryPlugin();
+            try
+            {
+                SetPrivateField(plugin, "_settings", CreateSettingsWithEnabledCategories());
+                InvokeInitializeMetrics(plugin);
+
+                Assert.IsNull(GetPrivateField<object>(plugin, "_blocksProcessedCounter"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_mempoolSizeGauge"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_connectedPeersGauge"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_cpuUsageGauge"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_consensusMessagesSentCounter"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_stateRootHeightGauge"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_rpcRequestsCounter"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_vmCounterListener"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_traceProfileStore"));
+            }
+            finally
+            {
+                plugin.Dispose();
+                Plugin.Plugins.Remove(plugin);
+            }
+        }
+
+        [TestMethod]
+        public void InitializeMetrics_BlockchainCategoryEnabled_CreatesBlockchainInstruments()
+        {
+            var plugin = new OpenTelemetryPlugin();
+            try
+            {
+                SetPrivateField(plugin, "_settings", CreateSettingsWithEnabledCategories("Blockchain"));
+                InvokeInitializeMetrics(plugin);
+
+                Assert.IsNotNull(GetPrivateField<object>(plugin, "_blocksProcessedCounter"));
+                Assert.IsNotNull(GetPrivateField<object>(plugin, "_blockProcessingTimeHistogram"));
+                Assert.IsNotNull(GetPrivateField<object>(plugin, "_blockHeightGauge"));
+                Assert.IsNotNull(GetPrivateField<object>(plugin, "_blockProcessingRateGauge"));
+
+                Assert.IsNull(GetPrivateField<object>(plugin, "_mempoolSizeGauge"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_rpcRequestsCounter"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_vmCounterListener"));
+            }
+            finally
+            {
+                plugin.Dispose();
+                Plugin.Plugins.Remove(plugin);
+            }
+        }
+
+        [TestMethod]
+        public void InitializeMetrics_RpcCategoryEnabled_CreatesRpcInstruments()
+        {
+            var plugin = new OpenTelemetryPlugin();
+            try
+            {
+                SetPrivateField(plugin, "_settings", CreateSettingsWithEnabledCategories("Rpc"));
+                InvokeInitializeMetrics(plugin);
+
+                Assert.IsNotNull(GetPrivateField<object>(plugin, "_rpcRequestsCounter"));
+                Assert.IsNotNull(GetPrivateField<object>(plugin, "_rpcRequestErrorCounter"));
+                Assert.IsNotNull(GetPrivateField<object>(plugin, "_rpcRequestDurationHistogram"));
+                Assert.IsNotNull(GetPrivateField<object>(plugin, "_rpcActiveRequestsGauge"));
+
+                Assert.IsNull(GetPrivateField<object>(plugin, "_blocksProcessedCounter"));
+                Assert.IsNull(GetPrivateField<object>(plugin, "_vmCounterListener"));
+            }
+            finally
+            {
+                plugin.Dispose();
+                Plugin.Plugins.Remove(plugin);
+            }
+        }
+
+        private static readonly string[] CategoryNames =
+        [
+            "Blockchain",
+            "Mempool",
+            "Network",
+            "System",
+            "Consensus",
+            "State",
+            "Vm",
+            "Rpc"
+        ];
+
+        private static OTelSettings CreateSettingsWithEnabledCategories(params string[] enabledCategories)
+        {
+            var values = new Dictionary<string, string?>
+            {
+                ["PluginConfiguration:Enabled"] = "true",
+                ["PluginConfiguration:ServiceName"] = "unit-test-node",
+                ["PluginConfiguration:Metrics:Enabled"] = "true",
+                ["PluginConfiguration:Metrics:Interval"] = "1000",
+                ["PluginConfiguration:Metrics:PrometheusExporter:Enabled"] = "false",
+                ["PluginConfiguration:Metrics:ConsoleExporter:Enabled"] = "false",
+                ["PluginConfiguration:Traces:Enabled"] = "false",
+                ["PluginConfiguration:Logs:Enabled"] = "false",
+                ["PluginConfiguration:OtlpExporter:Enabled"] = "false"
+            };
+
+            var enabledSet = new HashSet<string>(enabledCategories ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+            foreach (var category in CategoryNames)
+            {
+                values[$"PluginConfiguration:Metrics:Categories:{category}"] =
+                    enabledSet.Contains(category) ? bool.TrueString : bool.FalseString;
+            }
+
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(values)
+                .Build();
+
+            return new OTelSettings(configuration.GetSection("PluginConfiguration"));
+        }
+
+        private static void InvokeInitializeMetrics(OpenTelemetryPlugin plugin)
+        {
+            var method = typeof(OpenTelemetryPlugin).GetMethod("InitializeMetrics", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(method, "InitializeMetrics method not found via reflection.");
+            method.Invoke(plugin, null);
+        }
+
+        private static void SetPrivateField(object target, string fieldName, object? value)
+        {
+            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' not found on {target.GetType().Name}.");
+            field.SetValue(target, value);
+        }
+
+        private static T? GetPrivateField<T>(object target, string fieldName)
+        {
+            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' not found on {target.GetType().Name}.");
+            return (T?)field.GetValue(target);
         }
     }
 }

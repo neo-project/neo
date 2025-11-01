@@ -112,12 +112,7 @@ namespace Neo.Plugins.OpenTelemetry
         {
             if (system == null) return "unknown";
 
-            return system.Settings.Network switch
-            {
-                0x00 => "testnet",
-                0x01 => "mainnet",
-                _ => $"private-{system.Settings.Network}"
-            };
+            return $"network-{system.Settings.Network}";
         }
 
         private static int GetNetworkId(NeoSystem? system)

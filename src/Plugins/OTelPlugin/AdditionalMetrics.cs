@@ -20,6 +20,7 @@ namespace Neo.Plugins.OpenTelemetry
         public const string ConsensusRound = "neo.consensus.round";
         public const string ConsensusView = "neo.consensus.view";
         public const string ConsensusState = "neo.consensus.state";
+        public const string ConsensusViewChangesTotal = "neo.consensus.view_changes_total";
         public const string ConsensusMessagesSent = "neo.consensus.messages_sent_total";
         public const string ConsensusMessagesReceived = "neo.consensus.messages_received_total";
         public const string ConsensusTimeToFinality = "neo.consensus.time_to_finality";
@@ -45,6 +46,11 @@ namespace Neo.Plugins.OpenTelemetry
 
         // State metrics
         public const string StateRootHeight = "neo.state.root_height";
+        public const string StateValidatedRootHeight = "neo.state.validated_root_height";
+        public const string StateRootLag = "neo.state.root_lag";
+        public const string StateSnapshotApplyDuration = "neo.state.snapshot_apply_duration_ms";
+        public const string StateSnapshotCommitDuration = "neo.state.snapshot_commit_duration_ms";
+        public const string StateSnapshotHealth = "neo.state.snapshot_health";
         public const string StateValidations = "neo.state.validations_total";
         public const string StateValidationErrors = "neo.state.validation_errors_total";
 
@@ -59,9 +65,30 @@ namespace Neo.Plugins.OpenTelemetry
         public const string NodeReadiness = "neo.node.readiness";
         public const string NodeLastActivity = "neo.node.last_activity";
 
+        // Virtual machine metrics
+        public const string VmInstructionRate = "neo.vm.instruction_rate";
+        public const string VmInstructionLatency = "neo.vm.instruction_latency_ms";
+        public const string VmEvaluationStackDepth = "neo.vm.evaluation_stack_depth";
+        public const string VmInvocationStackDepth = "neo.vm.invocation_stack_depth";
+        public const string VmResultStackDepth = "neo.vm.result_stack_depth";
+        public const string VmReferenceSweepRate = "neo.vm.reference_sweeps_rate";
+        public const string VmHotTraceRatio = "neo.vm.trace.hot_ratio";
+        public const string VmHotTraceHits = "neo.vm.trace.hot_hits";
+        public const string VmHotTraceMaxRatio = "neo.vm.trace.max_hot_ratio";
+        public const string VmHotTraceMaxHits = "neo.vm.trace.max_hot_hits";
+        public const string VmTraceProfileCount = "neo.vm.trace.profile_count";
+        public const string VmSuperInstructionPlanCount = "neo.vm.superinstruction.plan_count";
+
         // Resource utilization
         public const string FileDescriptors = "process.file_descriptors";
         public const string OpenConnections = "process.open_connections";
-        public const string GoroutineCount = "process.goroutines"; // For compatibility with other systems
+        public const string DiskFreeBytes = "neo.node.disk_free_bytes";
+        public const string ChainDbSize = "neo.node.chain_db_size_bytes";
+
+        // RPC metrics
+        public const string RpcRequestsTotal = "neo.rpc.requests_total";
+        public const string RpcRequestErrorsTotal = "neo.rpc.request_errors_total";
+        public const string RpcRequestDuration = "neo.rpc.request_duration_ms";
+        public const string RpcActiveRequests = "neo.rpc.active_requests";
     }
 }

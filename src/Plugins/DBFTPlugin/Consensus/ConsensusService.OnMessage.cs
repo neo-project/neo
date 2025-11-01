@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.IEventHandlers;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -82,6 +83,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (message.Version != context.Block.Version || message.PrevHash != context.Block.PrevHash) return;
             if (message.TransactionHashes.Length > neoSystem.Settings.MaxTransactionsPerBlock) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex} tx={message.TransactionHashes.Length}");
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageReceived, message.BlockIndex, message.ViewNumber, messageKind: ConsensusMessageKind.PrepareRequest, messageSent: false);
             if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMilliseconds(8 * context.TimePerBlock.TotalMilliseconds).ToTimestampMS())
             {
                 Log($"Timestamp incorrect: {message.Timestamp}", LogLevel.Warning);
@@ -180,6 +182,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
             Log($"{nameof(OnPrepareResponseReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex}");
             context.PreparationPayloads[message.ValidatorIndex] = payload;
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageReceived, message.BlockIndex, message.ViewNumber, messageKind: ConsensusMessageKind.PrepareResponse, messageSent: false);
             if (context.WatchOnly || context.CommitSent) return;
             if (context.RequestSentOrReceived)
                 CheckPreparations();
@@ -197,6 +200,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 return;
 
             Log($"{nameof(OnChangeViewReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex} nv={message.NewViewNumber} reason={message.Reason}");
+            lastChangeViewReason = message.Reason;
+            hasLastChangeViewReason = true;
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageReceived, message.BlockIndex, message.ViewNumber, messageKind: ConsensusMessageKind.ChangeView, messageSent: false, reason: message.Reason.ToString());
             context.ChangeViewPayloads[message.ValidatorIndex] = payload;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -227,6 +233,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 else if (Crypto.VerifySignature(hashData, commit.Signature.Span, context.Validators[commit.ValidatorIndex]))
                 {
                     existingCommitPayload = payload;
+                    PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageReceived, commit.BlockIndex, commit.ViewNumber, messageKind: ConsensusMessageKind.Commit, messageSent: false);
                     CheckCommits();
                 }
                 return;
@@ -246,6 +253,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             int validPrepResponses = 0, totalPrepResponses = 0, validCommits = 0, totalCommits = 0;
 
             Log($"{nameof(OnRecoveryMessageReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex}");
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageReceived, message.BlockIndex, message.ViewNumber, messageKind: ConsensusMessageKind.RecoveryMessage, messageSent: false);
             try
             {
                 if (message.ViewNumber > context.ViewNumber)
@@ -299,6 +307,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (!knownHashes.Add(payload.Hash)) return;
 
             Log($"{nameof(OnRecoveryRequestReceived)}: height={message.BlockIndex} index={message.ValidatorIndex} view={message.ViewNumber}");
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageReceived, message.BlockIndex, message.ViewNumber, messageKind: ConsensusMessageKind.RecoveryRequest, messageSent: false);
             if (context.WatchOnly) return;
             if (!context.CommitSent)
             {
@@ -316,6 +325,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 if (!shouldSendRecovery) return;
             }
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+            PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageSent, context.Block.Index, context.ViewNumber, messageKind: ConsensusMessageKind.RecoveryMessage, messageSent: true);
         }
     }
 }

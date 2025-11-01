@@ -450,8 +450,6 @@
             mempoolUnverified: [],
             gcCollections: [],
             threadCount: [],
-            messagesReceived: [],
-            messagesSent: [],
             errors: []
         };
 
@@ -714,11 +712,9 @@
                 txTotal: await queryMetric('neo_transactions_processed_total'),
                 blocksTotal: await queryMetric('neo_blocks_processed_total'),
                 uptime: await queryMetric('neo_node_uptime_seconds'),
-                messagesReceived: await queryMetric('neo_p2p_messages_received_total'),
-                messagesSent: await queryMetric('neo_p2p_messages_sent_total'),
-                failedMessages: await queryMetric('neo_p2p_failed_messages_total'),
-                bytesReceived: await queryMetric('neo_p2p_bytes_received_total'),
-                bytesSent: await queryMetric('neo_p2p_bytes_sent_total'),
+                mempoolConflicts: await queryMetric('neo_mempool_conflicts_total'),
+                mempoolBatchRemoved: await queryMetric('neo_mempool_batch_removed_size_sum'),
+                mempoolCapacityRatio: await queryMetric('neo_mempool_capacity_ratio'),
                 networkErrors: await queryMetric('neo_errors_total{error_type="network"}'),
                 storageErrors: await queryMetric('neo_errors_total{error_type="storage"}'),
                 protocolErrors: await queryMetric('neo_errors_total{error_type="protocol"}'),
@@ -810,11 +806,13 @@
                     icon: 'fa-microchip'
                 },
                 {
-                    title: 'P2P Messages',
-                    value: `↓${(metrics.messagesReceived || 0).toLocaleString()} ↑${(metrics.messagesSent || 0).toLocaleString()}`,
-                    change: `${metrics.failedMessages || 0} failed`,
-                    positive: (metrics.failedMessages || 0) < 100,
-                    icon: 'fa-comments'
+                    title: 'Mempool Evictions',
+                    value: `${(metrics.mempoolConflicts || 0).toLocaleString()} conflicts`,
+                    change: metrics.mempoolBatchRemoved != null
+                        ? `${metrics.mempoolBatchRemoved || 0} tx removed (Σ)`
+                        : 'Tracking...',
+                    positive: (metrics.mempoolCapacityRatio || 0) < 0.9,
+                    icon: 'fa-recycle'
                 }
             ];
 
@@ -912,9 +910,9 @@
                 { name: 'neo_blocks_processed_total', value: metrics.blocksTotal, format: 'number' },
                 { name: 'neo_transactions_processed_total', value: metrics.txTotal, format: 'number' },
                 { name: 'neo_node_uptime_seconds', value: metrics.uptime, format: 'duration' },
-                { name: 'neo_p2p_messages_received_total', value: metrics.messagesReceived, format: 'number' },
-                { name: 'neo_p2p_messages_sent_total', value: metrics.messagesSent, format: 'number' },
-                { name: 'neo_p2p_failed_messages_total', value: metrics.failedMessages, format: 'number' },
+                { name: 'neo_mempool_conflicts_total', value: metrics.mempoolConflicts, format: 'number' },
+                { name: 'neo_mempool_batch_removed_size_sum', value: metrics.mempoolBatchRemoved, format: 'number' },
+                { name: 'neo_mempool_capacity_ratio', value: metrics.mempoolCapacityRatio, format: 'percent' },
                 { name: 'neo_errors_network', value: metrics.networkErrors, format: 'number' },
                 { name: 'neo_errors_storage', value: metrics.storageErrors, format: 'number' },
                 { name: 'neo_errors_protocol', value: metrics.protocolErrors, format: 'number' }

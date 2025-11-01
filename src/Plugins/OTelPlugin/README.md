@@ -8,6 +8,12 @@ A production-ready OpenTelemetry plugin for Neo blockchain nodes that provides c
 - **Multiple Export Options**: Prometheus, OTLP, and Console exporters
 - **Thread-Safe Implementation**: Designed for production use with proper synchronization
 - **Event-Driven Architecture**: Integrates with Neo blockchain events for accurate metrics
+- **Consensus Telemetry**: Tracks dBFT view changes, finality, and message flow for production validators
+- **State Service Visibility**: Monitors state root lag, validation cadence, and snapshot health
+- **RPC Observability**: Captures request throughput, latency percentiles, and error rates
+- **Hot Trace Profiling**: Captures hot opcode sequences per contract for targeted JIT tuning
+- **Operational Health Signals**: Readiness and health scoring backed by automated telemetry checks
+- **Cross-Platform System Metrics**: Portable CPU and memory telemetry for Windows and Linux
 - **Configuration Validation**: Validates all settings with clear error messages
 - **Resource Management**: Proper disposal patterns and error recovery
 
@@ -35,8 +41,6 @@ A production-ready OpenTelemetry plugin for Neo blockchain nodes that provides c
 |------------|------|-------------|---------|
 | `neo.p2p.connected_peers` | Gauge | Number of connected P2P peers | - |
 | `neo.p2p.unconnected_peers` | Gauge | Number of known but unconnected peers | - |
-| `neo.p2p.bytes_sent_total` | Counter | Total bytes sent to peers | - |
-| `neo.p2p.bytes_received_total` | Counter | Total bytes received from peers | - |
 
 ### MemPool Metrics
 | Metric Name | Type | Description | Labels |
@@ -44,19 +48,64 @@ A production-ready OpenTelemetry plugin for Neo blockchain nodes that provides c
 | `neo.mempool.size` | Gauge | Current number of transactions in mempool | - |
 | `neo.mempool.verified_count` | Gauge | Number of verified transactions | - |
 | `neo.mempool.unverified_count` | Gauge | Number of unverified transactions | - |
-| `neo.mempool.memory_bytes` | Gauge | Total memory used by mempool | - |
+| `neo.mempool.memory_bytes` | Gauge | Estimated memory footprint of transactions in mempool | - |
+| `neo.mempool.conflicts_total` | Counter | Transactions evicted because of conflicts | - |
+| `neo.mempool.batch_removed_size` | Histogram | Batch size of removals triggered by mempool events | - |
+| `neo.mempool.capacity_ratio` | Gauge | Ratio of current mempool usage to configured capacity | - |
 
 ### System Metrics
 | Metric Name | Type | Description | Labels |
 |------------|------|-------------|---------|
-| `process_cpu_usage` | Gauge | Process CPU usage percentage | - |
-| `system_cpu_usage` | Gauge | System CPU usage percentage | - |
-| `process_memory_working_set` | Gauge | Process working set memory (bytes) | - |
-| `process_memory_virtual` | Gauge | Process virtual memory (bytes) | - |
-| `dotnet_gc_heap_size` | Gauge | .NET GC heap size (bytes) | - |
-| `process_thread_count` | Gauge | Number of process threads | - |
-| `neo_node_start_time` | Gauge | Node start time (Unix timestamp) | - |
-| `neo_network_id` | Gauge | Network ID (0=TestNet, 1=MainNet) | - |
+| `process.cpu.usage` | Gauge | Process CPU usage percentage | - |
+| `system.cpu.usage` | Gauge | System CPU usage percentage | - |
+| `process.memory.working_set` | Gauge | Process working set memory (bytes) | - |
+| `process.memory.virtual` | Gauge | Process virtual memory (bytes) | - |
+| `dotnet.gc.heap_size` | Gauge | .NET GC heap size (bytes) | - |
+| `process.thread_count` | Gauge | Number of process threads | - |
+| `process.file_descriptors` | Gauge | Open file descriptors / handles | - |
+| `neo.node.disk_free_bytes` | Gauge | Free disk space for the chain data volume | - |
+| `neo.node.chain_db_size_bytes` | Gauge | Approximate on-disk size of the chain database | - |
+| `neo.node.start_time` | Gauge | Node start time (Unix timestamp) | - |
+| `neo.node.health_score` | Gauge | Telemetry health (-1=unhealthy, 0=degraded, 1=healthy) | - |
+| `neo.node.readiness` | Gauge | Node readiness for serving traffic (1=ready, 0=not ready) | - |
+| `neo.node.last_activity` | Gauge | Unix timestamp of the last persisted block | - |
+| `neo.network.id` | Gauge | Neo network magic identifier | - |
+
+
+### Consensus Metrics
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
+| `neo.consensus.round` | Gauge | Latest block height observed by consensus | - |
+| `neo.consensus.view` | Gauge | Current consensus view number | - |
+| `neo.consensus.state` | Gauge | Current primary validator index | - |
+| `neo.consensus.view_changes_total` | Counter | View changes grouped by reason | `reason` |
+| `neo.consensus.messages_sent_total` | Counter | Consensus messages sent | `type` |
+| `neo.consensus.messages_received_total` | Counter | Consensus messages received | `type` |
+| `neo.consensus.time_to_finality` | Gauge | Time from proposal to block persistence (ms) | - |
+
+### VM Metrics
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
+| `neo.vm.instruction_rate` | Gauge | Average VM instruction dispatch rate (ops/s) | - |
+| `neo.vm.instruction_latency_ms` | Gauge | Average VM instruction dispatch latency (ms) | - |
+| `neo.vm.evaluation_stack_depth` | Gauge | Current evaluation stack depth | - |
+| `neo.vm.invocation_stack_depth` | Gauge | Current invocation stack depth | - |
+| `neo.vm.result_stack_depth` | Gauge | Current result stack depth | - |
+| `neo.vm.reference_sweeps_rate` | Gauge | Reference sweep operations per second | - |
+| `neo.vm.trace.hot_ratio` | Gauge | Hit ratio of the hottest opcode window (per script, labelled) | `script`, `sequence`, `hits`, `total_instructions`, `last_seen` |
+| `neo.vm.trace.hot_hits` | Gauge | Hit count of the hottest opcode window (per script, labelled) | `script`, `sequence`, `total_instructions`, `last_seen` |
+| `neo.vm.trace.max_hot_ratio` | Gauge | Maximum hot-trace hit ratio across scripts | - |
+| `neo.vm.trace.max_hot_hits` | Gauge | Maximum hot-trace hit count across scripts | - |
+| `neo.vm.trace.profile_count` | Gauge | Number of trace profiles persisted | - |
+| `neo.vm.superinstruction.plan_count` | Gauge | Number of super-instruction plans derived from profiling | - |
+
+### RPC Metrics
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
+| `neo.rpc.active_requests` | Gauge | In-flight RPC requests per instance | - |
+| `neo.rpc.requests_total` | Counter | Total RPC requests processed | `method` |
+| `neo.rpc.request_errors_total` | Counter | RPC failures grouped by method and code | `method`, `code` |
+| `neo.rpc.request_duration_ms` | Histogram | RPC request latencies (milliseconds) | `method`, `result` |
 
 ## Configuration
 
@@ -81,10 +130,46 @@ Configure the plugin via `OTelPlugin.json`. All settings are validated on startu
 {
   "Metrics": {
     "Enabled": true,
+    "Categories": {
+      "Blockchain": true,
+      "Mempool": true,
+      "Network": true,
+      "System": true,
+      "Consensus": true,
+      "State": true,
+      "Vm": true,
+      "Rpc": true
+    },
     "PrometheusExporter": {
       "Enabled": true,
       "Port": 9090,
       "Path": "/metrics"
+    }
+  }
+}
+```
+
+### Metric Categories
+
+Set `Metrics.Categories` flags to disable an entire telemetry area without code changes. All switches default to `true`.
+
+- `Blockchain` – block/transaction counters, processing latency, planner rate gauges
+- `Mempool` – pool occupancy, capacity ratio, conflict tracking
+- `Network` – connected and unconnected peer gauges
+- `System` – process health, readiness, disk capacity, file descriptors
+- `Consensus` – dBFT round/view/state gauges with message and finality tracking
+- `State` – state root heights, lag, snapshot durations, validation counters
+- `Vm` – EventCounter feeds, stack depth gauges, trace profiler aggregates, super-instruction plans
+- `Rpc` – request concurrency, throughput, error rate, latency histograms
+
+Example override:
+
+```json
+{
+  "Metrics": {
+    "Categories": {
+      "Vm": false,
+      "Rpc": true
     }
   }
 }
@@ -128,6 +213,7 @@ Add custom attributes to identify your node:
   - MemPool size
   - Connected peers count
   - Active metrics and exporters
+- `telemetry plans [count]` - Print the top super-instruction planner suggestions captured from runtime telemetry (defaults to 10 entries).
 
 ## Monitoring Setup
 
@@ -146,14 +232,39 @@ scrape_configs:
 2. Example Prometheus queries:
    - Block processing rate: `rate(neo_blocks_processed_total[5m])`
    - Transaction throughput: `rate(neo_transactions_processed_total[5m])`
+   - Conflicting transactions: `increase(neo_mempool_conflicts_total[15m])`
    - Average block time: `rate(neo_block_processing_time_sum[5m]) / rate(neo_block_processing_time_count[5m])`
 
 ### Grafana Dashboards
 
-Pre-configured dashboards are available in the `grafana/` directory:
-- `neo-node-overview-dashboard.json` - Comprehensive overview with system metrics, network status, and blockchain data
-- `neo-complete-dashboard.json` - Detailed metrics dashboard with performance analysis  
-- `neo-node-health-dashboard.json` - Focused health monitoring dashboard
+Pre-configured dashboards are available in the `monitoring/` directory:
+- `neo-dashboard.json` - Comprehensive overview with system metrics, network status, and blockchain data
+- `neo-dashboard.html` - Lightweight dashboard preview that mirrors the JSON layout
+- `professional-dashboard.html` - Production-ready multi-pane monitoring view
+- `real-dashboard.html` - Alternative layout focused on operational runbooks
+
+### Trace Profiling Output
+
+Trace profiling produces hot opcode sequences per script. Profiles persist to `Plugins/OTelPlugin/profiles/vm-trace-profiles.json` and expose:
+
+- `scriptHash` – 20-byte Neo script hash for the contract/script
+- `hotSequence` – Most frequently observed 6-opcode window
+- `hitCount` / `totalInstructions` – Frequency data to feed super-instruction tuning
+
+The planner also emits `Plugins/OTelPlugin/profiles/vm-superinstructions.json`, bundling the most valuable sequences (with hit ratios and counts) so they can be ingested directly by your super-instruction/JIT pipeline. Pair these artifacts with the `neo_vm_superinstruction_plan_count` gauge and the "VM Optimization Playbook" panel to close the loop from profiling to deployment.
+
+### Converting Planner Output into C# Stubs
+
+Use the helper in `tools/generate_superinstructions.py` to convert the planner JSON into a partial C# helper:
+
+```bash
+python tools/generate_superinstructions.py \
+  --input Plugins/OTelPlugin/profiles/vm-superinstructions.json \
+  --output src/Neo.VM/JumpTable.SuperInstructions.generated.cs \
+  --min-ratio 0.10 --max-count 24
+```
+
+The generated file exposes a static list of sequences with hit ratios/counts, ready to feed into your JumpTable or JIT optimisation pipeline.
 
 The overview dashboard includes:
 - **Node Information**: Block height, peer count, network type, sync status, uptime

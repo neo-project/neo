@@ -7,6 +7,16 @@
     "Metrics": {
       "Enabled": true,
       "Interval": 10000,
+      "Categories": {
+        "Blockchain": true,
+        "Mempool": true,
+        "Network": true,
+        "System": true,
+        "Consensus": true,
+        "State": true,
+        "Vm": true,
+        "Rpc": true
+      },
       "PrometheusExporter": {
         "Enabled": true,
         "Port": 9090,

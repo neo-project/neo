@@ -117,25 +117,25 @@ groups:
   - name: neo_network_alerts
     interval: 30s
     rules:
-      - alert: NeoHighNetworkTraffic
-        expr: rate(neo_p2p_bytes_received_total[5m]) + rate(neo_p2p_bytes_sent_total[5m]) > 10485760
+      - alert: NeoPeerChurn
+        expr: abs(delta(neo_p2p_connected_peers[5m])) > 5
         for: 5m
         labels:
           severity: info
           component: network
         annotations:
-          summary: "High network traffic"
-          description: "Network traffic on {{ $labels.instance }} exceeds 10MB/s (current: {{ $value | humanize }}B/s)."
+          summary: "Peer count fluctuating"
+          description: "Peer churn on {{ $labels.instance }} exceeds 5 peers within 5 minutes (delta={{ $value }})."
 
       - alert: NeoFrequentPeerDisconnects
-        expr: rate(neo_p2p_peer_disconnected_total[5m]) > 0.1
+        expr: avg_over_time(neo_p2p_unconnected_peers[10m]) > 10
         for: 10m
         labels:
           severity: warning
           component: network
         annotations:
-          summary: "Frequent peer disconnections"
-          description: "Neo node {{ $labels.instance }} is experiencing frequent peer disconnections ({{ $value }} per second)."
+          summary: "High unconnected peer backlog"
+          description: "Neo node {{ $labels.instance }} reports more than 10 known-unconnected peers on average over the last 10 minutes."
 
   - name: neo_error_alerts
     interval: 30s
@@ -169,3 +169,26 @@ groups:
         annotations:
           summary: "Network errors detected"
           description: "Neo node {{ $labels.instance }} is experiencing network errors ({{ $value }} per second)."
+
+  - name: neo_consensus_alerts
+    interval: 30s
+    rules:
+      - alert: NeoConsensusFinalitySlow
+        expr: neo_consensus_time_to_finality > 5000
+        for: 5m
+        labels:
+          severity: warning
+          component: consensus
+        annotations:
+          summary: "Consensus finality exceeds threshold"
+          description: "Consensus finality on {{ $labels.instance }} averaged {{ $value | humanizeDuration }} over the last 5 minutes."
+
+      - alert: NeoConsensusViewFlapping
+        expr: increase(neo_consensus_view_changes_total[10m]) > 3
+        for: 10m
+        labels:
+          severity: info
+          component: consensus
+        annotations:
+          summary: "Frequent consensus view changes"
+          description: "More than 3 view changes were observed on {{ $labels.instance }} in the last 10 minutes."

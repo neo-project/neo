@@ -7,6 +7,16 @@
       "InstanceId": "node-prod-01",
       "Metrics": {
         "Enabled": true,
+        "Categories": {
+          "Blockchain": true,
+          "Mempool": true,
+          "Network": true,
+          "System": true,
+          "Consensus": true,
+          "State": true,
+          "Vm": true,
+          "Rpc": true
+        },
         "ConsoleExporter": {
           "Enabled": false
         },

@@ -36,10 +36,11 @@ class NeoMetricsState:
         self.storage_errors = 0
         self.protocol_errors = 0
         
-        # P2P message counts
-        self.messages_received = 1567890
-        self.messages_sent = 1543210
-        self.failed_messages = 23
+        # MemPool eviction tracking
+        self.mempool_conflicts_total = 1_250
+        self.mempool_batch_removed_sum = 4_800
+        self.mempool_batch_removed_count = 620
+        self.mempool_capacity = 5_000
         
     def get_current_height(self):
         """Calculate current block height based on elapsed time"""
@@ -82,14 +83,14 @@ class NeoMetricsState:
         fluctuation = int(math.sin(elapsed / 180) * 3)  # 3-minute cycles
         return max(5, min(self.max_peers, self.peer_count + fluctuation))
     
-    def update_message_counts(self):
-        """Update P2P message statistics"""
-        # Messages increase steadily
-        self.messages_received += 15
-        self.messages_sent += 14
-        # Occasional failed message
-        if time.time() % 100 < 1:
-            self.failed_messages += 1
+    def update_peer_activity(self):
+        """Update P2P connection counters and mempool eviction metrics"""
+        # Conflicts and removals occur more sporadically
+        if int(time.time()) % 45 == 0:
+            self.mempool_conflicts_total += 1
+
+        self.mempool_batch_removed_sum += 8
+        self.mempool_batch_removed_count += 1
     
     def update_error_counts(self):
         """Occasionally increment error counters"""
@@ -102,6 +103,32 @@ class NeoMetricsState:
         if current_time % 1800 == 0:  # Every 30 minutes
             self.protocol_errors += 1
 
+    def advance_height(self, height):
+        """Update derived counters based on new block height"""
+        if height > self.last_height:
+            delta = height - self.last_height
+            self.chain_db_size_bytes += delta * self.chain_growth_per_block
+            self.state_validations_total += delta
+            self.last_height = height
+
+    def update_state_metrics(self):
+        """Slowly adjust state service timings and validation errors"""
+        now = time.time()
+        self.state_apply_ms = 16.0 + 5.5 * math.sin(now / 40.0)
+        self.state_commit_ms = 6.2 + 2.1 * math.sin(now / 55.0)
+        if int(now) % 900 == 0:
+            self.state_validation_errors_total += 1
+
+    def update_rpc_metrics(self):
+        """Increment RPC counters to simulate steady traffic"""
+        self.rpc_active_requests = max(0, int(random.gauss(2.5, 1.2)))
+        for stats in self.rpc_methods.values():
+            delta = random.randint(45, 140)
+            stats["total"] += delta
+            stats["duration_sum"] += delta * random.uniform(0.05, 0.11)
+            if random.random() < 0.035:
+                stats["errors"] += 1
+
 # Global state instance
 neo_state = NeoMetricsState()
 
@@ -113,7 +140,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
             self.end_headers()
             
             # Update counters
-            neo_state.update_message_counts()
+            neo_state.update_peer_activity()
             neo_state.update_error_counts()
             
             # Get current values
@@ -227,25 +254,81 @@ dotnet_gc_collections_total{{generation="0"}} {int((time.time() - neo_state.star
 dotnet_gc_collections_total{{generation="1"}} {int((time.time() - neo_state.start_time) / 60)}
 dotnet_gc_collections_total{{generation="2"}} {int((time.time() - neo_state.start_time) / 300)}
 
-# HELP neo_p2p_messages_received_total Total P2P messages received
-# TYPE neo_p2p_messages_received_total counter
-neo_p2p_messages_received_total{{network="mainnet"}} {neo_state.messages_received}
+# HELP neo_mempool_conflicts_total Transactions removed due to conflicts
+# TYPE neo_mempool_conflicts_total counter
+neo_mempool_conflicts_total{{network="mainnet"}} {neo_state.mempool_conflicts_total}
 
-# HELP neo_p2p_messages_sent_total Total P2P messages sent
-# TYPE neo_p2p_messages_sent_total counter
-neo_p2p_messages_sent_total{{network="mainnet"}} {neo_state.messages_sent}
+# HELP neo_mempool_capacity_ratio Ratio of mempool usage versus configured capacity
+# TYPE neo_mempool_capacity_ratio gauge
+neo_mempool_capacity_ratio{{network="mainnet"}} {mempool / neo_state.mempool_capacity}
 
-# HELP neo_p2p_failed_messages_total Total failed P2P messages
-# TYPE neo_p2p_failed_messages_total counter
-neo_p2p_failed_messages_total{{network="mainnet"}} {neo_state.failed_messages}
+# HELP neo_consensus_round Latest consensus block height
+# TYPE neo_consensus_round gauge
+neo_consensus_round{{network="mainnet"}} {height}
 
-# HELP neo_p2p_bytes_received_total Total bytes received via P2P
-# TYPE neo_p2p_bytes_received_total counter
-neo_p2p_bytes_received_total{{network="mainnet"}} {neo_state.messages_received * 512}
+# HELP neo_consensus_view Current consensus view number
+# TYPE neo_consensus_view gauge
+neo_consensus_view{{network="mainnet"}} {(1 if neo_state.peer_count >= neo_state.max_peers else 0)}
 
-# HELP neo_p2p_bytes_sent_total Total bytes sent via P2P
-# TYPE neo_p2p_bytes_sent_total counter
-neo_p2p_bytes_sent_total{{network="mainnet"}} {neo_state.messages_sent * 512}
+# HELP neo_consensus_state Current primary validator index
+# TYPE neo_consensus_state gauge
+neo_consensus_state{{network="mainnet"}} {neo_state.peer_count % max(1, neo_state.max_peers)}
+
+# HELP neo_consensus_time_to_finality Consensus time to finality in milliseconds
+# TYPE neo_consensus_time_to_finality gauge
+neo_consensus_time_to_finality{{network="mainnet"}} {int((neo_state.get_current_height() - neo_state.base_block_height + 1) * 3200 % 6000)}
+
+# HELP neo_consensus_view_changes_total Consensus view changes total
+# TYPE neo_consensus_view_changes_total counter
+neo_consensus_view_changes_total{{network="mainnet",reason="Timeout"}} {neo_state.mempool_conflicts_total // 2}
+
+# HELP neo_consensus_messages_sent_total Consensus messages sent
+# TYPE neo_consensus_messages_sent_total counter
+neo_consensus_messages_sent_total{{network="mainnet",type="PrepareRequest"}} {neo_state.peer_count * 120}
+neo_consensus_messages_sent_total{{network="mainnet",type="PrepareResponse"}} {neo_state.peer_count * 210}
+neo_consensus_messages_sent_total{{network="mainnet",type="Commit"}} {neo_state.peer_count * 190}
+neo_consensus_messages_sent_total{{network="mainnet",type="ChangeView"}} {max(5, neo_state.peer_count)}
+neo_consensus_messages_sent_total{{network="mainnet",type="RecoveryRequest"}} {max(2, neo_state.peer_count // 2)}
+neo_consensus_messages_sent_total{{network="mainnet",type="RecoveryMessage"}} {max(2, neo_state.peer_count // 2)}
+
+# HELP neo_consensus_messages_received_total Consensus messages received
+# TYPE neo_consensus_messages_received_total counter
+neo_consensus_messages_received_total{{network="mainnet",type="PrepareRequest"}} {neo_state.peer_count * 118}
+neo_consensus_messages_received_total{{network="mainnet",type="PrepareResponse"}} {neo_state.peer_count * 208}
+neo_consensus_messages_received_total{{network="mainnet",type="Commit"}} {neo_state.peer_count * 192}
+neo_consensus_messages_received_total{{network="mainnet",type="ChangeView"}} {max(5, neo_state.peer_count)}
+neo_consensus_messages_received_total{{network="mainnet",type="RecoveryRequest"}} {max(2, neo_state.peer_count // 2)}
+neo_consensus_messages_received_total{{network="mainnet",type="RecoveryMessage"}} {max(2, neo_state.peer_count // 2)}
+
+# HELP neo_vm_trace_hot_ratio Hot trace hit ratio per script
+# TYPE neo_vm_trace_hot_ratio gauge
+neo_vm_trace_hot_ratio{{network="mainnet",script="0x{neo_state.base_block_height:X}",sequence="PUSH1 PUSH1 ADD MUL DIV",hits="{neo_state.mempool_conflicts_total}",total_instructions="{neo_state.mempool_conflicts_total + 400}",last_seen="{int(time.time())}"}} {min(0.85, neo_state.mempool_conflicts_total / max(1, neo_state.mempool_conflicts_total + 400))}
+
+# HELP neo_vm_trace_hot_hits Hot trace hit counts per script
+# TYPE neo_vm_trace_hot_hits gauge
+neo_vm_trace_hot_hits{{network="mainnet",script="0x{neo_state.base_block_height:X}",sequence="PUSH1 PUSH1 ADD MUL DIV",total_instructions="{neo_state.mempool_conflicts_total + 400}",last_seen="{int(time.time())}"}} {neo_state.mempool_conflicts_total}
+
+# HELP neo_vm_trace_max_hot_ratio Maximum hot trace hit ratio across scripts
+# TYPE neo_vm_trace_max_hot_ratio gauge
+neo_vm_trace_max_hot_ratio{{network="mainnet"}} {min(0.9, neo_state.mempool_conflicts_total / max(1, neo_state.mempool_conflicts_total + 300))}
+
+# HELP neo_vm_trace_max_hot_hits Maximum hot trace hit count across scripts
+# TYPE neo_vm_trace_max_hot_hits gauge
+neo_vm_trace_max_hot_hits{{network="mainnet"}} {neo_state.mempool_conflicts_total}
+
+# HELP neo_vm_trace_profile_count Number of hot trace profiles maintained
+# TYPE neo_vm_trace_profile_count gauge
+neo_vm_trace_profile_count{{network="mainnet"}} 2
+
+# HELP neo_mempool_batch_removed_size Number of transactions removed per batch
+# TYPE neo_mempool_batch_removed_size histogram
+neo_mempool_batch_removed_size_bucket{{le="1",network="mainnet"}} {neo_state.mempool_batch_removed_count * 0.15:.0f}
+neo_mempool_batch_removed_size_bucket{{le="5",network="mainnet"}} {neo_state.mempool_batch_removed_count * 0.55:.0f}
+neo_mempool_batch_removed_size_bucket{{le="10",network="mainnet"}} {neo_state.mempool_batch_removed_count * 0.85:.0f}
+neo_mempool_batch_removed_size_bucket{{le="25",network="mainnet"}} {neo_state.mempool_batch_removed_count * 0.97:.0f}
+neo_mempool_batch_removed_size_bucket{{le="+Inf",network="mainnet"}} {neo_state.mempool_batch_removed_count}
+neo_mempool_batch_removed_size_sum{{network="mainnet"}} {neo_state.mempool_batch_removed_sum}
+neo_mempool_batch_removed_size_count{{network="mainnet"}} {neo_state.mempool_batch_removed_count}
 
 # HELP neo_errors_total Error count by type
 # TYPE neo_errors_total counter

@@ -159,17 +159,81 @@ dotnet_gc_collections_total{{generation="0",instance="localhost:9090"}} {random.
 dotnet_gc_collections_total{{generation="1",instance="localhost:9090"}} {random.randint(100, 500)}
 dotnet_gc_collections_total{{generation="2",instance="localhost:9090"}} {random.randint(10, 50)}
 
-# HELP neo_p2p_messages_received_total P2P messages received
-# TYPE neo_p2p_messages_received_total counter
-neo_p2p_messages_received_total{{instance="localhost:9090"}} {random.randint(100000, 500000)}
+# HELP neo_mempool_conflicts_total Mempool conflicts detected
+# TYPE neo_mempool_conflicts_total counter
+neo_mempool_conflicts_total{{instance="localhost:9090"}} {random.randint(100, 500)}
 
-# HELP neo_p2p_messages_sent_total P2P messages sent
-# TYPE neo_p2p_messages_sent_total counter
-neo_p2p_messages_sent_total{{instance="localhost:9090"}} {random.randint(100000, 500000)}
+# HELP neo_mempool_batch_removed_size Transactions removed per batch
+# TYPE neo_mempool_batch_removed_size histogram
+neo_mempool_batch_removed_size_bucket{{le="1",instance="localhost:9090"}} {random.randint(10, 50)}
+neo_mempool_batch_removed_size_bucket{{le="5",instance="localhost:9090"}} {random.randint(60, 120)}
+neo_mempool_batch_removed_size_bucket{{le="10",instance="localhost:9090"}} {random.randint(130, 200)}
+neo_mempool_batch_removed_size_bucket{{le="25",instance="localhost:9090"}} {random.randint(210, 240)}
+neo_mempool_batch_removed_size_bucket{{le="+Inf",instance="localhost:9090"}} {random.randint(250, 280)}
+neo_mempool_batch_removed_size_sum{{instance="localhost:9090"}} {random.randint(1000, 2500)}
+neo_mempool_batch_removed_size_count{{instance="localhost:9090"}} {random.randint(250, 280)}
 
-# HELP neo_p2p_failed_messages_total Failed P2P messages
-# TYPE neo_p2p_failed_messages_total counter
-neo_p2p_failed_messages_total{{instance="localhost:9090"}} {random.randint(10, 100)}
+# HELP neo_mempool_capacity_ratio Mempool usage ratio
+# TYPE neo_mempool_capacity_ratio gauge
+neo_mempool_capacity_ratio{{instance="localhost:9090"}} {round(random.uniform(0.1, 0.8), 3)}
+
+# HELP neo_consensus_round Latest consensus block height
+# TYPE neo_consensus_round gauge
+neo_consensus_round{{instance="localhost:9090"}} {height}
+
+# HELP neo_consensus_view Current consensus view number
+# TYPE neo_consensus_view gauge
+neo_consensus_view{{instance="localhost:9090"}} {random.randint(0, 2)}
+
+# HELP neo_consensus_state Current primary validator index
+# TYPE neo_consensus_state gauge
+neo_consensus_state{{instance="localhost:9090"}} {random.randint(0, 6)}
+
+# HELP neo_consensus_time_to_finality Consensus time to finality in milliseconds
+# TYPE neo_consensus_time_to_finality gauge
+neo_consensus_time_to_finality{{instance="localhost:9090"}} {random.randint(1200, 5200)}
+
+# HELP neo_consensus_view_changes_total Consensus view changes
+# TYPE neo_consensus_view_changes_total counter
+neo_consensus_view_changes_total{{instance="localhost:9090",reason="Timeout"}} {random.randint(0, 20)}
+
+# HELP neo_consensus_messages_sent_total Consensus messages sent
+# TYPE neo_consensus_messages_sent_total counter
+neo_consensus_messages_sent_total{{instance="localhost:9090",type="PrepareRequest"}} {random.randint(200, 400)}
+neo_consensus_messages_sent_total{{instance="localhost:9090",type="PrepareResponse"}} {random.randint(300, 600)}
+neo_consensus_messages_sent_total{{instance="localhost:9090",type="Commit"}} {random.randint(250, 500)}
+neo_consensus_messages_sent_total{{instance="localhost:9090",type="ChangeView"}} {random.randint(20, 60)}
+neo_consensus_messages_sent_total{{instance="localhost:9090",type="RecoveryRequest"}} {random.randint(5, 30)}
+neo_consensus_messages_sent_total{{instance="localhost:9090",type="RecoveryMessage"}} {random.randint(5, 30)}
+
+# HELP neo_consensus_messages_received_total Consensus messages received
+# TYPE neo_consensus_messages_received_total counter
+neo_consensus_messages_received_total{{instance="localhost:9090",type="PrepareRequest"}} {random.randint(200, 400)}
+neo_consensus_messages_received_total{{instance="localhost:9090",type="PrepareResponse"}} {random.randint(300, 600)}
+neo_consensus_messages_received_total{{instance="localhost:9090",type="Commit"}} {random.randint(250, 500)}
+neo_consensus_messages_received_total{{instance="localhost:9090",type="ChangeView"}} {random.randint(20, 60)}
+neo_consensus_messages_received_total{{instance="localhost:9090",type="RecoveryRequest"}} {random.randint(5, 30)}
+neo_consensus_messages_received_total{{instance="localhost:9090",type="RecoveryMessage"}} {random.randint(5, 30)}
+
+# HELP neo_vm_trace_hot_ratio Hot trace hit ratio per script
+# TYPE neo_vm_trace_hot_ratio gauge
+neo_vm_trace_hot_ratio{{instance="localhost:9090",script="0x4F2B..A1",sequence="PUSH1 PUSH1 ADD MUL DIV",hits="{random.randint(150, 400)}",total_instructions="{random.randint(500, 1200)}",last_seen="{int(time.time())}"}} {round(random.uniform(0.3, 0.8), 3)}
+
+# HELP neo_vm_trace_hot_hits Hot trace hit counts per script
+# TYPE neo_vm_trace_hot_hits gauge
+neo_vm_trace_hot_hits{{instance="localhost:9090",script="0x4F2B..A1",sequence="PUSH1 PUSH1 ADD MUL DIV",total_instructions="{random.randint(500, 1200)}",last_seen="{int(time.time())}"}} {random.randint(150, 400)}
+
+# HELP neo_vm_trace_max_hot_ratio Maximum hot trace hit ratio across scripts
+# TYPE neo_vm_trace_max_hot_ratio gauge
+neo_vm_trace_max_hot_ratio{{instance="localhost:9090"}} {round(random.uniform(0.3, 0.85), 3)}
+
+# HELP neo_vm_trace_max_hot_hits Maximum hot trace hit count across scripts
+# TYPE neo_vm_trace_max_hot_hits gauge
+neo_vm_trace_max_hot_hits{{instance="localhost:9090"}} {random.randint(200, 500)}
+
+# HELP neo_vm_trace_profile_count Number of hot trace profiles
+# TYPE neo_vm_trace_profile_count gauge
+neo_vm_trace_profile_count{{instance="localhost:9090"}} {random.randint(2, 6)}
 
 # HELP neo_errors_total Error count by type
 # TYPE neo_errors_total counter
@@ -246,3 +310,5 @@ echo -e "${RED}✗${NC} Docker Hub connectivity issue prevents container deploym
 echo -e "${GREEN}✓${NC} All configuration files are valid and ready"
 echo -e "${GREEN}✓${NC} Metrics simulator created for local testing"
 echo -e "${YELLOW}!${NC} Manual installation of Prometheus/Grafana required for local testing"
+
+# Note: super-instruction planner remains disabled in local harness.
