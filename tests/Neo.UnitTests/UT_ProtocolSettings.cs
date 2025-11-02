@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo;
 using Neo.Cryptography.ECC;
 using Neo.Wallets;
 using System;
@@ -196,6 +197,85 @@ namespace Neo.UnitTests
             foreach (var point in TestProtocolSettings.Default.StandbyCommittee)
             {
                 Assert.MatchesRegex(new Regex("^[0-9A-Fa-f]{66}$"), point.ToString()); // ECPoint is 66 hex characters
+            }
+        }
+
+        [TestMethod]
+        public void FindFileReturnsFullPathWhenFileExists()
+        {
+            var fileName = $"protocolsettings_{Guid.NewGuid():N}.json";
+            var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                var expectedPath = Path.Combine(tempDir, fileName);
+                File.WriteAllText(expectedPath, "{}");
+
+                var resolved = ProtocolSettings.FindFile(fileName, tempDir);
+
+                Assert.AreEqual(expectedPath, resolved);
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                    Directory.Delete(tempDir, true);
+            }
+        }
+
+        [TestMethod]
+        public void FindFileFallsBackToExecutableDirectory()
+        {
+            var fileName = $"protocolsettings_{Guid.NewGuid():N}.json";
+            var executableDir = AppContext.BaseDirectory;
+            var expectedPath = Path.Combine(executableDir, fileName);
+
+            try
+            {
+                File.WriteAllText(expectedPath, "{}");
+
+                var resolved = ProtocolSettings.FindFile(fileName, "relative/nonexistent");
+
+                Assert.AreEqual(expectedPath, resolved);
+            }
+            finally
+            {
+                if (File.Exists(expectedPath))
+                    File.Delete(expectedPath);
+            }
+        }
+
+        [TestMethod]
+        public void HardforkConfigurationWithGapThrows()
+        {
+            string json = CreateHFSettings("\"HF_Aspidochelone\": 0, \"HF_Gorgon\": 100");
+            var file = Path.GetTempFileName();
+            File.WriteAllText(file, json);
+            try
+            {
+                Assert.ThrowsExactly<ArgumentException>(() => _ = ProtocolSettings.Load(file));
+            }
+            finally
+            {
+                File.Delete(file);
+            }
+        }
+
+        [TestMethod]
+        public void LoadMissingConfigurationReturnsDefaultWithoutChangingCustom()
+        {
+            var originalCustom = ProtocolSettings.Custom;
+            var missingFile = $"missing-{Guid.NewGuid():N}.json";
+
+            try
+            {
+                var settings = ProtocolSettings.Load(missingFile);
+
+                Assert.AreSame(ProtocolSettings.Default, settings);
+                Assert.AreSame(originalCustom, ProtocolSettings.Custom);
+            }
+            finally
+            {
+                ProtocolSettings.Custom = originalCustom;
             }
         }
 

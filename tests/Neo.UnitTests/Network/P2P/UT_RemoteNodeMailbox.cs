@@ -90,6 +90,7 @@ namespace Neo.UnitTests.Network.P2P
             Assert.IsFalse(uut.IsHighPriority(obj));
         }
 
+        [TestMethod]
         public void ProtocolHandlerMailbox_Test_ShallDrop()
         {
             // using this for messages
@@ -98,9 +99,9 @@ namespace Neo.UnitTests.Network.P2P
             // empty queue
             IEnumerable<object> emptyQueue = Enumerable.Empty<object>();
 
-            // any random object (non Message) should be dropped
+            // any random object (non Message) should not be dropped
             object obj = null;
-            Assert.IsTrue(uut.ShallDrop(obj, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(obj, emptyQueue));
 
             //handshaking
             // Version (no drop)
@@ -195,6 +196,33 @@ namespace Neo.UnitTests.Network.P2P
             msg = Message.Create(MessageCommand.Alert, s);
             Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
             Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
+        }
+
+        [TestMethod]
+        public void RemoteNodeMailbox_DropsDuplicateControlCommands()
+        {
+            var queue = new object[]
+            {
+                Message.Create(MessageCommand.GetBlocks, null)
+            };
+            var newMsg = Message.Create(MessageCommand.GetBlocks, null);
+            Assert.IsTrue(uut.ShallDrop(newMsg, queue));
+
+            var differentMsg = Message.Create(MessageCommand.GetHeaders, null);
+            Assert.IsFalse(uut.ShallDrop(differentMsg, queue));
+        }
+
+        [TestMethod]
+        public void RemoteNodeMailbox_DoesNotDropWhenQueueContainsDifferentType()
+        {
+            var queue = new object[]
+            {
+                "not-a-message",
+                Message.Create(MessageCommand.Ping, null)
+            };
+
+            var newMsg = Message.Create(MessageCommand.Ping, null);
+            Assert.IsFalse(uut.ShallDrop(newMsg, queue));
         }
     }
 }
