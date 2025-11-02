@@ -399,7 +399,7 @@ namespace Neo.Network.P2P
             toConnect = Math.Min(toConnect, UnconnectedPeers.Count);
             toConnect = Math.Min(toConnect, maxConnections);
 
-            var connectingCapacity = ConnectingMax;
+            var connectingCapacity = ConnectingMax - ConnectingPeers.Count;
             if (connectingCapacity <= 0)
                 return;
 
