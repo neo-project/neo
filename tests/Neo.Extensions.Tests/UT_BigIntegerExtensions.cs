@@ -9,8 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions.Factories;
 using Neo.Json;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -20,25 +22,122 @@ namespace Neo.Extensions.Tests
     public class UT_BigIntegerExtensions
     {
         [TestMethod]
+        public void CeilingDivide_NegativeNumerator()
+        {
+            var actual = BigIntegerExtensions.DivideCeiling(-7, 3);
+            Assert.AreEqual(-2, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(-7, -3);
+            Assert.AreEqual(3, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(-1, -3);
+            Assert.AreEqual(1, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(-1, 3);
+            Assert.AreEqual(0, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(1, -3);
+            Assert.AreEqual(0, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(7, -3);
+            Assert.AreEqual(-2, actual);
+
+            actual = BigIntegerExtensions.DivideCeiling(12345, -1234);
+            Assert.AreEqual(-10, actual);
+        }
+
+        [TestMethod]
+        public void CeilingDivide_DividesExactly()
+        {
+            var actual = BigIntegerExtensions.DivideCeiling(9, 3);
+            Assert.AreEqual(3, actual);
+        }
+
+        [TestMethod]
+        public void CeilingDivide_RoundsUp()
+        {
+            var actual = BigIntegerExtensions.DivideCeiling(10, 3);
+            Assert.AreEqual(4, actual);
+        }
+
+        [TestMethod]
+        public void CeilingDivide_LargeNumbers()
+        {
+            var a = BigInteger.Parse("1000000000000000000000000000000000");
+            var b = new BigInteger(7);
+            var actual = BigIntegerExtensions.DivideCeiling(a, b);
+
+            Assert.AreEqual((a + b - 1) / b, actual);
+        }
+
+        [TestMethod]
+        public void CeilingDivide_DivisorOne()
+        {
+            var actual = BigIntegerExtensions.DivideCeiling(12345, 1);
+            Assert.AreEqual(12345, actual);
+        }
+
+        [TestMethod]
+        public void CeilingDivide_ThrowsOnZeroDivisor()
+        {
+            Assert.Throws<DivideByZeroException>(() => BigIntegerExtensions.DivideCeiling(10, 0));
+        }
+
+        [TestMethod]
         public void TestGetLowestSetBit()
         {
             var big1 = new BigInteger(0);
             Assert.AreEqual(-1, big1.GetLowestSetBit());
+            Assert.AreEqual(32, BigInteger.TrailingZeroCount(big1)); // NOTE: 32 if zero in standard library
 
             var big2 = new BigInteger(512);
             Assert.AreEqual(9, big2.GetLowestSetBit());
+            Assert.AreEqual(9, BigInteger.TrailingZeroCount(big2));
 
             var big3 = new BigInteger(int.MinValue);
             Assert.AreEqual(31, big3.GetLowestSetBit());
+            Assert.AreEqual(31, BigInteger.TrailingZeroCount(big3));
 
             var big4 = new BigInteger(long.MinValue);
             Assert.AreEqual(63, big4.GetLowestSetBit());
+            Assert.AreEqual(63, BigInteger.TrailingZeroCount(big4));
 
             var big5 = new BigInteger(-18);
             Assert.AreEqual(1, big5.GetLowestSetBit());
+            Assert.AreEqual(1, BigInteger.TrailingZeroCount(big5));
 
             var big6 = BigInteger.Pow(2, 1000);
             Assert.AreEqual(1000, big6.GetLowestSetBit());
+            Assert.AreEqual(1000, BigInteger.TrailingZeroCount(big6));
+
+            for (var i = 0; i < 64; i++)
+            {
+                var b = new BigInteger(1ul << i);
+                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+                Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
+            }
+
+            var random = new Random();
+            for (var i = 0; i < 128; i++)
+            {
+                var buffer = new byte[16];
+                BinaryPrimitives.WriteInt128LittleEndian(buffer, Int128.One << i);
+
+                var b = new BigInteger(buffer, isUnsigned: false);
+                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+                Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
+
+                BinaryPrimitives.WriteUInt128LittleEndian(buffer, UInt128.One << i);
+                b = new BigInteger(buffer, isUnsigned: true);
+                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+                Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
+
+                buffer = new byte[32]; // 256bit
+                random.NextBytes(buffer);
+                b = new BigInteger(buffer, isUnsigned: true);
+                var zeroCount = BigInteger.TrailingZeroCount(b);
+                if (!b.IsZero) Assert.AreEqual(zeroCount, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
+            }
         }
 
         [TestMethod]
@@ -106,7 +205,7 @@ namespace Neo.Extensions.Tests
             Assert.AreNotEqual(long.MinValue % long.MaxValue, result, "Mod should always return non-negative values, unlike % operator");
 
             // Test case 5: Verifying % operator behavior
-            Assert.AreEqual((long)(minValue % maxValue), long.MinValue % long.MaxValue, "% operator should behave consistently for BigInteger and long");
+            Assert.AreEqual(long.MinValue % long.MaxValue, (long)(minValue % maxValue), "% operator should behave consistently for BigInteger and long");
 
             // Test case 6: Mod with prime numbers
             Assert.AreEqual(17, new BigInteger(17).Mod(19), "Mod with a larger prime should return the original number");
@@ -153,11 +252,24 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestBit()
         {
-            var bigInteger = new BigInteger(5); // Binary: 101
-            Assert.IsTrue(bigInteger.TestBit(2)); // Bit at index 2 is set (1)
+            var value = new BigInteger(5); // Binary: 101
+            Assert.IsTrue(value.TestBit(2)); // Bit at index 2 is set (1)
 
-            bigInteger = new BigInteger(5); // Binary: 101
-            Assert.IsFalse(bigInteger.TestBit(1)); // Bit at index 1 is not set (0)
+            value = new BigInteger(5); // Binary: 101
+            Assert.IsFalse(value.TestBit(1)); // Bit at index 1 is not set (0)
+            Assert.IsFalse(value.TestBit(10)); // Bit at index 10 is not set (0)
+
+            value = new BigInteger(-3);
+            Assert.AreEqual(2, value.GetBitLength()); // 2, without sign bit
+            Assert.IsTrue(value.TestBit(255)); // Bit at index 255 is set (1)
+
+            value = new BigInteger(3); // Binary: 11
+            Assert.AreEqual(2, value.GetBitLength()); // 2, without sign bit
+            Assert.IsFalse(value.TestBit(255)); // Bit at index 255 is not set (0)
+            Assert.IsTrue(value.TestBit(0)); // Bit at index 0 is set (1)
+            Assert.IsTrue(value.TestBit(1)); // Bit at index 1 is set (0)
+            Assert.IsFalse(value.TestBit(2)); // Bit at index 2 is not set (0)
+            Assert.IsFalse(value.TestBit(-1)); // Bit at index -1 is not set (0)
         }
 
         [TestMethod]
@@ -200,13 +312,10 @@ namespace Neo.Extensions.Tests
             Assert.AreEqual(new BigInteger(9), new BigInteger(81).Sqrt());
         }
 
-        private static byte[] GetRandomByteArray(Random random)
+        private static byte[] GetRandomByteArray()
         {
-            var byteValue = random.Next(0, 32);
-            var value = new byte[byteValue];
-
-            random.NextBytes(value);
-            return value;
+            var byteValue = RandomNumberFactory.NextInt32(0, 32);
+            return RandomNumberFactory.NextBytes(byteValue);
         }
 
         private void VerifyGetBitLength(BigInteger value, long expected)
@@ -220,8 +329,6 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestGetBitLength()
         {
-            var random = new Random();
-
             // Big Number (net standard didn't work)
             Assert.ThrowsExactly<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
 
@@ -249,7 +356,7 @@ namespace Neo.Extensions.Tests
             // Random cases
             for (uint i = 0; i < 1000; i++)
             {
-                var b = new BigInteger(GetRandomByteArray(random));
+                var b = new BigInteger(GetRandomByteArray());
                 Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.GetBitLength(b), message: $"Error comparing: {b}");
                 Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.BitLength(b), message: $"Error comparing: {b}");
             }

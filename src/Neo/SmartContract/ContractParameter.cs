@@ -60,7 +60,7 @@ namespace Neo.SmartContract
                 ContractParameterType.String => "",
                 ContractParameterType.Array => new List<ContractParameter>(),
                 ContractParameterType.Map => new List<KeyValuePair<ContractParameter, ContractParameter>>(),
-                _ => throw new ArgumentException(null, nameof(type)),
+                _ => throw new ArgumentException($"Parameter type '{type}' is not supported.", nameof(type)),
             };
         }
 
@@ -76,6 +76,7 @@ namespace Neo.SmartContract
                 Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
             };
             if (json["value"] != null)
+            {
                 parameter.Value = parameter.Type switch
                 {
                     ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"].AsString()),
@@ -87,8 +88,9 @@ namespace Neo.SmartContract
                     ContractParameterType.String => json["value"].AsString(),
                     ContractParameterType.Array => ((JArray)json["value"]).Select(p => FromJson((JObject)p)).ToList(),
                     ContractParameterType.Map => ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson((JObject)p["key"]), FromJson((JObject)p["value"]))).ToList(),
-                    _ => throw new ArgumentException(null, nameof(json)),
+                    _ => throw new ArgumentException($"Parameter type '{parameter.Type}' is not supported.", nameof(json)),
                 };
+            }
             return parameter;
         }
 
@@ -102,7 +104,7 @@ namespace Neo.SmartContract
             {
                 case ContractParameterType.Signature:
                     byte[] signature = text.HexToBytes();
-                    if (signature.Length != 64) throw new FormatException();
+                    if (signature.Length != 64) throw new FormatException($"Signature length({signature.Length}) is not 64");
                     Value = signature;
                     break;
                 case ContractParameterType.Boolean:
@@ -127,7 +129,7 @@ namespace Neo.SmartContract
                     Value = text;
                     break;
                 default:
-                    throw new ArgumentException($"The ContractParameterType '{Type}' is not supported.");
+                    throw new ArgumentException($"Parameter type '{Type}' is not supported for value setting.");
             }
         }
 
@@ -145,6 +147,7 @@ namespace Neo.SmartContract
             JObject json = new();
             json["type"] = parameter.Type;
             if (parameter.Value != null)
+            {
                 switch (parameter.Type)
                 {
                     case ContractParameterType.Signature:
@@ -180,6 +183,7 @@ namespace Neo.SmartContract
                         if (!context.Remove(parameter)) throw new InvalidOperationException("Circular reference.");
                         break;
                 }
+            }
             return json;
         }
 

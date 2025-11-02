@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Native
         private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state, uint end)
         {
             if (state.Balance.IsZero) return BigInteger.Zero;
-            if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance));
+            if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance), "cannot be negative");
 
             var expectEnd = Ledger.CurrentIndex(snapshot) + 1;
             if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
@@ -276,12 +276,17 @@ namespace Neo.SmartContract.Native
             }
         }
 
+        /// <summary>
+        /// Sets the amount of GAS generated in each block. Only committee members can call this method.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="gasPerBlock">The amount of GAS generated in each block.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
-                throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+                throw new ArgumentOutOfRangeException(nameof(gasPerBlock), $"GasPerBlock must be between [0, {10 * GAS.Factor}]");
+            AssertCommittee(engine);
 
             var index = engine.PersistingBlock.Index + 1;
             var entry = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_GasPerBlock, index), () => new StorageItem(gasPerBlock));
@@ -299,12 +304,18 @@ namespace Neo.SmartContract.Native
             return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
         }
 
+        /// <summary>
+        /// Sets the fees to be paid to register as a candidate. Only committee members can call this method.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="registerPrice">The fees to be paid to register as a candidate.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetRegisterPrice(ApplicationEngine engine, long registerPrice)
         {
             if (registerPrice <= 0)
-                throw new ArgumentOutOfRangeException(nameof(registerPrice));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+                throw new ArgumentOutOfRangeException(nameof(registerPrice), "RegisterPrice must be positive");
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_registerPrice).Set(registerPrice);
         }
 
@@ -344,23 +355,36 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
+        /// <summary>
+        /// Handles the payment of GAS.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="from">The account that is paying the GAS.</param>
+        /// <param name="amount">The amount of GAS being paid.</param>
+        /// <param name="data">The data of the payment.</param>
         [ContractMethod(Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
         {
             if (engine.CallingScriptHash != GAS.Hash)
-                throw new InvalidOperationException("only GAS is accepted");
+                throw new InvalidOperationException("Only GAS contract can call this method");
 
             if ((long)amount != GetRegisterPrice(engine.SnapshotCache))
-                throw new ArgumentException("incorrect GAS amount for registration");
+                throw new ArgumentException($"Incorrect GAS amount. Expected {GetRegisterPrice(engine.SnapshotCache)} GAS, but received {amount} GAS.");
 
             var pubkey = ECPoint.DecodePoint(data.GetSpan(), ECCurve.Secp256r1);
 
             if (!RegisterInternal(engine, pubkey))
-                throw new InvalidOperationException("failed to register candidate");
+                throw new InvalidOperationException("Failed to register candidate");
 
             await GAS.Burn(engine, Hash, amount);
         }
 
+        /// <summary>
+        /// Registers a candidate.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="pubkey">The public key of the candidate.</param>
+        /// <returns><see langword="true"/> if the candidate is registered; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(true, Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States)]
         [ContractMethod(Hardfork.HF_Echidna, /* */ RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
@@ -389,6 +413,12 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        /// <summary>
+        /// Unregisters a candidate.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="pubkey">The public key of the candidate.</param>
+        /// <returns><see langword="true"/> if the candidate is unregistered; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
         [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
@@ -407,57 +437,65 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        /// <summary>
+        /// Votes for a candidate.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="account">The account that is voting.</param>
+        /// <param name="voteTo">The candidate to vote for.</param>
+        /// <returns><see langword="true"/> if the vote is successful; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
         [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
-            NeoAccountState state_account = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
-            if (state_account is null) return false;
-            if (state_account.Balance == 0) return false;
-            CandidateState validator_new = null;
+            NeoAccountState stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
+            if (stateAccount is null) return false;
+            if (stateAccount.Balance == 0) return false;
+
+            CandidateState validatorNew = null;
             if (voteTo != null)
             {
-                validator_new = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Candidate, voteTo))?.GetInteroperable<CandidateState>();
-                if (validator_new is null) return false;
-                if (!validator_new.Registered) return false;
+                validatorNew = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Candidate, voteTo))?.GetInteroperable<CandidateState>();
+                if (validatorNew is null) return false;
+                if (!validatorNew.Registered) return false;
             }
-            if (state_account.VoteTo is null ^ voteTo is null)
+            if (stateAccount.VoteTo is null ^ voteTo is null)
             {
                 StorageItem item = engine.SnapshotCache.GetAndChange(_votersCount);
-                if (state_account.VoteTo is null)
-                    item.Add(state_account.Balance);
+                if (stateAccount.VoteTo is null)
+                    item.Add(stateAccount.Balance);
                 else
-                    item.Add(-state_account.Balance);
+                    item.Add(-stateAccount.Balance);
             }
-            GasDistribution gasDistribution = DistributeGas(engine, account, state_account);
-            if (state_account.VoteTo != null)
+            GasDistribution gasDistribution = DistributeGas(engine, account, stateAccount);
+            if (stateAccount.VoteTo != null)
             {
-                StorageKey key = CreateStorageKey(Prefix_Candidate, state_account.VoteTo);
-                StorageItem storage_validator = engine.SnapshotCache.GetAndChange(key);
-                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
-                state_validator.Votes -= state_account.Balance;
-                CheckCandidate(engine.SnapshotCache, state_account.VoteTo, state_validator);
+                StorageKey key = CreateStorageKey(Prefix_Candidate, stateAccount.VoteTo);
+                StorageItem storageValidator = engine.SnapshotCache.GetAndChange(key);
+                CandidateState stateValidator = storageValidator.GetInteroperable<CandidateState>();
+                stateValidator.Votes -= stateAccount.Balance;
+                CheckCandidate(engine.SnapshotCache, stateAccount.VoteTo, stateValidator);
             }
-            if (voteTo != null && voteTo != state_account.VoteTo)
+            if (voteTo != null && voteTo != stateAccount.VoteTo)
             {
                 StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteTo);
                 var latestGasPerVote = engine.SnapshotCache.TryGet(voterRewardKey) ?? BigInteger.Zero;
-                state_account.LastGasPerVote = latestGasPerVote;
+                stateAccount.LastGasPerVote = latestGasPerVote;
             }
-            ECPoint from = state_account.VoteTo;
-            state_account.VoteTo = voteTo;
+            ECPoint from = stateAccount.VoteTo;
+            stateAccount.VoteTo = voteTo;
 
-            if (validator_new != null)
+            if (validatorNew != null)
             {
-                validator_new.Votes += state_account.Balance;
+                validatorNew.Votes += stateAccount.Balance;
             }
             else
             {
-                state_account.LastGasPerVote = 0;
+                stateAccount.LastGasPerVote = 0;
             }
             engine.SendNotification(Hash, "Vote",
-                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, state_account.Balance });
+                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, stateAccount.Balance });
             if (gasDistribution is not null)
                 await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
             return true;
@@ -582,6 +620,11 @@ namespace Neo.SmartContract.Native
                 .Take(settings.CommitteeMembersCount);
         }
 
+        /// <summary>
+        /// Gets the validators of the next block.
+        /// </summary>
+        /// <param name="engine">The engine used to read data.</param>
+        /// <returns>The public keys of the validators.</returns>
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
         private ECPoint[] GetNextBlockValidators(ApplicationEngine engine)
         {

@@ -43,9 +43,10 @@ namespace Neo.Network.P2P.Capabilities
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            if (reader.ReadByte() != (byte)Type)
+            var readType = reader.ReadByte();
+            if (readType != (byte)Type)
             {
-                throw new FormatException();
+                throw new FormatException($"ReadType({readType}) does not match NodeCapabilityType({Type})");
             }
 
             DeserializeWithoutType(ref reader);

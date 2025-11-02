@@ -34,22 +34,22 @@ namespace Neo.UnitTests.SmartContract
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(System.Array.Empty<byte>());
-            ApplicationEngine.Notify += Test_Notify1;
+            engine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             Assert.AreEqual(notifyEvent, eventName);
 
-            ApplicationEngine.Notify += Test_Notify2;
+            engine.Notify += Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             Assert.IsNull(eventName);
 
             eventName = notifyEvent;
-            ApplicationEngine.Notify -= Test_Notify1;
+            engine.Notify -= Test_Notify1;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             Assert.IsNull(eventName);
 
-            ApplicationEngine.Notify -= Test_Notify2;
+            engine.Notify -= Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             Assert.IsNull(eventName);
         }
@@ -105,7 +105,7 @@ namespace Neo.UnitTests.SmartContract
             // Check that block numbers are not higher in earlier hardforks than in later ones
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
             {
-                Assert.IsFalse(setting[sortedHardforks[i]] > setting[sortedHardforks[i + 1]]);
+                Assert.IsLessThanOrEqualTo(setting[sortedHardforks[i + 1]], setting[sortedHardforks[i]]);
             }
         }
 
@@ -161,13 +161,13 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual("", engine.GetEngineStackInfoOnFault());
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
-                Assert.IsTrue(engine.FaultException.ToString().Contains($"Cannot Call Method disallowed Of Contract {scriptHash.ToString()}"));
+                Assert.Contains($"Cannot Call Method disallowed Of Contract {scriptHash.ToString()}", engine.FaultException.ToString());
                 string traceback = engine.GetEngineStackInfoOnFault();
-                Assert.IsTrue(traceback.Contains($"Cannot Call Method disallowed Of Contract {scriptHash.ToString()}"));
-                Assert.IsTrue(traceback.Contains("CurrentScriptHash"));
-                Assert.IsTrue(traceback.Contains("EntryScriptHash"));
-                Assert.IsTrue(traceback.Contains("InstructionPointer"));
-                Assert.IsTrue(traceback.Contains("OpCode SYSCALL, Script Length="));
+                Assert.Contains($"Cannot Call Method disallowed Of Contract {scriptHash.ToString()}", traceback);
+                Assert.Contains("CurrentScriptHash", traceback);
+                Assert.Contains("EntryScriptHash", traceback);
+                Assert.Contains("InstructionPointer", traceback);
+                Assert.Contains("OpCode SYSCALL, Script Length=", traceback);
             }
 
             // Allowed method call.
@@ -196,7 +196,7 @@ namespace Neo.UnitTests.SmartContract
                 var currentScriptHash = engine.EntryScriptHash;
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.HasCount(1, engine.ResultStack);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Boolean));
                 var res = (Boolean)engine.ResultStack.Pop();
                 Assert.IsTrue(res.GetBoolean());

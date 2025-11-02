@@ -77,8 +77,8 @@ namespace Neo.UnitTests.SmartContract
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(1, engine.ResultStack);
             Assert.IsTrue(engine.ResultStack.Peek().IsNull);
 
             // Not traceable block
@@ -100,8 +100,8 @@ namespace Neo.UnitTests.SmartContract
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(1, engine.ResultStack);
             Assert.IsTrue(engine.ResultStack.Peek().IsNull);
 
             // With block
@@ -112,8 +112,8 @@ namespace Neo.UnitTests.SmartContract
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(1, engine.ResultStack);
 
             var array = engine.ResultStack.Pop<VM.Types.Array>();
             Assert.AreEqual(block.Hash, new UInt256(array[0].GetSpan()));
@@ -131,8 +131,8 @@ namespace Neo.UnitTests.SmartContract
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.FAULT);
-            Assert.AreEqual(0, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+            Assert.IsEmpty(engine.ResultStack);
 
             // With tx
 
@@ -162,8 +162,8 @@ namespace Neo.UnitTests.SmartContract
             engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(1, engine.ResultStack);
 
             var array = engine.ResultStack.Pop<VM.Types.Array>();
             Assert.AreEqual(tx.Hash, new UInt256(array[0].GetSpan()));
@@ -189,7 +189,7 @@ namespace Neo.UnitTests.SmartContract
 
                 var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 100_000_000);
                 engine.LoadScript(script.ToArray());
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
 
                 // Check the results
 
@@ -213,8 +213,8 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check the results
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(1, engine.ResultStack);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
                 Assert.AreEqual(1999999520, engine.ResultStack.Pop().GetInteger());
             }

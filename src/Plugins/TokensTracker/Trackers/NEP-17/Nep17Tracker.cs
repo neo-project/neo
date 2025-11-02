@@ -15,6 +15,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer;
+using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -36,15 +37,15 @@ namespace Neo.Plugins.Trackers.NEP_17
         private const byte Nep17TransferSentPrefix = 0xe9;
         private const byte Nep17TransferReceivedPrefix = 0xea;
         private uint _currentHeight;
-        private Block _currentBlock;
+        private Block? _currentBlock;
 
         public override string TrackName => nameof(Nep17Tracker);
 
-        public Nep17Tracker(IStore db, uint maxResult, bool shouldRecordHistory, NeoSystem system) : base(db, maxResult, shouldRecordHistory, system)
-        {
-        }
+        public Nep17Tracker(IStore db, uint maxResult, bool shouldRecordHistory, NeoSystem system)
+            : base(db, maxResult, shouldRecordHistory, system) { }
 
-        public override void OnPersist(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        public override void OnPersist(NeoSystem system, Block block, DataCache snapshot,
+            IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             _currentBlock = block;
             _currentHeight = block.Index;
@@ -89,7 +90,6 @@ namespace Neo.Plugins.Trackers.NEP_17
                 }
             }
         }
-
 
         private void HandleNotificationNep17(IVerifiable scriptContainer, UInt160 asset, Array stateItems, HashSet<BalanceChangeRecord> balanceChangeRecords, ref uint transferIndex)
         {
@@ -144,15 +144,15 @@ namespace Neo.Plugins.Trackers.NEP_17
 
 
         [RpcMethod]
-        public JToken GetNep17Transfers(JArray _params)
+        public JToken GetNep17Transfers(Address address, ulong startTime = 0, ulong endTime = 0)
         {
             _shouldTrackHistory.True_Or(RpcError.MethodNotFound);
-            UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
-            // If start time not present, default to 1 week of history.
-            ulong startTime = _params.Count > 1 ? (ulong)_params[1].AsNumber() :
-                (DateTime.UtcNow - TimeSpan.FromDays(7)).ToTimestampMS();
-            ulong endTime = _params.Count > 2 ? (ulong)_params[2].AsNumber() : DateTime.UtcNow.ToTimestampMS();
 
+            var userScriptHash = address.ScriptHash;
+
+            // If start time not present, default to 1 week of history.
+            startTime = startTime == 0 ? (DateTime.UtcNow - TimeSpan.FromDays(7)).ToTimestampMS() : startTime;
+            endTime = endTime == 0 ? DateTime.UtcNow.ToTimestampMS() : endTime;
             (endTime >= startTime).True_Or(RpcError.InvalidParams);
 
             JObject json = new();
@@ -167,9 +167,9 @@ namespace Neo.Plugins.Trackers.NEP_17
         }
 
         [RpcMethod]
-        public JToken GetNep17Balances(JArray _params)
+        public JToken GetNep17Balances(Address address)
         {
-            UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
+            var userScriptHash = address.ScriptHash;
 
             JObject json = new();
             JArray balances = new();
@@ -223,9 +223,9 @@ namespace Neo.Plugins.Trackers.NEP_17
             }
         }
 
-
         private void RecordTransferHistoryNep17(UInt160 scriptHash, UInt160 from, UInt160 to, BigInteger amount, UInt256 txHash, ref uint transferIndex)
         {
+            if (_currentBlock is null) return; // _currentBlock already set in OnPersist
             if (!_shouldTrackHistory) return;
             if (from != UInt160.Zero)
             {

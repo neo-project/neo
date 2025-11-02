@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Neo.Extensions.Exceptions;
+using Neo.Extensions.Factories;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
@@ -78,8 +80,7 @@ namespace Neo.Network.P2P
 
         static LocalNode()
         {
-            Random rand = new();
-            Nonce = (uint)rand.Next();
+            Nonce = RandomNumberFactory.NextUInt32();
             UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)}/";
         }
 
@@ -93,10 +94,10 @@ namespace Neo.Network.P2P
             SeedList = new IPEndPoint[system.Settings.SeedList.Length];
 
             // Start dns resolution in parallel
-            string[] seedList = system.Settings.SeedList;
-            for (int i = 0; i < seedList.Length; i++)
+            var seedList = system.Settings.SeedList;
+            for (var i = 0; i < seedList.Length; i++)
             {
-                int index = i;
+                var index = i;
                 Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
             }
         }
@@ -133,17 +134,9 @@ namespace Neo.Network.P2P
         {
             if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
                 return new IPEndPoint(ipAddress, port);
-            IPHostEntry entry;
-            try
-            {
-                entry = Dns.GetHostEntry(hostNameOrAddress);
-            }
-            catch (SocketException)
-            {
-                return null;
-            }
+            var entry = hostNameOrAddress.TryCatchThrow<string, SocketException, IPHostEntry>(Dns.GetHostEntry);
             ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo);
-            if (ipAddress == null) return null;
+            if (ipAddress == null) throw new ArgumentException("Can not resolve DNS name or IP address.");
             return new IPEndPoint(ipAddress, port);
         }
 
@@ -151,14 +144,9 @@ namespace Neo.Network.P2P
         {
             if (string.IsNullOrEmpty(hostAndPort)) return null;
 
-            try
-            {
-                string[] p = hostAndPort.Split(':');
-                return GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
-            }
-            catch { }
-
-            return null;
+            return hostAndPort.Split(':')
+                .TryCatch<IList<string>, Exception, IPEndPoint>(
+                    t => GetIPEndpointFromHostPort(t[0], int.Parse(t[1])), static (_, _) => null);
         }
 
         /// <summary>
@@ -222,8 +210,7 @@ namespace Neo.Network.P2P
                 // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
                 // It will try to add those, sequentially, to the list of currently unconnected ones.
 
-                Random rand = new();
-                AddPeers(SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count));
+                AddPeers(SeedList.Where(u => u != null).OrderBy(p => RandomNumberFactory.NextInt32()).Take(count));
             }
         }
 
@@ -269,9 +256,8 @@ namespace Neo.Network.P2P
         {
             var capabilities = new List<NodeCapability>
             {
-                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView))
-                // Wait for 3.9
-                // new ArchivalNodeCapability()
+                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView)),
+                new ArchivalNodeCapability(),
             };
 
             if (!Config.EnableCompression)

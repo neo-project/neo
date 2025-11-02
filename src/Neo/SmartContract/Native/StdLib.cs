@@ -13,6 +13,7 @@
 
 using Microsoft.IdentityModel.Tokens;
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM.Types;
 using System;
@@ -78,7 +79,7 @@ namespace Neo.SmartContract.Native
             {
                 10 => value.ToString(),
                 16 => value.ToString("x"),
-                _ => throw new ArgumentOutOfRangeException(nameof(@base))
+                _ => throw new ArgumentOutOfRangeException(nameof(@base), $"Invalid base: {@base}")
             };
         }
 
@@ -106,7 +107,7 @@ namespace Neo.SmartContract.Native
             {
                 10 => BigInteger.Parse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture),
                 16 => BigInteger.Parse(value, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture),
-                _ => throw new ArgumentOutOfRangeException(nameof(@base))
+                _ => throw new ArgumentOutOfRangeException(nameof(@base), $"Invalid base: {@base}")
             };
         }
 
@@ -198,6 +199,18 @@ namespace Neo.SmartContract.Native
             return Base58.Base58CheckDecode(s);
         }
 
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5)]
+        private static string HexEncode([MaxLength(MaxInputLength)] byte[] bytes)
+        {
+            return bytes.ToHexString();
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5)]
+        private static byte[] HexDecode([MaxLength(MaxInputLength)] string str)
+        {
+            return str.HexToBytes();
+        }
+
         [ContractMethod(CpuFee = 1 << 5)]
         private static int MemoryCompare([MaxLength(MaxInputLength)] byte[] str1, [MaxLength(MaxInputLength)] byte[] str2)
         {
@@ -219,7 +232,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 6)]
         private static int MemorySearch([MaxLength(MaxInputLength)] byte[] mem, byte[] value, int start, bool backward)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             if (backward)
             {
                 return mem.AsSpan(0, start).LastIndexOf(value);
@@ -235,14 +248,14 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 8)]
         private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator)
         {
-            if (separator is null) throw new ArgumentNullException(nameof(separator));
+            ArgumentNullException.ThrowIfNull(separator);
             return str.Split(separator);
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
         private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
         {
-            if (separator is null) throw new ArgumentNullException(nameof(separator));
+            ArgumentNullException.ThrowIfNull(separator);
             StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
             return str.Split(separator, options);
         }

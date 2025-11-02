@@ -73,10 +73,30 @@ namespace Neo.Extensions.Tests.Collections
 
             dict.RemoveWhere(p => p.Value == "b");
 
-            Assert.AreEqual(2, dict.Count);
+            Assert.HasCount(2, dict);
             Assert.IsFalse(dict.ContainsKey(2));
             Assert.AreEqual("a", dict[1]);
             Assert.AreEqual("c", dict[3]);
+        }
+
+        [TestMethod]
+        public void TestSample()
+        {
+            var list = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            var sampled = list.Sample(5);
+            Assert.AreEqual(5, sampled.Length);
+            foreach (var item in sampled) Assert.Contains(item, list);
+
+            sampled = list.Sample(10);
+            Assert.AreEqual(10, sampled.Length);
+            foreach (var item in sampled) Assert.Contains(item, list);
+
+            sampled = list.Sample(0);
+            Assert.AreEqual(0, sampled.Length);
+
+            sampled = list.Sample(100);
+            Assert.AreEqual(10, sampled.Length);
+            foreach (var item in sampled) Assert.Contains(item, list);
         }
     }
 }

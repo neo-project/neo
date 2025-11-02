@@ -24,7 +24,7 @@ namespace Neo
     /// Represents a 160-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 20)]
-    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable, ISerializableSpan
+    public class UInt160 : IComparable, IComparable<UInt160>, IEquatable<UInt160>, ISerializable, ISerializableSpan
     {
         /// <summary>
         /// The length of <see cref="UInt160"/> values.
@@ -54,10 +54,17 @@ namespace Neo
         public UInt160(ReadOnlySpan<byte> value)
         {
             if (value.Length != Length)
-                throw new FormatException($"Invalid length: {value.Length}");
+                throw new FormatException($"Invalid UInt160 length: expected {Length} bytes, but got {value.Length} bytes. UInt160 values must be exactly 20 bytes long.");
 
             var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
             value.CopyTo(span);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int CompareTo(object obj)
+        {
+            if (ReferenceEquals(obj, this)) return 0;
+            return CompareTo(obj as UInt160);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -108,8 +115,13 @@ namespace Neo
             if (BitConverter.IsLittleEndian)
                 return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
 
+            return GetSpanLittleEndian();
+        }
+
+        internal Span<byte> GetSpanLittleEndian()
+        {
             Span<byte> buffer = new byte[Length];
-            Serialize(buffer);
+            SafeSerialize(buffer);
             return buffer; // Keep the same output as Serialize when BigEndian
         }
 
@@ -123,27 +135,23 @@ namespace Neo
             }
             else
             {
-                const int IxValue2 = sizeof(ulong);
-                const int IxValue3 = sizeof(ulong) * 2;
-
-                Span<byte> buffer = stackalloc byte[Length];
-                BinaryPrimitives.WriteUInt64LittleEndian(buffer, _value1);
-                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], _value2);
-                BinaryPrimitives.WriteUInt32LittleEndian(buffer[IxValue3..], _value3);
-                buffer.CopyTo(destination);
+                SafeSerialize(destination);
             }
         }
 
-        /// <summary>
-        /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
-        /// </summary>
-        /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
-        /// <returns>The parsed <see cref="UInt160"/>.</returns>
-        /// <exception cref="FormatException"><paramref name="value"/> is not in the correct format.</exception>
-        public static UInt160 Parse(string value)
+        // internal for testing, don't use it directly
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void SafeSerialize(Span<byte> destination)
         {
-            if (!TryParse(value, out var result)) throw new FormatException();
-            return result;
+            // Avoid partial write and keep the same Exception as before if the buffer is too small
+            if (destination.Length < Length)
+                throw new ArgumentException($"Destination buffer size ({destination.Length} bytes) is too small to serialize UInt160. Required size is {Length} bytes.", nameof(destination));
+
+            const int IxValue2 = sizeof(ulong);
+            const int IxValue3 = sizeof(ulong) * 2;
+            BinaryPrimitives.WriteUInt64LittleEndian(destination, _value1);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination[IxValue2..], _value2);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination[IxValue3..], _value3);
         }
 
         public void Serialize(BinaryWriter writer)
@@ -155,24 +163,22 @@ namespace Neo
 
         public override string ToString()
         {
-            return "0x" + this.ToArray().ToHexString(reverse: true);
+            return "0x" + GetSpan().ToHexString(reverse: true);
         }
 
         /// <summary>
         /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
         /// </summary>
-        /// <param name="str">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
+        /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt160"/>.</param>
-        /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string str, [NotNullWhen(true)] out UInt160 result)
+        /// <returns>
+        /// <see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool TryParse(string value, [NotNullWhen(true)] out UInt160 result)
         {
             result = null;
-            var data = str.AsSpan(); // AsSpan is null safe
-            if (data.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                data = data[2..];
-
+            var data = value.AsSpan().TrimStartIgnoreCase("0x");
             if (data.Length != Length * 2) return false;
-
             try
             {
                 result = new UInt160(data.HexToBytesReversed());
@@ -182,6 +188,21 @@ namespace Neo
             {
                 return false;
             }
+        }
+
+
+        /// <summary>
+        /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
+        /// <returns>The parsed <see cref="UInt160"/>.</returns>
+        /// <exception cref="FormatException"><paramref name="value"/> is not in the correct format.</exception>
+        public static UInt160 Parse(string value)
+        {
+            var data = value.AsSpan().TrimStartIgnoreCase("0x");
+            if (data.Length != Length * 2)
+                throw new FormatException($"Invalid UInt160 string format: expected {Length * 2} hexadecimal characters, but got {data.Length}. UInt160 values must be represented as 40 hexadecimal characters (with or without '0x' prefix).");
+            return new UInt160(data.HexToBytesReversed());
         }
 
         public static implicit operator UInt160(string s)

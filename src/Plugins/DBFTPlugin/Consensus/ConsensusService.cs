@@ -24,7 +24,7 @@ using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
 {
-    partial class ConsensusService : UntypedActor
+    internal partial class ConsensusService : UntypedActor
     {
         public class Start { }
         private class Timer { public uint Height; public byte ViewNumber; }
@@ -54,13 +54,13 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         /// This variable is only true during OnRecoveryMessageReceived
         /// </summary>
         private bool isRecovering = false;
-        private readonly Settings dbftSettings;
+        private readonly DbftSettings dbftSettings;
         private readonly NeoSystem neoSystem;
 
-        public ConsensusService(NeoSystem neoSystem, Settings settings, ISigner signer)
+        public ConsensusService(NeoSystem neoSystem, DbftSettings settings, ISigner signer)
             : this(neoSystem, settings, new ConsensusContext(neoSystem, settings, signer)) { }
 
-        internal ConsensusService(NeoSystem neoSystem, Settings settings, ConsensusContext context)
+        internal ConsensusService(NeoSystem neoSystem, DbftSettings settings, ConsensusContext context)
         {
             this.neoSystem = neoSystem;
             localNode = neoSystem.LocalNode;
@@ -336,7 +336,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             base.PostStop();
         }
 
-        public static Props Props(NeoSystem neoSystem, Settings dbftSettings, ISigner signer)
+        public static Props Props(NeoSystem neoSystem, DbftSettings dbftSettings, ISigner signer)
         {
             return Akka.Actor.Props.Create(() => new ConsensusService(neoSystem, dbftSettings, signer));
         }

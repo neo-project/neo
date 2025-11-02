@@ -36,6 +36,7 @@ namespace Neo.UnitTests.SmartContract.Native
             data = new byte[] { 1, 2, 3 };
 
             CollectionAssert.AreEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
+            CollectionAssert.AreEqual(data, StdLib.Base64Decode("A \r Q \t I \n D"));
             CollectionAssert.AreEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
             Assert.AreEqual("AQIDBA==", StdLib.Base64Encode(new byte[] { 1, 2, 3, 4 }));
             Assert.AreEqual("2VfUX", StdLib.Base58Encode(new byte[] { 1, 2, 3, 4 }));
@@ -76,8 +77,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(4, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(4, engine.ResultStack);
 
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
                 Assert.AreEqual(0, engine.ResultStack.Pop<Integer>().GetInteger());
@@ -98,8 +99,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(1, engine.ResultStack);
 
                 Assert.AreEqual("3DUz7ncyT", engine.ResultStack.Pop<ByteString>().GetString());
             }
@@ -111,8 +112,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(1, engine.ResultStack);
 
                 CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, engine.ResultStack.Pop<ByteString>().GetSpan().ToArray());
             }
@@ -126,7 +127,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
             }
 
             using (ScriptBuilder script = new())
@@ -136,7 +137,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
             }
         }
 
@@ -156,8 +157,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(5, engine.ResultStack);
 
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
@@ -176,8 +177,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(5, engine.ResultStack);
 
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
@@ -196,8 +197,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(5, engine.ResultStack);
 
                 Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
                 Assert.AreEqual(2, engine.ResultStack.Pop<Integer>().GetInteger());
@@ -217,11 +218,11 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(1, engine.ResultStack);
 
             var arr = engine.ResultStack.Pop<VM.Types.Array>();
-            Assert.AreEqual(2, arr.Count);
+            Assert.HasCount(2, arr);
             Assert.AreEqual("a", arr[0].GetString());
             Assert.AreEqual("b", arr[1].GetString());
         }
@@ -239,8 +240,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(3, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(3, engine.ResultStack);
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
@@ -261,8 +262,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(2, engine.ResultStack);
             Assert.AreEqual(3, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
         }
@@ -282,8 +283,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(2, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(2, engine.ResultStack);
 
                 engine.ResultStack.Pop<Null>();
                 Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
@@ -298,8 +299,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                Assert.AreEqual(0, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.IsEmpty(engine.ResultStack);
             }
 
             // Error 2 - No decimals
@@ -311,8 +312,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                Assert.AreEqual(0, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.IsEmpty(engine.ResultStack);
             }
         }
 
@@ -342,8 +343,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(5, engine.ResultStack);
 
                 Assert.AreEqual("{\"key\":\"value\"}", engine.ResultStack.Pop<ByteString>().GetString());
                 Assert.AreEqual("null", engine.ResultStack.Pop<ByteString>().GetString());
@@ -361,8 +362,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                Assert.AreEqual(0, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.IsEmpty(engine.ResultStack);
             }
         }
 
@@ -380,11 +381,11 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(2, engine.ResultStack);
 
-            Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString(), "280474657374");
-            Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString(), "210164");
+            Assert.AreEqual("280474657374", engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString());
+            Assert.AreEqual("210164", engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString());
         }
 
         [TestMethod]
@@ -401,11 +402,11 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(2, engine.ResultStack);
 
-            Assert.AreEqual(engine.ResultStack.Pop<Integer>().GetInteger(), 100);
-            Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetString(), "test");
+            Assert.AreEqual(100, engine.ResultStack.Pop<Integer>().GetInteger());
+            Assert.AreEqual("test", engine.ResultStack.Pop<ByteString>().GetString());
         }
 
         [TestMethod]
@@ -417,15 +418,63 @@ namespace Neo.UnitTests.SmartContract.Native
                 // Test encoding
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlEncode", "Subject=test@example.com&Issuer=https://example.com");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlDecode", "U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlDecode", "U 3 \t V \n \riamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t");
 
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(2, engine.ResultStack.Count);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(3, engine.ResultStack);
+                Assert.AreEqual("Subject=test@example.com&Issuer=https://example.com", engine.ResultStack.Pop<ByteString>());
                 Assert.AreEqual("Subject=test@example.com&Issuer=https://example.com", engine.ResultStack.Pop<ByteString>());
                 Assert.AreEqual("U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t", engine.ResultStack.Pop<ByteString>().GetString());
             }
+        }
+
+        [TestMethod]
+        public void TestHexEncodeDecode()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var expectedBytes = new byte[] { 0x00, 0x01, 0x02, 0x03 };
+            var expectedString = "00010203";
+
+            using (var script = new ScriptBuilder())
+            {
+                // Test encoding
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "hexEncode", expectedBytes);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "hexDecode", expectedString);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(2, engine.ResultStack);
+                Assert.AreEqual(expectedBytes, engine.ResultStack.Pop<ByteString>());
+                Assert.AreEqual(expectedString, engine.ResultStack.Pop<ByteString>());
+            }
+        }
+
+        [TestMethod]
+        public void TestMemorySearch()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var expectedBytes = new byte[] { 0x00, 0x01, 0x02, 0x03 };
+            var expectedValue = new byte[] { 0x03 };
+
+            using var sb = new ScriptBuilder()
+                .EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", expectedBytes, expectedValue, 0, false)
+                .EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", expectedBytes, expectedValue, expectedBytes.Length - 1, false)
+                .EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", expectedBytes, expectedValue, expectedBytes.Length, true);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+            engine.LoadScript(sb.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(3, engine.ResultStack);
+
+            Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
+            Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
+            Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
         }
     }
 }

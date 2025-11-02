@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Namotion.Reflection;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -41,12 +42,12 @@ namespace Neo.UnitTests.SmartContract.Native
             _nativeStates = new Dictionary<string, string>
             {
                 {"ContractManagement", """{"id":-1,"updatecounter":0,"hash":"0xfffdc93764dbaddd97c48f252a53ea4643faa3fd","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dA","checksum":3581846399},"manifest":{"name":"ContractManagement","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"deploy","parameters":[{"name":"nefFile","type":"ByteArray"},{"name":"manifest","type":"ByteArray"}],"returntype":"Array","offset":0,"safe":false},{"name":"deploy","parameters":[{"name":"nefFile","type":"ByteArray"},{"name":"manifest","type":"ByteArray"},{"name":"data","type":"Any"}],"returntype":"Array","offset":7,"safe":false},{"name":"destroy","parameters":[],"returntype":"Void","offset":14,"safe":false},{"name":"getContract","parameters":[{"name":"hash","type":"Hash160"}],"returntype":"Array","offset":21,"safe":true},{"name":"getContractById","parameters":[{"name":"id","type":"Integer"}],"returntype":"Array","offset":28,"safe":true},{"name":"getContractHashes","parameters":[],"returntype":"InteropInterface","offset":35,"safe":true},{"name":"getMinimumDeploymentFee","parameters":[],"returntype":"Integer","offset":42,"safe":true},{"name":"hasMethod","parameters":[{"name":"hash","type":"Hash160"},{"name":"method","type":"String"},{"name":"pcount","type":"Integer"}],"returntype":"Boolean","offset":49,"safe":true},{"name":"isContract","parameters":[{"name":"hash","type":"Hash160"}],"returntype":"Boolean","offset":56,"safe":true},{"name":"setMinimumDeploymentFee","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":63,"safe":false},{"name":"update","parameters":[{"name":"nefFile","type":"ByteArray"},{"name":"manifest","type":"ByteArray"}],"returntype":"Void","offset":70,"safe":false},{"name":"update","parameters":[{"name":"nefFile","type":"ByteArray"},{"name":"manifest","type":"ByteArray"},{"name":"data","type":"Any"}],"returntype":"Void","offset":77,"safe":false}],"events":[{"name":"Deploy","parameters":[{"name":"Hash","type":"Hash160"}]},{"name":"Update","parameters":[{"name":"Hash","type":"Hash160"}]},{"name":"Destroy","parameters":[{"name":"Hash","type":"Hash160"}]}]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}""" },
-                {"StdLib", """{"id":-2,"updatecounter":0,"hash":"0xacce6fd80d44e1796aa0c2c625e9e4e0ce39efc0","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=","checksum":2681632925},"manifest":{"name":"StdLib","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"atoi","parameters":[{"name":"value","type":"String"}],"returntype":"Integer","offset":0,"safe":true},{"name":"atoi","parameters":[{"name":"value","type":"String"},{"name":"base","type":"Integer"}],"returntype":"Integer","offset":7,"safe":true},{"name":"base58CheckDecode","parameters":[{"name":"s","type":"String"}],"returntype":"ByteArray","offset":14,"safe":true},{"name":"base58CheckEncode","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"String","offset":21,"safe":true},{"name":"base58Decode","parameters":[{"name":"s","type":"String"}],"returntype":"ByteArray","offset":28,"safe":true},{"name":"base58Encode","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"String","offset":35,"safe":true},{"name":"base64Decode","parameters":[{"name":"s","type":"String"}],"returntype":"ByteArray","offset":42,"safe":true},{"name":"base64Encode","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"String","offset":49,"safe":true},{"name":"base64UrlDecode","parameters":[{"name":"s","type":"String"}],"returntype":"String","offset":56,"safe":true},{"name":"base64UrlEncode","parameters":[{"name":"data","type":"String"}],"returntype":"String","offset":63,"safe":true},{"name":"deserialize","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"Any","offset":70,"safe":true},{"name":"itoa","parameters":[{"name":"value","type":"Integer"}],"returntype":"String","offset":77,"safe":true},{"name":"itoa","parameters":[{"name":"value","type":"Integer"},{"name":"base","type":"Integer"}],"returntype":"String","offset":84,"safe":true},{"name":"jsonDeserialize","parameters":[{"name":"json","type":"ByteArray"}],"returntype":"Any","offset":91,"safe":true},{"name":"jsonSerialize","parameters":[{"name":"item","type":"Any"}],"returntype":"ByteArray","offset":98,"safe":true},{"name":"memoryCompare","parameters":[{"name":"str1","type":"ByteArray"},{"name":"str2","type":"ByteArray"}],"returntype":"Integer","offset":105,"safe":true},{"name":"memorySearch","parameters":[{"name":"mem","type":"ByteArray"},{"name":"value","type":"ByteArray"}],"returntype":"Integer","offset":112,"safe":true},{"name":"memorySearch","parameters":[{"name":"mem","type":"ByteArray"},{"name":"value","type":"ByteArray"},{"name":"start","type":"Integer"}],"returntype":"Integer","offset":119,"safe":true},{"name":"memorySearch","parameters":[{"name":"mem","type":"ByteArray"},{"name":"value","type":"ByteArray"},{"name":"start","type":"Integer"},{"name":"backward","type":"Boolean"}],"returntype":"Integer","offset":126,"safe":true},{"name":"serialize","parameters":[{"name":"item","type":"Any"}],"returntype":"ByteArray","offset":133,"safe":true},{"name":"strLen","parameters":[{"name":"str","type":"String"}],"returntype":"Integer","offset":140,"safe":true},{"name":"stringSplit","parameters":[{"name":"str","type":"String"},{"name":"separator","type":"String"}],"returntype":"Array","offset":147,"safe":true},{"name":"stringSplit","parameters":[{"name":"str","type":"String"},{"name":"separator","type":"String"},{"name":"removeEmptyEntries","type":"Boolean"}],"returntype":"Array","offset":154,"safe":true}],"events":[]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
+                {"StdLib", """{"id":-2,"updatecounter":0,"hash":"0xacce6fd80d44e1796aa0c2c625e9e4e0ce39efc0","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQA==","checksum":2426471238},"manifest":{"name":"StdLib","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"atoi","parameters":[{"name":"value","type":"String"}],"returntype":"Integer","offset":0,"safe":true},{"name":"atoi","parameters":[{"name":"value","type":"String"},{"name":"base","type":"Integer"}],"returntype":"Integer","offset":7,"safe":true},{"name":"base58CheckDecode","parameters":[{"name":"s","type":"String"}],"returntype":"ByteArray","offset":14,"safe":true},{"name":"base58CheckEncode","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"String","offset":21,"safe":true},{"name":"base58Decode","parameters":[{"name":"s","type":"String"}],"returntype":"ByteArray","offset":28,"safe":true},{"name":"base58Encode","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"String","offset":35,"safe":true},{"name":"base64Decode","parameters":[{"name":"s","type":"String"}],"returntype":"ByteArray","offset":42,"safe":true},{"name":"base64Encode","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"String","offset":49,"safe":true},{"name":"base64UrlDecode","parameters":[{"name":"s","type":"String"}],"returntype":"String","offset":56,"safe":true},{"name":"base64UrlEncode","parameters":[{"name":"data","type":"String"}],"returntype":"String","offset":63,"safe":true},{"name":"deserialize","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"Any","offset":70,"safe":true},{"name":"hexDecode","parameters":[{"name":"str","type":"String"}],"returntype":"ByteArray","offset":77,"safe":true},{"name":"hexEncode","parameters":[{"name":"bytes","type":"ByteArray"}],"returntype":"String","offset":84,"safe":true},{"name":"itoa","parameters":[{"name":"value","type":"Integer"}],"returntype":"String","offset":91,"safe":true},{"name":"itoa","parameters":[{"name":"value","type":"Integer"},{"name":"base","type":"Integer"}],"returntype":"String","offset":98,"safe":true},{"name":"jsonDeserialize","parameters":[{"name":"json","type":"ByteArray"}],"returntype":"Any","offset":105,"safe":true},{"name":"jsonSerialize","parameters":[{"name":"item","type":"Any"}],"returntype":"ByteArray","offset":112,"safe":true},{"name":"memoryCompare","parameters":[{"name":"str1","type":"ByteArray"},{"name":"str2","type":"ByteArray"}],"returntype":"Integer","offset":119,"safe":true},{"name":"memorySearch","parameters":[{"name":"mem","type":"ByteArray"},{"name":"value","type":"ByteArray"}],"returntype":"Integer","offset":126,"safe":true},{"name":"memorySearch","parameters":[{"name":"mem","type":"ByteArray"},{"name":"value","type":"ByteArray"},{"name":"start","type":"Integer"}],"returntype":"Integer","offset":133,"safe":true},{"name":"memorySearch","parameters":[{"name":"mem","type":"ByteArray"},{"name":"value","type":"ByteArray"},{"name":"start","type":"Integer"},{"name":"backward","type":"Boolean"}],"returntype":"Integer","offset":140,"safe":true},{"name":"serialize","parameters":[{"name":"item","type":"Any"}],"returntype":"ByteArray","offset":147,"safe":true},{"name":"strLen","parameters":[{"name":"str","type":"String"}],"returntype":"Integer","offset":154,"safe":true},{"name":"stringSplit","parameters":[{"name":"str","type":"String"},{"name":"separator","type":"String"}],"returntype":"Array","offset":161,"safe":true},{"name":"stringSplit","parameters":[{"name":"str","type":"String"},{"name":"separator","type":"String"},{"name":"removeEmptyEntries","type":"Boolean"}],"returntype":"Array","offset":168,"safe":true}],"events":[]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
                 {"CryptoLib", """{"id":-3,"updatecounter":0,"hash":"0x726cb6e0cd8628a1350a611384688911ab75f51b","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQA==","checksum":174904780},"manifest":{"name":"CryptoLib","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"bls12381Add","parameters":[{"name":"x","type":"InteropInterface"},{"name":"y","type":"InteropInterface"}],"returntype":"InteropInterface","offset":0,"safe":true},{"name":"bls12381Deserialize","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"InteropInterface","offset":7,"safe":true},{"name":"bls12381Equal","parameters":[{"name":"x","type":"InteropInterface"},{"name":"y","type":"InteropInterface"}],"returntype":"Boolean","offset":14,"safe":true},{"name":"bls12381Mul","parameters":[{"name":"x","type":"InteropInterface"},{"name":"mul","type":"ByteArray"},{"name":"neg","type":"Boolean"}],"returntype":"InteropInterface","offset":21,"safe":true},{"name":"bls12381Pairing","parameters":[{"name":"g1","type":"InteropInterface"},{"name":"g2","type":"InteropInterface"}],"returntype":"InteropInterface","offset":28,"safe":true},{"name":"bls12381Serialize","parameters":[{"name":"g","type":"InteropInterface"}],"returntype":"ByteArray","offset":35,"safe":true},{"name":"keccak256","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"ByteArray","offset":42,"safe":true},{"name":"murmur32","parameters":[{"name":"data","type":"ByteArray"},{"name":"seed","type":"Integer"}],"returntype":"ByteArray","offset":49,"safe":true},{"name":"recoverSecp256K1","parameters":[{"name":"messageHash","type":"ByteArray"},{"name":"signature","type":"ByteArray"}],"returntype":"ByteArray","offset":56,"safe":true},{"name":"ripemd160","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"ByteArray","offset":63,"safe":true},{"name":"sha256","parameters":[{"name":"data","type":"ByteArray"}],"returntype":"ByteArray","offset":70,"safe":true},{"name":"verifyWithECDsa","parameters":[{"name":"message","type":"ByteArray"},{"name":"pubkey","type":"ByteArray"},{"name":"signature","type":"ByteArray"},{"name":"curveHash","type":"Integer"}],"returntype":"Boolean","offset":77,"safe":true},{"name":"verifyWithEd25519","parameters":[{"name":"message","type":"ByteArray"},{"name":"pubkey","type":"ByteArray"},{"name":"signature","type":"ByteArray"}],"returntype":"Boolean","offset":84,"safe":true}],"events":[]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
                 {"LedgerContract", """{"id":-4,"updatecounter":0,"hash":"0xda65b600f7124ce6c79950c1772a36403104f2be","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=","checksum":1110259869},"manifest":{"name":"LedgerContract","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"currentHash","parameters":[],"returntype":"Hash256","offset":0,"safe":true},{"name":"currentIndex","parameters":[],"returntype":"Integer","offset":7,"safe":true},{"name":"getBlock","parameters":[{"name":"indexOrHash","type":"ByteArray"}],"returntype":"Array","offset":14,"safe":true},{"name":"getTransaction","parameters":[{"name":"hash","type":"Hash256"}],"returntype":"Array","offset":21,"safe":true},{"name":"getTransactionFromBlock","parameters":[{"name":"blockIndexOrHash","type":"ByteArray"},{"name":"txIndex","type":"Integer"}],"returntype":"Array","offset":28,"safe":true},{"name":"getTransactionHeight","parameters":[{"name":"hash","type":"Hash256"}],"returntype":"Integer","offset":35,"safe":true},{"name":"getTransactionSigners","parameters":[{"name":"hash","type":"Hash256"}],"returntype":"Array","offset":42,"safe":true},{"name":"getTransactionVMState","parameters":[{"name":"hash","type":"Hash256"}],"returntype":"Integer","offset":49,"safe":true}],"events":[]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
                 {"NeoToken", """{"id":-5,"updatecounter":0,"hash":"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dA","checksum":1991619121},"manifest":{"name":"NeoToken","groups":[],"features":{},"supportedstandards":["NEP-17","NEP-27"],"abi":{"methods":[{"name":"balanceOf","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Integer","offset":0,"safe":true},{"name":"decimals","parameters":[],"returntype":"Integer","offset":7,"safe":true},{"name":"getAccountState","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Array","offset":14,"safe":true},{"name":"getAllCandidates","parameters":[],"returntype":"InteropInterface","offset":21,"safe":true},{"name":"getCandidateVote","parameters":[{"name":"pubKey","type":"PublicKey"}],"returntype":"Integer","offset":28,"safe":true},{"name":"getCandidates","parameters":[],"returntype":"Array","offset":35,"safe":true},{"name":"getCommittee","parameters":[],"returntype":"Array","offset":42,"safe":true},{"name":"getCommitteeAddress","parameters":[],"returntype":"Hash160","offset":49,"safe":true},{"name":"getGasPerBlock","parameters":[],"returntype":"Integer","offset":56,"safe":true},{"name":"getNextBlockValidators","parameters":[],"returntype":"Array","offset":63,"safe":true},{"name":"getRegisterPrice","parameters":[],"returntype":"Integer","offset":70,"safe":true},{"name":"onNEP17Payment","parameters":[{"name":"from","type":"Hash160"},{"name":"amount","type":"Integer"},{"name":"data","type":"Any"}],"returntype":"Void","offset":77,"safe":false},{"name":"registerCandidate","parameters":[{"name":"pubkey","type":"PublicKey"}],"returntype":"Boolean","offset":84,"safe":false},{"name":"setGasPerBlock","parameters":[{"name":"gasPerBlock","type":"Integer"}],"returntype":"Void","offset":91,"safe":false},{"name":"setRegisterPrice","parameters":[{"name":"registerPrice","type":"Integer"}],"returntype":"Void","offset":98,"safe":false},{"name":"symbol","parameters":[],"returntype":"String","offset":105,"safe":true},{"name":"totalSupply","parameters":[],"returntype":"Integer","offset":112,"safe":true},{"name":"transfer","parameters":[{"name":"from","type":"Hash160"},{"name":"to","type":"Hash160"},{"name":"amount","type":"Integer"},{"name":"data","type":"Any"}],"returntype":"Boolean","offset":119,"safe":false},{"name":"unclaimedGas","parameters":[{"name":"account","type":"Hash160"},{"name":"end","type":"Integer"}],"returntype":"Integer","offset":126,"safe":true},{"name":"unregisterCandidate","parameters":[{"name":"pubkey","type":"PublicKey"}],"returntype":"Boolean","offset":133,"safe":false},{"name":"vote","parameters":[{"name":"account","type":"Hash160"},{"name":"voteTo","type":"PublicKey"}],"returntype":"Boolean","offset":140,"safe":false}],"events":[{"name":"Transfer","parameters":[{"name":"from","type":"Hash160"},{"name":"to","type":"Hash160"},{"name":"amount","type":"Integer"}]},{"name":"CandidateStateChanged","parameters":[{"name":"pubkey","type":"PublicKey"},{"name":"registered","type":"Boolean"},{"name":"votes","type":"Integer"}]},{"name":"Vote","parameters":[{"name":"account","type":"Hash160"},{"name":"from","type":"PublicKey"},{"name":"to","type":"PublicKey"},{"name":"amount","type":"Integer"}]},{"name":"CommitteeChanged","parameters":[{"name":"old","type":"Array"},{"name":"new","type":"Array"}]}]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
                 {"GasToken", """{"id":-6,"updatecounter":0,"hash":"0xd2a4cff31913016155e38e474a2c06d08be276cf","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=","checksum":2663858513},"manifest":{"name":"GasToken","groups":[],"features":{},"supportedstandards":["NEP-17"],"abi":{"methods":[{"name":"balanceOf","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Integer","offset":0,"safe":true},{"name":"decimals","parameters":[],"returntype":"Integer","offset":7,"safe":true},{"name":"symbol","parameters":[],"returntype":"String","offset":14,"safe":true},{"name":"totalSupply","parameters":[],"returntype":"Integer","offset":21,"safe":true},{"name":"transfer","parameters":[{"name":"from","type":"Hash160"},{"name":"to","type":"Hash160"},{"name":"amount","type":"Integer"},{"name":"data","type":"Any"}],"returntype":"Boolean","offset":28,"safe":false}],"events":[{"name":"Transfer","parameters":[{"name":"from","type":"Hash160"},{"name":"to","type":"Hash160"},{"name":"amount","type":"Integer"}]}]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
-                {"PolicyContract", """{"id":-7,"updatecounter":0,"hash":"0xcc5e4edd9f5f8dba8bb65734541df7a1c081c67b","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=","checksum":588003825},"manifest":{"name":"PolicyContract","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"blockAccount","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Boolean","offset":0,"safe":false},{"name":"getAttributeFee","parameters":[{"name":"attributeType","type":"Integer"}],"returntype":"Integer","offset":7,"safe":true},{"name":"getExecFeeFactor","parameters":[],"returntype":"Integer","offset":14,"safe":true},{"name":"getFeePerByte","parameters":[],"returntype":"Integer","offset":21,"safe":true},{"name":"getMaxTraceableBlocks","parameters":[],"returntype":"Integer","offset":28,"safe":true},{"name":"getMaxValidUntilBlockIncrement","parameters":[],"returntype":"Integer","offset":35,"safe":true},{"name":"getMillisecondsPerBlock","parameters":[],"returntype":"Integer","offset":42,"safe":true},{"name":"getStoragePrice","parameters":[],"returntype":"Integer","offset":49,"safe":true},{"name":"isBlocked","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Boolean","offset":56,"safe":true},{"name":"setAttributeFee","parameters":[{"name":"attributeType","type":"Integer"},{"name":"value","type":"Integer"}],"returntype":"Void","offset":63,"safe":false},{"name":"setExecFeeFactor","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":70,"safe":false},{"name":"setFeePerByte","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":77,"safe":false},{"name":"setMaxTraceableBlocks","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":84,"safe":false},{"name":"setMaxValidUntilBlockIncrement","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":91,"safe":false},{"name":"setMillisecondsPerBlock","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":98,"safe":false},{"name":"setStoragePrice","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":105,"safe":false},{"name":"unblockAccount","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Boolean","offset":112,"safe":false}],"events":[{"name":"MillisecondsPerBlockChanged","parameters":[{"name":"old","type":"Integer"},{"name":"new","type":"Integer"}]}]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
+                {"PolicyContract", """{"id":-7,"updatecounter":0,"hash":"0xcc5e4edd9f5f8dba8bb65734541df7a1c081c67b","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dA","checksum":2208257578},"manifest":{"name":"PolicyContract","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"blockAccount","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Boolean","offset":0,"safe":false},{"name":"getAttributeFee","parameters":[{"name":"attributeType","type":"Integer"}],"returntype":"Integer","offset":7,"safe":true},{"name":"getBlockedAccounts","parameters":[],"returntype":"InteropInterface","offset":14,"safe":true},{"name":"getExecFeeFactor","parameters":[],"returntype":"Integer","offset":21,"safe":true},{"name":"getFeePerByte","parameters":[],"returntype":"Integer","offset":28,"safe":true},{"name":"getMaxTraceableBlocks","parameters":[],"returntype":"Integer","offset":35,"safe":true},{"name":"getMaxValidUntilBlockIncrement","parameters":[],"returntype":"Integer","offset":42,"safe":true},{"name":"getMillisecondsPerBlock","parameters":[],"returntype":"Integer","offset":49,"safe":true},{"name":"getStoragePrice","parameters":[],"returntype":"Integer","offset":56,"safe":true},{"name":"isBlocked","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Boolean","offset":63,"safe":true},{"name":"setAttributeFee","parameters":[{"name":"attributeType","type":"Integer"},{"name":"value","type":"Integer"}],"returntype":"Void","offset":70,"safe":false},{"name":"setExecFeeFactor","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":77,"safe":false},{"name":"setFeePerByte","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":84,"safe":false},{"name":"setMaxTraceableBlocks","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":91,"safe":false},{"name":"setMaxValidUntilBlockIncrement","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":98,"safe":false},{"name":"setMillisecondsPerBlock","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":105,"safe":false},{"name":"setStoragePrice","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":112,"safe":false},{"name":"unblockAccount","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Boolean","offset":119,"safe":false}],"events":[{"name":"MillisecondsPerBlockChanged","parameters":[{"name":"old","type":"Integer"},{"name":"new","type":"Integer"}]}]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
                 {"RoleManagement", """{"id":-8,"updatecounter":0,"hash":"0x49cf4e5378ffcd4dec034fd98a174c5491e395e2","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0A=","checksum":983638438},"manifest":{"name":"RoleManagement","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"designateAsRole","parameters":[{"name":"role","type":"Integer"},{"name":"nodes","type":"Array"}],"returntype":"Void","offset":0,"safe":false},{"name":"getDesignatedByRole","parameters":[{"name":"role","type":"Integer"},{"name":"index","type":"Integer"}],"returntype":"Array","offset":7,"safe":true}],"events":[{"name":"Designation","parameters":[{"name":"Role","type":"Integer"},{"name":"BlockIndex","type":"Integer"},{"name":"Old","type":"Array"},{"name":"New","type":"Array"}]}]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
                 {"OracleContract", """{"id":-9,"updatecounter":0,"hash":"0xfe924b7cfe89ddd271abaf7210a80a7e11178758","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=","checksum":2663858513},"manifest":{"name":"OracleContract","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"finish","parameters":[],"returntype":"Void","offset":0,"safe":false},{"name":"getPrice","parameters":[],"returntype":"Integer","offset":7,"safe":true},{"name":"request","parameters":[{"name":"url","type":"String"},{"name":"filter","type":"String"},{"name":"callback","type":"String"},{"name":"userData","type":"Any"},{"name":"gasForResponse","type":"Integer"}],"returntype":"Void","offset":14,"safe":false},{"name":"setPrice","parameters":[{"name":"price","type":"Integer"}],"returntype":"Void","offset":21,"safe":false},{"name":"verify","parameters":[],"returntype":"Boolean","offset":28,"safe":true}],"events":[{"name":"OracleRequest","parameters":[{"name":"Id","type":"Integer"},{"name":"RequestContract","type":"Hash160"},{"name":"Url","type":"String"},{"name":"Filter","type":"String"}]},{"name":"OracleResponse","parameters":[{"name":"Id","type":"Integer"},{"name":"OriginalTx","type":"Hash256"}]}]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""},
                 {"Notary", """{"id":-10,"updatecounter":0,"hash":"0xc1e14f19c3e60d0b9244d06dd7ba9b113135ec3b","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=","checksum":1110259869},"manifest":{"name":"Notary","groups":[],"features":{},"supportedstandards":["NEP-27"],"abi":{"methods":[{"name":"balanceOf","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Integer","offset":0,"safe":true},{"name":"expirationOf","parameters":[{"name":"account","type":"Hash160"}],"returntype":"Integer","offset":7,"safe":true},{"name":"getMaxNotValidBeforeDelta","parameters":[],"returntype":"Integer","offset":14,"safe":true},{"name":"lockDepositUntil","parameters":[{"name":"account","type":"Hash160"},{"name":"till","type":"Integer"}],"returntype":"Boolean","offset":21,"safe":false},{"name":"onNEP17Payment","parameters":[{"name":"from","type":"Hash160"},{"name":"amount","type":"Integer"},{"name":"data","type":"Any"}],"returntype":"Void","offset":28,"safe":false},{"name":"setMaxNotValidBeforeDelta","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":35,"safe":false},{"name":"verify","parameters":[{"name":"signature","type":"ByteArray"}],"returntype":"Boolean","offset":42,"safe":true},{"name":"withdraw","parameters":[{"name":"from","type":"Hash160"},{"name":"to","type":"Hash160"}],"returntype":"Boolean","offset":49,"safe":false}],"events":[]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}"""}
@@ -87,10 +88,10 @@ namespace Neo.UnitTests.SmartContract.Native
             var before = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 19);
             var after = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 20);
 
-            Assert.AreEqual(2, before.Manifest.Abi.Events[0].Parameters.Length);
-            Assert.AreEqual(1, before.Manifest.Abi.Events.Length);
-            Assert.AreEqual(4, after.Manifest.Abi.Events[0].Parameters.Length);
-            Assert.AreEqual(1, after.Manifest.Abi.Events.Length);
+            Assert.HasCount(2, before.Manifest.Abi.Events[0].Parameters);
+            Assert.HasCount(1, before.Manifest.Abi.Events);
+            Assert.HasCount(4, after.Manifest.Abi.Events[0].Parameters);
+            Assert.HasCount(1, after.Manifest.Abi.Events);
         }
 
         [TestMethod]
@@ -111,13 +112,13 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 0, out var hf));
             Assert.IsNotNull(hf);
-            Assert.AreEqual(0, hf.Length);
+            Assert.IsEmpty(hf);
 
             Assert.IsFalse(NativeContract.CryptoLib.IsInitializeBlock(settings, 1, out hf));
             Assert.IsNull(hf);
 
             Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 20, out hf));
-            Assert.AreEqual(1, hf.Length);
+            Assert.HasCount(1, hf);
             Assert.AreEqual(Hardfork.HF_Cockatrice, hf[0]);
         }
 
@@ -152,15 +153,15 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestNativeContractId()
         {
             // native contract id is implicitly defined in NativeContract.cs(the defined order)
-            Assert.AreEqual(NativeContract.ContractManagement.Id, -1);
-            Assert.AreEqual(NativeContract.StdLib.Id, -2);
-            Assert.AreEqual(NativeContract.CryptoLib.Id, -3);
-            Assert.AreEqual(NativeContract.Ledger.Id, -4);
-            Assert.AreEqual(NativeContract.NEO.Id, -5);
-            Assert.AreEqual(NativeContract.GAS.Id, -6);
-            Assert.AreEqual(NativeContract.Policy.Id, -7);
-            Assert.AreEqual(NativeContract.RoleManagement.Id, -8);
-            Assert.AreEqual(NativeContract.Oracle.Id, -9);
+            Assert.AreEqual(-1, NativeContract.ContractManagement.Id);
+            Assert.AreEqual(-2, NativeContract.StdLib.Id);
+            Assert.AreEqual(-3, NativeContract.CryptoLib.Id);
+            Assert.AreEqual(-4, NativeContract.Ledger.Id);
+            Assert.AreEqual(-5, NativeContract.NEO.Id);
+            Assert.AreEqual(-6, NativeContract.GAS.Id);
+            Assert.AreEqual(-7, NativeContract.Policy.Id);
+            Assert.AreEqual(-8, NativeContract.RoleManagement.Id);
+            Assert.AreEqual(-9, NativeContract.Oracle.Id);
         }
 
 
@@ -273,6 +274,161 @@ namespace Neo.UnitTests.SmartContract.Native
             ((IInteroperable)cs).FromStackItem(result);
 
             return cs;
+        }
+
+        [TestMethod]
+        public void TestGenerateNativeContractApi()
+        {
+            var markdownTables = new Dictionary<(int Id, string Name), string>();
+            foreach (var contract in NativeContract.Contracts)
+            {
+                var contractName = contract.Name;
+                var contractMethods = new List<ContractMethodMetadata>();
+
+                // Get all methods using reflection
+                var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+                foreach (var member in contract.GetType().GetMembers(flags))
+                {
+                    foreach (var attribute in member.GetCustomAttributes<ContractMethodAttribute>())
+                    {
+                        contractMethods.Add(new ContractMethodMetadata(member, attribute));
+                    }
+                }
+
+                markdownTables[(contract.Id, contract.Name)] = GenMarkdownTable(contractName, contractMethods);
+            }
+
+            var docsDirectory = LocateDocsDirectory(new DirectoryInfo(Directory.GetCurrentDirectory()));
+            var outputPath = Path.Combine(docsDirectory.FullName, "native-contracts-api.md");
+            var previousContent = File.Exists(outputPath) ? File.ReadAllText(outputPath) : "";
+
+            using (var writer = new StreamWriter(outputPath) { NewLine = "\n" })
+            {
+                writer.WriteLine("""
+                # Native Contracts API
+                Native contracts are the contracts that are implemented in the Neo blockchain,
+                and native contract APIsare the methods that are provided by the native contracts.
+
+                When calling a native contract method by transaction script, there are several tips and notes:
+                1. A part of native contract methods require CallFlags. If no such CallFlags is provided, the call will be failed. 
+                2. Some native contract methods are only allowed to be called before or after a certain hardfork.
+                3. A native contract method may have different behaviors in different hardforks.
+
+                ## Table of Contents
+                """ + "\n");
+
+                var count = 1;
+                foreach (var kvp in markdownTables.OrderByDescending(x => x.Key.Id))
+                {
+                    writer.WriteLine($"{count}. [{kvp.Key.Name}](#{kvp.Key.Name.ToLower()})");
+                    count++;
+                }
+                writer.WriteLine();
+
+                foreach (var kvp in markdownTables.OrderByDescending(x => x.Key.Id))
+                {
+                    writer.WriteLine($"## {kvp.Key.Name}\n");
+                    writer.WriteLine(kvp.Value);
+                    writer.WriteLine();
+                }
+            }
+
+            Assert.IsTrue(File.Exists(outputPath), $"Generated file should exist at {outputPath}");
+
+            if (!string.IsNullOrEmpty(previousContent))
+            {
+                Assert.AreEqual(previousContent.Trim(), File.ReadAllText(outputPath).Trim(), "Native contract api file was changed!");
+            }
+        }
+
+        private static DirectoryInfo LocateDocsDirectory(DirectoryInfo start)
+        {
+            for (var current = start; current is not null; current = current.Parent)
+            {
+                var candidate = new DirectoryInfo(Path.Combine(current.FullName, "docs"));
+                if (candidate.Exists)
+                    return candidate;
+            }
+            throw new DirectoryNotFoundException($"Unable to locate 'docs' directory starting from '{start.FullName}'.");
+        }
+
+        private static string GenMarkdownTable(string contractName, List<ContractMethodMetadata> methods)
+        {
+            var table = new System.Text.StringBuilder();
+            table.Append("| Method | Summary | Parameters | Return Value | CPU fee | Storage fee | Call Flags | Hardfork |\n");
+            table.Append("|--------|---------|------------|--------------|---------|-------------|------------|----------|\n");
+
+            foreach (var method in methods)
+            {
+                var methodName = method.Name;
+                var summary = method.Handler.GetXmlDocsSummary().Replace("\n", " ").Replace("\r", "").Trim();
+                summary = string.IsNullOrEmpty(summary) ? "--" : summary;
+
+                var parameters = FormatParameters(method.Parameters);
+                var returnType = FormatReturnType(method.Handler.ReturnType);
+                var cpuFee = FormatPowerOfTwo(method.CpuFee);
+                var storageFee = FormatPowerOfTwo(method.StorageFee);
+                var callFlags = FormatCallFlags(method.RequiredCallFlags);
+                var hardfork = FormatHardfork(method.ActiveIn, method.DeprecatedIn);
+                table.Append($"| {methodName} | {summary} | {parameters} | {returnType} | {cpuFee} | {storageFee} | {callFlags} | {hardfork} |\n");
+            }
+
+            return table.ToString();
+        }
+
+        private static string FormatPowerOfTwo(long value)
+        {
+            if (value <= 0) return value.ToString();
+            if ((value & (value - 1)) == 0) return $"1<<{(int)Math.Log2(value)}";
+            return value.ToString();
+        }
+
+        private static string FormatReturnType(Type type)
+        {
+            if (type.BaseType == typeof(ContractTask)) return FormatReturnType(type.GenericTypeArguments[0]);
+            if (type == typeof(ContractTask) || type == typeof(void)) return "Void";
+            return type.Name;
+        }
+
+        private static string FormatParameters(InteropParameterDescriptor[] parameters)
+        {
+            if (parameters == null || parameters.Length == 0) return "--";
+
+            var @params = parameters.Select(p => $"{p.Type.Name}(*{p.Name}*)");
+            return string.Join(", ", @params);
+        }
+
+        private static string FormatCallFlags(CallFlags flags)
+        {
+            if (flags == CallFlags.None) return "--";
+
+            if (flags.HasFlag(CallFlags.All)) return "All";
+
+            var flagStrings = new List<string>();
+            if (flags.HasFlag(CallFlags.States))
+                flagStrings.Add("States");
+            else if (flags.HasFlag(CallFlags.ReadStates))
+                flagStrings.Add("ReadStates");
+            else if (flags.HasFlag(CallFlags.WriteStates))
+                flagStrings.Add("WriteStates");
+
+            if (flags.HasFlag(CallFlags.AllowCall))
+                flagStrings.Add("AllowCall");
+            if (flags.HasFlag(CallFlags.AllowNotify))
+                flagStrings.Add("AllowNotify");
+
+            return string.Join(",", flagStrings);
+        }
+
+        private static string FormatHardfork(Hardfork? activeIn, Hardfork? deprecatedIn)
+        {
+            if (activeIn.HasValue && deprecatedIn.HasValue)
+                return $"{activeIn}";
+            if (activeIn.HasValue)
+                return $"{activeIn}";
+            if (deprecatedIn.HasValue)
+                return $"Deprecated in {deprecatedIn}";
+            return "--";
         }
     }
 }

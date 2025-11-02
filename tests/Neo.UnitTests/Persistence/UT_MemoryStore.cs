@@ -73,7 +73,7 @@ namespace Neo.UnitTests.Persistence
             store.Put([0x00, 0x00, 0x04], [0x04]);
 
             var entries = store.Find([], SeekDirection.Backward).ToArray();
-            Assert.AreEqual(0, entries.Length);
+            Assert.IsEmpty(entries);
         }
 
         [TestMethod]
@@ -135,7 +135,7 @@ namespace Neo.UnitTests.Persistence
             storeView.Add(new KeyBuilder(1, 0x000004), new StorageItem([0x04]));
 
             var entries = storeView.Seek([], SeekDirection.Backward).ToArray();
-            Assert.AreEqual(0, entries.Length);
+            Assert.IsEmpty(entries);
         }
     }
 }

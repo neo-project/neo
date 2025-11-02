@@ -74,7 +74,8 @@ namespace Neo.SmartContract.Manifest
             Name = @struct[0].GetString();
             Groups = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractGroup>()).ToArray();
             if (((Map)@struct[2]).Count != 0)
-                throw new ArgumentException(null, nameof(stackItem));
+                throw new ArgumentException("Features field must be empty", nameof(stackItem));
+
             SupportedStandards = ((Array)@struct[3]).Select(p => p.GetString()).ToArray();
             Abi = @struct[4].ToInteroperable<ContractAbi>();
             Permissions = ((Array)@struct[5]).Select(p => p.ToInteroperable<ContractPermission>()).ToArray();
@@ -83,7 +84,7 @@ namespace Neo.SmartContract.Manifest
                 Null _ => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
                 // Array array when array.Any(p => ((ByteString)p).Size == 0) => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(ContractPermissionDescriptor.Create).ToArray()),
-                _ => throw new ArgumentException(null, nameof(stackItem))
+                _ => throw new ArgumentException("Trusts field must be null or array", nameof(stackItem))
             };
             Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
         }
@@ -122,12 +123,12 @@ namespace Neo.SmartContract.Manifest
             };
 
             if (string.IsNullOrEmpty(manifest.Name))
-                throw new FormatException();
+                throw new FormatException("Name in ContractManifest is empty");
             _ = manifest.Groups.ToDictionary(p => p.PubKey);
             if (json["features"] is not JObject features || features.Count != 0)
-                throw new FormatException();
+                throw new FormatException("Features field must be empty");
             if (manifest.SupportedStandards.Any(string.IsNullOrEmpty))
-                throw new FormatException();
+                throw new FormatException("SupportedStandards in ContractManifest has empty string");
             _ = manifest.SupportedStandards.ToDictionary(p => p);
             _ = manifest.Permissions.ToDictionary(p => p.Contract);
             _ = manifest.Trusts.ToDictionary(p => p);
@@ -141,7 +142,8 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The parsed manifest.</returns>
         public static ContractManifest Parse(ReadOnlySpan<byte> json)
         {
-            if (json.Length > MaxLength) throw new ArgumentException(null, nameof(json));
+            if (json.Length > MaxLength)
+                throw new ArgumentException($"JSON content length {json.Length} exceeds maximum allowed size of {MaxLength} bytes", nameof(json));
             return FromJson((JObject)JToken.Parse(json));
         }
 

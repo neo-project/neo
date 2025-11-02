@@ -20,6 +20,7 @@ using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using static Neo.Plugins.OracleService.Tests.TestBlockchain;
 using static Neo.Plugins.OracleService.Tests.TestUtils;
@@ -93,11 +94,11 @@ namespace Neo.Plugins.OracleService.Tests
                 InvocationScript = new byte[] { (byte)OpCode.PUSHDATA1, (byte)signature.Length }.Concat(signature).ToArray(),
                 VerificationScript = MultisigScript,
             };
-            s_theNeoSystem.Blockchain.Ask(block).Wait();
+            s_theNeoSystem.Blockchain.Ask(block, cancellationToken: CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
             Task t = s_oracle.Start(s_wallet);
-            t.Wait(TimeSpan.FromMilliseconds(900));
+            t.Wait(TimeSpan.FromMilliseconds(900), cancellationToken: CancellationToken.None);
             s_oracle.cancelSource.Cancel();
-            t.Wait();
+            t.Wait(cancellationToken: CancellationToken.None);
         }
     }
 }

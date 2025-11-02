@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Akka.Event;
 using Neo.Extensions;
+using System;
 using System.Text;
 
 namespace Neo
@@ -28,7 +29,7 @@ namespace Neo
             public Logger()
             {
                 Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
-                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message));
+                Receive<LogEvent>(e => Log("Akka", (LogLevel)e.LogLevel(), $"[{e.LogSource}] {e.Message}{Environment.NewLine}{e.Cause?.StackTrace ?? ""}"));
             }
         }
 

@@ -18,12 +18,12 @@ namespace Neo.Json
     /// </summary>
     public class JObject : JContainer
     {
-        private readonly OrderedDictionary<string, JToken?> properties = new();
+        private readonly OrderedDictionary<string, JToken?> _properties = [];
 
         /// <summary>
         /// Gets or sets the properties of the JSON object.
         /// </summary>
-        public IDictionary<string, JToken?> Properties => properties;
+        public IDictionary<string, JToken?> Properties => _properties;
 
         /// <summary>
         /// Gets or sets the properties of the JSON object.
@@ -34,7 +34,7 @@ namespace Neo.Json
         {
             get
             {
-                if (Properties.TryGetValue(name, out JToken? value))
+                if (Properties.TryGetValue(name, out var value))
                     return value;
                 return null;
             }
@@ -44,7 +44,24 @@ namespace Neo.Json
             }
         }
 
-        public override IReadOnlyList<JToken?> Children => properties.Values;
+        public override IReadOnlyList<JToken?> Children => _properties.Values;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public JObject() { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="properties">Properties</param>
+        public JObject(IDictionary<string, JToken?> properties)
+        {
+            foreach (var (key, value) in properties)
+            {
+                Properties[key] = value;
+            }
+        }
 
         /// <summary>
         /// Determines whether the JSON object contains a property with the specified name.
@@ -56,7 +73,7 @@ namespace Neo.Json
             return Properties.ContainsKey(key);
         }
 
-        public override void Clear() => properties.Clear();
+        public override void Clear() => _properties.Clear();
 
         internal override void Write(Utf8JsonWriter writer)
         {

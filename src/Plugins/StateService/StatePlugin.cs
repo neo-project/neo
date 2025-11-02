@@ -18,7 +18,6 @@ using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer;
-using Neo.Plugins.StateService.Network;
 using Neo.Plugins.StateService.Storage;
 using Neo.Plugins.StateService.Verification;
 using Neo.SmartContract;
@@ -40,12 +39,15 @@ namespace Neo.Plugins.StateService
         public override string Description => "Enables MPT for the node";
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "StateService.json");
 
-        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
+        protected override UnhandledExceptionPolicy ExceptionPolicy => StateServiceSettings.Default.ExceptionPolicy;
 
         internal IActorRef Store;
         internal IActorRef Verifier;
 
-        internal static NeoSystem _system;
+        private static NeoSystem _system;
+
+        internal static NeoSystem NeoSystem => _system;
+
         private IWalletProvider walletProvider;
 
         public StatePlugin()
@@ -56,16 +58,16 @@ namespace Neo.Plugins.StateService
 
         protected override void Configure()
         {
-            Settings.Load(GetConfiguration());
+            StateServiceSettings.Load(GetConfiguration());
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
-            if (system.Settings.Network != Settings.Default.Network) return;
+            if (system.Settings.Network != StateServiceSettings.Default.Network) return;
             _system = system;
-            Store = _system.ActorSystem.ActorOf(StateStore.Props(this, string.Format(Settings.Default.Path, system.Settings.Network.ToString("X8"))));
+            Store = _system.ActorSystem.ActorOf(StateStore.Props(this, string.Format(StateServiceSettings.Default.Path, system.Settings.Network.ToString("X8"))));
             _system.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
-            RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
+            RpcServerPlugin.RegisterMethods(this, StateServiceSettings.Default.Network);
         }
 
         void IServiceAddedHandler.NeoSystem_ServiceAdded_Handler(object sender, object service)
@@ -74,7 +76,7 @@ namespace Neo.Plugins.StateService
             {
                 walletProvider = service as IWalletProvider;
                 _system.ServiceAdded -= ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
-                if (Settings.Default.AutoVerify)
+                if (StateServiceSettings.Default.AutoVerify)
                 {
                     walletProvider.WalletChanged += ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
                 }
@@ -96,22 +98,33 @@ namespace Neo.Plugins.StateService
             if (Verifier is not null) _system.EnsureStopped(Verifier);
         }
 
-        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot,
+            IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
-            if (system.Settings.Network != Settings.Default.Network) return;
-            StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index, snapshot.GetChangeSet().Where(p => p.Value.State != TrackState.None).Where(p => p.Key.Id != NativeContract.Ledger.Id).ToList());
+            if (system.Settings.Network != StateServiceSettings.Default.Network) return;
+            StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index,
+                snapshot.GetChangeSet()
+                    .Where(p => p.Value.State != TrackState.None && p.Key.Id != NativeContract.Ledger.Id)
+                    .ToList());
         }
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            if (system.Settings.Network != Settings.Default.Network) return;
+            if (system.Settings.Network != StateServiceSettings.Default.Network) return;
             StateStore.Singleton.UpdateLocalStateRoot(block.Index);
+        }
+
+        private void CheckNetwork()
+        {
+            var network = StateServiceSettings.Default.Network;
+            if (_system is null || _system.Settings.Network != network)
+                throw new InvalidOperationException($"Network doesn't match: {_system?.Settings.Network} != {network}");
         }
 
         [ConsoleCommand("start states", Category = "StateService", Description = "Start as a state verifier if wallet is open")]
         private void OnStartVerifyingState()
         {
-            if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
+            CheckNetwork();
             Start(walletProvider.GetWallet());
         }
 
@@ -133,19 +146,21 @@ namespace Neo.Plugins.StateService
         [ConsoleCommand("state root", Category = "StateService", Description = "Get state root by index")]
         private void OnGetStateRoot(uint index)
         {
-            if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
+            CheckNetwork();
+
             using var snapshot = StateStore.Singleton.GetSnapshot();
-            StateRoot state_root = snapshot.GetStateRoot(index);
-            if (state_root is null)
+            var stateRoot = snapshot.GetStateRoot(index);
+            if (stateRoot is null)
                 ConsoleHelper.Warning("Unknown state root");
             else
-                ConsoleHelper.Info(state_root.ToJson().ToString());
+                ConsoleHelper.Info(stateRoot.ToJson().ToString());
         }
 
         [ConsoleCommand("state height", Category = "StateService", Description = "Get current state root index")]
         private void OnGetStateHeight()
         {
-            if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
+            CheckNetwork();
+
             ConsoleHelper.Info("LocalRootIndex: ",
                 $"{StateStore.Singleton.LocalRootIndex}",
                 " ValidatedRootIndex: ",
@@ -153,12 +168,14 @@ namespace Neo.Plugins.StateService
         }
 
         [ConsoleCommand("get proof", Category = "StateService", Description = "Get proof of key and contract hash")]
-        private void OnGetProof(UInt256 root_hash, UInt160 script_hash, string key)
+        private void OnGetProof(UInt256 rootHash, UInt160 scriptHash, string key)
         {
-            if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
+            if (_system is null || _system.Settings.Network != StateServiceSettings.Default.Network)
+                throw new InvalidOperationException("Network doesn't match");
+
             try
             {
-                ConsoleHelper.Info("Proof: ", GetProof(root_hash, script_hash, Convert.FromBase64String(key)));
+                ConsoleHelper.Info("Proof: ", GetProof(rootHash, scriptHash, Convert.FromBase64String(key)));
             }
             catch (RpcException e)
             {
@@ -167,12 +184,11 @@ namespace Neo.Plugins.StateService
         }
 
         [ConsoleCommand("verify proof", Category = "StateService", Description = "Verify proof, return value if successed")]
-        private void OnVerifyProof(UInt256 root_hash, string proof)
+        private void OnVerifyProof(UInt256 rootHash, string proof)
         {
             try
             {
-                ConsoleHelper.Info("Verify Result: ",
-                    VerifyProof(root_hash, Convert.FromBase64String(proof)));
+                ConsoleHelper.Info("Verify Result: ", VerifyProof(rootHash, Convert.FromBase64String(proof)));
             }
             catch (RpcException e)
             {
@@ -181,19 +197,18 @@ namespace Neo.Plugins.StateService
         }
 
         [RpcMethod]
-        public JToken GetStateRoot(JArray _params)
+        public JToken GetStateRoot(uint index)
         {
-            uint index = Result.Ok_Or(() => uint.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid state root index: {_params[0]}"));
             using var snapshot = StateStore.Singleton.GetSnapshot();
-            StateRoot state_root = snapshot.GetStateRoot(index).NotNull_Or(RpcError.UnknownStateRoot);
-            return state_root.ToJson();
+            var stateRoot = snapshot.GetStateRoot(index).NotNull_Or(RpcError.UnknownStateRoot);
+            return stateRoot.ToJson();
         }
 
-        private string GetProof(Trie trie, int contract_id, byte[] key)
+        private string GetProof(Trie trie, int contractId, byte[] key)
         {
-            StorageKey skey = new()
+            var skey = new StorageKey()
             {
-                Id = contract_id,
+                Id = contractId,
                 Key = key,
             };
             return GetProof(trie, skey);
@@ -202,8 +217,8 @@ namespace Neo.Plugins.StateService
         private string GetProof(Trie trie, StorageKey skey)
         {
             trie.TryGetProof(skey.ToArray(), out var proof).True_Or(RpcError.UnknownStorageItem);
-            using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms, Utility.StrictUTF8);
+            using var ms = new MemoryStream();
+            using var writer = new BinaryWriter(ms, Utility.StrictUTF8);
 
             writer.WriteVarBytes(skey.ToArray());
             writer.WriteVarInt(proof.Count);
@@ -216,30 +231,29 @@ namespace Neo.Plugins.StateService
             return Convert.ToBase64String(ms.ToArray());
         }
 
-        private string GetProof(UInt256 root_hash, UInt160 script_hash, byte[] key)
+        private string GetProof(UInt256 rootHash, UInt160 scriptHash, byte[] key)
         {
-            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != root_hash).False_Or(RpcError.UnsupportedState);
+            CheckRootHash(rootHash);
+
             using var store = StateStore.Singleton.GetStoreSnapshot();
-            var trie = new Trie(store, root_hash);
-            var contract = GetHistoricalContractState(trie, script_hash).NotNull_Or(RpcError.UnknownContract);
+            var trie = new Trie(store, rootHash);
+            var contract = GetHistoricalContractState(trie, scriptHash).NotNull_Or(RpcError.UnknownContract);
             return GetProof(trie, contract.Id, key);
         }
 
         [RpcMethod]
-        public JToken GetProof(JArray _params)
+        public JToken GetProof(UInt256 rootHash, UInt160 scriptHash, string key)
         {
-            UInt256 root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
-            byte[] key = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[2]}"));
-            return GetProof(root_hash, script_hash, key);
+            var keyBytes = Result.Ok_Or(() => Convert.FromBase64String(key), RpcError.InvalidParams.WithData($"Invalid key: {key}"));
+            return GetProof(rootHash, scriptHash, keyBytes);
         }
 
-        private string VerifyProof(UInt256 root_hash, byte[] proof)
+        private string VerifyProof(UInt256 rootHash, byte[] proof)
         {
             var proofs = new HashSet<byte[]>();
 
-            using MemoryStream ms = new(proof, false);
-            using BinaryReader reader = new(ms, Utility.StrictUTF8);
+            using var ms = new MemoryStream(proof, false);
+            using var reader = new BinaryReader(ms, Utility.StrictUTF8);
 
             var key = reader.ReadVarBytes(Node.MaxKeyLength);
             var count = reader.ReadVarInt(byte.MaxValue);
@@ -248,83 +262,78 @@ namespace Neo.Plugins.StateService
                 proofs.Add(reader.ReadVarBytes());
             }
 
-            var value = Trie.VerifyProof(root_hash, key, proofs).NotNull_Or(RpcError.InvalidProof);
+            var value = Trie.VerifyProof(rootHash, key, proofs).NotNull_Or(RpcError.InvalidProof);
             return Convert.ToBase64String(value);
         }
 
         [RpcMethod]
-        public JToken VerifyProof(JArray _params)
+        public JToken VerifyProof(UInt256 rootHash, string proof)
         {
-            UInt256 root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            byte[] proof_bytes = Result.Ok_Or(() => Convert.FromBase64String(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid proof: {_params[1]}"));
-            return VerifyProof(root_hash, proof_bytes);
+            var proofBytes = Result.Ok_Or(
+                () => Convert.FromBase64String(proof), RpcError.InvalidParams.WithData($"Invalid proof: {proof}"));
+            return VerifyProof(rootHash, proofBytes);
         }
 
         [RpcMethod]
-        public JToken GetStateHeight(JArray _params)
+        public JToken GetStateHeight()
         {
-            var json = new JObject();
-            json["localrootindex"] = StateStore.Singleton.LocalRootIndex;
-            json["validatedrootindex"] = StateStore.Singleton.ValidatedRootIndex;
-            return json;
+            return new JObject()
+            {
+                ["localrootindex"] = StateStore.Singleton.LocalRootIndex,
+                ["validatedrootindex"] = StateStore.Singleton.ValidatedRootIndex,
+            };
         }
 
-        private ContractState GetHistoricalContractState(Trie trie, UInt160 script_hash)
+        private ContractState GetHistoricalContractState(Trie trie, UInt160 scriptHash)
         {
             const byte prefix = 8;
-            StorageKey skey = new KeyBuilder(NativeContract.ContractManagement.Id, prefix).Add(script_hash);
-            return trie.TryGetValue(skey.ToArray(), out var value) ? value.AsSerializable<StorageItem>().GetInteroperable<ContractState>() : null;
+            var skey = new KeyBuilder(NativeContract.ContractManagement.Id, prefix).Add(scriptHash);
+            return trie.TryGetValue(skey.ToArray(), out var value)
+                ? value.AsSerializable<StorageItem>().GetInteroperable<ContractState>()
+                : null;
         }
 
         private StorageKey ParseStorageKey(byte[] data)
         {
-            return new()
-            {
-                Id = BinaryPrimitives.ReadInt32LittleEndian(data),
-                Key = data.AsMemory(sizeof(int)),
-            };
+            return new() { Id = BinaryPrimitives.ReadInt32LittleEndian(data), Key = data.AsMemory(sizeof(int)) };
+        }
+
+        private void CheckRootHash(UInt256 rootHash)
+        {
+            var fullState = StateServiceSettings.Default.FullState;
+            var current = StateStore.Singleton.CurrentLocalRootHash;
+            (!fullState && current != rootHash)
+                .False_Or(RpcError.UnsupportedState.WithData($"fullState:{fullState},current:{current},rootHash:{rootHash}"));
         }
 
         [RpcMethod]
-        public JToken FindStates(JArray _params)
+        public JToken FindStates(UInt256 rootHash, UInt160 scriptHash, byte[] prefix, byte[] key = null, int count = 0)
         {
-            var root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != root_hash).False_Or(RpcError.UnsupportedState);
-            var script_hash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
-            var prefix = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid prefix: {_params[2]}"));
-            byte[] key = Array.Empty<byte>();
-            if (3 < _params.Count)
-                key = Result.Ok_Or(() => Convert.FromBase64String(_params[3].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[3]}"));
-            int count = Settings.Default.MaxFindResultItems;
-            if (4 < _params.Count)
-                count = Result.Ok_Or(() => int.Parse(_params[4].AsString()), RpcError.InvalidParams.WithData($"Invalid count: {_params[4]}"));
-            if (Settings.Default.MaxFindResultItems < count)
-                count = Settings.Default.MaxFindResultItems;
+            CheckRootHash(rootHash);
+
+            key ??= [];
+            count = count <= 0 ? StateServiceSettings.Default.MaxFindResultItems : count;
+            count = Math.Min(count, StateServiceSettings.Default.MaxFindResultItems);
+
             using var store = StateStore.Singleton.GetStoreSnapshot();
-            var trie = new Trie(store, root_hash);
-            var contract = GetHistoricalContractState(trie, script_hash).NotNull_Or(RpcError.UnknownContract);
-            StorageKey pkey = new()
-            {
-                Id = contract.Id,
-                Key = prefix,
-            };
-            StorageKey fkey = new()
-            {
-                Id = pkey.Id,
-                Key = key,
-            };
-            JObject json = new();
-            JArray jarr = new();
+            var trie = new Trie(store, rootHash);
+            var contract = GetHistoricalContractState(trie, scriptHash).NotNull_Or(RpcError.UnknownContract);
+            var pkey = new StorageKey() { Id = contract.Id, Key = prefix };
+            var fkey = new StorageKey() { Id = pkey.Id, Key = key };
+
+            var json = new JObject();
+            var jarr = new JArray();
             int i = 0;
             foreach (var (ikey, ivalue) in trie.Find(pkey.ToArray(), 0 < key.Length ? fkey.ToArray() : null))
             {
                 if (count < i) break;
                 if (i < count)
                 {
-                    JObject j = new();
-                    j["key"] = Convert.ToBase64String(ParseStorageKey(ikey.ToArray()).Key.Span);
-                    j["value"] = Convert.ToBase64String(ivalue.Span);
-                    jarr.Add(j);
+                    jarr.Add(new JObject()
+                    {
+                        ["key"] = Convert.ToBase64String(ParseStorageKey(ikey.ToArray()).Key.Span),
+                        ["value"] = Convert.ToBase64String(ivalue.Span),
+                    });
                 }
                 i++;
             }
@@ -342,17 +351,14 @@ namespace Neo.Plugins.StateService
         }
 
         [RpcMethod]
-        public JToken GetState(JArray _params)
+        public JToken GetState(UInt256 rootHash, UInt160 scriptHash, byte[] key)
         {
-            var root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != root_hash).False_Or(RpcError.UnsupportedState);
-            var script_hash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
-            var key = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[2]}"));
-            using var store = StateStore.Singleton.GetStoreSnapshot();
-            var trie = new Trie(store, root_hash);
+            CheckRootHash(rootHash);
 
-            var contract = GetHistoricalContractState(trie, script_hash).NotNull_Or(RpcError.UnknownContract);
-            StorageKey skey = new()
+            using var store = StateStore.Singleton.GetStoreSnapshot();
+            var trie = new Trie(store, rootHash);
+            var contract = GetHistoricalContractState(trie, scriptHash).NotNull_Or(RpcError.UnknownContract);
+            var skey = new StorageKey()
             {
                 Id = contract.Id,
                 Key = key,

@@ -12,10 +12,10 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Builders;
 using Neo.Cryptography.ECC;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.VM;
-using System;
 
 namespace Neo.UnitTests.Builders
 {
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestNonce()
         {
-            var expectedNonce = (uint)Random.Shared.Next();
+            var expectedNonce = RandomNumberFactory.NextUInt32();
             var tx = TransactionBuilder.CreateEmpty()
                 .Nonce(expectedNonce)
                 .Build();
@@ -66,7 +66,7 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestSystemFee()
         {
-            var expectedSystemFee = (uint)Random.Shared.Next();
+            var expectedSystemFee = RandomNumberFactory.NextUInt32();
             var tx = TransactionBuilder.CreateEmpty()
                 .SystemFee(expectedSystemFee)
                 .Build();
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestNetworkFee()
         {
-            var expectedNetworkFee = (uint)Random.Shared.Next();
+            var expectedNetworkFee = RandomNumberFactory.NextUInt32();
             var tx = TransactionBuilder.CreateEmpty()
                 .NetworkFee(expectedNetworkFee)
                 .Build();
@@ -90,7 +90,7 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestValidUntilBlock()
         {
-            var expectedValidUntilBlock = (uint)Random.Shared.Next();
+            var expectedValidUntilBlock = RandomNumberFactory.NextUInt32();
             var tx = TransactionBuilder.CreateEmpty()
                 .ValidUntil(expectedValidUntilBlock)
                 .Build();
@@ -118,7 +118,7 @@ namespace Neo.UnitTests.Builders
                 .AddAttributes(ab => ab.AddHighPriority())
                 .Build();
 
-            Assert.AreEqual(1, tx.Attributes.Length);
+            Assert.HasCount(1, tx.Attributes);
             Assert.IsInstanceOfType<HighPriorityAttribute>(tx.Attributes[0]);
             Assert.IsNotNull(tx.Hash);
         }
@@ -135,7 +135,7 @@ namespace Neo.UnitTests.Builders
                 })
                 .Build();
 
-            Assert.AreEqual(1, tx.Witnesses.Length);
+            Assert.HasCount(1, tx.Witnesses);
             Assert.AreEqual(0, tx.Witnesses[0].InvocationScript.Length);
             Assert.AreEqual(0, tx.Witnesses[0].VerificationScript.Length);
             Assert.IsNotNull(tx.Hash);
@@ -178,14 +178,14 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(tx.Hash);
-            Assert.AreEqual(1, tx.Signers.Length);
+            Assert.HasCount(1, tx.Signers);
             Assert.AreEqual(expectedContractHash, tx.Signers[0].Account);
-            Assert.AreEqual(1, tx.Signers[0].AllowedContracts.Length);
+            Assert.HasCount(1, tx.Signers[0].AllowedContracts);
             Assert.AreEqual(expectedContractHash, tx.Signers[0].AllowedContracts[0]);
-            Assert.AreEqual(1, tx.Signers[0].AllowedGroups.Length);
+            Assert.HasCount(1, tx.Signers[0].AllowedGroups);
             Assert.AreEqual(expectedPublicKey, tx.Signers[0].AllowedGroups[0]);
             Assert.AreEqual(WitnessScope.WitnessRules, tx.Signers[0].Scopes);
-            Assert.AreEqual(1, tx.Signers[0].Rules.Length);
+            Assert.HasCount(1, tx.Signers[0].Rules);
             Assert.AreEqual(WitnessRuleAction.Deny, tx.Signers[0].Rules[0].Action);
             Assert.IsNotNull(tx.Signers[0].Rules[0].Condition);
             Assert.IsInstanceOfType<ScriptHashCondition>(tx.Signers[0].Rules[0].Condition);

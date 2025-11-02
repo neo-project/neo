@@ -52,7 +52,7 @@ namespace Neo.Cryptography.ECC
         internal ECPoint(ECFieldElement? x, ECFieldElement? y, ECCurve curve)
         {
             if (x is null ^ y is null)
-                throw new ArgumentException("Exactly one of the field elements is null");
+                throw new ArgumentException("Invalid ECPoint construction: exactly one of the field elements (X or Y) is null. Both X and Y must be either null (for infinity point) or non-null (for valid point).");
             X = x;
             Y = y;
             Curve = curve;
@@ -60,8 +60,8 @@ namespace Neo.Cryptography.ECC
 
         public int CompareTo(ECPoint? other)
         {
-            if (other == null) throw new ArgumentNullException(nameof(other));
-            if (!Curve.Equals(other.Curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
+            ArgumentNullException.ThrowIfNull(other);
+            if (!Curve.Equals(other.Curve)) throw new InvalidOperationException("Cannot compare ECPoints with different curves. Both points must use the same elliptic curve for comparison.");
             if (ReferenceEquals(this, other)) return 0;
             if (IsInfinity) return other.IsInfinity ? 0 : -1;
             if (other.IsInfinity) return IsInfinity ? 0 : 1;
@@ -85,13 +85,13 @@ namespace Neo.Cryptography.ECC
                 case 0x03: // compressed
                     {
                         if (encoded.Length != (curve.ExpectedECPointLength + 1))
-                            throw new FormatException("Incorrect length for compressed encoding");
+                            throw new FormatException($"Invalid compressed ECPoint encoding length: expected {curve.ExpectedECPointLength + 1} bytes, but got {encoded.Length} bytes. Compressed points must be exactly {curve.ExpectedECPointLength + 1} bytes long.");
                         return DecompressPoint(encoded, curve);
                     }
                 case 0x04: // uncompressed
                     {
                         if (encoded.Length != (2 * curve.ExpectedECPointLength + 1))
-                            throw new FormatException("Incorrect length for uncompressed/hybrid encoding");
+                            throw new FormatException($"Invalid uncompressed ECPoint encoding length: expected {2 * curve.ExpectedECPointLength + 1} bytes, but got {encoded.Length} bytes. Uncompressed points must be exactly {2 * curve.ExpectedECPointLength + 1} bytes long.");
                         var x1 = new BigInteger(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
                         var y1 = new BigInteger(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
                         return new ECPoint(new ECFieldElement(x1, curve), new ECFieldElement(y1, curve), curve)
@@ -100,7 +100,7 @@ namespace Neo.Cryptography.ECC
                         };
                     }
                 default:
-                    throw new FormatException("Invalid point encoding " + encoded[0]);
+                    throw new FormatException($"Invalid ECPoint encoding format: unknown prefix byte 0x{encoded[0]:X2}. Expected 0x02, 0x03 (compressed), or 0x04 (uncompressed).");
             }
         }
 
@@ -109,7 +109,7 @@ namespace Neo.Cryptography.ECC
             ECPointCache pointCache;
             if (curve == ECCurve.Secp256k1) pointCache = PointCacheK1;
             else if (curve == ECCurve.Secp256r1) pointCache = PointCacheR1;
-            else throw new FormatException("Invalid curve " + curve);
+            else throw new FormatException($"Unsupported elliptic curve: {curve}. Only Secp256k1 and Secp256r1 curves are supported for point decompression.");
 
             var compressedPoint = encoded.ToArray();
             if (!pointCache.TryGet(compressedPoint, out var p))
@@ -127,7 +127,7 @@ namespace Neo.Cryptography.ECC
         {
             var x = new ECFieldElement(X1, curve);
             var alpha = x * (x.Square() + curve.A) + curve.B;
-            var beta = alpha.Sqrt() ?? throw new ArithmeticException("Invalid point compression");
+            var beta = alpha.Sqrt() ?? throw new ArithmeticException("Failed to decompress ECPoint: the provided X coordinate does not correspond to a valid point on the curve. The point compression is invalid.");
             var betaValue = beta.Value;
             var bit0 = betaValue.IsEven ? 0 : 1;
 
@@ -159,7 +159,7 @@ namespace Neo.Cryptography.ECC
             {
                 0x02 or 0x03 => 1 + curve.ExpectedECPointLength,
                 0x04 => 1 + curve.ExpectedECPointLength * 2,
-                _ => throw new FormatException("Invalid point encoding " + reader.Peek())
+                _ => throw new FormatException($"Invalid ECPoint encoding format in serialized data: unknown prefix byte 0x{reader.Peek():X2}. Expected 0x02, 0x03 (compressed), or 0x04 (uncompressed).")
             };
             return DecodePoint(reader.ReadMemory(size).Span, curve);
         }
@@ -222,7 +222,7 @@ namespace Neo.Cryptography.ECC
                 33 or 65 => DecodePoint(bytes, curve),
                 64 or 72 => DecodePoint([.. new byte[] { 0x04 }, .. bytes[^64..]], curve),
                 96 or 104 => DecodePoint([.. new byte[] { 0x04 }, .. bytes[^96..^32]], curve),
-                _ => throw new FormatException(),
+                _ => throw new FormatException($"Invalid ECPoint byte array length: {bytes.Length} bytes. Expected 33, 65 (with prefix), 64, 72 (raw coordinates), 96, or 104 bytes."),
             };
         }
 
@@ -438,7 +438,7 @@ namespace Neo.Cryptography.ECC
         public static ECPoint operator *(ECPoint p, byte[] n)
         {
             if (n.Length != 32)
-                throw new ArgumentException(null, nameof(n));
+                throw new ArgumentException($"Invalid byte array length for ECPoint multiplication: {n.Length} bytes. The scalar must be exactly 32 bytes.", nameof(n));
             if (p.IsInfinity)
                 return p;
             var k = new BigInteger(n, isUnsigned: true, isBigEndian: true);

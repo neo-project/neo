@@ -16,7 +16,7 @@ namespace Neo.Plugins.RpcServer
 {
     public class Tree<T>
     {
-        public TreeNode<T> Root { get; private set; }
+        public TreeNode<T>? Root { get; private set; }
 
         public TreeNode<T> AddRoot(T item)
         {

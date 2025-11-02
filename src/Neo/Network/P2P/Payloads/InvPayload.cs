@@ -76,7 +76,7 @@ namespace Neo.Network.P2P.Payloads
         {
             Type = (InventoryType)reader.ReadByte();
             if (!Enum.IsDefined(typeof(InventoryType), Type))
-                throw new FormatException();
+                throw new FormatException($"`Type`({Type}) is not defined in InventoryType");
             Hashes = reader.ReadSerializableArray<UInt256>(MaxHashesCount);
         }
 

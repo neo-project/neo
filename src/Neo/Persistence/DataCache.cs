@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -29,6 +30,7 @@ namespace Neo.Persistence
         /// <summary>
         /// Represents an entry in the cache.
         /// </summary>
+        [DebuggerDisplay("{Item.ToString()}, State = {State.ToString()}")]
         public class Trackable(StorageItem item, TrackState state)
         {
             /// <summary>
@@ -42,8 +44,19 @@ namespace Neo.Persistence
             public TrackState State { get; set; } = state;
         }
 
+        /// <summary>
+        /// Delegate for storage entries
+        /// </summary>
+        /// <param name="sender">DataCache</param>
+        /// <param name="key">Key</param>
+        /// <param name="item">Item</param>
+        public delegate void OnEntryDelegate(DataCache sender, StorageKey key, StorageItem item);
+
         private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
         private readonly HashSet<StorageKey>? _changeSet;
+
+        public event OnEntryDelegate? OnRead;
+        public event OnEntryDelegate? OnUpdate;
 
         /// <summary>
         /// True if DataCache is readOnly
@@ -145,7 +158,7 @@ namespace Neo.Persistence
                             trackable.State = TrackState.None;
                             break;
                         case TrackState.Changed:
-                            UpdateInternal(key, trackable.Item);
+                            UpdateInternalWrapper(key, trackable.Item);
                             trackable.State = TrackState.None;
                             break;
                         case TrackState.Deleted:
@@ -218,7 +231,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    var item = TryGetInternal(key);
+                    var item = TryGetInternalWrapper(key);
                     if (item == null) return;
                     _dictionary.Add(key, new Trackable(item, TrackState.Deleted));
                     _changeSet?.Add(key);
@@ -243,59 +256,57 @@ namespace Neo.Persistence
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
-            var key = key_prefix?.ToArray();
+            var key = keyPrefix?.ToArray();
             return Find(key, direction);
         }
 
         /// <summary>
         /// Finds the entries starting with the specified prefix.
         /// </summary>
-        /// <param name="key_prefix">The prefix of the key.</param>
+        /// <param name="keyPrefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
-            var seek_prefix = key_prefix;
+            var seekPrefix = keyPrefix;
             if (direction == SeekDirection.Backward)
             {
-                if (key_prefix == null)
-                {
-                    // Backwards seek for null prefix is not supported for now.
-                    throw new ArgumentNullException(nameof(key_prefix));
-                }
-                if (key_prefix.Length == 0)
+                ArgumentNullException.ThrowIfNull(keyPrefix);
+                if (keyPrefix.Length == 0)
                 {
                     // Backwards seek for zero prefix is not supported for now.
-                    throw new ArgumentOutOfRangeException(nameof(key_prefix));
+                    throw new ArgumentOutOfRangeException(nameof(keyPrefix));
                 }
-                seek_prefix = null;
-                for (var i = key_prefix.Length - 1; i >= 0; i--)
+                seekPrefix = null;
+                for (var i = keyPrefix.Length - 1; i >= 0; i--)
                 {
-                    if (key_prefix[i] < 0xff)
+                    if (keyPrefix[i] < 0xff)
                     {
-                        seek_prefix = key_prefix.Take(i + 1).ToArray();
-                        // The next key after the key_prefix.
-                        seek_prefix[i]++;
+                        seekPrefix = keyPrefix.Take(i + 1).ToArray();
+                        // The next key after the keyPrefix.
+                        seekPrefix[i]++;
                         break;
                     }
                 }
-                if (seek_prefix == null)
+                if (seekPrefix == null)
                 {
-                    throw new ArgumentException($"{nameof(key_prefix)} with all bytes being 0xff is not supported now");
+                    throw new ArgumentException($"{nameof(keyPrefix)} with all bytes being 0xff is not supported now");
                 }
             }
-            return FindInternal(key_prefix, seek_prefix, direction);
+            return FindInternal(keyPrefix, seekPrefix, direction);
         }
 
-        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? key_prefix, byte[]? seek_prefix, SeekDirection direction)
+        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? keyPrefix, byte[]? seekPrefix, SeekDirection direction)
         {
-            foreach (var (key, value) in Seek(seek_prefix, direction))
-                if (key_prefix == null || key.ToArray().AsSpan().StartsWith(key_prefix))
+            foreach (var (key, value) in Seek(seekPrefix, direction))
+            {
+                if (keyPrefix == null || key.ToArray().AsSpan().StartsWith(keyPrefix))
                     yield return (key, value);
-                else if (direction == SeekDirection.Forward || (seek_prefix == null || !key.ToArray().SequenceEqual(seek_prefix)))
+                else if (direction == SeekDirection.Forward || (seekPrefix == null || !key.ToArray().SequenceEqual(seekPrefix)))
                     yield break;
+            }
         }
 
         /// <summary>
@@ -311,10 +322,12 @@ namespace Neo.Persistence
                 ? ByteArrayComparer.Default
                 : ByteArrayComparer.Reverse;
             foreach (var (key, value) in Seek(start, direction))
+            {
                 if (comparer.Compare(key.ToArray(), end) < 0)
                     yield return (key, value);
                 else
                     yield break;
+            }
         }
 
         /// <summary>
@@ -359,9 +372,7 @@ namespace Neo.Persistence
         /// <returns>
         /// The cached data, or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.
         /// </returns>
-#if NET5_0_OR_GREATER
         [return: NotNullIfNotNull(nameof(factory))]
-#endif
         public StorageItem? GetAndChange(StorageKey key, Func<StorageItem>? factory = null)
         {
             lock (_dictionary)
@@ -390,7 +401,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    var item = TryGetInternal(key);
+                    var item = TryGetInternalWrapper(key);
                     if (item == null)
                     {
                         if (factory == null) return null;
@@ -405,6 +416,21 @@ namespace Neo.Persistence
                 }
                 return trackable.Item;
             }
+        }
+
+        private StorageItem? TryGetInternalWrapper(StorageKey key)
+        {
+            var item = TryGetInternal(key);
+            if (item == null) return null;
+
+            OnRead?.Invoke(this, key, item);
+            return item;
+        }
+
+        private void UpdateInternalWrapper(StorageKey key, StorageItem value)
+        {
+            UpdateInternal(key, value);
+            OnUpdate?.Invoke(this, key, value);
         }
 
         /// <summary>
@@ -440,7 +466,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    var item = TryGetInternal(key);
+                    var item = TryGetInternalWrapper(key);
                     if (item == null)
                     {
                         trackable = new Trackable(factory(), TrackState.Added);
@@ -538,7 +564,7 @@ namespace Neo.Persistence
                         return null;
                     return trackable.Item;
                 }
-                var value = TryGetInternal(key);
+                var value = TryGetInternalWrapper(key);
                 if (value == null) return null;
                 _dictionary.Add(key, new Trackable(value, TrackState.None));
                 return value;

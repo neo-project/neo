@@ -34,10 +34,12 @@ namespace Neo.VM.Types
         /// The size of the buffer.
         /// </summary>
         public int Size => InnerBuffer.Length;
+
         public override StackItemType Type => StackItemType.Buffer;
 
         private readonly byte[] _buffer;
-        private bool _keep_alive = false;
+
+        private bool _keepAlive = false;
 
         /// <summary>
         /// Create a buffer of the specified size.
@@ -62,13 +64,13 @@ namespace Neo.VM.Types
 
         internal override void Cleanup()
         {
-            if (!_keep_alive)
+            if (!_keepAlive)
                 ArrayPool<byte>.Shared.Return(_buffer, clearArray: false);
         }
 
         public void KeepAlive()
         {
-            _keep_alive = true;
+            _keepAlive = true;
         }
 
         public override StackItem ConvertTo(StackItemType type)
@@ -80,11 +82,7 @@ namespace Neo.VM.Types
                         throw new InvalidCastException();
                     return new BigInteger(InnerBuffer.Span);
                 case StackItemType.ByteString:
-#if NET5_0_OR_GREATER
-                    byte[] clone = GC.AllocateUninitializedArray<byte>(InnerBuffer.Length);
-#else
-                    byte[] clone = new byte[InnerBuffer.Length];
-#endif
+                    var clone = GC.AllocateUninitializedArray<byte>(InnerBuffer.Length);
                     InnerBuffer.CopyTo(clone);
                     return clone;
                 default:
@@ -94,7 +92,7 @@ namespace Neo.VM.Types
 
         internal override StackItem DeepCopy(Dictionary<StackItem, StackItem> refMap, bool asImmutable)
         {
-            if (refMap.TryGetValue(this, out StackItem? mappedItem)) return mappedItem;
+            if (refMap.TryGetValue(this, out var mappedItem)) return mappedItem;
             StackItem result = asImmutable ? new ByteString(InnerBuffer.ToArray()) : new Buffer(InnerBuffer.Span);
             refMap.Add(this, result);
             return result;

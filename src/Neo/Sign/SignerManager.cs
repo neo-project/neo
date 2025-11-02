@@ -43,8 +43,8 @@ namespace Neo.Sign
         /// <exception cref="InvalidOperationException">Thrown when <paramref name="name"/> is already registered</exception>
         public static void RegisterSigner(string name, ISigner signer)
         {
-            if (string.IsNullOrEmpty(name)) throw new ArgumentException($"{nameof(name)} cannot be null or empty");
-            if (signer is null) throw new ArgumentNullException(nameof(signer));
+            if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
+            ArgumentNullException.ThrowIfNull(signer);
 
             if (!s_signers.TryAdd(name, signer)) throw new InvalidOperationException($"Signer {name} already exists");
         }

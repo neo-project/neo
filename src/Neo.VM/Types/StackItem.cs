@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#pragma warning disable CS0659
-
 using Neo.Extensions;
 using System;
 using System.Collections.Generic;
@@ -26,7 +24,7 @@ namespace Neo.VM.Types
     public abstract partial class StackItem : IEquatable<StackItem>
     {
         [ThreadStatic]
-        private static Boolean? tls_true = null;
+        private static Boolean? tlsTrue = null;
 
         /// <summary>
         /// Represents <see langword="true"/> in the VM.
@@ -35,13 +33,13 @@ namespace Neo.VM.Types
         {
             get
             {
-                tls_true ??= new(true);
-                return tls_true;
+                tlsTrue ??= new(true);
+                return tlsTrue;
             }
         }
 
         [ThreadStatic]
-        private static Boolean? tls_false = null;
+        private static Boolean? tlsFalse = null;
 
         /// <summary>
         /// Represents <see langword="false"/> in the VM.
@@ -50,13 +48,13 @@ namespace Neo.VM.Types
         {
             get
             {
-                tls_false ??= new(false);
-                return tls_false;
+                tlsFalse ??= new(false);
+                return tlsFalse;
             }
         }
 
         [ThreadStatic]
-        private static Null? tls_null = null;
+        private static Null? tlsNull = null;
 
         /// <summary>
         /// Represents <see langword="null"/> in the VM.
@@ -65,8 +63,8 @@ namespace Neo.VM.Types
         {
             get
             {
-                tls_null ??= new();
-                return tls_null;
+                tlsNull ??= new();
+                return tlsNull;
             }
         }
 
@@ -92,9 +90,7 @@ namespace Neo.VM.Types
             throw new InvalidCastException();
         }
 
-        internal virtual void Cleanup()
-        {
-        }
+        internal virtual void Cleanup() { }
 
         /// <summary>
         /// Copy the object and all its children.

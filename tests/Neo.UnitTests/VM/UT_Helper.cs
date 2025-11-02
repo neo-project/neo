@@ -111,7 +111,7 @@ namespace Neo.UnitTests.VMT
             engine2.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine2.Execute());
 
-            Assert.AreEqual(0, engine2.ResultStack.Pop<VM.Types.Array>().Count);
+            Assert.IsEmpty(engine2.ResultStack.Pop<VM.Types.Array>());
         }
 
         [TestMethod]
@@ -136,7 +136,7 @@ namespace Neo.UnitTests.VMT
             engine2.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine2.Execute());
 
-            Assert.AreEqual(0, engine2.ResultStack.Pop<Struct>().Count);
+            Assert.IsEmpty(engine2.ResultStack.Pop<Struct>());
         }
 
         [TestMethod]
@@ -659,7 +659,7 @@ namespace Neo.UnitTests.VMT
             StackItem item = new Map();
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.Map, parameter.Type);
-            Assert.AreEqual(0, ((List<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).Count);
+            Assert.IsEmpty((List<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value);
         }
 
         private void TestToParaMeter2VMArray()
@@ -667,7 +667,7 @@ namespace Neo.UnitTests.VMT
             VM.Types.Array item = new VM.Types.Array();
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.Array, parameter.Type);
-            Assert.AreEqual(0, ((List<ContractParameter>)parameter.Value).Count);
+            Assert.IsEmpty((List<ContractParameter>)parameter.Value);
         }
 
         [TestMethod]

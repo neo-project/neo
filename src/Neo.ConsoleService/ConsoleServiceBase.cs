@@ -35,52 +35,116 @@ namespace Neo.ConsoleService
 
         protected bool ShowPrompt { get; set; } = true;
 
+        protected bool IsBackground { get; set; } = false;
+
         private bool _running;
         private readonly CancellationTokenSource _shutdownTokenSource = new();
         private readonly CountdownEvent _shutdownAcknowledged = new(1);
         private readonly Dictionary<string, List<ConsoleCommandMethod>> _verbs = new();
         private readonly Dictionary<string, object> _instances = new();
-        private readonly Dictionary<Type, Func<List<CommandToken>, bool, object>> _handlers = new();
+        private readonly Dictionary<Type, Func<IList<CommandToken>, bool, object>> _handlers = new();
 
         private readonly List<string> _commandHistory = new();
 
-        private bool OnCommand(string commandLine)
+        /// <summary>
+        /// Parse sequential arguments.
+        /// For example, if a method defined as `void Method(string arg1, int arg2, bool arg3)`,
+        /// the arguments will be parsed as `"arg1" 2 true`.
+        /// </summary>
+        /// <param name="method">the MethodInfo of the called method</param>
+        /// <param name="args">the raw arguments</param>
+        /// <returns>the parsed arguments</returns>
+        /// <exception cref="ArgumentException">Missing argument</exception>
+        internal object?[] ParseSequentialArguments(MethodInfo method, IList<CommandToken> args)
         {
-            if (string.IsNullOrEmpty(commandLine)) return true;
+            var parameters = method.GetParameters();
+            var arguments = new List<object?>();
+            foreach (var parameter in parameters)
+            {
+                if (TryProcessValue(parameter.ParameterType, args, parameter == parameters.Last(), out var value))
+                {
+                    arguments.Add(value);
+                }
+                else
+                {
+                    if (!parameter.HasDefaultValue)
+                        throw new ArgumentException($"Missing value for parameter: {parameter.Name}");
+                    arguments.Add(parameter.DefaultValue);
+                }
+            }
+            return arguments.ToArray();
+        }
+
+        /// <summary>
+        /// Parse indicator arguments.
+        /// For example, if a method defined as `void Method(string arg1, int arg2, bool arg3)`,
+        /// the arguments will be parsed as `Method --arg1 "arg1" --arg2 2 --arg3`.
+        /// </summary>
+        /// <param name="method">the MethodInfo of the called method</param>
+        /// <param name="args">the raw arguments</param>
+        /// <returns>the parsed arguments</returns>
+        internal object?[] ParseIndicatorArguments(MethodInfo method, IList<CommandToken> args)
+        {
+            var parameters = method.GetParameters();
+            if (parameters is null || parameters.Length == 0) return [];
+
+            var arguments = parameters.Select(p => p.HasDefaultValue ? p.DefaultValue : null).ToArray();
+            var noValues = parameters.Where(p => !p.HasDefaultValue).Select(p => p.Name).ToHashSet();
+            for (int i = 0; i < args.Count; i++)
+            {
+                var token = args[i];
+                if (!token.IsIndicator) continue;
+
+                var paramName = token.Value.Substring(2); // Remove "--"
+                var parameter = parameters.FirstOrDefault(p => string.Equals(p.Name, paramName));
+                if (parameter == null) throw new ArgumentException($"Unknown parameter: {paramName}");
+
+                var paramIndex = Array.IndexOf(parameters, parameter);
+                if (i + 1 < args.Count && args[i + 1].IsWhiteSpace) i += 1; // Skip the white space token
+                if (i + 1 < args.Count && !args[i + 1].IsIndicator) // Check if next token is a value (not an indicator)
+                {
+                    var valueToken = args[i + 1]; // Next token is the value for this parameter
+                    if (!TryProcessValue(parameter.ParameterType, [args[i + 1]], false, out var value))
+                        throw new ArgumentException($"Cannot parse value for parameter {paramName}: {valueToken.Value}");
+                    arguments[paramIndex] = value;
+                    noValues.Remove(paramName);
+                    i += 1; // Skip the value token in next iteration
+                }
+                else
+                {
+                    if (parameter.ParameterType != typeof(bool)) // If parameter is not a bool and no value is provided
+                        throw new ArgumentException($"Missing value for parameter: {paramName}");
+                    arguments[paramIndex] = true;
+                    noValues.Remove(paramName);
+                }
+            }
+
+            if (noValues.Count > 0)
+                throw new ArgumentException($"Missing value for parameters: {string.Join(',', noValues)}");
+            return arguments;
+        }
+
+        internal bool OnCommand(string commandLine)
+        {
+            if (string.IsNullOrWhiteSpace(commandLine)) return true;
 
             var possibleHelp = "";
-            var commandArgs = CommandToken.Parse(commandLine).ToArray();
+            var tokens = commandLine.Tokenize();
             var availableCommands = new List<(ConsoleCommandMethod Command, object?[] Arguments)>();
-
             foreach (var entries in _verbs.Values)
             {
                 foreach (var command in entries)
                 {
-                    if (!command.IsThisCommand(commandArgs, out var consumedArgs)) continue;
+                    var consumed = command.IsThisCommand(tokens);
+                    if (consumed <= 0) continue;
 
-                    var arguments = new List<object?>();
-                    var args = commandArgs.Skip(consumedArgs).ToList();
-
-                    CommandSpaceToken.Trim(args);
+                    var args = tokens.Skip(consumed).ToList().Trim();
                     try
                     {
-                        var parameters = command.Method.GetParameters();
-                        foreach (var arg in parameters)
-                        {
-                            // Parse argument
-                            if (TryProcessValue(arg.ParameterType, args, arg == parameters.Last(), out var value))
-                            {
-                                arguments.Add(value);
-                            }
-                            else
-                            {
-                                if (!arg.HasDefaultValue)
-                                    throw new ArgumentException($"Missing argument: {arg.Name}");
-                                arguments.Add(arg.DefaultValue);
-                            }
-                        }
-
-                        availableCommands.Add((command, arguments.ToArray()));
+                        if (args.Any(u => u.IsIndicator))
+                            availableCommands.Add((command, ParseIndicatorArguments(command.Method, args)));
+                        else
+                            availableCommands.Add((command, ParseSequentialArguments(command.Method, args)));
                     }
                     catch (Exception ex)
                     {
@@ -91,52 +155,44 @@ namespace Neo.ConsoleService
                 }
             }
 
-            switch (availableCommands.Count)
+            if (availableCommands.Count == 0)
             {
-                case 0:
-                    {
-                        if (!string.IsNullOrEmpty(possibleHelp))
-                        {
-                            OnHelpCommand(possibleHelp);
-                            return true;
-                        }
-
-                        return false;
-                    }
-                case 1:
-                    {
-                        var (command, arguments) = availableCommands[0];
-                        object? result = command.Method.Invoke(command.Instance, arguments);
-                        if (result is Task task) task.Wait();
-                        return true;
-                    }
-                default:
-                    {
-                        // Show Ambiguous call
-                        var ambiguousCommands = availableCommands.Select(u => u.Command.Key).Distinct().ToList();
-                        throw new ArgumentException($"Ambiguous calls for: {string.Join(',', ambiguousCommands)}");
-                    }
+                if (!string.IsNullOrEmpty(possibleHelp))
+                {
+                    OnHelpCommand(possibleHelp);
+                    return true;
+                }
+                return false;
             }
+
+            if (availableCommands.Count == 1)
+            {
+                var (command, arguments) = availableCommands[0];
+                object? result = command.Method.Invoke(command.Instance, arguments);
+
+                if (result is Task task) task.Wait();
+                return true;
+            }
+
+            // Show Ambiguous call
+            var ambiguousCommands = availableCommands.Select(u => u.Command.Key).Distinct().ToList();
+            throw new ArgumentException($"Ambiguous calls for: {string.Join(',', ambiguousCommands)}");
         }
 
-        private bool TryProcessValue(Type parameterType, List<CommandToken> args, bool canConsumeAll, out object? value)
+        private bool TryProcessValue(Type parameterType, IList<CommandToken> args, bool consumeAll, out object? value)
         {
             if (args.Count > 0)
             {
                 if (_handlers.TryGetValue(parameterType, out var handler))
                 {
-                    value = handler(args, canConsumeAll);
+                    value = handler(args, consumeAll);
                     return true;
                 }
 
                 if (parameterType.IsEnum)
                 {
-                    var arg = CommandToken.ReadString(args, canConsumeAll);
-                    if (arg is not null)
-                    {
-                        value = Enum.Parse(parameterType, arg.Trim(), true);
-                        return true;
-                    }
+                    value = Enum.Parse(parameterType, args[0].Value, true);
+                    return true;
                 }
             }
 
@@ -145,6 +201,18 @@ namespace Neo.ConsoleService
         }
 
         #region Commands
+
+        private static string ParameterGuide(ParameterInfo info)
+        {
+            if (info.HasDefaultValue)
+            {
+                var defaultValue = info.DefaultValue?.ToString();
+                return string.IsNullOrEmpty(defaultValue) ?
+                    $"[ --{info.Name} {info.ParameterType.Name} ]" :
+                    $"[ --{info.Name} {info.ParameterType.Name}({defaultValue}) ]";
+            }
+            return $"--{info.Name} {info.ParameterType.Name}";
+        }
 
         /// <summary>
         /// Process "help" command
@@ -159,32 +227,25 @@ namespace Neo.ConsoleService
             {
                 // Filter only the help of this plugin
                 key = "";
-                foreach (var commands in _verbs.Values.Select(u => u))
+                foreach (var commands in _verbs.Values)
                 {
-                    withHelp.AddRange(
-                        commands.Where(u => !string.IsNullOrEmpty(u.HelpCategory) && u.Instance == instance)
-                    );
+                    withHelp.AddRange(commands.Where(u => !string.IsNullOrEmpty(u.HelpCategory) && u.Instance == instance));
                 }
             }
             else
             {
                 // Fetch commands
-                foreach (var commands in _verbs.Values.Select(u => u))
+                foreach (var commands in _verbs.Values)
                 {
                     withHelp.AddRange(commands.Where(u => !string.IsNullOrEmpty(u.HelpCategory)));
                 }
             }
 
             // Sort and show
-
             withHelp.Sort((a, b) =>
             {
-                var cate = string.Compare(a.HelpCategory, b.HelpCategory, StringComparison.Ordinal);
-                if (cate == 0)
-                {
-                    cate = string.Compare(a.Key, b.Key, StringComparison.Ordinal);
-                }
-                return cate;
+                var category = string.Compare(a.HelpCategory, b.HelpCategory, StringComparison.Ordinal);
+                return category == 0 ? string.Compare(a.Key, b.Key, StringComparison.Ordinal) : category;
             });
 
             if (string.IsNullOrEmpty(key) || key.Equals("help", StringComparison.InvariantCultureIgnoreCase))
@@ -199,48 +260,94 @@ namespace Neo.ConsoleService
                     }
 
                     Console.Write($"\t{command.Key}");
-                    Console.WriteLine(" " + string.Join(' ',
-                        command.Method.GetParameters()
-                        .Select(u => u.HasDefaultValue ? $"[{u.Name}={(u.DefaultValue == null ? "null" : u.DefaultValue.ToString())}]" : $"<{u.Name}>"))
-                    );
+                    Console.WriteLine(" " + string.Join(' ', command.Method.GetParameters().Select(ParameterGuide)));
                 }
             }
             else
             {
-                // Show help for this specific command
+                ShowHelpForCommand(key, withHelp);
+            }
+        }
 
-                string? last = null;
-                string? lastKey = null;
-                bool found = false;
-
-                foreach (var command in withHelp.Where(u => u.Key == key))
+        /// <summary>
+        /// Show help for a specific command
+        /// </summary>
+        /// <param name="key">Command key</param>
+        /// <param name="withHelp">List of commands</param>
+        private void ShowHelpForCommand(string key, List<ConsoleCommandMethod> withHelp)
+        {
+            bool found = false;
+            string helpMessage = string.Empty;
+            string lastKey = string.Empty;
+            foreach (var command in withHelp.Where(u => u.Key == key))
+            {
+                found = true;
+                if (helpMessage != command.HelpMessage)
                 {
-                    found = true;
-
-                    if (last != command.HelpMessage)
-                    {
-                        Console.WriteLine($"{command.HelpMessage}");
-                        last = command.HelpMessage;
-                    }
-
-                    if (lastKey != command.Key)
-                    {
-                        Console.WriteLine("You can call this command like this:");
-                        lastKey = command.Key;
-                    }
-
-                    Console.Write($"\t{command.Key}");
-                    Console.WriteLine(" " + string.Join(' ',
-                        command.Method.GetParameters()
-                        .Select(u => u.HasDefaultValue ? $"[{u.Name}={u.DefaultValue?.ToString() ?? "null"}]" : $"<{u.Name}>"))
-                    );
+                    Console.WriteLine($"{command.HelpMessage}");
+                    helpMessage = command.HelpMessage;
                 }
 
-                if (!found)
+                if (lastKey != command.Key)
                 {
-                    throw new ArgumentException("Command not found.");
+                    Console.WriteLine("You can call this command like this:");
+                    lastKey = command.Key;
+                }
+
+                Console.Write($"\t{command.Key}");
+                Console.WriteLine(" " + string.Join(' ', command.Method.GetParameters().Select(ParameterGuide)));
+
+                var parameters = command.Method.GetParameters();
+                if (parameters.Length > 0)  // Show parameter info for this command
+                {
+                    Console.WriteLine($"Parameters for command `{command.Key}`:");
+                    foreach (var item in parameters)
+                    {
+                        var info = item.HasDefaultValue ? $"(optional, default: {item.DefaultValue?.ToString() ?? "null"})" : "(required)";
+                        Console.WriteLine($"\t{item.Name}: {item.ParameterType.Name} {info}");
+                    }
                 }
             }
+
+            if (!found)
+                throw new ArgumentException($"Command '{key}' not found. Use 'help' to see available commands.");
+
+            Console.WriteLine();
+            Console.WriteLine("You can also use 'how to input' to see how to input arguments.");
+        }
+
+        /// <summary>
+        /// Show `how to input` guide
+        /// </summary>
+        [ConsoleCommand("how to input", Category = "Base Commands")]
+        internal void OnHowToInput()
+        {
+            Console.WriteLine("""
+            1. Sequential Arguments (Positional)
+            Arguments are provided in the order they appear in the method signature.
+            Usage:
+            > create wallet "path/to/wallet"
+            > create wallet "path/to/wallet" "wif-or-file" "wallet-name"
+
+            Note: String values can be quoted or unquoted. Use quotes for values with spaces.
+
+            2. Indicator Arguments (Named Parameters)
+            Arguments are provided with parameter names prefixed with "--", and parameter order doesn't matter.
+            Usage:
+            > create wallet --path "path/to/wallet"
+            > create wallet --path "path/to/wallet" --wifOrFile "wif-or-file" --walletName "wallet-name"
+
+            3. Tips:
+             - String: Can be quoted or unquoted, use quotes for spaces. It's recommended to use quotes for complex values.
+             - String[]: Use comma-separated or space-separated values, If space separated, it must be the last argument.
+             - UInt160, UInt256: Specified in hex format, for example: 0x1234567890abcdef1234567890abcdef12345678
+             - Numeric: Standard number parsing
+             - Boolean: Can be specified without a value (defaults to true), true/false, 1/0, yes/no, y/n
+             - Enum: Case-insensitive enum value names
+             - JSON: Input as JSON string
+             - Escape characters: \\, \", \', \n, \r, \t, \v, \b, \f, \a, \e, \0, \ (whitespace), \xHH, \uHHHH.
+                If want to input without escape, quote the value with backtick(`).
+            """);
         }
 
         /// <summary>
@@ -312,18 +419,16 @@ namespace Neo.ConsoleService
         protected ConsoleServiceBase()
         {
             // Register self commands
-            RegisterCommandHandler<string>((args, canConsumeAll) => CommandToken.ReadString(args, canConsumeAll) ?? "");
-
-            RegisterCommandHandler<string[]>((args, canConsumeAll) =>
+            RegisterCommandHandler<string>((args, consumeAll) =>
             {
-                if (canConsumeAll)
-                {
-                    var ret = CommandToken.ToString(args);
-                    args.Clear();
-                    return ret.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries);
-                }
+                return consumeAll ? args.ConsumeAll() : args.Consume();
+            });
 
-                return (CommandToken.ReadString(args, false)?.Split(',', ' ')) ?? [];
+            RegisterCommandHandler<string[]>((args, consumeAll) =>
+            {
+                return consumeAll
+                    ? args.ConsumeAll().Split([',', ' '], StringSplitOptions.RemoveEmptyEntries)
+                    : args.Consume().Split(',', ' ');
             });
 
             RegisterCommandHandler<string, byte>(false, str => byte.Parse(str));
@@ -338,7 +443,7 @@ namespace Neo.ConsoleService
         /// </summary>
         /// <typeparam name="TRet">Return type</typeparam>
         /// <param name="handler">Handler</param>
-        private void RegisterCommandHandler<TRet>(Func<List<CommandToken>, bool, object> handler)
+        private void RegisterCommandHandler<TRet>(Func<IList<CommandToken>, bool, object> handler)
         {
             _handlers[typeof(TRet)] = handler;
         }
@@ -410,78 +515,89 @@ namespace Neo.ConsoleService
             }
         }
 
+        private void OnScCommand(string action)
+        {
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            {
+                ConsoleHelper.Warning("Only services support on Windows.");
+                return;
+            }
+
+            string arguments;
+            if (action == "install")
+            {
+                var fileName = Process.GetCurrentProcess().MainModule!.FileName;
+                arguments = $"create {ServiceName} start= auto binPath= \"{fileName}\"";
+            }
+            else
+            {
+                arguments = $"delete {ServiceName}";
+                if (!string.IsNullOrEmpty(Depends)) arguments += $" depend= {Depends}";
+            }
+
+            var process = Process.Start(new ProcessStartInfo
+            {
+                Arguments = arguments,
+                FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
+                RedirectStandardOutput = true,
+                UseShellExecute = false
+            });
+            if (process is null)
+            {
+                ConsoleHelper.Error($"Error {action}ing the service with sc.exe.");
+            }
+            else
+            {
+                process.WaitForExit();
+                Console.Write(process.StandardOutput.ReadToEnd());
+            }
+        }
+
+        private void WaitForShutdown()
+        {
+            _running = true;
+            try
+            {
+                _shutdownTokenSource.Token.WaitHandle.WaitOne();
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when shutdown is triggered
+            }
+            _running = false;
+        }
+
         public void Run(string[] args)
         {
             if (Environment.UserInteractive)
             {
-                if (args.Length == 1 && args[0] == "/install")
+                if (args.Length == 1 && (args[0] == "--install" || args[0] == "/install"))
                 {
-                    if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-                    {
-                        ConsoleHelper.Warning("Only support for installing services on Windows.");
-                        return;
-                    }
-
-                    var fileName = Process.GetCurrentProcess().MainModule!.FileName;
-                    var arguments = $"create {ServiceName} start= auto binPath= \"{fileName}\"";
-                    if (!string.IsNullOrEmpty(Depends))
-                    {
-                        arguments += $" depend= {Depends}";
-                    }
-
-                    Process? process = Process.Start(new ProcessStartInfo
-                    {
-                        Arguments = arguments,
-                        FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false
-                    });
-                    if (process is null)
-                    {
-                        ConsoleHelper.Error("Error installing the service with sc.exe.");
-                    }
-                    else
-                    {
-                        process.WaitForExit();
-                        Console.Write(process.StandardOutput.ReadToEnd());
-                    }
+                    OnScCommand("install");
                 }
-                else if (args.Length == 1 && args[0] == "/uninstall")
+                else if (args.Length == 1 && (args[0] == "--uninstall" || args[0] == "/uninstall"))
                 {
-                    if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-                    {
-                        ConsoleHelper.Warning("Only support for installing services on Windows.");
-                        return;
-                    }
-                    Process? process = Process.Start(new ProcessStartInfo
-                    {
-                        Arguments = string.Format("delete {0}", ServiceName),
-                        FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false
-                    });
-                    if (process is null)
-                    {
-                        ConsoleHelper.Error("Error installing the service with sc.exe.");
-                    }
-                    else
-                    {
-                        process.WaitForExit();
-                        Console.Write(process.StandardOutput.ReadToEnd());
-                    }
+                    OnScCommand("uninstall");
                 }
                 else
                 {
-                    if (OnStart(args)) RunConsole();
+                    if (OnStart(args))
+                    {
+                        if (IsBackground) WaitForShutdown();
+                        else RunConsole();
+                    }
                     OnStop();
                 }
             }
             else
             {
-                Debug.Assert(Environment.OSVersion.Platform == PlatformID.Win32NT);
-#pragma warning disable CA1416
+                if (!OperatingSystem.IsWindows())
+                {
+                    ConsoleHelper.Error("ServiceProxy only runs on Windows platforms.");
+                    return;
+                }
+
                 ServiceBase.Run(new ServiceProxy(this));
-#pragma warning restore CA1416
             }
         }
 

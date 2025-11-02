@@ -34,7 +34,7 @@ namespace Neo.Extensions
 
         private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)> context)
         {
-            if (parameter is null) throw new ArgumentNullException(nameof(parameter));
+            ArgumentNullException.ThrowIfNull(parameter);
             if (parameter.Value is null) return StackItem.Null;
             StackItem stackItem = null;
             switch (parameter.Type)
@@ -87,7 +87,7 @@ namespace Neo.Extensions
                     stackItem = (string)parameter.Value;
                     break;
                 default:
-                    throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported to StackItem.");
+                    throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported for conversion to StackItem. This parameter type cannot be processed by the virtual machine.", nameof(parameter));
             }
             return stackItem;
         }

@@ -48,22 +48,23 @@ namespace Neo.Wallets
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> used by the <see cref="ApplicationEngine"/>.</param>
-        /// <param name="asset_id">The id of the asset.</param>
-        public AssetDescriptor(DataCache snapshot, ProtocolSettings settings, UInt160 asset_id)
+        /// <param name="assetId">The id of the asset.</param>
+        public AssetDescriptor(DataCache snapshot, ProtocolSettings settings, UInt160 assetId)
         {
-            var contract = NativeContract.ContractManagement.GetContract(snapshot, asset_id);
-            if (contract is null) throw new ArgumentException(null, nameof(asset_id));
+            var contract = NativeContract.ContractManagement.GetContract(snapshot, assetId);
+            if (contract is null) throw new ArgumentException($"No asset contract found for assetId {assetId}. Please ensure the assetId is correct and the asset is deployed on the blockchain.", nameof(assetId));
 
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                sb.EmitDynamicCall(asset_id, "decimals", CallFlags.ReadOnly);
-                sb.EmitDynamicCall(asset_id, "symbol", CallFlags.ReadOnly);
+                sb.EmitDynamicCall(assetId, "decimals", CallFlags.ReadOnly);
+                sb.EmitDynamicCall(assetId, "symbol", CallFlags.ReadOnly);
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_30000000L);
-            if (engine.State != VMState.HALT) throw new ArgumentException(null, nameof(asset_id));
-            AssetId = asset_id;
+
+            using var engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_30000000L);
+            if (engine.State != VMState.HALT) throw new ArgumentException($"Failed to execute 'decimals' or 'symbol' method for asset {assetId}. The contract execution did not complete successfully (VM state: {engine.State}).", nameof(assetId));
+            AssetId = assetId;
             AssetName = contract.Manifest.Name;
             Symbol = engine.ResultStack.Pop().GetString();
             Decimals = (byte)engine.ResultStack.Pop().GetInteger();

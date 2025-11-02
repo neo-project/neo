@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Null => WildcardContainer<string>.CreateWildcard(),
                 Array array => WildcardContainer<string>.Create(array.Select(p => p.GetString()).ToArray()),
-                _ => throw new ArgumentException(null, nameof(stackItem))
+                _ => throw new ArgumentException("Methods field must be null or array", nameof(stackItem))
             };
         }
 
@@ -90,7 +90,7 @@ namespace Neo.SmartContract.Manifest
                 Methods = WildcardContainer<string>.FromJson(json["methods"], u => u.GetString()),
             };
             if (permission.Methods.Any(p => string.IsNullOrEmpty(p)))
-                throw new FormatException();
+                throw new FormatException("Methods in ContractPermission has empty string");
             _ = permission.Methods.ToDictionary(p => p);
             return permission;
         }
@@ -101,10 +101,11 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The permission represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["contract"] = Contract.ToJson();
-            json["methods"] = Methods.ToJson(p => p);
-            return json;
+            return new JObject()
+            {
+                ["contract"] = Contract.ToJson(),
+                ["methods"] = Methods.ToJson(p => p)
+            };
         }
 
         /// <summary>

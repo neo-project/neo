@@ -364,7 +364,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var clone = new ContractManifest();
             ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
 
-            Assert.AreEqual(expected.Extra.ToString(), @"{""a"":123}");
+            Assert.AreEqual(@"{""a"":123}", expected.Extra.ToString());
             Assert.AreEqual(expected.ToString(), clone.ToString());
 
             expected.Extra = null;
@@ -386,7 +386,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             var actualTrusts = ((Array)si)[6];
 
-            Assert.AreEqual(((Array)actualTrusts).Count, 2);
+            Assert.HasCount(2, (Array)actualTrusts);
             Assert.AreEqual(((Array)actualTrusts)[0], new ByteString(UInt160.Parse("0x0000000000000000000000000000000000000001").ToArray()));
             // Wildcard trust should be represented as Null stackitem (not as zero-length ByteString):
             Assert.AreEqual(((Array)actualTrusts)[1], StackItem.Null);

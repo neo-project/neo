@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Sign;
@@ -22,7 +23,9 @@ using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
+using Helper = Neo.SmartContract.Helper;
 
 namespace Neo.UnitTests.Wallets
 {
@@ -449,7 +452,7 @@ namespace Neo.UnitTests.Wallets
 
             var signature = wallet.SignBlock(block, glkey.PublicKey, network);
             Assert.IsNotNull(signature);
-            Assert.AreEqual(signature.Length, 64);
+            Assert.AreEqual(64, signature.Length);
 
             var signData = block.GetSignData(network);
             var isValid = Crypto.VerifySignature(signData, signature.Span, glkey.PublicKey);
@@ -510,6 +513,44 @@ namespace Neo.UnitTests.Wallets
             wallet.GetAccount(scriptHash).Lock = true;
             contains = wallet.ContainsSignable(pair.PublicKey);
             Assert.IsFalse(contains); // locked
+        }
+
+        [TestMethod]
+        public void TestMultiSigAccount()
+        {
+            var expectedWallet = new MyWallet();
+            var expectedPrivateKey1 = RandomNumberFactory.NextBytes(32, cryptography: true);
+            var expectedPrivateKey2 = RandomNumberFactory.NextBytes(32, cryptography: true);
+            var expectedPrivateKey3 = RandomNumberFactory.NextBytes(32, cryptography: true);
+
+            var expectedWalletAccount1 = expectedWallet.CreateAccount(expectedPrivateKey1);
+            var expectedWalletAccount2 = expectedWallet.CreateAccount(expectedPrivateKey2);
+            var expectedWalletAccount3 = expectedWallet.CreateAccount(expectedPrivateKey3);
+
+            var expectedAccountKey1 = expectedWalletAccount1.GetKey();
+            var expectedAccountKey2 = expectedWalletAccount2.GetKey();
+            var expectedAccountKey3 = expectedWalletAccount3.GetKey();
+
+            var actualMultiSigAccount1 = expectedWallet.CreateMultiSigAccount([expectedAccountKey1.PublicKey]);
+            var actualMultiSigAccount2 = expectedWallet.CreateMultiSigAccount([expectedAccountKey1.PublicKey, expectedAccountKey2.PublicKey, expectedAccountKey3.PublicKey]);
+
+            Assert.IsNotNull(actualMultiSigAccount1);
+            Assert.AreNotEqual(expectedWalletAccount1.ScriptHash, actualMultiSigAccount1.ScriptHash);
+            Assert.AreEqual(expectedAccountKey1.PublicKey, actualMultiSigAccount1.GetKey().PublicKey);
+            Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount1.Contract.Script));
+            Assert.IsTrue(expectedWallet.GetMultiSigAccounts().Contains(actualMultiSigAccount1));
+
+            var notExpectedAccountKeys = new ECPoint[1025];
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount());
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount(2, [expectedAccountKey1.PublicKey]));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount(0, [expectedAccountKey1.PublicKey]));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount(1025, notExpectedAccountKeys));
+
+            Assert.IsNotNull(actualMultiSigAccount2);
+            Assert.AreNotEqual(expectedWalletAccount2.ScriptHash, actualMultiSigAccount2.ScriptHash);
+            Assert.Contains(actualMultiSigAccount2.GetKey().PublicKey, [expectedAccountKey1.PublicKey, expectedAccountKey2.PublicKey, expectedAccountKey3.PublicKey]);
+            Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount2.Contract.Script));
+            Assert.IsTrue(expectedWallet.GetMultiSigAccounts().Contains(actualMultiSigAccount2));
         }
     }
 }

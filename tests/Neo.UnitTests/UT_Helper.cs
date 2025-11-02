@@ -47,7 +47,7 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new();
             byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), TestProtocolSettings.Default.Network);
-            Assert.AreEqual(64, res.Length);
+            Assert.HasCount(64, res);
         }
 
         [TestMethod]
@@ -112,18 +112,6 @@ namespace Neo.UnitTests
 
             number = BigInteger.One;
             Assert.AreEqual("01", number.ToByteArrayStandard().ToHexString());
-        }
-
-        [TestMethod]
-        public void TestNextBigIntegerForRandom()
-        {
-            Random ran = new();
-            Action action1 = () => ran.NextBigInteger(-1);
-            Assert.ThrowsExactly<ArgumentException>(() => action1());
-
-            Assert.AreEqual(0, ran.NextBigInteger(0));
-            Assert.IsNotNull(ran.NextBigInteger(8));
-            Assert.IsNotNull(ran.NextBigInteger(9));
         }
 
         [TestMethod]

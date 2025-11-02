@@ -11,9 +11,9 @@
 
 #pragma warning disable IDE0051
 
-using Akka.Dispatch;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Iterators;
 using System;
 using System.Numerics;
 
@@ -203,7 +203,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the fee for attribute before Echidna hardfork.
+        /// Gets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
@@ -215,7 +215,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the fee for attribute after Echidna hardfork.
+        /// Gets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type</param>
@@ -236,8 +236,11 @@ namespace Neo.SmartContract.Native
         /// <returns>The fee for attribute.</returns>
         private uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType, bool allowNotaryAssisted)
         {
-            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
-                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) ||
+                (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+            {
+                throw new InvalidOperationException($"Attribute type {attributeType} is not supported.");
+            }
 
             var key = CreateStorageKey(Prefix_AttributeFee, attributeType);
             return snapshot.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
@@ -266,8 +269,8 @@ namespace Neo.SmartContract.Native
         public void SetMillisecondsPerBlock(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxMillisecondsPerBlock)
-                throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock value should be between 1 and {MaxMillisecondsPerBlock}, got {value}");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException("invalid committee signature");
+                throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock must be between [1, {MaxMillisecondsPerBlock}], got {value}");
+            AssertCommittee(engine);
 
             var oldTime = GetMillisecondsPerBlock(engine.SnapshotCache);
             engine.SnapshotCache.GetAndChange(_millisecondsPerBlock).Set(value);
@@ -277,7 +280,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Sets the fee for attribute before Echidna hardfork.
+        /// Sets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
@@ -290,7 +293,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Sets the fee for attribute after Echidna hardfork.
+        /// Sets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
@@ -313,10 +316,16 @@ namespace Neo.SmartContract.Native
         /// <returns>The fee for attribute.</returns>
         private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value, bool allowNotaryAssisted)
         {
-            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
-                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
-            if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) ||
+                (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+            {
+                throw new InvalidOperationException($"Attribute type {attributeType} is not supported.");
+            }
+
+            if (value > MaxAttributeFee)
+                throw new ArgumentOutOfRangeException(nameof(value), $"AttributeFee must be less than {MaxAttributeFee}");
+
+            AssertCommittee(engine);
 
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee, attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
         }
@@ -324,35 +333,43 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetFeePerByte(ApplicationEngine engine, long value)
         {
-            if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (value < 0 || value > 1_00000000)
+                throw new ArgumentOutOfRangeException(nameof(value), $"FeePerByte must be between [0, 100000000], got {value}");
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetExecFeeFactor(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (value == 0 || value > MaxExecFeeFactor)
+                throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {MaxExecFeeFactor}], got {value}");
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_execFeeFactor).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetStoragePrice(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (value == 0 || value > MaxStoragePrice)
+                throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {MaxStoragePrice}], got {value}");
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
         }
 
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMaxValidUntilBlockIncrement(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > MaxMaxValidUntilBlockIncrement) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value == 0 || value > MaxMaxValidUntilBlockIncrement)
+                throw new ArgumentOutOfRangeException(nameof(value), $"MaxValidUntilBlockIncrement must be between [1, {MaxMaxValidUntilBlockIncrement}], got {value}");
             var mtb = GetMaxTraceableBlocks(engine.SnapshotCache);
             if (value >= mtb)
                 throw new InvalidOperationException($"MaxValidUntilBlockIncrement must be lower than MaxTraceableBlocks ({value} vs {mtb})");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement).Set(value);
         }
 
@@ -365,27 +382,32 @@ namespace Neo.SmartContract.Native
         private void SetMaxTraceableBlocks(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxMaxTraceableBlocks)
-                throw new ArgumentOutOfRangeException(nameof(value), $"MaxTraceableBlocks value should be between 1 and {MaxMaxTraceableBlocks}, got {value}");
+                throw new ArgumentOutOfRangeException(nameof(value), $"MaxTraceableBlocks must be between [1, {MaxMaxTraceableBlocks}], got {value}");
+
             var oldVal = GetMaxTraceableBlocks(engine.SnapshotCache);
             if (value > oldVal)
                 throw new InvalidOperationException($"MaxTraceableBlocks can not be increased (old {oldVal}, new {value})");
+
             var mVUBIncrement = GetMaxValidUntilBlockIncrement(engine.SnapshotCache);
             if (value <= mVUBIncrement)
                 throw new InvalidOperationException($"MaxTraceableBlocks must be larger than MaxValidUntilBlockIncrement ({value} vs {mVUBIncrement})");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(_maxTraceableBlocks).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
             return BlockAccount(engine.SnapshotCache, account);
         }
 
         internal bool BlockAccount(DataCache snapshot, UInt160 account)
         {
-            if (IsNative(account)) throw new InvalidOperationException("It's impossible to block a native contract.");
+            if (IsNative(account)) throw new InvalidOperationException("Cannot block a native contract.");
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (snapshot.Contains(key)) return false;
@@ -397,13 +419,24 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
+
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (!engine.SnapshotCache.Contains(key)) return false;
 
             engine.SnapshotCache.Delete(key);
             return true;
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private StorageIterator GetBlockedAccounts(DataCache snapshot)
+        {
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+            var enumerator = snapshot
+                .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
+                .GetEnumerator();
+            return new StorageIterator(enumerator, 1, options);
         }
     }
 }

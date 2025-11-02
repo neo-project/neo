@@ -69,12 +69,12 @@ namespace Neo.CLI
         /// Reads blocks from a stream and yields blocks that are not yet in the blockchain.
         /// </summary>
         /// <param name="stream">The stream to read blocks from.</param>
-        /// <param name="read_start">If true, reads the start block index from the stream.</param>
+        /// <param name="readStart">If true, reads the start block index from the stream.</param>
         /// <returns>An enumerable of blocks that are not yet in the blockchain.</returns>
-        private IEnumerable<Block> GetBlocks(Stream stream, bool read_start = false)
+        private IEnumerable<Block> GetBlocks(Stream stream, bool readStart = false)
         {
             using BinaryReader r = new BinaryReader(stream);
-            uint start = read_start ? r.ReadUInt32() : 0;
+            uint start = readStart ? r.ReadUInt32() : 0;
             uint count = r.ReadUInt32();
             uint end = start + count - 1;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
@@ -83,7 +83,7 @@ namespace Neo.CLI
             {
                 var size = r.ReadInt32();
                 if (size > Message.PayloadMaxSize)
-                    throw new ArgumentException($"Block {height} exceeds the maximum allowed size");
+                    throw new ArgumentException($"Block at height {height} has a size of {size} bytes, which exceeds the maximum allowed payload size of {Message.PayloadMaxSize} bytes. This block cannot be processed due to size constraints.");
 
                 byte[] array = r.ReadBytes(size);
                 if (height > currentHeight)

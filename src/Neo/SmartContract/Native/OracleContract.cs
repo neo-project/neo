@@ -51,12 +51,17 @@ namespace Neo.SmartContract.Native
             "OriginalTx", ContractParameterType.Hash256)]
         internal OracleContract() : base() { }
 
+        /// <summary>
+        /// Sets the price for an Oracle request. Only committee members can call this method.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="price">The price for an Oracle request.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetPrice(ApplicationEngine engine, long price)
         {
-            if (price <= 0)
-                throw new ArgumentOutOfRangeException(nameof(price));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (price <= 0) throw new ArgumentOutOfRangeException(nameof(price), "Price must be positive");
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Price)).Set(price);
         }
 
@@ -71,6 +76,11 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_Price)];
         }
 
+        /// <summary>
+        /// Finishes an Oracle response.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <returns><see langword="true"/> if the response is finished; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private ContractTask Finish(ApplicationEngine engine)
         {
@@ -78,9 +88,9 @@ namespace Neo.SmartContract.Native
             if (engine.GetInvocationCounter() != 1) throw new InvalidOperationException();
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.GetAttribute<OracleResponse>();
-            if (response == null) throw new ArgumentException("Oracle response was not found");
+            if (response == null) throw new ArgumentException("Oracle response not found");
             OracleRequest request = GetRequest(engine.SnapshotCache, response.Id);
-            if (request == null) throw new ArgumentException("Oracle request was not found");
+            if (request == null) throw new ArgumentException("Oracle request not found");
             engine.SendNotification(Hash, "OracleResponse", new Array(engine.ReferenceCounter) { response.Id, request.OriginalTxid.ToArray() });
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits, engine.ReferenceCounter);
             return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
@@ -202,21 +212,21 @@ namespace Neo.SmartContract.Native
         {
             var urlSize = url.GetStrictUtf8ByteCount();
             if (urlSize > MaxUrlLength)
-                throw new ArgumentException($"The url bytes size({urlSize}) cannot be greater than {MaxUrlLength}.");
+                throw new ArgumentException($"URL size {urlSize} bytes exceeds maximum allowed size of {MaxUrlLength} bytes.");
 
             var filterSize = filter is null ? 0 : filter.GetStrictUtf8ByteCount();
             if (filterSize > MaxFilterLength)
-                throw new ArgumentException($"The filter bytes size({filterSize}) cannot be greater than {MaxFilterLength}.");
+                throw new ArgumentException($"Filter size {filterSize} bytes exceeds maximum allowed size of {MaxFilterLength} bytes.");
 
             var callbackSize = callback is null ? 0 : callback.GetStrictUtf8ByteCount();
             if (callbackSize > MaxCallbackLength)
-                throw new ArgumentException($"The callback bytes size({callbackSize}) cannot be greater than {MaxCallbackLength}.");
+                throw new ArgumentException($"Callback size {callbackSize} bytes exceeds maximum allowed size of {MaxCallbackLength} bytes.");
 
             if (callback.StartsWith('_'))
-                throw new ArgumentException($"The callback cannot start with '_'.");
+                throw new ArgumentException("Callback cannot start with underscore.");
 
             if (gasForResponse < 0_10000000)
-                throw new ArgumentException($"The gasForResponse({gasForResponse}) must be greater than or equal to 0.1 datoshi.");
+                throw new ArgumentException($"gasForResponse {gasForResponse} must be at least 0.1 datoshi.");
 
             engine.AddFee(GetPrice(engine.SnapshotCache));
 
@@ -225,9 +235,9 @@ namespace Neo.SmartContract.Native
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
-            var item_id = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId));
-            var id = (ulong)(BigInteger)item_id;
-            item_id.Add(1);
+            var itemId = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId));
+            var id = (ulong)(BigInteger)itemId;
+            itemId.Add(1);
 
             //Put the request to storage
             if (!ContractManagement.IsContract(engine.SnapshotCache, engine.CallingScriptHash))

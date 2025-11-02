@@ -79,8 +79,8 @@ namespace Neo.UnitTests.SmartContract.Native
                     var methods = NativeContract.NEO.GetContractMethods(engine);
                     var entries = methods.Values.Where(u => u.Name == method).ToArray();
 
-                    Assert.AreEqual(entries.Length, 1);
-                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States);
+                    Assert.HasCount(1, entries);
+                    Assert.AreEqual(CallFlags.States, entries[0].RequiredCallFlags);
                 }
 
                 // Test WITH HF_Echidna
@@ -93,8 +93,8 @@ namespace Neo.UnitTests.SmartContract.Native
                     var methods = NativeContract.NEO.GetContractMethods(engine);
                     var entries = methods.Values.Where(u => u.Name == method).ToArray();
 
-                    Assert.AreEqual(entries.Length, 1);
-                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States | CallFlags.AllowNotify);
+                    Assert.HasCount(1, entries);
+                    Assert.AreEqual(CallFlags.States | CallFlags.AllowNotify, entries[0].RequiredCallFlags);
                 }
             }
         }
@@ -667,7 +667,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var result = (VM.Types.Array)NativeContract.NEO.Call(snapshotCache, "getNextBlockValidators");
-            Assert.AreEqual(7, result.Count);
+            Assert.HasCount(7, result);
             Assert.AreEqual("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", result[0].GetSpan().ToHexString());
             Assert.AreEqual("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", result[1].GetSpan().ToHexString());
             Assert.AreEqual("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e", result[2].GetSpan().ToHexString());
@@ -682,7 +682,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var clonedCache = _snapshotCache.CloneCache();
             var result = NativeContract.NEO.GetNextBlockValidators(clonedCache, 7);
-            Assert.AreEqual(7, result.Length);
+            Assert.HasCount(7, result);
             Assert.AreEqual("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", result[0].ToArray().ToHexString());
             Assert.AreEqual("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", result[1].ToArray().ToHexString());
             Assert.AreEqual("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e", result[2].ToArray().ToHexString());
@@ -697,7 +697,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var array = (VM.Types.Array)NativeContract.NEO.Call(snapshotCache, "getCandidates");
-            Assert.AreEqual(0, array.Count);
+            Assert.IsEmpty(array);
         }
 
         [TestMethod]
@@ -728,7 +728,7 @@ namespace Neo.UnitTests.SmartContract.Native
             cloneCache.Add(storageKey, new StorageItem(new CandidateState { Registered = true, Votes = BigInteger.One }));
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            Assert.AreEqual(1, cloneCache.Find(storageKey).ToArray().Length);
+            Assert.HasCount(1, cloneCache.Find(storageKey).ToArray());
 
             // Pre-persist
             var persistingBlock = new Block
@@ -755,13 +755,13 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.Result);
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            Assert.AreEqual(0, cloneCache.Find(storageKey).ToArray().Length);
+            Assert.IsEmpty(cloneCache.Find(storageKey).ToArray());
 
             // Post-persist
             Assert.IsTrue(Check_PostPersist(cloneCache, persistingBlock));
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            Assert.AreEqual(1, cloneCache.Find(storageKey).ToArray().Length);
+            Assert.HasCount(1, cloneCache.Find(storageKey).ToArray());
         }
 
         [TestMethod]
@@ -769,7 +769,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var clonedCache = TestBlockchain.GetTestSnapshotCache();
             var result = (VM.Types.Array)NativeContract.NEO.Call(clonedCache, "getCommittee");
-            Assert.AreEqual(21, result.Count);
+            Assert.HasCount(21, result);
             Assert.AreEqual("020f2887f41474cfeb11fd262e982051c1541418137c02a0f4961af911045de639", result[0].GetSpan().ToHexString());
             Assert.AreEqual("03204223f8c86b8cd5c89ef12e4f0dbb314172e9241e30c9ef2293790793537cf0", result[1].GetSpan().ToHexString());
             Assert.AreEqual("0222038884bbd1d8ff109ed3bdef3542e768eef76c1247aea8bc8171f532928c30", result[2].GetSpan().ToHexString());
@@ -1226,7 +1226,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var st = (Struct)BinarySerializer.Deserialize(trackable.Value.Item.Value, ExecutionEngineLimits.Default);
 
-            Assert.AreEqual(3, st.Count);
+            Assert.HasCount(3, st);
             CollectionAssert.AreEqual(new Type[] { typeof(Integer), typeof(Integer), typeof(ByteString) }, st.Select(u => u.GetType()).ToArray()); // Balance
 
             Assert.AreEqual(balance, st[0].GetInteger()); // Balance

@@ -41,7 +41,7 @@ namespace Neo.SmartContract
         /// </summary>
         public const int MaxNotificationCount = 512;
 
-        private uint random_times = 0;
+        private uint randomTimes = 0;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Platform.
@@ -215,7 +215,7 @@ namespace Neo.SmartContract
         protected internal void RuntimeLoadScript(byte[] script, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
-                throw new ArgumentOutOfRangeException(nameof(callFlags));
+                throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
 
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
@@ -241,7 +241,7 @@ namespace Neo.SmartContract
             {
                 20 => new UInt160(hashOrPubkey),
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
-                _ => throw new ArgumentException("Invalid hashOrPubkey.", nameof(hashOrPubkey))
+                _ => throw new ArgumentException("Invalid hashOrPubkey length", nameof(hashOrPubkey))
             };
             return CheckWitnessInternal(hash);
         }
@@ -314,7 +314,7 @@ namespace Neo.SmartContract
             long price;
             if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
-                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
+                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++);
                 price = 1 << 13;
             }
             else
@@ -333,7 +333,8 @@ namespace Neo.SmartContract
         /// <param name="state">The message of the log.</param>
         protected internal void RuntimeLog(byte[] state)
         {
-            if (state.Length > MaxNotificationSize) throw new ArgumentException("Message is too long.", nameof(state));
+            if (state.Length > MaxNotificationSize)
+                throw new ArgumentException($"Notification size {state.Length} exceeds maximum allowed size of {MaxNotificationSize} bytes", nameof(state));
             try
             {
                 string message = state.ToStrictUtf8String();
@@ -341,7 +342,7 @@ namespace Neo.SmartContract
             }
             catch
             {
-                throw new ArgumentException("Failed to convert byte array to string: Invalid or non-printable UTF-8 sequence detected.", nameof(state));
+                throw new ArgumentException("Failed to convert byte array to string: Invalid UTF-8 sequence", nameof(state));
             }
         }
 
@@ -358,7 +359,8 @@ namespace Neo.SmartContract
                 RuntimeNotifyV1(eventName, state);
                 return;
             }
-            if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            if (eventName.Length > MaxEventName)
+                throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
 
             string name = eventName.ToStrictUtf8String();
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
@@ -383,7 +385,8 @@ namespace Neo.SmartContract
 
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
         {
-            if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            if (eventName.Length > MaxEventName)
+                throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
             if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);

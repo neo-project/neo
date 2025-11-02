@@ -17,8 +17,22 @@ namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
+        /// <summary>
+        /// Lists all plugins.
+        /// <para>Request format:</para>
+        /// <code>{"jsonrpc": "2.0", "id": 1, "method": "listplugins"}</code>
+        /// <para>Response format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "result": [
+        ///     {"name": "The plugin name", "version": "The plugin version", "interfaces": ["The plugin method name"]}
+        ///   ]
+        /// }</code>
+        /// </summary>
+        /// <returns>A JSON array containing the plugin information.</returns>
         [RpcMethod]
-        protected internal virtual JToken ListPlugins(JArray _params)
+        protected internal virtual JToken ListPlugins()
         {
             return new JArray(Plugin.Plugins
                 .OrderBy(u => u.Name)
@@ -33,11 +47,23 @@ namespace Neo.Plugins.RpcServer
                 }));
         }
 
+        /// <summary>
+        /// Validates an address.
+        /// <para>Request format:</para>
+        /// <code>{"jsonrpc": "2.0", "id": 1, "method": "validateaddress", "params": ["The Base58Check address"]}</code>
+        /// <para>Response format:</para>
+        /// <code>{
+        ///   "jsonrpc": "2.0",
+        ///   "id": 1,
+        ///   "result": {"address": "The Base58Check address", "isvalid": true}
+        /// }</code>
+        /// </summary>
+        /// <param name="address">The address as a string.</param>
+        /// <returns>A JSON object containing the address and whether it is valid.</returns>
         [RpcMethod]
-        protected internal virtual JToken ValidateAddress(JArray _params)
+        protected internal virtual JToken ValidateAddress(string address)
         {
-            string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invlid address format: {_params[0]}"));
-            UInt160 scriptHash;
+            UInt160? scriptHash;
             try
             {
                 scriptHash = address.ToScriptHash(system.Settings.AddressVersion);

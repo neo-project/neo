@@ -127,7 +127,7 @@ namespace Neo.Extensions
 
         public static ContractParameter ToParameter(this StackItem item, List<(StackItem, ContractParameter)> context)
         {
-            if (item is null) throw new ArgumentNullException(nameof(item));
+            ArgumentNullException.ThrowIfNull(item);
             ContractParameter parameter = null;
             switch (item)
             {
@@ -189,7 +189,7 @@ namespace Neo.Extensions
                     };
                     break;
                 default:
-                    throw new ArgumentException($"StackItemType({item.Type}) is not supported to ContractParameter.");
+                    throw new ArgumentException($"StackItemType({item.Type}) is not supported for conversion to ContractParameter. This stack item type cannot be converted to a contract parameter.", nameof(item));
             }
             return parameter;
         }

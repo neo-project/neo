@@ -27,6 +27,9 @@ namespace Neo.Persistence.Providers
     {
         private readonly ConcurrentDictionary<byte[], byte[]> _innerData = new(ByteArrayEqualityComparer.Default);
 
+        /// <inheritdoc/>
+        public event IStore.OnNewSnapshotDelegate? OnNewSnapshot;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Delete(byte[] key)
         {
@@ -38,7 +41,9 @@ namespace Neo.Persistence.Providers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IStoreSnapshot GetSnapshot()
         {
-            return new MemorySnapshot(this, _innerData);
+            var snapshot = new MemorySnapshot(this, _innerData);
+            OnNewSnapshot?.Invoke(this, snapshot);
+            return snapshot;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -59,7 +59,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private ECPoint _myPublicKey;
         private int _witnessSize;
         private readonly NeoSystem neoSystem;
-        private readonly Settings dbftSettings;
+        private readonly DbftSettings dbftSettings;
         private readonly ISigner _signer;
         private readonly IStore store;
         private Dictionary<UInt256, ConsensusMessage> cachedMessages;
@@ -113,7 +113,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public int Size => throw new NotImplementedException();
 
-        public ConsensusContext(NeoSystem neoSystem, Settings settings, ISigner signer)
+        public ConsensusContext(NeoSystem neoSystem, DbftSettings settings, ISigner signer)
         {
             _signer = signer;
             this.neoSystem = neoSystem;
@@ -286,7 +286,11 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         public void Deserialize(ref MemoryReader reader)
         {
             Reset(0);
-            if (reader.ReadUInt32() != Block.Version) throw new FormatException();
+
+            var blockVersion = reader.ReadUInt32();
+            if (blockVersion != Block.Version)
+                throw new FormatException($"Invalid block version: {blockVersion}/{Block.Version}");
+
             if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
             Block.Header.Timestamp = reader.ReadUInt64();
             Block.Header.Nonce = reader.ReadUInt64();

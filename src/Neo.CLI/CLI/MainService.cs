@@ -13,7 +13,6 @@ using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Extensions;
 using Neo.Json;
-using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
@@ -28,13 +27,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Array = System.Array;
@@ -171,108 +168,78 @@ namespace Neo.CLI
             return true;
         }
 
-        private byte[] LoadDeploymentScript(string nefFilePath, string? manifestFilePath, JObject? data, out NefFile nef, out ContractManifest manifest)
+        private static ContractParameter? LoadScript(string nefFilePath, string? manifestFilePath, JObject? data,
+            out NefFile nef, out ContractManifest manifest)
         {
             if (string.IsNullOrEmpty(manifestFilePath))
-            {
                 manifestFilePath = Path.ChangeExtension(nefFilePath, ".manifest.json");
-            }
 
             // Read manifest
-
             var info = new FileInfo(manifestFilePath);
-            if (!info.Exists || info.Length >= Transaction.MaxTransactionSize)
-            {
-                throw new ArgumentException(nameof(manifestFilePath));
-            }
+            if (!info.Exists)
+                throw new ArgumentException($"Contract manifest file not found at path: {manifestFilePath}. Please ensure the manifest file exists and the path is correct.", nameof(manifestFilePath));
+            if (info.Length >= Transaction.MaxTransactionSize)
+                throw new ArgumentException($"Contract manifest file size ({info.Length} bytes) exceeds the maximum allowed transaction size ({Transaction.MaxTransactionSize} bytes). Please check the file size and ensure it's within limits.", nameof(manifestFilePath));
 
             manifest = ContractManifest.Parse(File.ReadAllBytes(manifestFilePath));
 
             // Read nef
-
             info = new FileInfo(nefFilePath);
-            if (!info.Exists || info.Length >= Transaction.MaxTransactionSize)
-            {
-                throw new ArgumentException(nameof(nefFilePath));
-            }
+            if (!info.Exists)
+                throw new ArgumentException($"Contract NEF file not found at path: {nefFilePath}. Please ensure the NEF file exists and the path is correct.", nameof(nefFilePath));
+            if (info.Length >= Transaction.MaxTransactionSize)
+                throw new ArgumentException($"Contract NEF file size ({info.Length} bytes) exceeds the maximum allowed transaction size ({Transaction.MaxTransactionSize} bytes). Please check the file size and ensure it's within limits.", nameof(nefFilePath));
 
             nef = File.ReadAllBytes(nefFilePath).AsSerializable<NefFile>();
-
-            ContractParameter? dataParameter = null;
-            if (data is not null)
-                try
-                {
-                    dataParameter = ContractParameter.FromJson(data);
-                }
-                catch
-                {
-                    throw new FormatException("invalid data");
-                }
 
             // Basic script checks
             nef.Script.IsScriptValid(manifest.Abi);
 
-            // Build script
-
-            using (ScriptBuilder sb = new ScriptBuilder())
+            if (data is not null)
             {
-                if (dataParameter is not null)
-                    sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifest.ToJson().ToString(), dataParameter);
+                try
+                {
+                    return ContractParameter.FromJson(data);
+                }
+                catch (Exception ex)
+                {
+                    throw new FormatException($"Invalid contract deployment data format. The provided JSON data could not be parsed as valid contract parameters. Original error: {ex.Message}", ex);
+                }
+            }
+
+            return null;
+        }
+
+        private byte[] LoadDeploymentScript(string nefFilePath, string? manifestFilePath, JObject? data,
+            out NefFile nef, out ContractManifest manifest)
+        {
+            var parameter = LoadScript(nefFilePath, manifestFilePath, data, out nef, out manifest);
+            var manifestJson = manifest.ToJson().ToString();
+
+            // Build script
+            using (var sb = new ScriptBuilder())
+            {
+                if (parameter is not null)
+                    sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifestJson, parameter);
                 else
-                    sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifest.ToJson().ToString());
+                    sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifestJson);
                 return sb.ToArray();
             }
         }
 
-        private byte[] LoadUpdateScript(UInt160 scriptHash, string nefFilePath, string manifestFilePath, JObject? data, out NefFile nef, out ContractManifest manifest)
+        private byte[] LoadUpdateScript(UInt160 scriptHash, string nefFilePath, string manifestFilePath, JObject? data,
+            out NefFile nef, out ContractManifest manifest)
         {
-            if (string.IsNullOrEmpty(manifestFilePath))
-            {
-                manifestFilePath = Path.ChangeExtension(nefFilePath, ".manifest.json");
-            }
-
-            // Read manifest
-
-            var info = new FileInfo(manifestFilePath);
-            if (!info.Exists || info.Length >= Transaction.MaxTransactionSize)
-            {
-                throw new ArgumentException(nameof(manifestFilePath));
-            }
-
-            manifest = ContractManifest.Parse(File.ReadAllBytes(manifestFilePath));
-
-            // Read nef
-
-            info = new FileInfo(nefFilePath);
-            if (!info.Exists || info.Length >= Transaction.MaxTransactionSize)
-            {
-                throw new ArgumentException(nameof(nefFilePath));
-            }
-
-            nef = File.ReadAllBytes(nefFilePath).AsSerializable<NefFile>();
-
-            ContractParameter? dataParameter = null;
-            if (data is not null)
-                try
-                {
-                    dataParameter = ContractParameter.FromJson(data);
-                }
-                catch
-                {
-                    throw new FormatException("invalid data");
-                }
-
-            // Basic script checks
-            nef.Script.IsScriptValid(manifest.Abi);
+            var parameter = LoadScript(nefFilePath, manifestFilePath, data, out nef, out manifest);
+            var manifestJson = manifest.ToJson().ToString();
 
             // Build script
-
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (var sb = new ScriptBuilder())
             {
-                if (dataParameter is null)
-                    sb.EmitDynamicCall(scriptHash, "update", nef.ToArray(), manifest.ToJson().ToString());
+                if (parameter is null)
+                    sb.EmitDynamicCall(scriptHash, "update", nef.ToArray(), manifestJson);
                 else
-                    sb.EmitDynamicCall(scriptHash, "update", nef.ToArray(), manifest.ToJson().ToString(), dataParameter);
+                    sb.EmitDynamicCall(scriptHash, "update", nef.ToArray(), manifestJson, parameter);
                 return sb.ToArray();
             }
         }
@@ -293,13 +260,80 @@ namespace Neo.CLI
         {
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException($"Wallet file \"{path}\" not found.");
+                throw new FileNotFoundException($"Wallet file not found at path: {path}. Please verify the file path is correct and the wallet file exists.", path);
             }
 
             if (CurrentWallet is not null) SignerManager.UnregisterSigner(CurrentWallet.Name);
 
-            CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
+            CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException($"Failed to open wallet at path: {path}. The wallet format may not be supported or the password may be incorrect. Please verify the wallet file integrity and password.");
             SignerManager.RegisterSigner(CurrentWallet.Name, CurrentWallet);
+        }
+
+        private static void ShowDllNotFoundError(DllNotFoundException ex)
+        {
+            void DisplayError(string primaryMessage, string? secondaryMessage = null)
+            {
+                ConsoleHelper.Error(primaryMessage + Environment.NewLine +
+                                    (secondaryMessage != null ? secondaryMessage + Environment.NewLine : "") +
+                                    "Press any key to exit.");
+                Console.ReadKey();
+                Environment.Exit(-1);
+            }
+
+            const string neoUrl = "https://github.com/neo-project/neo/releases";
+            const string levelDbUrl = "https://github.com/neo-ngd/leveldb/releases";
+            if (ex.Message.Contains("libleveldb"))
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    if (File.Exists("libleveldb.dll"))
+                    {
+                        DisplayError("Dependency DLL not found, please install Microsoft Visual C++ Redistributable.",
+                            "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist");
+                    }
+                    else
+                    {
+                        DisplayError("DLL not found, please get libleveldb.dll.", $"Download from {levelDbUrl}");
+                    }
+                }
+                else if (OperatingSystem.IsLinux())
+                {
+                    DisplayError("Shared library libleveldb.so not found, please get libleveldb.so.",
+                        $"Use command \"sudo apt-get install libleveldb-dev\" in terminal or download from {levelDbUrl}");
+                }
+                else if (OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst())
+                {
+                    // Check if the error message contains information about missing dependencies
+                    if (ex.Message.Contains("libtcmalloc") && ex.Message.Contains("gperftools"))
+                    {
+                        DisplayError("LevelDB dependency 'gperftools' not found. This is required for libleveldb on macOS.",
+                            "To fix this issue:\n" +
+                            "1. Install gperftools: brew install gperftools\n" +
+                            "2. Install leveldb: brew install leveldb\n" +
+                            "3. If the issue persists, try: brew reinstall gperftools leveldb\n" +
+                            "\n" +
+                            "Note: The system is looking for libtcmalloc.4.dylib which is provided by gperftools.");
+                    }
+                    else
+                    {
+                        DisplayError("Shared library libleveldb.dylib not found or has missing dependencies.",
+                            "To fix this issue:\n" +
+                            "1. Install dependencies: brew install gperftools snappy\n" +
+                            "2. Install leveldb: brew install leveldb\n" +
+                            "3. If already installed, try: brew reinstall gperftools leveldb\n" +
+                            $"\n" +
+                            $"Alternative: Download pre-compiled binaries from {levelDbUrl}");
+                    }
+                }
+                else
+                {
+                    DisplayError("Neo CLI is broken, please reinstall it.", $"Download from {neoUrl}");
+                }
+            }
+            else
+            {
+                DisplayError("Neo CLI is broken, please reinstall it.", $"Download from {neoUrl}");
+            }
         }
 
         public async void Start(CommandLineOptions options)
@@ -316,42 +350,9 @@ namespace Neo.CLI
                 NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
                     string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             }
-            catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
+            catch (DllNotFoundException ex)
             {
-                if (OperatingSystem.IsWindows())
-                {
-                    if (File.Exists("libleveldb.dll"))
-                    {
-                        DisplayError("Dependency DLL not found, please install Microsoft Visual C++ Redistributable.",
-                            "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist");
-                    }
-                    else
-                    {
-                        DisplayError("DLL not found, please get libleveldb.dll.",
-                            "Download from https://github.com/neo-ngd/leveldb/releases");
-                    }
-                }
-                else if (OperatingSystem.IsLinux())
-                {
-                    DisplayError("Shared library libleveldb.so not found, please get libleveldb.so.",
-                        "Use command \"sudo apt-get install libleveldb-dev\" in terminal or download from https://github.com/neo-ngd/leveldb/releases");
-                }
-                else if (OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst())
-                {
-                    DisplayError("Shared library libleveldb.dylib not found, please get libleveldb.dylib.",
-                        "Use command \"brew install leveldb\" in terminal or download from https://github.com/neo-ngd/leveldb/releases");
-                }
-                else
-                {
-                    DisplayError("Neo CLI is broken, please reinstall it.",
-                        "Download from https://github.com/neo-project/neo/releases");
-                }
-                return;
-            }
-            catch (DllNotFoundException)
-            {
-                DisplayError("Neo CLI is broken, please reinstall it.",
-                    "Download from https://github.com/neo-project/neo/releases");
+                ShowDllNotFoundError(ex);
                 return;
             }
 
@@ -360,15 +361,18 @@ namespace Neo.CLI
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
 
             // installing plugins
-            var installTasks = options.Plugins?.Select(p => p).Where(p => !string.IsNullOrEmpty(p)).ToList().Select(p => InstallPluginAsync(p));
+            var installTasks = options.Plugins?.Select(p => p)
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToList()
+                .Select(p => InstallPluginAsync(p));
             if (installTasks is not null)
             {
                 await Task.WhenAll(installTasks);
             }
+
             foreach (var plugin in Plugin.Plugins)
             {
                 // Register plugins commands
-
                 RegisterCommand(plugin, plugin.Name);
             }
 
@@ -413,31 +417,12 @@ namespace Neo.CLI
                     ConsoleHelper.Error(ex.GetBaseException().Message);
                 }
             }
-
-            return;
-
-            void DisplayError(string primaryMessage, string? secondaryMessage = null)
-            {
-                ConsoleHelper.Error(primaryMessage + Environment.NewLine +
-                                    (secondaryMessage != null ? secondaryMessage + Environment.NewLine : "") +
-                                    "Press any key to exit.");
-                Console.ReadKey();
-                Environment.Exit(-1);
-            }
         }
 
         public void Stop()
         {
             Dispose_Logger();
             Interlocked.Exchange(ref _neoSystem, null)?.Dispose();
-        }
-
-        private static void WriteLineWithoutFlicker(string message = "", int maxWidth = 80)
-        {
-            if (message.Length > 0) Console.Write(message);
-            var spacesToErase = maxWidth - message.Length;
-            if (spacesToErase < 0) spacesToErase = 0;
-            Console.WriteLine(new string(' ', spacesToErase));
         }
 
         /// <summary>
@@ -450,9 +435,8 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
 
-            Signer[] signers = Array.Empty<Signer>();
+            var signers = Array.Empty<Signer>();
             var snapshot = NeoSystem.StoreView;
-
             if (account != null)
             {
                 signers = CurrentWallet!.GetAccounts()
@@ -463,10 +447,9 @@ namespace Neo.CLI
 
             try
             {
-                Transaction tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: datoshi);
+                var tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: datoshi);
                 ConsoleHelper.Info("Invoking script with: ", $"'{Convert.ToBase64String(tx.Script.Span)}'");
-
-                using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: datoshi))
+                using (var engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: datoshi))
                 {
                     PrintExecutionOutput(engine, true);
                     if (engine.State == VMState.FAULT) return;
@@ -496,10 +479,10 @@ namespace Neo.CLI
         /// <param name="showStack">Show result stack if it is true</param>
         /// <param name="datoshi">Max fee for running the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
         /// <returns>Return true if it was successful</returns>
-        private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result, IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long datoshi = TestModeGas)
+        private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result,
+            IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long datoshi = TestModeGas)
         {
-            List<ContractParameter> parameters = new();
-
+            var parameters = new List<ContractParameter>();
             if (contractParameters != null)
             {
                 foreach (var contractParameter in contractParameters)
@@ -511,7 +494,7 @@ namespace Neo.CLI
                 }
             }
 
-            ContractState contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
+            var contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
             if (contract == null)
             {
                 ConsoleHelper.Error("Contract does not exist.");
@@ -529,8 +512,7 @@ namespace Neo.CLI
             }
 
             byte[] script;
-
-            using (ScriptBuilder scriptBuilder = new ScriptBuilder())
+            using (var scriptBuilder = new ScriptBuilder())
             {
                 scriptBuilder.EmitDynamicCall(scriptHash, operation, parameters.ToArray());
                 script = scriptBuilder.ToArray();
@@ -542,7 +524,7 @@ namespace Neo.CLI
                 tx.Script = script;
             }
 
-            using ApplicationEngine engine = ApplicationEngine.Run(script, NeoSystem.StoreView, container: verifiable, settings: NeoSystem.Settings, gas: datoshi);
+            using var engine = ApplicationEngine.Run(script, NeoSystem.StoreView, container: verifiable, settings: NeoSystem.Settings, gas: datoshi);
             PrintExecutionOutput(engine, showStack);
             result = engine.State == VMState.FAULT ? StackItem.Null : engine.ResultStack.Peek();
             return engine.State != VMState.FAULT;
@@ -575,7 +557,7 @@ namespace Neo.CLI
         public UInt160? ResolveNeoNameServiceAddress(string domain)
         {
             if (Settings.Default.Contracts.NeoNameService == UInt160.Zero)
-                throw new Exception("Neo Name Service (NNS): is disabled on this network.");
+                throw new Exception($"Neo Name Service (NNS) is not available on the current network. The NNS contract is not configured for network: {NeoSystem.Settings.Network}. Please ensure you are connected to a network that supports NNS functionality.");
 
             using var sb = new ScriptBuilder();
             sb.EmitDynamicCall(Settings.Default.Contracts.NeoNameService, "resolve", CallFlags.ReadOnly, domain, 16);
@@ -598,18 +580,18 @@ namespace Neo.CLI
                 }
                 else if (data is Null)
                 {
-                    throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
+                    throw new Exception($"Neo Name Service (NNS): Domain '{domain}' was not found in the NNS registry. Please verify the domain name is correct and has been registered in the NNS system.");
                 }
-                throw new Exception("Neo Name Service (NNS): Record invalid address format.");
+                throw new Exception($"Neo Name Service (NNS): The resolved record for domain '{domain}' contains an invalid address format. The NNS record exists but the address data is not in the expected format.");
             }
             else
             {
                 if (appEng.FaultException is not null)
                 {
-                    throw new Exception($"Neo Name Service (NNS): \"{appEng.FaultException.Message}\".");
+                    throw new Exception($"Neo Name Service (NNS): Failed to resolve domain '{domain}' due to contract execution error: {appEng.FaultException.Message}. Please verify the domain exists and try again.");
                 }
             }
-            throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
+            throw new Exception($"Neo Name Service (NNS): Domain '{domain}' was not found in the NNS registry. The resolution operation completed but no valid record was returned. Please verify the domain name is correct and has been registered.");
         }
     }
 }

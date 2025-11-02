@@ -12,7 +12,6 @@
 using System;
 using System.IO.Hashing;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Neo.Extensions
 {
@@ -54,22 +53,33 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this byte[]? value)
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
-#if NET9_0_OR_GREATER
             return Convert.ToHexStringLower(value);
-#else
-            return string.Create(value.Length * 2, value, (span, bytes) =>
-            {
-                for (var i = 0; i < bytes.Length; i++)
-                {
-                    var b = bytes[i];
-                    span[i * 2] = s_hexChars[b >> 4];
-                    span[i * 2 + 1] = s_hexChars[b & 0xF];
-                }
-            });
-#endif
+        }
+
+        /// <summary>
+        /// Converts a byte array to hex <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <returns>The converted hex <see cref="string"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ToHexString(this ReadOnlyMemory<byte> value)
+        {
+            return Convert.ToHexStringLower(value.Span);
+        }
+
+        /// <summary>
+        /// Converts a byte array to hex <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <returns>The converted hex <see cref="string"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ToHexString(this Memory<byte> value)
+        {
+            return Convert.ToHexStringLower(value.Span);
         }
 
         /// <summary>
@@ -82,11 +92,21 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this byte[]? value, bool reverse = false)
         {
-            if (!reverse)
-                return ToHexString(value);
+            ArgumentNullException.ThrowIfNull(value);
 
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            return ToHexString(value.AsSpan(), reverse);
+        }
+
+        /// <summary>
+        /// Converts a byte span to hex <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
+        /// <returns>The converted hex <see cref="string"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ToHexString(this ReadOnlySpan<byte> value, bool reverse = false)
+        {
+            if (!reverse) return ToHexString(value);
 
             return string.Create(value.Length * 2, value, (span, bytes) =>
             {
@@ -107,19 +127,7 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this ReadOnlySpan<byte> value)
         {
-#if NET9_0_OR_GREATER
             return Convert.ToHexStringLower(value);
-#else
-            // string.Create with ReadOnlySpan<char> not supported in NET5 or lower
-            var sb = new StringBuilder(value.Length * 2);
-            for (var i = 0; i < value.Length; i++)
-            {
-                var b = value[i];
-                sb.Append(s_hexChars[b >> 4]);
-                sb.Append(s_hexChars[b & 0xF]);
-            }
-            return sb.ToString();
-#endif
         }
 
         /// <summary>
@@ -138,15 +146,7 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(this ReadOnlySpan<byte> x)
         {
-#if NET7_0_OR_GREATER
             return x.IndexOfAnyExcept((byte)0) >= 0;
-#else
-            for (var i = 0; i < x.Length; i++)
-            {
-                if (x[i] != 0) return true;
-            }
-            return false;
-#endif
         }
     }
 }

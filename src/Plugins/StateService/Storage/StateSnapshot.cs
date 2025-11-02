@@ -19,29 +19,29 @@ namespace Neo.Plugins.StateService.Storage
 {
     class StateSnapshot : IDisposable
     {
-        private readonly IStoreSnapshot snapshot;
+        private readonly IStoreSnapshot _snapshot;
         public Trie Trie;
 
         public StateSnapshot(IStore store)
         {
-            snapshot = store.GetSnapshot();
-            Trie = new Trie(snapshot, CurrentLocalRootHash(), Settings.Default.FullState);
+            _snapshot = store.GetSnapshot();
+            Trie = new Trie(_snapshot, CurrentLocalRootHash(), StateServiceSettings.Default.FullState);
         }
 
         public StateRoot GetStateRoot(uint index)
         {
-            return snapshot.TryGet(Keys.StateRoot(index), out var data) ? data.AsSerializable<StateRoot>() : null;
+            return _snapshot.TryGet(Keys.StateRoot(index), out var data) ? data.AsSerializable<StateRoot>() : null;
         }
 
-        public void AddLocalStateRoot(StateRoot state_root)
+        public void AddLocalStateRoot(StateRoot stateRoot)
         {
-            snapshot.Put(Keys.StateRoot(state_root.Index), state_root.ToArray());
-            snapshot.Put(Keys.CurrentLocalRootIndex, BitConverter.GetBytes(state_root.Index));
+            _snapshot.Put(Keys.StateRoot(stateRoot.Index), stateRoot.ToArray());
+            _snapshot.Put(Keys.CurrentLocalRootIndex, BitConverter.GetBytes(stateRoot.Index));
         }
 
         public uint? CurrentLocalRootIndex()
         {
-            if (snapshot.TryGet(Keys.CurrentLocalRootIndex, out var bytes))
+            if (_snapshot.TryGet(Keys.CurrentLocalRootIndex, out var bytes))
                 return BitConverter.ToUInt32(bytes);
             return null;
         }
@@ -53,17 +53,17 @@ namespace Neo.Plugins.StateService.Storage
             return GetStateRoot((uint)index)?.RootHash;
         }
 
-        public void AddValidatedStateRoot(StateRoot state_root)
+        public void AddValidatedStateRoot(StateRoot stateRoot)
         {
-            if (state_root?.Witness is null)
-                throw new ArgumentException(nameof(state_root) + " missing witness in invalidated state root");
-            snapshot.Put(Keys.StateRoot(state_root.Index), state_root.ToArray());
-            snapshot.Put(Keys.CurrentValidatedRootIndex, BitConverter.GetBytes(state_root.Index));
+            if (stateRoot.Witness is null)
+                throw new ArgumentException(nameof(stateRoot) + " missing witness in invalidated state root");
+            _snapshot.Put(Keys.StateRoot(stateRoot.Index), stateRoot.ToArray());
+            _snapshot.Put(Keys.CurrentValidatedRootIndex, BitConverter.GetBytes(stateRoot.Index));
         }
 
         public uint? CurrentValidatedRootIndex()
         {
-            if (snapshot.TryGet(Keys.CurrentValidatedRootIndex, out var bytes))
+            if (_snapshot.TryGet(Keys.CurrentValidatedRootIndex, out var bytes))
                 return BitConverter.ToUInt32(bytes);
             return null;
         }
@@ -72,21 +72,21 @@ namespace Neo.Plugins.StateService.Storage
         {
             var index = CurrentLocalRootIndex();
             if (index is null) return null;
-            var state_root = GetStateRoot((uint)index);
-            if (state_root is null || state_root.Witness is null)
+            var stateRoot = GetStateRoot((uint)index);
+            if (stateRoot is null || stateRoot.Witness is null)
                 throw new InvalidOperationException(nameof(CurrentValidatedRootHash) + " could not get validated state root");
-            return state_root.RootHash;
+            return stateRoot.RootHash;
         }
 
         public void Commit()
         {
             Trie.Commit();
-            snapshot.Commit();
+            _snapshot.Commit();
         }
 
         public void Dispose()
         {
-            snapshot.Dispose();
+            _snapshot.Dispose();
         }
     }
 }

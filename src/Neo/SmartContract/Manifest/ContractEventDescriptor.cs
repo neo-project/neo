@@ -62,7 +62,7 @@ namespace Neo.SmartContract.Manifest
                 Name = json["name"].GetString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
             };
-            if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
+            if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException("Name in ContractEventDescriptor is empty");
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
             return descriptor;
         }
@@ -73,10 +73,11 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The event represented by a JSON object.</returns>
         public virtual JObject ToJson()
         {
-            var json = new JObject();
-            json["name"] = Name;
-            json["parameters"] = new JArray(Parameters.Select(u => u.ToJson()).ToArray());
-            return json;
+            return new JObject()
+            {
+                ["name"] = Name,
+                ["parameters"] = new JArray(Parameters.Select(u => u.ToJson()).ToArray())
+            };
         }
 
         public bool Equals(ContractEventDescriptor other)

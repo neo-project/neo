@@ -121,12 +121,13 @@ namespace Neo.SmartContract
                         }
                         break;
                     default:
-                        throw new FormatException();
+                        throw new FormatException($"Invalid StackItemType({type})");
                 }
                 if (deserialized.Count > maxItems)
-                    throw new FormatException();
+                    throw new FormatException($"Deserialized count({deserialized.Count}) is out of range (max:{maxItems})");
             }
-            Stack<StackItem> stack_temp = new();
+
+            var stackTemp = new Stack<StackItem>();
             while (deserialized.Count > 0)
             {
                 StackItem item = deserialized.Pop();
@@ -137,30 +138,30 @@ namespace Neo.SmartContract
                         case StackItemType.Array:
                             Array array = new(referenceCounter);
                             for (int i = 0; i < placeholder.ElementCount; i++)
-                                array.Add(stack_temp.Pop());
+                                array.Add(stackTemp.Pop());
                             item = array;
                             break;
                         case StackItemType.Struct:
                             Struct @struct = new(referenceCounter);
                             for (int i = 0; i < placeholder.ElementCount; i++)
-                                @struct.Add(stack_temp.Pop());
+                                @struct.Add(stackTemp.Pop());
                             item = @struct;
                             break;
                         case StackItemType.Map:
                             Map map = new(referenceCounter);
                             for (int i = 0; i < placeholder.ElementCount; i++)
                             {
-                                StackItem key = stack_temp.Pop();
-                                StackItem value = stack_temp.Pop();
+                                var key = stackTemp.Pop();
+                                var value = stackTemp.Pop();
                                 map[(PrimitiveType)key] = value;
                             }
                             item = map;
                             break;
                     }
                 }
-                stack_temp.Push(item);
+                stackTemp.Push(item);
             }
-            return stack_temp.Peek();
+            return stackTemp.Peek();
         }
 
         /// <summary>
@@ -205,7 +206,7 @@ namespace Neo.SmartContract
             while (unserialized.Count > 0)
             {
                 if (--maxItems < 0)
-                    throw new FormatException();
+                    throw new FormatException("Too many items to serialize");
                 item = unserialized.Pop();
                 writer.Write((byte)item.Type);
                 switch (item)

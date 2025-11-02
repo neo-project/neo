@@ -170,8 +170,8 @@ namespace Neo.UnitTests.SmartContract
                 var currentScriptHash = engine.EntryScriptHash;
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.AreEqual(2, engine.Notifications.Count);
+                Assert.HasCount(1, engine.ResultStack);
+                Assert.HasCount(2, engine.Notifications);
 
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.Array));
 
@@ -247,8 +247,8 @@ namespace Neo.UnitTests.SmartContract
                 var currentScriptHash = engine.EntryScriptHash;
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.AreEqual(2, engine.Notifications.Count);
+                Assert.HasCount(1, engine.ResultStack);
+                Assert.HasCount(2, engine.Notifications);
 
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.Array));
 
@@ -277,7 +277,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
 
             var array = (VM.Types.Array)stackItem;
-            Assert.AreEqual(3, array.Count);
+            Assert.HasCount(3, array);
             CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetSpan().ToArray());
             Assert.AreEqual(notification, array[1].GetString());
         }
@@ -368,10 +368,10 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true);
             var message = "hello";
-            ApplicationEngine.Log += LogEvent;
+            engine.Log += LogEvent;
             engine.RuntimeLog(Encoding.UTF8.GetBytes(message));
             Assert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }.ToHexString(), ((Transaction)engine.ScriptContainer).Script.Span.ToHexString());
-            ApplicationEngine.Log -= LogEvent;
+            engine.Log -= LogEvent;
         }
 
         [TestMethod]
@@ -408,7 +408,7 @@ namespace Neo.UnitTests.SmartContract
 
             engineA.LoadScript(script.ToArray());
             engineA.Execute();
-            Assert.AreEqual(engineA.State, VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engineA.State);
 
             var result = engineA.ResultStack.Pop();
             Assert.IsInstanceOfType(result, typeof(Null));
@@ -419,14 +419,14 @@ namespace Neo.UnitTests.SmartContract
 
             engineB.LoadScript(script.ToArray());
             engineB.Execute();
-            Assert.AreEqual(engineB.State, VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engineB.State);
 
             result = engineB.ResultStack.Pop();
             Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
-            Assert.AreEqual(1, (result as VM.Types.Array).Count);
+            Assert.HasCount(1, result as VM.Types.Array);
             result = (result as VM.Types.Array)[0];
             Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
-            Assert.AreEqual(5, (result as VM.Types.Array).Count);
+            Assert.HasCount(5, result as VM.Types.Array);
             result = (result as VM.Types.Array)[0]; // Address
             Assert.AreEqual(UInt160.Zero, new UInt160(result.GetSpan()));
         }
@@ -497,7 +497,7 @@ namespace Neo.UnitTests.SmartContract
             script.EmitDynamicCall(NativeContract.Ledger.Hash, "getTransactionHeight", state.Transaction.Hash);
             engine.LoadScript(script.ToArray());
             engine.Execute();
-            Assert.AreEqual(engine.State, VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.State);
 
             var result = engine.ResultStack.Pop();
             Assert.IsInstanceOfType(result, typeof(Integer));
@@ -545,7 +545,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
             var list = NativeContract.ContractManagement.ListContracts(engine.SnapshotCache);
-            list.ForEach(p => Assert.IsTrue(p.Id < 0));
+            list.ForEach(p => Assert.IsLessThan(0, p.Id));
 
             var state = TestUtils.GetContract();
             engine.SnapshotCache.AddContract(state.Hash, state);

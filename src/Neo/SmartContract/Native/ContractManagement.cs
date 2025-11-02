@@ -117,6 +117,11 @@ namespace Neo.SmartContract.Native
             }
         }
 
+        /// <summary>
+        /// Gets the minimum deployment fee for deploying a contract.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The minimum deployment fee for deploying a contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private long GetMinimumDeploymentFee(IReadOnlyStore snapshot)
         {
@@ -124,11 +129,18 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
         }
 
+        /// <summary>
+        /// Sets the minimum deployment fee for deploying a contract. Only committee members can call this method.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="value">The minimum deployment fee for deploying a contract.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value/* In the unit of datoshi, 1 datoshi = 1e-8 GAS*/)
         {
-            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "cannot be negative");
+            AssertCommittee(engine);
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
         }
 
@@ -180,8 +192,8 @@ namespace Neo.SmartContract.Native
         private IIterator GetContractHashes(IReadOnlyStore snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix;
-            var prefix_key = CreateStorageKey(Prefix_ContractHash);
-            var enumerator = snapshot.Find(prefix_key)
+            var prefixKey = CreateStorageKey(Prefix_ContractHash);
+            var enumerator = snapshot.Find(prefixKey)
                 .Select(p => (p.Key, p.Value, Id: BinaryPrimitives.ReadInt32BigEndian(p.Key.Key.Span[1..])))
                 .Where(p => p.Id >= 0)
                 .Select(p => (p.Key, p.Value))
@@ -217,12 +229,27 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperableClone<ContractState>(false));
         }
 
+        /// <summary>
+        /// Deploys a contract. It needs to pay the deployment fee and storage fee.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="nefFile">The NEF file of the contract.</param>
+        /// <param name="manifest">The manifest of the contract.</param>
+        /// <returns>The deployed contract.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
+        /// <summary>
+        /// Deploys a contract. It needs to pay the deployment fee and storage fee.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="nefFile">The NEF file of the contract.</param>
+        /// <param name="manifest">The manifest of the contract.</param>
+        /// <param name="data">The data of the contract.</param>
+        /// <returns>The deployed contract.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
@@ -236,9 +263,9 @@ namespace Neo.SmartContract.Native
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
             if (nefFile.Length == 0)
-                throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
+                throw new ArgumentException($"NEF file length cannot be zero.");
             if (manifest.Length == 0)
-                throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
+                throw new ArgumentException($"Manifest length cannot be zero.");
 
             engine.AddFee(Math.Max(
                 engine.StoragePrice * (nefFile.Length + manifest.Length),
@@ -275,12 +302,27 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
+        /// <summary>
+        /// Updates a contract. It needs to pay the storage fee.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="nefFile">The NEF file of the contract.</param>
+        /// <param name="manifest">The manifest of the contract.</param>
+        /// <returns>The updated contract.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Update(engine, nefFile, manifest, StackItem.Null);
         }
 
+        /// <summary>
+        /// Updates a contract. It needs to pay the storage fee.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="nefFile">The NEF file of the contract.</param>
+        /// <param name="manifest">The manifest of the contract.</param>
+        /// <param name="data">The data of the contract.</param>
+        /// <returns>The updated contract.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
@@ -292,7 +334,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Cannot call Update with the flag {state.CallFlags}.");
             }
             if (nefFile is null && manifest is null)
-                throw new ArgumentException("The nefFile and manifest cannot be null at the same time.");
+                throw new ArgumentException("NEF file and manifest cannot both be null.");
 
             engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
@@ -308,7 +350,7 @@ namespace Neo.SmartContract.Native
             if (nefFile != null)
             {
                 if (nefFile.Length == 0)
-                    throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
+                    throw new ArgumentException($"NEF file length cannot be zero.");
 
                 // Update nef
                 contract.Nef = nefFile.AsSerializable<NefFile>();
@@ -316,19 +358,24 @@ namespace Neo.SmartContract.Native
             if (manifest != null)
             {
                 if (manifest.Length == 0)
-                    throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
-                ContractManifest manifest_new = ContractManifest.Parse(manifest);
-                if (manifest_new.Name != contract.Manifest.Name)
+                    throw new ArgumentException($"Manifest length cannot be zero.");
+
+                var manifestNew = ContractManifest.Parse(manifest);
+                if (manifestNew.Name != contract.Manifest.Name)
                     throw new InvalidOperationException("The name of the contract can't be changed.");
-                if (!manifest_new.IsValid(engine.Limits, contract.Hash))
+                if (!manifestNew.IsValid(engine.Limits, contract.Hash))
                     throw new InvalidOperationException($"Invalid Manifest: {contract.Hash}");
-                contract.Manifest = manifest_new;
+                contract.Manifest = manifestNew;
             }
             Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
             return OnDeployAsync(engine, contract, data, true);
         }
 
+        /// <summary>
+        /// Destroys a contract.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {

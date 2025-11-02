@@ -9,10 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#pragma warning disable CS1718
+#pragma warning disable CS1718 // Comparison made to same variable
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.IO;
 using System;
 using System.IO;
@@ -38,8 +39,21 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGernerator2()
         {
-            UInt256 uInt256 = new(new byte[32]);
+            UInt256 uInt256 = new byte[32];
             Assert.IsNotNull(uInt256);
+            Assert.AreEqual(UInt256.Zero, uInt256);
+        }
+
+        [TestMethod]
+        public void TestGernerator3()
+        {
+            UInt256 uInt256 = "0xff00000000000000000000000000000000000000000000000000000000000001";
+            Assert.IsNotNull(uInt256);
+            Assert.AreEqual("0xff00000000000000000000000000000000000000000000000000000000000001", uInt256.ToString());
+
+            UInt256 value = "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20";
+            Assert.IsNotNull(value);
+            Assert.AreEqual("0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20", value.ToString());
         }
 
         [TestMethod]
@@ -51,13 +65,14 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual(0, UInt256.Zero.CompareTo(UInt256.Zero));
             Assert.AreEqual(-1, UInt256.Zero.CompareTo(result));
             Assert.AreEqual(1, result.CompareTo(UInt256.Zero));
+            Assert.AreEqual(0, result.CompareTo(temp));
         }
 
         [TestMethod]
         public void TestDeserialize()
         {
-            using MemoryStream stream = new();
-            using BinaryWriter writer = new(stream);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
             writer.Write(new byte[20]);
             UInt256 uInt256 = new();
             Assert.ThrowsExactly<FormatException>(() =>
@@ -70,9 +85,10 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestEquals()
         {
-            byte[] temp = new byte[32];
+            var temp = new byte[32];
             temp[31] = 0x01;
-            UInt256 result = new(temp);
+
+            var result = new UInt256(temp);
             Assert.IsTrue(UInt256.Zero.Equals(UInt256.Zero));
             Assert.IsFalse(UInt256.Zero.Equals(result));
             Assert.IsFalse(result.Equals(null));
@@ -81,9 +97,9 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestEquals1()
         {
-            UInt256 temp1 = new();
-            UInt256 temp2 = new();
-            UInt160 temp3 = new();
+            var temp1 = new UInt256();
+            var temp2 = new UInt256();
+            var temp3 = new UInt160();
             Assert.IsFalse(temp1.Equals(null));
             Assert.IsTrue(temp1.Equals(temp1));
             Assert.IsTrue(temp1.Equals(temp2));
@@ -159,9 +175,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestSpanAndSerialize()
         {
-            var random = new Random();
-            var data = new byte[UInt256.Length];
-            random.NextBytes(data);
+            var data = RandomNumberFactory.NextBytes(UInt256.Length);
 
             var value = new UInt256(data);
             var span = value.GetSpan();
@@ -174,6 +188,30 @@ namespace Neo.UnitTests.IO
             data = new byte[UInt256.Length];
             ((ISerializableSpan)value).Serialize(data.AsSpan());
             CollectionAssert.AreEqual(data, value.ToArray());
+        }
+
+        [TestMethod]
+        public void TestSpanAndSerializeLittleEndian()
+        {
+            var data = RandomNumberFactory.NextBytes(UInt256.Length);
+
+            var value = new UInt256(data);
+            var spanLittleEndian = value.GetSpanLittleEndian();
+            CollectionAssert.AreEqual(data, spanLittleEndian.ToArray());
+
+            // Check that Serialize LittleEndian and Serialize BigEndian are equals
+            var dataLittleEndian = new byte[UInt256.Length];
+            value.SafeSerialize(dataLittleEndian.AsSpan());
+            CollectionAssert.AreEqual(value.ToArray(), dataLittleEndian);
+
+            // Check that Serialize LittleEndian and Serialize BigEndian are equals
+            var dataSerialized = new byte[UInt256.Length];
+            value.Serialize(dataSerialized.AsSpan());
+            CollectionAssert.AreEqual(value.ToArray(), dataSerialized);
+
+            var shortBuffer = new byte[UInt256.Length - 1];
+            Assert.ThrowsExactly<ArgumentException>(() => value.Serialize(shortBuffer.AsSpan()));
+            Assert.ThrowsExactly<ArgumentException>(() => value.SafeSerialize(shortBuffer.AsSpan()));
         }
     }
 }

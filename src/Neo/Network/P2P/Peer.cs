@@ -27,8 +27,10 @@ namespace Neo.Network.P2P
     /// <summary>
     /// Actor used to manage the connections of the local node.
     /// </summary>
-    public abstract class Peer : UntypedActor
+    public abstract class Peer : UntypedActor, IWithUnboundedStash
     {
+        public IStash Stash { get; set; }
+
         /// <summary>
         /// Sent to <see cref="Peer"/> to add more unconnected peers.
         /// </summary>
@@ -58,11 +60,14 @@ namespace Neo.Network.P2P
 
         private class Timer { }
 
-        private static readonly IActorRef tcp_manager = Context.System.Tcp();
-        private IActorRef tcp_listener;
-        private ICancelable timer;
+        private static readonly IActorRef s_tcpManager = Context.System.Tcp();
 
-        private static readonly HashSet<IPAddress> localAddresses = new();
+        private IActorRef _tcpListener;
+
+        private ICancelable _timer;
+
+        private static readonly HashSet<IPAddress> s_localAddresses = new();
+
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new();
 
         /// <summary>
@@ -118,7 +123,10 @@ namespace Neo.Network.P2P
 
         static Peer()
         {
-            localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.UnMap()));
+            var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces()
+                .SelectMany(p => p.GetIPProperties().UnicastAddresses)
+                .Select(p => p.Address.UnMap());
+            s_localAddresses.UnionWith(networkInterfaces);
         }
 
         /// <summary>
@@ -131,7 +139,7 @@ namespace Neo.Network.P2P
             {
                 // Do not select peers to be added that are already on the ConnectedPeers
                 // If the address is the same, the ListenerTcpPort should be different
-                peers = peers.Where(p => (p.Port != ListenerTcpPort || !localAddresses.Contains(p.Address)) && !ConnectedPeers.Values.Contains(p));
+                peers = peers.Where(p => (p.Port != ListenerTcpPort || !s_localAddresses.Contains(p.Address)) && !ConnectedPeers.Values.Contains(p));
                 ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
             }
         }
@@ -145,7 +153,7 @@ namespace Neo.Network.P2P
         {
             endPoint = endPoint.UnMap();
             // If the address is the same, the ListenerTcpPort should be different, otherwise, return
-            if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
+            if (endPoint.Port == ListenerTcpPort && s_localAddresses.Contains(endPoint.Address)) return;
 
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
             // If connections with the peer greater than or equal to MaxConnectionsPerAddress, return.
@@ -155,7 +163,7 @@ namespace Neo.Network.P2P
             ImmutableInterlocked.Update(ref ConnectingPeers, p =>
             {
                 if ((p.Count >= ConnectingMax && !isTrusted) || p.Contains(endPoint)) return p;
-                tcp_manager.Tell(new Tcp.Connect(endPoint));
+                s_tcpManager.Tell(new Tcp.Connect(endPoint));
                 return p.Add(endPoint);
             });
         }
@@ -164,7 +172,11 @@ namespace Neo.Network.P2P
         {
             byte[] data = address.MapToIPv4().GetAddressBytes();
             uint value = BinaryPrimitives.ReadUInt32BigEndian(data);
-            return (value & 0xff000000) == 0x0a000000 || (value & 0xff000000) == 0x7f000000 || (value & 0xfff00000) == 0xac100000 || (value & 0xffff0000) == 0xc0a80000 || (value & 0xffff0000) == 0xa9fe0000;
+            return (value & 0xff000000) == 0x0a000000 ||
+                   (value & 0xff000000) == 0x7f000000 ||
+                   (value & 0xfff00000) == 0xac100000 ||
+                   (value & 0xffff0000) == 0xc0a80000 ||
+                   (value & 0xffff0000) == 0xa9fe0000;
         }
 
         /// <summary>
@@ -179,26 +191,74 @@ namespace Neo.Network.P2P
             {
                 case ChannelsConfig config:
                     OnStart(config);
-                    break;
+                    Stash.UnstashAll();
+                    return;
+
                 case Timer _:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTimer();
                     break;
+
                 case Peers peers:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     AddPeers(peers.EndPoints);
                     break;
+
                 case Connect connect:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     ConnectToPeer(connect.EndPoint, connect.IsTrusted);
                     break;
+
                 case Tcp.Connected connected:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
+                    if (connected.RemoteAddress is null)
+                    {
+                        Sender.Tell(Tcp.Abort.Instance);
+                        break;
+                    }
                     OnTcpConnected(((IPEndPoint)connected.RemoteAddress).UnMap(), ((IPEndPoint)connected.LocalAddress).UnMap());
                     break;
+
                 case Tcp.Bound _:
-                    tcp_listener = Sender;
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
+                    _tcpListener = Sender;
                     break;
+
                 case Tcp.CommandFailed commandFailed:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTcpCommandFailed(commandFailed.Cmd);
                     break;
+
                 case Terminated terminated:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTerminated(terminated.ActorRef);
                     break;
             }
@@ -210,14 +270,14 @@ namespace Neo.Network.P2P
             Config = config;
 
             // schedule time to trigger `OnTimer` event every TimerMillisecondsInterval ms
-            timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
+            _timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
             if ((ListenerTcpPort > 0)
-                && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
+                && s_localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
             {
                 try
                 {
-                    localAddresses.Add(UPnP.GetExternalIP());
+                    s_localAddresses.Add(UPnP.GetExternalIP());
 
                     if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
                 }
@@ -225,7 +285,7 @@ namespace Neo.Network.P2P
             }
             if (ListenerTcpPort > 0)
             {
-                tcp_manager.Tell(new Tcp.Bind(Self, config.Tcp, options: [new Inet.SO.ReuseAddress(true)]));
+                s_tcpManager.Tell(new Tcp.Bind(Self, config.Tcp, options: [new Inet.SO.ReuseAddress(true)]));
             }
         }
 
@@ -238,6 +298,12 @@ namespace Neo.Network.P2P
         /// <param name="local">The local endpoint of TCP connection.</param>
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
+            if (Config is null) // OnStart is not called yet
+            {
+                Sender.Tell(Tcp.Abort.Instance);
+                return;
+            }
+
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             if (Config.MaxConnections != -1 && ConnectedPeers.Count >= Config.MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
@@ -253,7 +319,7 @@ namespace Neo.Network.P2P
             else
             {
                 ConnectedAddresses[remote.Address] = count + 1;
-                IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
+                var connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
@@ -306,10 +372,9 @@ namespace Neo.Network.P2P
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(Config.MinDesiredConnections - ConnectedPeers.Count);
 
-            Random rand = new();
-            IPEndPoint[] endpoints = UnconnectedPeers.OrderBy(u => rand.Next()).Take(Config.MinDesiredConnections - ConnectedPeers.Count).ToArray();
+            var endpoints = UnconnectedPeers.Sample(Config.MinDesiredConnections - ConnectedPeers.Count);
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
-            foreach (IPEndPoint endpoint in endpoints)
+            foreach (var endpoint in endpoints)
             {
                 ConnectToPeer(endpoint);
             }
@@ -317,8 +382,8 @@ namespace Neo.Network.P2P
 
         protected override void PostStop()
         {
-            timer.CancelIfNotNull();
-            tcp_listener?.Tell(Tcp.Unbind.Instance);
+            _timer.CancelIfNotNull();
+            _tcpListener?.Tell(Tcp.Unbind.Instance);
             base.PostStop();
         }
 

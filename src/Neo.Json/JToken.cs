@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -103,7 +104,7 @@ namespace Neo.Json
         /// <exception cref="OverflowException">The JSON token cannot be converted to a 32-bit signed integer.</exception>
         public int GetInt32()
         {
-            double d = GetNumber();
+            var d = GetNumber();
             if (d % 1 != 0) throw new InvalidCastException();
             return checked((int)d);
         }
@@ -130,7 +131,7 @@ namespace Neo.Json
         /// <returns>The parsed JSON token.</returns>
         public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 64)
         {
-            Utf8JsonReader reader = new(value, new JsonReaderOptions
+            var reader = new Utf8JsonReader(value, new JsonReaderOptions
             {
                 AllowTrailingCommas = false,
                 CommentHandling = JsonCommentHandling.Skip,
@@ -138,8 +139,8 @@ namespace Neo.Json
             });
             try
             {
-                JToken? json = Read(ref reader);
-                if (reader.Read()) throw new FormatException();
+                var json = Read(ref reader);
+                if (reader.Read()) throw new FormatException("Read json token failed");
                 return json;
             }
             catch (JsonException ex)
@@ -161,7 +162,7 @@ namespace Neo.Json
 
         private static JToken? Read(ref Utf8JsonReader reader, bool skipReading = false)
         {
-            if (!skipReading && !reader.Read()) throw new FormatException();
+            if (!skipReading && !reader.Read()) throw new FormatException("Read json token failed");
             return reader.TokenType switch
             {
                 JsonTokenType.False => false,
@@ -177,7 +178,7 @@ namespace Neo.Json
 
         private static JArray ReadArray(ref Utf8JsonReader reader)
         {
-            JArray array = new();
+            var array = new JArray();
             while (reader.Read())
             {
                 switch (reader.TokenType)
@@ -202,11 +203,11 @@ namespace Neo.Json
                     case JsonTokenType.EndObject:
                         return obj;
                     case JsonTokenType.PropertyName:
-                        string name = ReadString(ref reader);
+                        var name = ReadString(ref reader);
                         if (obj.Properties.ContainsKey(name))
                             throw new FormatException($"Duplicate property name: {name}");
 
-                        JToken? value = Read(ref reader);
+                        var value = Read(ref reader);
                         obj.Properties.Add(name, value);
                         break;
                     default:
@@ -271,11 +272,11 @@ namespace Neo.Json
 
         public JArray JsonPath(string expr)
         {
-            JToken?[] objects = { this };
+            JToken?[] objects = [this];
             if (expr.Length == 0) return objects;
 
             Queue<JPathToken> tokens = new(JPathToken.Parse(expr));
-            JPathToken first = tokens.Dequeue();
+            var first = tokens.Dequeue();
             if (first.Type != JPathTokenType.Root)
                 throw new FormatException($"Unexpected token {first.Type}");
 
@@ -303,6 +304,7 @@ namespace Neo.Json
             return (JNumber)value;
         }
 
+        [return: NotNullIfNotNull(nameof(value))]
         public static implicit operator JToken?(string? value)
         {
             return (JString?)value;

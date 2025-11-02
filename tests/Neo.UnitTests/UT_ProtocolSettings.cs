@@ -97,11 +97,11 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestNone()
         {
-            string json = CreateHFSettings("");
-
+            var json = CreateHFSettings("");
             var file = Path.GetTempFileName();
+
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file);
+            var settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
             Assert.AreEqual((uint)0, settings.Hardforks[Hardfork.HF_Aspidochelone]);
@@ -113,6 +113,8 @@ namespace Neo.UnitTests
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 0));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Faun, 10));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 10));
         }
 
         [TestMethod]
@@ -193,7 +195,7 @@ namespace Neo.UnitTests
         {
             foreach (var point in TestProtocolSettings.Default.StandbyCommittee)
             {
-                StringAssert.Matches(point.ToString(), new Regex("^[0-9A-Fa-f]{66}$")); // ECPoint is 66 hex characters
+                Assert.MatchesRegex(new Regex("^[0-9A-Fa-f]{66}$"), point.ToString()); // ECPoint is 66 hex characters
             }
         }
 
@@ -206,26 +208,26 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestMaxTransactionsPerBlock()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.MaxTransactionsPerBlock > 0);
-            Assert.IsTrue(TestProtocolSettings.Default.MaxTransactionsPerBlock <= 50000); // Assuming 50000 as a reasonable upper limit
+            Assert.IsGreaterThan(0u, TestProtocolSettings.Default.MaxTransactionsPerBlock);
+            Assert.IsLessThanOrEqualTo(50000u, TestProtocolSettings.Default.MaxTransactionsPerBlock); // Assuming 50000 as a reasonable upper limit
         }
 
         [TestMethod]
         public void TestMaxTraceableBlocks()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.MaxTraceableBlocks > 0);
+            Assert.IsGreaterThan(0u, TestProtocolSettings.Default.MaxTraceableBlocks);
         }
 
         [TestMethod]
         public void TestMaxValidUntilBlockIncrement()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.MaxValidUntilBlockIncrement > 0);
+            Assert.IsGreaterThan(0u, TestProtocolSettings.Default.MaxValidUntilBlockIncrement);
         }
 
         [TestMethod]
         public void TestInitialGasDistribution()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.InitialGasDistribution > 0);
+            Assert.IsGreaterThan(0ul, TestProtocolSettings.Default.InitialGasDistribution);
         }
 
         [TestMethod]
@@ -237,14 +239,14 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestAddressVersion()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.AddressVersion >= 0);
-            Assert.IsTrue(TestProtocolSettings.Default.AddressVersion <= 255); // Address version is a byte
+            Assert.IsGreaterThanOrEqualTo(0, TestProtocolSettings.Default.AddressVersion);
+            Assert.IsLessThanOrEqualTo(255, TestProtocolSettings.Default.AddressVersion); // Address version is a byte
         }
 
         [TestMethod]
         public void TestNetworkSettingsConsistency()
         {
-            Assert.IsTrue(TestProtocolSettings.Default.Network > 0);
+            Assert.IsGreaterThan(0u, TestProtocolSettings.Default.Network);
             Assert.IsNotNull(TestProtocolSettings.Default.SeedList);
         }
 
@@ -270,7 +272,7 @@ namespace Neo.UnitTests
         {
             foreach (var seed in TestProtocolSettings.Default.SeedList)
             {
-                StringAssert.Matches(seed, new Regex(@"^[\w.-]+:\d+$")); // Format: domain:port
+                Assert.MatchesRegex(new Regex(@"^[\w.-]+:\d+$"), seed); // Format: domain:port
             }
         }
 

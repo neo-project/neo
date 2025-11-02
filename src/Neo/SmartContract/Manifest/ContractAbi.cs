@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Manifest
                 Methods = ((JArray)json!["methods"])?.Select(u => ContractMethodDescriptor.FromJson((JObject)u)).ToArray() ?? [],
                 Events = ((JArray)json!["events"])?.Select(u => ContractEventDescriptor.FromJson((JObject)u)).ToArray() ?? []
             };
-            if (abi.Methods.Length == 0) throw new FormatException();
+            if (abi.Methods.Length == 0) throw new FormatException("Methods in ContractAbi is empty");
             return abi;
         }
 
@@ -73,11 +73,18 @@ namespace Neo.SmartContract.Manifest
         /// Gets the method with the specified name.
         /// </summary>
         /// <param name="name">The name of the method.</param>
-        /// <param name="pcount">The number of parameters of the method. It can be set to -1 to search for the method with the specified name and any number of parameters.</param>
-        /// <returns>The method that matches the specified name and number of parameters. If <paramref name="pcount"/> is set to -1, the first method with the specified name will be returned.</returns>
+        /// <param name="pcount">
+        /// The number of parameters of the method.
+        /// It can be set to -1 to search for the method with the specified name and any number of parameters.
+        /// </param>
+        /// <returns>
+        /// The method that matches the specified name and number of parameters.
+        /// If <paramref name="pcount"/> is set to -1, the first method with the specified name will be returned.
+        /// </returns>
         public ContractMethodDescriptor GetMethod(string name, int pcount)
         {
-            if (pcount < -1 || pcount > ushort.MaxValue) throw new ArgumentOutOfRangeException(nameof(pcount));
+            if (pcount < -1 || pcount > ushort.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(pcount), $"`pcount` must be between [-1, {ushort.MaxValue}]");
             if (pcount >= 0)
             {
                 methodDictionary ??= Methods.ToDictionary(p => (p.Name, p.Parameters.Length));
@@ -96,10 +103,11 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The ABI represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray());
-            json["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray());
-            return json;
+            return new JObject()
+            {
+                ["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray()),
+                ["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray())
+            };
         }
     }
 }

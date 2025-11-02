@@ -57,12 +57,8 @@ namespace Neo
         /// <param name="value">The value of the number.</param>
         public BigDecimal(decimal value)
         {
-#if NET5_0_OR_GREATER
             Span<int> span = stackalloc int[4];
             decimal.GetBits(value, span);
-#else
-            var span = decimal.GetBits(value);
-#endif
             var buffer = MemoryMarshal.AsBytes((ReadOnlySpan<int>)span);
             _value = new BigInteger(buffer[..12], isUnsigned: true);
 
@@ -77,16 +73,12 @@ namespace Neo
         /// <param name="decimals">The number of decimal places for this number.</param>
         public BigDecimal(decimal value, byte decimals)
         {
-#if NET5_0_OR_GREATER
             Span<int> span = stackalloc int[4];
             decimal.GetBits(value, span);
-#else
-            var span = decimal.GetBits(value);
-#endif
             var buffer = MemoryMarshal.AsBytes((ReadOnlySpan<int>)span);
             _value = new BigInteger(buffer[..12], isUnsigned: true);
             if (buffer[14] > decimals)
-                throw new ArgumentException($"Invalid decimals: {buffer[14]}-{decimals}", nameof(value));
+                throw new ArgumentException($"Decimal value has {buffer[14]} decimal places, which exceeds the maximum allowed precision of {decimals}.", nameof(value));
             else if (buffer[14] < decimals)
                 _value *= BigInteger.Pow(10, decimals - buffer[14]);
 
@@ -127,7 +119,7 @@ namespace Neo
         public static BigDecimal Parse(string s, byte decimals)
         {
             if (!TryParse(s, decimals, out var result))
-                throw new FormatException();
+                throw new FormatException($"Failed to parse BigDecimal from string '{s}' with {decimals} decimal places. Please ensure the string represents a valid number in the correct format.");
             return result;
         }
 
@@ -156,12 +148,12 @@ namespace Neo
             var index = s.IndexOfAny(['e', 'E']);
             if (index >= 0)
             {
-                if (!sbyte.TryParse(s[(index + 1)..], out var e_temp))
+                if (!sbyte.TryParse(s[(index + 1)..], out var eTemp))
                 {
                     result = default;
                     return false;
                 }
-                e = e_temp;
+                e = eTemp;
                 s = s[..index];
             }
             index = s.IndexOf('.');
@@ -209,11 +201,13 @@ namespace Neo
             return CompareTo(other) == 0;
         }
 
+        /// <summary>
+        /// Get the hash code of the decimal value. Semantic equivalence is not guaranteed.
+        /// </summary>
+        /// <returns>hash code</returns>
         public override readonly int GetHashCode()
         {
-            var divisor = BigInteger.Pow(10, _decimals);
-            var result = BigInteger.DivRem(_value, divisor, out var remainder);
-            return HashCode.Combine(result, remainder);
+            return HashCode.Combine(_decimals, _value.GetHashCode());
         }
 
         public static bool operator ==(BigDecimal left, BigDecimal right)

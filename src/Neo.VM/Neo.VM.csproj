@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -10,10 +9,11 @@
     <InternalsVisibleTo Include="Neo" />
     <InternalsVisibleTo Include="Neo.SmartContract.Testing" />
     <InternalsVisibleTo Include="Neo.VM.Benchmarks" />
+    <InternalsVisibleTo Include="Neo.VM.Tests" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IO.Hashing" Version="9.0.1" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.7" />
   </ItemGroup>
 
   <ItemGroup>

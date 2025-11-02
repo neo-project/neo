@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.Json;
 using Neo.SmartContract;
 using System;
@@ -70,11 +71,11 @@ namespace Neo.UnitTests.SmartContract
 
             ContractParameter contractParameter9 = new(ContractParameterType.Array);
             Assert.IsNotNull(contractParameter9);
-            Assert.AreEqual(0, ((List<ContractParameter>)contractParameter9.Value).Count);
+            Assert.IsEmpty((List<ContractParameter>)contractParameter9.Value);
 
             ContractParameter contractParameter10 = new(ContractParameterType.Map);
             Assert.IsNotNull(contractParameter10);
-            Assert.AreEqual(0, ((List<KeyValuePair<ContractParameter, ContractParameter>>)contractParameter10.Value).Count);
+            Assert.IsEmpty((List<KeyValuePair<ContractParameter, ContractParameter>>)contractParameter10.Value);
 
             Assert.ThrowsExactly<ArgumentException>(() => _ = new ContractParameter(ContractParameterType.Void));
         }
@@ -188,10 +189,9 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(Encoding.Default.GetString(expectedArray6), Encoding.Default.GetString((byte[])contractParameter6.Value));
 
             ContractParameter contractParameter7 = new(ContractParameterType.PublicKey);
-            Random random7 = new();
             byte[] privateKey7 = new byte[32];
             for (int j = 0; j < privateKey7.Length; j++)
-                privateKey7[j] = (byte)random7.Next(256);
+                privateKey7[j] = RandomNumberFactory.NextByte();
             ECPoint publicKey7 = ECCurve.Secp256r1.G * privateKey7;
             contractParameter7.SetValue(publicKey7.ToString());
             Assert.IsTrue(publicKey7.Equals(contractParameter7.Value));

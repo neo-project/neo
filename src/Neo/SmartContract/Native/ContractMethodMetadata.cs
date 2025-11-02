@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native
             {
                 MethodInfo m => m,
                 PropertyInfo p => p.GetMethod,
-                _ => throw new ArgumentException(null, nameof(member))
+                _ => throw new ArgumentException("Member type not supported", nameof(member))
             };
             ParameterInfo[] parameterInfos = Handler.GetParameters();
             if (parameterInfos.Length > 0)

@@ -14,6 +14,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
+#nullable enable
+
 namespace Neo.Extensions
 {
     public static class BinaryWriterExtensions
@@ -37,6 +39,8 @@ namespace Neo.Extensions
         public static void Write<T>(this BinaryWriter writer, IReadOnlyCollection<T> value)
             where T : ISerializable
         {
+            ArgumentNullException.ThrowIfNull(value);
+
             writer.WriteVarInt(value.Count);
             foreach (T item in value)
             {
@@ -52,14 +56,13 @@ namespace Neo.Extensions
         /// <param name="length">The fixed size of the <see cref="string"/>.</param>
         public static void WriteFixedString(this BinaryWriter writer, string value, int length)
         {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             if (value.Length > length)
-                throw new ArgumentException(null, nameof(value));
+                throw new ArgumentException($"The string value length ({value.Length} characters) exceeds the maximum allowed length of {length} characters.", nameof(value));
 
             var bytes = value.ToStrictUtf8Bytes();
             if (bytes.Length > length)
-                throw new ArgumentException(null, nameof(value));
+                throw new ArgumentException($"The UTF-8 encoded string length ({bytes.Length} bytes) exceeds the maximum allowed length of {length} bytes.", nameof(value));
             writer.Write(bytes);
             if (bytes.Length < length)
                 writer.Write(stackalloc byte[length - bytes.Length]);
@@ -74,13 +77,15 @@ namespace Neo.Extensions
         public static void WriteNullableArray<T>(this BinaryWriter writer, T[] value)
             where T : class, ISerializable
         {
+            ArgumentNullException.ThrowIfNull(value);
+
             writer.WriteVarInt(value.Length);
             foreach (var item in value)
             {
                 var isNull = item is null;
                 writer.Write(!isNull);
                 if (isNull) continue;
-                item.Serialize(writer);
+                item!.Serialize(writer);
             }
         }
 
@@ -103,7 +108,7 @@ namespace Neo.Extensions
         public static void WriteVarInt(this BinaryWriter writer, long value)
         {
             if (value < 0)
-                throw new ArgumentOutOfRangeException(nameof(value));
+                throw new ArgumentOutOfRangeException(nameof(value), "cannot be negative");
             if (value < 0xFD)
             {
                 writer.Write((byte)value);
@@ -136,3 +141,5 @@ namespace Neo.Extensions
         }
     }
 }
+
+#nullable disable

@@ -14,45 +14,53 @@ namespace Neo.Json.UnitTests
     [TestClass]
     public class UT_JObject
     {
-        private JObject alice;
-        private JObject bob;
+        private JObject _alice;
+        private JObject _bob;
 
         [TestInitialize]
         public void SetUp()
         {
-            alice = new JObject();
-            alice["name"] = "alice";
-            alice["age"] = 30;
-            alice["score"] = 100.001;
-            alice["gender"] = Foo.female;
-            alice["isMarried"] = true;
-            var pet1 = new JObject();
-            pet1["name"] = "Tom";
-            pet1["type"] = "cat";
-            alice["pet"] = pet1;
+            _alice = new JObject()
+            {
+                ["name"] = "alice",
+                ["age"] = 30,
+                ["score"] = 100.001,
+                ["gender"] = Foo.female,
+                ["isMarried"] = true,
+            };
 
-            bob = new JObject();
-            bob["name"] = "bob";
-            bob["age"] = 100000;
-            bob["score"] = 0.001;
-            bob["gender"] = Foo.male;
-            bob["isMarried"] = false;
-            var pet2 = new JObject();
-            pet2["name"] = "Paul";
-            pet2["type"] = "dog";
-            bob["pet"] = pet2;
+            var pet1 = new JObject(new Dictionary<string, JToken>()
+            {
+                ["name"] = "Tom",
+                ["type"] = "cat",
+            });
+            _alice["pet"] = pet1;
+            _bob = new JObject()
+            {
+                ["name"] = "bob",
+                ["age"] = 100000,
+                ["score"] = 0.001,
+                ["gender"] = Foo.male,
+                ["isMarried"] = false,
+            };
+            var pet2 = new JObject()
+            {
+                ["name"] = "Paul",
+                ["type"] = "dog",
+            };
+            _bob["pet"] = pet2;
         }
 
         [TestMethod]
         public void TestAsBoolean()
         {
-            Assert.IsTrue(alice.AsBoolean());
+            Assert.IsTrue(_alice.AsBoolean());
         }
 
         [TestMethod]
         public void TestAsNumber()
         {
-            Assert.AreEqual(double.NaN, alice.AsNumber());
+            Assert.AreEqual(double.NaN, _alice.AsNumber());
         }
 
         [TestMethod]
@@ -85,9 +93,9 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestGetEnum()
         {
-            Assert.AreEqual(Woo.Tom, alice.AsEnum<Woo>());
+            Assert.AreEqual(Woo.Tom, _alice.AsEnum<Woo>());
 
-            Action action = () => alice.GetEnum<Woo>();
+            Action action = () => _alice.GetEnum<Woo>();
             Assert.ThrowsExactly<InvalidCastException>(action);
         }
 
@@ -117,22 +125,22 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestClone()
         {
-            var bobClone = (JObject)bob.Clone();
-            Assert.AreNotSame(bob, bobClone);
+            var bobClone = (JObject)_bob.Clone();
+            Assert.AreNotSame(_bob, bobClone);
             foreach (var key in bobClone.Properties.Keys)
             {
-                switch (bob[key])
+                switch (_bob[key])
                 {
                     case JToken.Null:
                         Assert.IsNull(bobClone[key]);
                         break;
                     case JObject obj:
                         CollectionAssert.AreEqual(
-                            ((JObject)bob[key]).Properties.ToList(),
+                            ((JObject)_bob[key]).Properties.ToList(),
                             ((JObject)bobClone[key]).Properties.ToList());
                         break;
                     default:
-                        Assert.AreEqual(bob[key], bobClone[key]);
+                        Assert.AreEqual(_bob[key], bobClone[key]);
                         break;
                 }
             }

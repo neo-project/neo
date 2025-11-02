@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Extensions.Factories;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -63,23 +64,18 @@ namespace Neo.UnitTests.Ledger
 
             Assert.AreEqual(0, _unit.VerifiedCount);
             Assert.AreEqual(0, _unit.UnVerifiedCount);
-            Assert.AreEqual(0, _unit.Count);
-        }
-
-        private static long LongRandom(long min, long max, Random rand)
-        {
-            // Only returns positive random long values.
-            long longRand = (long)rand.NextBigInteger(63);
-            return longRand % (max - min) + min;
+            Assert.IsEmpty(_unit);
         }
 
         private Transaction CreateTransactionWithFee(long fee)
         {
-            Random random = new();
-            var randomBytes = new byte[16];
-            random.NextBytes(randomBytes);
+            var randomBytes = RandomNumberFactory.NextBytes(16);
             Mock<Transaction> mock = new();
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>()))
+            mock.Setup(p => p.VerifyStateDependent(
+                    It.IsAny<ProtocolSettings>(),
+                    It.IsAny<DataCache>(),
+                    It.IsAny<TransactionVerificationContext>(),
+                    It.IsAny<IEnumerable<Transaction>>()))
                 .Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
@@ -92,13 +88,17 @@ namespace Neo.UnitTests.Ledger
 
         private Transaction CreateTransactionWithFeeAndBalanceVerify(long fee)
         {
-            Random random = new();
-            var randomBytes = new byte[16];
-            random.NextBytes(randomBytes);
+            var randomBytes = RandomNumberFactory.NextBytes(16);
             Mock<Transaction> mock = new();
             UInt160 sender = senderAccount;
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>()))
-                .Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList) => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            mock.Setup(p => p.VerifyStateDependent(
+                    It.IsAny<ProtocolSettings>(),
+                    It.IsAny<DataCache>(),
+                    It.IsAny<TransactionVerificationContext>(),
+                    It.IsAny<IEnumerable<Transaction>>()))
+                .Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList)
+                    => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
@@ -112,7 +112,7 @@ namespace Neo.UnitTests.Ledger
         {
             if (fee != -1)
                 return CreateTransactionWithFee(fee);
-            return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
+            return CreateTransactionWithFee(RandomNumberFactory.NextInt64(100000, 100000000));
         }
 
         private void AddTransactions(int count)
@@ -155,7 +155,7 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(100, _unit.SortedTxCount);
             Assert.AreEqual(100, _unit.VerifiedCount);
             Assert.AreEqual(0, _unit.UnVerifiedCount);
-            Assert.AreEqual(100, _unit.Count);
+            Assert.HasCount(100, _unit);
         }
 
         [TestMethod]
@@ -428,8 +428,8 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(1, _unit.SortedTxCount);
             Assert.AreEqual(0, _unit.UnverifiedSortedTxCount);
 
-            Assert.AreEqual(_unit.TryAdd(mp1, engine.SnapshotCache), VerifyResult.HasConflicts); // mp1 conflicts with mp2 but has lower network fee
-            Assert.AreEqual(_unit.SortedTxCount, 1);
+            Assert.AreEqual(VerifyResult.HasConflicts, _unit.TryAdd(mp1, engine.SnapshotCache)); // mp1 conflicts with mp2 but has lower network fee
+            Assert.AreEqual(1, _unit.SortedTxCount);
             CollectionAssert.Contains(_unit.GetVerifiedTransactions().ToList(), mp2);
 
             // Act & Assert: try to invalidate verified transactions and push conflicting one.
@@ -461,11 +461,11 @@ namespace Neo.UnitTests.Ledger
                         if (lastTransaction.NetworkFee == tx.NetworkFee)
                             Assert.IsTrue(lastTransaction.Hash < tx.Hash);
                         else
-                            Assert.IsTrue(lastTransaction.NetworkFee > tx.NetworkFee);
+                            Assert.IsGreaterThan(tx.NetworkFee, lastTransaction.NetworkFee);
                     }
                     else
                     {
-                        Assert.IsTrue(lastTransaction.FeePerByte > tx.FeePerByte);
+                        Assert.IsGreaterThan(tx.FeePerByte, lastTransaction.FeePerByte);
                     }
                 }
                 lastTransaction = tx;
@@ -479,7 +479,7 @@ namespace Neo.UnitTests.Ledger
 
             var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions();
             // verify all 100 transactions are returned in sorted order
-            Assert.AreEqual(100, sortedVerifiedTxs.Length);
+            Assert.HasCount(100, sortedVerifiedTxs);
             VerifyTransactionsSortedDescending(sortedVerifiedTxs);
 
             // move all to unverified
@@ -506,7 +506,7 @@ namespace Neo.UnitTests.Ledger
                 // reverify 1 high priority and 1 low priority transaction
                 _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, GetSnapshot());
                 var verifiedTxs = _unit.GetSortedVerifiedTransactions();
-                Assert.AreEqual(1, verifiedTxs.Length);
+                Assert.HasCount(1, verifiedTxs);
                 Assert.AreEqual(maxTransaction, verifiedTxs[0]);
                 var blockWith2Tx = new Block
                 {
@@ -810,7 +810,8 @@ namespace Neo.UnitTests.Ledger
 
             // Assert
             Assert.IsTrue(eventRaised, "TransactionRemoved event should be raised");
-            Assert.IsTrue(capturedArgs?.Transactions.Count > 0, "Removed transactions should be included");
+            Assert.IsNotNull(capturedArgs, "TransactionRemovedEventArgs should not be null");
+            Assert.IsGreaterThan(0, capturedArgs.Transactions.Count, "Removed transactions should be included");
             Assert.AreEqual(TransactionRemovalReason.CapacityExceeded, capturedArgs?.Reason,
                 "Removal reason should be CapacityExceeded");
         }
@@ -827,9 +828,9 @@ namespace Neo.UnitTests.Ledger
             var transactionsAll = _unit.GetSortedVerifiedTransactions();
 
             // Assert
-            Assert.AreEqual(10, transactions10.Length, "Should return exactly 10 transactions");
-            Assert.AreEqual(20, transactions20.Length, "Should return exactly 20 transactions");
-            Assert.AreEqual(50, transactionsAll.Length, "Should return all transactions");
+            Assert.HasCount(10, transactions10, "Should return exactly 10 transactions");
+            Assert.HasCount(20, transactions20, "Should return exactly 20 transactions");
+            Assert.HasCount(50, transactionsAll, "Should return all transactions");
 
             // Verify they are in the right order (highest fee first)
             VerifyTransactionsSortedDescending(transactions10);
@@ -857,32 +858,32 @@ namespace Neo.UnitTests.Ledger
             var tx4 = CreateTransaction(300000);
 
             // Set up conflicts: tx2 conflicts with tx1, tx3 conflicts with tx2, tx4 conflicts with tx3
-            tx2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx1.Hash } };
-            tx3.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx2.Hash } };
-            tx4.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx3.Hash } };
+            tx2.Attributes = [new Conflicts() { Hash = tx1.Hash }];
+            tx3.Attributes = [new Conflicts() { Hash = tx2.Hash }];
+            tx4.Attributes = [new Conflicts() { Hash = tx3.Hash }];
 
             // Act & Assert - Add transactions in specific order to test conflict resolution
 
             // Add tx1 first
             Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx1, snapshot), "tx1 should be added successfully");
-            Assert.AreEqual(1, _unit.Count, "Pool should contain 1 transaction");
+            Assert.HasCount(1, _unit, "Pool should contain 1 transaction");
             Assert.IsTrue(_unit.ContainsKey(tx1.Hash), "Pool should contain tx1");
 
             // Add tx2 which conflicts with tx1 but has higher fee
             Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx2, snapshot), "tx2 should be added successfully");
-            Assert.AreEqual(1, _unit.Count, "Pool should still contain 1 transaction (tx2 replaced tx1)");
+            Assert.HasCount(1, _unit, "Pool should still contain 1 transaction (tx2 replaced tx1)");
             Assert.IsTrue(_unit.ContainsKey(tx2.Hash), "Pool should contain tx2");
             Assert.IsFalse(_unit.ContainsKey(tx1.Hash), "Pool should no longer contain tx1");
 
             // Add tx3 which conflicts with tx2 but has lower fee
             Assert.AreEqual(VerifyResult.HasConflicts, _unit.TryAdd(tx3, snapshot), "tx3 should not be added due to conflicts");
-            Assert.AreEqual(1, _unit.Count, "Pool should still contain 1 transaction");
+            Assert.HasCount(1, _unit, "Pool should still contain 1 transaction");
             Assert.IsTrue(_unit.ContainsKey(tx2.Hash), "Pool should still contain tx2");
             Assert.IsFalse(_unit.ContainsKey(tx3.Hash), "Pool should not contain tx3");
 
             // Add tx4 which conflicts with tx3 (which is not in the pool)
             Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx4, snapshot), "tx4 should be added successfully");
-            Assert.AreEqual(2, _unit.Count, "Pool should contain 2 transactions");
+            Assert.HasCount(2, _unit, "Pool should contain 2 transactions");
             Assert.IsTrue(_unit.ContainsKey(tx2.Hash), "Pool should contain tx2");
             Assert.IsTrue(_unit.ContainsKey(tx4.Hash), "Pool should contain tx4");
         }
@@ -900,26 +901,26 @@ namespace Neo.UnitTests.Ledger
 
             // Create a transaction that conflicts with all three
             var txMultiConflict = CreateTransaction(350000); // Higher fee than all three combined
-            txMultiConflict.Attributes = new TransactionAttribute[]
-            {
+            txMultiConflict.Attributes =
+            [
                 new Conflicts() { Hash = tx1.Hash },
                 new Conflicts() { Hash = tx2.Hash },
                 new Conflicts() { Hash = tx3.Hash }
-            };
+            ];
 
             // Act
             _unit.TryAdd(tx1, snapshot);
             _unit.TryAdd(tx2, snapshot);
             _unit.TryAdd(tx3, snapshot);
 
-            Assert.AreEqual(3, _unit.Count, "Should have 3 transactions in the pool");
+            Assert.HasCount(3, _unit, "Should have 3 transactions in the pool");
 
             // Add the transaction with multiple conflicts
             var result = _unit.TryAdd(txMultiConflict, snapshot);
 
             // Assert
             Assert.AreEqual(VerifyResult.Succeed, result, "Transaction with multiple conflicts should be added");
-            Assert.AreEqual(1, _unit.Count, "Should have 1 transaction in the pool after conflicts resolved");
+            Assert.HasCount(1, _unit, "Should have 1 transaction in the pool after conflicts resolved");
             Assert.IsTrue(_unit.ContainsKey(txMultiConflict.Hash), "Pool should contain the transaction with higher fee");
             Assert.IsFalse(_unit.ContainsKey(tx1.Hash), "Pool should not contain tx1");
             Assert.IsFalse(_unit.ContainsKey(tx2.Hash), "Pool should not contain tx2");
@@ -943,22 +944,18 @@ namespace Neo.UnitTests.Ledger
             // Act
             var snapshot = GetSnapshot();
 
-            // Verify transactions in batches
-            int verifiedInFirstBatch = 0;
-            int verifiedInSecondBatch = 0;
-
             // First batch - should reverify some transactions
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(20, snapshot);
-            verifiedInFirstBatch = _unit.VerifiedCount;
+            var verifiedInFirstBatch = _unit.VerifiedCount;
 
             // Second batch - should reverify more transactions
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(30, snapshot);
-            verifiedInSecondBatch = _unit.VerifiedCount - verifiedInFirstBatch;
+            var verifiedInSecondBatch = _unit.VerifiedCount - verifiedInFirstBatch;
 
             // Assert
-            Assert.IsTrue(verifiedInFirstBatch > 0, "First batch should reverify some transactions");
-            Assert.IsTrue(verifiedInSecondBatch > 0, "Second batch should reverify additional transactions");
-            Assert.IsTrue(_unit.VerifiedCount < 100, "Not all transactions should be reverified in just two batches");
+            Assert.IsGreaterThan(0, verifiedInFirstBatch, "First batch should reverify some transactions");
+            Assert.IsGreaterThan(0, verifiedInSecondBatch, "Second batch should reverify additional transactions");
+            Assert.IsLessThan(100, _unit.VerifiedCount, "Not all transactions should be reverified in just two batches");
 
             // Verify that transactions are reverified in fee order (highest fee first)
             var verifiedTxs = _unit.GetSortedVerifiedTransactions();

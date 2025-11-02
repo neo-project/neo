@@ -15,6 +15,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer;
+using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -34,7 +35,7 @@ namespace Neo.Plugins.Trackers.NEP_11
         private const byte Nep11TransferSentPrefix = 0xf9;
         private const byte Nep11TransferReceivedPrefix = 0xfa;
         private uint _currentHeight;
-        private Block _currentBlock;
+        private Block? _currentBlock;
         private readonly HashSet<string> _properties = new()
         {
             "name",
@@ -45,9 +46,8 @@ namespace Neo.Plugins.Trackers.NEP_11
 
         public override string TrackName => nameof(Nep11Tracker);
 
-        public Nep11Tracker(IStore db, uint maxResult, bool shouldRecordHistory, NeoSystem system) : base(db, maxResult, shouldRecordHistory, system)
-        {
-        }
+        public Nep11Tracker(IStore db, uint maxResult, bool shouldRecordHistory, NeoSystem system)
+            : base(db, maxResult, shouldRecordHistory, system) { }
 
         public override void OnPersist(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
@@ -114,6 +114,12 @@ namespace Neo.Plugins.Trackers.NEP_11
 
         private void SaveDivisibleNFTBalance(TransferRecord record, DataCache snapshot)
         {
+            if (record.tokenId == null)
+            {
+                Log($"Fault: from[{record.from}] to[{record.to}] get {record.asset} token is null", LogLevel.Warning);
+                return;
+            }
+
             using ScriptBuilder sb = new();
             sb.EmitDynamicCall(record.asset, "balanceOf", record.from, record.tokenId);
             sb.EmitDynamicCall(record.asset, "balanceOf", record.to, record.tokenId);
@@ -130,12 +136,24 @@ namespace Neo.Plugins.Trackers.NEP_11
                 Log($"Fault: from[{record.from}] to[{record.to}] get {record.asset} token [{record.tokenId.ToHexString()}] balance not number", LogLevel.Warning);
                 return;
             }
-            Put(Nep11BalancePrefix, new Nep11BalanceKey(record.to, record.asset, record.tokenId), new TokenBalance { Balance = toBalance.GetInteger(), LastUpdatedBlock = _currentHeight });
-            Put(Nep11BalancePrefix, new Nep11BalanceKey(record.from, record.asset, record.tokenId), new TokenBalance { Balance = fromBalance.GetInteger(), LastUpdatedBlock = _currentHeight });
+
+            Put(Nep11BalancePrefix,
+                new Nep11BalanceKey(record.to, record.asset, record.tokenId),
+                new TokenBalance { Balance = toBalance.GetInteger(), LastUpdatedBlock = _currentHeight });
+
+            Put(Nep11BalancePrefix,
+                new Nep11BalanceKey(record.from, record.asset, record.tokenId),
+                new TokenBalance { Balance = fromBalance.GetInteger(), LastUpdatedBlock = _currentHeight });
         }
 
         private void SaveNFTBalance(TransferRecord record)
         {
+            if (record.tokenId == null)
+            {
+                Log($"Fault: from[{record.from}] to[{record.to}] get {record.asset} token is null", LogLevel.Warning);
+                return;
+            }
+
             if (record.from != UInt160.Zero)
             {
                 Delete(Nep11BalancePrefix, new Nep11BalanceKey(record.from, record.asset, record.tokenId));
@@ -143,7 +161,9 @@ namespace Neo.Plugins.Trackers.NEP_11
 
             if (record.to != UInt160.Zero)
             {
-                Put(Nep11BalancePrefix, new Nep11BalanceKey(record.to, record.asset, record.tokenId), new TokenBalance { Balance = 1, LastUpdatedBlock = _currentHeight });
+                Put(Nep11BalancePrefix,
+                    new Nep11BalanceKey(record.to, record.asset, record.tokenId),
+                    new TokenBalance { Balance = 1, LastUpdatedBlock = _currentHeight });
             }
         }
 
@@ -152,7 +172,7 @@ namespace Neo.Plugins.Trackers.NEP_11
         {
             if (stateItems.Count != 4) return;
             var transferRecord = GetTransferRecord(asset, stateItems);
-            if (transferRecord == null) return;
+            if (transferRecord == null || transferRecord.tokenId == null) return;
 
             transfers.Add(transferRecord);
             if (scriptContainer is Transaction transaction)
@@ -164,6 +184,7 @@ namespace Neo.Plugins.Trackers.NEP_11
 
         private void RecordTransferHistoryNep11(UInt160 contractHash, UInt160 from, UInt160 to, ByteString tokenId, BigInteger amount, UInt256 txHash, ref uint transferIndex)
         {
+            if (_currentBlock is null) return; // _currentBlock already set in OnPersist
             if (!_shouldTrackHistory) return;
             if (from != UInt160.Zero)
             {
@@ -195,14 +216,15 @@ namespace Neo.Plugins.Trackers.NEP_11
 
 
         [RpcMethod]
-        public JToken GetNep11Transfers(JArray _params)
+        public JToken GetNep11Transfers(Address address, ulong startTime = 0, ulong endTime = 0)
         {
             _shouldTrackHistory.True_Or(RpcError.MethodNotFound);
-            UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
+
+            var userScriptHash = address.ScriptHash;
+
             // If start time not present, default to 1 week of history.
-            ulong startTime = _params.Count > 1 ? (ulong)_params[1].AsNumber() :
-                (DateTime.UtcNow - TimeSpan.FromDays(7)).ToTimestampMS();
-            ulong endTime = _params.Count > 2 ? (ulong)_params[2].AsNumber() : DateTime.UtcNow.ToTimestampMS();
+            startTime = startTime == 0 ? (DateTime.UtcNow - TimeSpan.FromDays(7)).ToTimestampMS() : startTime;
+            endTime = endTime == 0 ? DateTime.UtcNow.ToTimestampMS() : endTime;
             (endTime >= startTime).True_Or(RpcError.InvalidParams);
 
             JObject json = new();
@@ -217,9 +239,9 @@ namespace Neo.Plugins.Trackers.NEP_11
         }
 
         [RpcMethod]
-        public JToken GetNep11Balances(JArray _params)
+        public JToken GetNep11Balances(Address address)
         {
-            UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
+            var userScriptHash = address.ScriptHash;
 
             JObject json = new();
             JArray balances = new();
@@ -277,13 +299,12 @@ namespace Neo.Plugins.Trackers.NEP_11
         }
 
         [RpcMethod]
-        public JToken GetNep11Properties(JArray _params)
+        public JToken GetNep11Properties(Address address, string tokenId)
         {
-            UInt160 nep11Hash = GetScriptHashFromParam(_params[0].AsString());
-            var tokenId = _params[1].AsString().HexToBytes();
+            var nep11Hash = address.ScriptHash;
 
             using ScriptBuilder sb = new();
-            sb.EmitDynamicCall(nep11Hash, "properties", CallFlags.ReadOnly, tokenId);
+            sb.EmitDynamicCall(nep11Hash, "properties", CallFlags.ReadOnly, tokenId.HexToBytes());
             using var snapshot = _neoSystem.GetSnapshotCache();
 
             using var engine = ApplicationEngine.Run(sb.ToArray(), snapshot, settings: _neoSystem.Settings);
@@ -295,7 +316,8 @@ namespace Neo.Plugins.Trackers.NEP_11
                 foreach (var keyValue in map)
                 {
                     if (keyValue.Value is CompoundType) continue;
-                    var key = keyValue.Key.GetString();
+                    var key = keyValue.Key.GetString()
+                        ?? throw new RpcException(RpcError.InternalServerError.WithData("unexpected null key"));
                     if (_properties.Contains(key))
                     {
                         json[key] = keyValue.Value.GetString();

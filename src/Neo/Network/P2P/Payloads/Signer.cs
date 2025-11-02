@@ -107,9 +107,9 @@ namespace Neo.Network.P2P.Payloads
             Account = reader.ReadSerializable<UInt160>();
             Scopes = (WitnessScope)reader.ReadByte();
             if ((Scopes & ~(WitnessScope.CalledByEntry | WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.WitnessRules | WitnessScope.Global)) != 0)
-                throw new FormatException();
+                throw new FormatException($"`Scopes`({Scopes}) in Signer is not valid");
             if (Scopes.HasFlag(WitnessScope.Global) && Scopes != WitnessScope.Global)
-                throw new FormatException();
+                throw new FormatException($"`Scopes`({Scopes}) in Signer is not valid");
             AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
                 ? reader.ReadSerializableArray<UInt160>(MaxSubitems) : [];
             AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
@@ -207,9 +207,11 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The signer represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["account"] = Account.ToString();
-            json["scopes"] = Scopes;
+            var json = new JObject()
+            {
+                ["account"] = Account.ToString(),
+                ["scopes"] = Scopes
+            };
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
                 json["allowedcontracts"] = AllowedContracts.Select(p => (JToken)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))

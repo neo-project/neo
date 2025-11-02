@@ -26,7 +26,7 @@ namespace Neo.Extensions
         /// <returns>The converted <see cref="ISerializable"/> array.</returns>
         public static T[] AsSerializableArray<T>(this ReadOnlyMemory<byte> value, int max = 0x1000000) where T : ISerializable, new()
         {
-            if (value.IsEmpty) throw new FormatException();
+            if (value.IsEmpty) throw new FormatException("`value` is empty");
             MemoryReader reader = new(value);
             return reader.ReadSerializableArray<T>(max);
         }
@@ -40,7 +40,7 @@ namespace Neo.Extensions
         public static T AsSerializable<T>(this ReadOnlyMemory<byte> value)
             where T : ISerializable, new()
         {
-            if (value.IsEmpty) throw new FormatException();
+            if (value.IsEmpty) throw new FormatException("`value` is empty");
             MemoryReader reader = new(value);
             return reader.ReadSerializable<T>();
         }
@@ -54,7 +54,7 @@ namespace Neo.Extensions
         public static ISerializable AsSerializable(this ReadOnlyMemory<byte> value, Type type)
         {
             if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
-                throw new InvalidCastException();
+                throw new InvalidCastException($"`{type.Name}` is not assignable from `ISerializable`");
             var serializable = (ISerializable)Activator.CreateInstance(type);
             MemoryReader reader = new(value);
             serializable.Deserialize(ref reader);
