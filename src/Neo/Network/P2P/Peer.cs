@@ -380,7 +380,7 @@ namespace Neo.Network.P2P
             if (UnconnectedPeers.Count == 0)
                 return;
 
-            var maxConnections = Config.MaxConnections == -1
+            var maxConnections = Config.MaxConnections < 0
                 ? int.MaxValue
                 : Config.MaxConnections - ConnectedPeers.Count;
             if (maxConnections <= 0)
