@@ -13,6 +13,7 @@ using Akka.IO;
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
+using System.Collections.Immutable;
 using System;
 using System.Linq;
 using System.Net;
@@ -63,6 +64,50 @@ namespace Neo.UnitTests.Network.P2P
             configProbe.Send(_system.LocalNode, new ChannelsConfig());
 
             connectionProbe.ExpectMsg<Tcp.Register>(TimeSpan.FromSeconds(1), cancellationToken: CancellationToken.None);
+        }
+
+        [TestMethod]
+        public void OnTimerDoesNotDrainUnconnectedPeersWhenConnectingCapacityIsZero()
+        {
+            var config = new ChannelsConfig
+            {
+                MinDesiredConnections = 2,
+                MaxConnections = 8,
+                MaxConnectionsPerAddress = 2
+            };
+
+            var probe = CreateTestProbe();
+            probe.Send(_system.LocalNode, config);
+            probe.Send(_system.LocalNode, new LocalNode.GetInstance());
+            var localNode = probe.ExpectMsg<LocalNode>(cancellationToken: CancellationToken.None);
+
+            var unconnectedEndpoints = Enumerable.Range(0, 4)
+                .Select(i => new IPEndPoint(IPAddress.Parse("203.0.113.10"), 20000 + i))
+                .ToArray();
+            var connectingEndpoints = Enumerable.Range(0, 8)
+                .Select(i => new IPEndPoint(IPAddress.Parse("198.51.100.20"), 30000 + i))
+                .ToArray();
+
+            var unconnected = ImmutableHashSet.CreateRange(unconnectedEndpoints);
+            var connecting = ImmutableHashSet.CreateRange(connectingEndpoints);
+
+            typeof(Peer).GetField("UnconnectedPeers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(localNode, unconnected);
+            typeof(Peer).GetField("ConnectingPeers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(localNode, connecting);
+
+            typeof(Peer).GetMethod("OnTimer", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(localNode, null);
+
+            var updatedUnconnected = (ImmutableHashSet<IPEndPoint>)typeof(Peer)
+                .GetField("UnconnectedPeers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .GetValue(localNode);
+            var updatedConnecting = (ImmutableHashSet<IPEndPoint>)typeof(Peer)
+                .GetField("ConnectingPeers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .GetValue(localNode);
+
+            Assert.IsTrue(unconnected.SetEquals(updatedUnconnected));
+            Assert.IsTrue(connecting.SetEquals(updatedConnecting));
         }
     }
 }
