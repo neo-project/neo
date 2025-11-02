@@ -29,7 +29,7 @@ namespace Neo
             public Logger()
             {
                 Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
-                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), $"Akka.LogEvent: {e.Message}{Environment.NewLine}{e.Cause?.StackTrace ?? ""}"));
+                Receive<LogEvent>(e => Log("Akka", (LogLevel)e.LogLevel(), $"[{e.LogSource}] {e.Message}{Environment.NewLine}{e.Cause?.StackTrace ?? ""}"));
             }
         }
 

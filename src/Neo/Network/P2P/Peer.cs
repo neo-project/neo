@@ -28,8 +28,10 @@ namespace Neo.Network.P2P
     /// <summary>
     /// Actor used to manage the connections of the local node.
     /// </summary>
-    public abstract class Peer : UntypedActor
+    public abstract class Peer : UntypedActor, IWithUnboundedStash
     {
+        public IStash Stash { get; set; }
+
         /// <summary>
         /// Sent to <see cref="Peer"/> to add more unconnected peers.
         /// </summary>
@@ -179,17 +181,42 @@ namespace Neo.Network.P2P
             {
                 case ChannelsConfig config:
                     OnStart(config);
-                    break;
+                    Stash.UnstashAll();
+                    return;
+
                 case Timer _:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTimer();
                     break;
+
                 case Peers peers:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     AddPeers(peers.EndPoints);
                     break;
+
                 case Connect connect:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     ConnectToPeer(connect.EndPoint, connect.IsTrusted);
                     break;
+
                 case Tcp.Connected connected:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     if (connected.RemoteAddress is null)
                     {
                         Sender.Tell(Tcp.Abort.Instance);
@@ -197,13 +224,31 @@ namespace Neo.Network.P2P
                     }
                     OnTcpConnected(((IPEndPoint)connected.RemoteAddress).UnMap(), ((IPEndPoint)connected.LocalAddress).UnMap());
                     break;
+
                 case Tcp.Bound _:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     _tcpListener = Sender;
                     break;
+
                 case Tcp.CommandFailed commandFailed:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTcpCommandFailed(commandFailed.Cmd);
                     break;
+
                 case Terminated terminated:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTerminated(terminated.ActorRef);
                     break;
             }
