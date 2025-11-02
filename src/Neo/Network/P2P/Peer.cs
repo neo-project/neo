@@ -367,7 +367,7 @@ namespace Neo.Network.P2P
         {
             var deficit = Config.MinDesiredConnections - ConnectedPeers.Count;
 
-            if (ConnectedPeers.Count >= Config.MinDesiredConnections && ConnectingPeers.Count == 0)
+            if (deficit <= 0 && ConnectingPeers.Count == 0)
                 return;
 
             if (deficit > 0 && UnconnectedPeers.Count == 0)
