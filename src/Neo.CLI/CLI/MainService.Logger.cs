@@ -92,9 +92,9 @@ namespace Neo.CLI
                 message = sb.ToString();
             }
 
-            var now = DateTime.Now;
             lock (syncRoot)
             {
+                var now = DateTime.Now;
                 var log = $"[{now.TimeOfDay:hh\\:mm\\:ss\\.fff}]";
                 if (_showLog)
                 {
