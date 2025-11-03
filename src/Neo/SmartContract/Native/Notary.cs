@@ -257,9 +257,12 @@ namespace Neo.SmartContract.Native
         {
             var maxVUBIncrement = engine.SnapshotCache.GetMaxValidUntilBlockIncrement(engine.ProtocolSettings);
             if (value > maxVUBIncrement / 2 || value < ProtocolSettings.Default.ValidatorsCount)
+            {
                 throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}",
-                 maxVUBIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+                   maxVUBIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
+            }
+            AssertCommittee(engine);
+
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MaxNotValidBeforeDelta))!.Set(value);
         }
 

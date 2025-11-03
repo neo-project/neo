@@ -140,7 +140,7 @@ namespace Neo.SmartContract.Native
         private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value/* In the unit of datoshi, 1 datoshi = 1e-8 GAS*/)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "cannot be negative");
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            AssertCommittee(engine);
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
         }
 
