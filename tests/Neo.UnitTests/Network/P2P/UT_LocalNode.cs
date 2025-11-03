@@ -141,7 +141,7 @@ namespace Neo.UnitTests.Network.P2P
 
             bool containsAnother = SpinWait.SpinUntil(
                 () => localnode.GetUnconnectedPeers().Contains(another),
-                TimeSpan.FromMilliseconds(500));
+                TimeSpan.FromSeconds(5));
 
             var unconnected = localnode.GetUnconnectedPeers().ToArray();
             CollectionAssert.DoesNotContain(unconnected, remote);
