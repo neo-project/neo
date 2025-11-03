@@ -19,7 +19,6 @@ namespace Neo
 {
     public class Log
     {
-
         private static readonly string DefaultLogDirectory = Path.Combine(Environment.CurrentDirectory, "Logs");
 
         private static string? s_logDirectory;
