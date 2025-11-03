@@ -391,9 +391,9 @@ namespace Neo.SmartContract
             return task;
         }
 
-        internal override void UnloadContext(ExecutionContext context)
+        protected override void ContextUnloaded(ExecutionContext context)
         {
-            base.UnloadContext(context);
+            base.ContextUnloaded(context);
             if (context.Script != CurrentContext?.Script)
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
@@ -627,16 +627,16 @@ namespace Neo.SmartContract
             }
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
             Diagnostic?.Disposed();
-            if (disposables != null)
+            if (disposing && disposables != null)
             {
-                foreach (IDisposable disposable in disposables)
+                foreach (var disposable in disposables)
                     disposable.Dispose();
                 disposables = null;
             }
-            base.Dispose();
+            base.Dispose(disposing);
         }
 
         /// <summary>
