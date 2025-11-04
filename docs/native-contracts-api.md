@@ -19,6 +19,7 @@ When calling a native contract method by transaction script, there are several t
 8. [RoleManagement](#rolemanagement)
 9. [OracleContract](#oraclecontract)
 10. [Notary](#notary)
+11. [Treasury](#treasury)
 
 ## ContractManagement
 
@@ -201,5 +202,14 @@ When calling a native contract method by transaction script, there are several t
 | withdraw | Withdraw sends all deposited GAS for "from" address to "to" address. If "to" address is not specified, then "from" will be used as a sender. | UInt160(*from*), UInt160(*to*) | Boolean | 1<<15 | 0 | All | -- |
 | getMaxNotValidBeforeDelta | GetMaxNotValidBeforeDelta is Notary contract method and returns the maximum NotValidBefore delta. | -- | UInt32 | 1<<15 | 0 | ReadStates | -- |
 | setMaxNotValidBeforeDelta | SetMaxNotValidBeforeDelta is Notary contract method and sets the maximum NotValidBefore delta. | UInt32(*value*) | Void | 1<<15 | 0 | States | -- |
+
+
+## Treasury
+
+| Method | Summary | Parameters | Return Value | CPU fee | Storage fee | Call Flags | Hardfork |
+|--------|---------|------------|--------------|---------|-------------|------------|----------|
+| verify | Verify checks whether the transaction is signed by the committee. | -- | Boolean | 1<<15 | 0 | ReadStates | -- |
+| onNEP17Payment | OnNEP17Payment is a callback that accepts GAS transfer as Notary deposit. It also sets the deposit's lock height after which deposit can be withdrawn. | UInt160(*from*), BigInteger(*amount*), StackItem(*data*) | Void | 1<<15 | 0 | States | -- |
+| onNEP11Payment | OnNEP17Payment is a callback that accepts GAS transfer as Notary deposit. It also sets the deposit's lock height after which deposit can be withdrawn. | UInt160(*from*), BigInteger(*amount*), String(*tokenId*), StackItem(*data*) | Void | 1<<15 | 0 | States | -- |
 
 
