@@ -26,7 +26,6 @@ namespace Neo
         // For compatibility with the old Log api,
         private static readonly ConcurrentDictionary<string, ILogger> s_loggers = new();
 
-
         /// <summary>
         /// The directory where the logs are stored. It only can be set once on startup.
         /// </summary>
