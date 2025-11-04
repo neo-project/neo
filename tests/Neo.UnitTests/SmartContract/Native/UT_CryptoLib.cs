@@ -380,6 +380,36 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestBls12381MultiExpRejectsNonOnCurveG1()
+        {
+            var zero = Fp.Zero;
+            var invalid = new G1Affine(zero, zero);
+            var pair = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(invalid),
+                new ByteString(CreateScalarBytes(1))
+            });
+            var pairs = new VMArray(new StackItem[] { pair });
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381MultiExp(pairs));
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpRejectsNonOnCurveG2()
+        {
+            var zero = Fp2.Zero;
+            var invalid = new G2Affine(zero, zero);
+            var pair = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(invalid),
+                new ByteString(CreateScalarBytes(1))
+            });
+            var pairs = new VMArray(new StackItem[] { pair });
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381MultiExp(pairs));
+        }
+
+        [TestMethod]
         public void Bls12381Equal()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
