@@ -15,11 +15,11 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.7" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.7" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.13.0" />
+    <PackageReference Include="Neo.Cryptography.BLS12_381" Version="3.9.0-CI00010" />
     <PackageReference Include="Neo.VM" Version="3.9.0-CI00344" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Neo.Cryptography.BLS12_381\Neo.Cryptography.BLS12_381.csproj" />
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\Neo.IO\Neo.IO.csproj" />
     <ProjectReference Include="..\Neo.Json\Neo.Json.csproj" />
