@@ -43,10 +43,7 @@ namespace Neo.SmartContract.Native
         /// <param name="amount">The amount of GAS sent</param>
         /// <param name="data">Deposit-related data: optional To value (treated as deposit owner if set) and Till height after which deposit can be withdrawn </param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
-        {
-            // Accept NEP-17 payment
-        }
+        private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data) { }
 
         /// <summary>
         /// OnNEP17Payment is a callback that accepts GAS transfer as Notary deposit.
@@ -58,10 +55,7 @@ namespace Neo.SmartContract.Native
         /// <param name="tokenId">Nep11 token Id</param>
         /// <param name="data">Deposit-related data: optional To value (treated as deposit owner if set) and Till height after which deposit can be withdrawn </param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void OnNEP11Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, string tokenId, StackItem? data = null)
-        {
-            // Accept NEP-11 payment
-        }
+        private void OnNEP11Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, string tokenId, StackItem? data = null) { }
     }
 }
 
