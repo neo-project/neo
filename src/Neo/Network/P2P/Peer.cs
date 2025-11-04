@@ -377,6 +377,8 @@ namespace Neo.Network.P2P
                     return;
             }
 
+            // Check min values
+
             if (UnconnectedPeers.Count == 0)
                 return;
 
@@ -386,8 +388,12 @@ namespace Neo.Network.P2P
             if (maxConnections <= 0)
                 return;
 
+            var connectingCapacity = ConnectingMax - ConnectingPeers.Count;
+            if (connectingCapacity <= 0)
+                return;
+
             var toConnect = Math.Max(deficit, 0);
-            if (ConnectedPeers.Count == 0)
+            if (ConnectedPeers.IsEmpty)
             {
                 var perAddressCap = Config.MaxConnectionsPerAddress == -1
                     ? Config.MinDesiredConnections
@@ -398,12 +404,8 @@ namespace Neo.Network.P2P
 
             toConnect = Math.Min(toConnect, UnconnectedPeers.Count);
             toConnect = Math.Min(toConnect, maxConnections);
-
-            var connectingCapacity = ConnectingMax - ConnectingPeers.Count;
-            if (connectingCapacity <= 0)
-                return;
-
             toConnect = Math.Min(toConnect, connectingCapacity);
+
             if (toConnect <= 0)
                 return;
 
