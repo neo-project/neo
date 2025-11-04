@@ -11,7 +11,6 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
@@ -19,6 +18,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
@@ -75,19 +75,19 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Expressions);
         }
 
-        private protected override void ParseJson(JObject json, int maxNestDepth)
+        private protected override void ParseJson(JsonObject json, int maxNestDepth)
         {
-            JArray expressions = (JArray)json["expressions"];
+            JsonArray expressions = (JsonArray)json["expressions"];
             if (expressions.Count > MaxSubitems)
                 throw new FormatException($"`expressions`({expressions.Count}) in OrCondition is out of range (max:{MaxSubitems})");
-            Expressions = expressions.Select(p => FromJson((JObject)p, maxNestDepth - 1)).ToArray();
+            Expressions = expressions.Select(p => FromJson((JsonObject)p, maxNestDepth - 1)).ToArray();
             if (Expressions.Length == 0) throw new FormatException("`Expressions` in OrCondition is empty");
         }
 
-        public override JObject ToJson()
+        public override JsonObject ToJson()
         {
-            JObject json = base.ToJson();
-            json["expressions"] = Expressions.Select(p => p.ToJson()).ToArray();
+            JsonObject json = base.ToJson();
+            json["expressions"] = new JsonArray(Expressions.Select(p => p.ToJson()).ToArray());
             return json;
         }
 

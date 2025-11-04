@@ -11,11 +11,11 @@
 
 using Neo.IO;
 using Neo.IO.Caching;
-using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 using System.IO;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -68,11 +68,11 @@ namespace Neo.Network.P2P.Payloads
         /// Converts the attribute to a JSON object.
         /// </summary>
         /// <returns>The attribute represented by a JSON object.</returns>
-        public virtual JObject ToJson()
+        public virtual JsonObject ToJson()
         {
-            return new JObject
+            return new JsonObject
             {
-                ["type"] = Type
+                ["type"] = Type.ToString()
             };
         }
 

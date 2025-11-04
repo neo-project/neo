@@ -12,13 +12,13 @@
 using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -159,11 +159,11 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> used during the conversion.</param>
         /// <returns>The block represented by a JSON object.</returns>
-        public JObject ToJson(ProtocolSettings settings)
+        public JsonObject ToJson(ProtocolSettings settings)
         {
             var json = Header.ToJson(settings);
             json["size"] = Size;
-            json["tx"] = Transactions.Select(p => p.ToJson(settings)).ToArray();
+            json["tx"] = new JsonArray(Transactions.Select(p => p.ToJson(settings)).ToArray());
             return json;
         }
 

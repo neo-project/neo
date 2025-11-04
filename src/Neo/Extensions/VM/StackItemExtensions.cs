@@ -9,13 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;
@@ -30,18 +29,18 @@ namespace Neo.Extensions
         /// <param name="item">The <see cref="StackItem"/> to convert.</param>
         /// <param name="maxSize">The maximum size in bytes of the result.</param>
         /// <returns>The <see cref="StackItem"/> represented by a JSON object.</returns>
-        public static JObject ToJson(this StackItem item, int maxSize = int.MaxValue)
+        public static JsonObject ToJson(this StackItem item, int maxSize = int.MaxValue)
         {
             return ToJson(item, null, ref maxSize);
         }
 
-        public static JObject ToJson(this StackItem item, HashSet<StackItem> context, ref int maxSize)
+        public static JsonObject ToJson(this StackItem item, HashSet<StackItem> context, ref int maxSize)
         {
-            JObject json = new()
+            JsonObject json = new()
             {
-                ["type"] = item.Type
+                ["type"] = item.Type.ToString()
             };
-            JToken value = null;
+            JsonNode value = null;
             maxSize -= 11/*{"type":""}*/+ item.Type.ToString().Length;
             switch (item)
             {
@@ -50,7 +49,7 @@ namespace Neo.Extensions
                         context ??= new(ReferenceEqualityComparer.Instance);
                         if (!context.Add(array)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (array.Count - 1))/*,*/;
-                        JArray a = [];
+                        JsonArray a = [];
                         foreach (var stackItem in array)
                             a.Add(ToJson(stackItem, context, ref maxSize));
                         value = a;
@@ -84,11 +83,11 @@ namespace Neo.Extensions
                         context ??= new(ReferenceEqualityComparer.Instance);
                         if (!context.Add(map)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (map.Count - 1))/*,*/;
-                        JArray a = new();
+                        JsonArray a = new();
                         foreach (var (k, v) in map)
                         {
                             maxSize -= 17/*{"key":,"value":}*/;
-                            JObject i = new()
+                            JsonObject i = new()
                             {
                                 ["key"] = ToJson(k, context, ref maxSize),
                                 ["value"] = ToJson(v, context, ref maxSize)

@@ -10,10 +10,10 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.Json;
 using Neo.Persistence;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -45,7 +45,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(NKeys);
         }
 
-        public override JObject ToJson()
+        public override JsonObject ToJson()
         {
             var json = base.ToJson();
             json["nkeys"] = NKeys;

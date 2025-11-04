@@ -10,12 +10,12 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.Json;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -95,9 +95,9 @@ namespace Neo.SmartContract
         /// Converts the contract to a JSON object.
         /// </summary>
         /// <returns>The contract represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject
+            return new JsonObject
             {
                 ["id"] = Id,
                 ["updatecounter"] = UpdateCounter,

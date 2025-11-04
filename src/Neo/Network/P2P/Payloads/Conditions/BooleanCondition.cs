@@ -10,13 +10,13 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
@@ -69,14 +69,14 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Expression);
         }
 
-        private protected override void ParseJson(JObject json, int maxNestDepth)
+        private protected override void ParseJson(JsonObject json, int maxNestDepth)
         {
-            Expression = json["expression"].GetBoolean();
+            Expression = json["expression"].GetValue<bool>();
         }
 
-        public override JObject ToJson()
+        public override JsonObject ToJson()
         {
-            JObject json = base.ToJson();
+            JsonObject json = base.ToJson();
             json["expression"] = Expression;
             return json;
         }

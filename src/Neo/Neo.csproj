@@ -22,7 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\Neo.IO\Neo.IO.csproj" />
-    <ProjectReference Include="..\Neo.Json\Neo.Json.csproj" />
   </ItemGroup>
 
   <ItemGroup>

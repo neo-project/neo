@@ -9,11 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -49,12 +49,12 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The parameter represented by a JSON object.</param>
         /// <returns>The converted parameter.</returns>
-        public static ContractParameterDefinition FromJson(JObject json)
+        public static ContractParameterDefinition FromJson(JsonObject json)
         {
             ContractParameterDefinition parameter = new()
             {
-                Name = json["name"].GetString(),
-                Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
+                Name = json["name"].GetValue<string>(),
+                Type = Enum.Parse<ContractParameterType>(json["type"].GetValue<string>())
             };
             if (string.IsNullOrEmpty(parameter.Name))
                 throw new FormatException("Name in ContractParameterDefinition is empty");
@@ -67,9 +67,9 @@ namespace Neo.SmartContract.Manifest
         /// Converts the parameter to a JSON object.
         /// </summary>
         /// <returns>The parameter represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject()
+            return new JsonObject()
             {
                 ["name"] = Name,
                 ["type"] = Type.ToString()

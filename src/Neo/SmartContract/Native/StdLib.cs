@@ -14,11 +14,11 @@
 using Microsoft.IdentityModel.Tokens;
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.Json;
 using Neo.VM.Types;
 using System;
 using System.Globalization;
 using System.Numerics;
+using System.Text.Json.Nodes;
 
 namespace Neo.SmartContract.Native
 {
@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem JsonDeserialize(ApplicationEngine engine, byte[] json)
         {
-            return JsonSerializer.Deserialize(engine, JToken.Parse(json, 10), engine.Limits, engine.ReferenceCounter);
+            return JsonSerializer.Deserialize(engine, JsonNode.Parse(json, documentOptions: new() { MaxDepth = 10 }), engine.Limits, engine.ReferenceCounter);
         }
 
         /// <summary>

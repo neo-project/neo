@@ -11,13 +11,13 @@
 
 using Neo.IO;
 using Neo.IO.Caching;
-using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
@@ -103,7 +103,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <param name="writer">The <see cref="BinaryWriter"/> for writing data.</param>
         protected abstract void SerializeWithoutType(BinaryWriter writer);
 
-        private protected abstract void ParseJson(JObject json, int maxNestDepth);
+        private protected abstract void ParseJson(JsonObject json, int maxNestDepth);
 
         /// <summary>
         /// Converts the <see cref="WitnessCondition"/> from a JSON object.
@@ -111,11 +111,11 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <param name="json">The <see cref="WitnessCondition"/> represented by a JSON object.</param>
         /// <param name="maxNestDepth">The maximum nesting depth allowed during deserialization.</param>
         /// <returns>The converted <see cref="WitnessCondition"/>.</returns>
-        public static WitnessCondition FromJson(JObject json, int maxNestDepth)
+        public static WitnessCondition FromJson(JsonObject json, int maxNestDepth)
         {
             if (maxNestDepth <= 0)
                 throw new FormatException($"`maxNestDepth`({maxNestDepth}) in WitnessCondition is out of range (min:1)");
-            WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
+            WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetValue<string>());
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException($"Invalid WitnessConditionType({type})");
             condition.ParseJson(json, maxNestDepth);
@@ -126,11 +126,11 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// Converts the condition to a JSON object.
         /// </summary>
         /// <returns>The condition represented by a JSON object.</returns>
-        public virtual JObject ToJson()
+        public virtual JsonObject ToJson()
         {
-            return new JObject
+            return new JsonObject
             {
-                ["type"] = Type
+                ["type"] = Type.ToString()
             };
         }
 

@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.Wallets.NEP6
 {
@@ -56,22 +56,23 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         /// <param name="json">The parameters represented by a JSON object.</param>
         /// <returns>The converted parameters.</returns>
-        public static ScryptParameters FromJson(JObject json)
+        public static ScryptParameters FromJson(JsonObject json)
         {
-            return new ScryptParameters((int)json["n"].AsNumber(), (int)json["r"].AsNumber(), (int)json["p"].AsNumber());
+            return new ScryptParameters(json["n"].GetValue<int>(), json["r"].GetValue<int>(), json["p"].GetValue<int>());
         }
 
         /// <summary>
         /// Converts the parameters to a JSON object.
         /// </summary>
         /// <returns>The parameters represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            JObject json = new();
-            json["n"] = N;
-            json["r"] = R;
-            json["p"] = P;
-            return json;
+            return new()
+            {
+                ["n"] = N,
+                ["r"] = R,
+                ["p"] = P
+            };
         }
     }
 }

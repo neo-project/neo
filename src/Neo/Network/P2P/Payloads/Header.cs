@@ -11,7 +11,6 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -19,6 +18,7 @@ using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.IO;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -224,21 +224,22 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> used during the conversion.</param>
         /// <returns>The header represented by a JSON object.</returns>
-        public JObject ToJson(ProtocolSettings settings)
+        public JsonObject ToJson(ProtocolSettings settings)
         {
-            JObject json = new();
-            json["hash"] = Hash.ToString();
-            json["size"] = Size;
-            json["version"] = version;
-            json["previousblockhash"] = prevHash.ToString();
-            json["merkleroot"] = merkleRoot.ToString();
-            json["time"] = timestamp;
-            json["nonce"] = nonce.ToString("X16");
-            json["index"] = index;
-            json["primary"] = primaryIndex;
-            json["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion);
-            json["witnesses"] = new JArray(Witness.ToJson());
-            return json;
+            return new()
+            {
+                ["hash"] = Hash.ToString(),
+                ["size"] = Size,
+                ["version"] = version,
+                ["previousblockhash"] = prevHash.ToString(),
+                ["merkleroot"] = merkleRoot.ToString(),
+                ["time"] = timestamp,
+                ["nonce"] = nonce.ToString("X16"),
+                ["index"] = index,
+                ["primary"] = primaryIndex,
+                ["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion),
+                ["witnesses"] = new JsonArray(Witness.ToJson())
+            };
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot)

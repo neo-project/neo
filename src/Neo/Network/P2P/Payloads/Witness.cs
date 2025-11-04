@@ -11,10 +11,10 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.SmartContract;
 using System;
 using System.IO;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -83,12 +83,13 @@ namespace Neo.Network.P2P.Payloads
         /// Converts the witness to a JSON object.
         /// </summary>
         /// <returns>The witness represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            JObject json = new();
-            json["invocation"] = Convert.ToBase64String(InvocationScript.Span);
-            json["verification"] = Convert.ToBase64String(VerificationScript.Span);
-            return json;
+            return new()
+            {
+                ["invocation"] = Convert.ToBase64String(InvocationScript.Span),
+                ["verification"] = Convert.ToBase64String(VerificationScript.Span)
+            };
         }
 
         public Witness Clone()

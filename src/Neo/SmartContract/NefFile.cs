@@ -12,12 +12,12 @@
 using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.VM;
 using System;
 using System.Buffers.Binary;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.SmartContract
 {
@@ -153,14 +153,14 @@ namespace Neo.SmartContract
         /// Converts the nef file to a JSON object.
         /// </summary>
         /// <returns>The nef file represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject
+            return new JsonObject
             {
                 ["magic"] = Magic,
                 ["compiler"] = Compiler,
                 ["source"] = Source,
-                ["tokens"] = new JArray(Tokens.Select(p => p.ToJson())),
+                ["tokens"] = new JsonArray(Tokens.Select(p => p.ToJson()).ToArray()),
                 ["script"] = Convert.ToBase64String(Script.Span),
                 ["checksum"] = CheckSum
             };

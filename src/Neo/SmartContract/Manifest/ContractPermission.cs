@@ -10,11 +10,11 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
@@ -82,12 +82,12 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The permission represented by a JSON object.</param>
         /// <returns>The converted permission.</returns>
-        public static ContractPermission FromJson(JObject json)
+        public static ContractPermission FromJson(JsonObject json)
         {
             ContractPermission permission = new()
             {
-                Contract = ContractPermissionDescriptor.FromJson((JString)json["contract"]),
-                Methods = WildcardContainer<string>.FromJson(json["methods"], u => u.GetString()),
+                Contract = ContractPermissionDescriptor.FromJson((JsonValue)json["contract"]),
+                Methods = WildcardContainer<string>.FromJson(json["methods"], u => u.GetValue<string>()),
             };
             if (permission.Methods.Any(p => string.IsNullOrEmpty(p)))
                 throw new FormatException("Methods in ContractPermission has empty string");
@@ -99,9 +99,9 @@ namespace Neo.SmartContract.Manifest
         /// Converts the permission to a JSON object.
         /// </summary>
         /// <returns>The permission represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject()
+            return new JsonObject()
             {
                 ["contract"] = Contract.ToJson(),
                 ["methods"] = Methods.ToJson(p => p)

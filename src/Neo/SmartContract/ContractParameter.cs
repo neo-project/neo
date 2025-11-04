@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Text.Json.Nodes;
 
 namespace Neo.SmartContract
 {
@@ -69,25 +70,25 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="json">The parameter represented by a JSON object.</param>
         /// <returns>The converted parameter.</returns>
-        public static ContractParameter FromJson(JObject json)
+        public static ContractParameter FromJson(JsonObject json)
         {
             ContractParameter parameter = new()
             {
-                Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
+                Type = Enum.Parse<ContractParameterType>(json["type"].GetValue<string>())
             };
             if (json["value"] != null)
             {
                 parameter.Value = parameter.Type switch
                 {
-                    ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"].AsString()),
-                    ContractParameterType.Boolean => json["value"].AsBoolean(),
+                    ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"].GetValue<string>()),
+                    ContractParameterType.Boolean => json["value"].GetValue<bool>(),
                     ContractParameterType.Integer => BigInteger.Parse(json["value"].AsString()),
-                    ContractParameterType.Hash160 => UInt160.Parse(json["value"].AsString()),
-                    ContractParameterType.Hash256 => UInt256.Parse(json["value"].AsString()),
-                    ContractParameterType.PublicKey => ECPoint.Parse(json["value"].AsString(), ECCurve.Secp256r1),
-                    ContractParameterType.String => json["value"].AsString(),
-                    ContractParameterType.Array => ((JArray)json["value"]).Select(p => FromJson((JObject)p)).ToList(),
-                    ContractParameterType.Map => ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson((JObject)p["key"]), FromJson((JObject)p["value"]))).ToList(),
+                    ContractParameterType.Hash160 => UInt160.Parse(json["value"].GetValue<string>()),
+                    ContractParameterType.Hash256 => UInt256.Parse(json["value"].GetValue<string>()),
+                    ContractParameterType.PublicKey => ECPoint.Parse(json["value"].GetValue<string>(), ECCurve.Secp256r1),
+                    ContractParameterType.String => json["value"].GetValue<string>(),
+                    ContractParameterType.Array => ((JsonArray)json["value"]).Select(p => FromJson((JsonObject)p)).ToList(),
+                    ContractParameterType.Map => ((JsonArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson((JsonObject)p["key"]), FromJson((JsonObject)p["value"]))).ToList(),
                     _ => throw new ArgumentException($"Parameter type '{parameter.Type}' is not supported.", nameof(json)),
                 };
             }
@@ -137,15 +138,17 @@ namespace Neo.SmartContract
         /// Converts the parameter to a JSON object.
         /// </summary>
         /// <returns>The parameter represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return ToJson(this, null);
         }
 
-        private static JObject ToJson(ContractParameter parameter, HashSet<ContractParameter> context)
+        private static JsonObject ToJson(ContractParameter parameter, HashSet<ContractParameter> context)
         {
-            JObject json = new();
-            json["type"] = parameter.Type;
+            JsonObject json = new()
+            {
+                ["type"] = parameter.Type.ToString()
+            };
             if (parameter.Value != null)
             {
                 switch (parameter.Type)
@@ -167,19 +170,20 @@ namespace Neo.SmartContract
                     case ContractParameterType.Array:
                         context ??= [];
                         if (!context.Add(parameter)) throw new InvalidOperationException("Circular reference.");
-                        json["value"] = new JArray(((IList<ContractParameter>)parameter.Value).Select(p => ToJson(p, context)));
+                        json["value"] = new JsonArray(((IList<ContractParameter>)parameter.Value).Select(p => ToJson(p, context)).ToArray());
                         if (!context.Remove(parameter)) throw new InvalidOperationException("Circular reference.");
                         break;
                     case ContractParameterType.Map:
                         context ??= [];
                         if (!context.Add(parameter)) throw new InvalidOperationException("Circular reference.");
-                        json["value"] = new JArray(((IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).Select(p =>
+                        json["value"] = new JsonArray(((IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).Select(p =>
                         {
-                            JObject item = new();
-                            item["key"] = ToJson(p.Key, context);
-                            item["value"] = ToJson(p.Value, context);
-                            return item;
-                        }));
+                            return new JsonObject()
+                            {
+                                ["key"] = ToJson(p.Key, context),
+                                ["value"] = ToJson(p.Value, context)
+                            };
+                        }).ToArray());
                         if (!context.Remove(parameter)) throw new InvalidOperationException("Circular reference.");
                         break;
                 }

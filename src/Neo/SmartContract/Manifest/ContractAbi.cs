@@ -9,12 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
@@ -58,12 +58,12 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The ABI represented by a JSON object.</param>
         /// <returns>The converted ABI.</returns>
-        public static ContractAbi FromJson(JObject json)
+        public static ContractAbi FromJson(JsonObject json)
         {
             ContractAbi abi = new()
             {
-                Methods = ((JArray)json!["methods"])?.Select(u => ContractMethodDescriptor.FromJson((JObject)u)).ToArray() ?? [],
-                Events = ((JArray)json!["events"])?.Select(u => ContractEventDescriptor.FromJson((JObject)u)).ToArray() ?? []
+                Methods = ((JsonArray)json!["methods"])?.Select(u => ContractMethodDescriptor.FromJson((JsonObject)u)).ToArray() ?? [],
+                Events = ((JsonArray)json!["events"])?.Select(u => ContractEventDescriptor.FromJson((JsonObject)u)).ToArray() ?? []
             };
             if (abi.Methods.Length == 0) throw new FormatException("Methods in ContractAbi is empty");
             return abi;
@@ -101,12 +101,12 @@ namespace Neo.SmartContract.Manifest
         /// Converts the ABI to a JSON object.
         /// </summary>
         /// <returns>The ABI represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject()
+            return new JsonObject()
             {
-                ["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray()),
-                ["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray())
+                ["methods"] = new JsonArray(Methods.Select(u => u.ToJson()).ToArray()),
+                ["events"] = new JsonArray(Events.Select(u => u.ToJson()).ToArray())
             };
         }
     }

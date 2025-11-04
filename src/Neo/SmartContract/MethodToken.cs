@@ -11,9 +11,9 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using System;
 using System.IO;
+using System.Text.Json.Nodes;
 
 namespace Neo.SmartContract
 {
@@ -78,15 +78,15 @@ namespace Neo.SmartContract
         /// Converts the token to a JSON object.
         /// </summary>
         /// <returns>The token represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject
+            return new JsonObject
             {
                 ["hash"] = Hash.ToString(),
                 ["method"] = Method,
                 ["paramcount"] = ParametersCount,
                 ["hasreturnvalue"] = HasReturnValue,
-                ["callflags"] = CallFlags
+                ["callflags"] = CallFlags.ToString()
             };
         }
     }

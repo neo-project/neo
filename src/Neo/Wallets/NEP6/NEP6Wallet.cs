@@ -20,6 +20,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Neo.Wallets.NEP6
@@ -34,7 +35,7 @@ namespace Neo.Wallets.NEP6
         private string name;
         private Version version;
         private readonly Dictionary<UInt160, NEP6Account> accounts;
-        private readonly JToken extra;
+        private readonly JsonNode extra;
 
         /// <summary>
         /// The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.
@@ -65,7 +66,7 @@ namespace Neo.Wallets.NEP6
             this.password = password.ToSecureString();
             if (File.Exists(path))
             {
-                var wallet = (JObject)JToken.Parse(File.ReadAllBytes(path));
+                var wallet = (JsonObject)JsonNode.Parse(File.ReadAllBytes(path));
                 LoadFromJson(wallet, out Scrypt, out accounts, out extra);
             }
             else
@@ -74,7 +75,7 @@ namespace Neo.Wallets.NEP6
                 version = Version.Parse("1.0");
                 Scrypt = ScryptParameters.Default;
                 accounts = new Dictionary<UInt160, NEP6Account>();
-                extra = JToken.Null;
+                extra = null;
             }
         }
 
@@ -85,18 +86,18 @@ namespace Neo.Wallets.NEP6
         /// <param name="password">The password of the wallet.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <param name="json">The JSON object representing the wallet.</param>
-        public NEP6Wallet(string path, string password, ProtocolSettings settings, JObject json) : base(path, settings)
+        public NEP6Wallet(string path, string password, ProtocolSettings settings, JsonObject json) : base(path, settings)
         {
             this.password = password.ToSecureString();
             LoadFromJson(json, out Scrypt, out accounts, out extra);
         }
 
-        private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JToken extra)
+        private void LoadFromJson(JsonObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JsonNode extra)
         {
             version = Version.Parse(wallet["version"].AsString());
             name = wallet["name"]?.AsString();
-            scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]);
-            accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JObject)p, this)).ToDictionary(p => p.ScriptHash);
+            scrypt = ScryptParameters.FromJson((JsonObject)wallet["scrypt"]);
+            accounts = ((JsonArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JsonObject)p, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
             if (!VerifyPasswordInternal(password.GetClearText()))
                 throw new InvalidOperationException("Incorrect password provided for NEP6 wallet. Please verify the password and try again.");
@@ -296,7 +297,7 @@ namespace Neo.Wallets.NEP6
         /// <summary>
         /// Exports the wallet as JSON
         /// </summary>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             NEP6Account[] accountValues;
             lock (accounts)
@@ -309,7 +310,7 @@ namespace Neo.Wallets.NEP6
                 ["name"] = name,
                 ["version"] = version.ToString(),
                 ["scrypt"] = Scrypt.ToJson(),
-                ["accounts"] = accountValues.Select(p => p.ToJson()).ToArray(),
+                ["accounts"] = new JsonArray(accountValues.Select(p => p.ToJson()).ToArray()),
                 ["extra"] = extra
             };
         }

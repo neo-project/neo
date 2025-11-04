@@ -12,10 +12,10 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Text.Json.Nodes;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -53,12 +53,12 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The group represented by a JSON object.</param>
         /// <returns>The converted group.</returns>
-        public static ContractGroup FromJson(JObject json)
+        public static ContractGroup FromJson(JsonObject json)
         {
             ContractGroup group = new()
             {
-                PubKey = ECPoint.Parse(json["pubkey"].GetString(), ECCurve.Secp256r1),
-                Signature = Convert.FromBase64String(json["signature"].GetString()),
+                PubKey = ECPoint.Parse(json["pubkey"].GetValue<string>(), ECCurve.Secp256r1),
+                Signature = Convert.FromBase64String(json["signature"].GetValue<string>()),
             };
             if (group.Signature.Length != 64)
                 throw new FormatException($"Signature length({group.Signature.Length}) is not 64");
@@ -79,9 +79,9 @@ namespace Neo.SmartContract.Manifest
         /// Converts the group to a JSON object.
         /// </summary>
         /// <returns>The group represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject()
+            return new JsonObject()
             {
                 ["pubkey"] = PubKey.ToString(),
                 ["signature"] = Convert.ToBase64String(Signature)

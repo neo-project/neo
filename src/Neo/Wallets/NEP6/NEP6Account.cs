@@ -9,8 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
 using System;
+using System.Text.Json.Nodes;
 using System.Threading;
 
 namespace Neo.Wallets.NEP6
@@ -21,7 +21,7 @@ namespace Neo.Wallets.NEP6
         private string nep2key;
         private string nep2KeyNew = null;
         private KeyPair key;
-        public JToken Extra;
+        public JsonNode Extra;
 
         public bool Decrypted => nep2key == null || key != null;
         public override bool HasKey => nep2key != null;
@@ -39,14 +39,14 @@ namespace Neo.Wallets.NEP6
             this.key = key;
         }
 
-        public static NEP6Account FromJson(JObject json, NEP6Wallet wallet)
+        public static NEP6Account FromJson(JsonObject json, NEP6Wallet wallet)
         {
-            return new NEP6Account(wallet, json["address"].GetString().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.GetString())
+            return new NEP6Account(wallet, json["address"].GetValue<string>().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.GetValue<string>())
             {
-                Label = json["label"]?.GetString(),
-                IsDefault = json["isDefault"].GetBoolean(),
-                Lock = json["lock"].GetBoolean(),
-                Contract = NEP6Contract.FromJson((JObject)json["contract"]),
+                Label = json["label"]?.GetValue<string>(),
+                IsDefault = json["isDefault"].GetValue<bool>(),
+                Lock = json["lock"].GetValue<bool>(),
+                Contract = NEP6Contract.FromJson((JsonObject)json["contract"]),
                 Extra = json["extra"]
             };
         }
@@ -71,17 +71,18 @@ namespace Neo.Wallets.NEP6
             return key;
         }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            JObject account = new();
-            account["address"] = ScriptHash.ToAddress(ProtocolSettings.AddressVersion);
-            account["label"] = Label;
-            account["isDefault"] = IsDefault;
-            account["lock"] = Lock;
-            account["key"] = nep2key;
-            account["contract"] = ((NEP6Contract)Contract)?.ToJson();
-            account["extra"] = Extra;
-            return account;
+            return new()
+            {
+                ["address"] = ScriptHash.ToAddress(ProtocolSettings.AddressVersion),
+                ["label"] = Label,
+                ["isDefault"] = IsDefault,
+                ["lock"] = Lock,
+                ["key"] = nep2key,
+                ["contract"] = ((NEP6Contract)Contract)?.ToJson(),
+                ["extra"] = Extra
+            };
         }
 
         public bool VerifyPassword(string password)

@@ -13,7 +13,6 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -26,6 +25,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using static Neo.SmartContract.Helper;
 using Array = Neo.VM.Types.Array;
 
@@ -327,22 +327,23 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> used during the conversion.</param>
         /// <returns>The transaction represented by a JSON object.</returns>
-        public JObject ToJson(ProtocolSettings settings)
+        public JsonObject ToJson(ProtocolSettings settings)
         {
-            JObject json = new();
-            json["hash"] = Hash.ToString();
-            json["size"] = Size;
-            json["version"] = Version;
-            json["nonce"] = Nonce;
-            json["sender"] = Sender.ToAddress(settings.AddressVersion);
-            json["sysfee"] = SystemFee.ToString();
-            json["netfee"] = NetworkFee.ToString();
-            json["validuntilblock"] = ValidUntilBlock;
-            json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
-            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["script"] = Convert.ToBase64String(Script.Span);
-            json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
-            return json;
+            return new()
+            {
+                ["hash"] = Hash.ToString(),
+                ["size"] = Size,
+                ["version"] = Version,
+                ["nonce"] = Nonce,
+                ["sender"] = Sender.ToAddress(settings.AddressVersion),
+                ["sysfee"] = SystemFee.ToString(),
+                ["netfee"] = NetworkFee.ToString(),
+                ["validuntilblock"] = ValidUntilBlock,
+                ["signers"] = new JsonArray(Signers.Select(p => p.ToJson()).ToArray()),
+                ["attributes"] = new JsonArray(Attributes.Select(p => p.ToJson()).ToArray()),
+                ["script"] = Convert.ToBase64String(Script.Span),
+                ["witnesses"] = new JsonArray(Witnesses.Select(p => p.ToJson()).ToArray())
+            };
         }
 
         /// <summary>

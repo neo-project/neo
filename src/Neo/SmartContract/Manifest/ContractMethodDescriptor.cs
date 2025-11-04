@@ -9,12 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -62,15 +62,15 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The method represented by a JSON object.</param>
         /// <returns>The converted method.</returns>
-        public new static ContractMethodDescriptor FromJson(JObject json)
+        public new static ContractMethodDescriptor FromJson(JsonObject json)
         {
             ContractMethodDescriptor descriptor = new()
             {
-                Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
-                ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
-                Offset = json["offset"].GetInt32(),
-                Safe = json["safe"].GetBoolean()
+                Name = json["name"].GetValue<string>(),
+                Parameters = ((JsonArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JsonObject)u)).ToArray(),
+                ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetValue<string>()),
+                Offset = json["offset"].GetValue<int>(),
+                Safe = json["safe"].GetValue<bool>()
             };
 
             if (string.IsNullOrEmpty(descriptor.Name))
@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Manifest
         /// Converts the method to a JSON object.
         /// </summary>
         /// <returns>The method represented by a JSON object.</returns>
-        public override JObject ToJson()
+        public override JsonObject ToJson()
         {
             var json = base.ToJson();
             json["returntype"] = ReturnType.ToString();

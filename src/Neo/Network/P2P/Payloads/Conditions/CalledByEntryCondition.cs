@@ -10,11 +10,11 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.Json;
 using Neo.SmartContract;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -55,7 +55,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         protected override void SerializeWithoutType(BinaryWriter writer) { }
 
-        private protected override void ParseJson(JObject json, int maxNestDepth) { }
+        private protected override void ParseJson(JsonObject json, int maxNestDepth) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(CalledByEntryCondition left, CalledByEntryCondition right)

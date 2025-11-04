@@ -24,6 +24,7 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Array = System.Array;
 using Buffer = Neo.VM.Types.Buffer;
 using VMArray = Neo.VM.Types.Array;
@@ -578,7 +579,7 @@ namespace Neo.SmartContract
                 ReadOnlyMemory<byte> m => m,
                 string s => s,
                 BigInteger i => i,
-                JObject o => o.ToByteArray(false),
+                JsonObject o => o.ToByteArray(false),
                 IInteroperable interoperable => interoperable.ToStackItem(ReferenceCounter),
                 ISerializable i => i.ToArray(),
                 StackItem item => item,

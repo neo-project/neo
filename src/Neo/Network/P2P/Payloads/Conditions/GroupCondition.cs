@@ -12,7 +12,6 @@
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -21,6 +20,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
@@ -75,14 +75,14 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Group);
         }
 
-        private protected override void ParseJson(JObject json, int maxNestDepth)
+        private protected override void ParseJson(JsonObject json, int maxNestDepth)
         {
-            Group = ECPoint.Parse(json["group"].GetString(), ECCurve.Secp256r1);
+            Group = ECPoint.Parse(json["group"].GetValue<string>(), ECCurve.Secp256r1);
         }
 
-        public override JObject ToJson()
+        public override JsonObject ToJson()
         {
-            JObject json = base.ToJson();
+            JsonObject json = base.ToJson();
             json["group"] = Group.ToString();
             return json;
         }

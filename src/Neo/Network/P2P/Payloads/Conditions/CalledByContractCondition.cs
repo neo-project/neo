@@ -11,13 +11,13 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
@@ -70,14 +70,14 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Hash);
         }
 
-        private protected override void ParseJson(JObject json, int maxNestDepth)
+        private protected override void ParseJson(JsonObject json, int maxNestDepth)
         {
-            Hash = UInt160.Parse(json["hash"].GetString());
+            Hash = UInt160.Parse(json["hash"].GetValue<string>());
         }
 
-        public override JObject ToJson()
+        public override JsonObject ToJson()
         {
-            JObject json = base.ToJson();
+            JsonObject json = base.ToJson();
             json["hash"] = Hash.ToString();
             return json;
         }

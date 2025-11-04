@@ -11,7 +11,6 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -19,6 +18,7 @@ using Neo.VM;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -86,11 +86,11 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Result.Span);
         }
 
-        public override JObject ToJson()
+        public override JsonObject ToJson()
         {
-            JObject json = base.ToJson();
+            JsonObject json = base.ToJson();
             json["id"] = Id;
-            json["code"] = Code;
+            json["code"] = Code.ToString();
             json["result"] = Convert.ToBase64String(Result.Span);
             return json;
         }

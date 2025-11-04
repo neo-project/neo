@@ -11,7 +11,6 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.VM;
@@ -19,6 +18,7 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
@@ -80,16 +80,16 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <param name="json">The <see cref="WitnessRule"/> represented by a JSON object.</param>
         /// <returns>The converted <see cref="WitnessRule"/>.</returns>
-        public static WitnessRule FromJson(JObject json)
+        public static WitnessRule FromJson(JsonObject json)
         {
-            WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"].GetString());
+            WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"].GetValue<string>());
             if (action != WitnessRuleAction.Allow && action != WitnessRuleAction.Deny)
                 throw new FormatException($"Invalid action: {action}.");
 
             return new()
             {
                 Action = action,
-                Condition = WitnessCondition.FromJson((JObject)json["condition"], WitnessCondition.MaxNestingDepth)
+                Condition = WitnessCondition.FromJson((JsonObject)json["condition"], WitnessCondition.MaxNestingDepth)
             };
         }
 
@@ -97,11 +97,11 @@ namespace Neo.Network.P2P.Payloads
         /// Converts the rule to a JSON object.
         /// </summary>
         /// <returns>The rule represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject
+            return new JsonObject
             {
-                ["action"] = Action,
+                ["action"] = Action.ToString(),
                 ["condition"] = Condition.ToJson()
             };
         }

@@ -9,12 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
@@ -55,12 +55,12 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The event represented by a JSON object.</param>
         /// <returns>The converted event.</returns>
-        public static ContractEventDescriptor FromJson(JObject json)
+        public static ContractEventDescriptor FromJson(JsonObject json)
         {
             ContractEventDescriptor descriptor = new()
             {
-                Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
+                Name = json["name"].GetValue<string>(),
+                Parameters = ((JsonArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JsonObject)u)).ToArray(),
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException("Name in ContractEventDescriptor is empty");
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
@@ -71,12 +71,12 @@ namespace Neo.SmartContract.Manifest
         /// Converts the event to a JSON object.
         /// </summary>
         /// <returns>The event represented by a JSON object.</returns>
-        public virtual JObject ToJson()
+        public virtual JsonObject ToJson()
         {
-            return new JObject()
+            return new JsonObject()
             {
                 ["name"] = Name,
-                ["parameters"] = new JArray(Parameters.Select(u => u.ToJson()).ToArray())
+                ["parameters"] = new JsonArray(Parameters.Select(u => u.ToJson()).ToArray())
             };
         }
 

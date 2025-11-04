@@ -12,7 +12,6 @@
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.VM;
@@ -22,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
@@ -185,19 +185,19 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <param name="json">The signer represented by a JSON object.</param>
         /// <returns>The converted signer.</returns>
-        public static Signer FromJson(JObject json)
+        public static Signer FromJson(JsonObject json)
         {
             Signer signer = new()
             {
-                Account = UInt160.Parse(json["account"].GetString()),
-                Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetString())
+                Account = UInt160.Parse(json["account"].GetValue<string>()),
+                Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetValue<string>())
             };
             if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
-                signer.AllowedContracts = ((JArray)json["allowedcontracts"]).Select(p => UInt160.Parse(p.GetString())).ToArray();
+                signer.AllowedContracts = ((JsonArray)json["allowedcontracts"]).Select(p => UInt160.Parse(p.GetValue<string>())).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
-                signer.AllowedGroups = ((JArray)json["allowedgroups"]).Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1)).ToArray();
+                signer.AllowedGroups = ((JsonArray)json["allowedgroups"]).Select(p => ECPoint.Parse(p.GetValue<string>(), ECCurve.Secp256r1)).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
-                signer.Rules = ((JArray)json["rules"]).Select(p => WitnessRule.FromJson((JObject)p)).ToArray();
+                signer.Rules = ((JsonArray)json["rules"]).Select(p => WitnessRule.FromJson((JsonObject)p)).ToArray();
             return signer;
         }
 
@@ -205,19 +205,19 @@ namespace Neo.Network.P2P.Payloads
         /// Converts the signer to a JSON object.
         /// </summary>
         /// <returns>The signer represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            var json = new JObject()
+            var json = new JsonObject()
             {
                 ["account"] = Account.ToString(),
-                ["scopes"] = Scopes
+                ["scopes"] = Scopes.ToString()
             };
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
-                json["allowedcontracts"] = AllowedContracts.Select(p => (JToken)p.ToString()).ToArray();
+                json["allowedcontracts"] = new JsonArray(AllowedContracts.Select(p => (JsonNode)p.ToString()).ToArray());
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
-                json["allowedgroups"] = AllowedGroups.Select(p => (JToken)p.ToString()).ToArray();
+                json["allowedgroups"] = new JsonArray(AllowedGroups.Select(p => (JsonNode)p.ToString()).ToArray());
             if (Scopes.HasFlag(WitnessScope.WitnessRules))
-                json["rules"] = Rules.Select(p => p.ToJson()).ToArray();
+                json["rules"] = new JsonArray(Rules.Select(p => p.ToJson()).ToArray());
             return json;
         }
 

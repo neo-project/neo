@@ -9,11 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -58,14 +59,14 @@ namespace Neo.SmartContract.Manifest
         /// <param name="json">The list represented by a JSON object.</param>
         /// <param name="elementSelector">A converter for elements.</param>
         /// <returns>The converted list.</returns>
-        public static WildcardContainer<T> FromJson(JToken json, Func<JToken, T> elementSelector)
+        public static WildcardContainer<T> FromJson(JsonNode json, Func<JsonNode, T> elementSelector)
         {
             switch (json)
             {
-                case JString str:
-                    if (str.Value != "*") throw new FormatException($"Invalid wildcard('{str.Value}')");
+                case JsonValue str when str.GetValueKind() == JsonValueKind.String:
+                    if (str.GetValue<string>() != "*") throw new FormatException($"Invalid wildcard('{str.GetValue<string>()}')");
                     return CreateWildcard();
-                case JArray array:
+                case JsonArray array:
                     return Create(array.Select(p => elementSelector(p)).ToArray());
                 default:
                     throw new FormatException($"Invalid json type for wildcard({json.GetType()})");
@@ -85,10 +86,10 @@ namespace Neo.SmartContract.Manifest
         /// Converts the list to a JSON object.
         /// </summary>
         /// <returns>The list represented by a JSON object.</returns>
-        public JToken ToJson(Func<T, JToken> elementSelector)
+        public JsonNode ToJson(Func<T, JsonNode> elementSelector)
         {
             if (IsWildcard) return "*";
-            return _data.Select(p => elementSelector(p)).ToArray();
+            return new JsonArray(_data.Select(p => elementSelector(p)).ToArray());
         }
     }
 }

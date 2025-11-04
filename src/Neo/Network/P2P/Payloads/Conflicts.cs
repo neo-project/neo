@@ -11,10 +11,10 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System.IO;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -41,9 +41,9 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Hash);
         }
 
-        public override JObject ToJson()
+        public override JsonObject ToJson()
         {
-            JObject json = base.ToJson();
+            JsonObject json = base.ToJson();
             json["hash"] = Hash.ToString();
             return json;
         }

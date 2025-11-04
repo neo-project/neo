@@ -15,6 +15,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
@@ -66,7 +67,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Custom user data.
         /// </summary>
-        public JObject Extra { get; set; }
+        public JsonObject Extra { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -86,7 +87,7 @@ namespace Neo.SmartContract.Manifest
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(ContractPermissionDescriptor.Create).ToArray()),
                 _ => throw new ArgumentException("Trusts field must be null or array", nameof(stackItem))
             };
-            Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
+            Extra = (JsonObject)JsonNode.Parse(@struct[7].GetSpan());
         }
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
@@ -109,23 +110,23 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The manifest represented by a JSON object.</param>
         /// <returns>The converted manifest.</returns>
-        public static ContractManifest FromJson(JObject json)
+        public static ContractManifest FromJson(JsonObject json)
         {
             ContractManifest manifest = new()
             {
-                Name = json["name"]!.GetString(),
-                Groups = ((JArray)json["groups"])?.Select(u => ContractGroup.FromJson((JObject)u)).ToArray() ?? [],
-                SupportedStandards = ((JArray)json["supportedstandards"])?.Select(u => u.GetString()).ToArray() ?? [],
-                Abi = ContractAbi.FromJson((JObject)json["abi"]),
-                Permissions = ((JArray)json["permissions"])?.Select(u => ContractPermission.FromJson((JObject)u)).ToArray() ?? [],
-                Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson((JString)u)),
-                Extra = (JObject)json["extra"]
+                Name = json["name"]!.GetValue<string>(),
+                Groups = ((JsonArray)json["groups"])?.Select(u => ContractGroup.FromJson((JsonObject)u)).ToArray() ?? [],
+                SupportedStandards = ((JsonArray)json["supportedstandards"])?.Select(u => u.GetValue<string>()).ToArray() ?? [],
+                Abi = ContractAbi.FromJson((JsonObject)json["abi"]),
+                Permissions = ((JsonArray)json["permissions"])?.Select(u => ContractPermission.FromJson((JsonObject)u)).ToArray() ?? [],
+                Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson((JsonValue)u)),
+                Extra = (JsonObject)json["extra"]
             };
 
             if (string.IsNullOrEmpty(manifest.Name))
                 throw new FormatException("Name in ContractManifest is empty");
             _ = manifest.Groups.ToDictionary(p => p.PubKey);
-            if (json["features"] is not JObject features || features.Count != 0)
+            if (json["features"] is not JsonObject features || features.Count != 0)
                 throw new FormatException("Features field must be empty");
             if (manifest.SupportedStandards.Any(string.IsNullOrEmpty))
                 throw new FormatException("SupportedStandards in ContractManifest has empty string");
@@ -144,7 +145,7 @@ namespace Neo.SmartContract.Manifest
         {
             if (json.Length > MaxLength)
                 throw new ArgumentException($"JSON content length {json.Length} exceeds maximum allowed size of {MaxLength} bytes", nameof(json));
-            return FromJson((JObject)JToken.Parse(json));
+            return FromJson((JsonObject)JsonNode.Parse(json));
         }
 
         /// <summary>
@@ -158,16 +159,16 @@ namespace Neo.SmartContract.Manifest
         /// Converts the manifest to a JSON object.
         /// </summary>
         /// <returns>The manifest represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject
+            return new JsonObject
             {
                 ["name"] = Name,
-                ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
-                ["features"] = new JObject(),
-                ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
+                ["groups"] = new JsonArray(Groups.Select(u => u.ToJson()).ToArray()),
+                ["features"] = new JsonObject(),
+                ["supportedstandards"] = new JsonArray(SupportedStandards.Select(u => (JsonNode)u).ToArray()),
                 ["abi"] = Abi.ToJson(),
-                ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
+                ["permissions"] = new JsonArray(Permissions.Select(p => p.ToJson()).ToArray()),
                 ["trusts"] = Trusts.ToJson(p => p.ToJson()),
                 ["extra"] = Extra
             };

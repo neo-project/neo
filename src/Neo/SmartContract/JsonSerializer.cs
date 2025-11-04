@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -20,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;
@@ -32,18 +32,28 @@ namespace Neo.SmartContract
     public static class JsonSerializer
     {
         /// <summary>
-        /// Serializes a <see cref="StackItem"/> to a <see cref="JToken"/>.
+        /// Represents the largest safe integer in JSON.
+        /// </summary>
+        public static readonly long MAX_SAFE_INTEGER = (long)Math.Pow(2, 53) - 1;
+
+        /// <summary>
+        /// Represents the smallest safe integer in JSON.
+        /// </summary>
+        public static readonly long MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
+
+        /// <summary>
+        /// Serializes a <see cref="StackItem"/> to a <see cref="JsonNode"/>.
         /// </summary>
         /// <param name="item">The <see cref="StackItem"/> to serialize.</param>
         /// <returns>The serialized object.</returns>
         [Obsolete("This method will be removed in the future, do not use.")]
-        public static JToken Serialize(StackItem item)
+        public static JsonNode Serialize(StackItem item)
         {
             switch (item)
             {
                 case Array array:
                     {
-                        return array.Select(p => Serialize(p)).ToArray();
+                        return new JsonArray(array.Select(p => Serialize(p)).ToArray());
                     }
                 case ByteString _:
                 case Buffer _:
@@ -53,7 +63,7 @@ namespace Neo.SmartContract
                 case Integer num:
                     {
                         var integer = num.GetInteger();
-                        if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
+                        if (integer > MAX_SAFE_INTEGER || integer < MIN_SAFE_INTEGER)
                             throw new InvalidOperationException();
                         return (double)integer;
                     }
@@ -63,7 +73,7 @@ namespace Neo.SmartContract
                     }
                 case Map map:
                     {
-                        var ret = new JObject();
+                        var ret = new JsonObject();
 
                         foreach (var entry in map)
                         {
@@ -79,7 +89,7 @@ namespace Neo.SmartContract
                     }
                 case Null _:
                     {
-                        return JToken.Null;
+                        return null;
                     }
                 default: throw new FormatException($"Invalid StackItemType({item.Type})");
             }
@@ -120,7 +130,7 @@ namespace Neo.SmartContract
                     case Integer num:
                         {
                             var integer = num.GetInteger();
-                            if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
+                            if (integer > MAX_SAFE_INTEGER || integer < MIN_SAFE_INTEGER)
                                 throw new InvalidOperationException();
                             writer.WriteNumberValue((double)integer);
                             break;
@@ -159,20 +169,20 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Deserializes a <see cref="StackItem"/> from <see cref="JToken"/>.
+        /// Deserializes a <see cref="StackItem"/> from <see cref="JsonNode"/>.
         /// </summary>
         /// <param name="engine">The <see cref="ApplicationEngine"/> used.</param>
-        /// <param name="json">The <see cref="JToken"/> to deserialize.</param>
+        /// <param name="json">The <see cref="JsonNode"/> to deserialize.</param>
         /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ApplicationEngine engine, JToken json, ExecutionEngineLimits limits, IReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(ApplicationEngine engine, JsonNode json, ExecutionEngineLimits limits, IReferenceCounter referenceCounter = null)
         {
             uint maxStackSize = limits.MaxStackSize;
             return Deserialize(engine, json, ref maxStackSize, referenceCounter);
         }
 
-        private static StackItem Deserialize(ApplicationEngine engine, JToken json, ref uint maxStackSize, IReferenceCounter referenceCounter)
+        private static StackItem Deserialize(ApplicationEngine engine, JsonNode json, ref uint maxStackSize, IReferenceCounter referenceCounter)
         {
             if (maxStackSize-- == 0) throw new FormatException("Max stack size reached");
             switch (json)
@@ -181,35 +191,40 @@ namespace Neo.SmartContract
                     {
                         return StackItem.Null;
                     }
-                case JArray array:
+                case JsonArray array:
                     {
                         List<StackItem> list = new(array.Count);
-                        foreach (JToken obj in array)
+                        foreach (JsonNode obj in array)
                             list.Add(Deserialize(engine, obj, ref maxStackSize, referenceCounter));
                         return new Array(referenceCounter, list);
                     }
-                case JString str:
+                case JsonValue str when str.GetValueKind() == JsonValueKind.String:
                     {
-                        return str.Value;
+                        return str.GetValue<string>();
                     }
-                case JNumber num:
+                case JsonValue num when num.GetValueKind() == JsonValueKind.Number:
                     {
-                        if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
+                        double value = num.GetValue<double>();
+                        if ((value % 1) != 0) throw new FormatException("Decimal value is not allowed");
                         if (engine.IsHardforkEnabled(Hardfork.HF_Basilisk))
                         {
-                            return BigInteger.Parse(num.Value.ToString(CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture);
+                            return BigInteger.Parse(value.ToString(CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture);
                         }
-                        return (BigInteger)num.Value;
+                        return (BigInteger)value;
                     }
-                case JBoolean boolean:
+                case JsonValue boolean when boolean.GetValueKind() == JsonValueKind.True:
                     {
-                        return boolean.Value ? StackItem.True : StackItem.False;
+                        return StackItem.True;
                     }
-                case JObject obj:
+                case JsonValue boolean when boolean.GetValueKind() == JsonValueKind.False:
+                    {
+                        return StackItem.False;
+                    }
+                case JsonObject obj:
                     {
                         var item = new Map(referenceCounter);
 
-                        foreach (var entry in obj.Properties)
+                        foreach (var entry in obj)
                         {
                             if (maxStackSize-- == 0) throw new FormatException("Max stack size reached");
 

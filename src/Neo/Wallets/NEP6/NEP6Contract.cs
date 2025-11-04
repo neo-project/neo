@@ -13,6 +13,7 @@ using Neo.Json;
 using Neo.SmartContract;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Wallets.NEP6
 {
@@ -21,31 +22,30 @@ namespace Neo.Wallets.NEP6
         public string[] ParameterNames;
         public bool Deployed;
 
-        public static NEP6Contract FromJson(JObject json)
+        public static NEP6Contract FromJson(JsonObject json)
         {
             if (json == null) return null;
             return new NEP6Contract
             {
                 Script = Convert.FromBase64String(json["script"].AsString()),
-                ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].GetEnum<ContractParameterType>()).ToArray(),
-                ParameterNames = ((JArray)json["parameters"]).Select(p => p["name"].AsString()).ToArray(),
-                Deployed = json["deployed"].AsBoolean()
+                ParameterList = ((JsonArray)json["parameters"]).Select(p => p["type"].GetEnum<ContractParameterType>()).ToArray(),
+                ParameterNames = ((JsonArray)json["parameters"]).Select(p => p["name"].AsString()).ToArray(),
+                Deployed = json["deployed"].GetValue<bool>()
             };
         }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            JObject contract = new();
-            contract["script"] = Convert.ToBase64String(Script);
-            contract["parameters"] = new JArray(ParameterList.Zip(ParameterNames, (type, name) =>
+            return new()
             {
-                JObject parameter = new();
-                parameter["name"] = name;
-                parameter["type"] = type;
-                return parameter;
-            }));
-            contract["deployed"] = Deployed;
-            return contract;
+                ["script"] = Convert.ToBase64String(Script),
+                ["parameters"] = new JsonArray(ParameterList.Zip(ParameterNames, (type, name) => new JsonObject()
+                {
+                    ["name"] = name,
+                    ["type"] = type.ToString()
+                }).ToArray()),
+                ["deployed"] = Deployed
+            };
         }
     }
 }
