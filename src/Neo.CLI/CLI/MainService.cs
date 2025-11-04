@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence.Providers;
 using Neo.Plugins;
 using Neo.Sign;
 using Neo.SmartContract;
@@ -345,10 +346,31 @@ namespace Neo.CLI
             var protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
+
+            var engineConfig = Settings.Default.Storage.Engine;
+            var engine = string.IsNullOrWhiteSpace(engineConfig) ? nameof(MemoryStore) : engineConfig;
+            var storagePath = string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8"));
+
+            if (!engine.Equals(nameof(MemoryStore), StringComparison.OrdinalIgnoreCase))
+            {
+                var pluginDir = Plugin.PluginsDirectory;
+                var mask = $"*{engine}*.dll";
+                var hasProviderDLL = Directory.Exists(pluginDir) && Directory.EnumerateFiles(pluginDir, mask, SearchOption.AllDirectories).Any();
+                if (!hasProviderDLL)
+                {
+                    ConsoleHelper.Info($"Storage provider {engine} not found in {pluginDir}. Auto-install {engine}.", nameof(Settings.Default.Storage.Engine));
+                    var installProvider = await InstallPluginAsync(engine);
+
+                    if (!installProvider)
+                    {
+                        throw new ArgumentException($"Not possible to install provider {engine}", nameof(Settings.Default.Storage.Engine));
+                    }
+                }
+            }
+
             try
             {
-                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
-                    string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+                NeoSystem = new NeoSystem(protocol, engine, storagePath);
             }
             catch (DllNotFoundException ex)
             {
