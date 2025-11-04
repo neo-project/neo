@@ -40,8 +40,6 @@ jobs:
           - "Neo.Plugins.ApplicationLogs"
           - "Neo.Plugins.OracleService"
           - "Neo.Plugins.RpcServer"
-          - "Neo.Cryptography.BLS12_381"
-          - "Neo.VM"
           - "Neo.Json"
           - "Neo.IO"
           - "Neo"
