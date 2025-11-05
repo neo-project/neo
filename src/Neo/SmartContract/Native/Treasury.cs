@@ -35,7 +35,7 @@ namespace Neo.SmartContract.Native
         private bool Verify(ApplicationEngine engine) => CheckCommittee(engine);
 
         /// <summary>
-        /// OnNEP17Payment is a callback that accepts GAS transfer as Notary deposit.
+        /// OnNEP17Payment callback.
         /// It also sets the deposit's lock height after which deposit can be withdrawn.
         /// </summary>
         /// <param name="engine">ApplicationEngine</param>
