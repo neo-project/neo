@@ -659,7 +659,7 @@ namespace Neo.SmartContract
             Diagnostic?.Disposed();
             if (disposables != null)
             {
-                foreach (IDisposable disposable in disposables)
+                foreach (var disposable in disposables)
                     disposable.Dispose();
                 disposables = null;
             }
