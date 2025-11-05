@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native
         /// <param name="tokenId">Nep11 token Id</param>
         /// <param name="data">Deposit-related data: optional To value (treated as deposit owner if set) and Till height after which deposit can be withdrawn </param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void OnNEP11Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, string tokenId, StackItem? data = null) { }
+        private void OnNEP11Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, byte[] tokenId, StackItem data) { }
     }
 }
 
