@@ -236,8 +236,10 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    // The values have the decimals stored
+                    // The values have the decimals stored starting from OnPersist of Faun's block.
                     _execFeeFactor = NativeContract.Policy.GetExecPicoFeeFactor(this);
+                    if (trigger == TriggerType.OnPersist && persistingIndex > 0 && !settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingIndex - 1))
+                        _execFeeFactor *= FeeFactor;
                 }
 
                 StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
