@@ -354,8 +354,7 @@ namespace Neo.CLI
             if (!engine.Equals(nameof(MemoryStore), StringComparison.OrdinalIgnoreCase))
             {
                 var pluginDir = Plugin.PluginsDirectory;
-                var mask = $"*{engine}*.dll";
-                var hasProviderDLL = Directory.Exists(pluginDir) && Directory.EnumerateFiles(pluginDir, mask, SearchOption.AllDirectories).Any();
+                var hasProviderDLL = Directory.Exists(pluginDir) && Directory.EnumerateFiles(pluginDir, $"*{engine}*.dll", SearchOption.AllDirectories).Any();
                 if (!hasProviderDLL)
                 {
                     ConsoleHelper.Info($"Storage provider {engine} not found in {pluginDir}. Auto-install {engine}.", nameof(Settings.Default.Storage.Engine));
