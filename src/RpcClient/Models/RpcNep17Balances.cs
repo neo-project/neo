@@ -14,6 +14,7 @@ using Neo.Wallets;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -23,20 +24,20 @@ namespace Neo.Network.RPC.Models
 
         public List<RpcNep17Balance> Balances { get; set; }
 
-        public JObject ToJson(ProtocolSettings protocolSettings)
+        public JsonObject ToJson(ProtocolSettings protocolSettings)
         {
             return new()
             {
-                ["balance"] = Balances.Select(p => p.ToJson()).ToArray(),
+                ["balance"] = new JsonArray(Balances.Select(p => p.ToJson()).ToArray()),
                 ["address"] = UserScriptHash.ToAddress(protocolSettings.AddressVersion)
             };
         }
 
-        public static RpcNep17Balances FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static RpcNep17Balances FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new()
             {
-                Balances = ((JArray)json["balance"]).Select(p => RpcNep17Balance.FromJson((JObject)p, protocolSettings)).ToList(),
+                Balances = ((JsonArray)json["balance"]).Select(p => RpcNep17Balance.FromJson((JsonObject)p, protocolSettings)).ToList(),
                 UserScriptHash = json["address"].ToScriptHash(protocolSettings)
             };
         }
@@ -50,7 +51,7 @@ namespace Neo.Network.RPC.Models
 
         public uint LastUpdatedBlock { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
@@ -60,7 +61,7 @@ namespace Neo.Network.RPC.Models
             };
         }
 
-        public static RpcNep17Balance FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static RpcNep17Balance FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new()
             {

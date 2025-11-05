@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
@@ -32,7 +33,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             var test = new HighPriorityAttribute();
-            var json = test.ToJson().ToString();
+            var json = test.ToJson().ToString(false);
             Assert.AreEqual(@"{""type"":""HighPriority""}", json);
         }
 

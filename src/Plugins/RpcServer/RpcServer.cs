@@ -30,6 +30,7 @@ using System.Net.Security;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Address = Neo.Plugins.RpcServer.Model.Address;
 
@@ -109,16 +110,16 @@ namespace Neo.Plugins.RpcServer
             return CryptographicOperations.FixedTimeEquals(user, _rpcUser) & CryptographicOperations.FixedTimeEquals(pass, _rpcPass);
         }
 
-        private static JObject CreateErrorResponse(JToken? id, RpcError rpcError)
+        private static JsonObject CreateErrorResponse(JsonNode? id, RpcError rpcError)
         {
             var response = CreateResponse(id);
             response["error"] = rpcError.ToJson();
             return response;
         }
 
-        private static JObject CreateResponse(JToken? id)
+        private static JsonObject CreateResponse(JsonNode? id)
         {
-            return new JObject
+            return new JsonObject
             {
                 ["jsonrpc"] = "2.0",
                 ["id"] = id
@@ -249,7 +250,7 @@ namespace Neo.Plugins.RpcServer
         {
             if (context.Request.Method != HttpMethodGet && context.Request.Method != HttpMethodPost) return;
 
-            JToken? request = null;
+            JsonNode? request = null;
             if (context.Request.Method == HttpMethodGet)
             {
                 string? jsonrpc = context.Request.Query["jsonrpc"];
@@ -264,12 +265,12 @@ namespace Neo.Plugins.RpcServer
                     }
                     catch (FormatException) { }
 
-                    request = new JObject();
+                    request = new JsonObject();
                     if (!string.IsNullOrEmpty(jsonrpc))
                         request["jsonrpc"] = jsonrpc;
                     request["id"] = id;
                     request["method"] = method;
-                    request["params"] = JToken.Parse(_params, MaxParamsDepth);
+                    request["params"] = JsonNode.Parse(_params, documentOptions: new() { MaxDepth = MaxParamsDepth });
                 }
             }
             else if (context.Request.Method == HttpMethodPost)
@@ -277,17 +278,17 @@ namespace Neo.Plugins.RpcServer
                 using var reader = new StreamReader(context.Request.Body);
                 try
                 {
-                    request = JToken.Parse(await reader.ReadToEndAsync(), MaxParamsDepth);
+                    request = JsonNode.Parse(await reader.ReadToEndAsync(), documentOptions: new() { MaxDepth = MaxParamsDepth });
                 }
                 catch (FormatException) { }
             }
 
-            JToken? response;
+            JsonNode? response;
             if (request == null)
             {
                 response = CreateErrorResponse(null, RpcError.BadRequest);
             }
-            else if (request is JArray array)
+            else if (request is JsonArray array)
             {
                 if (array.Count == 0)
                 {
@@ -295,35 +296,35 @@ namespace Neo.Plugins.RpcServer
                 }
                 else
                 {
-                    var tasks = array.Select(p => ProcessRequestAsync(context, (JObject?)p));
+                    var tasks = array.Select(p => ProcessRequestAsync(context, (JsonObject?)p));
                     var results = await Task.WhenAll(tasks);
-                    response = results.Where(p => p != null).ToArray();
+                    response = new JsonArray(results.Where(p => p != null).ToArray());
                 }
             }
             else
             {
-                response = await ProcessRequestAsync(context, (JObject)request);
+                response = await ProcessRequestAsync(context, (JsonObject)request);
             }
 
-            if (response == null || (response as JArray)?.Count == 0) return;
+            if (response == null || (response as JsonArray)?.Count == 0) return;
             context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
+            await context.Response.WriteAsync(response.ToString(false), Encoding.UTF8);
         }
 
-        internal async Task<JObject?> ProcessRequestAsync(HttpContext context, JObject? request)
+        internal async Task<JsonObject?> ProcessRequestAsync(HttpContext context, JsonObject? request)
         {
             if (request is null) return CreateErrorResponse(null, RpcError.InvalidRequest);
 
-            if (!request.ContainsProperty("id")) return null;
+            if (!request.ContainsKey("id")) return null;
 
-            var @params = request["params"] ?? new JArray();
+            var @params = request["params"] ?? new JsonArray();
             var method = request["method"]?.AsString();
-            if (method is null || @params is not JArray)
+            if (method is null || @params is not JsonArray)
             {
                 return CreateErrorResponse(request["id"], RpcError.InvalidRequest);
             }
 
-            var jsonParameters = (JArray)@params;
+            var jsonParameters = (JsonArray)@params;
             var response = CreateResponse(request["id"]);
             try
             {
@@ -333,8 +334,8 @@ namespace Neo.Plugins.RpcServer
                 {
                     response["result"] = ProcessParamsMethod(jsonParameters, rpcMethod) switch
                     {
-                        JToken result => result,
-                        Task<JToken> task => await task,
+                        JsonNode result => result,
+                        Task<JsonNode> task => await task,
                         _ => throw new NotSupportedException()
                     };
                     return response;
@@ -371,12 +372,12 @@ namespace Neo.Plugins.RpcServer
             }
         }
 
-        private object? ProcessParamsMethod(JArray arguments, RpcMethod rpcMethod)
+        private object? ProcessParamsMethod(JsonArray arguments, RpcMethod rpcMethod)
         {
             var args = new object?[rpcMethod.Parameters.Length];
 
             // If the method has only one parameter of type JArray, invoke the method directly with the arguments
-            if (rpcMethod.Parameters.Length == 1 && rpcMethod.Parameters[0].Type == typeof(JArray))
+            if (rpcMethod.Parameters.Length == 1 && rpcMethod.Parameters[0].Type == typeof(JsonArray))
             {
                 return rpcMethod.Delegate.DynamicInvoke(arguments);
             }

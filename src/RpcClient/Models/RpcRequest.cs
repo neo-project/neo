@@ -11,38 +11,39 @@
 
 using Neo.Json;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
     public class RpcRequest
     {
-        public JToken Id { get; set; }
+        public JsonNode Id { get; set; }
 
         public string JsonRpc { get; set; }
 
         public string Method { get; set; }
 
-        public JToken[] Params { get; set; }
+        public JsonNode[] Params { get; set; }
 
-        public static RpcRequest FromJson(JObject json)
+        public static RpcRequest FromJson(JsonObject json)
         {
             return new RpcRequest
             {
                 Id = json["id"],
                 JsonRpc = json["jsonrpc"].AsString(),
                 Method = json["method"].AsString(),
-                Params = ((JArray)json["params"]).ToArray()
+                Params = ((JsonArray)json["params"]).ToArray()
             };
         }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
                 ["id"] = Id,
                 ["jsonrpc"] = JsonRpc,
                 ["method"] = Method,
-                ["params"] = new JArray(Params)
+                ["params"] = new JsonArray(Params)
             };
         }
     }

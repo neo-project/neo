@@ -27,6 +27,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using static Neo.SmartContract.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
@@ -477,7 +478,7 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="jsonObjectToSign">Json object to sign</param>
         [ConsoleCommand("sign", Category = "Wallet Commands")]
-        private void OnSignCommand(JObject jsonObjectToSign)
+        private void OnSignCommand(JsonObject jsonObjectToSign)
         {
             if (NoWallet()) return;
 
@@ -489,7 +490,7 @@ namespace Neo.CLI
             try
             {
                 var snapshot = NeoSystem.StoreView;
-                var context = ContractParametersContext.Parse(jsonObjectToSign.ToString(), snapshot);
+                var context = ContractParametersContext.Parse(jsonObjectToSign.ToString(false), snapshot);
                 if (context.Network != NeoSystem.Settings.Network)
                 {
                     ConsoleHelper.Warning("Network mismatch.");

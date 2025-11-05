@@ -15,6 +15,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
+using System.Text.Json.Nodes;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -77,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
         {
             IInteroperable newContract = new ContractState();
             newContract.FromStackItem(contract.ToStackItem(null));
-            Assert.AreEqual(contract.Manifest.ToJson().ToString(), ((ContractState)newContract).Manifest.ToJson().ToString());
+            Assert.AreEqual(contract.Manifest.ToJson().ToString(false), ((ContractState)newContract).Manifest.ToJson().ToString(false));
             Assert.IsTrue(((ContractState)newContract).Script.Span.SequenceEqual(contract.Script.Span));
         }
 
@@ -91,7 +92,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestToJson()
         {
-            JObject json = contract.ToJson();
+            JsonObject json = contract.ToJson();
             Assert.AreEqual("0x820944cfdc70976602d71b0091445eedbc661bc5", json["hash"].AsString());
             Assert.AreEqual("AQ==", json["nef"]["script"].AsString());
             Assert.AreEqual(manifest.ToJson().AsString(), json["manifest"].AsString());

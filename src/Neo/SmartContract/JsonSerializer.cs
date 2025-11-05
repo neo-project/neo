@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -32,16 +33,6 @@ namespace Neo.SmartContract
     public static class JsonSerializer
     {
         /// <summary>
-        /// Represents the largest safe integer in JSON.
-        /// </summary>
-        public static readonly long MAX_SAFE_INTEGER = (long)Math.Pow(2, 53) - 1;
-
-        /// <summary>
-        /// Represents the smallest safe integer in JSON.
-        /// </summary>
-        public static readonly long MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
-
-        /// <summary>
         /// Serializes a <see cref="StackItem"/> to a <see cref="JsonNode"/>.
         /// </summary>
         /// <param name="item">The <see cref="StackItem"/> to serialize.</param>
@@ -63,7 +54,7 @@ namespace Neo.SmartContract
                 case Integer num:
                     {
                         var integer = num.GetInteger();
-                        if (integer > MAX_SAFE_INTEGER || integer < MIN_SAFE_INTEGER)
+                        if (integer > JsonConstants.MAX_SAFE_INTEGER || integer < JsonConstants.MIN_SAFE_INTEGER)
                             throw new InvalidOperationException();
                         return (double)integer;
                     }
@@ -130,7 +121,7 @@ namespace Neo.SmartContract
                     case Integer num:
                         {
                             var integer = num.GetInteger();
-                            if (integer > MAX_SAFE_INTEGER || integer < MIN_SAFE_INTEGER)
+                            if (integer > JsonConstants.MAX_SAFE_INTEGER || integer < JsonConstants.MIN_SAFE_INTEGER)
                                 throw new InvalidOperationException();
                             writer.WriteNumberValue((double)integer);
                             break;

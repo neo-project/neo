@@ -20,6 +20,7 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Array = Neo.VM.Types.Array;
 
@@ -74,8 +75,8 @@ namespace Neo.UnitTests.SmartContract.Manifest
             json = Regex.Replace(json, @"\s+", "");
             var manifest = ContractManifest.Parse(json);
 
-            Assert.AreEqual(manifest.ToJson().ToString(), json);
-            Assert.AreEqual(manifest.ToJson().ToString(), TestUtils.CreateDefaultManifest().ToJson().ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(false), json);
+            Assert.AreEqual(manifest.ToJson().ToString(false), TestUtils.CreateDefaultManifest().ToJson().ToString(false));
             Assert.IsTrue(manifest.IsValid(ExecutionEngineLimits.Default, UInt160.Zero));
         }
 
@@ -103,7 +104,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             """;
             json = Regex.Replace(json, @"\s+", "");
             var manifest = ContractManifest.Parse(json);
-            Assert.AreEqual(manifest.ToJson().ToString(), json);
+            Assert.AreEqual(manifest.ToJson().ToString(false), json);
 
             var check = TestUtils.CreateDefaultManifest();
             check.Permissions = [
@@ -113,7 +114,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                     Methods = WildcardContainer<string>.Create("method1", "method2")
                 }
             ];
-            Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(false), check.ToJson().ToString(false));
         }
 
         [TestMethod]
@@ -175,10 +176,10 @@ namespace Neo.UnitTests.SmartContract.Manifest
             """;
             json = Regex.Replace(json, @"\s+", "");
             var manifest = ContractManifest.Parse(json);
-            Assert.AreEqual(manifest.ToJson().ToString(), json);
+            Assert.AreEqual(manifest.ToJson().ToString(false), json);
 
             var check = TestUtils.CreateDefaultManifest();
-            Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(false), check.ToJson().ToString(false));
         }
 
         [TestMethod]
@@ -206,13 +207,13 @@ namespace Neo.UnitTests.SmartContract.Manifest
             json = Regex.Replace(json, @"\s+", "");
 
             var manifest = ContractManifest.Parse(json);
-            Assert.AreEqual(manifest.ToJson().ToString(), json);
+            Assert.AreEqual(manifest.ToJson().ToString(false), json);
 
             var check = TestUtils.CreateDefaultManifest();
             check.Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(
                 ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001")),
                 ContractPermissionDescriptor.CreateWildcard());
-            Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(false), check.ToJson().ToString(false));
         }
 
         [TestMethod]
@@ -316,7 +317,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             """;
             json = Regex.Replace(json, @"\s+", "");
             var manifest = ContractManifest.Parse(json);
-            Assert.AreEqual(manifest.ToJson().ToString(), json);
+            Assert.AreEqual(manifest.ToJson().ToString(false), json);
 
             var signature = string.Concat(Enumerable.Repeat("41", 64));
             var check = TestUtils.CreateDefaultManifest();
@@ -326,7 +327,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                     Signature = signature.HexToBytes()
                 }
             ];
-            Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(false), check.ToJson().ToString(false));
         }
 
         [TestMethod]
@@ -351,7 +352,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             """;
             json = Regex.Replace(json, @"\s+", "");
             var manifest = ContractManifest.Parse(json);
-            Assert.AreEqual(json, manifest.ToJson().ToString());
+            Assert.AreEqual(json, manifest.ToJson().ToString(false));
             Assert.AreEqual("value", manifest.Extra["key"].AsString(), false);
         }
 
@@ -359,12 +360,12 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestDeserializeAndSerialize()
         {
             var expected = TestUtils.CreateDefaultManifest();
-            expected.Extra = (JObject)JToken.Parse(@"{""a"":123}");
+            expected.Extra = (JsonObject)JsonNode.Parse(@"{""a"":123}");
 
             var clone = new ContractManifest();
             ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
 
-            Assert.AreEqual(@"{""a"":123}", expected.Extra.ToString());
+            Assert.AreEqual(@"{""a"":123}", expected.Extra.ToString(false));
             Assert.AreEqual(expected.ToString(), clone.ToString());
 
             expected.Extra = null;

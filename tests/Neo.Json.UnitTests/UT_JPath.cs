@@ -9,32 +9,34 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Text.Json.Nodes;
+
 namespace Neo.Json.UnitTests
 {
     [TestClass]
     public class UT_JPath
     {
-        private static readonly JObject json = new()
+        private static readonly JsonObject json = new()
         {
-            ["store"] = new JObject
+            ["store"] = new JsonObject
             {
-                ["book"] = new JArray
+                ["book"] = new JsonArray
                 {
-                    new JObject
+                    new JsonObject
                     {
                         ["category"] = "reference",
                         ["author"] = "Nigel Rees",
                         ["title"] = "Sayings of the Century",
                         ["price"] = 8.95
                     },
-                    new JObject
+                    new JsonObject
                     {
                         ["category"] = "fiction",
                         ["author"] = "Evelyn Waugh",
                         ["title"] = "Sword of Honour",
                         ["price"] = 12.99
                     },
-                    new JObject
+                    new JsonObject
                     {
                         ["category"] = "fiction",
                         ["author"] = "Herman Melville",
@@ -42,7 +44,7 @@ namespace Neo.Json.UnitTests
                         ["isbn"] = "0-553-21311-3",
                         ["price"] = 8.99
                     },
-                    new JObject
+                    new JsonObject
                     {
                         ["category"] = "fiction",
                         ["author"] = "J. R. R. Tolkien",
@@ -51,7 +53,7 @@ namespace Neo.Json.UnitTests
                         ["price"] = null
                     }
                 },
-                ["bicycle"] = new JObject
+                ["bicycle"] = new JsonObject
                 {
                     ["color"] = "red",
                     ["price"] = 19.95
@@ -65,26 +67,26 @@ namespace Neo.Json.UnitTests
         public void TestOOM()
         {
             var filter = "$" + string.Concat(Enumerable.Repeat("[0" + string.Concat(Enumerable.Repeat(",0", 64)) + "]", 6));
-            Assert.ThrowsExactly<InvalidOperationException>(() => _ = JObject.Parse("[[[[[[{}]]]]]]")!.JsonPath(filter));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = JsonNode.Parse("[[[[[[{}]]]]]]")!.JsonPath(filter));
         }
 
         [TestMethod]
         public void TestJsonPath()
         {
-            Assert.AreEqual(@"[""Nigel Rees"",""Evelyn Waugh"",""Herman Melville"",""J. R. R. Tolkien""]", json.JsonPath("$.store.book[*].author").ToString());
-            Assert.AreEqual(@"[""Nigel Rees"",""Evelyn Waugh"",""Herman Melville"",""J. R. R. Tolkien""]", json.JsonPath("$..author").ToString());
-            Assert.AreEqual(@"[[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99},{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}],{""color"":""red"",""price"":19.95}]", json.JsonPath("$.store.*").ToString());
-            Assert.AreEqual(@"[19.95,8.95,12.99,8.99,null]", json.JsonPath("$.store..price").ToString());
-            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99}]", json.JsonPath("$..book[2]").ToString());
-            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99}]", json.JsonPath("$..book[-2]").ToString());
-            Assert.AreEqual(@"[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99}]", json.JsonPath("$..book[0,1]").ToString());
-            Assert.AreEqual(@"[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99}]", json.JsonPath("$..book[:2]").ToString());
-            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99}]", json.JsonPath("$..book[1:2]").ToString());
-            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}]", json.JsonPath("$..book[-2:]").ToString());
-            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}]", json.JsonPath("$..book[2:]").ToString());
-            Assert.AreEqual(@"[{""store"":{""book"":[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99},{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}],""bicycle"":{""color"":""red"",""price"":19.95}},""expensive"":10,""data"":null}]", json.JsonPath("").ToString());
-            Assert.AreEqual(@"[{""book"":[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99},{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}],""bicycle"":{""color"":""red"",""price"":19.95}},10,null]", json.JsonPath("$.*").ToString());
-            Assert.AreEqual(@"[]", json.JsonPath("$..invalidfield").ToString());
+            Assert.AreEqual(@"[""Nigel Rees"",""Evelyn Waugh"",""Herman Melville"",""J. R. R. Tolkien""]", json.JsonPath("$.store.book[*].author").ToString(false));
+            Assert.AreEqual(@"[""Nigel Rees"",""Evelyn Waugh"",""Herman Melville"",""J. R. R. Tolkien""]", json.JsonPath("$..author").ToString(false));
+            Assert.AreEqual(@"[[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99},{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}],{""color"":""red"",""price"":19.95}]", json.JsonPath("$.store.*").ToString(false));
+            Assert.AreEqual(@"[19.95,8.95,12.99,8.99,null]", json.JsonPath("$.store..price").ToString(false));
+            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99}]", json.JsonPath("$..book[2]").ToString(false));
+            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99}]", json.JsonPath("$..book[-2]").ToString(false));
+            Assert.AreEqual(@"[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99}]", json.JsonPath("$..book[0,1]").ToString(false));
+            Assert.AreEqual(@"[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99}]", json.JsonPath("$..book[:2]").ToString(false));
+            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99}]", json.JsonPath("$..book[1:2]").ToString(false));
+            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}]", json.JsonPath("$..book[-2:]").ToString(false));
+            Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}]", json.JsonPath("$..book[2:]").ToString(false));
+            Assert.AreEqual(@"[{""store"":{""book"":[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99},{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}],""bicycle"":{""color"":""red"",""price"":19.95}},""expensive"":10,""data"":null}]", json.JsonPath("").ToString(false));
+            Assert.AreEqual(@"[{""book"":[{""category"":""reference"",""author"":""Nigel Rees"",""title"":""Sayings of the Century"",""price"":8.95},{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99},{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":null}],""bicycle"":{""color"":""red"",""price"":19.95}},10,null]", json.JsonPath("$.*").ToString(false));
+            Assert.AreEqual(@"[]", json.JsonPath("$..invalidfield").ToString(false));
         }
 
         [TestMethod]

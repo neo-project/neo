@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Neo.Plugins.RpcServer.Tests
@@ -125,12 +126,12 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Create a context and request object to simulate a real RPC call
             var context = new DefaultHttpContext();
-            var request = new JObject()
+            var request = new JsonObject()
             {
                 ["jsonrpc"] = "2.0",
                 ["id"] = 1,
                 ["method"] = "sendrawtransaction",
-                ["params"] = new JArray { txString },
+                ["params"] = new JsonArray { txString },
             };
 
             // Process the request directly through the RPC server
@@ -290,12 +291,12 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Create a context and request object to simulate a real RPC call
             var context = new DefaultHttpContext();
-            var request = new JObject()
+            var request = new JsonObject()
             {
                 ["jsonrpc"] = "2.0",
                 ["id"] = 1,
                 ["method"] = "sendrawtransaction",
-                ["params"] = new JArray { txString },
+                ["params"] = new JsonArray { txString },
             };
 
             // Process the request - this should use the standard RPC processing
@@ -316,32 +317,32 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         // Helper to simulate processing a raw POST request
-        private async Task<JToken> SimulatePostRequest(string requestBody)
+        private async Task<JsonNode> SimulatePostRequest(string requestBody)
         {
             var context = new DefaultHttpContext();
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(requestBody));
             context.Request.ContentType = "application/json";
 
-            JToken requestJson = null;
-            JToken responseJson = null;
+            JsonNode requestJson = null;
+            JsonNode responseJson = null;
             try
             {
-                requestJson = JToken.Parse(requestBody);
+                requestJson = JsonNode.Parse(requestBody);
             }
             catch (FormatException)
             {
                 // Simulate ProcessAsync behavior for malformed JSON
-                return new JObject() { ["error"] = RpcError.BadRequest.ToJson() };
+                return new JsonObject() { ["error"] = RpcError.BadRequest.ToJson() };
             }
 
-            if (requestJson is JObject singleRequest)
+            if (requestJson is JsonObject singleRequest)
             {
                 try
                 {
                     // Extract the method and parameters
                     var method = singleRequest["method"].AsString();
-                    var parameters = singleRequest["params"] as JArray;
+                    var parameters = singleRequest["params"] as JsonArray;
 
                     // For sendrawtransaction, directly call the method to ensure proper error handling
                     if (method == "sendrawtransaction" && parameters != null && parameters.Count > 0)
@@ -350,7 +351,7 @@ namespace Neo.Plugins.RpcServer.Tests
                         {
                             var result = _rpcServer.SendRawTransaction(parameters[0].AsString());
                             // Create a successful response
-                            responseJson = new JObject()
+                            responseJson = new JsonObject()
                             {
                                 ["jsonrpc"] = "2.0",
                                 ["id"] = singleRequest["id"],
@@ -360,7 +361,7 @@ namespace Neo.Plugins.RpcServer.Tests
                         catch (RpcException ex)
                         {
                             // Create an error response with the correct error code
-                            responseJson = new JObject()
+                            responseJson = new JsonObject()
                             {
                                 ["jsonrpc"] = "2.0",
                                 ["id"] = singleRequest["id"],
@@ -380,12 +381,12 @@ namespace Neo.Plugins.RpcServer.Tests
                     responseJson = await _rpcServer.ProcessRequestAsync(context, singleRequest);
                 }
             }
-            else if (requestJson is JArray batchRequest)
+            else if (requestJson is JsonArray batchRequest)
             {
                 if (batchRequest.Count == 0)
                 {
                     // Simulate ProcessAsync behavior for empty batch
-                    responseJson = new JObject()
+                    responseJson = new JsonObject()
                     {
                         ["jsonrpc"] = "2.0",
                         ["id"] = null,
@@ -395,15 +396,15 @@ namespace Neo.Plugins.RpcServer.Tests
                 else
                 {
                     // Process each request in the batch
-                    var tasks = batchRequest.Cast<JObject>().Select(p => _rpcServer.ProcessRequestAsync(context, p));
+                    var tasks = batchRequest.Cast<JsonObject>().Select(p => _rpcServer.ProcessRequestAsync(context, p));
                     var results = await Task.WhenAll(tasks);
-                    responseJson = new JArray(results.Where(p => p != null));
+                    responseJson = new JsonArray(results.Where(p => p != null).ToArray());
                 }
             }
             else
             {
                 // Should not happen with valid JSON
-                responseJson = new JObject() { ["error"] = RpcError.InvalidRequest.ToJson() };
+                responseJson = new JsonObject() { ["error"] = RpcError.InvalidRequest.ToJson() };
             }
 
             return responseJson;

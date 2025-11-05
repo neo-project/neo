@@ -28,6 +28,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.StateService
@@ -153,7 +154,7 @@ namespace Neo.Plugins.StateService
             if (stateRoot is null)
                 ConsoleHelper.Warning("Unknown state root");
             else
-                ConsoleHelper.Info(stateRoot.ToJson().ToString());
+                ConsoleHelper.Info(stateRoot.ToJson().ToString(false));
         }
 
         [ConsoleCommand("state height", Category = "StateService", Description = "Get current state root index")]
@@ -197,7 +198,7 @@ namespace Neo.Plugins.StateService
         }
 
         [RpcMethod]
-        public JToken GetStateRoot(uint index)
+        public JsonNode GetStateRoot(uint index)
         {
             using var snapshot = StateStore.Singleton.GetSnapshot();
             var stateRoot = snapshot.GetStateRoot(index).NotNull_Or(RpcError.UnknownStateRoot);
@@ -242,7 +243,7 @@ namespace Neo.Plugins.StateService
         }
 
         [RpcMethod]
-        public JToken GetProof(UInt256 rootHash, UInt160 scriptHash, string key)
+        public JsonNode GetProof(UInt256 rootHash, UInt160 scriptHash, string key)
         {
             var keyBytes = Result.Ok_Or(() => Convert.FromBase64String(key), RpcError.InvalidParams.WithData($"Invalid key: {key}"));
             return GetProof(rootHash, scriptHash, keyBytes);
@@ -267,7 +268,7 @@ namespace Neo.Plugins.StateService
         }
 
         [RpcMethod]
-        public JToken VerifyProof(UInt256 rootHash, string proof)
+        public JsonNode VerifyProof(UInt256 rootHash, string proof)
         {
             var proofBytes = Result.Ok_Or(
                 () => Convert.FromBase64String(proof), RpcError.InvalidParams.WithData($"Invalid proof: {proof}"));
@@ -275,9 +276,9 @@ namespace Neo.Plugins.StateService
         }
 
         [RpcMethod]
-        public JToken GetStateHeight()
+        public JsonNode GetStateHeight()
         {
-            return new JObject()
+            return new JsonObject()
             {
                 ["localrootindex"] = StateStore.Singleton.LocalRootIndex,
                 ["validatedrootindex"] = StateStore.Singleton.ValidatedRootIndex,
@@ -307,7 +308,7 @@ namespace Neo.Plugins.StateService
         }
 
         [RpcMethod]
-        public JToken FindStates(UInt256 rootHash, UInt160 scriptHash, byte[] prefix, byte[] key = null, int count = 0)
+        public JsonNode FindStates(UInt256 rootHash, UInt160 scriptHash, byte[] prefix, byte[] key = null, int count = 0)
         {
             CheckRootHash(rootHash);
 
@@ -321,15 +322,15 @@ namespace Neo.Plugins.StateService
             var pkey = new StorageKey() { Id = contract.Id, Key = prefix };
             var fkey = new StorageKey() { Id = pkey.Id, Key = key };
 
-            var json = new JObject();
-            var jarr = new JArray();
+            var json = new JsonObject();
+            var jarr = new JsonArray();
             int i = 0;
             foreach (var (ikey, ivalue) in trie.Find(pkey.ToArray(), 0 < key.Length ? fkey.ToArray() : null))
             {
                 if (count < i) break;
                 if (i < count)
                 {
-                    jarr.Add(new JObject()
+                    jarr.Add(new JsonObject()
                     {
                         ["key"] = Convert.ToBase64String(ParseStorageKey(ikey.ToArray()).Key.Span),
                         ["value"] = Convert.ToBase64String(ivalue.Span),
@@ -351,7 +352,7 @@ namespace Neo.Plugins.StateService
         }
 
         [RpcMethod]
-        public JToken GetState(UInt256 rootHash, UInt160 scriptHash, byte[] key)
+        public JsonNode GetState(UInt256 rootHash, UInt160 scriptHash, byte[] key)
         {
             CheckRootHash(rootHash);
 

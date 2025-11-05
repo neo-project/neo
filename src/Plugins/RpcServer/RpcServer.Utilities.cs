@@ -9,9 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
 using Neo.Wallets;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Plugins.RpcServer
 {
@@ -32,19 +32,20 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <returns>A JSON array containing the plugin information.</returns>
         [RpcMethod]
-        protected internal virtual JToken ListPlugins()
+        protected internal virtual JsonNode ListPlugins()
         {
-            return new JArray(Plugin.Plugins
+            return new JsonArray(Plugin.Plugins
                 .OrderBy(u => u.Name)
-                .Select(u => new JObject
+                .Select(u => new JsonObject
                 {
                     ["name"] = u.Name,
                     ["version"] = u.Version.ToString(),
-                    ["interfaces"] = new JArray(u.GetType().GetInterfaces()
+                    ["interfaces"] = new JsonArray(u.GetType().GetInterfaces()
                         .Select(p => p.Name)
                         .Where(p => p.EndsWith("Plugin"))
-                        .Select(p => (JToken)p))
-                }));
+                        .Select(p => (JsonNode)p)
+                        .ToArray())
+                }).ToArray());
         }
 
         /// <summary>
@@ -61,7 +62,7 @@ namespace Neo.Plugins.RpcServer
         /// <param name="address">The address as a string.</param>
         /// <returns>A JSON object containing the address and whether it is valid.</returns>
         [RpcMethod]
-        protected internal virtual JToken ValidateAddress(string address)
+        protected internal virtual JsonNode ValidateAddress(string address)
         {
             UInt160? scriptHash;
             try
@@ -73,7 +74,7 @@ namespace Neo.Plugins.RpcServer
                 scriptHash = null;
             }
 
-            return new JObject()
+            return new JsonObject()
             {
                 ["address"] = address,
                 ["isvalid"] = scriptHash != null,

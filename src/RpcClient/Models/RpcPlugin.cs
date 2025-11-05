@@ -11,6 +11,7 @@
 
 using Neo.Json;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -22,23 +23,23 @@ namespace Neo.Network.RPC.Models
 
         public string[] Interfaces { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
                 ["name"] = Name,
                 ["version"] = Version,
-                ["interfaces"] = new JArray(Interfaces.Select(p => (JToken)p))
+                ["interfaces"] = new JsonArray(Interfaces.Select(p => (JsonNode)p).ToArray())
             };
         }
 
-        public static RpcPlugin FromJson(JObject json)
+        public static RpcPlugin FromJson(JsonObject json)
         {
             return new RpcPlugin
             {
                 Name = json["name"].AsString(),
                 Version = json["version"].AsString(),
-                Interfaces = ((JArray)json["interfaces"]).Select(p => p.AsString()).ToArray()
+                Interfaces = ((JsonArray)json["interfaces"]).Select(p => p.AsString()).ToArray()
             };
         }
     }

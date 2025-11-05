@@ -10,4 +10,8 @@
     <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
+  </ItemGroup>
+
 </Project>

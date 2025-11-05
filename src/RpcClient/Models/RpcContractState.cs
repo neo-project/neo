@@ -12,6 +12,7 @@
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -19,12 +20,12 @@ namespace Neo.Network.RPC.Models
     {
         public ContractState ContractState { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return ContractState.ToJson();
         }
 
-        public static RpcContractState FromJson(JObject json)
+        public static RpcContractState FromJson(JsonObject json)
         {
             return new RpcContractState
             {
@@ -33,8 +34,8 @@ namespace Neo.Network.RPC.Models
                     Id = (int)json["id"].AsNumber(),
                     UpdateCounter = (ushort)json["updatecounter"].AsNumber(),
                     Hash = UInt160.Parse(json["hash"].AsString()),
-                    Nef = RpcNefFile.FromJson((JObject)json["nef"]),
-                    Manifest = ContractManifest.FromJson((JObject)json["manifest"])
+                    Nef = RpcNefFile.FromJson((JsonObject)json["nef"]),
+                    Manifest = ContractManifest.FromJson((JsonObject)json["manifest"])
                 }
             };
         }

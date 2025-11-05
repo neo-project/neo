@@ -11,119 +11,71 @@
 
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.Json.UnitTests
 {
     [TestClass]
     public class UT_JString
     {
-        private static readonly JString AsicString = "hello world";
-        private static readonly JString EscapeString = "\n\t\'\"";
-        private static readonly JString BadChar = ((char)0xff).ToString();
-        private static readonly JString IntegerString = "123";
-        private static readonly JString EmptyString = "";
-        private static readonly JString SpaceString = "    ";
-        private static readonly JString DoubleString = "123.456";
-        private static readonly JString UnicodeString = "\ud83d\ude03\ud83d\ude01";
-        private static readonly JString EmojString = "ã🦆";
-        private static readonly JString MixedString = "abc123!@# ";
-        private static readonly JString LongString = new string('x', 5000); // 5000
-        private static readonly JString MultiLangString = "Hello 你好 مرحبا";
-        private static readonly JString JsonString = "{\"key\": \"value\"}";
-        private static readonly JString HtmlEntityString = "&amp; &lt; &gt;";
-        private static readonly JString ControlCharString = "\t\n\r";
-        private static readonly JString SingleCharString = "a";
-        private static readonly JString LongWordString = "Supercalifragilisticexpialidocious";
-        private static readonly JString ConcatenatedString = new JString("Hello" + "123" + "!@#");
-        private static readonly JString WhiteSpaceString = new JString("   leading and trailing spaces   ");
-        private static readonly JString FilePathString = new JString(@"C:\Users\Example\file.txt");
-        private static readonly JString LargeNumberString = new JString("12345678901234567890");
-        private static readonly JString HexadecimalString = new JString("0x1A3F");
-        private static readonly JString PalindromeString = new JString("racecar");
-        private static readonly JString SqlInjectionString = new JString("SELECT * FROM users WHERE name = 'a'; DROP TABLE users;");
-        private static readonly JString RegexString = new JString(@"^\d{3}-\d{2}-\d{4}$");
-        private static readonly JString DateTimeString = new JString("2023-01-01T00:00:00");
-        private static readonly JString SpecialCharString = new JString("!?@#$%^&*()");
-        private static readonly JString SubstringString = new JString("Hello world".Substring(0, 5));
-        private static readonly JString CaseSensitiveString1 = new JString("TestString");
-        private static readonly JString CaseSensitiveString2 = new JString("teststring");
-        private static readonly JString BooleanString = new JString("true");
-        private static readonly JString FormatSpecifierString = new JString("{0:C}");
-        private static readonly JString EmojiSequenceString = new JString("👨‍👩‍👦");
-        private static readonly JString NullCharString = new JString("Hello\0World");
-        private static readonly JString RepeatingPatternString = new JString("abcabcabc");
+        private static readonly JsonValue AsicString = JsonValue.Create("hello world");
+        private static readonly JsonValue EscapeString = JsonValue.Create("\n\t\'\"");
+        private static readonly JsonValue BadChar = JsonValue.Create(((char)0xff).ToString());
+        private static readonly JsonValue IntegerString = JsonValue.Create("123");
+        private static readonly JsonValue EmptyString = JsonValue.Create("");
+        private static readonly JsonValue SpaceString = JsonValue.Create("    ");
+        private static readonly JsonValue DoubleString = JsonValue.Create("123.456");
+        private static readonly JsonValue UnicodeString = JsonValue.Create("\ud83d\ude03\ud83d\ude01");
+        private static readonly JsonValue EmojString = JsonValue.Create("ã🦆");
+        private static readonly JsonValue MixedString = JsonValue.Create("abc123!@# ");
+        private static readonly JsonValue LongString = JsonValue.Create(new string('x', 5000)); // 5000
+        private static readonly JsonValue MultiLangString = JsonValue.Create("Hello 你好 مرحبا");
+        private static readonly JsonValue JsonString = JsonValue.Create("{\"key\": \"value\"}");
+        private static readonly JsonValue HtmlEntityString = JsonValue.Create("&amp; &lt; &gt;");
+        private static readonly JsonValue ControlCharString = JsonValue.Create("\t\n\r");
+        private static readonly JsonValue SingleCharString = JsonValue.Create("a");
+        private static readonly JsonValue LongWordString = JsonValue.Create("Supercalifragilisticexpialidocious");
+        private static readonly JsonValue ConcatenatedString = JsonValue.Create("Hello" + "123" + "!@#");
+        private static readonly JsonValue WhiteSpaceString = JsonValue.Create("   leading and trailing spaces   ");
+        private static readonly JsonValue FilePathString = JsonValue.Create(@"C:\Users\Example\file.txt");
+        private static readonly JsonValue LargeNumberString = JsonValue.Create("12345678901234567890");
+        private static readonly JsonValue HexadecimalString = JsonValue.Create("0x1A3F");
+        private static readonly JsonValue PalindromeString = JsonValue.Create("racecar");
+        private static readonly JsonValue SqlInjectionString = JsonValue.Create("SELECT * FROM users WHERE name = 'a'; DROP TABLE users;");
+        private static readonly JsonValue RegexString = JsonValue.Create(@"^\d{3}-\d{2}-\d{4}$");
+        private static readonly JsonValue DateTimeString = JsonValue.Create("2023-01-01T00:00:00");
+        private static readonly JsonValue SpecialCharString = JsonValue.Create("!?@#$%^&*()");
+        private static readonly JsonValue SubstringString = JsonValue.Create("Hello world".Substring(0, 5));
+        private static readonly JsonValue CaseSensitiveString1 = JsonValue.Create("TestString");
+        private static readonly JsonValue CaseSensitiveString2 = JsonValue.Create("teststring");
+        private static readonly JsonValue BooleanString = JsonValue.Create("true");
+        private static readonly JsonValue FormatSpecifierString = JsonValue.Create("{0:C}");
+        private static readonly JsonValue EmojiSequenceString = JsonValue.Create("👨‍👩‍👦");
+        private static readonly JsonValue NullCharString = JsonValue.Create("Hello\0World");
+        private static readonly JsonValue RepeatingPatternString = JsonValue.Create("abcabcabc");
 
         [TestMethod]
         public void TestConstructor()
         {
             string s = "hello world";
-            JString jstring = new JString(s);
-            Assert.AreEqual(s, jstring.Value);
-            Assert.ThrowsExactly<ArgumentNullException>(() => _ = new JString(null));
-        }
-
-        [TestMethod]
-        public void TestConstructorNull()
-        {
-            string s = null;
-            Assert.ThrowsExactly<ArgumentNullException>(() => new JString(s));
+            JsonValue jstring = JsonValue.Create(s);
+            Assert.AreEqual(s, jstring.GetValue<string>());
         }
 
         [TestMethod]
         public void TestConstructorEmpty()
         {
             string s = "";
-            JString jstring = new JString(s);
-            Assert.AreEqual(s, jstring.Value);
+            JsonValue jstring = JsonValue.Create(s);
+            Assert.AreEqual(s, jstring.GetValue<string>());
         }
 
         [TestMethod]
         public void TestConstructorSpace()
         {
             string s = "    ";
-            JString jstring = new JString(s);
-            Assert.AreEqual(s, jstring.Value);
-            Assert.ThrowsExactly<ArgumentNullException>(() => _ = new JString(null));
-        }
-
-        [TestMethod]
-        public void TestAsBoolean()
-        {
-            Assert.IsTrue(AsicString.AsBoolean());
-            Assert.IsTrue(EscapeString.AsBoolean());
-            Assert.IsTrue(BadChar.AsBoolean());
-            Assert.IsTrue(IntegerString.AsBoolean());
-            Assert.IsFalse(EmptyString.AsBoolean());
-            Assert.IsTrue(SpaceString.AsBoolean());
-            Assert.IsTrue(DoubleString.AsBoolean());
-            Assert.IsTrue(UnicodeString.AsBoolean());
-            Assert.IsTrue(EmojString.AsBoolean());
-            Assert.IsTrue(MixedString.AsBoolean());
-            Assert.IsTrue(LongString.AsBoolean());
-            Assert.IsTrue(MultiLangString.AsBoolean());
-            Assert.IsTrue(JsonString.AsBoolean());
-            Assert.IsTrue(HtmlEntityString.AsBoolean());
-            Assert.IsTrue(ControlCharString.AsBoolean());
-            Assert.IsTrue(SingleCharString.AsBoolean());
-            Assert.IsTrue(LongWordString.AsBoolean());
-            Assert.IsTrue(ConcatenatedString.AsBoolean());
-            Assert.IsTrue(WhiteSpaceString.AsBoolean());
-            Assert.IsTrue(FilePathString.AsBoolean());
-            Assert.IsTrue(LargeNumberString.AsBoolean());
-            Assert.IsTrue(HexadecimalString.AsBoolean());
-            Assert.IsTrue(PalindromeString.AsBoolean());
-            Assert.IsTrue(SqlInjectionString.AsBoolean());
-            Assert.IsTrue(RegexString.AsBoolean());
-            Assert.IsTrue(DateTimeString.AsBoolean());
-            Assert.IsTrue(SpecialCharString.AsBoolean());
-            Assert.IsTrue(SubstringString.AsBoolean());
-            Assert.IsTrue(CaseSensitiveString1.AsBoolean());
-            Assert.IsTrue(CaseSensitiveString2.AsBoolean());
-            Assert.IsTrue(BooleanString.AsBoolean());
-            Assert.IsTrue(FormatSpecifierString.AsBoolean());
-            Assert.IsTrue(EmojiSequenceString.AsBoolean());
-            Assert.IsTrue(NullCharString.AsBoolean());
-            Assert.IsTrue(RepeatingPatternString.AsBoolean());
+            JsonValue jstring = JsonValue.Create(s);
+            Assert.AreEqual(s, jstring.GetValue<string>());
         }
 
         [TestMethod]
@@ -169,171 +121,167 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestValidGetEnum()
         {
-            JString validEnum = "James";
+            JsonValue validEnum = JsonValue.Create("James");
 
             Woo woo = validEnum.GetEnum<Woo>();
             Assert.AreEqual(Woo.James, woo);
-
-            validEnum = "";
-            woo = validEnum.AsEnum(Woo.Jerry, false);
-            Assert.AreEqual(Woo.Jerry, woo);
         }
 
         [TestMethod]
         public void TestInValidGetEnum()
         {
-            JString validEnum = "_James";
+            JsonValue validEnum = JsonValue.Create("_James");
             Assert.ThrowsExactly<ArgumentException>(() => validEnum.GetEnum<Woo>());
         }
 
         [TestMethod]
         public void TestMixedString()
         {
-            Assert.AreEqual("abc123!@# ", MixedString.Value);
+            Assert.AreEqual("abc123!@# ", MixedString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestLongString()
         {
-            Assert.AreEqual(new string('x', 5000), LongString.Value);
+            Assert.AreEqual(new string('x', 5000), LongString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestMultiLangString()
         {
-            Assert.AreEqual("Hello 你好 مرحبا", MultiLangString.Value);
+            Assert.AreEqual("Hello 你好 مرحبا", MultiLangString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestJsonString()
         {
-            Assert.AreEqual("{\"key\": \"value\"}", JsonString.Value);
+            Assert.AreEqual("{\"key\": \"value\"}", JsonString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestHtmlEntityString()
         {
-            Assert.AreEqual("&amp; &lt; &gt;", HtmlEntityString.Value);
+            Assert.AreEqual("&amp; &lt; &gt;", HtmlEntityString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestControlCharString()
         {
-            Assert.AreEqual("\t\n\r", ControlCharString.Value);
+            Assert.AreEqual("\t\n\r", ControlCharString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestSingleCharString()
         {
-            Assert.AreEqual("a", SingleCharString.Value);
+            Assert.AreEqual("a", SingleCharString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestLongWordString()
         {
-            Assert.AreEqual("Supercalifragilisticexpialidocious", LongWordString.Value);
+            Assert.AreEqual("Supercalifragilisticexpialidocious", LongWordString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestConcatenatedString()
         {
-            Assert.AreEqual("Hello123!@#", ConcatenatedString.Value);
+            Assert.AreEqual("Hello123!@#", ConcatenatedString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestWhiteSpaceString()
         {
-            Assert.AreEqual("   leading and trailing spaces   ", WhiteSpaceString.Value);
+            Assert.AreEqual("   leading and trailing spaces   ", WhiteSpaceString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestFilePathString()
         {
-            Assert.AreEqual(@"C:\Users\Example\file.txt", FilePathString.Value);
+            Assert.AreEqual(@"C:\Users\Example\file.txt", FilePathString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestLargeNumberString()
         {
-            Assert.AreEqual("12345678901234567890", LargeNumberString.Value);
+            Assert.AreEqual("12345678901234567890", LargeNumberString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestHexadecimalString()
         {
-            Assert.AreEqual("0x1A3F", HexadecimalString.Value);
+            Assert.AreEqual("0x1A3F", HexadecimalString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestPalindromeString()
         {
-            Assert.AreEqual("racecar", PalindromeString.Value);
+            Assert.AreEqual("racecar", PalindromeString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestSqlInjectionString()
         {
-            Assert.AreEqual("SELECT * FROM users WHERE name = 'a'; DROP TABLE users;", SqlInjectionString.Value);
+            Assert.AreEqual("SELECT * FROM users WHERE name = 'a'; DROP TABLE users;", SqlInjectionString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestRegexString()
         {
-            Assert.AreEqual(@"^\d{3}-\d{2}-\d{4}$", RegexString.Value);
+            Assert.AreEqual(@"^\d{3}-\d{2}-\d{4}$", RegexString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestDateTimeString()
         {
-            Assert.AreEqual("2023-01-01T00:00:00", DateTimeString.Value);
+            Assert.AreEqual("2023-01-01T00:00:00", DateTimeString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestSpecialCharString()
         {
-            Assert.AreEqual("!?@#$%^&*()", SpecialCharString.Value);
+            Assert.AreEqual("!?@#$%^&*()", SpecialCharString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestSubstringString()
         {
-            Assert.AreEqual("Hello", SubstringString.Value);
+            Assert.AreEqual("Hello", SubstringString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestCaseSensitiveStrings()
         {
-            Assert.AreNotEqual(CaseSensitiveString1.Value, CaseSensitiveString2.Value);
+            Assert.AreNotEqual(CaseSensitiveString1.GetValue<string>(), CaseSensitiveString2.GetValue<string>());
         }
 
         [TestMethod]
         public void TestBooleanString()
         {
-            Assert.AreEqual("true", BooleanString.Value);
+            Assert.AreEqual("true", BooleanString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestFormatSpecifierString()
         {
-            Assert.AreEqual("{0:C}", FormatSpecifierString.Value);
+            Assert.AreEqual("{0:C}", FormatSpecifierString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestEmojiSequenceString()
         {
-            Assert.AreEqual("👨‍👩‍👦", EmojiSequenceString.Value);
+            Assert.AreEqual("👨‍👩‍👦", EmojiSequenceString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestNullCharString()
         {
-            Assert.AreEqual("Hello\0World", NullCharString.Value);
+            Assert.AreEqual("Hello\0World", NullCharString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestRepeatingPatternString()
         {
-            Assert.AreEqual("abcabcabc", RepeatingPatternString.Value);
+            Assert.AreEqual("abcabcabc", RepeatingPatternString.GetValue<string>());
         }
 
         [TestMethod]
@@ -341,15 +289,11 @@ namespace Neo.Json.UnitTests
         {
             var str = "hello world";
             var str2 = "hello world2";
-            var jString = new JString(str);
-            var jString2 = new JString(str2);
-
-            Assert.IsTrue(jString == str);
+            var jString = JsonValue.Create(str);
+            var jString2 = JsonValue.Create(str2);
             Assert.IsFalse(jString == null);
-            Assert.IsTrue(jString != str2);
-            Assert.IsFalse(jString == str2);
 
-            Assert.AreEqual(str, jString.GetString());
+            Assert.AreEqual(str, jString.GetValue<string>());
             Assert.IsTrue(jString.Equals(str));
             Assert.IsFalse(jString.Equals(jString2));
             Assert.IsFalse(jString.Equals(null));
@@ -361,11 +305,11 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestWrite()
         {
-            var jString = new JString("hello world");
+            var jString = JsonValue.Create("hello world");
             using (var stream = new MemoryStream())
             using (var writer = new Utf8JsonWriter(stream))
             {
-                jString.Write(writer);
+                jString.WriteTo(writer);
                 writer.Flush();
                 var json = Encoding.UTF8.GetString(stream.ToArray());
                 Assert.AreEqual("\"hello world\"", json);
@@ -375,8 +319,8 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestClone()
         {
-            var jString = new JString("hello world");
-            var clone = jString.Clone();
+            var jString = JsonValue.Create("hello world");
+            var clone = jString.DeepClone();
             Assert.AreEqual(jString, clone);
             Assert.AreSame(jString, clone); // Cloning should return the same instance for immutable objects
         }
@@ -384,46 +328,39 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestEqualityWithDifferentTypes()
         {
-            var jString = new JString("hello world");
+            var jString = JsonValue.Create("hello world");
             Assert.IsFalse(jString.Equals(123));
             Assert.IsFalse(jString.Equals(new object()));
-            Assert.IsFalse(jString.Equals(new JBoolean()));
+            Assert.IsFalse(jString.Equals(JsonValue.Create(false)));
         }
 
         [TestMethod]
         public void TestImplicitOperators()
         {
-            JString fromEnum = EnumExample.Value;
-            Assert.AreEqual("Value", fromEnum.Value);
+            JsonValue fromEnum = JsonValue.Create(EnumExample.Value.ToString());
+            Assert.AreEqual("Value", fromEnum.GetValue<string>());
 
-            JString fromString = "test string";
-            Assert.AreEqual("test string", fromString.Value);
-
-            JString nullString = (string)null;
-            Assert.IsNull(nullString);
+            JsonValue fromString = JsonValue.Create("test string");
+            Assert.AreEqual("test string", fromString.GetValue<string>());
         }
 
         [TestMethod]
         public void TestBoundaryAndSpecialCases()
         {
-            JString largeString = new string('a', ushort.MaxValue);
-            Assert.AreEqual(ushort.MaxValue, largeString.Value.Length);
+            JsonValue largeString = JsonValue.Create(new string('a', ushort.MaxValue));
+            Assert.AreEqual(ushort.MaxValue, largeString.GetValue<string>().Length);
 
-            JString specialUnicode = "\uD83D\uDE00"; // 😀 emoji
-            Assert.AreEqual("\uD83D\uDE00", specialUnicode.Value);
+            JsonValue specialUnicode = JsonValue.Create("\uD83D\uDE00"); // 😀 emoji
+            Assert.AreEqual("\uD83D\uDE00", specialUnicode.GetValue<string>());
 
-            JString complexJson = "{\"nested\":{\"key\":\"value\"}}";
-            Assert.AreEqual("{\"nested\":{\"key\":\"value\"}}", complexJson.Value);
+            JsonValue complexJson = JsonValue.Create("{\"nested\":{\"key\":\"value\"}}");
+            Assert.AreEqual("{\"nested\":{\"key\":\"value\"}}", complexJson.GetValue<string>());
         }
 
         [TestMethod]
         public void TestExceptionHandling()
         {
-            JString invalidEnum = "invalid_value";
-
-            var result = invalidEnum.AsEnum(Woo.Jerry);
-            Assert.AreEqual(Woo.Jerry, result);
-
+            JsonValue invalidEnum = JsonValue.Create("invalid_value");
             Assert.ThrowsExactly<ArgumentException>(() => _ = invalidEnum.GetEnum<Woo>());
         }
     }

@@ -18,6 +18,7 @@ using Neo.SmartContract;
 using Neo.UnitTests;
 using Neo.Wallets;
 using System;
+using System.Text.Json.Nodes;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -35,17 +36,17 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(contractNameOrHashOrId.IsName);
             Assert.IsFalse(ContractNameOrHashOrId.TryParse("", out _));
 
-            JToken token = 1;
+            JsonNode token = 1;
             Assert.AreEqual(1, ((ContractNameOrHashOrId)token.AsParameter(typeof(ContractNameOrHashOrId))).AsId());
 
-            JToken token2 = "1";
+            JsonNode token2 = "1";
             Assert.AreEqual(1, ((ContractNameOrHashOrId)token2.AsParameter(typeof(ContractNameOrHashOrId))).AsId());
 
-            JToken token3 = "0x1234567890abcdef1234567890abcdef12345678";
+            JsonNode token3 = "0x1234567890abcdef1234567890abcdef12345678";
             Assert.AreEqual(UInt160.Parse("0x1234567890abcdef1234567890abcdef12345678"),
                 ((ContractNameOrHashOrId)token3.AsParameter(typeof(ContractNameOrHashOrId))).AsHash());
 
-            JToken token4 = "0xabc";
+            JsonNode token4 = "0xabc";
             Assert.ThrowsExactly<RpcException>(
                 () => _ = ((ContractNameOrHashOrId)token4.AsParameter(typeof(ContractNameOrHashOrId))).AsHash());
         }
@@ -60,29 +61,29 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"), blockHashOrIndex.AsHash());
             Assert.IsFalse(BlockHashOrIndex.TryParse("", out _));
 
-            JToken token = 1;
+            JsonNode token = 1;
             Assert.AreEqual(1u, ((BlockHashOrIndex)token.AsParameter(typeof(BlockHashOrIndex))).AsIndex());
 
-            JToken token2 = -1;
+            JsonNode token2 = -1;
             Assert.ThrowsExactly<RpcException>(
                 () => _ = ((BlockHashOrIndex)token2.AsParameter(typeof(BlockHashOrIndex))).AsIndex());
 
-            JToken token3 = "1";
+            JsonNode token3 = "1";
             Assert.AreEqual(1u, ((BlockHashOrIndex)token3.AsParameter(typeof(BlockHashOrIndex))).AsIndex());
 
-            JToken token4 = "-1";
+            JsonNode token4 = "-1";
             Assert.ThrowsExactly<RpcException>(
                 () => _ = ((BlockHashOrIndex)token4.AsParameter(typeof(BlockHashOrIndex))).AsIndex());
 
-            JToken token5 = "0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d";
+            JsonNode token5 = "0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d";
             Assert.AreEqual(UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"),
                 ((BlockHashOrIndex)token5.AsParameter(typeof(BlockHashOrIndex))).AsHash());
 
-            JToken token6 = "761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d";
+            JsonNode token6 = "761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d";
             Assert.AreEqual(UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"),
                 ((BlockHashOrIndex)token6.AsParameter(typeof(BlockHashOrIndex))).AsHash());
 
-            JToken token7 = "0xabc";
+            JsonNode token7 = "0xabc";
             Assert.ThrowsExactly<RpcException>(
                 () => _ = ((BlockHashOrIndex)ParameterConverter.AsParameter(token7, typeof(BlockHashOrIndex))).AsHash());
         }
@@ -90,33 +91,33 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestUInt160()
         {
-            JToken token = "0x1234567890abcdef1234567890abcdef12345678";
+            JsonNode token = "0x1234567890abcdef1234567890abcdef12345678";
             Assert.AreEqual(UInt160.Parse("0x1234567890abcdef1234567890abcdef12345678"),
                 (UInt160)token.AsParameter(typeof(UInt160)));
 
             var addressVersion = TestProtocolSettings.Default.AddressVersion;
-            JToken token2 = "0xabc";
+            JsonNode token2 = "0xabc";
             Assert.ThrowsExactly<RpcException>(() => _ = token2.ToAddress(addressVersion));
 
             const string address = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
-            Assert.AreEqual(address.ToScriptHash(addressVersion), ((JToken)address).ToAddress(addressVersion).ScriptHash);
+            Assert.AreEqual(address.ToScriptHash(addressVersion), ((JsonNode)address).ToAddress(addressVersion).ScriptHash);
         }
 
         [TestMethod]
         public void TestUInt256()
         {
-            JToken token = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+            JsonNode token = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
             Assert.AreEqual(UInt256.Parse("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"),
                 token.AsParameter(typeof(UInt256)));
 
-            JToken token2 = "0xabc";
+            JsonNode token2 = "0xabc";
             Assert.ThrowsExactly<RpcException>(() => _ = token2.AsParameter(typeof(UInt256)));
         }
 
         [TestMethod]
         public void TestInteger()
         {
-            JToken token = 1;
+            JsonNode token = 1;
             Assert.AreEqual(1, token.AsParameter(typeof(int)));
             Assert.AreEqual((long)1, token.AsParameter(typeof(long)));
             Assert.AreEqual((uint)1, token.AsParameter(typeof(uint)));
@@ -126,7 +127,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual((byte)1, token.AsParameter(typeof(byte)));
             Assert.AreEqual((sbyte)1, token.AsParameter(typeof(sbyte)));
 
-            JToken token2 = 1.1;
+            JsonNode token2 = 1.1;
 
             Assert.ThrowsExactly<RpcException>(() => _ = token2.AsParameter(typeof(int)));
             Assert.ThrowsExactly<RpcException>(() => _ = token2.AsParameter(typeof(long)));
@@ -137,7 +138,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.ThrowsExactly<RpcException>(() => _ = token2.AsParameter(typeof(byte)));
             Assert.ThrowsExactly<RpcException>(() => _ = token2.AsParameter(typeof(sbyte)));
 
-            JToken token3 = "1";
+            JsonNode token3 = "1";
 
             Assert.AreEqual((int)1, token3.AsParameter(typeof(int)));
             Assert.AreEqual((long)1, token3.AsParameter(typeof(long)));
@@ -148,7 +149,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual((byte)1, token3.AsParameter(typeof(byte)));
             Assert.AreEqual((sbyte)1, token3.AsParameter(typeof(sbyte)));
 
-            JToken token4 = "1.1";
+            JsonNode token4 = "1.1";
             Assert.ThrowsExactly<RpcException>(() => _ = token4.AsParameter(typeof(int)));
             Assert.ThrowsExactly<RpcException>(() => _ = token4.AsParameter(typeof(long)));
             Assert.ThrowsExactly<RpcException>(() => _ = token4.AsParameter(typeof(uint)));
@@ -158,7 +159,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.ThrowsExactly<RpcException>(() => _ = token4.AsParameter(typeof(byte)));
             Assert.ThrowsExactly<RpcException>(() => _ = token4.AsParameter(typeof(sbyte)));
 
-            JToken token5 = "abc";
+            JsonNode token5 = "abc";
 
             Assert.ThrowsExactly<RpcException>(() => _ = token5.AsParameter(typeof(int)));
             Assert.ThrowsExactly<RpcException>(() => _ = token5.AsParameter(typeof(long)));
@@ -169,7 +170,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.ThrowsExactly<RpcException>(() => _ = token5.AsParameter(typeof(byte)));
             Assert.ThrowsExactly<RpcException>(() => _ = token5.AsParameter(typeof(sbyte)));
 
-            JToken token6 = -1;
+            JsonNode token6 = -1;
 
             Assert.AreEqual(-1, token6.AsParameter(typeof(int)));
             Assert.AreEqual((long)-1, token6.AsParameter(typeof(long)));
@@ -184,13 +185,13 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestBoolean()
         {
-            JToken token = true;
+            JsonNode token = true;
             Assert.IsTrue((bool?)token.AsParameter(typeof(bool)));
-            JToken token2 = false;
+            JsonNode token2 = false;
             Assert.IsFalse((bool?)token2.AsParameter(typeof(bool)));
-            JToken token6 = 1;
+            JsonNode token6 = 1;
             Assert.IsTrue((bool?)token6.AsParameter(typeof(bool)));
-            JToken token7 = 0;
+            JsonNode token7 = 0;
             Assert.IsFalse((bool?)ParameterConverter.AsParameter(token7, typeof(bool)));
         }
 
@@ -225,152 +226,152 @@ namespace Neo.Plugins.RpcServer.Tests
         private void TestIntegerConversions()
         {
             // Test max value
-            JToken maxToken = int.MaxValue;
+            JsonNode maxToken = int.MaxValue;
             Assert.AreEqual(int.MaxValue, ParameterConverter.AsParameter(maxToken, typeof(int)));
 
             // Test min value
-            JToken minToken = int.MinValue;
+            JsonNode minToken = int.MinValue;
             Assert.AreEqual(int.MinValue, ParameterConverter.AsParameter(minToken, typeof(int)));
 
             // Test overflow
-            JToken overflowToken = (long)int.MaxValue + 1;
+            JsonNode overflowToken = (long)int.MaxValue + 1;
             Assert.ThrowsExactly<RpcException>(() => _ = overflowToken.AsParameter(typeof(int)));
 
             // Test underflow
-            JToken underflowToken = (long)int.MinValue - 1;
+            JsonNode underflowToken = (long)int.MinValue - 1;
             Assert.ThrowsExactly<RpcException>(() => _ = underflowToken.AsParameter(typeof(int)));
         }
 
         private void TestByteConversions()
         {
             // Test max value
-            JToken maxToken = byte.MaxValue;
+            JsonNode maxToken = byte.MaxValue;
             Assert.AreEqual(byte.MaxValue, maxToken.AsParameter(typeof(byte)));
 
             // Test min value
-            JToken minToken = byte.MinValue;
+            JsonNode minToken = byte.MinValue;
             Assert.AreEqual(byte.MinValue, minToken.AsParameter(typeof(byte)));
 
             // Test overflow
-            JToken overflowToken = (int)byte.MaxValue + 1;
+            JsonNode overflowToken = (int)byte.MaxValue + 1;
             Assert.ThrowsExactly<RpcException>(() => _ = overflowToken.AsParameter(typeof(byte)));
 
             // Test underflow
-            JToken underflowToken = -1;
+            JsonNode underflowToken = -1;
             Assert.ThrowsExactly<RpcException>(() => _ = underflowToken.AsParameter(typeof(byte)));
         }
 
         private void TestSByteConversions()
         {
             // Test max value
-            JToken maxToken = sbyte.MaxValue;
+            JsonNode maxToken = sbyte.MaxValue;
             Assert.AreEqual(sbyte.MaxValue, maxToken.AsParameter(typeof(sbyte)));
 
             // Test min value
-            JToken minToken = sbyte.MinValue;
+            JsonNode minToken = sbyte.MinValue;
             Assert.AreEqual(sbyte.MinValue, minToken.AsParameter(typeof(sbyte)));
 
             // Test overflow
-            JToken overflowToken = (int)sbyte.MaxValue + 1;
+            JsonNode overflowToken = (int)sbyte.MaxValue + 1;
             Assert.ThrowsExactly<RpcException>(() => _ = overflowToken.AsParameter(typeof(sbyte)));
 
             // Test underflow
-            JToken underflowToken = (int)sbyte.MinValue - 1;
+            JsonNode underflowToken = (int)sbyte.MinValue - 1;
             Assert.ThrowsExactly<RpcException>(() => _ = underflowToken.AsParameter(typeof(sbyte)));
         }
 
         private void TestShortConversions()
         {
             // Test max value
-            JToken maxToken = short.MaxValue;
+            JsonNode maxToken = short.MaxValue;
             Assert.AreEqual(short.MaxValue, maxToken.AsParameter(typeof(short)));
 
             // Test min value
-            JToken minToken = short.MinValue;
+            JsonNode minToken = short.MinValue;
             Assert.AreEqual(short.MinValue, minToken.AsParameter(typeof(short)));
 
             // Test overflow
-            JToken overflowToken = (int)short.MaxValue + 1;
+            JsonNode overflowToken = (int)short.MaxValue + 1;
             Assert.ThrowsExactly<RpcException>(() => _ = overflowToken.AsParameter(typeof(short)));
 
             // Test underflow
-            JToken underflowToken = (int)short.MinValue - 1;
+            JsonNode underflowToken = (int)short.MinValue - 1;
             Assert.ThrowsExactly<RpcException>(() => _ = underflowToken.AsParameter(typeof(short)));
         }
 
         private void TestUShortConversions()
         {
             // Test max value
-            JToken maxToken = ushort.MaxValue;
+            JsonNode maxToken = ushort.MaxValue;
             Assert.AreEqual(ushort.MaxValue, maxToken.AsParameter(typeof(ushort)));
 
             // Test min value
-            JToken minToken = ushort.MinValue;
+            JsonNode minToken = ushort.MinValue;
             Assert.AreEqual(ushort.MinValue, minToken.AsParameter(typeof(ushort)));
 
             // Test overflow
-            JToken overflowToken = (int)ushort.MaxValue + 1;
+            JsonNode overflowToken = (int)ushort.MaxValue + 1;
             Assert.ThrowsExactly<RpcException>(() => _ = overflowToken.AsParameter(typeof(ushort)));
 
             // Test underflow
-            JToken underflowToken = -1;
+            JsonNode underflowToken = -1;
             Assert.ThrowsExactly<RpcException>(() => _ = underflowToken.AsParameter(typeof(ushort)));
         }
 
         private void TestUIntConversions()
         {
             // Test max value
-            JToken maxToken = uint.MaxValue;
+            JsonNode maxToken = uint.MaxValue;
             Assert.AreEqual(uint.MaxValue, maxToken.AsParameter(typeof(uint)));
 
             // Test min value
-            JToken minToken = uint.MinValue;
+            JsonNode minToken = uint.MinValue;
             Assert.AreEqual(uint.MinValue, minToken.AsParameter(typeof(uint)));
 
             // Test overflow
-            JToken overflowToken = (ulong)uint.MaxValue + 1;
+            JsonNode overflowToken = (ulong)uint.MaxValue + 1;
             Assert.ThrowsExactly<RpcException>(() => _ = overflowToken.AsParameter(typeof(uint)));
 
             // Test underflow
-            JToken underflowToken = -1;
+            JsonNode underflowToken = -1;
             Assert.ThrowsExactly<RpcException>(() => _ = underflowToken.AsParameter(typeof(uint)));
         }
 
         private void TestLongConversions()
         {
             // Test max value
-            JToken maxToken = JNumber.MAX_SAFE_INTEGER;
-            Assert.AreEqual(JNumber.MAX_SAFE_INTEGER, maxToken.AsParameter(typeof(long)));
+            JsonNode maxToken = JsonConstants.MAX_SAFE_INTEGER;
+            Assert.AreEqual(JsonConstants.MAX_SAFE_INTEGER, maxToken.AsParameter(typeof(long)));
 
             // Test min value
-            JToken minToken = JNumber.MIN_SAFE_INTEGER;
-            Assert.AreEqual(JNumber.MIN_SAFE_INTEGER, minToken.AsParameter(typeof(long)));
+            JsonNode minToken = JsonConstants.MIN_SAFE_INTEGER;
+            Assert.AreEqual(JsonConstants.MIN_SAFE_INTEGER, minToken.AsParameter(typeof(long)));
 
             // Test overflow
-            JToken overflowToken = $"{JNumber.MAX_SAFE_INTEGER}0"; // This will be parsed as a string, causing overflow
+            JsonNode overflowToken = $"{JsonConstants.MAX_SAFE_INTEGER}0"; // This will be parsed as a string, causing overflow
             Assert.ThrowsExactly<RpcException>(() => _ = overflowToken.AsParameter(typeof(long)));
 
             // Test underflow
-            JToken underflowToken = $"-{JNumber.MIN_SAFE_INTEGER}0"; // This will be parsed as a string, causing underflow
+            JsonNode underflowToken = $"-{JsonConstants.MIN_SAFE_INTEGER}0"; // This will be parsed as a string, causing underflow
             Assert.ThrowsExactly<RpcException>(() => _ = underflowToken.AsParameter(typeof(long)));
         }
 
         private void TestULongConversions()
         {
             // Test max value
-            JToken maxToken = JNumber.MAX_SAFE_INTEGER;
-            Assert.AreEqual((ulong)JNumber.MAX_SAFE_INTEGER, maxToken.AsParameter(typeof(ulong)));
+            JsonNode maxToken = JsonConstants.MAX_SAFE_INTEGER;
+            Assert.AreEqual((ulong)JsonConstants.MAX_SAFE_INTEGER, maxToken.AsParameter(typeof(ulong)));
 
             // Test min value
-            JToken minToken = ulong.MinValue;
+            JsonNode minToken = ulong.MinValue;
             Assert.AreEqual(ulong.MinValue, minToken.AsParameter(typeof(ulong)));
 
             // Test overflow
-            JToken overflowToken = $"{JNumber.MAX_SAFE_INTEGER}0"; // This will be parsed as a string, causing overflow
+            JsonNode overflowToken = $"{JsonConstants.MAX_SAFE_INTEGER}0"; // This will be parsed as a string, causing overflow
             Assert.ThrowsExactly<RpcException>(() => _ = overflowToken.AsParameter(typeof(ulong)));
 
             // Test underflow
-            JToken underflowToken = -1;
+            JsonNode underflowToken = -1;
             Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.AsParameter(underflowToken, typeof(ulong)));
         }
 
@@ -404,7 +405,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test conversion of empty or null values
             Assert.AreEqual(0, ParameterConverter.AsParameter("", typeof(int)));
-            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.AsParameter(JToken.Null, typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.AsParameter(null, typeof(int)));
 
             // Test conversion to non-numeric types
             Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.AsParameter(42, typeof(DateTime)));
@@ -431,7 +432,7 @@ namespace Neo.Plugins.RpcServer.Tests
             const string address = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
             var addressVersion = TestProtocolSettings.Default.AddressVersion;
             var account = address.AddressToScriptHash(addressVersion);
-            var signers = new JArray(new JObject
+            var signers = new JsonArray(new JsonObject
             {
                 ["account"] = address,
                 ["scopes"] = WitnessScope.CalledByEntry.ToString()
@@ -443,7 +444,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(account, result.Signers[0].Account);
             Assert.AreEqual(WitnessScope.CalledByEntry, result.Signers[0].Scopes);
 
-            var signersAndWitnesses = new JArray(new JObject
+            var signersAndWitnesses = new JsonArray(new JsonObject
             {
                 ["account"] = address,
                 ["scopes"] = WitnessScope.CalledByEntry.ToString(),
@@ -494,7 +495,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestContractParameters()
         {
-            var parameters = new JArray(new JObject
+            var parameters = new JsonArray(new JsonObject
             {
                 ["value"] = "test",
                 ["type"] = "String"
@@ -505,7 +506,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(ContractParameterType.String, converted[0].Type);
 
             // Invalid Parameter
-            Assert.ThrowsExactly<RpcException>(() => _ = new JArray([null]).AsParameter(typeof(ContractParameter[])));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonArray([null]).AsParameter(typeof(ContractParameter[])));
         }
 
         [TestMethod]
@@ -514,7 +515,7 @@ namespace Neo.Plugins.RpcServer.Tests
             const string address = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
             var version = TestProtocolSettings.Default.AddressVersion;
             var account = address.AddressToScriptHash(version);
-            var signer = new JObject
+            var signer = new JsonObject
             {
                 ["account"] = address,
                 ["scopes"] = WitnessScope.CalledByEntry.ToString()
@@ -525,12 +526,12 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(WitnessScope.CalledByEntry, got.Scopes);
 
             // Invalid Parameter
-            Assert.ThrowsExactly<RpcException>(() => _ = new JObject().ToSigner(version));
-            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["account"] = address }.ToSigner(version));
-            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["scopes"] = "InvalidScopeValue" }.ToSigner(version));
-            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["allowedcontracts"] = "InvalidContractHash" }.ToSigner(version));
-            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["allowedgroups"] = "InvalidECPoint" }.ToSigner(version));
-            Assert.ThrowsExactly<RpcException>(() => _ = new JObject { ["rules"] = "InvalidRule" }.ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonObject().ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonObject { ["account"] = address }.ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonObject { ["scopes"] = "InvalidScopeValue" }.ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonObject { ["allowedcontracts"] = "InvalidContractHash" }.ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonObject { ["allowedgroups"] = "InvalidECPoint" }.ToSigner(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonObject { ["rules"] = "InvalidRule" }.ToSigner(version));
         }
 
         [TestMethod]
@@ -540,7 +541,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var version = TestProtocolSettings.Default.AddressVersion;
             var scopes = WitnessScope.CalledByEntry;
             var account = address.AddressToScriptHash(version);
-            var signers = new JArray(new JObject { ["account"] = address, ["scopes"] = scopes.ToString() });
+            var signers = new JsonArray(new JsonObject { ["account"] = address, ["scopes"] = scopes.ToString() });
             var got = signers.ToSigners(version);
             Assert.HasCount(1, got);
             Assert.AreEqual(account, got[0].Account);
@@ -553,14 +554,14 @@ namespace Neo.Plugins.RpcServer.Tests
             var address = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
             var version = TestProtocolSettings.Default.AddressVersion;
             var account = address.AddressToScriptHash(version);
-            var got = new JArray(new JString(address)).ToAddresses(version);
+            var got = new JsonArray(address).ToAddresses(version);
             Assert.HasCount(1, got);
             Assert.AreEqual(account, got[0].ScriptHash);
 
             // Invalid Parameter
-            Assert.ThrowsExactly<RpcException>(() => _ = new JObject().ToAddresses(version));
-            Assert.ThrowsExactly<RpcException>(() => _ = new JArray([null]).ToAddresses(version));
-            Assert.ThrowsExactly<RpcException>(() => _ = new JArray([new JString("InvalidAddress")]).ToAddresses(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonObject().ToAddresses(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonArray([null]).ToAddresses(version));
+            Assert.ThrowsExactly<RpcException>(() => _ = new JsonArray(["InvalidAddress"]).ToAddresses(version));
         }
     }
 }

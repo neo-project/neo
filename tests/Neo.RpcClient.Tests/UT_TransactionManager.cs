@@ -25,6 +25,7 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Neo.Network.RPC.Tests
@@ -61,8 +62,8 @@ namespace Neo.Network.RPC.Tests
             mockRpc.Setup(p => p.RpcSendAsync("getblockcount")).ReturnsAsync(100).Verifiable();
 
             // calculatenetworkfee
-            var networkfee = new JObject() { ["networkfee"] = 100000000 };
-            mockRpc.Setup(p => p.RpcSendAsync("calculatenetworkfee", It.Is<JToken[]>(u => true)))
+            var networkfee = new JsonObject() { ["networkfee"] = 100000000 };
+            mockRpc.Setup(p => p.RpcSendAsync("calculatenetworkfee", It.Is<JsonNode[]>(u => true)))
                 .ReturnsAsync(networkfee)
                 .Verifiable();
 
@@ -93,8 +94,8 @@ namespace Neo.Network.RPC.Tests
             mockRpc.Setup(p => p.RpcSendAsync("getblockcount")).ReturnsAsync(100).Verifiable();
 
             // calculatenetworkfee
-            var networkfee = new JObject() { ["networkfee"] = 100000000 };
-            mockRpc.Setup(p => p.RpcSendAsync("calculatenetworkfee", It.Is<JToken[]>(u => true)))
+            var networkfee = new JsonObject() { ["networkfee"] = 100000000 };
+            mockRpc.Setup(p => p.RpcSendAsync("calculatenetworkfee", It.Is<JsonNode[]>(u => true)))
                 .ReturnsAsync(networkfee)
                 .Verifiable();
 
@@ -127,7 +128,7 @@ namespace Neo.Network.RPC.Tests
                 State = VMState.HALT
             };
 
-            mockClient.Setup(p => p.RpcSendAsync("invokescript", It.Is<JToken[]>(j =>
+            mockClient.Setup(p => p.RpcSendAsync("invokescript", It.Is<JsonNode[]>(j =>
                 Convert.FromBase64String(j[0].AsString()).SequenceEqual(script))))
                 .ReturnsAsync(result.ToJson())
                 .Verifiable();

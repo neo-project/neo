@@ -14,6 +14,7 @@ using Neo.Wallets;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -25,22 +26,22 @@ namespace Neo.Network.RPC.Models
 
         public List<RpcNep17Transfer> Received { get; set; }
 
-        public JObject ToJson(ProtocolSettings protocolSettings)
+        public JsonObject ToJson(ProtocolSettings protocolSettings)
         {
             return new()
             {
-                ["sent"] = Sent.Select(p => p.ToJson(protocolSettings)).ToArray(),
-                ["received"] = Received.Select(p => p.ToJson(protocolSettings)).ToArray(),
+                ["sent"] = new JsonArray(Sent.Select(p => p.ToJson(protocolSettings)).ToArray()),
+                ["received"] = new JsonArray(Received.Select(p => p.ToJson(protocolSettings)).ToArray()),
                 ["address"] = UserScriptHash.ToAddress(protocolSettings.AddressVersion)
             };
         }
 
-        public static RpcNep17Transfers FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static RpcNep17Transfers FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new()
             {
-                Sent = ((JArray)json["sent"]).Select(p => RpcNep17Transfer.FromJson((JObject)p, protocolSettings)).ToList(),
-                Received = ((JArray)json["received"]).Select(p => RpcNep17Transfer.FromJson((JObject)p, protocolSettings)).ToList(),
+                Sent = ((JsonArray)json["sent"]).Select(p => RpcNep17Transfer.FromJson((JsonObject)p, protocolSettings)).ToList(),
+                Received = ((JsonArray)json["received"]).Select(p => RpcNep17Transfer.FromJson((JsonObject)p, protocolSettings)).ToList(),
                 UserScriptHash = json["address"].ToScriptHash(protocolSettings)
             };
         }
@@ -62,7 +63,7 @@ namespace Neo.Network.RPC.Models
 
         public UInt256 TxHash { get; set; }
 
-        public JObject ToJson(ProtocolSettings protocolSettings)
+        public JsonObject ToJson(ProtocolSettings protocolSettings)
         {
             return new()
             {
@@ -76,7 +77,7 @@ namespace Neo.Network.RPC.Models
             };
         }
 
-        public static RpcNep17Transfer FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static RpcNep17Transfer FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new RpcNep17Transfer
             {

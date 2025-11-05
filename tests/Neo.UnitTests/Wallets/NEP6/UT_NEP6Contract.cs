@@ -11,10 +11,10 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.Json;
 using Neo.SmartContract;
 using Neo.Wallets.NEP6;
 using System;
+using System.Text.Json.Nodes;
 
 namespace Neo.UnitTests.Wallets.NEP6
 {
@@ -33,7 +33,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             string json = "{\"script\":\"IQPviR30wLfu+5N9IeoPuIzejg2Cp/8RhytecEeWna+062h0dHaq\"," +
                 "\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false}";
-            JObject @object = (JObject)JToken.Parse(json);
+            JsonObject @object = (JsonObject)JsonNode.Parse(json);
 
             NEP6Contract nep6Contract = NEP6Contract.FromJson(@object);
             CollectionAssert.AreEqual("2103ef891df4c0b7eefb937d21ea0fb88cde8e0d82a7ff11872b5e7047969dafb4eb68747476aa".HexToBytes(), nep6Contract.Script);
@@ -55,25 +55,25 @@ namespace Neo.UnitTests.Wallets.NEP6
                 Deployed = false
             };
 
-            JObject @object = nep6Contract.ToJson();
-            JString jString = (JString)@object["script"];
-            Assert.AreEqual(Convert.ToBase64String(nep6Contract.Script, Base64FormattingOptions.None), jString.Value);
+            JsonObject @object = nep6Contract.ToJson();
+            var jString = @object["script"];
+            Assert.AreEqual(Convert.ToBase64String(nep6Contract.Script, Base64FormattingOptions.None), jString.GetValue<string>());
 
-            JBoolean jBoolean = (JBoolean)@object["deployed"];
-            Assert.IsFalse(jBoolean.Value);
+            var jBoolean = @object["deployed"];
+            Assert.IsFalse(jBoolean.GetValue<bool>());
 
-            JArray parameters = (JArray)@object["parameters"];
+            JsonArray parameters = (JsonArray)@object["parameters"];
             Assert.HasCount(2, parameters);
 
-            jString = (JString)parameters[0]["name"];
-            Assert.AreEqual("param1", jString.Value);
-            jString = (JString)parameters[0]["type"];
-            Assert.AreEqual(ContractParameterType.Boolean.ToString(), jString.Value);
+            jString = parameters[0]["name"];
+            Assert.AreEqual("param1", jString.GetValue<string>());
+            jString = parameters[0]["type"];
+            Assert.AreEqual(ContractParameterType.Boolean.ToString(), jString.GetValue<string>());
 
-            jString = (JString)parameters[1]["name"];
-            Assert.AreEqual("param2", jString.Value);
-            jString = (JString)parameters[1]["type"];
-            Assert.AreEqual(ContractParameterType.Integer.ToString(), jString.Value);
+            jString = parameters[1]["name"];
+            Assert.AreEqual("param2", jString.GetValue<string>());
+            jString = parameters[1]["type"];
+            Assert.AreEqual(ContractParameterType.Integer.ToString(), jString.GetValue<string>());
         }
     }
 }

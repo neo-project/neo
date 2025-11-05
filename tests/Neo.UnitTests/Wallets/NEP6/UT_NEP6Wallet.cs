@@ -23,6 +23,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json.Nodes;
 using Contract = Neo.SmartContract.Contract;
 
 namespace Neo.UnitTests.Wallets.NEP6
@@ -102,15 +103,15 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestChangePassword()
         {
-            var wallet = new JObject()
+            var wallet = new JsonObject()
             {
                 ["name"] = "name",
                 ["version"] = new Version("1.0").ToString(),
                 ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
-                ["accounts"] = new JArray(),
-                ["extra"] = new JObject()
+                ["accounts"] = new JsonArray(),
+                ["extra"] = new JsonObject()
             };
-            File.WriteAllText(wPath, wallet.ToString());
+            File.WriteAllText(wPath, wallet.ToString(false));
 
             uut = new NEP6Wallet(wPath, "123", TestProtocolSettings.Default);
             uut.CreateAccount(keyPair.PrivateKey);
@@ -125,12 +126,12 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             var wallet = new NEP6Wallet(wPath, "123", TestProtocolSettings.Default);
             Assert.AreEqual("name", wallet.Name);
-            Assert.AreEqual(new ScryptParameters(2, 1, 1).ToJson().ToString(), wallet.Scrypt.ToJson().ToString());
+            Assert.AreEqual(new ScryptParameters(2, 1, 1).ToJson().ToString(false), wallet.Scrypt.ToJson().ToString(false));
             Assert.AreEqual(new Version("1.0").ToString(), wallet.Version.ToString());
 
             wallet = new NEP6Wallet("", "123", TestProtocolSettings.Default, "test");
             Assert.AreEqual("test", wallet.Name);
-            Assert.AreEqual(ScryptParameters.Default.ToJson().ToString(), wallet.Scrypt.ToJson().ToString());
+            Assert.AreEqual(ScryptParameters.Default.ToJson().ToString(false), wallet.Scrypt.ToJson().ToString(false));
             Assert.AreEqual(Version.Parse("1.0"), wallet.Version);
 
             wallet = new NEP6Wallet("wallet.json", "123", TestProtocolSettings.Default, "");
@@ -140,15 +141,17 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestConstructorWithJObject()
         {
-            JObject wallet = new();
-            wallet["name"] = "test";
-            wallet["version"] = Version.Parse("1.0").ToString();
-            wallet["scrypt"] = ScryptParameters.Default.ToJson();
-            wallet["accounts"] = new JArray();
-            wallet["extra"] = new JObject();
+            JsonObject wallet = new()
+            {
+                ["name"] = "test",
+                ["version"] = Version.Parse("1.0").ToString(),
+                ["scrypt"] = ScryptParameters.Default.ToJson(),
+                ["accounts"] = new JsonArray(),
+                ["extra"] = new JsonObject()
+            };
             Assert.AreEqual(
                 "{\"name\":\"test\",\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[],\"extra\":{}}",
-                wallet.ToString());
+                wallet.ToString(false));
 
             var w = new NEP6Wallet(null, "123", TestProtocolSettings.Default, wallet);
             Assert.AreEqual("test", w.Name);
@@ -359,13 +362,13 @@ namespace Neo.UnitTests.Wallets.NEP6
             result = uut.Contains(testScriptHash);
             Assert.IsFalse(result);
 
-            var wallet = new JObject()
+            var wallet = new JsonObject()
             {
                 ["name"] = "name",
                 ["version"] = new Version("1.0").ToString(),
                 ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
-                ["accounts"] = new JArray(),
-                ["extra"] = new JObject()
+                ["accounts"] = new JsonArray(),
+                ["extra"] = new JsonObject()
             };
 
             uut = new NEP6Wallet(null, "123", ProtocolSettings.Default, wallet);
@@ -395,15 +398,15 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestSave()
         {
-            var wallet = new JObject()
+            var wallet = new JsonObject()
             {
                 ["name"] = "name",
                 ["version"] = new Version("1.0").ToString(),
                 ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
-                ["accounts"] = new JArray(),
-                ["extra"] = new JObject()
+                ["accounts"] = new JsonArray(),
+                ["extra"] = new JsonObject()
             };
-            File.WriteAllText(wPath, wallet.ToString());
+            File.WriteAllText(wPath, wallet.ToString(false));
 
             uut = new NEP6Wallet(wPath, "123", ProtocolSettings.Default);
             uut.CreateAccount(keyPair.PrivateKey);
@@ -420,7 +423,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             Assert.AreEqual(
                 "{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}",
-                uut.ToJson().ToString());
+                uut.ToJson().ToString(false));
         }
 
         [TestMethod]
@@ -439,13 +442,13 @@ namespace Neo.UnitTests.Wallets.NEP6
             uut.DeleteAccount(testScriptHash);
             Assert.IsFalse(uut.Contains(testScriptHash));
 
-            var wallet = new JObject()
+            var wallet = new JsonObject()
             {
                 ["name"] = "name",
                 ["version"] = new Version("1.0").ToString(),
                 ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
-                ["accounts"] = new JArray(),
-                ["extra"] = new JObject()
+                ["accounts"] = new JsonArray(),
+                ["extra"] = new JsonObject()
             };
 
             uut = new NEP6Wallet(null, "123", ProtocolSettings.Default, wallet);
@@ -467,13 +470,13 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestIsDefault()
         {
-            var wallet = new JObject()
+            var wallet = new JsonObject()
             {
                 ["name"] = "name",
                 ["version"] = new Version("1.0").ToString(),
                 ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
-                ["accounts"] = new JArray(),
-                ["extra"] = new JObject()
+                ["accounts"] = new JsonArray(),
+                ["extra"] = new JsonObject()
             };
 
             var w = new NEP6Wallet(null, "", ProtocolSettings.Default, wallet);

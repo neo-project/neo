@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Namotion.Reflection;
 using Neo.Extensions;
+using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -254,7 +255,7 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (var ctr in NativeContract.Contracts)
             {
                 var state = Call_GetContract(snapshot, ctr.Hash, persistingBlock);
-                Assert.AreEqual(_nativeStates[ctr.Name], state.ToJson().ToString(), message: $"{ctr.Name} is wrong");
+                Assert.AreEqual(_nativeStates[ctr.Name], state.ToJson().ToString(false), message: $"{ctr.Name} is wrong");
             }
         }
 

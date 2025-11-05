@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
@@ -25,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using Array = System.Array;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -1083,12 +1083,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             _uut.Attributes = [];
             _uut.Witnesses = [Witness.Empty];
 
-            JObject jObj = _uut.ToJson(ProtocolSettings.Default);
+            JsonObject jObj = _uut.ToJson(ProtocolSettings.Default);
             Assert.IsNotNull(jObj);
             Assert.AreEqual("0x0ab073429086d9e48fc87386122917989705d1c81fe4a60bf90e2fc228de3146", jObj["hash"].AsString());
             Assert.AreEqual(84, jObj["size"].AsNumber());
             Assert.AreEqual(0, jObj["version"].AsNumber());
-            Assert.IsEmpty((JArray)jObj["attributes"]);
+            Assert.IsEmpty((JsonArray)jObj["attributes"]);
             Assert.AreEqual("0", jObj["netfee"].AsString());
             Assert.AreEqual("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=", jObj["script"].AsString());
             Assert.AreEqual("4200000000", jObj["sysfee"].AsString());

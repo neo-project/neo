@@ -11,6 +11,7 @@
 
 using Neo.Json;
 using System.Numerics;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -20,9 +21,9 @@ namespace Neo.Network.RPC.Models
 
         public BigInteger Votes { get; set; }
 
-        public JObject ToJson() => new() { ["publickey"] = PublicKey, ["votes"] = Votes.ToString() };
+        public JsonObject ToJson() => new() { ["publickey"] = PublicKey, ["votes"] = Votes.ToString() };
 
-        public static RpcValidator FromJson(JObject json)
+        public static RpcValidator FromJson(JsonObject json)
         {
             return new RpcValidator
             {

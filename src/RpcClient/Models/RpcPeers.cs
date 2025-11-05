@@ -11,6 +11,7 @@
 
 using Neo.Json;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -22,23 +23,23 @@ namespace Neo.Network.RPC.Models
 
         public RpcPeer[] Connected { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
-                ["unconnected"] = new JArray(Unconnected.Select(p => p.ToJson())),
-                ["bad"] = new JArray(Bad.Select(p => p.ToJson())),
-                ["connected"] = new JArray(Connected.Select(p => p.ToJson()))
+                ["unconnected"] = new JsonArray(Unconnected.Select(p => p.ToJson()).ToArray()),
+                ["bad"] = new JsonArray(Bad.Select(p => p.ToJson()).ToArray()),
+                ["connected"] = new JsonArray(Connected.Select(p => p.ToJson()).ToArray())
             };
         }
 
-        public static RpcPeers FromJson(JObject json)
+        public static RpcPeers FromJson(JsonObject json)
         {
             return new RpcPeers
             {
-                Unconnected = ((JArray)json["unconnected"]).Select(p => RpcPeer.FromJson((JObject)p)).ToArray(),
-                Bad = ((JArray)json["bad"]).Select(p => RpcPeer.FromJson((JObject)p)).ToArray(),
-                Connected = ((JArray)json["connected"]).Select(p => RpcPeer.FromJson((JObject)p)).ToArray()
+                Unconnected = ((JsonArray)json["unconnected"]).Select(p => RpcPeer.FromJson((JsonObject)p)).ToArray(),
+                Bad = ((JsonArray)json["bad"]).Select(p => RpcPeer.FromJson((JsonObject)p)).ToArray(),
+                Connected = ((JsonArray)json["connected"]).Select(p => RpcPeer.FromJson((JsonObject)p)).ToArray()
             };
         }
     }
@@ -49,9 +50,9 @@ namespace Neo.Network.RPC.Models
 
         public int Port { get; set; }
 
-        public JObject ToJson() => new() { ["address"] = Address, ["port"] = Port };
+        public JsonObject ToJson() => new() { ["address"] = Address, ["port"] = Port };
 
-        public static RpcPeer FromJson(JObject json)
+        public static RpcPeer FromJson(JsonObject json)
         {
             return new RpcPeer
             {

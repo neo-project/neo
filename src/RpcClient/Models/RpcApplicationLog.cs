@@ -16,6 +16,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -27,24 +28,24 @@ namespace Neo.Network.RPC.Models
 
         public List<Execution> Executions { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            var json = new JObject();
+            var json = new JsonObject();
             if (TxId != null)
                 json["txid"] = TxId.ToString();
             if (BlockHash != null)
                 json["blockhash"] = BlockHash.ToString();
-            json["executions"] = Executions.Select(p => p.ToJson()).ToArray();
+            json["executions"] = new JsonArray(Executions.Select(p => p.ToJson()).ToArray());
             return json;
         }
 
-        public static RpcApplicationLog FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static RpcApplicationLog FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new RpcApplicationLog
             {
                 TxId = json["txid"] is null ? null : UInt256.Parse(json["txid"].AsString()),
                 BlockHash = json["blockhash"] is null ? null : UInt256.Parse(json["blockhash"].AsString()),
-                Executions = ((JArray)json["executions"]).Select(p => Execution.FromJson((JObject)p, protocolSettings)).ToList(),
+                Executions = ((JsonArray)json["executions"]).Select(p => Execution.FromJson((JsonObject)p, protocolSettings)).ToList(),
             };
         }
     }
@@ -63,20 +64,20 @@ namespace Neo.Network.RPC.Models
 
         public List<RpcNotifyEventArgs> Notifications { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
-                ["trigger"] = Trigger,
-                ["vmstate"] = VMState,
+                ["trigger"] = Trigger.ToString(),
+                ["vmstate"] = VMState.ToString(),
                 ["gasconsumed"] = GasConsumed.ToString(),
                 ["exception"] = ExceptionMessage,
-                ["stack"] = Stack.Select(q => q.ToJson()).ToArray(),
-                ["notifications"] = Notifications.Select(q => q.ToJson()).ToArray(),
+                ["stack"] = new JsonArray(Stack.Select(q => q.ToJson()).ToArray()),
+                ["notifications"] = new JsonArray(Notifications.Select(q => q.ToJson()).ToArray())
             };
         }
 
-        public static Execution FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static Execution FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new Execution
             {
@@ -84,8 +85,8 @@ namespace Neo.Network.RPC.Models
                 VMState = json["vmstate"].GetEnum<VMState>(),
                 GasConsumed = long.Parse(json["gasconsumed"].AsString()),
                 ExceptionMessage = json["exception"]?.AsString(),
-                Stack = ((JArray)json["stack"]).Select(p => Utility.StackItemFromJson((JObject)p)).ToList(),
-                Notifications = ((JArray)json["notifications"]).Select(p => RpcNotifyEventArgs.FromJson((JObject)p, protocolSettings)).ToList()
+                Stack = ((JsonArray)json["stack"]).Select(p => Utility.StackItemFromJson((JsonObject)p)).ToList(),
+                Notifications = ((JsonArray)json["notifications"]).Select(p => RpcNotifyEventArgs.FromJson((JsonObject)p, protocolSettings)).ToList()
             };
         }
     }
@@ -98,7 +99,7 @@ namespace Neo.Network.RPC.Models
 
         public StackItem State { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
@@ -108,13 +109,13 @@ namespace Neo.Network.RPC.Models
             };
         }
 
-        public static RpcNotifyEventArgs FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static RpcNotifyEventArgs FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new RpcNotifyEventArgs
             {
                 Contract = json["contract"].ToScriptHash(protocolSettings),
                 EventName = json["eventname"].AsString(),
-                State = Utility.StackItemFromJson((JObject)json["state"])
+                State = Utility.StackItemFromJson((JsonObject)json["state"])
             };
         }
     }

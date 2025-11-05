@@ -12,6 +12,7 @@
 using Neo.Json;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -22,23 +23,23 @@ namespace Neo.Network.RPC.Models
         public byte[] FirstProof;
         public byte[] LastProof;
 
-        public static RpcFoundStates FromJson(JObject json)
+        public static RpcFoundStates FromJson(JsonObject json)
         {
             return new RpcFoundStates
             {
-                Truncated = json["truncated"].AsBoolean(),
-                Results = ((JArray)json["results"])
+                Truncated = json["truncated"].GetValue<bool>(),
+                Results = ((JsonArray)json["results"])
                     .Select(j => (
                         Convert.FromBase64String(j["key"].AsString()),
                         Convert.FromBase64String(j["value"].AsString())
                     ))
                     .ToArray(),
-                FirstProof = ProofFromJson((JString)json["firstProof"]),
-                LastProof = ProofFromJson((JString)json["lastProof"]),
+                FirstProof = ProofFromJson((JsonValue)json["firstProof"]),
+                LastProof = ProofFromJson((JsonValue)json["lastProof"]),
             };
         }
 
-        static byte[] ProofFromJson(JString json)
+        static byte[] ProofFromJson(JsonValue json)
             => json == null ? null : Convert.FromBase64String(json.AsString());
     }
 }

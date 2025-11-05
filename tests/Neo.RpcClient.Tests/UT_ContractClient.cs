@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Extensions;
+using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -63,7 +64,7 @@ namespace Neo.Network.RPC.Tests
             };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", new byte[1], manifest.ToJson().ToString());
+                sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", new byte[1], manifest.ToJson().ToString(false));
                 script = sb.ToArray();
             }
 

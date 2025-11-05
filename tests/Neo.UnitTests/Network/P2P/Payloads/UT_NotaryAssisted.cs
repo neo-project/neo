@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using System;
 
@@ -34,7 +35,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             var attr = new NotaryAssisted() { NKeys = 4 };
-            var json = attr.ToJson().ToString();
+            var json = attr.ToJson().ToString(false);
             Assert.AreEqual(@"{""type"":""NotaryAssisted"",""nkeys"":4}", json);
         }
 

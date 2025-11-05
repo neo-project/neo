@@ -12,19 +12,20 @@
 using Neo.Json;
 using Neo.SmartContract;
 using System;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
     class RpcMethodToken
     {
-        public static MethodToken FromJson(JObject json)
+        public static MethodToken FromJson(JsonObject json)
         {
             return new MethodToken
             {
                 Hash = UInt160.Parse(json["hash"].AsString()),
                 Method = json["method"].AsString(),
                 ParametersCount = (ushort)json["paramcount"].AsNumber(),
-                HasReturnValue = json["hasreturnvalue"].AsBoolean(),
+                HasReturnValue = json["hasreturnvalue"].GetValue<bool>(),
                 CallFlags = (CallFlags)Enum.Parse(typeof(CallFlags), json["callflags"].AsString())
             };
         }

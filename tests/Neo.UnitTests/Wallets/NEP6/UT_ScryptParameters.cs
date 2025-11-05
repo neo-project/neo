@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.Wallets.NEP6;
+using System.Text.Json.Nodes;
 
 namespace Neo.UnitTests.Wallets.NEP6
 {
@@ -46,7 +47,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void Test_Default_ScryptParameters_FromJson()
         {
-            var json = new JObject()
+            var json = new JsonObject()
             {
                 ["n"] = 16384,
                 ["r"] = 8,

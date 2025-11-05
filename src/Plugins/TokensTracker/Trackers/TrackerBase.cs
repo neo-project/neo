@@ -11,7 +11,6 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -23,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Plugins.Trackers
@@ -136,17 +136,18 @@ namespace Neo.Plugins.Trackers
             };
         }
 
-        protected JObject ToJson(TokenTransferKey key, TokenTransfer value)
+        protected JsonObject ToJson(TokenTransferKey key, TokenTransfer value)
         {
-            JObject transfer = new();
-            transfer["timestamp"] = key.TimestampMS;
-            transfer["assethash"] = key.AssetScriptHash.ToString();
-            transfer["transferaddress"] = value.UserScriptHash == UInt160.Zero ? null : value.UserScriptHash.ToAddress(_neoSystem.Settings.AddressVersion);
-            transfer["amount"] = value.Amount.ToString();
-            transfer["blockindex"] = value.BlockIndex;
-            transfer["transfernotifyindex"] = key.BlockXferNotificationIndex;
-            transfer["txhash"] = value.TxHash.ToString();
-            return transfer;
+            return new()
+            {
+                ["timestamp"] = key.TimestampMS,
+                ["assethash"] = key.AssetScriptHash.ToString(),
+                ["transferaddress"] = value.UserScriptHash == UInt160.Zero ? null : value.UserScriptHash.ToAddress(_neoSystem.Settings.AddressVersion),
+                ["amount"] = value.Amount.ToString(),
+                ["blockindex"] = value.BlockIndex,
+                ["transfernotifyindex"] = key.BlockXferNotificationIndex,
+                ["txhash"] = value.TxHash.ToString()
+            };
         }
 
         public void Log(string message, LogLevel level = LogLevel.Info)

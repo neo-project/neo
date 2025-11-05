@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
@@ -35,7 +36,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Height = 42
             };
-            var json = test.ToJson().ToString();
+            var json = test.ToJson().ToString(false);
             Assert.AreEqual(@"{""type"":""NotValidBefore"",""height"":42}", json);
         }
 

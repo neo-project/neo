@@ -15,6 +15,7 @@ using Neo.Json;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
+using System.Text.Json.Nodes;
 
 namespace Neo.UnitTests.Wallets.NEP6
 {
@@ -87,14 +88,16 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestFromJson()
         {
-            JObject json = new();
-            json["address"] = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
-            json["key"] = null;
-            json["label"] = null;
-            json["isDefault"] = true;
-            json["lock"] = false;
-            json["contract"] = null;
-            json["extra"] = null;
+            JsonObject json = new()
+            {
+                ["address"] = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf",
+                ["key"] = null,
+                ["label"] = null,
+                ["isDefault"] = true,
+                ["lock"] = false,
+                ["contract"] = null,
+                ["extra"] = null
+            };
             NEP6Account account = NEP6Account.FromJson(json, _wallet);
             Assert.AreEqual("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion), account.ScriptHash);
             Assert.IsNull(account.Label);
@@ -130,25 +133,29 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestToJson()
         {
-            JObject nep6contract = new();
-            nep6contract["script"] = "IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=";
-            JObject parameters = new();
-            parameters["type"] = 0x00;
-            parameters["name"] = "Sig";
-            JArray array = new()
+            JsonObject nep6contract = new()
+            {
+                ["script"] = "IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w="
+            };
+            JsonObject parameters = new()
+            {
+                ["type"] = 0x00,
+                ["name"] = "Sig"
+            };
+            JsonArray array = new()
             {
                 parameters
             };
             nep6contract["parameters"] = array;
             nep6contract["deployed"] = false;
             _account.Contract = NEP6Contract.FromJson(nep6contract);
-            JObject json = _account.ToJson();
+            JsonObject json = _account.ToJson();
             Assert.AreEqual("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf", json["address"].AsString());
             Assert.IsNull(json["label"]);
             Assert.AreEqual("false", json["isDefault"].ToString());
             Assert.AreEqual("false", json["lock"].ToString());
             Assert.IsNull(json["key"]);
-            Assert.AreEqual(@"""IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=""", json["contract"]["script"].ToString());
+            Assert.AreEqual(@"""IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=""", json["contract"]["script"].ToString(false));
             Assert.IsNull(json["extra"]);
 
             _account.Contract = null;

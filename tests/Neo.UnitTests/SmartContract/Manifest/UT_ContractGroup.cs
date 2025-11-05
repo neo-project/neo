@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions.Factories;
+using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
@@ -34,7 +35,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             ContractGroup clone = new();
             ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
-            Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
+            Assert.AreEqual(clone.ToJson().ToString(false), contractGroup.ToJson().ToString(false));
         }
 
         [TestMethod]

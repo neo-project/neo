@@ -236,7 +236,7 @@ namespace Neo.Plugins.RestServer
                 Trusts = manifest.Trusts.Select(s => ContractPermissionDescriptorToJToken(s, serializer)),
                 manifest.SupportedStandards,
                 Extra = manifest.Extra?.Count > 0 ?
-                    new JObject(manifest.Extra.Properties.Select(s => new JProperty(s.Key.ToString(), s.Value?.AsString()))) :
+                    new JObject(manifest.Extra.Select(s => new JProperty(s.Key.ToString(), s.Value?.GetValue<string>()))) :
                     null,
             }, serializer);
 

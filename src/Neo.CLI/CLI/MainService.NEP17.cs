@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
-using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -18,6 +17,7 @@ using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Array = System.Array;
 
 namespace Neo.CLI
@@ -82,7 +82,7 @@ namespace Neo.CLI
         [ConsoleCommand("balanceOf", Category = "NEP17 Commands")]
         private void OnBalanceOfCommand(UInt160 tokenHash, UInt160 address)
         {
-            var arg = new JObject
+            var arg = new JsonObject
             {
                 ["type"] = "Hash160",
                 ["value"] = address.ToString()
@@ -90,7 +90,7 @@ namespace Neo.CLI
 
             var asset = new AssetDescriptor(NeoSystem.StoreView, NeoSystem.Settings, tokenHash);
 
-            if (!OnInvokeWithResult(tokenHash, "balanceOf", out StackItem balanceResult, null, new JArray(arg))) return;
+            if (!OnInvokeWithResult(tokenHash, "balanceOf", out StackItem balanceResult, null, new JsonArray(arg))) return;
 
             var balance = new BigDecimal(((PrimitiveType)balanceResult).GetInteger(), asset.Decimals);
 

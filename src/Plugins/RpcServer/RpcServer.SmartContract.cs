@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer.Model;
@@ -23,6 +22,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading;
 
 namespace Neo.Plugins.RpcServer
@@ -66,36 +66,33 @@ namespace Neo.Plugins.RpcServer
                 session.Dispose();
         }
 
-        private JObject GetInvokeResult(byte[] script, Signer[]? signers = null, Witness[]? witnesses = null, bool useDiagnostic = false)
+        private JsonObject GetInvokeResult(byte[] script, Signer[]? signers = null, Witness[]? witnesses = null, bool useDiagnostic = false)
         {
-            JObject json = new();
+            JsonObject json = new();
             Session session = new(system, script, signers, witnesses, settings.MaxGasInvoke, useDiagnostic ? new Diagnostic() : null);
             try
             {
                 json["script"] = Convert.ToBase64String(script);
-                json["state"] = session.Engine.State;
+                json["state"] = session.Engine.State.ToString();
                 // Gas consumed in the unit of datoshi, 1 GAS = 10^8 datoshi
                 json["gasconsumed"] = session.Engine.FeeConsumed.ToString();
                 json["exception"] = GetExceptionMessage(session.Engine.FaultException);
-                json["notifications"] = new JArray(session.Engine.Notifications.Select(n =>
+                json["notifications"] = new JsonArray(session.Engine.Notifications.Select(n => new JsonObject()
                 {
-                    return new JObject()
-                    {
-                        ["eventname"] = n.EventName,
-                        ["contract"] = n.ScriptHash.ToString(),
-                        ["state"] = ToJson(n.State, session),
-                    };
-                }));
+                    ["eventname"] = n.EventName,
+                    ["contract"] = n.ScriptHash.ToString(),
+                    ["state"] = ToJson(n.State, session),
+                }).ToArray());
                 if (useDiagnostic)
                 {
                     var diagnostic = (Diagnostic)session.Engine.Diagnostic;
-                    json["diagnostics"] = new JObject()
+                    json["diagnostics"] = new JsonObject()
                     {
                         ["invokedcontracts"] = ToJson(diagnostic.InvocationTree.Root!),
                         ["storagechanges"] = ToJson(session.Engine.SnapshotCache.GetChangeSet())
                     };
                 }
-                var stack = new JArray();
+                var stack = new JsonArray();
                 foreach (var item in session.Engine.ResultStack)
                 {
                     try
@@ -134,22 +131,22 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        protected static JObject ToJson(TreeNode<UInt160> node)
+        protected static JsonObject ToJson(TreeNode<UInt160> node)
         {
-            var json = new JObject() { ["hash"] = node.Item.ToString() };
+            var json = new JsonObject() { ["hash"] = node.Item.ToString() };
             if (node.Children.Any())
             {
-                json["call"] = new JArray(node.Children.Select(ToJson));
+                json["call"] = new JsonArray(node.Children.Select(ToJson).ToArray());
             }
             return json;
         }
 
-        protected static JArray ToJson(IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changes)
+        protected static JsonArray ToJson(IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changes)
         {
-            var array = new JArray();
+            var array = new JsonArray();
             foreach (var entry in changes)
             {
-                array.Add(new JObject
+                array.Add(new JsonObject
                 {
                     ["state"] = entry.Value.State.ToString(),
                     ["key"] = Convert.ToBase64String(entry.Key.ToArray()),
@@ -159,7 +156,7 @@ namespace Neo.Plugins.RpcServer
             return array;
         }
 
-        private static JObject ToJson(StackItem item, Session session)
+        private static JsonObject ToJson(StackItem item, Session session)
         {
             var json = item.ToJson();
             if (item is InteropInterface interopInterface && interopInterface.GetInterface<object>() is IIterator iterator)
@@ -235,7 +232,7 @@ namespace Neo.Plugins.RpcServer
         /// Thrown when the script hash is invalid, the contract is not found, or the verification fails.
         /// </exception>
         [RpcMethod]
-        protected internal virtual JToken InvokeFunction(UInt160 scriptHash, string operation,
+        protected internal virtual JsonNode InvokeFunction(UInt160 scriptHash, string operation,
             ContractParameter[]? args = null, SignersAndWitnesses signersAndWitnesses = default, bool useDiagnostic = false)
         {
             var (signers, witnesses) = signersAndWitnesses;
@@ -312,7 +309,7 @@ namespace Neo.Plugins.RpcServer
         /// Thrown when the script is invalid, the verification fails, or the script hash is invalid.
         /// </exception>
         [RpcMethod]
-        protected internal virtual JToken InvokeScript(byte[] script,
+        protected internal virtual JsonNode InvokeScript(byte[] script,
             SignersAndWitnesses signersAndWitnesses = default, bool useDiagnostic = false)
         {
             var (signers, witnesses) = signersAndWitnesses;
@@ -343,7 +340,7 @@ namespace Neo.Plugins.RpcServer
         /// <param name="count">The number of items to traverse.</param>
         /// <returns></returns>
         [RpcMethod]
-        protected internal virtual JToken TraverseIterator(Guid sessionId, Guid iteratorId, int count)
+        protected internal virtual JsonNode TraverseIterator(Guid sessionId, Guid iteratorId, int count)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
 
@@ -358,7 +355,7 @@ namespace Neo.Plugins.RpcServer
             }
 
             var iterator = Result.Ok_Or(() => session.Iterators[iteratorId], RpcError.UnknownIterator);
-            var json = new JArray();
+            var json = new JsonArray();
             while (count-- > 0 && iterator.Next())
                 json.Add(iterator.Value(null).ToJson());
             return json;
@@ -384,7 +381,7 @@ namespace Neo.Plugins.RpcServer
         /// <returns>True if the session is terminated successfully, otherwise false.</returns>
         /// <exception cref="RpcException">Thrown when the session id is invalid.</exception>
         [RpcMethod]
-        protected internal virtual JToken TerminateSession(Guid sessionId)
+        protected internal virtual JsonNode TerminateSession(Guid sessionId)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
 
@@ -420,12 +417,12 @@ namespace Neo.Plugins.RpcServer
         /// Thrown when the address is invalid.
         /// </exception>
         [RpcMethod]
-        protected internal virtual JToken GetUnclaimedGas(Address address)
+        protected internal virtual JsonNode GetUnclaimedGas(Address address)
         {
             var scriptHash = address.ScriptHash;
             var snapshot = system.StoreView;
             var unclaimed = NativeContract.NEO.UnclaimedGas(snapshot, scriptHash, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
-            return new JObject()
+            return new JsonObject()
             {
                 ["unclaimed"] = unclaimed.ToString(),
                 ["address"] = scriptHash.ToAddress(system.Settings.AddressVersion),

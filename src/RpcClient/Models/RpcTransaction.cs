@@ -12,6 +12,7 @@
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -27,7 +28,7 @@ namespace Neo.Network.RPC.Models
 
         public VMState? VMState { get; set; }
 
-        public JObject ToJson(ProtocolSettings protocolSettings)
+        public JsonObject ToJson(ProtocolSettings protocolSettings)
         {
             var json = Utility.TransactionToJson(Transaction, protocolSettings);
             if (Confirmations != null)
@@ -37,13 +38,13 @@ namespace Neo.Network.RPC.Models
                 json["blocktime"] = BlockTime;
                 if (VMState != null)
                 {
-                    json["vmstate"] = VMState;
+                    json["vmstate"] = VMState.ToString();
                 }
             }
             return json;
         }
 
-        public static RpcTransaction FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static RpcTransaction FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             var transaction = new RpcTransaction
             {

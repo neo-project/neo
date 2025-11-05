@@ -18,6 +18,7 @@ using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -149,9 +150,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             var uut = MakeWitnessWithValues(2, 3);
-            JObject json = uut.ToJson();
-            Assert.IsTrue(json.ContainsProperty("invocation"));
-            Assert.IsTrue(json.ContainsProperty("verification"));
+            JsonObject json = uut.ToJson();
+            Assert.IsTrue(json.ContainsKey("invocation"));
+            Assert.IsTrue(json.ContainsKey("verification"));
             Assert.AreEqual("ICA=", json["invocation"].AsString());
             Assert.AreEqual("ICAg", json["verification"].AsString());
         }

@@ -25,6 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Neo.Plugins.RpcServer.Tests
@@ -130,35 +131,35 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         // Helper to simulate processing a raw POST request
-        private async Task<JToken> SimulatePostRequest(string requestBody)
+        private async Task<JsonNode> SimulatePostRequest(string requestBody)
         {
             var context = new DefaultHttpContext();
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(requestBody));
             context.Request.ContentType = "application/json";
 
-            JToken requestJson = null;
-            JToken responseJson = null;
+            JsonNode requestJson = null;
+            JsonNode responseJson = null;
             try
             {
-                requestJson = JToken.Parse(requestBody);
+                requestJson = JsonNode.Parse(requestBody);
             }
             catch (FormatException)
             {
                 // Simulate ProcessAsync behavior for malformed JSON
-                return new JObject() { ["error"] = RpcError.BadRequest.ToJson() };
+                return new JsonObject() { ["error"] = RpcError.BadRequest.ToJson() };
             }
 
-            if (requestJson is JObject singleRequest)
+            if (requestJson is JsonObject singleRequest)
             {
                 responseJson = await _rpcServer.ProcessRequestAsync(context, singleRequest);
             }
-            else if (requestJson is JArray batchRequest)
+            else if (requestJson is JsonArray batchRequest)
             {
                 if (batchRequest.Count == 0)
                 {
                     // Simulate ProcessAsync behavior for empty batch
-                    responseJson = new JObject()
+                    responseJson = new JsonObject()
                     {
                         ["jsonrpc"] = "2.0",
                         ["id"] = null,
@@ -168,17 +169,17 @@ namespace Neo.Plugins.RpcServer.Tests
                 else
                 {
                     // Ensure Cast<JObject> refers to Neo.Json.JObject
-                    var tasks = batchRequest.Cast<JObject>().Select(p => _rpcServer.ProcessRequestAsync(context, p));
+                    var tasks = batchRequest.Cast<JsonObject>().Select(p => _rpcServer.ProcessRequestAsync(context, p));
                     var results = await Task.WhenAll(tasks);
                     // Ensure new JArray is Neo.Json.JArray
-                    responseJson = new JArray(results.Where(p => p != null));
+                    responseJson = new JsonArray(results.Where(p => p != null).ToArray());
                 }
             }
             else
             {
                 // Should not happen with valid JSON
                 // Revert to standard assignment
-                responseJson = new JObject() { ["error"] = RpcError.InvalidRequest.ToJson() };
+                responseJson = new JsonObject() { ["error"] = RpcError.InvalidRequest.ToJson() };
             }
 
             return responseJson;
@@ -217,8 +218,8 @@ namespace Neo.Plugins.RpcServer.Tests
             """;
 
             var response = await SimulatePostRequest(mixedBatchJson);
-            Assert.IsInstanceOfType(response, typeof(JArray));
-            var batchResults = (JArray)response;
+            Assert.IsInstanceOfType(response, typeof(JsonArray));
+            var batchResults = (JsonArray)response;
 
             Assert.HasCount(4, batchResults);
 
@@ -247,25 +248,25 @@ namespace Neo.Plugins.RpcServer.Tests
         {
 #nullable enable
             [RpcMethod]
-            public JToken GetMockMethod(string info) => $"string {info}";
+            public JsonNode GetMockMethod(string info) => $"string {info}";
 
-            public JToken NullContextMethod(string? info) => $"string-nullable {info}";
+            public JsonNode NullContextMethod(string? info) => $"string-nullable {info}";
 
-            public JToken IntMethod(int info) => $"int {info}";
+            public JsonNode IntMethod(int info) => $"int {info}";
 
-            public JToken IntNullableMethod(int? info) => $"int-nullable {info}";
+            public JsonNode IntNullableMethod(int? info) => $"int-nullable {info}";
 
-            public JToken AllowNullMethod([AllowNull] string info) => $"string-allownull {info}";
+            public JsonNode AllowNullMethod([AllowNull] string info) => $"string-allownull {info}";
 #nullable restore
 
 #nullable disable
-            public JToken NullableMethod(string info) => $"string-nullable {info}";
+            public JsonNode NullableMethod(string info) => $"string-nullable {info}";
 
-            public JToken OptionalMethod(string info = "default") => $"string-default {info}";
+            public JsonNode OptionalMethod(string info = "default") => $"string-default {info}";
 
-            public JToken NotNullMethod([NotNull] string info) => $"string-notnull {info}";
+            public JsonNode NotNullMethod([NotNull] string info) => $"string-notnull {info}";
 
-            public JToken DisallowNullMethod([DisallowNull] string info) => $"string-disallownull {info}";
+            public JsonNode DisallowNullMethod([DisallowNull] string info) => $"string-disallownull {info}";
 #nullable restore
         }
 
@@ -295,7 +296,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var output = new StreamReader(responseBody).ReadToEnd();
 
             // Parse the JSON response and check the result
-            var responseJson = JToken.Parse(output);
+            var responseJson = JsonNode.Parse(output);
             Assert.IsNotNull(responseJson["result"]);
             Assert.AreEqual("string test", responseJson["result"].AsString());
             Assert.AreEqual(200, context.Response.StatusCode);

@@ -20,6 +20,7 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Neo.Network.RPC.Tests
@@ -109,7 +110,7 @@ namespace Neo.Network.RPC.Tests
             var haveNeoTokenUT = false;
             foreach (var test in tests)
             {
-                rpcClientMock.Setup(p => p.RpcSendAsync("getcontractstate", It.Is<JToken[]>(u => true)))
+                rpcClientMock.Setup(p => p.RpcSendAsync("getcontractstate", It.Is<JsonNode[]>(u => true)))
                 .ReturnsAsync(test.Response.Result)
                 .Verifiable();
                 if (test.Request.Params[0].AsString() == NativeContract.GAS.Hash.ToString() || test.Request.Params[0].AsString().Equals(NativeContract.GAS.Name, StringComparison.OrdinalIgnoreCase))

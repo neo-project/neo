@@ -46,12 +46,6 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
-        public void TestIsReadOnly()
-        {
-            Assert.IsFalse(od.IsReadOnly);
-        }
-
-        [TestMethod]
         public void TestSetAndGetItem()
         {
             var val = od["a"];

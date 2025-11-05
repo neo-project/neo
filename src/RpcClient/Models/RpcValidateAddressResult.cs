@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -19,14 +20,14 @@ namespace Neo.Network.RPC.Models
 
         public bool IsValid { get; set; }
 
-        public JObject ToJson() => new() { ["address"] = Address, ["isvalid"] = IsValid };
+        public JsonObject ToJson() => new() { ["address"] = Address, ["isvalid"] = IsValid };
 
-        public static RpcValidateAddressResult FromJson(JObject json)
+        public static RpcValidateAddressResult FromJson(JsonObject json)
         {
             return new RpcValidateAddressResult
             {
                 Address = json["address"].AsString(),
-                IsValid = json["isvalid"].AsBoolean()
+                IsValid = json["isvalid"].GetValue<bool>()
             };
         }
     }

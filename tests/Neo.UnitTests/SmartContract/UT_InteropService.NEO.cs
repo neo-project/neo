@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Json;
 using Neo.Network.P2P;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -166,7 +167,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(1, snapshotCache.Find(BitConverter.GetBytes(state.Id)).ToList().Count);
             Assert.AreEqual(1, ret.UpdateCounter);
             Assert.AreEqual(state.Id, ret.Id);
-            Assert.AreEqual(manifest.ToJson().ToString(), ret.Manifest.ToJson().ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(false), ret.Manifest.ToJson().ToString(false));
             Assert.AreEqual(nef.Script.Span.ToHexString().ToString(), ret.Script.Span.ToHexString());
         }
 

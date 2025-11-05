@@ -25,6 +25,7 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading;
 using Array = System.Array;
 using Boolean = Neo.VM.Types.Boolean;
@@ -49,21 +50,21 @@ namespace Neo.Plugins.RpcServer.Tests
         static readonly string s_neoHash = NativeContract.NEO.Hash.ToString();
         static readonly string s_gasHash = NativeContract.GAS.Hash.ToString();
 
-        static readonly JArray validatorSigner = [new JObject()
+        static readonly JsonArray validatorSigner = [new JsonObject()
         {
             ["account"] = ValidatorScriptHash.ToString(),
             ["scopes"] = nameof(WitnessScope.CalledByEntry),
-            ["allowedcontracts"] = new JArray([s_neoHash, s_gasHash]),
-            ["allowedgroups"] = new JArray([TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString()]),
-            ["rules"] = new JArray([
-                new JObject()
+            ["allowedcontracts"] = new JsonArray([s_neoHash, s_gasHash]),
+            ["allowedgroups"] = new JsonArray([TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString()]),
+            ["rules"] = new JsonArray([
+                new JsonObject()
                 {
                     ["action"] = nameof(WitnessRuleAction.Allow),
-                    ["condition"] = new JObject { ["type"] = nameof(WitnessConditionType.CalledByEntry) }
+                    ["condition"] = new JsonObject { ["type"] = nameof(WitnessConditionType.CalledByEntry) }
                 }
             ]),
         }];
-        static readonly JArray multisigSigner = [new JObject()
+        static readonly JsonArray multisigSigner = [new JsonObject()
         {
             ["account"] = MultisigScriptHash.ToString(),
             ["scopes"] = nameof(WitnessScope.CalledByEntry),
@@ -73,32 +74,32 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestInvokeFunction()
         {
             _rpcServer.wallet = _wallet;
-            var resp = (JObject)_rpcServer.InvokeFunction(s_neoHash, "totalSupply", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
+            var resp = (JsonObject)_rpcServer.InvokeFunction(s_neoHash, "totalSupply", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
             Assert.AreEqual(8, resp.Count);
             Assert.AreEqual(resp["script"], NeoTotalSupplyScript);
-            Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
-            Assert.IsTrue(resp.ContainsProperty("diagnostics"));
+            Assert.IsTrue(resp.ContainsKey("gasconsumed"));
+            Assert.IsTrue(resp.ContainsKey("diagnostics"));
             Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], s_neoHash);
-            Assert.IsEmpty((JArray)resp["diagnostics"]["storagechanges"]);
+            Assert.IsEmpty((JsonArray)resp["diagnostics"]["storagechanges"]);
             Assert.AreEqual(nameof(VMState.HALT), resp["state"]);
             Assert.IsNull(resp["exception"]);
-            Assert.IsEmpty((JArray)resp["notifications"]);
+            Assert.IsEmpty((JsonArray)resp["notifications"]);
             Assert.AreEqual(nameof(Integer), resp["stack"][0]["type"]);
             Assert.AreEqual("100000000", resp["stack"][0]["value"]);
-            Assert.IsTrue(resp.ContainsProperty("tx"));
+            Assert.IsTrue(resp.ContainsKey("tx"));
 
-            resp = (JObject)_rpcServer.InvokeFunction(s_neoHash, "symbol");
+            resp = (JsonObject)_rpcServer.InvokeFunction(s_neoHash, "symbol");
             Assert.AreEqual(6, resp.Count);
-            Assert.IsTrue(resp.ContainsProperty("script"));
-            Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
+            Assert.IsTrue(resp.ContainsKey("script"));
+            Assert.IsTrue(resp.ContainsKey("gasconsumed"));
             Assert.AreEqual(nameof(VMState.HALT), resp["state"]);
             Assert.IsNull(resp["exception"]);
-            Assert.IsEmpty((JArray)resp["notifications"]);
+            Assert.IsEmpty((JsonArray)resp["notifications"]);
             Assert.AreEqual(nameof(ByteString), resp["stack"][0]["type"]);
             Assert.AreEqual(resp["stack"][0]["value"], Convert.ToBase64String(Encoding.UTF8.GetBytes("NEO")));
 
             // This call triggers not only NEO but also unclaimed GAS
-            resp = (JObject)_rpcServer.InvokeFunction(
+            resp = (JsonObject)_rpcServer.InvokeFunction(
                 s_neoHash,
                 "transfer",
                 [
@@ -112,14 +113,14 @@ namespace Neo.Plugins.RpcServer.Tests
             );
             Assert.AreEqual(7, resp.Count);
             Assert.AreEqual(resp["script"], NeoTransferScript);
-            Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
-            Assert.IsTrue(resp.ContainsProperty("diagnostics"));
+            Assert.IsTrue(resp.ContainsKey("gasconsumed"));
+            Assert.IsTrue(resp.ContainsKey("diagnostics"));
             Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], s_neoHash);
-            Assert.HasCount(4, (JArray)resp["diagnostics"]["storagechanges"]);
+            Assert.HasCount(4, (JsonArray)resp["diagnostics"]["storagechanges"]);
             Assert.AreEqual(nameof(VMState.HALT), resp["state"]);
             Assert.AreEqual(resp["exception"], $"The smart contract or address {MultisigScriptHash} ({MultisigAddress}) is not found. " +
                                 $"If this is your wallet address and you want to sign a transaction with it, make sure you have opened this wallet.");
-            JArray notifications = (JArray)resp["notifications"];
+            JsonArray notifications = (JsonArray)resp["notifications"];
             Assert.HasCount(2, notifications);
             Assert.AreEqual("Transfer", notifications[0]["eventname"].AsString());
             Assert.AreEqual(notifications[0]["contract"].AsString(), s_neoHash);
@@ -137,12 +138,12 @@ namespace Neo.Plugins.RpcServer.Tests
             _rpcServer.wallet = _wallet;
 
             var context = new DefaultHttpContext();
-            var json = new JObject()
+            var json = new JsonObject()
             {
                 ["id"] = 1,
                 ["jsonrpc"] = "2.0",
                 ["method"] = "invokefunction",
-                ["params"] = new JArray("0", "totalSupply", new JArray([]), validatorSigner, true),
+                ["params"] = new JsonArray("0", "totalSupply", new JsonArray([]), validatorSigner, true),
             };
 
             var resp = _rpcServer.ProcessRequestAsync(context, json).GetAwaiter().GetResult();
@@ -158,22 +159,22 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestInvokeScript()
         {
-            var resp = (JObject)_rpcServer.InvokeScript(
+            var resp = (JsonObject)_rpcServer.InvokeScript(
                 Convert.FromBase64String(NeoTotalSupplyScript),
                 validatorSigner.AsParameter<SignersAndWitnesses>(),
                 true
             );
             Assert.AreEqual(7, resp.Count);
-            Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
-            Assert.IsTrue(resp.ContainsProperty("diagnostics"));
+            Assert.IsTrue(resp.ContainsKey("gasconsumed"));
+            Assert.IsTrue(resp.ContainsKey("diagnostics"));
             Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], s_neoHash);
             Assert.AreEqual(nameof(VMState.HALT), resp["state"]);
             Assert.IsNull(resp["exception"]);
-            Assert.IsEmpty((JArray)resp["notifications"]);
+            Assert.IsEmpty((JsonArray)resp["notifications"]);
             Assert.AreEqual(nameof(Integer), resp["stack"][0]["type"]);
             Assert.AreEqual("100000000", resp["stack"][0]["value"]);
 
-            resp = (JObject)_rpcServer.InvokeScript(Convert.FromBase64String(NeoTransferScript));
+            resp = (JsonObject)_rpcServer.InvokeScript(Convert.FromBase64String(NeoTransferScript));
             Assert.AreEqual(6, resp.Count);
             Assert.AreEqual(nameof(Boolean), resp["stack"][0]["type"]);
             Assert.AreEqual(false, resp["stack"][0]["value"]);
@@ -184,7 +185,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             // Attempt to call a non-existent method
             var functionName = "nonExistentMethod";
-            var resp = (JObject)_rpcServer.InvokeFunction(s_neoHash, functionName, []);
+            var resp = (JsonObject)_rpcServer.InvokeFunction(s_neoHash, functionName, []);
 
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
@@ -202,7 +203,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 abortScript = sb.ToArray();
             }
 
-            var resp = (JObject)_rpcServer.InvokeScript(abortScript);
+            var resp = (JsonObject)_rpcServer.InvokeScript(abortScript);
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
             Assert.Contains("ABORT is executed", resp["exception"].AsString()); // Check for specific ABORT message
@@ -226,7 +227,7 @@ namespace Neo.Plugins.RpcServer.Tests
             };
             var tempRpcServer = new RpcServer(_neoSystem, lowGasSettings);
 
-            var resp = (JObject)tempRpcServer.InvokeScript(loopScript);
+            var resp = (JsonObject)tempRpcServer.InvokeScript(loopScript);
             Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
             Assert.IsNotNull(resp["exception"].AsString());
             Assert.Contains("Insufficient GAS", resp["exception"].AsString());
@@ -236,7 +237,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestInvokeFunction_InvalidSignerScope()
         {
-            var invalidSigner = new JArray(new JObject()
+            var invalidSigner = new JsonArray(new JsonObject()
             {
                 ["account"] = ValidatorScriptHash.ToString(),
                 ["scopes"] = "InvalidScopeValue", // Invalid enum value
@@ -252,7 +253,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestInvokeFunction_InvalidSignerAccount()
         {
-            var invalidSigner = new JArray(new JObject()
+            var invalidSigner = new JsonArray(new JsonObject()
             {
                 ["account"] = "NotAValidHash160",
                 ["scopes"] = nameof(WitnessScope.CalledByEntry),
@@ -268,7 +269,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestInvokeFunction_InvalidWitnessInvocation()
         {
             // Construct signer/witness JSON manually with invalid base64
-            var invalidWitnessSigner = new JArray(new JObject()
+            var invalidWitnessSigner = new JsonArray(new JsonObject()
             {
                 ["account"] = ValidatorScriptHash.ToString(),
                 ["scopes"] = nameof(WitnessScope.CalledByEntry),
@@ -284,7 +285,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestInvokeFunction_InvalidWitnessVerification()
         {
-            var invalidWitnessSigner = new JArray(new JObject()
+            var invalidWitnessSigner = new JsonArray(new JsonObject()
             {
                 ["account"] = ValidatorScriptHash.ToString(),
                 ["scopes"] = nameof(WitnessScope.CalledByEntry),
@@ -302,11 +303,11 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             // Call transfer which expects Hash160, Hash160, Integer, Any
             // Provide an invalid value for the Integer parameter
-            var invalidParams = new JArray([
-                new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = MultisigScriptHash.ToString() },
-                new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = ValidatorScriptHash.ToString() },
-                new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "NotAnInteger" }, // Invalid value
-                new JObject() { ["type"] = nameof(ContractParameterType.Any) },
+            var invalidParams = new JsonArray([
+                new JsonObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = MultisigScriptHash.ToString() },
+                new JsonObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = ValidatorScriptHash.ToString() },
+                new JsonObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "NotAnInteger" }, // Invalid value
+                new JsonObject() { ["type"] = nameof(ContractParameterType.Any) },
             ]);
 
             // Underlying ContractParameter.FromJson throws FormatException when called directly
@@ -321,7 +322,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestInvokeScript_InvalidBase64()
         {
-            var invalidBase64Script = new JString("ThisIsNotValidBase64***");
+            JsonNode invalidBase64Script = "ThisIsNotValidBase64***";
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeScript(invalidBase64Script.AsParameter<byte[]>()));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
             Assert.Contains(RpcError.InvalidParams.Message, ex.Message); // Fix based on test output
@@ -332,7 +333,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             // Use the NeoTransferScript which modifies NEO and GAS balances
             // Need valid signers for the transfer to simulate correctly (even though wallet isn't signing here)
-            var transferSigners = new JArray(new JObject()
+            var transferSigners = new JsonArray(new JsonObject()
             {
                 // Use Multisig as sender, which has initial balance
                 ["account"] = MultisigScriptHash.ToString(),
@@ -340,38 +341,38 @@ namespace Neo.Plugins.RpcServer.Tests
             });
 
             // Invoke with diagnostics enabled
-            var resp = (JObject)_rpcServer.InvokeScript(
+            var resp = (JsonObject)_rpcServer.InvokeScript(
                 Convert.FromBase64String(NeoTransferScript),
                 transferSigners.AsParameter<SignersAndWitnesses>(),
                 true
             );
 
-            Assert.IsTrue(resp.ContainsProperty("diagnostics"));
-            var diagnostics = (JObject)resp["diagnostics"];
+            Assert.IsTrue(resp.ContainsKey("diagnostics"));
+            var diagnostics = (JsonObject)resp["diagnostics"];
 
             // Verify Invoked Contracts structure
-            Assert.IsTrue(diagnostics.ContainsProperty("invokedcontracts"));
-            var invokedContracts = (JObject)diagnostics["invokedcontracts"];
+            Assert.IsTrue(diagnostics.ContainsKey("invokedcontracts"));
+            var invokedContracts = (JsonObject)diagnostics["invokedcontracts"];
 
             // Don't assert on root hash for raw script invoke, structure might differ
-            Assert.IsTrue(invokedContracts.ContainsProperty("call")); // Nested calls
+            Assert.IsTrue(invokedContracts.ContainsKey("call")); // Nested calls
 
-            var calls = (JArray)invokedContracts["call"];
+            var calls = (JsonArray)invokedContracts["call"];
             Assert.IsGreaterThanOrEqualTo(1, calls.Count); // Should call at least GAS contract for claim
 
             // Also check for NEO call, as it's part of the transfer
             Assert.IsTrue(calls.Any(c => c["hash"].AsString() == s_neoHash)); // Fix based on test output
 
             // Verify Storage Changes
-            Assert.IsTrue(diagnostics.ContainsProperty("storagechanges"));
-            var storageChanges = (JArray)diagnostics["storagechanges"];
+            Assert.IsTrue(diagnostics.ContainsKey("storagechanges"));
+            var storageChanges = (JsonArray)diagnostics["storagechanges"];
             Assert.IsGreaterThan(0, storageChanges.Count, "Expected storage changes for transfer");
 
             // Check structure of a storage change item
-            var firstChange = (JObject)storageChanges[0];
-            Assert.IsTrue(firstChange.ContainsProperty("state"));
-            Assert.IsTrue(firstChange.ContainsProperty("key"));
-            Assert.IsTrue(firstChange.ContainsProperty("value"));
+            var firstChange = (JsonObject)storageChanges[0];
+            Assert.IsTrue(firstChange.ContainsKey("state"));
+            Assert.IsTrue(firstChange.ContainsKey("key"));
+            Assert.IsTrue(firstChange.ContainsKey("value"));
             Assert.IsTrue(new[] { "Added", "Changed", "Deleted" }.Contains(firstChange["state"].AsString()));
         }
 
@@ -379,18 +380,18 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestTraverseIterator()
         {
             // GetAllCandidates that should return 0 candidates
-            var resp = (JObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
+            var resp = (JsonObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
             var sessionId = resp["session"];
             var iteratorId = resp["stack"][0]["id"];
-            var respArray = (JArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100);
+            var respArray = (JsonArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100);
             Assert.IsEmpty(respArray);
 
             _rpcServer.TerminateSession(sessionId.AsParameter<Guid>());
             Assert.ThrowsExactly<RpcException>(
-                () => _ = (JArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100), "Unknown session");
+                () => _ = (JsonArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100), "Unknown session");
 
             // register candidate in snapshot
-            resp = (JObject)_rpcServer.InvokeFunction(
+            resp = (JsonObject)_rpcServer.InvokeFunction(
                 s_neoHash,
                 "registerCandidate",
                 [
@@ -416,14 +417,14 @@ namespace Neo.Plugins.RpcServer.Tests
             engine.SnapshotCache.Commit();
 
             // GetAllCandidates that should return 1 candidate
-            resp = (JObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
+            resp = (JsonObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
             sessionId = resp["session"];
             iteratorId = resp["stack"][0]["id"];
-            respArray = (JArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100);
+            respArray = (JsonArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100);
             Assert.HasCount(1, respArray);
             Assert.AreEqual(nameof(Struct), respArray[0]["type"]);
 
-            var value = (JArray)respArray[0]["value"];
+            var value = (JsonArray)respArray[0]["value"];
             Assert.HasCount(2, value);
             Assert.AreEqual(nameof(ByteString), value[0]["type"]);
             Assert.AreEqual(value[0]["value"], Convert.ToBase64String(TestProtocolSettings.SoleNode.StandbyCommittee[0].ToArray()));
@@ -431,46 +432,46 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual("0", value[1]["value"]);
 
             // No result when traversed again
-            respArray = (JArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100);
+            respArray = (JsonArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100);
             Assert.IsEmpty(respArray);
 
             // GetAllCandidates again
-            resp = (JObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
+            resp = (JsonObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
             sessionId = resp["session"];
             iteratorId = resp["stack"][0]["id"];
 
             // Insufficient result count limit
-            respArray = (JArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 0);
+            respArray = (JsonArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 0);
             Assert.IsEmpty(respArray);
 
-            respArray = (JArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 1);
+            respArray = (JsonArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 1);
             Assert.HasCount(1, respArray);
 
-            respArray = (JArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 1);
+            respArray = (JsonArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 1);
             Assert.IsEmpty(respArray);
 
             // Mocking session timeout
             Thread.Sleep((int)_rpcServerSettings.SessionExpirationTime.TotalMilliseconds + 1);
 
             // build another session that did not expire
-            resp = (JObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
+            resp = (JsonObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
             var notExpiredSessionId = resp["session"];
             var notExpiredIteratorId = resp["stack"][0]["id"];
 
             _rpcServer.OnTimer(new object());
             Assert.ThrowsExactly<RpcException>(
-                () => _ = (JArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100), "Unknown session");
-            respArray = (JArray)_rpcServer.TraverseIterator(notExpiredSessionId.AsParameter<Guid>(), notExpiredIteratorId.AsParameter<Guid>(), 1);
+                () => _ = (JsonArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100), "Unknown session");
+            respArray = (JsonArray)_rpcServer.TraverseIterator(notExpiredSessionId.AsParameter<Guid>(), notExpiredIteratorId.AsParameter<Guid>(), 1);
             Assert.HasCount(1, respArray);
 
             // Mocking disposal
-            resp = (JObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
+            resp = (JsonObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
             sessionId = resp["session"];
             iteratorId = resp["stack"][0]["id"];
             _rpcServer.Dispose_SmartContract();
 
             Assert.ThrowsExactly<RpcException>(
-                () => _ = (JArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100), "Unknown session");
+                () => _ = (JsonArray)_rpcServer.TraverseIterator(sessionId.AsParameter<Guid>(), iteratorId.AsParameter<Guid>(), 100), "Unknown session");
         }
 
         [TestMethod]
@@ -497,7 +498,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestTraverseIterator_CountLimitExceeded()
         {
             // Need an active session and iterator first
-            var resp = (JObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
+            var resp = (JsonObject)_rpcServer.InvokeFunction(s_neoHash, "getAllCandidates", [], validatorSigner.AsParameter<SignersAndWitnesses>(), true);
             var sessionId = resp["session"];
             var iteratorId = resp["stack"][0]["id"];
 
@@ -518,19 +519,19 @@ namespace Neo.Plugins.RpcServer.Tests
             var unknownSessionId = Guid.NewGuid();
             // TerminateSession returns false for unknown session, doesn't throw RpcException directly
             var result = _rpcServer.TerminateSession(unknownSessionId);
-            Assert.IsFalse(result.AsBoolean()); // Fix based on test output
+            Assert.IsFalse(result.GetValue<bool>()); // Fix based on test output
         }
 
         [TestMethod]
         public void TestGetUnclaimedGas()
         {
-            var address = new JString(MultisigAddress);
-            JObject resp = (JObject)_rpcServer.GetUnclaimedGas(address.AsParameter<Address>());
+            JsonNode address = MultisigAddress;
+            JsonObject resp = (JsonObject)_rpcServer.GetUnclaimedGas(address.AsParameter<Address>());
             Assert.AreEqual("50000000", resp["unclaimed"]);
             Assert.AreEqual(resp["address"], MultisigAddress);
 
-            address = new JString(ValidatorAddress);
-            resp = (JObject)_rpcServer.GetUnclaimedGas(address.AsParameter<Address>());
+            address = ValidatorAddress;
+            resp = (JsonObject)_rpcServer.GetUnclaimedGas(address.AsParameter<Address>());
             Assert.AreEqual("0", resp["unclaimed"]);
             Assert.AreEqual(resp["address"], ValidatorAddress);
         }
@@ -538,7 +539,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestGetUnclaimedGas_InvalidAddress()
         {
-            var invalidAddress = new JString("ThisIsNotAValidNeoAddress");
+            JsonNode invalidAddress = "ThisIsNotAValidNeoAddress";
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetUnclaimedGas(invalidAddress.AsParameter<Address>()));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
 

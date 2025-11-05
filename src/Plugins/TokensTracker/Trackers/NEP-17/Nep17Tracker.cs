@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -25,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Plugins.Trackers.NEP_17
@@ -144,7 +144,7 @@ namespace Neo.Plugins.Trackers.NEP_17
 
 
         [RpcMethod]
-        public JToken GetNep17Transfers(Address address, ulong startTime = 0, ulong endTime = 0)
+        public JsonNode GetNep17Transfers(Address address, ulong startTime = 0, ulong endTime = 0)
         {
             _shouldTrackHistory.True_Or(RpcError.MethodNotFound);
 
@@ -155,24 +155,26 @@ namespace Neo.Plugins.Trackers.NEP_17
             endTime = endTime == 0 ? DateTime.UtcNow.ToTimestampMS() : endTime;
             (endTime >= startTime).True_Or(RpcError.InvalidParams);
 
-            JObject json = new();
-            json["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion);
-            JArray transfersSent = new();
-            json["sent"] = transfersSent;
-            JArray transfersReceived = new();
-            json["received"] = transfersReceived;
+            JsonArray transfersSent = new();
+            JsonArray transfersReceived = new();
+            JsonObject json = new()
+            {
+                ["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion),
+                ["sent"] = transfersSent,
+                ["received"] = transfersReceived
+            };
             AddNep17Transfers(Nep17TransferSentPrefix, userScriptHash, startTime, endTime, transfersSent);
             AddNep17Transfers(Nep17TransferReceivedPrefix, userScriptHash, startTime, endTime, transfersReceived);
             return json;
         }
 
         [RpcMethod]
-        public JToken GetNep17Balances(Address address)
+        public JsonNode GetNep17Balances(Address address)
         {
             var userScriptHash = address.ScriptHash;
 
-            JObject json = new();
-            JArray balances = new();
+            JsonObject json = new();
+            JsonArray balances = new();
             json["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion);
             json["balance"] = balances;
 
@@ -194,7 +196,7 @@ namespace Neo.Plugins.Trackers.NEP_17
                     var decimals = engine.ResultStack.Pop().GetInteger();
                     var name = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, key.AssetScriptHash).Manifest.Name;
 
-                    balances.Add(new JObject
+                    balances.Add(new JsonObject
                     {
                         ["assethash"] = key.AssetScriptHash.ToString(),
                         ["name"] = name,
@@ -214,7 +216,7 @@ namespace Neo.Plugins.Trackers.NEP_17
             return json;
         }
 
-        private void AddNep17Transfers(byte dbPrefix, UInt160 userScriptHash, ulong startTime, ulong endTime, JArray parentJArray)
+        private void AddNep17Transfers(byte dbPrefix, UInt160 userScriptHash, ulong startTime, ulong endTime, JsonArray parentJArray)
         {
             var transferPairs = QueryTransfers<Nep17TransferKey, TokenTransfer>(dbPrefix, userScriptHash, startTime, endTime).Take((int)_maxResults).ToList();
             foreach (var (key, value) in transferPairs.OrderByDescending(l => l.key.TimestampMS))

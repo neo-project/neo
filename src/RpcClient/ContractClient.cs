@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Extensions;
+using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
 using Neo.SmartContract;
@@ -62,7 +63,7 @@ namespace Neo.Network.RPC
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest.ToJson().ToString());
+                sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest.ToJson().ToString(false));
                 script = sb.ToArray();
             }
             UInt160 sender = Contract.CreateSignatureRedeemScript(key.PublicKey).ToScriptHash();

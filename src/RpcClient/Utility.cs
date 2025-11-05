@@ -22,6 +22,7 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 using Buffer = Neo.VM.Types.Buffer;
 
@@ -40,7 +41,7 @@ namespace Neo.Network.RPC
             return (numerator, denominator);
         }
 
-        public static UInt160 ToScriptHash(this JToken value, ProtocolSettings protocolSettings)
+        public static UInt160 ToScriptHash(this JsonNode value, ProtocolSettings protocolSettings)
         {
             var addressOrScriptHash = value.AsString();
 
@@ -120,23 +121,23 @@ namespace Neo.Network.RPC
             return res;
         }
 
-        public static Block BlockFromJson(JObject json, ProtocolSettings protocolSettings)
+        public static Block BlockFromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new Block()
             {
                 Header = HeaderFromJson(json, protocolSettings),
-                Transactions = ((JArray)json["tx"]).Select(p => TransactionFromJson((JObject)p, protocolSettings)).ToArray()
+                Transactions = ((JsonArray)json["tx"]).Select(p => TransactionFromJson((JsonObject)p, protocolSettings)).ToArray()
             };
         }
 
-        public static JObject BlockToJson(Block block, ProtocolSettings protocolSettings)
+        public static JsonObject BlockToJson(Block block, ProtocolSettings protocolSettings)
         {
-            JObject json = block.ToJson(protocolSettings);
-            json["tx"] = block.Transactions.Select(p => TransactionToJson(p, protocolSettings)).ToArray();
+            JsonObject json = block.ToJson(protocolSettings);
+            json["tx"] = new JsonArray(block.Transactions.Select(p => TransactionToJson(p, protocolSettings)).ToArray());
             return json;
         }
 
-        public static Header HeaderFromJson(JObject json, ProtocolSettings protocolSettings)
+        public static Header HeaderFromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new Header
             {
@@ -148,47 +149,47 @@ namespace Neo.Network.RPC
                 Index = (uint)json["index"].AsNumber(),
                 PrimaryIndex = (byte)json["primary"].AsNumber(),
                 NextConsensus = json["nextconsensus"].ToScriptHash(protocolSettings),
-                Witness = ((JArray)json["witnesses"]).Select(p => WitnessFromJson((JObject)p)).FirstOrDefault()
+                Witness = ((JsonArray)json["witnesses"]).Select(p => WitnessFromJson((JsonObject)p)).FirstOrDefault()
             };
         }
 
-        public static Transaction TransactionFromJson(JObject json, ProtocolSettings protocolSettings)
+        public static Transaction TransactionFromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new Transaction
             {
                 Version = byte.Parse(json["version"].AsString()),
                 Nonce = uint.Parse(json["nonce"].AsString()),
-                Signers = ((JArray)json["signers"]).Select(p => SignerFromJson((JObject)p, protocolSettings)).ToArray(),
+                Signers = ((JsonArray)json["signers"]).Select(p => SignerFromJson((JsonObject)p, protocolSettings)).ToArray(),
                 SystemFee = long.Parse(json["sysfee"].AsString()),
                 NetworkFee = long.Parse(json["netfee"].AsString()),
                 ValidUntilBlock = uint.Parse(json["validuntilblock"].AsString()),
-                Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttributeFromJson((JObject)p)).ToArray(),
+                Attributes = ((JsonArray)json["attributes"]).Select(p => TransactionAttributeFromJson((JsonObject)p)).ToArray(),
                 Script = Convert.FromBase64String(json["script"].AsString()),
-                Witnesses = ((JArray)json["witnesses"]).Select(p => WitnessFromJson((JObject)p)).ToArray()
+                Witnesses = ((JsonArray)json["witnesses"]).Select(p => WitnessFromJson((JsonObject)p)).ToArray()
             };
         }
 
-        public static JObject TransactionToJson(Transaction tx, ProtocolSettings protocolSettings)
+        public static JsonObject TransactionToJson(Transaction tx, ProtocolSettings protocolSettings)
         {
-            JObject json = tx.ToJson(protocolSettings);
+            JsonObject json = tx.ToJson(protocolSettings);
             json["sysfee"] = tx.SystemFee.ToString();
             json["netfee"] = tx.NetworkFee.ToString();
             return json;
         }
 
-        public static Signer SignerFromJson(JObject json, ProtocolSettings protocolSettings)
+        public static Signer SignerFromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new Signer
             {
                 Account = json["account"].ToScriptHash(protocolSettings),
-                Rules = ((JArray)json["rules"])?.Select(p => RuleFromJson((JObject)p, protocolSettings)).ToArray(),
+                Rules = ((JsonArray)json["rules"])?.Select(p => RuleFromJson((JsonObject)p, protocolSettings)).ToArray(),
                 Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scopes"].AsString()),
-                AllowedContracts = ((JArray)json["allowedcontracts"])?.Select(p => p.ToScriptHash(protocolSettings)).ToArray(),
-                AllowedGroups = ((JArray)json["allowedgroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray()
+                AllowedContracts = ((JsonArray)json["allowedcontracts"])?.Select(p => p.ToScriptHash(protocolSettings)).ToArray(),
+                AllowedGroups = ((JsonArray)json["allowedgroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray()
             };
         }
 
-        public static TransactionAttribute TransactionAttributeFromJson(JObject json)
+        public static TransactionAttribute TransactionAttributeFromJson(JsonObject json)
         {
             TransactionAttributeType usage = Enum.Parse<TransactionAttributeType>(json["type"].AsString());
             return usage switch
@@ -216,7 +217,7 @@ namespace Neo.Network.RPC
             };
         }
 
-        public static Witness WitnessFromJson(JObject json)
+        public static Witness WitnessFromJson(JsonObject json)
         {
             return new Witness
             {
@@ -225,23 +226,23 @@ namespace Neo.Network.RPC
             };
         }
 
-        public static WitnessRule RuleFromJson(JObject json, ProtocolSettings protocolSettings)
+        public static WitnessRule RuleFromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new WitnessRule()
             {
                 Action = Enum.Parse<WitnessRuleAction>(json["action"].AsString()),
-                Condition = RuleExpressionFromJson((JObject)json["condition"], protocolSettings)
+                Condition = RuleExpressionFromJson((JsonObject)json["condition"], protocolSettings)
             };
         }
 
-        public static WitnessCondition RuleExpressionFromJson(JObject json, ProtocolSettings protocolSettings)
+        public static WitnessCondition RuleExpressionFromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return json["type"].AsString() switch
             {
-                "Or" => new OrCondition { Expressions = ((JArray)json["expressions"])?.Select(p => RuleExpressionFromJson((JObject)p, protocolSettings)).ToArray() },
-                "And" => new AndCondition { Expressions = ((JArray)json["expressions"])?.Select(p => RuleExpressionFromJson((JObject)p, protocolSettings)).ToArray() },
-                "Boolean" => new BooleanCondition { Expression = json["expression"].AsBoolean() },
-                "Not" => new NotCondition { Expression = RuleExpressionFromJson((JObject)json["expression"], protocolSettings) },
+                "Or" => new OrCondition { Expressions = ((JsonArray)json["expressions"])?.Select(p => RuleExpressionFromJson((JsonObject)p, protocolSettings)).ToArray() },
+                "And" => new AndCondition { Expressions = ((JsonArray)json["expressions"])?.Select(p => RuleExpressionFromJson((JsonObject)p, protocolSettings)).ToArray() },
+                "Boolean" => new BooleanCondition { Expression = json["expression"].GetValue<bool>() },
+                "Not" => new NotCondition { Expression = RuleExpressionFromJson((JsonObject)json["expression"], protocolSettings) },
                 "Group" => new GroupCondition { Group = ECPoint.Parse(json["group"].AsString(), ECCurve.Secp256r1) },
                 "CalledByContract" => new CalledByContractCondition { Hash = json["hash"].ToScriptHash(protocolSettings) },
                 "ScriptHash" => new ScriptHashCondition { Hash = json["hash"].ToScriptHash(protocolSettings) },
@@ -251,13 +252,13 @@ namespace Neo.Network.RPC
             };
         }
 
-        public static StackItem StackItemFromJson(JObject json)
+        public static StackItem StackItemFromJson(JsonObject json)
         {
             StackItemType type = json["type"].GetEnum<StackItemType>();
             switch (type)
             {
                 case StackItemType.Boolean:
-                    return json["value"].GetBoolean() ? StackItem.True : StackItem.False;
+                    return json["value"].GetValue<bool>() ? StackItem.True : StackItem.False;
                 case StackItemType.Buffer:
                     return new Buffer(Convert.FromBase64String(json["value"].AsString()));
                 case StackItemType.ByteString:
@@ -266,20 +267,20 @@ namespace Neo.Network.RPC
                     return BigInteger.Parse(json["value"].AsString());
                 case StackItemType.Array:
                     Array array = new();
-                    foreach (JObject item in (JArray)json["value"])
+                    foreach (JsonObject item in (JsonArray)json["value"])
                         array.Add(StackItemFromJson(item));
                     return array;
                 case StackItemType.Struct:
                     Struct @struct = new();
-                    foreach (JObject item in (JArray)json["value"])
+                    foreach (JsonObject item in (JsonArray)json["value"])
                         @struct.Add(StackItemFromJson(item));
                     return @struct;
                 case StackItemType.Map:
                     Map map = new();
-                    foreach (var item in (JArray)json["value"])
+                    foreach (var item in (JsonArray)json["value"])
                     {
-                        PrimitiveType key = (PrimitiveType)StackItemFromJson((JObject)item["key"]);
-                        map[key] = StackItemFromJson((JObject)item["value"]);
+                        PrimitiveType key = (PrimitiveType)StackItemFromJson((JsonObject)item["key"]);
+                        map[key] = StackItemFromJson((JsonObject)item["value"]);
                     }
                     return map;
                 case StackItemType.Pointer:
@@ -295,8 +296,8 @@ namespace Neo.Network.RPC
         {
             if (item is InteropInterface iop)
             {
-                var json = iop.GetInterface<JObject>();
-                return json["id"]?.GetString();
+                var json = iop.GetInterface<JsonObject>();
+                return json["id"]?.GetValue<string>();
             }
             return null;
         }

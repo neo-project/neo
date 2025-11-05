@@ -12,6 +12,7 @@
 using Neo.Json;
 using Neo.Network.RPC.Models;
 using System;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Neo.Network.RPC
@@ -28,7 +29,7 @@ namespace Neo.Network.RPC
         public async Task<RpcStateRoot> GetStateRootAsync(uint index)
         {
             var result = await rpcClient.RpcSendAsync(RpcClient.GetRpcName(), index).ConfigureAwait(false);
-            return RpcStateRoot.FromJson((JObject)result);
+            return RpcStateRoot.FromJson((JsonObject)result);
         }
 
         public async Task<byte[]> GetProofAsync(UInt256 rootHash, UInt160 scriptHash, byte[] key)
@@ -54,11 +55,11 @@ namespace Neo.Network.RPC
             return (localRootIndex, validatedRootIndex);
         }
 
-        static uint? ToNullableUint(JToken json) => (json == null) ? null : (uint?)json.AsNumber();
+        static uint? ToNullableUint(JsonNode json) => (json == null) ? null : (uint?)json.AsNumber();
 
-        public static JToken[] MakeFindStatesParams(UInt256 rootHash, UInt160 scriptHash, ReadOnlySpan<byte> prefix, ReadOnlySpan<byte> from = default, int? count = null)
+        public static JsonNode[] MakeFindStatesParams(UInt256 rootHash, UInt160 scriptHash, ReadOnlySpan<byte> prefix, ReadOnlySpan<byte> from = default, int? count = null)
         {
-            var @params = new JToken[count.HasValue ? 5 : 4];
+            var @params = new JsonNode[count.HasValue ? 5 : 4];
             @params[0] = rootHash.ToString();
             @params[1] = scriptHash.ToString();
             @params[2] = Convert.ToBase64String(prefix);
@@ -75,7 +76,7 @@ namespace Neo.Network.RPC
             var @params = MakeFindStatesParams(rootHash, scriptHash, prefix.Span, from.Span, count);
             var result = await rpcClient.RpcSendAsync(RpcClient.GetRpcName(), @params).ConfigureAwait(false);
 
-            return RpcFoundStates.FromJson((JObject)result);
+            return RpcFoundStates.FromJson((JsonObject)result);
         }
 
         public async Task<byte[]> GetStateAsync(UInt256 rootHash, UInt160 scriptHash, byte[] key)

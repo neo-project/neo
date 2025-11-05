@@ -14,6 +14,7 @@ using Neo.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -34,7 +35,7 @@ namespace Neo.Network.RPC.Models
             public IReadOnlyList<string> SeedList { get; set; }
             public IReadOnlyList<ECPoint> StandbyCommittee { get; set; }
 
-            public JObject ToJson()
+            public JsonObject ToJson()
             {
                 return new()
                 {
@@ -47,17 +48,17 @@ namespace Neo.Network.RPC.Models
                     ["maxtransactionsperblock"] = MaxTransactionsPerBlock,
                     ["memorypoolmaxtransactions"] = MemoryPoolMaxTransactions,
                     ["initialgasdistribution"] = InitialGasDistribution,
-                    ["hardforks"] = new JArray(Hardforks.Select(s => new JObject()
+                    ["hardforks"] = new JsonArray(Hardforks.Select(s => new JsonObject()
                     {
                         ["name"] = StripPrefix(s.Key.ToString(), "HF_"), // Strip HF_ prefix.
                         ["blockheight"] = s.Value,
-                    })),
-                    ["standbycommittee"] = new JArray(StandbyCommittee.Select(u => new JString(u.ToString()))),
-                    ["seedlist"] = new JArray(SeedList.Select(u => new JString(u)))
+                    }).ToArray()),
+                    ["standbycommittee"] = new JsonArray(StandbyCommittee.Select(u => (JsonNode)u.ToString()).ToArray()),
+                    ["seedlist"] = new JsonArray(SeedList.Select(u => (JsonNode)u).ToArray())
                 };
             }
 
-            public static RpcProtocol FromJson(JObject json)
+            public static RpcProtocol FromJson(JsonObject json)
             {
                 return new()
                 {
@@ -70,15 +71,15 @@ namespace Neo.Network.RPC.Models
                     MaxTransactionsPerBlock = (uint)json["maxtransactionsperblock"].AsNumber(),
                     MemoryPoolMaxTransactions = (int)json["memorypoolmaxtransactions"].AsNumber(),
                     InitialGasDistribution = (ulong)json["initialgasdistribution"].AsNumber(),
-                    Hardforks = new Dictionary<Hardfork, uint>(((JArray)json["hardforks"]).Select(s =>
+                    Hardforks = new Dictionary<Hardfork, uint>(((JsonArray)json["hardforks"]).Select(s =>
                     {
                         var name = s["name"].AsString();
                         // Add HF_ prefix to the hardfork response for proper Hardfork enum parsing.
                         var hardfork = Enum.Parse<Hardfork>(name.StartsWith("HF_") ? name : $"HF_{name}");
                         return new KeyValuePair<Hardfork, uint>(hardfork, (uint)s["blockheight"].AsNumber());
                     })),
-                    SeedList = [.. ((JArray)json["seedlist"]).Select(s => s.AsString())],
-                    StandbyCommittee = [.. ((JArray)json["standbycommittee"]).Select(s => ECPoint.Parse(s.AsString(), ECCurve.Secp256r1))]
+                    SeedList = [.. ((JsonArray)json["seedlist"]).Select(s => s.AsString())],
+                    StandbyCommittee = [.. ((JsonArray)json["standbycommittee"]).Select(s => ECPoint.Parse(s.AsString(), ECCurve.Secp256r1))]
                 };
             }
 
@@ -96,7 +97,7 @@ namespace Neo.Network.RPC.Models
 
         public RpcProtocol Protocol { get; set; } = new();
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
@@ -108,14 +109,14 @@ namespace Neo.Network.RPC.Models
             };
         }
 
-        public static RpcVersion FromJson(JObject json)
+        public static RpcVersion FromJson(JsonObject json)
         {
             return new()
             {
                 TcpPort = (int)json["tcpport"].AsNumber(),
                 Nonce = (uint)json["nonce"].AsNumber(),
                 UserAgent = json["useragent"].AsString(),
-                Protocol = RpcProtocol.FromJson((JObject)json["protocol"])
+                Protocol = RpcProtocol.FromJson((JsonObject)json["protocol"])
             };
         }
     }

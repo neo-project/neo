@@ -242,12 +242,12 @@ namespace Neo.CLI
                 ConsoleHelper.Info("", "            Checksum: ", $"{contract.Nef.CheckSum}");
                 ConsoleHelper.Info("", "            Compiler: ", $"{contract.Nef.Compiler}");
                 ConsoleHelper.Info("", "          SourceCode: ", $"{contract.Nef.Source}");
-                ConsoleHelper.Info("", "              Trusts: ", $"[{string.Join(", ", contract.Manifest.Trusts.Select(s => s.ToJson()?.GetString()))}]");
+                ConsoleHelper.Info("", "              Trusts: ", $"[{string.Join(", ", contract.Manifest.Trusts.Select(s => s.ToJson()?.GetValue<string>()))}]");
                 if (contract.Manifest.Extra is not null)
                 {
-                    foreach (var extra in contract.Manifest.Extra.Properties)
+                    foreach (var extra in contract.Manifest.Extra)
                     {
-                        ConsoleHelper.Info("", $"  {extra.Key,18}: ", $"{extra.Value?.GetString()}");
+                        ConsoleHelper.Info("", $"  {extra.Key,18}: ", $"{extra.Value?.GetValue<string>()}");
                     }
                 }
                 ConsoleHelper.Info();
@@ -272,7 +272,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info();
                 foreach (var permission in contract.Manifest.Permissions)
                 {
-                    ConsoleHelper.Info("", "  Contract: ", $"{permission.Contract.ToJson()?.GetString()}");
+                    ConsoleHelper.Info("", "  Contract: ", $"{permission.Contract.ToJson()?.GetValue<string>()}");
                     if (permission.Methods.IsWildcard)
                         ConsoleHelper.Info("", "   Methods: ", "*");
                     else

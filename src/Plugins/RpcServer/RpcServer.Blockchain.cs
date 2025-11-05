@@ -21,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Plugins.RpcServer
@@ -36,9 +37,9 @@ namespace Neo.Plugins.RpcServer
         /// {"jsonrpc": "2.0", "id": 1, "result": "The block hash(UInt256)"}
         /// </code>
         /// </summary>
-        /// <returns>The hash of the best block as a <see cref="JToken"/>.</returns>
+        /// <returns>The hash of the best block as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetBestBlockHash()
+        protected internal virtual JsonNode GetBestBlockHash()
         {
             return NativeContract.Ledger.CurrentHash(system.StoreView).ToString();
         }
@@ -86,10 +87,10 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <param name="blockHashOrIndex">The block hash or index.</param>
         /// <param name="verbose">Optional, the default value is false.</param>
-        /// <returns>The block data as a <see cref="JToken"/>. If the second item of _params is true, then
+        /// <returns>The block data as a <see cref="JsonNode"/>. If the second item of _params is true, then
         /// block data is json format, otherwise, the return type is Base64-encoded byte array.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetBlock(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
+        protected internal virtual JsonNode GetBlock(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
             blockHashOrIndex.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'blockHashOrIndex'"));
 
@@ -100,7 +101,7 @@ namespace Neo.Plugins.RpcServer
             block.NotNull_Or(RpcError.UnknownBlock);
             if (verbose)
             {
-                JObject json = block.ToJson(system.Settings);
+                JsonObject json = block.ToJson(system.Settings);
                 json["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
                 UInt256 hash = NativeContract.Ledger.GetBlockHash(snapshot, block.Index + 1);
                 if (hash != null)
@@ -117,9 +118,9 @@ namespace Neo.Plugins.RpcServer
         /// <para>Response format:</para>
         /// <code>{"jsonrpc": "2.0", "id": 1, "result": 100 /* The number of block headers in the blockchain */}</code>
         /// </summary>
-        /// <returns>The count of block headers as a <see cref="JToken"/>.</returns>
+        /// <returns>The count of block headers as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        internal virtual JToken GetBlockHeaderCount()
+        internal virtual JsonNode GetBlockHeaderCount()
         {
             return (system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(system.StoreView)) + 1;
         }
@@ -131,9 +132,9 @@ namespace Neo.Plugins.RpcServer
         /// <para>Response format:</para>
         /// <code>{"jsonrpc": "2.0", "id": 1, "result": 100 /* The number of blocks in the blockchain */}</code>
         /// </summary>
-        /// <returns>The count of blocks as a <see cref="JToken"/>.</returns>
+        /// <returns>The count of blocks as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetBlockCount()
+        protected internal virtual JsonNode GetBlockCount()
         {
             return NativeContract.Ledger.CurrentIndex(system.StoreView) + 1;
         }
@@ -148,9 +149,9 @@ namespace Neo.Plugins.RpcServer
         /// </code>
         /// </summary>
         /// <param name="height">Block index (block height)</param>
-        /// <returns>The hash of the block at the specified height as a <see cref="JToken"/>.</returns>
+        /// <returns>The hash of the block at the specified height as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetBlockHash(uint height)
+        protected internal virtual JsonNode GetBlockHash(uint height)
         {
             var snapshot = system.StoreView;
             if (height <= NativeContract.Ledger.CurrentIndex(snapshot))
@@ -206,11 +207,11 @@ namespace Neo.Plugins.RpcServer
         /// }</code>
         /// </summary>
         /// <returns>
-        /// The block header data as a <see cref="JToken"/>.
+        /// The block header data as a <see cref="JsonNode"/>.
         /// In json format if the second item of _params is true, otherwise Base64-encoded byte array.
         /// </returns>
         [RpcMethod]
-        protected internal virtual JToken GetBlockHeader(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
+        protected internal virtual JsonNode GetBlockHeader(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
             blockHashOrIndex.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'blockHashOrIndex'"));
 
@@ -248,9 +249,9 @@ namespace Neo.Plugins.RpcServer
         /// <code>{"jsonrpc": "2.0", "id": 1, "result": "A json string of the contract state"}</code>
         /// </summary>
         /// <param name="contractNameOrHashOrId">Contract name or script hash or the native contract id.</param>
-        /// <returns>The contract state in json format as a <see cref="JToken"/>.</returns>
+        /// <returns>The contract state in json format as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetContractState(ContractNameOrHashOrId contractNameOrHashOrId)
+        protected internal virtual JsonNode GetContractState(ContractNameOrHashOrId contractNameOrHashOrId)
         {
             contractNameOrHashOrId.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'contractNameOrHashOrId'"));
 
@@ -299,20 +300,22 @@ namespace Neo.Plugins.RpcServer
         /// }</code>
         /// </summary>
         /// <param name="shouldGetUnverified">Optional, the default value is false.</param>
-        /// <returns>The memory pool transactions in json format as a <see cref="JToken"/>.</returns>
+        /// <returns>The memory pool transactions in json format as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetRawMemPool(bool shouldGetUnverified = false)
+        protected internal virtual JsonNode GetRawMemPool(bool shouldGetUnverified = false)
         {
             if (!shouldGetUnverified)
-                return new JArray(system.MemPool.GetVerifiedTransactions().Select(p => (JToken)p.Hash.ToString()));
+                return new JsonArray(system.MemPool.GetVerifiedTransactions().Select(p => (JsonNode)p.Hash.ToString()).ToArray());
 
-            JObject json = new();
-            json["height"] = NativeContract.Ledger.CurrentIndex(system.StoreView);
             system.MemPool.GetVerifiedAndUnverifiedTransactions(
                 out IEnumerable<Transaction> verifiedTransactions,
                 out IEnumerable<Transaction> unverifiedTransactions);
-            json["verified"] = new JArray(verifiedTransactions.Select(p => (JToken)p.Hash.ToString()));
-            json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JToken)p.Hash.ToString()));
+            JsonObject json = new()
+            {
+                ["height"] = NativeContract.Ledger.CurrentIndex(system.StoreView),
+                ["verified"] = new JsonArray(verifiedTransactions.Select(p => (JsonNode)p.Hash.ToString()).ToArray()),
+                ["unverified"] = new JsonArray(unverifiedTransactions.Select(p => (JsonNode)p.Hash.ToString()).ToArray())
+            };
             return json;
         }
 
@@ -354,9 +357,9 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <param name="hash">The transaction hash.</param>
         /// <param name="verbose">Optional, the default value is false.</param>
-        /// <returns>The transaction data as a <see cref="JToken"/>. In json format if verbose is true, otherwise base64string. </returns>
+        /// <returns>The transaction data as a <see cref="JsonNode"/>. In json format if verbose is true, otherwise base64string. </returns>
         [RpcMethod]
-        protected internal virtual JToken GetRawTransaction(UInt256 hash, bool verbose = false)
+        protected internal virtual JsonNode GetRawTransaction(UInt256 hash, bool verbose = false)
         {
             hash.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'hash'"));
 
@@ -408,9 +411,9 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <param name="contractNameOrHashOrId">The contract ID or script hash.</param>
         /// <param name="base64Key">The Base64-encoded storage key.</param>
-        /// <returns>The storage item as a <see cref="JToken"/>.</returns>
+        /// <returns>The storage item as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetStorage(ContractNameOrHashOrId contractNameOrHashOrId, string base64Key)
+        protected internal virtual JsonNode GetStorage(ContractNameOrHashOrId contractNameOrHashOrId, string base64Key)
         {
             contractNameOrHashOrId.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'contractNameOrHashOrId'"));
             base64Key.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'base64Key'"));
@@ -458,9 +461,9 @@ namespace Neo.Plugins.RpcServer
         /// <param name="contractNameOrHashOrId">The contract ID (int) or script hash (UInt160).</param>
         /// <param name="base64KeyPrefix">The Base64-encoded storage key prefix.</param>
         /// <param name="start">The start index.</param>
-        /// <returns>The found storage items <see cref="StorageItem"/> as a <see cref="JToken"/>.</returns>
+        /// <returns>The found storage items <see cref="StorageItem"/> as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken FindStorage(ContractNameOrHashOrId contractNameOrHashOrId, string base64KeyPrefix, int start = 0)
+        protected internal virtual JsonNode FindStorage(ContractNameOrHashOrId contractNameOrHashOrId, string base64KeyPrefix, int start = 0)
         {
             contractNameOrHashOrId.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'contractNameOrHashOrId'"));
             base64KeyPrefix.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'base64KeyPrefix'"));
@@ -472,8 +475,8 @@ namespace Neo.Plugins.RpcServer
                 () => Convert.FromBase64String(base64KeyPrefix),
                 RpcError.InvalidParams.WithData($"Invalid Base64 string: {base64KeyPrefix}"));
 
-            var json = new JObject();
-            var items = new JArray();
+            var json = new JsonObject();
+            var items = new JsonArray();
             int pageSize = settings.FindStoragePageSize;
             int i = 0;
             using (var iter = NativeContract.ContractManagement.FindContractStorage(snapshot, id, prefix).Skip(count: start).GetEnumerator())
@@ -487,7 +490,7 @@ namespace Neo.Plugins.RpcServer
                         break;
                     }
 
-                    var item = new JObject
+                    var item = new JsonObject
                     {
                         ["key"] = Convert.ToBase64String(iter.Current.Key.Key.Span),
                         ["value"] = Convert.ToBase64String(iter.Current.Value.Value.Span)
@@ -511,9 +514,9 @@ namespace Neo.Plugins.RpcServer
         /// <code>{"jsonrpc": "2.0", "id": 1, "result": 100}</code>
         /// </summary>
         /// <param name="hash">The transaction hash.</param>
-        /// <returns>The height of the transaction as a <see cref="JToken"/>.</returns>
+        /// <returns>The height of the transaction as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetTransactionHeight(UInt256 hash)
+        protected internal virtual JsonNode GetTransactionHeight(UInt256 hash)
         {
             hash.NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'hash'"));
 
@@ -536,19 +539,18 @@ namespace Neo.Plugins.RpcServer
         ///   ]
         /// }</code>
         /// </summary>
-        /// <returns>The next block validators as a <see cref="JToken"/>.</returns>
+        /// <returns>The next block validators as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetNextBlockValidators()
+        protected internal virtual JsonNode GetNextBlockValidators()
         {
             using var snapshot = system.GetSnapshotCache();
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, system.Settings.ValidatorsCount);
-            return validators.Select(p =>
+            return new JsonArray(validators.Select(p => new JsonObject()
             {
-                JObject validator = new();
-                validator["publickey"] = p.ToString();
-                validator["votes"] = (int)NativeContract.NEO.GetCandidateVote(snapshot, p);
-                return validator;
-            }).ToArray();
+                ["publickey"] = p.ToString(),
+                ["votes"] = (int)NativeContract.NEO.GetCandidateVote(snapshot, p)
+            }
+            ).ToArray());
         }
 
         /// <summary>
@@ -567,7 +569,7 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <returns>The candidates public key list as a JToken.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetCandidates()
+        protected internal virtual JsonNode GetCandidates()
         {
             using var snapshot = system.GetSnapshotCache();
             byte[] script;
@@ -586,12 +588,12 @@ namespace Neo.Plugins.RpcServer
                 throw new RpcException(RpcError.InternalServerError.WithData("Can't get candidates."));
             }
 
-            JObject json = new();
+            JsonObject json = new();
             try
             {
                 if (resultstack.Length > 0)
                 {
-                    JArray jArray = new();
+                    JsonArray jArray = new();
                     var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, system.Settings.ValidatorsCount)
                         ?? throw new RpcException(RpcError.InternalServerError.WithData("Can't get next block validators."));
 
@@ -626,11 +628,11 @@ namespace Neo.Plugins.RpcServer
         /// <para>Response format:</para>
         /// <code>{"jsonrpc": "2.0", "id": 1, "result": ["The public key"]}</code>
         /// </summary>
-        /// <returns>The committee members publickeys as a <see cref="JToken"/>.</returns>
+        /// <returns>The committee members publickeys as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetCommittee()
+        protected internal virtual JsonNode GetCommittee()
         {
-            return new JArray(NativeContract.NEO.GetCommittee(system.StoreView).Select(p => (JToken)p.ToString()));
+            return new JsonArray(NativeContract.NEO.GetCommittee(system.StoreView).Select(p => (JsonNode)p.ToString()).ToArray());
         }
 
         /// <summary>
@@ -713,16 +715,17 @@ namespace Neo.Plugins.RpcServer
         ///    }]
         /// }</code>
         /// </summary>
-        /// <returns>The native contract states <see cref="ContractState"/> as a <see cref="JToken"/>.</returns>
+        /// <returns>The native contract states <see cref="ContractState"/> as a <see cref="JsonNode"/>.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetNativeContracts()
+        protected internal virtual JsonNode GetNativeContracts()
         {
             var storeView = system.StoreView;
             var contractStates = NativeContract.Contracts
                 .Select(p => NativeContract.ContractManagement.GetContract(storeView, p.Hash))
                 .Where(p => p != null) // if not active
-                .Select(p => p.ToJson());
-            return new JArray(contractStates);
+                .Select(p => p.ToJson())
+                .ToArray();
+            return new JsonArray(contractStates);
         }
     }
 }

@@ -13,7 +13,6 @@ using Akka.Actor;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Json;
-using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence.Providers;
@@ -23,6 +22,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 
 namespace Neo.Plugins.RpcServer.Tests
@@ -33,7 +34,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetConnectionCount()
         {
             var result = _rpcServer.GetConnectionCount();
-            Assert.IsInstanceOfType(result, typeof(JNumber));
+            Assert.AreEqual(JsonValueKind.Number, result.GetValueKind());
         }
 
         [TestMethod]
@@ -48,12 +49,12 @@ namespace Neo.Plugins.RpcServer.Tests
             var rpcServer = new RpcServer(neoSystem, RpcServersSettings.Default);
 
             var result = rpcServer.GetPeers();
-            Assert.IsInstanceOfType(result, typeof(JObject));
-            var json = (JObject)result;
-            Assert.IsTrue(json.ContainsProperty("unconnected"));
-            Assert.HasCount(3, json["unconnected"] as JArray);
-            Assert.IsTrue(json.ContainsProperty("bad"));
-            Assert.IsTrue(json.ContainsProperty("connected"));
+            Assert.IsInstanceOfType(result, typeof(JsonObject));
+            var json = (JsonObject)result;
+            Assert.IsTrue(json.ContainsKey("unconnected"));
+            Assert.HasCount(3, json["unconnected"] as JsonArray);
+            Assert.IsTrue(json.ContainsKey("bad"));
+            Assert.IsTrue(json.ContainsKey("connected"));
         }
 
         [TestMethod]
@@ -67,12 +68,12 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Get peers immediately (should have no unconnected)
             var result = rpcServer.GetPeers();
-            Assert.IsInstanceOfType(result, typeof(JObject));
-            var json = (JObject)result;
-            Assert.IsTrue(json.ContainsProperty("unconnected"));
-            Assert.IsEmpty(json["unconnected"] as JArray);
-            Assert.IsTrue(json.ContainsProperty("bad"));
-            Assert.IsTrue(json.ContainsProperty("connected"));
+            Assert.IsInstanceOfType(result, typeof(JsonObject));
+            var json = (JsonObject)result;
+            Assert.IsTrue(json.ContainsKey("unconnected"));
+            Assert.IsEmpty(json["unconnected"] as JsonArray);
+            Assert.IsTrue(json.ContainsKey("bad"));
+            Assert.IsTrue(json.ContainsKey("connected"));
         }
 
         [TestMethod]
@@ -86,61 +87,61 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Get peers immediately (should have no connected)
             var result = rpcServer.GetPeers();
-            Assert.IsInstanceOfType(result, typeof(JObject));
-            var json = (JObject)result;
-            Assert.IsTrue(json.ContainsProperty("unconnected"));
-            Assert.IsTrue(json.ContainsProperty("bad"));
-            Assert.IsTrue(json.ContainsProperty("connected"));
-            Assert.IsEmpty(json["connected"] as JArray); // Directly check connected count
+            Assert.IsInstanceOfType(result, typeof(JsonObject));
+            var json = (JsonObject)result;
+            Assert.IsTrue(json.ContainsKey("unconnected"));
+            Assert.IsTrue(json.ContainsKey("bad"));
+            Assert.IsTrue(json.ContainsKey("connected"));
+            Assert.IsEmpty(json["connected"] as JsonArray); // Directly check connected count
         }
 
         [TestMethod]
         public void TestGetVersion()
         {
             var result = _rpcServer.GetVersion();
-            Assert.IsInstanceOfType(result, typeof(JObject));
+            Assert.IsInstanceOfType(result, typeof(JsonObject));
 
-            var json = (JObject)result;
-            Assert.IsTrue(json.ContainsProperty("tcpport"));
-            Assert.IsTrue(json.ContainsProperty("nonce"));
-            Assert.IsTrue(json.ContainsProperty("useragent"));
+            var json = (JsonObject)result;
+            Assert.IsTrue(json.ContainsKey("tcpport"));
+            Assert.IsTrue(json.ContainsKey("nonce"));
+            Assert.IsTrue(json.ContainsKey("useragent"));
 
-            Assert.IsTrue(json.ContainsProperty("protocol"));
-            var protocol = (JObject)json["protocol"];
-            Assert.IsTrue(protocol.ContainsProperty("addressversion"));
-            Assert.IsTrue(protocol.ContainsProperty("network"));
-            Assert.IsTrue(protocol.ContainsProperty("validatorscount"));
-            Assert.IsTrue(protocol.ContainsProperty("msperblock"));
-            Assert.IsTrue(protocol.ContainsProperty("maxtraceableblocks"));
-            Assert.IsTrue(protocol.ContainsProperty("maxvaliduntilblockincrement"));
-            Assert.IsTrue(protocol.ContainsProperty("maxtransactionsperblock"));
-            Assert.IsTrue(protocol.ContainsProperty("memorypoolmaxtransactions"));
-            Assert.IsTrue(protocol.ContainsProperty("standbycommittee"));
-            Assert.IsTrue(protocol.ContainsProperty("seedlist"));
+            Assert.IsTrue(json.ContainsKey("protocol"));
+            var protocol = (JsonObject)json["protocol"];
+            Assert.IsTrue(protocol.ContainsKey("addressversion"));
+            Assert.IsTrue(protocol.ContainsKey("network"));
+            Assert.IsTrue(protocol.ContainsKey("validatorscount"));
+            Assert.IsTrue(protocol.ContainsKey("msperblock"));
+            Assert.IsTrue(protocol.ContainsKey("maxtraceableblocks"));
+            Assert.IsTrue(protocol.ContainsKey("maxvaliduntilblockincrement"));
+            Assert.IsTrue(protocol.ContainsKey("maxtransactionsperblock"));
+            Assert.IsTrue(protocol.ContainsKey("memorypoolmaxtransactions"));
+            Assert.IsTrue(protocol.ContainsKey("standbycommittee"));
+            Assert.IsTrue(protocol.ContainsKey("seedlist"));
         }
 
         [TestMethod]
         public void TestGetVersion_HardforksStructure()
         {
             var result = _rpcServer.GetVersion();
-            Assert.IsInstanceOfType(result, typeof(JObject));
-            var json = (JObject)result;
+            Assert.IsInstanceOfType(result, typeof(JsonObject));
+            var json = (JsonObject)result;
 
-            Assert.IsTrue(json.ContainsProperty("protocol"));
-            var protocol = (JObject)json["protocol"];
-            Assert.IsTrue(protocol.ContainsProperty("hardforks"));
-            var hardforks = (JArray)protocol["hardforks"];
+            Assert.IsTrue(json.ContainsKey("protocol"));
+            var protocol = (JsonObject)json["protocol"];
+            Assert.IsTrue(protocol.ContainsKey("hardforks"));
+            var hardforks = (JsonArray)protocol["hardforks"];
 
             // Check if there are any hardforks defined in settings
             if (hardforks.Count > 0)
             {
-                Assert.IsTrue(hardforks.All(hf => hf is JObject)); // Each item should be an object
-                foreach (JObject hfJson in hardforks)
+                Assert.IsTrue(hardforks.All(hf => hf is JsonObject)); // Each item should be an object
+                foreach (JsonObject hfJson in hardforks)
                 {
-                    Assert.IsTrue(hfJson.ContainsProperty("name"));
-                    Assert.IsTrue(hfJson.ContainsProperty("blockheight"));
-                    Assert.IsInstanceOfType(hfJson["name"], typeof(JString));
-                    Assert.IsInstanceOfType(hfJson["blockheight"], typeof(JNumber));
+                    Assert.IsTrue(hfJson.ContainsKey("name"));
+                    Assert.IsTrue(hfJson.ContainsKey("blockheight"));
+                    Assert.AreEqual(JsonValueKind.String, hfJson["name"].GetValueKind());
+                    Assert.AreEqual(JsonValueKind.Number, hfJson["blockheight"].GetValueKind());
                     Assert.DoesNotStartWith("HF_", hfJson["name"].AsString()); // Check if prefix was stripped
                 }
             }
@@ -161,8 +162,8 @@ namespace Neo.Plugins.RpcServer.Tests
             var txString = Convert.ToBase64String(tx.ToArray());
 
             var result = _rpcServer.SendRawTransaction(txString);
-            Assert.IsInstanceOfType(result, typeof(JObject));
-            Assert.IsTrue(((JObject)result).ContainsProperty("hash"));
+            Assert.IsInstanceOfType(result, typeof(JsonObject));
+            Assert.IsTrue(((JsonObject)result).ContainsKey("hash"));
         }
 
         [TestMethod]
@@ -298,8 +299,8 @@ namespace Neo.Plugins.RpcServer.Tests
             var blockString = Convert.ToBase64String(block.ToArray());
 
             var result = _rpcServer.SubmitBlock(blockString);
-            Assert.IsInstanceOfType(result, typeof(JObject));
-            Assert.IsTrue(((JObject)result).ContainsProperty("hash"));
+            Assert.IsInstanceOfType(result, typeof(JsonObject));
+            Assert.IsTrue(((JsonObject)result).ContainsKey("hash"));
         }
 
         [TestMethod]

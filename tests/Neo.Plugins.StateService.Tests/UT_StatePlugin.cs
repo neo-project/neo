@@ -22,6 +22,8 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.VM;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.Plugins.StateService.Tests
 {
@@ -69,9 +71,9 @@ namespace Neo.Plugins.StateService.Tests
             var result = _statePlugin!.GetStateHeight();
 
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType<JObject>(result);
+            Assert.IsInstanceOfType<JsonObject>(result);
 
-            Assert.AreEqual("{\"localrootindex\":0,\"validatedrootindex\":null}", result.ToString());
+            Assert.AreEqual("{\"localrootindex\":0,\"validatedrootindex\":null}", result.ToString(false));
         }
 
         [TestMethod]
@@ -109,9 +111,9 @@ namespace Neo.Plugins.StateService.Tests
             var result = _statePlugin!.GetStateRoot(1);
 
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType<JObject>(result);
+            Assert.IsInstanceOfType<JsonObject>(result);
 
-            var json = (JObject)result;
+            var json = (JsonObject)result;
             Assert.AreEqual(0x00, json["version"]?.AsNumber());
             Assert.AreEqual(1u, json["index"]?.AsNumber());
             Assert.IsNotNull(json["roothash"]);
@@ -130,9 +132,9 @@ namespace Neo.Plugins.StateService.Tests
             var result = _statePlugin!.GetProof(rootHash, scriptHash, Convert.ToBase64String([0x01, 0x02]));
 
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType<JString>(result);
+            Assert.AreEqual(JsonValueKind.String, result.GetValueKind());
 
-            var proof = ((JString)result).Value; // long string
+            var proof = result.GetValue<string>(); // long string
             Assert.IsFalse(string.IsNullOrEmpty(proof));
         }
 
@@ -146,7 +148,7 @@ namespace Neo.Plugins.StateService.Tests
 
             var result = _statePlugin!.GetState(rootHash, scriptHash, [0x01, 0x02]);
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType<JString>(result);
+            Assert.AreEqual(JsonValueKind.String, result.GetValueKind());
             Assert.AreEqual("aabb", Convert.FromBase64String(result.AsString() ?? "").ToHexString());
         }
 
@@ -159,20 +161,20 @@ namespace Neo.Plugins.StateService.Tests
 
             var result = _statePlugin!.FindStates(rootHash, scriptHash, []);
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType<JObject>(result);
+            Assert.IsInstanceOfType<JsonObject>(result);
 
-            var jsonResult = (JObject)result;
+            var jsonResult = (JsonObject)result;
             Assert.IsNotNull(jsonResult["results"]);
-            Assert.IsInstanceOfType<JArray>(jsonResult["results"]);
+            Assert.IsInstanceOfType<JsonArray>(jsonResult["results"]);
 
-            var results = (JArray)jsonResult["results"]!;
+            var results = (JsonArray)jsonResult["results"]!;
             Assert.HasCount(2, results);
 
             Assert.AreEqual("0102", Convert.FromBase64String(results[0]?["key"]?.AsString() ?? "").ToHexString());
             Assert.AreEqual("0304", Convert.FromBase64String(results[1]?["key"]?.AsString() ?? "").ToHexString());
             Assert.AreEqual("aabb", Convert.FromBase64String(results[0]?["value"]?.AsString() ?? "").ToHexString());
             Assert.AreEqual("ccdd", Convert.FromBase64String(results[1]?["value"]?.AsString() ?? "").ToHexString());
-            Assert.IsFalse(jsonResult["truncated"]?.AsBoolean());
+            Assert.IsFalse(jsonResult["truncated"]?.GetValue<bool>());
         }
 
         private static void SetupMockStateRoot(uint index, UInt256 rootHash)

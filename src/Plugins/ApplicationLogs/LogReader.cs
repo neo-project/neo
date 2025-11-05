@@ -22,6 +22,7 @@ using Neo.Plugins.RpcServer;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using static System.IO.Path;
 
 namespace Neo.Plugins.ApplicationLogs
@@ -106,7 +107,7 @@ namespace Neo.Plugins.ApplicationLogs
         /// <returns>The block or the transaction execution log.</returns>
         /// <exception cref="RpcException">Thrown when the hash is invalid or the trigger type is invalid.</exception>
         [RpcMethod]
-        public JToken GetApplicationLog(UInt256 hash, string triggerType = "")
+        public JsonNode GetApplicationLog(UInt256 hash, string triggerType = "")
         {
             var raw = BlockToJObject(hash);
             if (raw == null)
@@ -117,7 +118,7 @@ namespace Neo.Plugins.ApplicationLogs
 
             if (!string.IsNullOrEmpty(triggerType) && Enum.TryParse(triggerType, true, out TriggerType _))
             {
-                var executions = raw["executions"] as JArray;
+                var executions = raw["executions"] as JsonArray;
                 if (executions != null)
                 {
                     for (var i = 0; i < executions.Count;)
@@ -346,43 +347,43 @@ namespace Neo.Plugins.ApplicationLogs
             return contractEvent.Parameters[parameterIndex].Name;
         }
 
-        private JObject EventModelToJObject(BlockchainEventModel model)
+        private JsonObject EventModelToJObject(BlockchainEventModel model)
         {
-            return new JObject()
+            return new JsonObject()
             {
                 ["contract"] = model.ScriptHash.ToString(),
                 ["eventname"] = model.EventName,
-                ["state"] = model.State.Select(s => s.ToJson()).ToArray()
+                ["state"] = new JsonArray(model.State.Select(s => s.ToJson()).ToArray())
             };
         }
 
-        private JObject? TransactionToJObject(UInt256 txHash)
+        private JsonObject? TransactionToJObject(UInt256 txHash)
         {
             var appLog = _neostore.GetTransactionLog(txHash);
             if (appLog == null)
                 return null;
 
-            var raw = new JObject() { ["txid"] = txHash.ToString() };
-            var trigger = new JObject()
+            var raw = new JsonObject() { ["txid"] = txHash.ToString() };
+            var trigger = new JsonObject()
             {
-                ["trigger"] = appLog.Trigger,
-                ["vmstate"] = appLog.VmState,
+                ["trigger"] = appLog.Trigger.ToString(),
+                ["vmstate"] = appLog.VmState.ToString(),
                 ["exception"] = string.IsNullOrEmpty(appLog.Exception) ? null : appLog.Exception,
                 ["gasconsumed"] = appLog.GasConsumed.ToString()
             };
 
             try
             {
-                trigger["stack"] = appLog.Stack.Select(s => s.ToJson(ApplicationLogsSettings.Default.MaxStackSize)).ToArray();
+                trigger["stack"] = new JsonArray(appLog.Stack.Select(s => s.ToJson(ApplicationLogsSettings.Default.MaxStackSize)).ToArray());
             }
             catch (Exception ex)
             {
                 trigger["exception"] = ex.Message;
             }
 
-            trigger["notifications"] = appLog.Notifications.Select(s =>
+            trigger["notifications"] = new JsonArray(appLog.Notifications.Select(s =>
             {
-                var notification = new JObject()
+                var notification = new JsonObject()
                 {
                     ["contract"] = s.ScriptHash.ToString(),
                     ["eventname"] = s.EventName
@@ -390,10 +391,10 @@ namespace Neo.Plugins.ApplicationLogs
 
                 try
                 {
-                    var state = new JObject()
+                    var state = new JsonObject()
                     {
                         ["type"] = "Array",
-                        ["value"] = s.State.Select(ss => ss.ToJson()).ToArray()
+                        ["value"] = new JsonArray(s.State.Select(ss => ss.ToJson()).ToArray())
                     };
 
                     notification["state"] = state;
@@ -404,25 +405,22 @@ namespace Neo.Plugins.ApplicationLogs
                 }
 
                 return notification;
-            }).ToArray();
+            }).ToArray());
 
             if (ApplicationLogsSettings.Default.Debug)
             {
-                trigger["logs"] = appLog.Logs.Select(s =>
+                trigger["logs"] = new JsonArray(appLog.Logs.Select(s => new JsonObject()
                 {
-                    return new JObject()
-                    {
-                        ["contract"] = s.ScriptHash.ToString(),
-                        ["message"] = s.Message
-                    };
-                }).ToArray();
+                    ["contract"] = s.ScriptHash.ToString(),
+                    ["message"] = s.Message
+                }).ToArray());
             }
 
-            raw["executions"] = new[] { trigger };
+            raw["executions"] = new JsonArray { trigger };
             return raw;
         }
 
-        private JObject? BlockToJObject(UInt256 blockHash)
+        private JsonObject? BlockToJObject(UInt256 blockHash)
         {
             var blockOnPersist = _neostore.GetBlockLog(blockHash, TriggerType.OnPersist);
             var blockPostPersist = _neostore.GetBlockLog(blockHash, TriggerType.PostPersist);
@@ -430,48 +428,48 @@ namespace Neo.Plugins.ApplicationLogs
             if (blockOnPersist == null && blockPostPersist == null)
                 return null;
 
-            var blockJson = new JObject() { ["blockhash"] = blockHash.ToString() };
-            var triggerList = new List<JObject>();
+            var blockJson = new JsonObject() { ["blockhash"] = blockHash.ToString() };
+            var triggerList = new List<JsonObject>();
 
             if (blockOnPersist != null)
                 triggerList.Add(BlockItemToJObject(blockOnPersist));
             if (blockPostPersist != null)
                 triggerList.Add(BlockItemToJObject(blockPostPersist));
 
-            blockJson["executions"] = triggerList.ToArray();
+            blockJson["executions"] = new JsonArray(triggerList.ToArray());
             return blockJson;
         }
 
-        private JObject BlockItemToJObject(BlockchainExecutionModel blockExecutionModel)
+        private JsonObject BlockItemToJObject(BlockchainExecutionModel blockExecutionModel)
         {
-            var trigger = new JObject()
+            var trigger = new JsonObject()
             {
-                ["trigger"] = blockExecutionModel.Trigger,
-                ["vmstate"] = blockExecutionModel.VmState,
+                ["trigger"] = blockExecutionModel.Trigger.ToString(),
+                ["vmstate"] = blockExecutionModel.VmState.ToString(),
                 ["gasconsumed"] = blockExecutionModel.GasConsumed.ToString()
             };
             try
             {
-                trigger["stack"] = blockExecutionModel.Stack.Select(q => q.ToJson(ApplicationLogsSettings.Default.MaxStackSize)).ToArray();
+                trigger["stack"] = new JsonArray(blockExecutionModel.Stack.Select(q => q.ToJson(ApplicationLogsSettings.Default.MaxStackSize)).ToArray());
             }
             catch (Exception ex)
             {
                 trigger["exception"] = ex.Message;
             }
 
-            trigger["notifications"] = blockExecutionModel.Notifications.Select(s =>
+            trigger["notifications"] = new JsonArray(blockExecutionModel.Notifications.Select(s =>
             {
-                var notification = new JObject()
+                var notification = new JsonObject()
                 {
                     ["contract"] = s.ScriptHash.ToString(),
                     ["eventname"] = s.EventName
                 };
                 try
                 {
-                    var state = new JObject()
+                    var state = new JsonObject()
                     {
                         ["type"] = "Array",
-                        ["value"] = s.State.Select(ss => ss.ToJson()).ToArray()
+                        ["value"] = new JsonArray(s.State.Select(ss => ss.ToJson()).ToArray())
                     };
 
                     notification["state"] = state;
@@ -481,18 +479,15 @@ namespace Neo.Plugins.ApplicationLogs
                     notification["state"] = "error: recursive reference";
                 }
                 return notification;
-            }).ToArray();
+            }).ToArray());
 
             if (ApplicationLogsSettings.Default.Debug)
             {
-                trigger["logs"] = blockExecutionModel.Logs.Select(s =>
+                trigger["logs"] = new JsonArray(blockExecutionModel.Logs.Select(s => new JsonObject()
                 {
-                    return new JObject()
-                    {
-                        ["contract"] = s.ScriptHash.ToString(),
-                        ["message"] = s.Message
-                    };
-                }).ToArray();
+                    ["contract"] = s.ScriptHash.ToString(),
+                    ["message"] = s.Message
+                }).ToArray());
             }
 
             return trigger;

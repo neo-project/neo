@@ -11,7 +11,6 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Json;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -19,6 +18,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
 using System.IO;
+using System.Text.Json.Nodes;
 
 namespace Neo.Plugins.StateService.Network
 {
@@ -112,14 +112,14 @@ namespace Neo.Plugins.StateService.Network
             return [Contract.GetBFTAddress(validators)];
         }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
                 ["version"] = Version,
                 ["index"] = Index,
                 ["roothash"] = RootHash.ToString(),
-                ["witnesses"] = Witness is null ? new JArray() : new JArray(Witness.ToJson()),
+                ["witnesses"] = Witness is null ? new JsonArray() : new JsonArray(Witness.ToJson()),
             };
         }
     }

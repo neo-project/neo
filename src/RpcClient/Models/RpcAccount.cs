@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -23,7 +24,7 @@ namespace Neo.Network.RPC.Models
 
         public bool WatchOnly { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
@@ -34,14 +35,14 @@ namespace Neo.Network.RPC.Models
             };
         }
 
-        public static RpcAccount FromJson(JObject json)
+        public static RpcAccount FromJson(JsonObject json)
         {
             return new RpcAccount
             {
                 Address = json["address"].AsString(),
-                HasKey = json["haskey"].AsBoolean(),
+                HasKey = json["haskey"].GetValue<bool>(),
                 Label = json["label"]?.AsString(),
-                WatchOnly = json["watchonly"].AsBoolean(),
+                WatchOnly = json["watchonly"].GetValue<bool>(),
             };
         }
     }

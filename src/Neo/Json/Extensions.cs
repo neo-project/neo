@@ -9,7 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -18,6 +22,16 @@ namespace Neo.Json
 {
     public static class Extensions
     {
+        public static double AsNumber(this JsonNode json)
+        {
+            return json.GetValueKind() switch
+            {
+                JsonValueKind.Number => json.GetValue<double>(),
+                JsonValueKind.String => double.TryParse(json.GetValue<string>(), NumberStyles.Float, CultureInfo.InvariantCulture, out var result) ? result : throw new InvalidCastException(),
+                _ => throw new InvalidCastException()
+            };
+        }
+
         public static string AsString(this JsonNode json)
         {
             return json.GetValueKind() switch
@@ -73,6 +87,25 @@ namespace Neo.Json
             json.WriteTo(writer);
             writer.Flush();
             return ms.ToArray();
+        }
+
+        public static string ToString(this JsonNode json, bool indented)
+        {
+            return Utility.StrictUTF8.GetString(json.ToByteArray(indented));
+        }
+
+        public static JsonArray JsonPath(this JsonNode json, string expr)
+        {
+            JsonNode?[] objects = [json];
+            if (expr.Length == 0) return [.. objects];
+
+            Queue<JPathToken> tokens = new(JPathToken.Parse(expr));
+            var first = tokens.Dequeue();
+            if (first.Type != JPathTokenType.Root)
+                throw new FormatException($"Unexpected token {first.Type}");
+
+            JPathToken.ProcessJsonPath(ref objects, tokens);
+            return [.. objects];
         }
     }
 }

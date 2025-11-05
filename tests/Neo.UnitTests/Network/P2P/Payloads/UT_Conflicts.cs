@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -48,7 +49,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             var test = CreateConflictsPayload();
-            var json = test.ToJson().ToString();
+            var json = test.ToJson().ToString(false);
             Assert.AreEqual(@"{""type"":""Conflicts"",""hash"":""0x0101010101010101010101010101010101010101010101010101010101010101""}", json);
         }
 

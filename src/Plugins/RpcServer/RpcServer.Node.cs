@@ -11,12 +11,12 @@
 
 using Akka.Actor;
 using Neo.Extensions;
-using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.RpcServer
@@ -34,7 +34,7 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <returns>The number of connections as a JToken.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetConnectionCount()
+        protected internal virtual JsonNode GetConnectionCount()
         {
             return localNode.ConnectedCount;
         }
@@ -57,19 +57,19 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <returns>A JObject containing information about unconnected, bad, and connected peers.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetPeers()
+        protected internal virtual JsonNode GetPeers()
         {
-            return new JObject()
+            return new JsonObject()
             {
-                ["unconnected"] = new JArray(localNode.GetUnconnectedPeers().Select(p =>
+                ["unconnected"] = new JsonArray(localNode.GetUnconnectedPeers().Select(p =>
                 {
-                    return new JObject() { ["address"] = p.Address.ToString(), ["port"] = p.Port, };
-                })),
-                ["bad"] = new JArray(),
-                ["connected"] = new JArray(localNode.GetRemoteNodes().Select(p =>
+                    return new JsonObject() { ["address"] = p.Address.ToString(), ["port"] = p.Port, };
+                }).ToArray()),
+                ["bad"] = new JsonArray(),
+                ["connected"] = new JsonArray(localNode.GetRemoteNodes().Select(p =>
                 {
-                    return new JObject() { ["address"] = p.Remote.Address.ToString(), ["port"] = p.ListenerTcpPort, };
-                }))
+                    return new JsonObject() { ["address"] = p.Remote.Address.ToString(), ["port"] = p.ListenerTcpPort, };
+                }).ToArray())
             };
         }
 
@@ -79,12 +79,12 @@ namespace Neo.Plugins.RpcServer
         /// <param name="reason">The verification result of the relay.</param>
         /// <param name="hash">The hash of the transaction or block.</param>
         /// <returns>A JObject containing the hash if successful, otherwise throws an RpcException.</returns>
-        private static JObject GetRelayResult(VerifyResult reason, UInt256 hash)
+        private static JsonObject GetRelayResult(VerifyResult reason, UInt256 hash)
         {
             switch (reason)
             {
                 case VerifyResult.Succeed:
-                    return new JObject() { ["hash"] = hash.ToString() };
+                    return new JsonObject() { ["hash"] = hash.ToString() };
                 case VerifyResult.AlreadyExists:
                     throw new RpcException(RpcError.AlreadyExists.WithData(reason.ToString()));
                 case VerifyResult.AlreadyInPool:
@@ -147,37 +147,41 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <returns>A JObject containing detailed version and configuration information.</returns>
         [RpcMethod]
-        protected internal virtual JToken GetVersion()
+        protected internal virtual JsonNode GetVersion()
         {
-            JObject json = new();
-            json["tcpport"] = localNode.ListenerTcpPort;
-            json["nonce"] = LocalNode.Nonce;
-            json["useragent"] = LocalNode.UserAgent;
-            // rpc settings
-            JObject rpc = new();
-            rpc["maxiteratorresultitems"] = settings.MaxIteratorResultItems;
-            rpc["sessionenabled"] = settings.SessionEnabled;
-            // protocol settings
-            JObject protocol = new();
-            protocol["addressversion"] = system.Settings.AddressVersion;
-            protocol["network"] = system.Settings.Network;
-            protocol["validatorscount"] = system.Settings.ValidatorsCount;
-            protocol["msperblock"] = system.GetTimePerBlock().TotalMilliseconds;
-            protocol["maxtraceableblocks"] = system.GetMaxTraceableBlocks();
-            protocol["maxvaliduntilblockincrement"] = system.GetMaxValidUntilBlockIncrement();
-            protocol["maxtransactionsperblock"] = system.Settings.MaxTransactionsPerBlock;
-            protocol["memorypoolmaxtransactions"] = system.Settings.MemoryPoolMaxTransactions;
-            protocol["initialgasdistribution"] = system.Settings.InitialGasDistribution;
-            protocol["hardforks"] = new JArray(system.Settings.Hardforks.Select(hf =>
+            JsonObject json = new()
             {
-                JObject forkJson = new();
-                // Strip "HF_" prefix.
-                forkJson["name"] = StripPrefix(hf.Key.ToString(), "HF_");
-                forkJson["blockheight"] = hf.Value;
-                return forkJson;
-            }));
-            protocol["standbycommittee"] = new JArray(system.Settings.StandbyCommittee.Select(u => new JString(u.ToString())));
-            protocol["seedlist"] = new JArray(system.Settings.SeedList.Select(u => new JString(u)));
+                ["tcpport"] = localNode.ListenerTcpPort,
+                ["nonce"] = LocalNode.Nonce,
+                ["useragent"] = LocalNode.UserAgent
+            };
+            // rpc settings
+            JsonObject rpc = new()
+            {
+                ["maxiteratorresultitems"] = settings.MaxIteratorResultItems,
+                ["sessionenabled"] = settings.SessionEnabled
+            };
+            // protocol settings
+            JsonObject protocol = new()
+            {
+                ["addressversion"] = system.Settings.AddressVersion,
+                ["network"] = system.Settings.Network,
+                ["validatorscount"] = system.Settings.ValidatorsCount,
+                ["msperblock"] = system.GetTimePerBlock().TotalMilliseconds,
+                ["maxtraceableblocks"] = system.GetMaxTraceableBlocks(),
+                ["maxvaliduntilblockincrement"] = system.GetMaxValidUntilBlockIncrement(),
+                ["maxtransactionsperblock"] = system.Settings.MaxTransactionsPerBlock,
+                ["memorypoolmaxtransactions"] = system.Settings.MemoryPoolMaxTransactions,
+                ["initialgasdistribution"] = system.Settings.InitialGasDistribution,
+                ["hardforks"] = new JsonArray(system.Settings.Hardforks.Select(hf => new JsonObject()
+                {
+                    // Strip "HF_" prefix.
+                    ["name"] = StripPrefix(hf.Key.ToString(), "HF_"),
+                    ["blockheight"] = hf.Value
+                }).ToArray()),
+                ["standbycommittee"] = new JsonArray(system.Settings.StandbyCommittee.Select(u => (JsonNode)u.ToString()).ToArray()),
+                ["seedlist"] = new JsonArray(system.Settings.SeedList.Select(u => (JsonNode)u).ToArray())
+            };
             json["rpc"] = rpc;
             json["protocol"] = protocol;
             return json;
@@ -206,7 +210,7 @@ namespace Neo.Plugins.RpcServer
         /// <param name="base64Tx">The base64-encoded transaction.</param>
         /// <returns>A JToken containing the result of the transaction relay.</returns>
         [RpcMethod]
-        protected internal virtual JToken SendRawTransaction(string base64Tx)
+        protected internal virtual JsonNode SendRawTransaction(string base64Tx)
         {
             var tx = Result.Ok_Or(
                 () => Convert.FromBase64String(base64Tx).AsSerializable<Transaction>(),
@@ -226,7 +230,7 @@ namespace Neo.Plugins.RpcServer
         /// <param name="base64Block">The base64-encoded block.</param>
         /// <returns>A JToken containing the result of the block submission.</returns>
         [RpcMethod]
-        protected internal virtual JToken SubmitBlock(string base64Block)
+        protected internal virtual JsonNode SubmitBlock(string base64Block)
         {
             var block = Result.Ok_Or(
                 () => Convert.FromBase64String(base64Block).AsSerializable<Block>(),

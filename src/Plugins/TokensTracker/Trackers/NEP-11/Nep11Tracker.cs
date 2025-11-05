@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -25,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Plugins.Trackers.NEP_11
@@ -216,7 +216,7 @@ namespace Neo.Plugins.Trackers.NEP_11
 
 
         [RpcMethod]
-        public JToken GetNep11Transfers(Address address, ulong startTime = 0, ulong endTime = 0)
+        public JsonNode GetNep11Transfers(Address address, ulong startTime = 0, ulong endTime = 0)
         {
             _shouldTrackHistory.True_Or(RpcError.MethodNotFound);
 
@@ -227,24 +227,26 @@ namespace Neo.Plugins.Trackers.NEP_11
             endTime = endTime == 0 ? DateTime.UtcNow.ToTimestampMS() : endTime;
             (endTime >= startTime).True_Or(RpcError.InvalidParams);
 
-            JObject json = new();
-            json["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion);
-            JArray transfersSent = new();
-            json["sent"] = transfersSent;
-            JArray transfersReceived = new();
-            json["received"] = transfersReceived;
+            JsonArray transfersSent = new();
+            JsonArray transfersReceived = new();
+            JsonObject json = new()
+            {
+                ["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion),
+                ["sent"] = transfersSent,
+                ["received"] = transfersReceived
+            };
             AddNep11Transfers(Nep11TransferSentPrefix, userScriptHash, startTime, endTime, transfersSent);
             AddNep11Transfers(Nep11TransferReceivedPrefix, userScriptHash, startTime, endTime, transfersReceived);
             return json;
         }
 
         [RpcMethod]
-        public JToken GetNep11Balances(Address address)
+        public JsonNode GetNep11Balances(Address address)
         {
             var userScriptHash = address.ScriptHash;
 
-            JObject json = new();
-            JArray balances = new();
+            JsonObject json = new();
+            JsonArray balances = new();
             json["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion);
             json["balance"] = balances;
 
@@ -279,18 +281,18 @@ namespace Neo.Plugins.Trackers.NEP_11
                     var decimals = engine.ResultStack.Pop().GetInteger();
                     var name = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, key).Manifest.Name;
 
-                    balances.Add(new JObject
+                    balances.Add(new JsonObject
                     {
                         ["assethash"] = key.ToString(),
                         ["name"] = name,
                         ["symbol"] = symbol,
                         ["decimals"] = decimals.ToString(),
-                        ["tokens"] = new JArray(map[key].Select(v => new JObject
+                        ["tokens"] = new JsonArray(map[key].Select(v => new JsonObject
                         {
                             ["tokenid"] = v.tokenid,
                             ["amount"] = v.amount.ToString(),
                             ["lastupdatedblock"] = v.height
-                        })),
+                        }).ToArray()),
                     });
                 }
                 catch { }
@@ -299,7 +301,7 @@ namespace Neo.Plugins.Trackers.NEP_11
         }
 
         [RpcMethod]
-        public JToken GetNep11Properties(Address address, string tokenId)
+        public JsonNode GetNep11Properties(Address address, string tokenId)
         {
             var nep11Hash = address.ScriptHash;
 
@@ -308,7 +310,7 @@ namespace Neo.Plugins.Trackers.NEP_11
             using var snapshot = _neoSystem.GetSnapshotCache();
 
             using var engine = ApplicationEngine.Run(sb.ToArray(), snapshot, settings: _neoSystem.Settings);
-            JObject json = new();
+            JsonObject json = new();
 
             if (engine.State == VMState.HALT)
             {
@@ -331,12 +333,12 @@ namespace Neo.Plugins.Trackers.NEP_11
             return json;
         }
 
-        private void AddNep11Transfers(byte dbPrefix, UInt160 userScriptHash, ulong startTime, ulong endTime, JArray parentJArray)
+        private void AddNep11Transfers(byte dbPrefix, UInt160 userScriptHash, ulong startTime, ulong endTime, JsonArray parentJArray)
         {
             var transferPairs = QueryTransfers<Nep11TransferKey, TokenTransfer>(dbPrefix, userScriptHash, startTime, endTime).Take((int)_maxResults).ToList();
             foreach (var (key, value) in transferPairs.OrderByDescending(l => l.key.TimestampMS))
             {
-                JObject transfer = ToJson(key, value);
+                JsonObject transfer = ToJson(key, value);
                 transfer["tokenid"] = key.Token.GetSpan().ToHexString();
                 parentJArray.Add(transfer);
             }

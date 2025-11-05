@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -19,9 +20,9 @@ namespace Neo.Network.RPC.Models
 
         public string Address { get; set; }
 
-        public JObject ToJson() => new() { ["unclaimed"] = Unclaimed.ToString(), ["address"] = Address };
+        public JsonObject ToJson() => new() { ["unclaimed"] = Unclaimed.ToString(), ["address"] = Address };
 
-        public static RpcUnclaimedGas FromJson(JObject json)
+        public static RpcUnclaimedGas FromJson(JsonObject json)
         {
             return new RpcUnclaimedGas
             {

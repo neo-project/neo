@@ -13,18 +13,19 @@ using Neo.Json;
 using Neo.SmartContract;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
     class RpcNefFile
     {
-        public static NefFile FromJson(JObject json)
+        public static NefFile FromJson(JsonObject json)
         {
             return new NefFile
             {
                 Compiler = json["compiler"].AsString(),
                 Source = json["source"].AsString(),
-                Tokens = ((JArray)json["tokens"]).Select(p => RpcMethodToken.FromJson((JObject)p)).ToArray(),
+                Tokens = ((JsonArray)json["tokens"]).Select(p => RpcMethodToken.FromJson((JsonObject)p)).ToArray(),
                 Script = Convert.FromBase64String(json["script"].AsString()),
                 CheckSum = (uint)json["checksum"].AsNumber()
             };

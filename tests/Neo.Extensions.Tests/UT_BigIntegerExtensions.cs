@@ -173,7 +173,7 @@ namespace Neo.Extensions.Tests
             );
             CollectionAssert.AreEqual(
                 new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0 },
-                new BigInteger(JNumber.MIN_SAFE_INTEGER).ToByteArrayStandard()
+                new BigInteger(JsonConstants.MIN_SAFE_INTEGER).ToByteArrayStandard()
             );
         }
 
@@ -295,8 +295,8 @@ namespace Neo.Extensions.Tests
         public void TestSum_EdgeCases()
         {
             Assert.AreEqual(0, new List<BigInteger>().Sum());
-            Assert.AreEqual(0, new List<BigInteger> { JNumber.MIN_SAFE_INTEGER, JNumber.MAX_SAFE_INTEGER }.Sum());
-            Assert.AreEqual(JNumber.MAX_SAFE_INTEGER * 2, new List<BigInteger> { JNumber.MAX_SAFE_INTEGER, JNumber.MAX_SAFE_INTEGER }.Sum());
+            Assert.AreEqual(0, new List<BigInteger> { JsonConstants.MIN_SAFE_INTEGER, JsonConstants.MAX_SAFE_INTEGER }.Sum());
+            Assert.AreEqual(JsonConstants.MAX_SAFE_INTEGER * 2, new List<BigInteger> { JsonConstants.MAX_SAFE_INTEGER, JsonConstants.MAX_SAFE_INTEGER }.Sum());
         }
 
         [TestMethod]

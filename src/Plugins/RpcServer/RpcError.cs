@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.Plugins.RpcServer
 {
@@ -90,9 +90,9 @@ namespace Neo.Plugins.RpcServer
 
         public override string ToString() => string.IsNullOrEmpty(Data) ? $"{Message} ({Code})" : $"{Message} ({Code}) - {Data}";
 
-        public JToken ToJson()
+        public JsonNode ToJson()
         {
-            var json = new JObject()
+            var json = new JsonObject()
             {
                 ["code"] = Code,
                 ["message"] = ErrorMessage,

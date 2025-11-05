@@ -11,6 +11,7 @@
 
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -22,7 +23,7 @@ namespace Neo.Network.RPC.Models
 
         public UInt256 NextBlockHash { get; set; }
 
-        public JObject ToJson(ProtocolSettings protocolSettings)
+        public JsonObject ToJson(ProtocolSettings protocolSettings)
         {
             var json = Utility.BlockToJson(Block, protocolSettings);
             json["confirmations"] = Confirmations;
@@ -30,7 +31,7 @@ namespace Neo.Network.RPC.Models
             return json;
         }
 
-        public static RpcBlock FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static RpcBlock FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new RpcBlock
             {

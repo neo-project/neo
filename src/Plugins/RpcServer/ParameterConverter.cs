@@ -20,19 +20,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using JToken = Neo.Json.JToken;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.Plugins.RpcServer
 {
     public static class ParameterConverter
     {
-        private static readonly Dictionary<Type, Func<JToken, object>> s_conversions;
+        private static readonly Dictionary<Type, Func<JsonNode, object>> s_conversions;
 
         static ParameterConverter()
         {
             // ToAddress, ToSignersAndWitnesses are registered in RpcServer.cs
             // Because they need a extra parameter(address version).
-            s_conversions = new Dictionary<Type, Func<JToken, object>>
+            s_conversions = new Dictionary<Type, Func<JsonNode, object>>
             {
                 { typeof(string), token => Result.Ok_Or(token.AsString, CreateInvalidParamError<string>(token)) },
                 { typeof(byte), ToNumeric<byte> },
@@ -44,7 +45,7 @@ namespace Neo.Plugins.RpcServer
                 { typeof(long), ToNumeric<long> },
                 { typeof(ulong), ToNumeric<ulong> },
                 { typeof(double), token => Result.Ok_Or(token.AsNumber, CreateInvalidParamError<double>(token)) },
-                { typeof(bool), token => Result.Ok_Or(token.AsBoolean, CreateInvalidParamError<bool>(token)) },
+                { typeof(bool), token => Result.Ok_Or(token.GetValue<bool>, CreateInvalidParamError<bool>(token)) },
                 { typeof(byte[]), ToBytes }, // byte[] in jsonrpc request must be base64 encoded.
                 { typeof(Guid), ToGuid },
                 { typeof(UInt160), ToUInt160 }, // hex-encoded UInt160
@@ -61,26 +62,26 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <typeparam name="T">The type to register the conversion function for.</typeparam>
         /// <param name="conversion">The conversion function to register.</param>
-        internal static void RegisterConversion<T>(Func<JToken, object> conversion)
+        internal static void RegisterConversion<T>(Func<JsonNode, object> conversion)
         {
             s_conversions[typeof(T)] = token => conversion(token);
         }
 
-        internal static object AsParameter(this JToken token, Type targetType)
+        internal static object AsParameter(this JsonNode token, Type targetType)
         {
             if (s_conversions.TryGetValue(targetType, out var conversion))
                 return conversion(token);
             throw new RpcException(RpcError.InvalidParams.WithData($"Unsupported parameter type: {targetType}"));
         }
 
-        internal static T AsParameter<T>(this JToken token)
+        internal static T AsParameter<T>(this JsonNode token)
         {
             if (s_conversions.TryGetValue(typeof(T), out var conversion))
                 return (T)conversion(token);
             throw new RpcException(RpcError.InvalidParams.WithData($"Unsupported parameter type: {typeof(T)}"));
         }
 
-        private static object ToNumeric<T>(JToken token) where T : struct, IMinMaxValue<T>
+        private static object ToNumeric<T>(JsonNode token) where T : struct, IMinMaxValue<T>
         {
             if (token is null) throw new RpcException(RpcError.InvalidParams.WithData($"Invalid {typeof(T)}: {token}"));
 
@@ -89,7 +90,7 @@ namespace Neo.Plugins.RpcServer
             throw new RpcException(CreateInvalidParamError<T>(token));
         }
 
-        private static bool TryToDoubleToNumericType<T>(JToken token, out T result) where T : struct, IMinMaxValue<T>
+        private static bool TryToDoubleToNumericType<T>(JsonNode token, out T result) where T : struct, IMinMaxValue<T>
         {
             result = default;
             try
@@ -119,41 +120,41 @@ namespace Neo.Plugins.RpcServer
         private static bool IsValidInteger(double value)
         {
             // Integer values are safe if they are within the range of MIN_SAFE_INTEGER and MAX_SAFE_INTEGER
-            if (value < JNumber.MIN_SAFE_INTEGER || value > JNumber.MAX_SAFE_INTEGER)
+            if (value < JsonConstants.MIN_SAFE_INTEGER || value > JsonConstants.MAX_SAFE_INTEGER)
                 return false;
             return Math.Abs(value % 1) <= double.Epsilon;
         }
 
-        private static object ToUInt160(JToken token)
+        private static object ToUInt160(JsonNode token)
         {
-            if (token is null || token is not JString value)
+            if (token?.GetValueKind() != JsonValueKind.String)
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid UInt160: {token}"));
 
-            if (UInt160.TryParse(value.Value, out var scriptHash)) return scriptHash;
+            if (UInt160.TryParse(token.GetValue<string>(), out var scriptHash)) return scriptHash;
 
             throw new RpcException(RpcError.InvalidParams.WithData($"Invalid UInt160: {token}"));
         }
 
-        private static object ToUInt256(JToken token)
+        private static object ToUInt256(JsonNode token)
         {
-            if (token is null || token is not JString value)
+            if (token?.GetValueKind() != JsonValueKind.String)
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid UInt256: {token}"));
 
-            if (UInt256.TryParse(value.Value, out var hash)) return hash;
+            if (UInt256.TryParse(token.GetValue<string>(), out var hash)) return hash;
 
             throw new RpcException(RpcError.InvalidParams.WithData($"Invalid UInt256: {token}"));
         }
 
-        private static object ToBytes(JToken token)
+        private static object ToBytes(JsonNode token)
         {
-            if (token is not JString value)
+            if (token?.GetValueKind() != JsonValueKind.String)
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid base64-encoded bytes: {token}"));
 
-            return Result.Ok_Or(() => Convert.FromBase64String(value.Value),
+            return Result.Ok_Or(() => Convert.FromBase64String(token.GetValue<string>()),
                 RpcError.InvalidParams.WithData($"Invalid Base64-encoded bytes: {token}"));
         }
 
-        private static object ToContractNameOrHashOrId(JToken token)
+        private static object ToContractNameOrHashOrId(JsonNode token)
         {
             if (ContractNameOrHashOrId.TryParse(token.AsString(), out var contractNameOrHashOrId))
             {
@@ -162,7 +163,7 @@ namespace Neo.Plugins.RpcServer
             throw new RpcException(RpcError.InvalidParams.WithData($"Invalid contract hash or id format: {token}"));
         }
 
-        private static object ToBlockHashOrIndex(JToken token)
+        private static object ToBlockHashOrIndex(JsonNode token)
         {
             if (token is null) throw new RpcException(RpcError.InvalidParams.WithData($"Invalid BlockHashOrIndex: {token}"));
 
@@ -171,7 +172,7 @@ namespace Neo.Plugins.RpcServer
             throw new RpcException(RpcError.InvalidParams.WithData($"Invalid block hash or index format: {token}"));
         }
 
-        private static RpcError CreateInvalidParamError<T>(JToken token)
+        private static RpcError CreateInvalidParamError<T>(JsonNode token)
         {
             return RpcError.InvalidParams.WithData($"Invalid {typeof(T)} value: {token}");
         }
@@ -193,10 +194,10 @@ namespace Neo.Plugins.RpcServer
         /// <param name="addressVersion">The address version to use for the signers.</param>
         /// <returns>A SignersAndWitnesses object.</returns>
         /// <exception cref="RpcException">Thrown when the JSON array is invalid.</exception>
-        internal static SignersAndWitnesses ToSignersAndWitnesses(this JToken json, byte addressVersion)
+        internal static SignersAndWitnesses ToSignersAndWitnesses(this JsonNode json, byte addressVersion)
         {
             if (json is null) return default;
-            if (json is not JArray array)
+            if (json is not JsonArray array)
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid SignersAndWitnesses: {json}"));
 
             var signers = array.ToSigners(addressVersion);
@@ -217,9 +218,9 @@ namespace Neo.Plugins.RpcServer
         /// <param name="addressVersion">The address version to use for the signer.</param>
         /// <returns>A Signer object.</returns>
         /// <exception cref="RpcException">Thrown when the JSON object is invalid.</exception>
-        internal static Signer ToSigner(this JToken json, byte addressVersion)
+        internal static Signer ToSigner(this JsonNode json, byte addressVersion)
         {
-            if (json is null || json is not JObject obj) throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Signer: {json}"));
+            if (json is null || json is not JsonObject obj) throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Signer: {json}"));
 
             var account = obj["account"].NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'account' in Signer."));
             var scopes = obj["scopes"].NotNull_Or(RpcError.InvalidParams.WithData($"Invalid 'scopes' in Signer."));
@@ -232,13 +233,13 @@ namespace Neo.Plugins.RpcServer
                 Scopes = Result.Ok_Or(() => Enum.Parse<WitnessScope>(scopes!.AsString()),
                     RpcError.InvalidParams.WithData($"Invalid 'scopes' in Signer.")),
                 AllowedContracts = contracts is null ? [] :
-                    Result.Ok_Or(() => ((JArray)contracts).Select(p => UInt160.Parse(p!.AsString())).ToArray(),
+                    Result.Ok_Or(() => ((JsonArray)contracts).Select(p => UInt160.Parse(p!.AsString())).ToArray(),
                     RpcError.InvalidParams.WithData($"Invalid 'allowedcontracts' in Signer.")),
                 AllowedGroups = groups is null ? [] :
-                    Result.Ok_Or(() => ((JArray)groups).Select(p => ECPoint.Parse(p!.AsString(), ECCurve.Secp256r1)).ToArray(),
+                    Result.Ok_Or(() => ((JsonArray)groups).Select(p => ECPoint.Parse(p!.AsString(), ECCurve.Secp256r1)).ToArray(),
                     RpcError.InvalidParams.WithData($"Invalid 'allowedgroups' in Signer.")),
                 Rules = rules is null ? [] :
-                    Result.Ok_Or(() => ((JArray)rules).Select(r => WitnessRule.FromJson((JObject)r!)).ToArray(),
+                    Result.Ok_Or(() => ((JsonArray)rules).Select(r => WitnessRule.FromJson((JsonObject)r!)).ToArray(),
                         RpcError.InvalidParams.WithData($"Invalid 'rules' in Signer.")),
             };
         }
@@ -256,7 +257,7 @@ namespace Neo.Plugins.RpcServer
         /// <param name="addressVersion">The address version to use for the signers.</param>
         /// <returns>A Signer array.</returns>
         /// <exception cref="RpcException">Thrown when the JSON array is invalid or max allowed witness exceeded.</exception>
-        internal static Signer[] ToSigners(this JArray json, byte addressVersion)
+        internal static Signer[] ToSigners(this JsonArray json, byte addressVersion)
         {
             if (json.Count > Transaction.MaxTransactionAttributes)
                 throw new RpcException(RpcError.InvalidParams.WithData("Max allowed signers exceeded."));
@@ -264,7 +265,7 @@ namespace Neo.Plugins.RpcServer
             var signers = new Signer[json.Count];
             for (var i = 0; i < json.Count; i++)
             {
-                if (json[i] is null || json[i] is not JObject obj)
+                if (json[i] is null || json[i] is not JsonObject obj)
                     throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Signer at {i}."));
 
                 signers[i] = obj.ToSigner(addressVersion);
@@ -292,7 +293,7 @@ namespace Neo.Plugins.RpcServer
         /// <param name="json">The JSON array to create a Witness array from.</param>
         /// <returns>A Witness array.</returns>
         /// <exception cref="RpcException">Thrown when the JSON array is invalid or max allowed witness exceeded.</exception>
-        private static Witness[] ToWitnesses(this JArray json)
+        private static Witness[] ToWitnesses(this JsonArray json)
         {
             if (json.Count > Transaction.MaxTransactionAttributes)
                 throw new RpcException(RpcError.InvalidParams.WithData("Max allowed witness exceeded."));
@@ -300,7 +301,7 @@ namespace Neo.Plugins.RpcServer
             var witnesses = new List<Witness>(json.Count);
             for (var i = 0; i < json.Count; i++)
             {
-                if (json[i] is null || json[i] is not JObject obj)
+                if (json[i] is null || json[i] is not JsonObject obj)
                     throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Witness at {i}."));
 
                 var invocation = obj["invocation"];
@@ -331,18 +332,18 @@ namespace Neo.Plugins.RpcServer
                 RpcError.InvalidParams.WithData($"Invalid Address: {address}"));
         }
 
-        internal static Address ToAddress(this JToken token, byte version)
+        internal static Address ToAddress(this JsonNode token, byte version)
         {
-            if (token is null || token is not JString value)
+            if (token?.GetValueKind() != JsonValueKind.String)
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Address: {token}"));
 
-            var scriptHash = value.Value.AddressToScriptHash(version);
+            var scriptHash = token.GetValue<string>().AddressToScriptHash(version);
             return new Address(scriptHash, version);
         }
 
-        internal static Address[] ToAddresses(this JToken token, byte version)
+        internal static Address[] ToAddresses(this JsonNode token, byte version)
         {
-            if (token is not JArray array)
+            if (token is not JsonArray array)
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Addresses: {token}"));
 
             var addresses = new Address[array.Count];
@@ -354,27 +355,27 @@ namespace Neo.Plugins.RpcServer
             return addresses;
         }
 
-        private static ContractParameter[] ToContractParameters(this JToken token)
+        private static ContractParameter[] ToContractParameters(this JsonNode token)
         {
-            if (token is not JArray array)
+            if (token is not JsonArray array)
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Addresses: {token}"));
 
             var parameters = new ContractParameter[array.Count];
             for (var i = 0; i < array.Count; i++)
             {
-                if (array[i] is null || array[i] is not JObject obj)
+                if (array[i] is null || array[i] is not JsonObject obj)
                     throw new RpcException(RpcError.InvalidParams.WithData($"Invalid ContractParameter at [{i}]"));
                 parameters[i] = ContractParameter.FromJson(obj);
             }
             return parameters;
         }
 
-        private static object ToGuid(JToken token)
+        private static object ToGuid(JsonNode token)
         {
-            if (token is null || token is not JString value)
+            if (token?.GetValueKind() != JsonValueKind.String)
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Guid: {token}"));
 
-            if (Guid.TryParse(value.Value, out var guid)) return guid;
+            if (Guid.TryParse(token.GetValue<string>(), out var guid)) return guid;
 
             throw new RpcException(RpcError.InvalidParams.WithData($"Invalid Guid: {token}"));
         }

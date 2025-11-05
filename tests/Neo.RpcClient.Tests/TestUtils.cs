@@ -15,12 +15,13 @@ using Neo.Network.RPC.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Tests
 {
     internal static class TestUtils
     {
-        public readonly static List<RpcTestCase> RpcTestCases = ((JArray)JToken.Parse(File.ReadAllText("RpcTestCases.json"))).Select(p => RpcTestCase.FromJson((JObject)p)).ToList();
+        public readonly static List<RpcTestCase> RpcTestCases = ((JsonArray)JsonNode.Parse(File.ReadAllText("RpcTestCases.json"))).Select(p => RpcTestCase.FromJson((JsonObject)p)).ToList();
 
         public static Block GetBlock(int txCount)
         {
@@ -60,9 +61,9 @@ namespace Neo.Network.RPC.Tests
         public RpcRequest Request { get; set; }
         public RpcResponse Response { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            return new JObject
+            return new JsonObject
             {
                 ["Name"] = Name,
                 ["Request"] = Request.ToJson(),
@@ -70,13 +71,13 @@ namespace Neo.Network.RPC.Tests
             };
         }
 
-        public static RpcTestCase FromJson(JObject json)
+        public static RpcTestCase FromJson(JsonObject json)
         {
             return new RpcTestCase
             {
                 Name = json["Name"].AsString(),
-                Request = RpcRequest.FromJson((JObject)json["Request"]),
-                Response = RpcResponse.FromJson((JObject)json["Response"]),
+                Request = RpcRequest.FromJson((JsonObject)json["Request"]),
+                Response = RpcResponse.FromJson((JsonObject)json["Response"]),
             };
         }
 

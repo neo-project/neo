@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System.Collections;
+using System.Text.Json.Nodes;
 
 namespace Neo.Json.UnitTests
 {
@@ -22,38 +23,38 @@ namespace Neo.Json.UnitTests
     [TestClass]
     public class UT_JArray
     {
-        private JObject alice;
-        private JObject bob;
+        private JsonObject alice;
+        private JsonObject bob;
 
         [TestInitialize]
         public void SetUp()
         {
-            alice = new JObject()
+            alice = new JsonObject()
             {
                 ["name"] = "alice",
                 ["age"] = 30,
                 ["score"] = 100.001,
-                ["gender"] = Foo.female,
+                ["gender"] = Foo.female.ToString(),
                 ["isMarried"] = true,
             };
 
-            var pet1 = new JObject()
+            var pet1 = new JsonObject()
             {
                 ["name"] = "Tom",
                 ["type"] = "cat",
             };
             alice["pet"] = pet1;
 
-            bob = new JObject()
+            bob = new JsonObject()
             {
                 ["name"] = "bob",
                 ["age"] = 100000,
                 ["score"] = 0.001,
-                ["gender"] = Foo.male,
+                ["gender"] = Foo.male.ToString(),
                 ["isMarried"] = false,
             };
 
-            var pet2 = new JObject()
+            var pet2 = new JsonObject()
             {
                 ["name"] = "Paul",
                 ["type"] = "dog",
@@ -64,31 +65,31 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAdd()
         {
-            var jArray = new JArray
+            var jArray = new JsonArray
             {
                 alice,
                 bob
             };
             var jAlice = jArray[0];
             var jBob = jArray[1];
-            Assert.AreEqual(alice["name"].ToString(), jAlice["name"].ToString());
-            Assert.AreEqual(alice["age"].ToString(), jAlice["age"].ToString());
-            Assert.AreEqual(alice["score"].ToString(), jAlice["score"].ToString());
-            Assert.AreEqual(alice["gender"].ToString(), jAlice["gender"].ToString());
-            Assert.AreEqual(alice["isMarried"].ToString(), jAlice["isMarried"].ToString());
-            Assert.AreEqual(alice["pet"].ToString(), jAlice["pet"].ToString());
-            Assert.AreEqual(bob["name"].ToString(), jBob["name"].ToString());
-            Assert.AreEqual(bob["age"].ToString(), jBob["age"].ToString());
-            Assert.AreEqual(bob["score"].ToString(), jBob["score"].ToString());
-            Assert.AreEqual(bob["gender"].ToString(), jBob["gender"].ToString());
-            Assert.AreEqual(bob["isMarried"].ToString(), jBob["isMarried"].ToString());
-            Assert.AreEqual(bob["pet"].ToString(), jBob["pet"].ToString());
+            Assert.AreEqual(alice["name"].ToString(false), jAlice["name"].ToString(false));
+            Assert.AreEqual(alice["age"].ToString(false), jAlice["age"].ToString(false));
+            Assert.AreEqual(alice["score"].ToString(false), jAlice["score"].ToString(false));
+            Assert.AreEqual(alice["gender"].ToString(false), jAlice["gender"].ToString(false));
+            Assert.AreEqual(alice["isMarried"].ToString(false), jAlice["isMarried"].ToString(false));
+            Assert.AreEqual(alice["pet"].ToString(false), jAlice["pet"].ToString(false));
+            Assert.AreEqual(bob["name"].ToString(false), jBob["name"].ToString(false));
+            Assert.AreEqual(bob["age"].ToString(false), jBob["age"].ToString(false));
+            Assert.AreEqual(bob["score"].ToString(false), jBob["score"].ToString(false));
+            Assert.AreEqual(bob["gender"].ToString(false), jBob["gender"].ToString(false));
+            Assert.AreEqual(bob["isMarried"].ToString(false), jBob["isMarried"].ToString(false));
+            Assert.AreEqual(bob["pet"].ToString(false), jBob["pet"].ToString(false));
         }
 
         [TestMethod]
         public void TestSetItem()
         {
-            var jArray = new JArray
+            var jArray = new JsonArray
             {
                 alice
             };
@@ -102,27 +103,27 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestClear()
         {
-            var jArray = new JArray
+            var jArray = new JsonArray
             {
                 alice
             };
             var jAlice = jArray[0];
-            Assert.AreEqual(alice["name"].ToString(), jAlice["name"].ToString());
-            Assert.AreEqual(alice["age"].ToString(), jAlice["age"].ToString());
-            Assert.AreEqual(alice["score"].ToString(), jAlice["score"].ToString());
-            Assert.AreEqual(alice["gender"].ToString(), jAlice["gender"].ToString());
-            Assert.AreEqual(alice["isMarried"].ToString(), jAlice["isMarried"].ToString());
-            Assert.AreEqual(alice["pet"].ToString(), jAlice["pet"].ToString());
+            Assert.AreEqual(alice["name"].ToString(false), jAlice["name"].ToString(false));
+            Assert.AreEqual(alice["age"].ToString(false), jAlice["age"].ToString(false));
+            Assert.AreEqual(alice["score"].ToString(false), jAlice["score"].ToString(false));
+            Assert.AreEqual(alice["gender"].ToString(false), jAlice["gender"].ToString(false));
+            Assert.AreEqual(alice["isMarried"].ToString(false), jAlice["isMarried"].ToString(false));
+            Assert.AreEqual(alice["pet"].ToString(false), jAlice["pet"].ToString(false));
 
             jArray.Clear();
-            Action action = () => jArray[0].ToString();
+            Action action = () => jArray[0].ToString(false);
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
         }
 
         [TestMethod]
         public void TestContains()
         {
-            var jArray = new JArray
+            var jArray = new JsonArray
             {
                 alice
             };
@@ -131,35 +132,9 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
-        public void TestCopyTo()
-        {
-            var jArray = new JArray
-            {
-                alice,
-                bob
-            };
-
-            JObject[] jObjects1 = new JObject[2];
-            jArray.CopyTo(jObjects1, 0);
-            var jAlice1 = jObjects1[0];
-            var jBob1 = jObjects1[1];
-            Assert.AreEqual(alice, jAlice1);
-            Assert.AreEqual(bob, jBob1);
-
-            JObject[] jObjects2 = new JObject[4];
-            jArray.CopyTo(jObjects2, 2);
-            var jAlice2 = jObjects2[2];
-            var jBob2 = jObjects2[3];
-            Assert.IsNull(jObjects2[0]);
-            Assert.IsNull(jObjects2[1]);
-            Assert.AreEqual(alice, jAlice2);
-            Assert.AreEqual(bob, jBob2);
-        }
-
-        [TestMethod]
         public void TestInsert()
         {
-            var jArray = new JArray
+            var jArray = new JsonArray
             {
                 alice,
                 alice,
@@ -181,7 +156,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestIndexOf()
         {
-            var jArray = new JArray();
+            var jArray = new JsonArray();
             Assert.AreEqual(-1, jArray.IndexOf(alice));
 
             jArray.Add(alice);
@@ -195,16 +170,9 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
-        public void TestIsReadOnly()
-        {
-            var jArray = new JArray();
-            Assert.IsFalse(jArray.IsReadOnly);
-        }
-
-        [TestMethod]
         public void TestRemove()
         {
-            var jArray = new JArray
+            var jArray = new JsonArray
             {
                 alice
             };
@@ -222,7 +190,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestRemoveAt()
         {
-            var jArray = new JArray
+            var jArray = new JsonArray
             {
                 alice,
                 bob,
@@ -236,7 +204,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestGetEnumerator()
         {
-            var jArray = new JArray
+            var jArray = new JsonArray
             {
                 alice,
                 bob,
@@ -254,28 +222,16 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
-        public void TestAsString()
-        {
-            var jArray = new JArray
-            {
-                alice,
-                bob,
-            };
-            var s = jArray.AsString();
-            Assert.AreEqual("[{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]", s);
-        }
-
-        [TestMethod]
         public void TestCount()
         {
-            var jArray = new JArray { alice, bob };
+            var jArray = new JsonArray { alice, bob };
             Assert.HasCount(2, jArray);
         }
 
         [TestMethod]
         public void TestInvalidIndexAccess()
         {
-            var jArray = new JArray { alice };
+            var jArray = new JsonArray { alice };
             Action action = () => { var item = jArray[1]; };
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
         }
@@ -283,7 +239,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestEmptyEnumeration()
         {
-            var jArray = new JArray();
+            var jArray = new JsonArray();
             foreach (var item in jArray)
             {
                 Assert.Fail("Enumeration should not occur on an empty JArray");
@@ -291,20 +247,9 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
-        public void TestImplicitConversionFromJTokenArray()
-        {
-            JToken[] jTokens = { alice, bob };
-            JArray jArray = jTokens;
-
-            Assert.HasCount(2, jArray);
-            Assert.AreEqual(alice, jArray[0]);
-            Assert.AreEqual(bob, jArray[1]);
-        }
-
-        [TestMethod]
         public void TestAddNullValues()
         {
-            var jArray = new JArray
+            var jArray = new JsonArray
             {
                 null
             };
@@ -315,33 +260,26 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestClone()
         {
-            var jArray = new JArray { alice, bob };
-            var clone = (JArray)jArray.Clone();
+            var jArray = new JsonArray { alice, bob };
+            var clone = (JsonArray)jArray.DeepClone();
 
             Assert.AreNotSame(jArray, clone);
             Assert.AreEqual(jArray.Count, clone.Count);
 
             for (int i = 0; i < jArray.Count; i++)
             {
-                Assert.AreEqual(jArray[i]?.AsString(), clone[i]?.AsString());
+                Assert.AreEqual(jArray[i]?.GetValue<string>(), clone[i]?.GetValue<string>());
             }
 
-            var a = jArray.AsString();
-            var b = jArray.Clone().AsString();
+            var a = jArray.GetValue<string>();
+            var b = jArray.DeepClone().GetValue<string>();
             Assert.AreEqual(a, b);
-        }
-
-        [TestMethod]
-        public void TestReadOnlyBehavior()
-        {
-            var jArray = new JArray();
-            Assert.IsFalse(jArray.IsReadOnly);
         }
 
         [TestMethod]
         public void TestAddNull()
         {
-            var jArray = new JArray { null };
+            var jArray = new JsonArray { null };
 
             Assert.HasCount(1, jArray);
             Assert.IsNull(jArray[0]);
@@ -350,7 +288,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestSetNull()
         {
-            var jArray = new JArray { alice };
+            var jArray = new JsonArray { alice };
             jArray[0] = null;
 
             Assert.HasCount(1, jArray);
@@ -360,7 +298,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestInsertNull()
         {
-            var jArray = new JArray { alice };
+            var jArray = new JsonArray { alice };
             jArray.Insert(0, null);
 
             Assert.HasCount(2, jArray);
@@ -371,7 +309,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestRemoveNull()
         {
-            var jArray = new JArray { null, alice };
+            var jArray = new JsonArray { null, alice };
             jArray.Remove(null);
 
             Assert.HasCount(1, jArray);
@@ -381,53 +319,40 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestContainsNull()
         {
-            var jArray = new JArray { null, alice };
-            Assert.Contains((JToken)null, jArray);
+            var jArray = new JsonArray { null, alice };
+            Assert.Contains((JsonNode)null, jArray);
             Assert.DoesNotContain(bob, jArray);
         }
 
         [TestMethod]
         public void TestIndexOfNull()
         {
-            var jArray = new JArray { null, alice };
+            var jArray = new JsonArray { null, alice };
             Assert.AreEqual(0, jArray.IndexOf(null));
             Assert.AreEqual(1, jArray.IndexOf(alice));
         }
 
         [TestMethod]
-        public void TestCopyToWithNull()
-        {
-            var jArray = new JArray { null, alice };
-            JObject[] jObjects = new JObject[2];
-            jArray.CopyTo(jObjects, 0);
-
-            Assert.IsNull(jObjects[0]);
-            Assert.AreEqual(alice, jObjects[1]);
-        }
-
-        [TestMethod]
         public void TestToStringWithNull()
         {
-            var jArray = new JArray { null, alice, bob };
-            var jsonString = jArray.ToString();
-            var asString = jArray.AsString();
+            var jArray = new JsonArray { null, alice, bob };
+            var jsonString = jArray.ToString(false);
             // JSON string should properly represent the null value
             Assert.AreEqual("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]", jsonString);
-            Assert.AreEqual("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]", asString);
         }
 
         [TestMethod]
         public void TestFromStringWithNull()
         {
             var jsonString = "[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]";
-            var jArray = (JArray)JArray.Parse(jsonString);
+            var jArray = (JsonArray)JsonNode.Parse(jsonString);
 
             Assert.HasCount(3, jArray);
             Assert.IsNull(jArray[0]);
 
             // Checking the second and third elements
-            Assert.AreEqual("alice", jArray[1]["name"].AsString());
-            Assert.AreEqual("bob", jArray[2]["name"].AsString());
+            Assert.AreEqual("alice", jArray[1]["name"].GetValue<string>());
+            Assert.AreEqual("bob", jArray[2]["name"].GetValue<string>());
         }
     }
 }

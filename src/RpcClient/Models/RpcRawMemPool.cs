@@ -12,6 +12,7 @@
 using Neo.Json;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -23,23 +24,23 @@ namespace Neo.Network.RPC.Models
 
         public List<UInt256> UnVerified { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
                 ["height"] = Height,
-                ["verified"] = new JArray(Verified.Select(p => (JToken)p.ToString())),
-                ["unverified"] = new JArray(UnVerified.Select(p => (JToken)p.ToString()))
+                ["verified"] = new JsonArray(Verified.Select(p => (JsonNode)p.ToString()).ToArray()),
+                ["unverified"] = new JsonArray(UnVerified.Select(p => (JsonNode)p.ToString()).ToArray())
             };
         }
 
-        public static RpcRawMemPool FromJson(JObject json)
+        public static RpcRawMemPool FromJson(JsonObject json)
         {
             return new RpcRawMemPool
             {
                 Height = uint.Parse(json["height"].AsString()),
-                Verified = ((JArray)json["verified"]).Select(p => UInt256.Parse(p.AsString())).ToList(),
-                UnVerified = ((JArray)json["unverified"]).Select(p => UInt256.Parse(p.AsString())).ToList()
+                Verified = ((JsonArray)json["verified"]).Select(p => UInt256.Parse(p.AsString())).ToList(),
+                UnVerified = ((JsonArray)json["unverified"]).Select(p => UInt256.Parse(p.AsString())).ToList()
             };
         }
     }

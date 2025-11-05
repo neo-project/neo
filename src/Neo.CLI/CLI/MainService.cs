@@ -32,6 +32,7 @@ using System.Net;
 using System.Numerics;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Array = System.Array;
@@ -87,10 +88,10 @@ namespace Neo.CLI
             RegisterCommandHandler<string[], UInt160[]>(arr => arr.Select(str => StringToAddress(str, NeoSystem.Settings.AddressVersion)).ToArray());
             RegisterCommandHandler<string, ECPoint>(str => ECPoint.Parse(str.Trim(), ECCurve.Secp256r1));
             RegisterCommandHandler<string[], ECPoint[]>(str => str.Select(u => ECPoint.Parse(u.Trim(), ECCurve.Secp256r1)).ToArray());
-            RegisterCommandHandler<string, JToken>(str => JToken.Parse(str)!);
-            RegisterCommandHandler<string, JObject>(str => (JObject)JToken.Parse(str)!);
+            RegisterCommandHandler<string, JsonNode>(str => JsonNode.Parse(str)!);
+            RegisterCommandHandler<string, JsonObject>(str => (JsonObject)JsonNode.Parse(str)!);
             RegisterCommandHandler<string, decimal>(str => decimal.Parse(str, CultureInfo.InvariantCulture));
-            RegisterCommandHandler<JToken, JArray>(obj => (JArray)obj);
+            RegisterCommandHandler<JsonNode, JsonArray>(obj => (JsonArray)obj);
 
             RegisterCommand(this);
 
@@ -168,7 +169,7 @@ namespace Neo.CLI
             return true;
         }
 
-        private static ContractParameter? LoadScript(string nefFilePath, string? manifestFilePath, JObject? data,
+        private static ContractParameter? LoadScript(string nefFilePath, string? manifestFilePath, JsonObject? data,
             out NefFile nef, out ContractManifest manifest)
         {
             if (string.IsNullOrEmpty(manifestFilePath))
@@ -210,11 +211,11 @@ namespace Neo.CLI
             return null;
         }
 
-        private byte[] LoadDeploymentScript(string nefFilePath, string? manifestFilePath, JObject? data,
+        private byte[] LoadDeploymentScript(string nefFilePath, string? manifestFilePath, JsonObject? data,
             out NefFile nef, out ContractManifest manifest)
         {
             var parameter = LoadScript(nefFilePath, manifestFilePath, data, out nef, out manifest);
-            var manifestJson = manifest.ToJson().ToString();
+            var manifestJson = manifest.ToJson().ToString(false);
 
             // Build script
             using (var sb = new ScriptBuilder())
@@ -227,11 +228,11 @@ namespace Neo.CLI
             }
         }
 
-        private byte[] LoadUpdateScript(UInt160 scriptHash, string nefFilePath, string manifestFilePath, JObject? data,
+        private byte[] LoadUpdateScript(UInt160 scriptHash, string nefFilePath, string manifestFilePath, JsonObject? data,
             out NefFile nef, out ContractManifest manifest)
         {
             var parameter = LoadScript(nefFilePath, manifestFilePath, data, out nef, out manifest);
-            var manifestJson = manifest.ToJson().ToString();
+            var manifestJson = manifest.ToJson().ToString(false);
 
             // Build script
             using (var sb = new ScriptBuilder())
@@ -480,7 +481,7 @@ namespace Neo.CLI
         /// <param name="datoshi">Max fee for running the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
         /// <returns>Return true if it was successful</returns>
         private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result,
-            IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long datoshi = TestModeGas)
+            IVerifiable? verifiable = null, JsonArray? contractParameters = null, bool showStack = true, long datoshi = TestModeGas)
         {
             var parameters = new List<ContractParameter>();
             if (contractParameters != null)
@@ -489,7 +490,7 @@ namespace Neo.CLI
                 {
                     if (contractParameter is not null)
                     {
-                        parameters.Add(ContractParameter.FromJson((JObject)contractParameter));
+                        parameters.Add(ContractParameter.FromJson((JsonObject)contractParameter));
                     }
                 }
             }
@@ -536,7 +537,7 @@ namespace Neo.CLI
             ConsoleHelper.Info("Gas Consumed: ", new BigDecimal((BigInteger)engine.FeeConsumed, NativeContract.GAS.Decimals).ToString());
 
             if (showStack)
-                ConsoleHelper.Info("Result Stack: ", new JArray(engine.ResultStack.Select(p => p.ToJson())).ToString());
+                ConsoleHelper.Info("Result Stack: ", new JsonArray(engine.ResultStack.Select(p => p.ToJson()).ToArray()).ToString(false));
 
             if (engine.State == VMState.FAULT)
                 ConsoleHelper.Error(GetExceptionMessage(engine.FaultException));

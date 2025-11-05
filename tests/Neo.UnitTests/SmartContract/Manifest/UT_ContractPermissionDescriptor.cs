@@ -17,6 +17,7 @@ using Neo.Wallets;
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -47,19 +48,19 @@ namespace Neo.UnitTests.SmartContract.Manifest
             ContractPermissionDescriptor result = ContractPermissionDescriptor.FromJson(temp.ToJson());
             Assert.IsNull(result.Hash);
             Assert.AreEqual(result.Group, result.Group);
-            Assert.ThrowsExactly<FormatException>(() => _ = ContractPermissionDescriptor.FromJson(string.Empty));
+            Assert.ThrowsExactly<FormatException>(() => _ = ContractPermissionDescriptor.FromJson(JsonValue.Create(string.Empty)));
         }
 
         [TestMethod]
         public void TestContractManifestFromJson()
         {
-            Assert.ThrowsExactly<NullReferenceException>(() => _ = ContractManifest.FromJson(new JObject()));
+            Assert.ThrowsExactly<NullReferenceException>(() => _ = ContractManifest.FromJson(new JsonObject()));
             var jsonFiles = Directory.GetFiles(Path.Combine("SmartContract", "Manifest", "TestFile"));
             foreach (var item in jsonFiles)
             {
-                var json = JObject.Parse(File.ReadAllText(item)) as JObject;
+                var json = JsonNode.Parse(File.ReadAllText(item)) as JsonObject;
                 var manifest = ContractManifest.FromJson(json);
-                Assert.AreEqual(manifest.ToJson().ToString(), json.ToString());
+                Assert.AreEqual(manifest.ToJson().ToString(false), json.ToString(false));
             }
         }
 

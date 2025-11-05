@@ -17,6 +17,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
+using System.Text.Json.Nodes;
 
 namespace Neo.Plugins.StorageDumper
 {
@@ -28,7 +29,7 @@ namespace Neo.Plugins.StorageDumper
         /// <summary>
         /// _currentBlock stores the last cached item
         /// </summary>
-        private JObject? _currentBlock;
+        private JsonObject? _currentBlock;
         private string? _lastCreateDirectory;
         protected override UnhandledExceptionPolicy ExceptionPolicy => StorageSettings.Default?.ExceptionPolicy ?? UnhandledExceptionPolicy.Ignore;
 
@@ -74,12 +75,12 @@ namespace Neo.Plugins.StorageDumper
                 prefix = BitConverter.GetBytes(contract.Id);
             }
             var states = _system.StoreView.Find(prefix);
-            JArray array = new JArray(states.Where(p => !StorageSettings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
+            JsonArray array = new JsonArray(states.Where(p => !StorageSettings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JsonObject
             {
                 ["key"] = Convert.ToBase64String(p.Key.ToArray()),
                 ["value"] = Convert.ToBase64String(p.Value.ToArray())
-            }));
-            File.WriteAllText(path, array.ToString());
+            }).ToArray());
+            File.WriteAllText(path, array.ToString(false));
             ConsoleHelper.Info("States",
                 $"({array.Count})",
                 " have been dumped into file ",
@@ -97,13 +98,13 @@ namespace Neo.Plugins.StorageDumper
             var blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (blockIndex >= StorageSettings.Default!.HeightToBegin)
             {
-                var stateChangeArray = new JArray();
+                var stateChangeArray = new JsonArray();
 
                 foreach (var trackable in snapshot.GetChangeSet())
                 {
                     if (StorageSettings.Default.Exclude.Contains(trackable.Key.Id))
                         continue;
-                    var state = new JObject();
+                    var state = new JsonObject();
                     switch (trackable.Value.State)
                     {
                         case TrackState.Added:
@@ -127,7 +128,7 @@ namespace Neo.Plugins.StorageDumper
                     stateChangeArray.Add(state);
                 }
 
-                var bsItem = new JObject()
+                var bsItem = new JsonObject()
                 {
                     ["block"] = blockIndex,
                     ["size"] = stateChangeArray.Count,
@@ -147,7 +148,7 @@ namespace Neo.Plugins.StorageDumper
         {
             if (_currentBlock != null && _writer != null)
             {
-                _writer.WriteLine(_currentBlock.ToString());
+                _writer.WriteLine(_currentBlock.ToString(false));
                 _writer.Flush();
             }
         }

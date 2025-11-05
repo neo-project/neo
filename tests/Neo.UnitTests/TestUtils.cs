@@ -19,6 +19,7 @@ using Neo.SmartContract.Native;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Text.Json.Nodes;
 
 namespace Neo.UnitTests
 {
@@ -65,15 +66,15 @@ namespace Neo.UnitTests
 
         public static NEP6Wallet GenerateTestWallet(string password)
         {
-            var wallet = new JObject()
+            var wallet = new JsonObject()
             {
                 ["name"] = "noname",
                 ["version"] = new Version("1.0").ToString(),
                 ["scrypt"] = new ScryptParameters(2, 1, 1).ToJson(),
-                ["accounts"] = new JArray(),
+                ["accounts"] = new JsonArray(),
                 ["extra"] = null
             };
-            Assert.AreEqual("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}", wallet.ToString());
+            Assert.AreEqual("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}", wallet.ToString(false));
             return new NEP6Wallet(null, password, TestProtocolSettings.Default, wallet);
         }
 

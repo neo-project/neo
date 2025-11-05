@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -57,16 +58,16 @@ namespace Neo.UnitTests.VMT
                 true
             };
 
-            Assert.AreEqual("{\"type\":\"Integer\",\"value\":\"5\"}", item[0].ToJson().ToString());
-            Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"}", item[1].ToJson().ToString());
-            Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"AQID\"}", item[2].ToJson().ToString());
-            Assert.AreEqual("{\"type\":\"Boolean\",\"value\":true}", item[3].ToJson().ToString());
-            Assert.AreEqual("{\"type\":\"Array\",\"value\":[{\"type\":\"Integer\",\"value\":\"5\"},{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"},{\"type\":\"ByteString\",\"value\":\"AQID\"},{\"type\":\"Boolean\",\"value\":true}]}", item.ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"Integer\",\"value\":\"5\"}", item[0].ToJson().ToString(false));
+            Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"}", item[1].ToJson().ToString(false));
+            Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"AQID\"}", item[2].ToJson().ToString(false));
+            Assert.AreEqual("{\"type\":\"Boolean\",\"value\":true}", item[3].ToJson().ToString(false));
+            Assert.AreEqual("{\"type\":\"Array\",\"value\":[{\"type\":\"Integer\",\"value\":\"5\"},{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"},{\"type\":\"ByteString\",\"value\":\"AQID\"},{\"type\":\"Boolean\",\"value\":true}]}", item.ToJson().ToString(false));
 
             var item2 = new Map();
             item2[1] = new Pointer(new Script(ReadOnlyMemory<byte>.Empty), 0);
 
-            Assert.AreEqual("{\"type\":\"Map\",\"value\":[{\"key\":{\"type\":\"Integer\",\"value\":\"1\"},\"value\":{\"type\":\"Pointer\",\"value\":0}}]}", item2.ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"Map\",\"value\":[{\"key\":{\"type\":\"Integer\",\"value\":\"1\"},\"value\":{\"type\":\"Pointer\",\"value\":0}}]}", item2.ToJson().ToString(false));
         }
 
         [TestMethod]
@@ -721,7 +722,7 @@ namespace Neo.UnitTests.VMT
             """;
 
             var json = item.ToJson();
-            Assert.AreEqual(Regex.Replace(expected, @"\s+", ""), json.ToString());
+            Assert.AreEqual(Regex.Replace(expected, @"\s+", ""), json.ToString(false));
             // check cyclic reference
             map[2] = item;
             var action = () => item.ToJson();

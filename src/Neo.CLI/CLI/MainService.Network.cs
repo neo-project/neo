@@ -20,6 +20,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
 using System.Net;
+using System.Text.Json.Nodes;
 
 namespace Neo.CLI
 {
@@ -130,7 +131,7 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="jsonObjectToRelay">Json object</param>
         [ConsoleCommand("relay", Category = "Network Commands")]
-        private void OnRelayCommand(JObject jsonObjectToRelay)
+        private void OnRelayCommand(JsonObject jsonObjectToRelay)
         {
             if (jsonObjectToRelay == null)
             {
@@ -140,7 +141,7 @@ namespace Neo.CLI
 
             try
             {
-                ContractParametersContext context = ContractParametersContext.Parse(jsonObjectToRelay.ToString(), NeoSystem.StoreView);
+                ContractParametersContext context = ContractParametersContext.Parse(jsonObjectToRelay.ToString(false), NeoSystem.StoreView);
                 if (!context.Completed)
                 {
                     ConsoleHelper.Error("The signature is incomplete.");

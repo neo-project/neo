@@ -10,22 +10,23 @@
 // modifications are permitted.
 
 using Neo.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
     public class RpcResponse
     {
-        public JToken Id { get; set; }
+        public JsonNode Id { get; set; }
 
         public string JsonRpc { get; set; }
 
         public RpcResponseError Error { get; set; }
 
-        public JToken Result { get; set; }
+        public JsonNode Result { get; set; }
 
         public string RawResponse { get; set; }
 
-        public static RpcResponse FromJson(JObject json)
+        public static RpcResponse FromJson(JsonObject json)
         {
             var response = new RpcResponse
             {
@@ -36,13 +37,13 @@ namespace Neo.Network.RPC.Models
 
             if (json["error"] != null)
             {
-                response.Error = RpcResponseError.FromJson((JObject)json["error"]);
+                response.Error = RpcResponseError.FromJson((JsonObject)json["error"]);
             }
 
             return response;
         }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {
@@ -60,9 +61,9 @@ namespace Neo.Network.RPC.Models
 
         public string Message { get; set; }
 
-        public JToken Data { get; set; }
+        public JsonNode Data { get; set; }
 
-        public static RpcResponseError FromJson(JObject json)
+        public static RpcResponseError FromJson(JsonObject json)
         {
             return new RpcResponseError
             {
@@ -72,7 +73,7 @@ namespace Neo.Network.RPC.Models
             };
         }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
             return new()
             {

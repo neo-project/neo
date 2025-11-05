@@ -15,6 +15,7 @@ using Neo.SmartContract.Manifest;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -24,24 +25,24 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestFromJson()
         {
-            var jstring = new JString("*");
+            JsonNode jstring = "*";
             var s = WildcardContainer<string>.FromJson(jstring, u => u.AsString());
             Assert.IsTrue(s.IsWildcard);
             Assert.IsEmpty(s);
 
-            jstring = new JString("hello world");
+            jstring = "hello world";
             Assert.ThrowsExactly<FormatException>(() => _ = WildcardContainer<string>.FromJson(jstring, u => u.AsString()));
 
-            var alice = new JObject()
+            var alice = new JsonObject()
             {
                 ["name"] = "alice",
                 ["age"] = 30
             };
-            var jarray = new JArray { alice };
+            var jarray = new JsonArray { alice };
             var r = WildcardContainer<string>.FromJson(jarray, u => u.AsString());
             Assert.AreEqual("{\"name\":\"alice\",\"age\":30}", r[0]);
 
-            var jbool = new JBoolean();
+            var jbool = JsonValue.Create(false);
             Assert.ThrowsExactly<FormatException>(() => _ = WildcardContainer<string>.FromJson(jbool, u => u.AsString()));
         }
 

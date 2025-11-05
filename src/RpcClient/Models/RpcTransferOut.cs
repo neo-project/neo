@@ -11,6 +11,7 @@
 
 using Neo.Json;
 using Neo.Wallets;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -22,7 +23,7 @@ namespace Neo.Network.RPC.Models
 
         public string Value { get; set; }
 
-        public JObject ToJson(ProtocolSettings protocolSettings)
+        public JsonObject ToJson(ProtocolSettings protocolSettings)
         {
             return new()
             {
@@ -32,7 +33,7 @@ namespace Neo.Network.RPC.Models
             };
         }
 
-        public static RpcTransferOut FromJson(JObject json, ProtocolSettings protocolSettings)
+        public static RpcTransferOut FromJson(JsonObject json, ProtocolSettings protocolSettings)
         {
             return new RpcTransferOut
             {

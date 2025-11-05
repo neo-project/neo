@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -236,7 +237,7 @@ namespace Neo.Plugins.OracleService
         /// <param name="msgSign">Message signature, base64-encoded if access from json-rpc</param>
         /// <returns>JObject</returns>
         [RpcMethod]
-        public JObject SubmitOracleResponse(byte[] oraclePubkey, ulong requestId, byte[] txSign, byte[] msgSign)
+        public JsonObject SubmitOracleResponse(byte[] oraclePubkey, ulong requestId, byte[] txSign, byte[] msgSign)
         {
             status.Equals(OracleStatus.Running).True_Or(RpcError.OracleDisabled);
 
@@ -260,7 +261,7 @@ namespace Neo.Plugins.OracleService
                     .True_Or(RpcErrorFactory.InvalidSignature($"Invalid oracle response transaction signature from '{oraclePub}'."));
                 AddResponseTxSign(snapshot, requestId, oraclePub, txSign);
             }
-            return new JObject();
+            return new JsonObject();
         }
 
         private static async Task SendContentAsync(Uri url, string content)
@@ -521,8 +522,8 @@ namespace Neo.Plugins.OracleService
             if (string.IsNullOrEmpty(filterArgs))
                 return input.ToStrictUtf8Bytes();
 
-            JToken beforeObject = JToken.Parse(input);
-            JArray afterObjects = beforeObject.JsonPath(filterArgs);
+            JsonNode beforeObject = JsonNode.Parse(input);
+            JsonArray afterObjects = beforeObject.JsonPath(filterArgs);
             return afterObjects.ToByteArray(false);
         }
 

@@ -12,14 +12,13 @@
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.CLI
@@ -176,13 +175,13 @@ namespace Neo.CLI
         private void OnGetAccountState(UInt160 address)
         {
             const string Notice = "No vote record!";
-            var arg = new JObject
+            var arg = new JsonObject
             {
                 ["type"] = "Hash160",
                 ["value"] = address.ToString()
             };
 
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, VoteMethods.GetAccountState, out var result, null, new JArray(arg))) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, VoteMethods.GetAccountState, out var result, null, new JsonArray(arg))) return;
             Console.WriteLine();
             if (result.IsNull)
             {

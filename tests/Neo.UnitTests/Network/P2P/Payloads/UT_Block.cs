@@ -17,6 +17,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
+using System.Text.Json.Nodes;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -169,16 +170,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(uut.Header.Index, jObj["index"].AsNumber());
             Assert.AreEqual("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf", jObj["nextconsensus"].AsString());
 
-            var scObj = (JObject)jObj["witnesses"][0];
+            var scObj = (JsonObject)jObj["witnesses"][0];
             Assert.AreEqual("", scObj["invocation"].AsString());
             Assert.AreEqual("EQ==", scObj["verification"].AsString());
 
             Assert.IsNotNull(jObj["tx"]);
-            var txObj = (JObject)jObj["tx"][0];
+            var txObj = (JsonObject)jObj["tx"][0];
             Assert.AreEqual("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c", txObj["hash"].AsString());
             Assert.AreEqual(53, txObj["size"].AsNumber());
             Assert.AreEqual(0, txObj["version"].AsNumber());
-            Assert.IsEmpty((JArray)txObj["attributes"]);
+            Assert.IsEmpty((JsonArray)txObj["attributes"]);
             Assert.AreEqual("0", txObj["netfee"].AsString());
         }
 

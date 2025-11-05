@@ -19,6 +19,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Neo.CLI
 {
@@ -31,7 +33,7 @@ namespace Neo.CLI
         /// <param name="manifestPath">Manifest path</param>
         /// <param name="data">Extra data for deploy</param>
         [ConsoleCommand("deploy", Category = "Contract Commands")]
-        private void OnDeployCommand(string filePath, string? manifestPath = null, JObject? data = null)
+        private void OnDeployCommand(string filePath, string? manifestPath = null, JsonObject? data = null)
         {
             if (NoWallet()) return;
             byte[] script = LoadDeploymentScript(filePath, manifestPath, data, out var nef, out var manifest);
@@ -68,7 +70,7 @@ namespace Neo.CLI
         /// <param name="signerAccounts">Signer Accounts</param>
         /// <param name="data">Extra data for update</param>
         [ConsoleCommand("update", Category = "Contract Commands")]
-        private void OnUpdateCommand(UInt160 scriptHash, string filePath, string manifestPath, UInt160 sender, UInt160[]? signerAccounts = null, JObject? data = null)
+        private void OnUpdateCommand(UInt160 scriptHash, string filePath, string manifestPath, UInt160 sender, UInt160[]? signerAccounts = null, JsonObject? data = null)
         {
             Signer[] signers = Array.Empty<Signer>();
 
@@ -131,7 +133,7 @@ namespace Neo.CLI
         /// <param name="signerAccounts">Signer's accounts</param>
         /// <param name="maxGas">Max fee for running the script, in the unit of GAS</param>
         [ConsoleCommand("invoke", Category = "Contract Commands")]
-        private void OnInvokeCommand(UInt160 scriptHash, string operation, JArray? contractParameters = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
+        private void OnInvokeCommand(UInt160 scriptHash, string operation, JsonArray? contractParameters = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             var datoshi = new BigDecimal(maxGas, NativeContract.GAS.Decimals);
@@ -200,7 +202,7 @@ namespace Neo.CLI
         /// <param name="maxGas">Max fee for running the script, in the unit of GAS</param>
         [ConsoleCommand("invokeabi", Category = "Contract Commands")]
         private void OnInvokeAbiCommand(UInt160 scriptHash, string operation,
-            JArray? args = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
+            JsonArray? args = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
         {
             // Get the contract from storage
             var contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
@@ -246,10 +248,10 @@ namespace Neo.CLI
             }
 
             // Parse parameters according to the ABI
-            JArray? contractParameters = null;
+            JsonArray? contractParameters = null;
             if (args != null && args.Count > 0)
             {
-                contractParameters = new JArray();
+                contractParameters = new JsonArray();
                 for (int i = 0; i < args.Count; i++)
                 {
                     var paramDef = method.Parameters[i];
@@ -275,14 +277,14 @@ namespace Neo.CLI
         /// <summary>
         /// Parse a parameter value according to its ABI type
         /// </summary>
-        private ContractParameter ParseParameterFromAbi(ContractParameterType type, JToken? value)
+        private ContractParameter ParseParameterFromAbi(ContractParameterType type, JsonNode? value)
         {
-            if (value == null || value == JToken.Null)
+            if (value == null)
                 return new ContractParameter { Type = type, Value = null };
 
             return type switch
             {
-                ContractParameterType.Boolean => new ContractParameter { Type = type, Value = value.AsBoolean() },
+                ContractParameterType.Boolean => new ContractParameter { Type = type, Value = value.GetValue<bool>() },
                 ContractParameterType.Integer => ParseIntegerParameter(value),
                 ContractParameterType.ByteArray => ParseByteArrayParameter(value),
                 ContractParameterType.String => new ContractParameter { Type = type, Value = value.AsString() },
@@ -301,7 +303,7 @@ namespace Neo.CLI
         /// <summary>
         /// Parse integer parameter with error handling
         /// </summary>
-        private ContractParameter ParseIntegerParameter(JToken value)
+        private ContractParameter ParseIntegerParameter(JsonNode value)
         {
             try
             {
@@ -316,7 +318,7 @@ namespace Neo.CLI
         /// <summary>
         /// Parse byte array parameter with error handling
         /// </summary>
-        private ContractParameter ParseByteArrayParameter(JToken value)
+        private ContractParameter ParseByteArrayParameter(JsonNode value)
         {
             try
             {
@@ -331,7 +333,7 @@ namespace Neo.CLI
         /// <summary>
         /// Parse Hash160 parameter with error handling
         /// </summary>
-        private ContractParameter ParseHash160Parameter(JToken value)
+        private ContractParameter ParseHash160Parameter(JsonNode value)
         {
             try
             {
@@ -346,7 +348,7 @@ namespace Neo.CLI
         /// <summary>
         /// Parse Hash256 parameter with error handling
         /// </summary>
-        private ContractParameter ParseHash256Parameter(JToken value)
+        private ContractParameter ParseHash256Parameter(JsonNode value)
         {
             try
             {
@@ -361,7 +363,7 @@ namespace Neo.CLI
         /// <summary>
         /// Parse PublicKey parameter with error handling
         /// </summary>
-        private ContractParameter ParsePublicKeyParameter(JToken value)
+        private ContractParameter ParsePublicKeyParameter(JsonNode value)
         {
             try
             {
@@ -376,7 +378,7 @@ namespace Neo.CLI
         /// <summary>
         /// Parse Signature parameter with error handling
         /// </summary>
-        private ContractParameter ParseSignatureParameter(JToken value)
+        private ContractParameter ParseSignatureParameter(JsonNode value)
         {
             try
             {
@@ -391,9 +393,9 @@ namespace Neo.CLI
         /// <summary>
         /// Parse Array parameter with type inference
         /// </summary>
-        private ContractParameter ParseArrayParameter(JToken value)
+        private ContractParameter ParseArrayParameter(JsonNode value)
         {
-            if (value is not JArray array)
+            if (value is not JsonArray array)
                 throw new ArgumentException($"Expected array value for Array parameter type, got: {value.GetType().Name}");
 
             var items = new ContractParameter[array.Count];
@@ -401,7 +403,7 @@ namespace Neo.CLI
             {
                 var element = array[j];
                 // Check if this is already a ContractParameter format
-                if (element is JObject obj && obj.ContainsProperty("type") && obj.ContainsProperty("value"))
+                if (element is JsonObject obj && obj.ContainsKey("type") && obj.ContainsKey("value"))
                 {
                     items[j] = ContractParameter.FromJson(obj);
                 }
@@ -417,27 +419,27 @@ namespace Neo.CLI
         /// <summary>
         /// Parse Map parameter with type inference
         /// </summary>
-        private ContractParameter ParseMapParameter(JToken value)
+        private ContractParameter ParseMapParameter(JsonNode value)
         {
-            if (value is not JObject map)
+            if (value is not JsonObject map)
                 throw new ArgumentException("Expected object value for Map parameter type");
 
             // Check if this is a ContractParameter format map
-            if (map.ContainsProperty("type") && map["type"]?.AsString() == "Map" && map.ContainsProperty("value"))
+            if (map.ContainsKey("type") && map["type"]?.AsString() == "Map" && map.ContainsKey("value"))
             {
                 return ContractParameter.FromJson(map);
             }
 
             // Otherwise, parse as a regular map with inferred types
             var dict = new List<KeyValuePair<ContractParameter, ContractParameter>>();
-            foreach (var kvp in map.Properties)
+            foreach (var kvp in map)
             {
                 // Keys are always strings in JSON
                 var key = new ContractParameter { Type = ContractParameterType.String, Value = kvp.Key };
 
                 // For values, check if they are ContractParameter format
                 var val = kvp.Value;
-                if (val is JObject valObj && valObj.ContainsProperty("type") && valObj.ContainsProperty("value"))
+                if (val is JsonObject valObj && valObj.ContainsKey("type") && valObj.ContainsKey("value"))
                 {
                     dict.Add(new KeyValuePair<ContractParameter, ContractParameter>(key, ContractParameter.FromJson(valObj)));
                 }
@@ -453,15 +455,15 @@ namespace Neo.CLI
         /// <summary>
         /// Infers the parameter type from a JToken and parses it accordingly
         /// </summary>
-        private ContractParameter InferParameterFromToken(JToken value)
+        private ContractParameter InferParameterFromToken(JsonNode value)
         {
-            return value switch
+            return value.GetValueKind() switch
             {
-                JBoolean => ParseParameterFromAbi(ContractParameterType.Boolean, value),
-                JNumber => ParseParameterFromAbi(ContractParameterType.Integer, value),
-                JString => ParseParameterFromAbi(ContractParameterType.String, value),
-                JArray => ParseParameterFromAbi(ContractParameterType.Array, value),
-                JObject => ParseParameterFromAbi(ContractParameterType.Map, value),
+                JsonValueKind.True or JsonValueKind.False => ParseParameterFromAbi(ContractParameterType.Boolean, value),
+                JsonValueKind.Number => ParseParameterFromAbi(ContractParameterType.Integer, value),
+                JsonValueKind.String => ParseParameterFromAbi(ContractParameterType.String, value),
+                JsonValueKind.Array => ParseParameterFromAbi(ContractParameterType.Array, value),
+                JsonValueKind.Object => ParseParameterFromAbi(ContractParameterType.Map, value),
                 _ => throw new ArgumentException($"Cannot infer type for value: {value}")
             };
         }

@@ -12,6 +12,7 @@
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -22,14 +23,14 @@ namespace Neo.Network.RPC.Models
         public UInt256 RootHash;
         public Witness Witness;
 
-        public static RpcStateRoot FromJson(JObject json)
+        public static RpcStateRoot FromJson(JsonObject json)
         {
             return new RpcStateRoot
             {
                 Version = (byte)json["version"].AsNumber(),
                 Index = (uint)json["index"].AsNumber(),
                 RootHash = UInt256.Parse(json["roothash"].AsString()),
-                Witness = ((JArray)json["witnesses"]).Select(p => Utility.WitnessFromJson((JObject)p)).FirstOrDefault()
+                Witness = ((JsonArray)json["witnesses"]).Select(p => Utility.WitnessFromJson((JsonObject)p)).FirstOrDefault()
             };
         }
     }

@@ -15,6 +15,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Neo.Network.RPC.Models
 {
@@ -34,12 +35,12 @@ namespace Neo.Network.RPC.Models
 
         public string Session { get; set; }
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            var json = new JObject()
+            var json = new JsonObject()
             {
                 ["script"] = Script,
-                ["state"] = State,
+                ["state"] = State.ToString(),
                 ["gasconsumed"] = GasConsumed.ToString()
             };
 
@@ -48,7 +49,7 @@ namespace Neo.Network.RPC.Models
 
             try
             {
-                json["stack"] = new JArray(Stack.Select(p => p.ToJson()));
+                json["stack"] = new JsonArray(Stack.Select(p => p.ToJson()).ToArray());
             }
             catch (InvalidOperationException)
             {
@@ -60,7 +61,7 @@ namespace Neo.Network.RPC.Models
             return json;
         }
 
-        public static RpcInvokeResult FromJson(JObject json)
+        public static RpcInvokeResult FromJson(JsonObject json)
         {
             var invokeScriptResult = new RpcInvokeResult()
             {
@@ -72,7 +73,7 @@ namespace Neo.Network.RPC.Models
             };
             try
             {
-                invokeScriptResult.Stack = ((JArray)json["stack"]).Select(p => Utility.StackItemFromJson((JObject)p)).ToArray();
+                invokeScriptResult.Stack = ((JsonArray)json["stack"]).Select(p => Utility.StackItemFromJson((JsonObject)p)).ToArray();
             }
             catch { }
             invokeScriptResult.Tx = json["tx"]?.AsString();
@@ -84,11 +85,11 @@ namespace Neo.Network.RPC.Models
     {
         public string Type { get; set; }
 
-        public JToken Value { get; set; }
+        public JsonNode Value { get; set; }
 
-        public JObject ToJson() => new() { ["type"] = Type, ["value"] = Value };
+        public JsonObject ToJson() => new() { ["type"] = Type, ["value"] = Value };
 
-        public static RpcStack FromJson(JObject json)
+        public static RpcStack FromJson(JsonObject json)
         {
             return new RpcStack
             {

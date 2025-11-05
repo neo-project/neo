@@ -28,6 +28,7 @@ using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using ApplicationLogsSettings = Neo.Plugins.ApplicationLogs.ApplicationLogsSettings;
@@ -141,15 +142,15 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             Block block = s_neoSystemFixture.block;
             await system.Blockchain.Ask(block, cancellationToken: CancellationToken.None);  // persist the block
 
-            JObject blockJson = (JObject)s_neoSystemFixture.logReader.GetApplicationLog(block.Hash);
+            JsonObject blockJson = (JsonObject)s_neoSystemFixture.logReader.GetApplicationLog(block.Hash);
             Assert.AreEqual(blockJson["blockhash"], block.Hash.ToString());
 
-            JArray executions = (JArray)blockJson["executions"];
+            JsonArray executions = (JsonArray)blockJson["executions"];
             Assert.HasCount(2, executions);
             Assert.AreEqual("OnPersist", executions[0]["trigger"]);
             Assert.AreEqual("PostPersist", executions[1]["trigger"]);
 
-            JArray notifications = (JArray)executions[1]["notifications"];
+            JsonArray notifications = (JsonArray)executions[1]["notifications"];
             Assert.HasCount(1, notifications);
             Assert.AreEqual(notifications[0]["contract"], GasToken.GAS.Hash.ToString());
             Assert.AreEqual("Transfer", notifications[0]["eventname"]);  // from null to Validator
@@ -157,18 +158,18 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             CollectionAssert.AreEqual(Convert.FromBase64String(notifications[0]["state"]["value"][1]["value"].AsString()), ValidatorScriptHash.ToArray());
             Assert.AreEqual("50000000", notifications[0]["state"]["value"][2]["value"]);
 
-            blockJson = (JObject)s_neoSystemFixture.logReader.GetApplicationLog(block.Hash, "PostPersist");
-            executions = (JArray)blockJson["executions"];
+            blockJson = (JsonObject)s_neoSystemFixture.logReader.GetApplicationLog(block.Hash, "PostPersist");
+            executions = (JsonArray)blockJson["executions"];
             Assert.HasCount(1, executions);
             Assert.AreEqual("PostPersist", executions[0]["trigger"]);
 
             // "true" is invalid but still works
-            JObject transactionJson = (JObject)s_neoSystemFixture.logReader.GetApplicationLog(s_neoSystemFixture.txs[0].Hash.ToString(), "true");
-            executions = (JArray)transactionJson["executions"];
+            JsonObject transactionJson = (JsonObject)s_neoSystemFixture.logReader.GetApplicationLog(s_neoSystemFixture.txs[0].Hash.ToString(), "true");
+            executions = (JsonArray)transactionJson["executions"];
             Assert.HasCount(1, executions);
             Assert.AreEqual(nameof(VMState.HALT), executions[0]["vmstate"]);
             Assert.AreEqual(true, executions[0]["stack"][0]["value"]);
-            notifications = (JArray)executions[0]["notifications"];
+            notifications = (JsonArray)executions[0]["notifications"];
             Assert.HasCount(2, notifications);
             Assert.AreEqual("Transfer", notifications[0]["eventname"].AsString());
             Assert.AreEqual(notifications[0]["contract"].AsString(), NeoToken.NEO.Hash.ToString());

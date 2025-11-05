@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -133,7 +134,7 @@ namespace Neo.UnitTests.Ledger
                 newBlock.Deserialize(ref reader);
             }
             Assert.AreEqual(newBlock.Hashes.Length, tblock.Hashes.Length);
-            Assert.AreEqual(newBlock.Header.ToJson(ProtocolSettings.Default).ToString(), tblock.Header.ToJson(TestProtocolSettings.Default).ToString());
+            Assert.AreEqual(newBlock.Header.ToJson(ProtocolSettings.Default).ToString(false), tblock.Header.ToJson(TestProtocolSettings.Default).ToString(false));
         }
     }
 }
