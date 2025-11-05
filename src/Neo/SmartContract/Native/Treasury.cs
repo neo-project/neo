@@ -36,7 +36,6 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// OnNEP17Payment callback.
-        /// It also sets the deposit's lock height after which deposit can be withdrawn.
         /// </summary>
         /// <param name="engine">ApplicationEngine</param>
         /// <param name="from">GAS sender</param>
