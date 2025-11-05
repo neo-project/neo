@@ -5,7 +5,7 @@ on:
     types: [published]
 
 env:
-  DOTNET_VERSION: 9.0.x
+  DOTNET_VERSION: 10.0.x
   DIST_DIR: ./dist
 
 jobs:
@@ -29,7 +29,6 @@ jobs:
     - name: Build (neo-cli)
       run: |
         dotnet publish ./src/Neo.CLI \
-          --framework net9.0 \
           --configuration Release \
           --runtime linux-x64 \
           --self-contained true \
@@ -57,7 +56,6 @@ jobs:
     - name: Build (LevelDbStore)
       run: |
         dotnet build ./src/Plugins/LevelDBStore \
-          --framework net9.0 \
           --configuration Release \
           --runtime linux-x64 \
           --output ${{ env.DIST_DIR }}/Plugins/LevelDBStore \

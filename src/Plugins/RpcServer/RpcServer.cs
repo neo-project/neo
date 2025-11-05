@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Neo.Json;
 using Neo.Network.P2P;
 using Neo.Plugins.RpcServer.Model;
@@ -47,7 +48,7 @@ namespace Neo.Plugins.RpcServer
 
         private readonly Dictionary<string, RpcMethod> _methods = new();
 
-        private IWebHost? host;
+        private IHost? host;
         private RpcServersSettings settings;
         private readonly NeoSystem system;
         private readonly LocalNode localNode;
@@ -155,87 +156,87 @@ namespace Neo.Plugins.RpcServer
 
         public void StartRpcServer()
         {
-            host = new WebHostBuilder().UseKestrel(options => options.Listen(settings.BindAddress, settings.Port, listenOptions =>
+            host = new HostBuilder().ConfigureWebHost(builder =>
             {
-                // Default value is 5Mb
-                options.Limits.MaxRequestBodySize = settings.MaxRequestBodySize;
-                options.Limits.MaxRequestLineSize = Math.Min(settings.MaxRequestBodySize, options.Limits.MaxRequestLineSize);
-                // Default value is 40
-                options.Limits.MaxConcurrentConnections = settings.MaxConcurrentConnections;
-
-                // Default value is 1 minutes
-                options.Limits.KeepAliveTimeout = settings.KeepAliveTimeout == -1 ?
-                    TimeSpan.MaxValue :
-                    TimeSpan.FromSeconds(settings.KeepAliveTimeout);
-
-                // Default value is 15 seconds
-                options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(settings.RequestHeadersTimeout);
-
-                if (string.IsNullOrEmpty(settings.SslCert)) return;
-                listenOptions.UseHttps(settings.SslCert, settings.SslCertPassword, httpsConnectionAdapterOptions =>
+                builder.UseKestrel(options => options.Listen(settings.BindAddress, settings.Port, listenOptions =>
                 {
-                    if (settings.TrustedAuthorities is null || settings.TrustedAuthorities.Length == 0) return;
-                    httpsConnectionAdapterOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
-                    httpsConnectionAdapterOptions.ClientCertificateValidation = (cert, chain, err) =>
+                    // Default value is 5Mb
+                    options.Limits.MaxRequestBodySize = settings.MaxRequestBodySize;
+                    options.Limits.MaxRequestLineSize = Math.Min(settings.MaxRequestBodySize, options.Limits.MaxRequestLineSize);
+                    // Default value is 40
+                    options.Limits.MaxConcurrentConnections = settings.MaxConcurrentConnections;
+
+                    // Default value is 1 minutes
+                    options.Limits.KeepAliveTimeout = settings.KeepAliveTimeout == -1 ?
+                        TimeSpan.MaxValue :
+                        TimeSpan.FromSeconds(settings.KeepAliveTimeout);
+
+                    // Default value is 15 seconds
+                    options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(settings.RequestHeadersTimeout);
+
+                    if (string.IsNullOrEmpty(settings.SslCert)) return;
+                    listenOptions.UseHttps(settings.SslCert, settings.SslCertPassword, httpsConnectionAdapterOptions =>
                     {
-                        if (chain is null || err != SslPolicyErrors.None) return false;
-                        var authority = chain.ChainElements[^1].Certificate;
-                        return settings.TrustedAuthorities.Contains(authority.Thumbprint);
-                    };
-                });
-            }))
-            .Configure(app =>
-            {
-                if (settings.EnableCors) app.UseCors("All");
-                app.UseResponseCompression();
-                app.Run(ProcessAsync);
-            })
-            .ConfigureServices(services =>
-            {
-                if (settings.EnableCors)
-                {
-                    if (settings.AllowOrigins.Length == 0)
-                    {
-                        services.AddCors(options =>
+                        if (settings.TrustedAuthorities is null || settings.TrustedAuthorities.Length == 0) return;
+                        httpsConnectionAdapterOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
+                        httpsConnectionAdapterOptions.ClientCertificateValidation = (cert, chain, err) =>
                         {
-                            options.AddPolicy("All", policy =>
-                            {
-                                policy.AllowAnyOrigin()
-                                    .WithHeaders("Content-Type")
-                                    .WithMethods(HttpMethodGet, HttpMethodPost);
-                                // The CORS specification states that setting origins to "*" (all origins)
-                                // is invalid if the Access-Control-Allow-Credentials header is present.
-                            });
-                        });
-                    }
-                    else
+                            if (chain is null || err != SslPolicyErrors.None) return false;
+                            var authority = chain.ChainElements[^1].Certificate;
+                            return settings.TrustedAuthorities.Contains(authority.Thumbprint);
+                        };
+                    });
+                })).Configure(app =>
+                {
+                    if (settings.EnableCors) app.UseCors("All");
+                    app.UseResponseCompression();
+                    app.Run(ProcessAsync);
+                }).ConfigureServices(services =>
+                {
+                    if (settings.EnableCors)
                     {
-                        services.AddCors(options =>
+                        if (settings.AllowOrigins.Length == 0)
                         {
-                            options.AddPolicy("All", policy =>
+                            services.AddCors(options =>
                             {
-                                policy.WithOrigins(settings.AllowOrigins)
-                                    .WithHeaders("Content-Type")
-                                    .AllowCredentials()
-                                    .WithMethods(HttpMethodGet, HttpMethodPost);
+                                options.AddPolicy("All", policy =>
+                                {
+                                    policy.AllowAnyOrigin()
+                                        .WithHeaders("Content-Type")
+                                        .WithMethods(HttpMethodGet, HttpMethodPost);
+                                    // The CORS specification states that setting origins to "*" (all origins)
+                                    // is invalid if the Access-Control-Allow-Credentials header is present.
+                                });
                             });
-                        });
+                        }
+                        else
+                        {
+                            services.AddCors(options =>
+                            {
+                                options.AddPolicy("All", policy =>
+                                {
+                                    policy.WithOrigins(settings.AllowOrigins)
+                                        .WithHeaders("Content-Type")
+                                        .AllowCredentials()
+                                        .WithMethods(HttpMethodGet, HttpMethodPost);
+                                });
+                            });
+                        }
                     }
-                }
 
-                services.AddResponseCompression(options =>
-                {
-                    // options.EnableForHttps = false;
-                    options.Providers.Add<GzipCompressionProvider>();
-                    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Append("application/json");
-                });
+                    services.AddResponseCompression(options =>
+                    {
+                        // options.EnableForHttps = false;
+                        options.Providers.Add<GzipCompressionProvider>();
+                        options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Append("application/json");
+                    });
 
-                services.Configure<GzipCompressionProviderOptions>(options =>
-                {
-                    options.Level = CompressionLevel.Fastest;
+                    services.Configure<GzipCompressionProviderOptions>(options =>
+                    {
+                        options.Level = CompressionLevel.Fastest;
+                    });
                 });
-            })
-            .Build();
+            }).Build();
 
             host.Start();
         }
