@@ -40,19 +40,18 @@ namespace Neo.SmartContract.Native
         /// <param name="engine">ApplicationEngine</param>
         /// <param name="from">GAS sender</param>
         /// <param name="amount">The amount of GAS sent</param>
-        /// <param name="data">Deposit-related data: optional To value (treated as deposit owner if set) and Till height after which deposit can be withdrawn </param>
+        /// <param name="data">Optional data</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data) { }
 
         /// <summary>
         /// OnNEP11Payment callback.
-        /// It also sets the deposit's lock height after which deposit can be withdrawn.
         /// </summary>
         /// <param name="engine">ApplicationEngine</param>
         /// <param name="from">GAS sender</param>
         /// <param name="amount">The amount of GAS sent</param>
         /// <param name="tokenId">Nep11 token Id</param>
-        /// <param name="data">Deposit-related data: optional To value (treated as deposit owner if set) and Till height after which deposit can be withdrawn </param>
+        /// <param name="data">Optional data</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void OnNEP11Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, byte[] tokenId, StackItem data) { }
     }
