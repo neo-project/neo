@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads.Conditions;
@@ -53,7 +54,7 @@ namespace Neo.Plugins.RestServer
         #region Globals
 
         private readonly RestServerSettings _settings;
-        private IWebHost? _host;
+        private IHost? _host;
 
         #endregion
 
@@ -71,8 +72,9 @@ namespace Neo.Plugins.RestServer
 
             IsRunning = true;
 
-            _host = new WebHostBuilder()
-                .UseKestrel(options =>
+            _host = new HostBuilder().ConfigureWebHost(builder =>
+            {
+                builder.UseKestrel(options =>
                 {
                     // Web server configuration
                     options.AddServerHeader = false;
@@ -99,8 +101,7 @@ namespace Neo.Plugins.RestServer
                                 }
                             });
                         });
-                })
-                .ConfigureServices(services =>
+                }).ConfigureServices(services =>
                 {
                     #region Add Basic auth
 
@@ -405,8 +406,7 @@ namespace Neo.Plugins.RestServer
                         services.Configure<GzipCompressionProviderOptions>(options => options.Level = _settings.CompressionLevel);
 
                     #endregion
-                })
-                .Configure(app =>
+                }).Configure(app =>
                 {
                     app.UseExceptionHandler(appError =>
                     {
@@ -468,7 +468,7 @@ namespace Neo.Plugins.RestServer
                         {
                             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
                         };
-                        forwardedHeaderOptions.KnownNetworks.Clear();
+                        forwardedHeaderOptions.KnownIPNetworks.Clear();
                         forwardedHeaderOptions.KnownProxies.Clear();
                         app.UseForwardedHeaders(forwardedHeaderOptions);
                     }
@@ -517,8 +517,8 @@ namespace Neo.Plugins.RestServer
                     }
 
                     app.UseMvc();
-                })
-                .Build();
+                });
+            }).Build();
             _host.Start();
         }
     }
