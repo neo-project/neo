@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using static Neo.Json.Utility;
 
 namespace Neo.Json
