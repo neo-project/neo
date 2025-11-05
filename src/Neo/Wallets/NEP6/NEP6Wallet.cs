@@ -317,7 +317,7 @@ namespace Neo.Wallets.NEP6
 
         public override void Save()
         {
-            File.WriteAllText(Path, ToJson().ToString(false));
+            File.WriteAllText(Path, ToJson().StrictToString(false));
         }
 
         public override bool VerifyPassword(string password)

@@ -490,7 +490,7 @@ namespace Neo.CLI
             try
             {
                 var snapshot = NeoSystem.StoreView;
-                var context = ContractParametersContext.Parse(jsonObjectToSign.ToString(false), snapshot);
+                var context = ContractParametersContext.Parse(jsonObjectToSign.StrictToString(false), snapshot);
                 if (context.Network != NeoSystem.Settings.Network)
                 {
                     ConsoleHelper.Warning("Network mismatch.");

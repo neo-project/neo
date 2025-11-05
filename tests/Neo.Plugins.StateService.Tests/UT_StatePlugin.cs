@@ -73,7 +73,7 @@ namespace Neo.Plugins.StateService.Tests
             Assert.IsNotNull(result);
             Assert.IsInstanceOfType<JsonObject>(result);
 
-            Assert.AreEqual("{\"localrootindex\":0,\"validatedrootindex\":null}", result.ToString(false));
+            Assert.AreEqual("{\"localrootindex\":0,\"validatedrootindex\":null}", result.StrictToString(false));
         }
 
         [TestMethod]

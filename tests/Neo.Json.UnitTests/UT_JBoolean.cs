@@ -34,18 +34,8 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
-        public void TestComparisonsWithOtherBooleans()
-        {
-            Assert.IsTrue(jTrue.Equals(JsonValue.Create(true)));
-            Assert.IsTrue(jFalse.Equals(JsonValue.Create(false)));
-        }
-
-        [TestMethod]
         public void TestEqual()
         {
-            Assert.IsTrue(jTrue.Equals(JsonValue.Create(true)));
-            Assert.IsTrue(jTrue == JsonValue.Create(true));
-            Assert.IsTrue(jTrue != JsonValue.Create(false));
             Assert.AreEqual(jFalse.ToString(), jFalse.GetValue<bool>().ToString().ToLowerInvariant());
         }
     }

@@ -141,7 +141,7 @@ namespace Neo.CLI
 
             try
             {
-                ContractParametersContext context = ContractParametersContext.Parse(jsonObjectToRelay.ToString(false), NeoSystem.StoreView);
+                ContractParametersContext context = ContractParametersContext.Parse(jsonObjectToRelay.StrictToString(false), NeoSystem.StoreView);
                 if (!context.Completed)
                 {
                     ConsoleHelper.Error("The signature is incomplete.");

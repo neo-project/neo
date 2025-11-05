@@ -35,7 +35,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             ContractGroup clone = new();
             ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
-            Assert.AreEqual(clone.ToJson().ToString(false), contractGroup.ToJson().ToString(false));
+            Assert.AreEqual(clone.ToJson().StrictToString(false), contractGroup.ToJson().StrictToString(false));
         }
 
         [TestMethod]

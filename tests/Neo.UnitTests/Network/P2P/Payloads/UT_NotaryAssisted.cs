@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             var attr = new NotaryAssisted() { NKeys = 4 };
-            var json = attr.ToJson().ToString(false);
+            var json = attr.ToJson().StrictToString(false);
             Assert.AreEqual(@"{""type"":""NotaryAssisted"",""nkeys"":4}", json);
         }
 

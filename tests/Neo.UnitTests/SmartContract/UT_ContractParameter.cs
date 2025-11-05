@@ -86,43 +86,43 @@ namespace Neo.UnitTests.SmartContract
         {
             ContractParameter contractParameter1 = new(ContractParameterType.Signature);
             JsonObject jobject1 = contractParameter1.ToJson();
-            Assert.AreEqual(jobject1.ToString(false), ContractParameter.FromJson(jobject1).ToJson().ToString(false));
+            Assert.AreEqual(jobject1.StrictToString(false), ContractParameter.FromJson(jobject1).ToJson().StrictToString(false));
 
             ContractParameter contractParameter2 = new(ContractParameterType.Boolean);
             JsonObject jobject2 = contractParameter2.ToJson();
-            Assert.AreEqual(jobject2.ToString(false), ContractParameter.FromJson(jobject2).ToJson().ToString(false));
+            Assert.AreEqual(jobject2.StrictToString(false), ContractParameter.FromJson(jobject2).ToJson().StrictToString(false));
 
             ContractParameter contractParameter3 = new(ContractParameterType.Integer);
             JsonObject jobject3 = contractParameter3.ToJson();
-            Assert.AreEqual(jobject3.ToString(false), ContractParameter.FromJson(jobject3).ToJson().ToString(false));
+            Assert.AreEqual(jobject3.StrictToString(false), ContractParameter.FromJson(jobject3).ToJson().StrictToString(false));
 
             ContractParameter contractParameter4 = new(ContractParameterType.Hash160);
             JsonObject jobject4 = contractParameter4.ToJson();
-            Assert.AreEqual(jobject4.ToString(false), ContractParameter.FromJson(jobject4).ToJson().ToString(false));
+            Assert.AreEqual(jobject4.StrictToString(false), ContractParameter.FromJson(jobject4).ToJson().StrictToString(false));
 
             ContractParameter contractParameter5 = new(ContractParameterType.Hash256);
             JsonObject jobject5 = contractParameter5.ToJson();
-            Assert.AreEqual(jobject5.ToString(false), ContractParameter.FromJson(jobject5).ToJson().ToString(false));
+            Assert.AreEqual(jobject5.StrictToString(false), ContractParameter.FromJson(jobject5).ToJson().StrictToString(false));
 
             ContractParameter contractParameter6 = new(ContractParameterType.ByteArray);
             JsonObject jobject6 = contractParameter6.ToJson();
-            Assert.AreEqual(jobject6.ToString(false), ContractParameter.FromJson(jobject6).ToJson().ToString(false));
+            Assert.AreEqual(jobject6.StrictToString(false), ContractParameter.FromJson(jobject6).ToJson().StrictToString(false));
 
             ContractParameter contractParameter7 = new(ContractParameterType.PublicKey);
             JsonObject jobject7 = contractParameter7.ToJson();
-            Assert.AreEqual(jobject7.ToString(false), ContractParameter.FromJson(jobject7).ToJson().ToString(false));
+            Assert.AreEqual(jobject7.StrictToString(false), ContractParameter.FromJson(jobject7).ToJson().StrictToString(false));
 
             ContractParameter contractParameter8 = new(ContractParameterType.String);
             JsonObject jobject8 = contractParameter8.ToJson();
-            Assert.AreEqual(jobject8.ToString(false), ContractParameter.FromJson(jobject8).ToJson().ToString(false));
+            Assert.AreEqual(jobject8.StrictToString(false), ContractParameter.FromJson(jobject8).ToJson().StrictToString(false));
 
             ContractParameter contractParameter9 = new(ContractParameterType.Array);
             JsonObject jobject9 = contractParameter9.ToJson();
-            Assert.AreEqual(jobject9.ToString(false), ContractParameter.FromJson(jobject9).ToJson().ToString(false));
+            Assert.AreEqual(jobject9.StrictToString(false), ContractParameter.FromJson(jobject9).ToJson().StrictToString(false));
 
             ContractParameter contractParameter10 = new(ContractParameterType.Map);
             JsonObject jobject10 = contractParameter10.ToJson();
-            Assert.AreEqual(jobject10.ToString(false), ContractParameter.FromJson(jobject10).ToJson().ToString(false));
+            Assert.AreEqual(jobject10.StrictToString(false), ContractParameter.FromJson(jobject10).ToJson().StrictToString(false));
 
             ContractParameter contractParameter11 = new(ContractParameterType.String);
             JsonObject jobject11 = contractParameter11.ToJson();
@@ -150,7 +150,7 @@ namespace Neo.UnitTests.SmartContract
 
             // just check there is no exception
             var json = item.ToJson();
-            Assert.AreEqual(json.ToString(false), ContractParameter.FromJson(json).ToJson().ToString(false));
+            Assert.AreEqual(json.StrictToString(false), ContractParameter.FromJson(json).ToJson().StrictToString(false));
 
             // check cyclic reference
             value.Add(item);

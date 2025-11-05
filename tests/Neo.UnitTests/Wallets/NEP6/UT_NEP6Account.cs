@@ -155,7 +155,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             Assert.AreEqual("false", json["isDefault"].ToString());
             Assert.AreEqual("false", json["lock"].ToString());
             Assert.IsNull(json["key"]);
-            Assert.AreEqual(@"""IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=""", json["contract"]["script"].ToString(false));
+            Assert.AreEqual(@"""IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=""", json["contract"]["script"].StrictToString(false));
             Assert.IsNull(json["extra"]);
 
             _account.Contract = null;

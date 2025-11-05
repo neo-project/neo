@@ -255,7 +255,7 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (var ctr in NativeContract.Contracts)
             {
                 var state = Call_GetContract(snapshot, ctr.Hash, persistingBlock);
-                Assert.AreEqual(_nativeStates[ctr.Name], state.ToJson().ToString(false), message: $"{ctr.Name} is wrong");
+                Assert.AreEqual(_nativeStates[ctr.Name], state.ToJson().StrictToString(false), message: $"{ctr.Name} is wrong");
             }
         }
 

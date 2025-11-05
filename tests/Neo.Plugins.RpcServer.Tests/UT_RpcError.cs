@@ -43,7 +43,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestJson()
         {
-            Assert.AreEqual("{\"code\":-600,\"message\":\"Access denied\"}", RpcError.AccessDenied.ToJson().ToString(false));
+            Assert.AreEqual("{\"code\":-600,\"message\":\"Access denied\"}", RpcError.AccessDenied.ToJson().StrictToString(false));
         }
     }
 }

@@ -45,7 +45,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcAccount.FromJson((JsonObject)json);
-            Assert.AreEqual(json.ToString(false), item.ToJson().ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson().StrictToString(false));
         }
 
         [TestMethod()]
@@ -56,7 +56,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcApplicationLog.FromJson((JsonObject)json, rpc.protocolSettings);
-            Assert.AreEqual(json.ToString(false), item.ToJson().ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson().StrictToString(false));
         }
 
         [TestMethod()]
@@ -67,7 +67,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcBlock.FromJson((JsonObject)json, rpc.protocolSettings);
-            Assert.AreEqual(json.ToString(false), item.ToJson(rpc.protocolSettings).ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson(rpc.protocolSettings).StrictToString(false));
         }
 
         [TestMethod()]
@@ -78,7 +78,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcBlockHeader.FromJson((JsonObject)json, rpc.protocolSettings);
-            Assert.AreEqual(json.ToString(false), item.ToJson(rpc.protocolSettings).ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson(rpc.protocolSettings).StrictToString(false));
         }
 
         [TestMethod()]
@@ -89,10 +89,10 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcContractState.FromJson((JsonObject)json);
-            Assert.AreEqual(json.ToString(false), item.ToJson().ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson().StrictToString(false));
 
             var nef = RpcNefFile.FromJson((JsonObject)json["nef"]);
-            Assert.AreEqual(json["nef"].ToString(false), nef.ToJson().ToString(false));
+            Assert.AreEqual(json["nef"].StrictToString(false), nef.ToJson().StrictToString(false));
         }
 
         [TestMethod()]
@@ -103,7 +103,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcInvokeResult.FromJson((JsonObject)json);
-            Assert.AreEqual(json.ToString(false), item.ToJson().ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson().StrictToString(false));
         }
 
         [TestMethod()]
@@ -116,7 +116,7 @@ namespace Neo.Network.RPC.Tests
             Assert.AreEqual(1, item.ParametersCount);
             Assert.AreEqual(true, item.HasReturnValue);
             Assert.AreEqual(CallFlags.All, item.CallFlags);
-            Assert.AreEqual(json, item.ToJson().ToString(false));
+            Assert.AreEqual(json, item.ToJson().StrictToString(false));
         }
 
         [TestMethod()]
@@ -127,7 +127,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcNep17Balances.FromJson((JsonObject)json, rpc.protocolSettings);
-            Assert.AreEqual(json.ToString(false), item.ToJson(rpc.protocolSettings).ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson(rpc.protocolSettings).StrictToString(false));
         }
 
         [TestMethod()]
@@ -138,7 +138,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcNep17Transfers.FromJson((JsonObject)json, rpc.protocolSettings);
-            Assert.AreEqual(json.ToString(false), item.ToJson(rpc.protocolSettings).ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson(rpc.protocolSettings).StrictToString(false));
         }
 
         [TestMethod()]
@@ -149,7 +149,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcPeers.FromJson((JsonObject)json);
-            Assert.AreEqual(json.ToString(false), item.ToJson().ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson().StrictToString(false));
         }
 
         [TestMethod()]
@@ -160,7 +160,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = ((JsonArray)json).Select(p => RpcPlugin.FromJson((JsonObject)p));
-            Assert.AreEqual(json.ToString(false), new JsonArray(item.Select(p => p.ToJson()).ToArray()).ToString(false));
+            Assert.AreEqual(json.StrictToString(false), new JsonArray(item.Select(p => p.ToJson()).ToArray()).StrictToString(false));
         }
 
         [TestMethod()]
@@ -171,7 +171,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcRawMemPool.FromJson((JsonObject)json);
-            Assert.AreEqual(json.ToString(false), item.ToJson().ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson().StrictToString(false));
         }
 
         [TestMethod()]
@@ -182,7 +182,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcTransaction.FromJson((JsonObject)json, rpc.protocolSettings);
-            Assert.AreEqual(json.ToString(false), item.ToJson(rpc.protocolSettings).ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson(rpc.protocolSettings).StrictToString(false));
         }
 
         [TestMethod()]
@@ -191,7 +191,7 @@ namespace Neo.Network.RPC.Tests
             var json = TestUtils.RpcTestCases
                 .Find(p => p.Name.Equals(nameof(RpcClient.SendManyAsync), StringComparison.CurrentCultureIgnoreCase)).Request.Params[1];
             var item = ((JsonArray)json).Select(p => RpcTransferOut.FromJson((JsonObject)p, rpc.protocolSettings));
-            Assert.AreEqual(json.ToString(false), new JsonArray(item.Select(p => p.ToJson(rpc.protocolSettings)).ToArray()).ToString(false));
+            Assert.AreEqual(json.StrictToString(false), new JsonArray(item.Select(p => p.ToJson(rpc.protocolSettings)).ToArray()).StrictToString(false));
         }
 
         [TestMethod()]
@@ -202,7 +202,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcValidateAddressResult.FromJson((JsonObject)json);
-            Assert.AreEqual(json.ToString(false), item.ToJson().ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson().StrictToString(false));
         }
 
         [TestMethod()]
@@ -213,7 +213,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = ((JsonArray)json).Select(p => RpcValidator.FromJson((JsonObject)p));
-            Assert.AreEqual(json.ToString(false), new JsonArray(item.Select(p => p.ToJson()).ToArray()).ToString(false));
+            Assert.AreEqual(json.StrictToString(false), new JsonArray(item.Select(p => p.ToJson()).ToArray()).StrictToString(false));
         }
 
         [TestMethod()]
@@ -224,7 +224,7 @@ namespace Neo.Network.RPC.Tests
                 .Response
                 .Result;
             var item = RpcVersion.FromJson((JsonObject)json);
-            Assert.AreEqual(json.ToString(false), item.ToJson().ToString(false));
+            Assert.AreEqual(json.StrictToString(false), item.ToJson().StrictToString(false));
         }
 
         [TestMethod]
@@ -237,7 +237,7 @@ namespace Neo.Network.RPC.Tests
             };
 
             var expectedJsonString = "{\"type\":\"Boolean\",\"value\":true}";
-            var actualJsonString = stack.ToJson().ToString(false);
+            var actualJsonString = stack.ToJson().StrictToString(false);
 
             Assert.AreEqual(expectedJsonString, actualJsonString);
         }

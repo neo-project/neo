@@ -109,7 +109,7 @@ namespace Neo.Network.RPC
 
         HttpRequestMessage AsHttpRequest(RpcRequest request)
         {
-            var requestJson = request.ToJson().ToString(false);
+            var requestJson = request.ToJson().StrictToString(false);
             return new HttpRequestMessage(HttpMethod.Post, _baseAddress)
             {
                 Content = new StringContent(requestJson, Neo.Utility.StrictUTF8)

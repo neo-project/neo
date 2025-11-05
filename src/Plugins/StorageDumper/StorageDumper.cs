@@ -80,7 +80,7 @@ namespace Neo.Plugins.StorageDumper
                 ["key"] = Convert.ToBase64String(p.Key.ToArray()),
                 ["value"] = Convert.ToBase64String(p.Value.ToArray())
             }).ToArray());
-            File.WriteAllText(path, array.ToString(false));
+            File.WriteAllText(path, array.StrictToString(false));
             ConsoleHelper.Info("States",
                 $"({array.Count})",
                 " have been dumped into file ",
@@ -148,7 +148,7 @@ namespace Neo.Plugins.StorageDumper
         {
             if (_currentBlock != null && _writer != null)
             {
-                _writer.WriteLine(_currentBlock.ToString(false));
+                _writer.WriteLine(_currentBlock.StrictToString(false));
                 _writer.Flush();
             }
         }

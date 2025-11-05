@@ -46,34 +46,9 @@ namespace Neo.Json
 
         public static T GetEnum<T>(this JsonNode json, bool ignoreCase = false) where T : unmanaged, Enum
         {
-            switch (json.GetValueKind())
-            {
-                case JsonValueKind.Number:
-                    {
-                        var enumType = typeof(T);
-                        object value;
-                        try
-                        {
-                            value = Convert.ChangeType(json.GetValue<double>(), enumType.GetEnumUnderlyingType());
-                        }
-                        catch (OverflowException)
-                        {
-                            throw new InvalidCastException($"The value is out of range for the enum {enumType.FullName}");
-                        }
-                        var result = Enum.ToObject(enumType, value);
-                        if (!Enum.IsDefined(enumType, result))
-                            throw new InvalidCastException($"The value is not defined in the enum {enumType.FullName}");
-                        return (T)result;
-                    }
-                case JsonValueKind.String:
-                    {
-                        var result = Enum.Parse<T>(json.GetValue<string>(), ignoreCase);
-                        if (!Enum.IsDefined(result)) throw new InvalidCastException();
-                        return result;
-                    }
-                default:
-                    throw new InvalidCastException();
-            }
+            var result = Enum.Parse<T>(json.AsString(), ignoreCase);
+            if (!Enum.IsDefined(result)) throw new InvalidCastException();
+            return result;
         }
 
         public static byte[] ToByteArray(this JsonNode json, bool indented)
@@ -89,7 +64,7 @@ namespace Neo.Json
             return ms.ToArray();
         }
 
-        public static string ToString(this JsonNode json, bool indented)
+        public static string StrictToString(this JsonNode json, bool indented)
         {
             return Utility.StrictUTF8.GetString(json.ToByteArray(indented));
         }

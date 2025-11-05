@@ -134,7 +134,7 @@ namespace Neo.UnitTests.Ledger
                 newBlock.Deserialize(ref reader);
             }
             Assert.AreEqual(newBlock.Hashes.Length, tblock.Hashes.Length);
-            Assert.AreEqual(newBlock.Header.ToJson(ProtocolSettings.Default).ToString(false), tblock.Header.ToJson(TestProtocolSettings.Default).ToString(false));
+            Assert.AreEqual(newBlock.Header.ToJson(ProtocolSettings.Default).StrictToString(false), tblock.Header.ToJson(TestProtocolSettings.Default).StrictToString(false));
         }
     }
 }

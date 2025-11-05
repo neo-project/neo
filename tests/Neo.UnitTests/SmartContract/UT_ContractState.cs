@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
         {
             IInteroperable newContract = new ContractState();
             newContract.FromStackItem(contract.ToStackItem(null));
-            Assert.AreEqual(contract.Manifest.ToJson().ToString(false), ((ContractState)newContract).Manifest.ToJson().ToString(false));
+            Assert.AreEqual(contract.Manifest.ToJson().StrictToString(false), ((ContractState)newContract).Manifest.ToJson().StrictToString(false));
             Assert.IsTrue(((ContractState)newContract).Script.Span.SequenceEqual(contract.Script.Span));
         }
 

@@ -60,7 +60,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             {
                 var json = JsonNode.Parse(File.ReadAllText(item)) as JsonObject;
                 var manifest = ContractManifest.FromJson(json);
-                Assert.AreEqual(manifest.ToJson().ToString(false), json.ToString(false));
+                Assert.AreEqual(manifest.ToJson().StrictToString(false), json.StrictToString(false));
             }
         }
 

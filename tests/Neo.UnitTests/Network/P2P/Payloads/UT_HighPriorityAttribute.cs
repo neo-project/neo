@@ -33,7 +33,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             var test = new HighPriorityAttribute();
-            var json = test.ToJson().ToString(false);
+            var json = test.ToJson().StrictToString(false);
             Assert.AreEqual(@"{""type"":""HighPriority""}", json);
         }
 

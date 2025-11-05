@@ -79,7 +79,7 @@ namespace Neo.Json.UnitTests
             Assert.AreEqual("hello world", JsonNode.Parse("\"hello world\"").AsString());
             Assert.AreEqual("\"\\/\b\f\n\r\t", JsonNode.Parse("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\"").AsString());
             Assert.AreEqual("0", JsonNode.Parse("\"\\u0030\"").AsString());
-            Assert.AreEqual("{\"k1\":\"v1\"}", JsonNode.Parse("{\"k1\":\"v1\"}", documentOptions: new() { MaxDepth = 100 }).ToString(false));
+            Assert.AreEqual("{\"k1\":\"v1\"}", JsonNode.Parse("{\"k1\":\"v1\"}", documentOptions: new() { MaxDepth = 100 }).StrictToString(false));
         }
 
         [TestMethod]
@@ -104,23 +104,7 @@ namespace Neo.Json.UnitTests
         {
             var bobClone = (JsonObject)_bob.DeepClone();
             Assert.AreNotSame(_bob, bobClone);
-            foreach (var (key, clonedValue) in bobClone)
-            {
-                switch (_bob[key])
-                {
-                    case null:
-                        Assert.IsNull(clonedValue);
-                        break;
-                    case JsonObject obj:
-                        CollectionAssert.AreEqual(
-                            ((JsonObject)_bob[key]).ToList(),
-                            ((JsonObject)clonedValue).ToList());
-                        break;
-                    default:
-                        Assert.AreEqual(_bob[key], bobClone[key]);
-                        break;
-                }
-            }
+            Assert.AreEqual(_bob.StrictToString(false), bobClone.StrictToString(false));
         }
     }
 }

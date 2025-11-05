@@ -66,12 +66,12 @@ namespace Neo.UnitTests.SmartContract
             var json = "[    ]";
             var parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual("[]", parsed.ToString(false));
+            Assert.AreEqual("[]", parsed.StrictToString(false));
 
             json = "[1,\"a==\",    -1.3 ,null] ";
             parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual("[1,\"a==\",-1.3,null]", parsed.ToString(false));
+            Assert.AreEqual("[1,\"a==\",-1.3,null]", parsed.StrictToString(false));
         }
 
         [TestMethod]
@@ -80,7 +80,7 @@ namespace Neo.UnitTests.SmartContract
             var json = "[  true ,false ]";
             var parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual("[true,false]", parsed.ToString(false));
+            Assert.AreEqual("[true,false]", parsed.StrictToString(false));
 
             json = "[True,FALSE] ";
             Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse(json));
@@ -92,12 +92,12 @@ namespace Neo.UnitTests.SmartContract
             var json = "[  1, -2 , 3.5 ]";
             var parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual("[1,-2,3.5]", parsed.ToString(false));
+            Assert.AreEqual("[1,-2,3.5]", parsed.StrictToString(false));
 
             json = "[200.500000E+005,200.500000e+5,-1.1234e-100,9.05E+28]";
             parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual("[20050000,20050000,-1.1234E-100,9.05E+28]", parsed.ToString(false));
+            Assert.AreEqual("[20050000,20050000,-1.1234E-100,9.05E+28]", parsed.StrictToString(false));
 
             json = "[-]";
             Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse(json));
@@ -142,17 +142,17 @@ namespace Neo.UnitTests.SmartContract
             var json = @" ["""" ,  ""\b\f\t\n\r\/\\"" ]";
             var parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual(@"["""",""\b\f\t\n\r/\\""]", parsed.ToString(false));
+            Assert.AreEqual(@"["""",""\b\f\t\n\r/\\""]", parsed.StrictToString(false));
 
             json = @"[""\uD834\uDD1E""]";
             parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual(json, parsed.ToString(false));
+            Assert.AreEqual(json, parsed.StrictToString(false));
 
             json = @"[""\\x00""]";
             parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual(json, parsed.ToString(false));
+            Assert.AreEqual(json, parsed.StrictToString(false));
 
             json = @"[""]";
             Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse(json));
@@ -176,12 +176,12 @@ namespace Neo.UnitTests.SmartContract
             var json = @" {""test"":   true}";
             var parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual(@"{""test"":true}", parsed.ToString(false));
+            Assert.AreEqual(@"{""test"":true}", parsed.StrictToString(false));
 
             json = @" {""\uAAAA"":   true}";
             parsed = JsonNode.Parse(json);
 
-            Assert.AreEqual(@"{""\uAAAA"":true}", parsed.ToString(false));
+            Assert.AreEqual(@"{""\uAAAA"":true}", parsed.StrictToString(false));
 
             json = @"{""a"":}";
             Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse(json));

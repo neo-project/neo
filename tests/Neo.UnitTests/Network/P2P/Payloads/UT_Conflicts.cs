@@ -49,7 +49,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             var test = CreateConflictsPayload();
-            var json = test.ToJson().ToString(false);
+            var json = test.ToJson().StrictToString(false);
             Assert.AreEqual(@"{""type"":""Conflicts"",""hash"":""0x0101010101010101010101010101010101010101010101010101010101010101""}", json);
         }
 

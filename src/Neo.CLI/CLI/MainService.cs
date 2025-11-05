@@ -215,7 +215,7 @@ namespace Neo.CLI
             out NefFile nef, out ContractManifest manifest)
         {
             var parameter = LoadScript(nefFilePath, manifestFilePath, data, out nef, out manifest);
-            var manifestJson = manifest.ToJson().ToString(false);
+            var manifestJson = manifest.ToJson().StrictToString(false);
 
             // Build script
             using (var sb = new ScriptBuilder())
@@ -232,7 +232,7 @@ namespace Neo.CLI
             out NefFile nef, out ContractManifest manifest)
         {
             var parameter = LoadScript(nefFilePath, manifestFilePath, data, out nef, out manifest);
-            var manifestJson = manifest.ToJson().ToString(false);
+            var manifestJson = manifest.ToJson().StrictToString(false);
 
             // Build script
             using (var sb = new ScriptBuilder())
@@ -537,7 +537,7 @@ namespace Neo.CLI
             ConsoleHelper.Info("Gas Consumed: ", new BigDecimal((BigInteger)engine.FeeConsumed, NativeContract.GAS.Decimals).ToString());
 
             if (showStack)
-                ConsoleHelper.Info("Result Stack: ", new JsonArray(engine.ResultStack.Select(p => p.ToJson()).ToArray()).ToString(false));
+                ConsoleHelper.Info("Result Stack: ", new JsonArray(engine.ResultStack.Select(p => p.ToJson()).ToArray()).StrictToString(false));
 
             if (engine.State == VMState.FAULT)
                 ConsoleHelper.Error(GetExceptionMessage(engine.FaultException));

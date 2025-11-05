@@ -430,7 +430,7 @@ namespace Neo.SmartContract
 
         public override string ToString()
         {
-            return ToJson().ToString(false);
+            return ToJson().StrictToString(false);
         }
     }
 }

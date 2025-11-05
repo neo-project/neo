@@ -100,7 +100,7 @@ namespace Neo.Network.RPC.Tests
             };
             var json = attribute.ToJson();
             var result = Utility.TransactionAttributeFromJson(json).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             var attribute2 = new OracleResponse
             {
@@ -110,7 +110,7 @@ namespace Neo.Network.RPC.Tests
             };
             json = attribute2.ToJson();
             result = Utility.TransactionAttributeFromJson(json).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             var attribute3 = new NotValidBefore
             {
@@ -118,12 +118,12 @@ namespace Neo.Network.RPC.Tests
             };
             json = attribute3.ToJson();
             result = Utility.TransactionAttributeFromJson(json).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             var attribute4 = new HighPriorityAttribute();
             json = attribute4.ToJson();
             result = Utility.TransactionAttributeFromJson(json).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
         }
 
         [TestMethod]
@@ -136,7 +136,7 @@ namespace Neo.Network.RPC.Tests
             };
             var json = rule.ToJson();
             var result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             rule.Condition = new OrCondition()
             {
@@ -154,7 +154,7 @@ namespace Neo.Network.RPC.Tests
             };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             rule.Condition = new AndCondition()
             {
@@ -172,12 +172,12 @@ namespace Neo.Network.RPC.Tests
             };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             rule.Condition = new BooleanCondition() { Expression = true };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             rule.Condition = new NotCondition()
             {
@@ -188,30 +188,30 @@ namespace Neo.Network.RPC.Tests
             };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             var kp = Utility.GetKeyPair("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p");
             rule.Condition = new GroupCondition() { Group = kp.PublicKey };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             rule.Condition = new CalledByContractCondition() { Hash = UInt160.Zero };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             rule.Condition = new ScriptHashCondition() { Hash = UInt160.Zero };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
 
             rule.Condition = new CalledByGroupCondition() { Group = kp.PublicKey };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
-            Assert.AreEqual(json.ToString(false), result.ToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
+            Assert.AreEqual(json.StrictToString(false), result.StrictToString(false));
         }
 
         [TestMethod]

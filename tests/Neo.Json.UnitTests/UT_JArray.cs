@@ -72,18 +72,18 @@ namespace Neo.Json.UnitTests
             };
             var jAlice = jArray[0];
             var jBob = jArray[1];
-            Assert.AreEqual(alice["name"].ToString(false), jAlice["name"].ToString(false));
-            Assert.AreEqual(alice["age"].ToString(false), jAlice["age"].ToString(false));
-            Assert.AreEqual(alice["score"].ToString(false), jAlice["score"].ToString(false));
-            Assert.AreEqual(alice["gender"].ToString(false), jAlice["gender"].ToString(false));
-            Assert.AreEqual(alice["isMarried"].ToString(false), jAlice["isMarried"].ToString(false));
-            Assert.AreEqual(alice["pet"].ToString(false), jAlice["pet"].ToString(false));
-            Assert.AreEqual(bob["name"].ToString(false), jBob["name"].ToString(false));
-            Assert.AreEqual(bob["age"].ToString(false), jBob["age"].ToString(false));
-            Assert.AreEqual(bob["score"].ToString(false), jBob["score"].ToString(false));
-            Assert.AreEqual(bob["gender"].ToString(false), jBob["gender"].ToString(false));
-            Assert.AreEqual(bob["isMarried"].ToString(false), jBob["isMarried"].ToString(false));
-            Assert.AreEqual(bob["pet"].ToString(false), jBob["pet"].ToString(false));
+            Assert.AreEqual(alice["name"].StrictToString(false), jAlice["name"].StrictToString(false));
+            Assert.AreEqual(alice["age"].StrictToString(false), jAlice["age"].StrictToString(false));
+            Assert.AreEqual(alice["score"].StrictToString(false), jAlice["score"].StrictToString(false));
+            Assert.AreEqual(alice["gender"].StrictToString(false), jAlice["gender"].StrictToString(false));
+            Assert.AreEqual(alice["isMarried"].StrictToString(false), jAlice["isMarried"].StrictToString(false));
+            Assert.AreEqual(alice["pet"].StrictToString(false), jAlice["pet"].StrictToString(false));
+            Assert.AreEqual(bob["name"].StrictToString(false), jBob["name"].StrictToString(false));
+            Assert.AreEqual(bob["age"].StrictToString(false), jBob["age"].StrictToString(false));
+            Assert.AreEqual(bob["score"].StrictToString(false), jBob["score"].StrictToString(false));
+            Assert.AreEqual(bob["gender"].StrictToString(false), jBob["gender"].StrictToString(false));
+            Assert.AreEqual(bob["isMarried"].StrictToString(false), jBob["isMarried"].StrictToString(false));
+            Assert.AreEqual(bob["pet"].StrictToString(false), jBob["pet"].StrictToString(false));
         }
 
         [TestMethod]
@@ -108,15 +108,15 @@ namespace Neo.Json.UnitTests
                 alice
             };
             var jAlice = jArray[0];
-            Assert.AreEqual(alice["name"].ToString(false), jAlice["name"].ToString(false));
-            Assert.AreEqual(alice["age"].ToString(false), jAlice["age"].ToString(false));
-            Assert.AreEqual(alice["score"].ToString(false), jAlice["score"].ToString(false));
-            Assert.AreEqual(alice["gender"].ToString(false), jAlice["gender"].ToString(false));
-            Assert.AreEqual(alice["isMarried"].ToString(false), jAlice["isMarried"].ToString(false));
-            Assert.AreEqual(alice["pet"].ToString(false), jAlice["pet"].ToString(false));
+            Assert.AreEqual(alice["name"].StrictToString(false), jAlice["name"].StrictToString(false));
+            Assert.AreEqual(alice["age"].StrictToString(false), jAlice["age"].StrictToString(false));
+            Assert.AreEqual(alice["score"].StrictToString(false), jAlice["score"].StrictToString(false));
+            Assert.AreEqual(alice["gender"].StrictToString(false), jAlice["gender"].StrictToString(false));
+            Assert.AreEqual(alice["isMarried"].StrictToString(false), jAlice["isMarried"].StrictToString(false));
+            Assert.AreEqual(alice["pet"].StrictToString(false), jAlice["pet"].StrictToString(false));
 
             jArray.Clear();
-            Action action = () => jArray[0].ToString(false);
+            Action action = () => jArray[0].StrictToString(false);
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
         }
 
@@ -137,20 +137,19 @@ namespace Neo.Json.UnitTests
             var jArray = new JsonArray
             {
                 alice,
-                alice,
-                alice,
-                alice
+                "Item1",
+                "Item2",
+                "Item3"
             };
 
             jArray.Insert(1, bob);
             Assert.AreEqual(5, jArray.Count);
             Assert.AreEqual(alice, jArray[0]);
             Assert.AreEqual(bob, jArray[1]);
-            Assert.AreEqual(alice, jArray[2]);
 
-            jArray.Insert(5, bob);
+            jArray.Insert(5, "Item5");
             Assert.AreEqual(6, jArray.Count);
-            Assert.AreEqual(bob, jArray[5]);
+            Assert.AreEqual("Item5", jArray[5].GetValue<string>());
         }
 
         [TestMethod]
@@ -160,9 +159,9 @@ namespace Neo.Json.UnitTests
             Assert.AreEqual(-1, jArray.IndexOf(alice));
 
             jArray.Add(alice);
-            jArray.Add(alice);
-            jArray.Add(alice);
-            jArray.Add(alice);
+            jArray.Add("Item1");
+            jArray.Add("Item2");
+            jArray.Add("Item3");
             Assert.AreEqual(0, jArray.IndexOf(alice));
 
             jArray.Insert(1, bob);
@@ -181,7 +180,7 @@ namespace Neo.Json.UnitTests
             Assert.AreEqual(0, jArray.Count);
 
             jArray.Add(alice);
-            jArray.Add(alice);
+            jArray.Add(bob);
             Assert.AreEqual(2, jArray.Count);
             jArray.Remove(alice);
             Assert.AreEqual(1, jArray.Count);
@@ -193,11 +192,10 @@ namespace Neo.Json.UnitTests
             var jArray = new JsonArray
             {
                 alice,
-                bob,
-                alice
+                bob
             };
             jArray.RemoveAt(1);
-            Assert.AreEqual(2, jArray.Count);
+            Assert.AreEqual(1, jArray.Count);
             Assert.DoesNotContain(bob, jArray);
         }
 
@@ -206,8 +204,6 @@ namespace Neo.Json.UnitTests
         {
             var jArray = new JsonArray
             {
-                alice,
-                bob,
                 alice,
                 bob
             };
@@ -268,11 +264,11 @@ namespace Neo.Json.UnitTests
 
             for (int i = 0; i < jArray.Count; i++)
             {
-                Assert.AreEqual(jArray[i]?.GetValue<string>(), clone[i]?.GetValue<string>());
+                Assert.AreEqual(jArray[i]?.StrictToString(false), clone[i]?.StrictToString(false));
             }
 
-            var a = jArray.GetValue<string>();
-            var b = jArray.DeepClone().GetValue<string>();
+            var a = jArray.StrictToString(false);
+            var b = jArray.DeepClone().StrictToString(false);
             Assert.AreEqual(a, b);
         }
 
@@ -336,7 +332,7 @@ namespace Neo.Json.UnitTests
         public void TestToStringWithNull()
         {
             var jArray = new JsonArray { null, alice, bob };
-            var jsonString = jArray.ToString(false);
+            var jsonString = jArray.StrictToString(false);
             // JSON string should properly represent the null value
             Assert.AreEqual("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]", jsonString);
         }

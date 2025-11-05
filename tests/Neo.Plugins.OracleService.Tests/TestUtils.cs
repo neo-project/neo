@@ -53,7 +53,7 @@ namespace Neo.Plugins.OracleService.Tests
                 ["accounts"] = new JsonArray(),
                 ["extra"] = null
             };
-            Assert.AreEqual("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}", wallet.ToString(false));
+            Assert.AreEqual("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}", wallet.StrictToString(false));
             return new NEP6Wallet(null, password, settings, wallet);
         }
     }

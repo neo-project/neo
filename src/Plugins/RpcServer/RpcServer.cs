@@ -308,7 +308,7 @@ namespace Neo.Plugins.RpcServer
 
             if (response == null || (response as JsonArray)?.Count == 0) return;
             context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(response.ToString(false), Encoding.UTF8);
+            await context.Response.WriteAsync(response.StrictToString(false), Encoding.UTF8);
         }
 
         internal async Task<JsonObject?> ProcessRequestAsync(HttpContext context, JsonObject? request)

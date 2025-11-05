@@ -167,7 +167,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(1, snapshotCache.Find(BitConverter.GetBytes(state.Id)).ToList().Count);
             Assert.AreEqual(1, ret.UpdateCounter);
             Assert.AreEqual(state.Id, ret.Id);
-            Assert.AreEqual(manifest.ToJson().ToString(false), ret.Manifest.ToJson().ToString(false));
+            Assert.AreEqual(manifest.ToJson().StrictToString(false), ret.Manifest.ToJson().StrictToString(false));
             Assert.AreEqual(nef.Script.Span.ToHexString().ToString(), ret.Script.Span.ToHexString());
         }
 

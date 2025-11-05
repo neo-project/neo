@@ -154,7 +154,7 @@ namespace Neo.Plugins.StateService
             if (stateRoot is null)
                 ConsoleHelper.Warning("Unknown state root");
             else
-                ConsoleHelper.Info(stateRoot.ToJson().ToString(false));
+                ConsoleHelper.Info(stateRoot.ToJson().StrictToString(false));
         }
 
         [ConsoleCommand("state height", Category = "StateService", Description = "Get current state root index")]
