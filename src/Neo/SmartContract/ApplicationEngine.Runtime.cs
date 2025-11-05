@@ -322,7 +322,7 @@ namespace Neo.SmartContract
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
-            AddFee(price * ExecFeeFactor);
+            AddFee(price * _execFeeFactor);
             return new BigInteger(buffer, isUnsigned: true);
         }
 
@@ -447,7 +447,7 @@ namespace Neo.SmartContract
         {
             if (datoshi <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
-            AddFee(datoshi);
+            AddFee(datoshi * FeeFactor);
         }
 
         /// <summary>

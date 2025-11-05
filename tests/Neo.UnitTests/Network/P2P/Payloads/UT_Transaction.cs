@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
@@ -188,7 +187,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Check
 
+            long feePerByte = 0;
             long verificationGas = 0;
+
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
@@ -199,9 +200,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
+                feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             }
 
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * feePerByte;
             Assert.AreEqual(1967100, verificationGas);
             Assert.AreEqual(348000, sizeGas);
             Assert.AreEqual(2315100, tx.NetworkFee);
@@ -264,7 +266,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Check
 
+            long feePerByte = 0;
             long verificationGas = 0;
+
             foreach (var witness in tx.Witnesses)
             {
                 using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
@@ -275,6 +279,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
+                feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             }
 
             // ------------------
@@ -299,8 +304,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // I + II + III + IV
             Assert.AreEqual(25 + 22 + 1 + 88 + 109, tx.Size);
 
-            Assert.AreEqual(1000, NativeContract.Policy.GetFeePerByte(snapshotCache));
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            Assert.AreEqual(1000, feePerByte);
+            var sizeGas = tx.Size * feePerByte;
 
             // final check: verification_cost and tx_size
             Assert.AreEqual(245000, sizeGas);
@@ -370,7 +375,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
 
             // Check
+            long feePerByte = 0;
             long verificationGas = 0;
+
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
@@ -381,9 +388,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
+                feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * feePerByte;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1228520, verificationGas + sizeGas);
             // final assert
@@ -451,6 +459,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
 
             // Check
+            long feePerByte = 0;
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
@@ -462,9 +471,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
+                feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * feePerByte;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1249520, verificationGas + sizeGas);
             // final assert
@@ -536,7 +546,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
 
             // Check
+            long feePerByte = 0;
             long verificationGas = 0;
+
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
@@ -547,9 +559,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
+                feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * feePerByte;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1249520, verificationGas + sizeGas);
             // final assert
@@ -668,7 +681,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
 
             // Check
+            long feePerByte = 0;
             long verificationGas = 0;
+
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
@@ -679,9 +694,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
+                feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * feePerByte;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1269520, verificationGas + sizeGas);
             // final assert
@@ -1054,6 +1070,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
 
             // Check
+            long feePerByte = 0;
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
@@ -1065,9 +1082,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.HasCount(1, engine.ResultStack);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 verificationGas += engine.FeeConsumed;
+                feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             }
             // get sizeGas
-            var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshotCache);
+            var sizeGas = tx.Size * feePerByte;
             // final check on sum: verification_cost + tx_size
             Assert.AreEqual(1228520, verificationGas + sizeGas);
             // final assert

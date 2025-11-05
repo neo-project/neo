@@ -50,8 +50,10 @@ namespace Neo.Plugins.OracleService.Tests
         public void TestCreateOracleResponseTx()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
-            Assert.AreEqual((uint)30, executionFactor);
+            var index = NativeContract.Ledger.CurrentIndex(snapshotCache);
+
+            var executionFactor = NativeContract.Policy.GetExecFeeFactor(TestUtils.settings, snapshotCache, index);
+            Assert.AreEqual(30, executionFactor);
 
             var feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             Assert.AreEqual(1000, feePerByte);

@@ -150,6 +150,7 @@ When calling a native contract method by transaction script, there are several t
 |--------|---------|------------|--------------|---------|-------------|------------|----------|
 | getFeePerByte | Gets the network fee per transaction byte. | -- | Int64 | 1<<15 | 0 | ReadStates | -- |
 | getExecFeeFactor | Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions. | -- | UInt32 | 1<<15 | 0 | ReadStates | -- |
+| getExecPicoFeeFactor | Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions. | -- | BigInteger | 1<<15 | 0 | ReadStates | HF_Faun |
 | getStoragePrice | Gets the storage price. | -- | UInt32 | 1<<15 | 0 | ReadStates | -- |
 | getMillisecondsPerBlock | Gets the block generation time in milliseconds. | -- | UInt32 | 1<<15 | 0 | ReadStates | HF_Echidna |
 | getMaxValidUntilBlockIncrement | Gets the upper increment size of blockchain height (in blocks) exceeding that a transaction should fail validation. | -- | UInt32 | 1<<15 | 0 | ReadStates | HF_Echidna |
@@ -161,7 +162,7 @@ When calling a native contract method by transaction script, there are several t
 | setAttributeFee | Sets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported. | Byte(*attributeType*), UInt32(*value*) | Void | 1<<15 | 0 | States | Deprecated in HF_Echidna |
 | setAttributeFee | Sets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported. | Byte(*attributeType*), UInt32(*value*) | Void | 1<<15 | 0 | States | HF_Echidna |
 | setFeePerByte | -- | Int64(*value*) | Void | 1<<15 | 0 | States | -- |
-| setExecFeeFactor | -- | UInt32(*value*) | Void | 1<<15 | 0 | States | -- |
+| setExecFeeFactor | -- | UInt64(*value*) | Void | 1<<15 | 0 | States | -- |
 | setStoragePrice | -- | UInt32(*value*) | Void | 1<<15 | 0 | States | -- |
 | setMaxValidUntilBlockIncrement | -- | UInt32(*value*) | Void | 1<<15 | 0 | States | HF_Echidna |
 | setMaxTraceableBlocks | Sets the length of the chain accessible to smart contracts. | UInt32(*value*) | Void | 1<<15 | 0 | States | HF_Echidna |

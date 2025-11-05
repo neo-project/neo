@@ -387,11 +387,11 @@ namespace Neo.Network.P2P.Payloads
                     return VerifyResult.InvalidAttribute;
                 attributesFee += attribute.CalculateNetworkFee(snapshot, this);
             }
-            long netFeeDatoshi = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
+            var netFeeDatoshi = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
             if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 
             if (netFeeDatoshi > MaxVerificationGas) netFeeDatoshi = MaxVerificationGas;
-            uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(settings, snapshot, height);
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (IsSignatureContract(witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(witnesses[i].InvocationScript, out var _))
