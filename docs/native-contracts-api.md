@@ -209,7 +209,7 @@ When calling a native contract method by transaction script, there are several t
 | Method | Summary | Parameters | Return Value | CPU fee | Storage fee | Call Flags | Hardfork |
 |--------|---------|------------|--------------|---------|-------------|------------|----------|
 | verify | Verify checks whether the transaction is signed by the committee. | -- | Boolean | 1<<15 | 0 | ReadStates | -- |
-| onNEP17Payment | OnNEP17Payment is a callback that accepts GAS transfer as Notary deposit. It also sets the deposit's lock height after which deposit can be withdrawn. | UInt160(*from*), BigInteger(*amount*), StackItem(*data*) | Void | 1<<15 | 0 | States | -- |
-| onNEP11Payment | OnNEP17Payment is a callback that accepts GAS transfer as Notary deposit. It also sets the deposit's lock height after which deposit can be withdrawn. | UInt160(*from*), BigInteger(*amount*), String(*tokenId*), StackItem(*data*) | Void | 1<<15 | 0 | States | -- |
+| onNEP17Payment | OnNEP17Payment callback. | UInt160(*from*), BigInteger(*amount*), StackItem(*data*) | Void | 1<<15 | 0 | States | -- |
+| onNEP11Payment | OnNEP11Payment callback. | UInt160(*from*), BigInteger(*amount*), Byte[](*tokenId*), StackItem(*data*) | Void | 1<<15 | 0 | States | -- |
 
 
