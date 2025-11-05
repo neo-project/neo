@@ -270,7 +270,7 @@ namespace Neo.Plugins.RpcServer
                         request["jsonrpc"] = jsonrpc;
                     request["id"] = id;
                     request["method"] = method;
-                    request["params"] = JsonNode.Parse(_params, documentOptions: new() { MaxDepth = MaxParamsDepth });
+                    request["params"] = JsonNode.StrictParse(_params, MaxParamsDepth);
                 }
             }
             else if (context.Request.Method == HttpMethodPost)
@@ -278,7 +278,7 @@ namespace Neo.Plugins.RpcServer
                 using var reader = new StreamReader(context.Request.Body);
                 try
                 {
-                    request = JsonNode.Parse(await reader.ReadToEndAsync(), documentOptions: new() { MaxDepth = MaxParamsDepth });
+                    request = JsonNode.StrictParse(await reader.ReadToEndAsync(), MaxParamsDepth);
                 }
                 catch (FormatException) { }
             }

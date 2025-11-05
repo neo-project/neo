@@ -58,20 +58,20 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestParse()
         {
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = JsonNode.Parse("", documentOptions: new() { MaxDepth = -1 }));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("aaa"));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("hello world"));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("100.a"));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("100.+"));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("\"\\s\""));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("\"a"));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("{\"k1\":\"v1\",\"k1\":\"v2\"}"));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("{\"k1\",\"k1\"}"));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("{\"k1\":\"v1\""));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse(new byte[] { 0x22, 0x01, 0x22 }));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("{\"color\":\"\\uDBFF\\u0DFFF\"}"));
-            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.Parse("\"\\uDBFF\\u0DFFF\""));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = JsonNode.StrictParse("", -1));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("aaa"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("hello world"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("100.a"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("100.+"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("\"\\s\""));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("\"a"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("{\"k1\":\"v1\",\"k1\":\"v2\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("{\"k1\",\"k1\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("{\"k1\":\"v1\""));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse(new byte[] { 0x22, 0x01, 0x22 }));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("{\"color\":\"\\uDBFF\\u0DFFF\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonNode.StrictParse("\"\\uDBFF\\u0DFFF\""));
 
             Assert.IsNull(JsonNode.Parse("null"));
             Assert.IsTrue(JsonNode.Parse("true").GetValue<bool>());
@@ -79,7 +79,7 @@ namespace Neo.Json.UnitTests
             Assert.AreEqual("hello world", JsonNode.Parse("\"hello world\"").AsString());
             Assert.AreEqual("\"\\/\b\f\n\r\t", JsonNode.Parse("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\"").AsString());
             Assert.AreEqual("0", JsonNode.Parse("\"\\u0030\"").AsString());
-            Assert.AreEqual("{\"k1\":\"v1\"}", JsonNode.Parse("{\"k1\":\"v1\"}", documentOptions: new() { MaxDepth = 100 }).StrictToString(false));
+            Assert.AreEqual("{\"k1\":\"v1\"}", JsonNode.StrictParse("{\"k1\":\"v1\"}", 100).StrictToString(false));
         }
 
         [TestMethod]

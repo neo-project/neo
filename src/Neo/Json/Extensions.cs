@@ -13,6 +13,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
@@ -22,65 +23,95 @@ namespace Neo.Json
 {
     public static class Extensions
     {
-        public static double AsNumber(this JsonNode json)
+        extension(JsonNode node)
         {
-            return json.GetValueKind() switch
+            public double AsNumber()
             {
-                JsonValueKind.Number => json.GetValue<double>(),
-                JsonValueKind.String => double.TryParse(json.GetValue<string>(), NumberStyles.Float, CultureInfo.InvariantCulture, out var result) ? result : throw new InvalidCastException(),
-                _ => throw new InvalidCastException()
-            };
-        }
+                return node.GetValueKind() switch
+                {
+                    JsonValueKind.Number => node.GetValue<double>(),
+                    JsonValueKind.String => double.TryParse(node.GetValue<string>(), NumberStyles.Float, CultureInfo.InvariantCulture, out var result) ? result : throw new InvalidCastException(),
+                    _ => throw new InvalidCastException()
+                };
+            }
 
-        public static string AsString(this JsonNode json)
-        {
-            return json.GetValueKind() switch
+            public string AsString()
             {
-                JsonValueKind.True => "true",
-                JsonValueKind.False => "false",
-                JsonValueKind.Number => json.ToString(),
-                JsonValueKind.String => json.GetValue<string>(),
-                _ => throw new InvalidCastException()
-            };
-        }
+                return node.GetValueKind() switch
+                {
+                    JsonValueKind.True => "true",
+                    JsonValueKind.False => "false",
+                    JsonValueKind.Number => node.ToString(),
+                    JsonValueKind.String => node.GetValue<string>(),
+                    _ => throw new InvalidCastException()
+                };
+            }
 
-        public static T GetEnum<T>(this JsonNode json, bool ignoreCase = false) where T : unmanaged, Enum
-        {
-            var result = Enum.Parse<T>(json.AsString(), ignoreCase);
-            if (!Enum.IsDefined(result)) throw new InvalidCastException();
-            return result;
-        }
-
-        public static byte[] ToByteArray(this JsonNode json, bool indented)
-        {
-            using MemoryStream ms = new();
-            using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
+            public T GetEnum<T>(bool ignoreCase = false) where T : unmanaged, Enum
             {
-                Indented = indented,
-                SkipValidation = true
-            });
-            json.WriteTo(writer);
-            writer.Flush();
-            return ms.ToArray();
+                var result = Enum.Parse<T>(node.AsString(), ignoreCase);
+                if (!Enum.IsDefined(result)) throw new InvalidCastException();
+                return result;
+            }
+
+            public byte[] ToByteArray(bool indented)
+            {
+                using MemoryStream ms = new();
+                using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
+                {
+                    Indented = indented,
+                    SkipValidation = true
+                });
+                node.WriteTo(writer);
+                writer.Flush();
+                return ms.ToArray();
+            }
+
+            public string StrictToString(bool indented)
+            {
+                return Utility.StrictUTF8.GetString(node.ToByteArray(indented));
+            }
+
+            public JsonArray JsonPath(string expr)
+            {
+                JsonNode?[] objects = [node];
+                if (expr.Length == 0) return [.. objects];
+
+                Queue<JPathToken> tokens = new(JPathToken.Parse(expr));
+                var first = tokens.Dequeue();
+                if (first.Type != JPathTokenType.Root)
+                    throw new FormatException($"Unexpected token {first.Type}");
+
+                JPathToken.ProcessJsonPath(ref objects, tokens);
+                return [.. objects];
+            }
         }
 
-        public static string StrictToString(this JsonNode json, bool indented)
+        extension(JsonNode)
         {
-            return Utility.StrictUTF8.GetString(json.ToByteArray(indented));
-        }
+            public static JsonNode? StrictParse([StringSyntax(StringSyntaxAttribute.Json)] string json, int max_nest = 64)
+            {
+                var options = new JsonDocumentOptions
+                {
+                    AllowDuplicateProperties = false,
+                    AllowTrailingCommas = false,
+                    CommentHandling = JsonCommentHandling.Disallow,
+                    MaxDepth = max_nest
+                };
+                return JsonNode.Parse(json, documentOptions: options);
+            }
 
-        public static JsonArray JsonPath(this JsonNode json, string expr)
-        {
-            JsonNode?[] objects = [json];
-            if (expr.Length == 0) return [.. objects];
-
-            Queue<JPathToken> tokens = new(JPathToken.Parse(expr));
-            var first = tokens.Dequeue();
-            if (first.Type != JPathTokenType.Root)
-                throw new FormatException($"Unexpected token {first.Type}");
-
-            JPathToken.ProcessJsonPath(ref objects, tokens);
-            return [.. objects];
+            public static JsonNode? StrictParse(ReadOnlySpan<byte> utf8Json, int max_nest = 64)
+            {
+                var options = new JsonDocumentOptions
+                {
+                    AllowDuplicateProperties = false,
+                    AllowTrailingCommas = false,
+                    CommentHandling = JsonCommentHandling.Disallow,
+                    MaxDepth = max_nest
+                };
+                return JsonNode.Parse(utf8Json, documentOptions: options);
+            }
         }
     }
 }

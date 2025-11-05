@@ -96,7 +96,7 @@ namespace Neo.Network.RPC
 
         static RpcResponse AsRpcResponse(string content, bool throwOnError)
         {
-            var response = RpcResponse.FromJson((JsonObject)JsonNode.Parse(content));
+            var response = RpcResponse.FromJson((JsonObject)JsonNode.StrictParse(content));
             response.RawResponse = content;
 
             if (response.Error != null && throwOnError)

@@ -522,7 +522,7 @@ namespace Neo.Plugins.OracleService
             if (string.IsNullOrEmpty(filterArgs))
                 return input.ToStrictUtf8Bytes();
 
-            JsonNode beforeObject = JsonNode.Parse(input);
+            JsonNode beforeObject = JsonNode.StrictParse(input);
             JsonArray afterObjects = beforeObject.JsonPath(filterArgs);
             return afterObjects.ToByteArray(false);
         }
