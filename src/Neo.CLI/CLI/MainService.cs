@@ -358,9 +358,7 @@ namespace Neo.CLI
                 if (!hasProviderDLL)
                 {
                     ConsoleHelper.Info($"Storage provider {engine} not found in {pluginDir}. Auto-install {engine}.", nameof(Settings.Default.Storage.Engine));
-                    var installProvider = await InstallPluginAsync(engine);
-
-                    if (!installProvider)
+                    if (!await InstallPluginAsync(engine))
                     {
                         throw new ArgumentException($"Not possible to install provider {engine}", nameof(Settings.Default.Storage.Engine));
                     }
