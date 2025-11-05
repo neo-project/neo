@@ -12,6 +12,7 @@
 #nullable enable
 #pragma warning disable IDE0051
 
+using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System.Numerics;
 
@@ -26,9 +27,9 @@ namespace Neo.SmartContract.Native
 
         public override Hardfork? ActiveIn => Hardfork.HF_Faun;
 
-        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest) 
-        { 
-            manifest.SupportedStandards = ["NEP-26", "NEP-27"]; 
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+        {
+            manifest.SupportedStandards = ["NEP-26", "NEP-27"];
         }
 
         /// <summary>
