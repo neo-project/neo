@@ -26,6 +26,11 @@ namespace Neo.SmartContract.Native
 
         public override Hardfork? ActiveIn => Hardfork.HF_Faun;
 
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest) 
+        { 
+            manifest.SupportedStandards = ["NEP-26", "NEP-27"]; 
+        }
+
         /// <summary>
         /// Verify checks whether the transaction is signed by the committee.
         /// </summary>
