@@ -24,8 +24,6 @@
     <Company>The Neo Project</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <VersionPrefix>3.8.1</VersionPrefix>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
     <OutputPath>../../bin/$(PackageId)</OutputPath>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>

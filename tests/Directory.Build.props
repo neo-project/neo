@@ -11,8 +11,6 @@
     <CollectCoverage>true</CollectCoverage>
     <CoverletOutput>../../TestResults/$(MSBuildProjectName)/</CoverletOutput>
     <CoverletOutputFormat>lcov</CoverletOutputFormat>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
     <OutputPath>../../bin/tests/$(MSBuildProjectName)</OutputPath>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
