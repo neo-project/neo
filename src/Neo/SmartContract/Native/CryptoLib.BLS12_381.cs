@@ -215,12 +215,14 @@ namespace Neo.SmartContract.Native
                 G1Projective g => new(g),
                 _ => throw new ArgumentException("BLS12-381 type mismatch")
             };
+            EnsureG1PointValid(in g1a);
             G2Affine g2a = g2.GetInterface<object>() switch
             {
                 G2Affine g => g,
                 G2Projective g => new(g),
                 _ => throw new ArgumentException("BLS12-381 type mismatch")
             };
+            EnsureG2PointValid(in g2a);
             return new(Bls12.Pairing(in g1a, in g2a));
         }
 
