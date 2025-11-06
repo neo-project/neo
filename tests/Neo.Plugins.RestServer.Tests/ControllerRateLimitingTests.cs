@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Hosting;
+
 namespace Neo.Plugins.RestServer.Tests
 {
     [TestClass]
@@ -21,8 +23,9 @@ namespace Neo.Plugins.RestServer.Tests
         public void Initialize()
         {
             // Create a test server with controllers and rate limiting
-            var builder = new WebHostBuilder()
-                .ConfigureServices(services =>
+            var host = new HostBuilder().ConfigureWebHost(builder =>
+            {
+                builder.UseTestServer().ConfigureServices(services =>
                 {
                     services.AddControllers();
 
@@ -57,8 +60,7 @@ namespace Neo.Plugins.RestServer.Tests
                             await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
                         };
                     });
-                })
-                .Configure(app =>
+                }).Configure(app =>
                 {
                     app.UseRateLimiter();
                     app.UseRouting();
@@ -89,8 +91,10 @@ namespace Neo.Plugins.RestServer.Tests
                         .DisableRateLimiting();
                     });
                 });
+            }).Build();
 
-            _server = new TestServer(builder);
+            host.Start();
+            _server = host.GetTestServer();
             _client = _server.CreateClient();
         }
 

@@ -7,7 +7,7 @@ on:
 
 # Define environment variables
 env:
-  DOTNET_VERSION: 9.0.x
+  DOTNET_VERSION: 10.0.x
   CONFIGURATION: Release
   NEO_NUGET_DIR: ./pkgs
 

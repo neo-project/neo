@@ -408,9 +408,9 @@ namespace Neo.SmartContract
             return task;
         }
 
-        internal override void UnloadContext(ExecutionContext context)
+        protected override void ContextUnloaded(ExecutionContext context)
         {
-            base.UnloadContext(context);
+            base.ContextUnloaded(context);
             if (context.Script != CurrentContext?.Script)
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
@@ -649,7 +649,7 @@ namespace Neo.SmartContract
             Diagnostic?.Disposed();
             if (disposables != null)
             {
-                foreach (IDisposable disposable in disposables)
+                foreach (var disposable in disposables)
                     disposable.Dispose();
                 disposables = null;
             }

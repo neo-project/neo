@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  DOTNET_VERSION: 9.0.x
+  DOTNET_VERSION: 10.0.x
 
 jobs:
 
@@ -145,9 +145,7 @@ jobs:
         format: lcov
         files:
           ${{ github.workspace }}/TestResults/Neo.UnitTests/coverage.info
-          ${{ github.workspace }}/TestResults/Neo.Cryptography.BLS12_381.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.ConsoleService.Tests/coverage.info
-          ${{ github.workspace }}/TestResults/Neo.VM.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Json.UnitTests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.Cryptography.MPTTrie.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.RpcClient.Tests/coverage.info
