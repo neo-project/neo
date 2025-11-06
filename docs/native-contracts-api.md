@@ -78,7 +78,7 @@ When calling a native contract method by transaction script, there are several t
 | bls12381Equal | Determines whether the specified points are equal. | InteropInterface(*x*), InteropInterface(*y*) | Boolean | 1<<5 | 0 | -- | -- |
 | bls12381Add | Add operation of two points. | InteropInterface(*x*), InteropInterface(*y*) | InteropInterface | 1<<19 | 0 | -- | -- |
 | bls12381Mul | Mul operation of gt point and multiplier | InteropInterface(*x*), Byte[](*mul*), Boolean(*neg*) | InteropInterface | 1<<21 | 0 | -- | -- |
-| bls12381MultiExp | Multi exponentiation operation for bls12381 points. | Array(*pairs*) (each pair is [InteropInterface(*point*), Byte[](*scalar*, 32-byte big-endian)]) | InteropInterface | 1<<23 | 0 | -- | HF_Faun |
+| bls12381MultiExp | Multi exponentiation operation for bls12381 points. | Array(*pairs*) | InteropInterface | 1<<23 | 0 | -- | HF_Faun |
 | bls12381Pairing | Pairing operation of g1 and g2 | InteropInterface(*g1*), InteropInterface(*g2*) | InteropInterface | 1<<23 | 0 | -- | -- |
 | recoverSecp256K1 | Recovers the public key from a secp256k1 signature in a single byte array format. | Byte[](*messageHash*), Byte[](*signature*) | Byte[] | 1<<15 | 0 | -- | HF_Echidna |
 | ripemd160 | Computes the hash value for the specified byte array using the ripemd160 algorithm. | Byte[](*data*) | Byte[] | 1<<15 | 0 | -- | -- |
@@ -202,4 +202,5 @@ When calling a native contract method by transaction script, there are several t
 | withdraw | Withdraw sends all deposited GAS for "from" address to "to" address. If "to" address is not specified, then "from" will be used as a sender. | UInt160(*from*), UInt160(*to*) | Boolean | 1<<15 | 0 | All | -- |
 | getMaxNotValidBeforeDelta | GetMaxNotValidBeforeDelta is Notary contract method and returns the maximum NotValidBefore delta. | -- | UInt32 | 1<<15 | 0 | ReadStates | -- |
 | setMaxNotValidBeforeDelta | SetMaxNotValidBeforeDelta is Notary contract method and sets the maximum NotValidBefore delta. | UInt32(*value*) | Void | 1<<15 | 0 | States | -- |
+
 
