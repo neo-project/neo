@@ -60,6 +60,24 @@ namespace Neo.UnitTests.SmartContract.Native
         private readonly byte[] g2 = s_g2Hex.HexToBytes();
         private readonly byte[] gt = s_gtHex.HexToBytes();
 
+        private const string EthG1MultiExpSingleInputHex =
+            "0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e10000000000000000000000000000000000000000000000000000000000000011";
+
+        private const string EthG1MultiExpSingleExpectedHex =
+            "000000000000000000000000000000001098f178f84fc753a76bb63709e9be91eec3ff5f7f3a5f4836f34fe8a1a6d6c5578d8fd820573cef3a01e2bfef3eaf3a000000000000000000000000000000000ea923110b733b531006075f796cc9368f2477fe26020f465468efbb380ce1f8eebaf5c770f31d320f9bd378dc758436";
+
+        private const string EthG1MultiExpMultipleInputHex =
+            "0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e10000000000000000000000000000000000000000000000000000000000000032000000000000000000000000000000000e12039459c60491672b6a6282355d8765ba6272387fb91a3e9604fa2a81450cf16b870bb446fc3a3e0a187fff6f89450000000000000000000000000000000018b6c1ed9f45d3cbc0b01b9d038dcecacbd702eb26469a0eb3905bd421461712f67f782b4735849644c1772c93fe3d09000000000000000000000000000000000000000000000000000000000000003300000000000000000000000000000000147b327c8a15b39634a426af70c062b50632a744eddd41b5a4686414ef4cd9746bb11d0a53c6c2ff21bbcf331e07ac9200000000000000000000000000000000078c2e9782fa5d9ab4e728684382717aa2b8fad61b5f5e7cf3baa0bc9465f57342bb7c6d7b232e70eebcdbf70f903a450000000000000000000000000000000000000000000000000000000000000034";
+
+        private const string EthG1MultiExpMultipleExpectedHex =
+            "000000000000000000000000000000001339b4f51923efe38905f590ba2031a2e7154f0adb34a498dfde8fb0f1ccf6862ae5e3070967056385055a666f1b6fc70000000000000000000000000000000009fb423f7e7850ef9c4c11a119bb7161fe1d11ac5527051b29fe8f73ad4262c84c37b0f1b9f0e163a9682c22c7f98c80";
+
+        private const string EthG2MultiExpSingleInputHex =
+            "00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e000000000000000000000000000000000ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be0000000000000000000000000000000000000000000000000000000000000011";
+
+        private const string EthG2MultiExpSingleExpectedHex =
+            "000000000000000000000000000000000ef786ebdcda12e142a32f091307f2fedf52f6c36beb278b0007a03ad81bf9fee3710a04928e43e541d02c9be44722e8000000000000000000000000000000000d05ceb0be53d2624a796a7a033aec59d9463c18d672c451ec4f2e679daef882cab7d8dd88789065156a1340ca9d426500000000000000000000000000000000118ed350274bc45e63eaaa4b8ddf119b3bf38418b5b9748597edfc456d9bc3e864ec7283426e840fd29fa84e7d89c934000000000000000000000000000000001594b866a28946b6d444bf0481558812769ea3222f5dfc961ca33e78e0ea62ee8ba63fd1ece9cc3e315abfa96d536944";
+
 
         private readonly byte[] notG1 =
             "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -323,8 +341,11 @@ namespace Neo.UnitTests.SmartContract.Native
             });
             var pairs = new VMArray(new StackItem[] { pair });
 
-            var wide = new byte[Scalar.Size * 2];
-            System.Array.Copy(scalarBytes, wide, scalarBytes.Length);
+            Span<byte> littleEndian = stackalloc byte[Scalar.Size];
+            for (int i = 0; i < Scalar.Size; i++)
+                littleEndian[i] = scalarBytes[Scalar.Size - 1 - i];
+            Span<byte> wide = stackalloc byte[Scalar.Size * 2];
+            littleEndian.CopyTo(wide);
             var reducedScalar = Scalar.FromBytesWide(wide);
 
             var result = CryptoLib.Bls12381MultiExp(pairs);
@@ -407,6 +428,35 @@ namespace Neo.UnitTests.SmartContract.Native
             var pairs = new VMArray(new StackItem[] { pair });
 
             Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381MultiExp(pairs));
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpMatchesEthereumG1Vectors()
+        {
+            var singleInput = EthG1MultiExpSingleInputHex.HexToBytes();
+            var singleResult = CryptoLib.Bls12381MultiExp(BuildEthereumG1Pairs(singleInput));
+            var singleActual = new G1Affine(singleResult.GetInterface<G1Projective>()).ToCompressed().ToHexString();
+            var singleExpectedBytes = EthG1MultiExpSingleExpectedHex.HexToBytes();
+            var singleExpected = new G1Affine(ParseEthereumG1Point(singleExpectedBytes)).ToCompressed().ToHexString();
+            Assert.AreEqual(singleExpected, singleActual);
+
+            var multiInput = EthG1MultiExpMultipleInputHex.HexToBytes();
+            var multiResult = CryptoLib.Bls12381MultiExp(BuildEthereumG1Pairs(multiInput));
+            var multiActual = new G1Affine(multiResult.GetInterface<G1Projective>()).ToCompressed().ToHexString();
+            var multiExpectedBytes = EthG1MultiExpMultipleExpectedHex.HexToBytes();
+            var multiExpected = new G1Affine(ParseEthereumG1Point(multiExpectedBytes)).ToCompressed().ToHexString();
+            Assert.AreEqual(multiExpected, multiActual);
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpMatchesEthereumG2Vectors()
+        {
+            var input = EthG2MultiExpSingleInputHex.HexToBytes();
+            var result = CryptoLib.Bls12381MultiExp(BuildEthereumG2Pairs(input));
+            var actual = new G2Affine(result.GetInterface<G2Projective>()).ToCompressed().ToHexString();
+            var expectedBytes = EthG2MultiExpSingleExpectedHex.HexToBytes();
+            var expected = new G2Affine(ParseEthereumG2Point(expectedBytes)).ToCompressed().ToHexString();
+            Assert.AreEqual(expected, actual);
         }
 
         [TestMethod]
@@ -1321,22 +1371,102 @@ namespace Neo.UnitTests.SmartContract.Native
             }
         }
 
+        private static VMArray BuildEthereumG1Pairs(byte[] input)
+        {
+            Assert.AreEqual(0, input.Length % 160, $"Invalid G1 multiexp input length ({input.Length}).");
+            var pairs = new VMArray();
+            for (int offset = 0; offset < input.Length; offset += 160)
+            {
+                var pointBytes = input.AsSpan(offset, 128);
+                var scalarBytes = input.AsSpan(offset + 128, Scalar.Size).ToArray();
+                pairs.Add(new VMArray(new StackItem[]
+                {
+                    StackItem.FromInterface(ParseEthereumG1Point(pointBytes)),
+                    new ByteString(scalarBytes)
+                }));
+            }
+            return pairs;
+        }
+
+        private static VMArray BuildEthereumG2Pairs(byte[] input)
+        {
+            Assert.AreEqual(0, input.Length % 288, "Invalid G2 multiexp input length.");
+            var pairs = new VMArray();
+            for (int offset = 0; offset < input.Length; offset += 288)
+            {
+                var pointBytes = input.AsSpan(offset, 256);
+                var scalarBytes = input.AsSpan(offset + 256, Scalar.Size).ToArray();
+                pairs.Add(new VMArray(new StackItem[]
+                {
+                    StackItem.FromInterface(ParseEthereumG2Point(pointBytes)),
+                    new ByteString(scalarBytes)
+                }));
+            }
+            return pairs;
+        }
+
+        private static G1Projective ParseEthereumG1Point(ReadOnlySpan<byte> bytes)
+        {
+            Assert.AreEqual(128, bytes.Length, "G1 encoding must be 128 bytes.");
+            var x = ParseEthereumFp(bytes[..64]);
+            var y = ParseEthereumFp(bytes[64..]);
+            var affine = new G1Affine(in x, in y);
+            Assert.IsTrue(affine.IsOnCurve, "G1 point not on curve.");
+            Assert.IsTrue(affine.IsTorsionFree, "G1 point not in prime subgroup.");
+            return new G1Projective(affine);
+        }
+
+        private static G2Projective ParseEthereumG2Point(ReadOnlySpan<byte> bytes)
+        {
+            Assert.AreEqual(256, bytes.Length, "G2 encoding must be 256 bytes.");
+            var x0 = ParseEthereumFp(bytes[..64]);
+            var x1 = ParseEthereumFp(bytes.Slice(64, 64));
+            var y0 = ParseEthereumFp(bytes.Slice(128, 64));
+            var y1 = ParseEthereumFp(bytes.Slice(192, 64));
+            var x = new Fp2(in x0, in x1);
+            var y = new Fp2(in y0, in y1);
+            var affine = new G2Affine(in x, in y);
+            Assert.IsTrue(affine.IsOnCurve, "G2 point not on curve.");
+            Assert.IsTrue(affine.IsTorsionFree, "G2 point not in prime subgroup.");
+            return new G2Projective(affine);
+        }
+
+        private static Fp ParseEthereumFp(ReadOnlySpan<byte> bytes)
+        {
+            Assert.AreEqual(64, bytes.Length, "Field element must be 64 bytes.");
+            for (int i = 0; i < 16; i++)
+                Assert.AreEqual((byte)0, bytes[i], "Field element has non-zero top bytes.");
+            Span<byte> fieldBytes = stackalloc byte[Fp.Size];
+            bytes[16..].CopyTo(fieldBytes);
+            return Fp.FromBytes(fieldBytes);
+        }
+
         private static byte[] CreateScalarBytes(BigInteger value)
         {
             if (value < 0)
                 throw new ArgumentOutOfRangeException(nameof(value));
 
-            var bytes = new byte[Scalar.Size];
+            Span<byte> temp = stackalloc byte[Scalar.Size];
             var mask = (BigInteger.One << (Scalar.Size * 8)) - BigInteger.One;
             var truncated = value & mask;
-            if (!truncated.TryWriteBytes(bytes, out _, isBigEndian: false))
+            var encoded = truncated.ToByteArray(isUnsigned: true, isBigEndian: true);
+            if (encoded.Length > Scalar.Size)
                 throw new InvalidOperationException("Unable to encode scalar value.");
-            return bytes;
+            encoded.CopyTo(temp[(Scalar.Size - encoded.Length)..]);
+            byte[] result = new byte[Scalar.Size];
+            temp.CopyTo(result);
+            return result;
         }
 
         private static byte[] CreateScalarBytes(uint value) => CreateScalarBytes(new BigInteger(value));
 
-        private static Scalar CreateScalar(uint value) => Scalar.FromBytes(CreateScalarBytes(value));
+        private static Scalar CreateScalar(uint value)
+        {
+            Span<byte> littleEndian = stackalloc byte[Scalar.Size];
+            if (!new BigInteger(value).TryWriteBytes(littleEndian, out _, isBigEndian: false))
+                throw new InvalidOperationException("Unable to encode scalar value.");
+            return Scalar.FromBytes(littleEndian);
+        }
 
     }
 }

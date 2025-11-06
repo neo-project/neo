@@ -238,7 +238,7 @@ namespace Neo.SmartContract.Native
 
         private static Scalar ParseScalar(StackItem scalarItem)
         {
-            ReadOnlySpan<byte> data = scalarItem switch
+            ReadOnlySpan<byte> bigEndian = scalarItem switch
             {
                 ByteString bs when bs.GetSpan().Length == Scalar.Size => bs.GetSpan(),
                 VMBuffer buffer when buffer.Size == Scalar.Size => buffer.InnerBuffer.Span,
@@ -246,7 +246,11 @@ namespace Neo.SmartContract.Native
             };
 
             Span<byte> littleEndian = stackalloc byte[Scalar.Size];
-            data.CopyTo(littleEndian);
+            for (int i = 0; i < Scalar.Size; i++)
+                littleEndian[i] = bigEndian[Scalar.Size - 1 - i];
+
+            Span<byte> wide = stackalloc byte[Scalar.Size * 2];
+            littleEndian.CopyTo(wide);
 
             try
             {
@@ -254,8 +258,6 @@ namespace Neo.SmartContract.Native
             }
             catch (FormatException)
             {
-                var wide = new byte[Scalar.Size * 2];
-                littleEndian.CopyTo(wide);
                 return Scalar.FromBytesWide(wide);
             }
         }
