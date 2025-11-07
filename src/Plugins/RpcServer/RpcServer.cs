@@ -16,11 +16,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
+using Neo.IEventHandlers;
 using Neo.Json;
 using Neo.Network.P2P;
+using Neo.Plugins;
 using Neo.Plugins.RpcServer.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
@@ -312,24 +315,42 @@ namespace Neo.Plugins.RpcServer
 
         internal async Task<JObject?> ProcessRequestAsync(HttpContext context, JObject? request)
         {
-            if (request is null) return CreateErrorResponse(null, RpcError.InvalidRequest);
+            var methodHint = request?["method"]?.AsString() ?? "unknown";
+            PublishRpcTelemetry(new RpcTelemetryEventArgs(RpcTelemetryEventType.Started, methodHint));
+            var stopwatch = Stopwatch.StartNew();
 
-            if (!request.ContainsProperty("id")) return null;
-
-            var @params = request["params"] ?? new JArray();
-            var method = request["method"]?.AsString();
-            if (method is null || @params is not JArray)
+            if (request is null)
             {
-                return CreateErrorResponse(request["id"], RpcError.InvalidRequest);
+                var errorResponse = CreateErrorResponse(null, RpcError.InvalidRequest);
+                return CompleteRpcRequest(methodHint, stopwatch, errorResponse);
             }
 
-            var jsonParameters = (JArray)@params;
+            if (!request.ContainsProperty("id"))
+            {
+                return CompleteRpcRequest(methodHint, stopwatch, null);
+            }
+
+            var paramsToken = request["params"] ?? new JArray();
+            if (paramsToken is not JArray jsonParameters)
+            {
+                var errorResponse = CreateErrorResponse(request["id"], RpcError.InvalidRequest);
+                return CompleteRpcRequest(methodHint, stopwatch, errorResponse);
+            }
+
+            var method = request["method"]?.AsString();
+            if (method is null)
+            {
+                var errorResponse = CreateErrorResponse(request["id"], RpcError.InvalidRequest);
+                return CompleteRpcRequest(methodHint, stopwatch, errorResponse);
+            }
+
+            var methodName = method;
             var response = CreateResponse(request["id"]);
             try
             {
-                (CheckAuth(context) && !settings.DisabledMethods.Contains(method)).True_Or(RpcError.AccessDenied);
+                (CheckAuth(context) && !settings.DisabledMethods.Contains(methodName)).True_Or(RpcError.AccessDenied);
 
-                if (_methods.TryGetValue(method, out var rpcMethod))
+                if (_methods.TryGetValue(methodName, out var rpcMethod))
                 {
                     response["result"] = ProcessParamsMethod(jsonParameters, rpcMethod) switch
                     {
@@ -337,38 +358,94 @@ namespace Neo.Plugins.RpcServer
                         Task<JToken> task => await task,
                         _ => throw new NotSupportedException()
                     };
-                    return response;
+                    return CompleteRpcRequest(methodName, stopwatch, response);
                 }
 
-                throw new RpcException(RpcError.MethodNotFound.WithData(method));
+                throw new RpcException(RpcError.MethodNotFound.WithData(methodName));
             }
             catch (FormatException ex)
             {
-                return CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
+                var errorResponse = CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
+                return CompleteRpcRequest(methodName, stopwatch, errorResponse, ex);
             }
             catch (IndexOutOfRangeException ex)
             {
-                return CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
+                var errorResponse = CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
+                return CompleteRpcRequest(methodName, stopwatch, errorResponse, ex);
             }
             catch (Exception ex) when (ex is not RpcException)
             {
-                // Unwrap the exception to get the original error code
                 var unwrapped = UnwrapException(ex);
 #if DEBUG
-                return CreateErrorResponse(request["id"],
+                var errorResponse = CreateErrorResponse(request["id"],
                     RpcErrorFactory.NewCustomError(unwrapped.HResult, unwrapped.Message, unwrapped.StackTrace ?? string.Empty));
 #else
-                return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(unwrapped.HResult, unwrapped.Message));
+                var errorResponse = CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(unwrapped.HResult, unwrapped.Message));
 #endif
+                return CompleteRpcRequest(methodName, stopwatch, errorResponse, unwrapped);
             }
             catch (RpcException ex)
             {
 #if DEBUG
-                return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace ?? string.Empty));
+                var errorResponse = CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace ?? string.Empty));
 #else
-                return CreateErrorResponse(request["id"], ex.GetError());
+                var errorResponse = CreateErrorResponse(request["id"], ex.GetError());
 #endif
+                return CompleteRpcRequest(methodName, stopwatch, errorResponse, ex);
             }
+        }
+
+        private static void PublishRpcTelemetry(RpcTelemetryEventArgs args)
+        {
+            foreach (var handler in Plugin.Plugins.OfType<IRpcDiagnosticsHandler>())
+            {
+                try
+                {
+                    handler.OnRpcTelemetry(args);
+                }
+                catch
+                {
+                    // Telemetry hooks must stay transparent to RPC behaviour.
+                }
+            }
+        }
+
+        private static JObject? CompleteRpcRequest(string method, Stopwatch stopwatch, JObject? response, Exception? exception = null)
+        {
+            stopwatch.Stop();
+            var success = response is null || response["error"] is null;
+            int? errorCode = null;
+            string? errorMessage = null;
+
+            if (!success && response?["error"] is JObject error)
+            {
+                if (error["code"] is JToken codeToken)
+                {
+                    try
+                    {
+                        errorCode = (int)codeToken.AsNumber();
+                    }
+                    catch
+                    {
+                        errorCode = null;
+                    }
+                }
+
+                errorMessage = error["message"]?.AsString();
+            }
+
+            if (exception != null && string.IsNullOrEmpty(errorMessage))
+                errorMessage = exception.Message;
+
+            PublishRpcTelemetry(new RpcTelemetryEventArgs(
+                RpcTelemetryEventType.Completed,
+                method,
+                stopwatch.Elapsed,
+                success,
+                errorCode,
+                errorMessage));
+
+            return response;
         }
 
         private object? ProcessParamsMethod(JArray arguments, RpcMethod rpcMethod)

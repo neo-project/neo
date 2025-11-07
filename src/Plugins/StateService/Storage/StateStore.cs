@@ -13,14 +13,18 @@
 
 using Akka.Actor;
 using Neo.Extensions;
+using Neo.IEventHandlers;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.Plugins.StateService.Network;
 using Neo.Plugins.StateService.Verification;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 namespace Neo.Plugins.StateService.Storage
@@ -107,24 +111,120 @@ namespace Neo.Plugins.StateService.Storage
 
         private bool OnNewStateRoot(StateRoot stateRoot)
         {
-            if (stateRoot.Witness is null) return false;
-            if (ValidatedRootIndex != null && stateRoot.Index <= ValidatedRootIndex) return false;
-            if (LocalRootIndex is null) throw new InvalidOperationException(nameof(StateStore) + " could not get local root index");
+            if (stateRoot.Witness is null)
+            {
+                PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                    StateServiceTelemetryEventType.SnapshotError,
+                    stateRoot.Index,
+                    LocalRootIndex,
+                    ValidatedRootIndex,
+                    stage: "validate",
+                    reason: "MissingWitness"));
+                return false;
+            }
+
+            if (ValidatedRootIndex != null && stateRoot.Index <= ValidatedRootIndex)
+            {
+                PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                    StateServiceTelemetryEventType.SnapshotError,
+                    stateRoot.Index,
+                    LocalRootIndex,
+                    ValidatedRootIndex,
+                    stage: "validate",
+                    reason: "DuplicateOrOldStateRoot"));
+                return false;
+            }
+
+            if (LocalRootIndex is null)
+            {
+                PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                    StateServiceTelemetryEventType.SnapshotError,
+                    stateRoot.Index,
+                    null,
+                    ValidatedRootIndex,
+                    stage: "validate",
+                    reason: "LocalRootUnavailable"));
+                throw new InvalidOperationException(nameof(StateStore) + " could not get local root index");
+            }
+
             if (LocalRootIndex < stateRoot.Index && stateRoot.Index < LocalRootIndex + MaxCacheCount)
             {
-                _cache.Add(stateRoot.Index, stateRoot);
+                _cache[stateRoot.Index] = stateRoot;
+                PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                    StateServiceTelemetryEventType.SnapshotApplied,
+                    stateRoot.Index,
+                    LocalRootIndex,
+                    ValidatedRootIndex,
+                    stage: "cache"));
                 return true;
             }
 
             using var stateSnapshot = Singleton.GetSnapshot();
             var localRoot = stateSnapshot.GetStateRoot(stateRoot.Index);
-            if (localRoot is null || localRoot.Witness != null) return false;
-            if (!stateRoot.Verify(StatePlugin.NeoSystem.Settings, StatePlugin.NeoSystem.StoreView)) return false;
-            if (localRoot.RootHash != stateRoot.RootHash) return false;
+            if (localRoot is null)
+            {
+                PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                    StateServiceTelemetryEventType.SnapshotError,
+                    stateRoot.Index,
+                    LocalRootIndex,
+                    ValidatedRootIndex,
+                    stage: "validate",
+                    reason: "MissingLocalStateRoot"));
+                return false;
+            }
+
+            if (localRoot.Witness != null)
+            {
+                PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                    StateServiceTelemetryEventType.SnapshotError,
+                    stateRoot.Index,
+                    LocalRootIndex,
+                    ValidatedRootIndex,
+                    stage: "validate",
+                    reason: "StateRootAlreadyValidated"));
+                return false;
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            if (!stateRoot.Verify(StatePlugin.NeoSystem.Settings, StatePlugin.NeoSystem.StoreView))
+            {
+                stopwatch.Stop();
+                PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                    StateServiceTelemetryEventType.SnapshotError,
+                    stateRoot.Index,
+                    LocalRootIndex,
+                    ValidatedRootIndex,
+                    duration: stopwatch.Elapsed,
+                    stage: "validate",
+                    reason: "WitnessVerificationFailed"));
+                return false;
+            }
+
+            if (localRoot.RootHash != stateRoot.RootHash)
+            {
+                stopwatch.Stop();
+                PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                    StateServiceTelemetryEventType.SnapshotError,
+                    stateRoot.Index,
+                    LocalRootIndex,
+                    ValidatedRootIndex,
+                    duration: stopwatch.Elapsed,
+                    stage: "validate",
+                    reason: "RootHashMismatch"));
+                return false;
+            }
 
             stateSnapshot.AddValidatedStateRoot(stateRoot);
             stateSnapshot.Commit();
+            stopwatch.Stop();
             UpdateCurrentSnapshot();
+            PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                StateServiceTelemetryEventType.ValidatedRootAdvanced,
+                stateRoot.Index,
+                LocalRootIndex,
+                stateRoot.Index,
+                stopwatch.Elapsed,
+                stage: "validate"));
             _system.Verifier?.Tell(new VerificationService.ValidatedRootPersisted { Index = stateRoot.Index });
             return true;
         }
@@ -133,18 +233,23 @@ namespace Neo.Plugins.StateService.Storage
         {
             _stateSnapshot?.Dispose();
             _stateSnapshot = Singleton.GetSnapshot();
+            var stopwatch = Stopwatch.StartNew();
+            var changeCount = 0;
             foreach (var item in changeSet)
             {
                 switch (item.Value.State)
                 {
                     case TrackState.Added:
                         _stateSnapshot.Trie.Put(item.Key.ToArray(), item.Value.Item.ToArray());
+                        changeCount++;
                         break;
                     case TrackState.Changed:
                         _stateSnapshot.Trie.Put(item.Key.ToArray(), item.Value.Item.ToArray());
+                        changeCount++;
                         break;
                     case TrackState.Deleted:
                         _stateSnapshot.Trie.Delete(item.Key.ToArray());
+                        changeCount++;
                         break;
                 }
             }
@@ -158,19 +263,39 @@ namespace Neo.Plugins.StateService.Storage
                 Witness = null,
             };
             _stateSnapshot.AddLocalStateRoot(stateRoot);
+            stopwatch.Stop();
+            PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                StateServiceTelemetryEventType.SnapshotApplied,
+                height,
+                height,
+                ValidatedRootIndex,
+                stopwatch.Elapsed,
+                changeCount,
+                "apply"));
         }
 
         public void UpdateLocalStateRoot(uint height)
         {
+            TimeSpan? duration = null;
             if (_stateSnapshot != null)
             {
+                var stopwatch = Stopwatch.StartNew();
                 _stateSnapshot.Commit();
+                stopwatch.Stop();
+                duration = stopwatch.Elapsed;
                 _stateSnapshot.Dispose();
                 _stateSnapshot = null;
             }
             UpdateCurrentSnapshot();
             _system.Verifier?.Tell(new VerificationService.BlockPersisted { Index = height });
             CheckValidatedStateRoot(height);
+            PublishStateTelemetry(new StateServiceTelemetryEventArgs(
+                StateServiceTelemetryEventType.LocalRootCommitted,
+                height,
+                LocalRootIndex,
+                ValidatedRootIndex,
+                duration,
+                stage: "commit"));
         }
 
         private void CheckValidatedStateRoot(uint index)
@@ -185,6 +310,21 @@ namespace Neo.Plugins.StateService.Storage
         private void UpdateCurrentSnapshot()
         {
             Interlocked.Exchange(ref _currentSnapshot, GetSnapshot())?.Dispose();
+        }
+
+        private static void PublishStateTelemetry(StateServiceTelemetryEventArgs args)
+        {
+            foreach (var handler in Plugin.Plugins.OfType<IStateServiceDiagnosticsHandler>())
+            {
+                try
+                {
+                    handler.OnStateServiceTelemetry(args);
+                }
+                catch
+                {
+                    // Telemetry consumers should not disrupt state service execution.
+                }
+            }
         }
 
         protected override void PostStop()

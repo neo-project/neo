@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Neo.IEventHandlers;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
@@ -50,6 +51,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
                 Log($"Sending {nameof(PrepareResponse)}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
+                PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageSent, context.Block.Index, context.ViewNumber, messageKind: ConsensusMessageKind.PrepareResponse, messageSent: true);
                 CheckPreparations();
             }
             return true;
@@ -80,6 +82,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     // if my last change view payload, `message`, has NewViewNumber lower than current view to change
                     if (message is null || message.NewViewNumber < viewNumber)
                         localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(ChangeViewReason.ChangeAgreement) });
+                    lastChangeViewReason = ChangeViewReason.ChangeAgreement;
+                    hasLastChangeViewReason = true;
+                    PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageSent, context.Block.Index, context.ViewNumber, messageKind: ConsensusMessageKind.ChangeView, messageSent: true, reason: ChangeViewReason.ChangeAgreement.ToString());
                 }
                 InitializeConsensus(viewNumber);
             }
@@ -93,6 +98,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 Log($"Sending {nameof(Commit)}");
                 context.Save();
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+                PublishConsensusTelemetry(ConsensusTelemetryEventType.MessageSent, context.Block.Index, context.ViewNumber, messageKind: ConsensusMessageKind.Commit, messageSent: true);
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(context.TimePerBlock);
                 CheckCommits();

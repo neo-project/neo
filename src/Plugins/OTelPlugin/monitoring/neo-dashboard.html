@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo Node Monitoring Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #00ff88, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .header .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+        }
+        
+        .metric-card h3 {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+        
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .metric-card.blockchain .metric-value {
+            color: #00ff88;
+        }
+        
+        .metric-card.network .metric-value {
+            color: #00ffff;
+        }
+        
+        .metric-card.system .metric-value {
+            color: #ff6b6b;
+        }
+        
+        .metric-card.mempool .metric-value {
+            color: #ffd93d;
+        }
+        
+        .metric-change {
+            font-size: 0.9em;
+            color: #888;
+        }
+        
+        .metric-change.positive {
+            color: #00ff88;
+        }
+        
+        .metric-change.negative {
+            color: #ff6b6b;
+        }
+        
+        .chart-container {
+            grid-column: span 2;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            height: 300px;
+        }
+        
+        .chart-container h3 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #e0e0e0;
+        }
+        
+        .error-panel {
+            grid-column: span 3;
+            background: rgba(255, 107, 107, 0.05);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .error-panel h3 {
+            color: #ff6b6b;
+            margin-bottom: 15px;
+        }
+        
+        .error-list {
+            list-style: none;
+        }
+        
+        .error-list li {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #ff6b6b;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #888;
+        }
+        
+        .gauge {
+            position: relative;
+            width: 100%;
+            height: 120px;
+        }
+        
+        .gauge-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .gauge-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00ffff);
+            border-radius: 15px;
+            transition: width 0.5s ease;
+        }
+        
+        .gauge-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.8em;
+            color: #888;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                grid-column: span 1;
+            }
+            
+            .error-panel {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Neo Node Monitoring Dashboard</h1>
+        <div class="status">
+            <span class="status-dot"></span>
+            <span id="connection-status">Connecting to Prometheus...</span>
+        </div>
+    </div>
+    
+    <div class="dashboard" id="dashboard">
+        <div class="loading">Loading metrics...</div>
+    </div>
+    
+    <script>
+        // Use relative URL when served from dashboard-server.py, or direct URL when opened as file
+        const PROMETHEUS_URL = window.location.protocol === 'file:' ? 'http://localhost:9091' : '';
+        let charts = {};
+        let historicalData = {
+            blockHeight: [],
+            peers: [],
+            mempool: [],
+            cpu: [],
+            memory: [],
+            timestamps: []
+        };
+        
+        async function queryPrometheus(query) {
+            try {
+                const response = await fetch(`${PROMETHEUS_URL}/api/v1/query?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                if (data.status === 'success' && data.data.result.length > 0) {
+                    return parseFloat(data.data.result[0].value[1]);
+                }
+                return null;
+            } catch (error) {
+                console.error('Prometheus query error:', error);
+                return null;
+            }
+        }
+        
+        async function queryPrometheusRange(query, start, end, step) {
+            try {
+                const response = await fetch(
+                    `${PROMETHEUS_URL}/api/v1/query_range?query=${encodeURIComponent(query)}&start=${start}&end=${end}&step=${step}`
+                );
+                const data = await response.json();
+                if (data.status === 'success' && data.data.result.length > 0) {
+                    return data.data.result[0].values.map(v => ({
+                        time: new Date(v[0] * 1000),
+                        value: parseFloat(v[1])
+                    }));
+                }
+                return [];
+            } catch (error) {
+                console.error('Prometheus range query error:', error);
+                return [];
+            }
+        }
+        
+        function formatNumber(num) {
+            if (num === null) return 'N/A';
+            if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+            return num.toFixed(0);
+        }
+        
+        function createMetricCard(title, value, unit = '', className = '', showGauge = false, gaugeMax = 100) {
+            const gaugeHtml = showGauge ? `
+                <div class="gauge">
+                    <div class="gauge-bar">
+                        <div class="gauge-fill" style="width: ${Math.min((value / gaugeMax) * 100, 100)}%"></div>
+                    </div>
+                    <div class="gauge-label">
+                        <span>0</span>
+                        <span>${gaugeMax}${unit}</span>
+                    </div>
+                </div>
+            ` : '';
+            
+            return `
+                <div class="metric-card ${className}">
+                    <h3>${title}</h3>
+                    <div class="metric-value">${formatNumber(value)}${unit}</div>
+                    ${gaugeHtml}
+                </div>
+            `;
+        }
+        
+        function createChartCard(id, title) {
+            return `
+                <div class="chart-container">
+                    <h3>${title}</h3>
+                    <canvas id="${id}"></canvas>
+                </div>
+            `;
+        }
+        
+        function initializeChart(id, label, color) {
+            const ctx = document.getElementById(id).getContext('2d');
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: [],
+                        borderColor: color,
+                        backgroundColor: color + '20',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'minute',
+                                displayFormats: {
+                                    minute: 'HH:mm'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#888'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#888'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function updateMetrics() {
+            const metrics = {
+                blockHeight: await queryPrometheus('neo_blockchain_height'),
+                peers: await queryPrometheus('neo_p2p_connected_peers'),
+                maxPeers: await queryPrometheus('neo_p2p_max_connected_peers'),
+                mempool: await queryPrometheus('neo_mempool_size'),
+                mempoolVerified: await queryPrometheus('neo_mempool_verified_count'),
+                mempoolUnverified: await queryPrometheus('neo_mempool_unverified_count'),
+                cpu: await queryPrometheus('process_cpu_usage'),
+                memory: await queryPrometheus('process_memory_working_set'),
+                blockRate: await queryPrometheus('rate(neo_blocks_processed_total[5m])'),
+                txRate: await queryPrometheus('rate(neo_transactions_processed_total[5m])'),
+                errorRate: await queryPrometheus('rate(neo_errors_total[5m])'),
+                gcHeap: await queryPrometheus('dotnet_gc_heap_size'),
+                threads: await queryPrometheus('process_threads_count')
+            };
+            
+            // Update historical data
+            const now = new Date();
+            historicalData.timestamps.push(now);
+            historicalData.blockHeight.push(metrics.blockHeight);
+            historicalData.peers.push(metrics.peers);
+            historicalData.mempool.push(metrics.mempool);
+            historicalData.cpu.push(metrics.cpu * 100);
+            historicalData.memory.push(metrics.memory / 1024 / 1024); // Convert to MB
+            
+            // Keep only last 30 data points
+            if (historicalData.timestamps.length > 30) {
+                Object.keys(historicalData).forEach(key => {
+                    historicalData[key].shift();
+                });
+            }
+            
+            // Build dashboard HTML
+            let dashboardHTML = '';
+            
+            // Key metrics cards
+            dashboardHTML += createMetricCard('Blockchain Height', metrics.blockHeight, '', 'blockchain');
+            dashboardHTML += createMetricCard('Connected Peers', metrics.peers, `/${metrics.maxPeers || 50}`, 'network', true, metrics.maxPeers || 50);
+            dashboardHTML += createMetricCard('MemPool Size', metrics.mempool, '', 'mempool');
+            dashboardHTML += createMetricCard('CPU Usage', metrics.cpu * 100, '%', 'system', true, 100);
+            dashboardHTML += createMetricCard('Memory Usage', metrics.memory / 1024 / 1024 / 1024, ' GB', 'system');
+            dashboardHTML += createMetricCard('Block Rate', metrics.blockRate * 60, '/min', 'blockchain');
+            
+            // Charts
+            dashboardHTML += createChartCard('blockHeightChart', '📊 Blockchain Height Over Time');
+            dashboardHTML += createChartCard('peersChart', '🌐 Peer Connections');
+            dashboardHTML += createChartCard('cpuChart', '💻 CPU Usage (%)');
+            dashboardHTML += createChartCard('memoryChart', '💾 Memory Usage (MB)');
+            
+            // Additional metrics
+            dashboardHTML += createMetricCard('TX Rate', metrics.txRate * 60, '/min', 'blockchain');
+            dashboardHTML += createMetricCard('Verified TX', metrics.mempoolVerified, '', 'mempool');
+            dashboardHTML += createMetricCard('Unverified TX', metrics.mempoolUnverified, '', 'mempool');
+            dashboardHTML += createMetricCard('GC Heap', metrics.gcHeap / 1024 / 1024 / 1024, ' GB', 'system');
+            dashboardHTML += createMetricCard('Threads', metrics.threads, '', 'system');
+            dashboardHTML += createMetricCard('Error Rate', metrics.errorRate * 60, '/min', 'network');
+            
+            document.getElementById('dashboard').innerHTML = dashboardHTML;
+            
+            // Initialize or update charts
+            if (!charts.blockHeight) {
+                charts.blockHeight = initializeChart('blockHeightChart', 'Block Height', '#00ff88');
+                charts.peers = initializeChart('peersChart', 'Connected Peers', '#00ffff');
+                charts.cpu = initializeChart('cpuChart', 'CPU Usage', '#ff6b6b');
+                charts.memory = initializeChart('memoryChart', 'Memory (MB)', '#ffd93d');
+            }
+            
+            // Update chart data
+            charts.blockHeight.data.labels = historicalData.timestamps;
+            charts.blockHeight.data.datasets[0].data = historicalData.blockHeight;
+            charts.blockHeight.update('none');
+            
+            charts.peers.data.labels = historicalData.timestamps;
+            charts.peers.data.datasets[0].data = historicalData.peers;
+            charts.peers.update('none');
+            
+            charts.cpu.data.labels = historicalData.timestamps;
+            charts.cpu.data.datasets[0].data = historicalData.cpu;
+            charts.cpu.update('none');
+            
+            charts.memory.data.labels = historicalData.timestamps;
+            charts.memory.data.datasets[0].data = historicalData.memory;
+            charts.memory.update('none');
+            
+            // Update connection status
+            document.getElementById('connection-status').textContent = 'Connected to Prometheus';
+        }
+        
+        async function checkPrometheusConnection() {
+            try {
+                const response = await fetch(`${PROMETHEUS_URL}/api/v1/targets`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    const neoTarget = data.data.activeTargets.find(t => t.labels.job === 'neo-node');
+                    if (neoTarget && neoTarget.health === 'up') {
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.error('Connection check failed:', error);
+            }
+            return false;
+        }
+        
+        // Initialize dashboard
+        async function init() {
+            const isConnected = await checkPrometheusConnection();
+            
+            if (!isConnected) {
+                document.getElementById('connection-status').textContent = 'Prometheus not reachable - Check if it\'s running on port 9091';
+                document.getElementById('dashboard').innerHTML = `
+                    <div class="error-panel" style="grid-column: span 3;">
+                        <h3>⚠️ Connection Error</h3>
+                        <p>Unable to connect to Prometheus at ${PROMETHEUS_URL}</p>
+                        <p>Please ensure:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Prometheus is running: <code>docker ps | grep neo-prometheus</code></li>
+                            <li>Metrics simulator is running: <code>python3 metrics-simulator.py</code></li>
+                            <li>Prometheus is accessible at: <a href="${PROMETHEUS_URL}" target="_blank">${PROMETHEUS_URL}</a></li>
+                        </ul>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Initial update
+            await updateMetrics();
+            
+            // Update every 5 seconds
+            setInterval(updateMetrics, 5000);
+        }
+        
+        // Start the dashboard
+        init();
+    </script>
+</body>
+</html>
