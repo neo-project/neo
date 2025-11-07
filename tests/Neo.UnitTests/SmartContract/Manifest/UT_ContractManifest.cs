@@ -53,6 +53,8 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Default()
         {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
             var json = """
             {
                 "name": "testManifest",
@@ -74,9 +76,11 @@ namespace Neo.UnitTests.SmartContract.Manifest
             json = Regex.Replace(json, @"\s+", "");
             var manifest = ContractManifest.Parse(json);
 
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Assert.AreEqual(manifest.ToJson().ToString(), json);
             Assert.AreEqual(manifest.ToJson().ToString(), TestUtils.CreateDefaultManifest().ToJson().ToString());
-            Assert.IsTrue(manifest.IsValid(ExecutionEngineLimits.Default, UInt160.Zero));
+            Assert.IsTrue(manifest.IsValid(engine, UInt160.Zero));
+            Assert.IsFalse(manifest.Abi.HasNEP25);
         }
 
         [TestMethod]

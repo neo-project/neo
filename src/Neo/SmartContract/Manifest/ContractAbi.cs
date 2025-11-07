@@ -79,7 +79,14 @@ namespace Neo.SmartContract.Manifest
 
             if (NamedTypes != null)
             {
-                ret.Add(new Map(NamedTypes.ToDictionary(p => (PrimitiveType)p.Key, p => (StackItem)p.Value.ToStackItem(referenceCounter)), referenceCounter));
+                var map = new Map(referenceCounter);
+
+                foreach (var nt in NamedTypes)
+                {
+                    map[nt.Key] = nt.Value.ToStackItem(referenceCounter);
+                }
+
+                ret.Add(map);
             }
 
             return ret;

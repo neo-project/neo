@@ -436,6 +436,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.IsTrue(result.NamedTypes.ContainsKey("boo"));
             Assert.IsTrue(result.NamedTypes.ContainsKey("alice"));
             Assert.IsTrue(result.NamedTypes.ContainsKey("toc"));
+            Assert.IsTrue(result.HasNEP25);
         }
 
         [TestMethod]
