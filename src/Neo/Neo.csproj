@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Akka" Version="1.5.55" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+    <PackageReference Include="Nethermind.MclBindings" Version="1.0.2" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />

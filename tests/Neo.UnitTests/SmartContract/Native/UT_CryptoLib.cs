@@ -23,8 +23,11 @@ using Neo.VM;
 using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -55,6 +58,21 @@ namespace Neo.UnitTests.SmartContract.Native
         private readonly byte[] g1 = s_g1Hex.HexToBytes();
         private readonly byte[] g2 = s_g2Hex.HexToBytes();
         private readonly byte[] gt = s_gtHex.HexToBytes();
+
+        private const string Bn254G1X = "1";
+        private const string Bn254G1Y = "2";
+        private const string Bn254G2XIm = "1800deef121f1e7641a819fe67140f7f8f87b140996fbbd1ba87fb145641f404";
+        private const string Bn254G2XRe = "198e9393920d483a7260bfb731fb5db382322bc5b47fbf6c80f6321231df581";
+        private const string Bn254G2YIm = "12c85ea5db8c6deb43baf7868f1c5341fd8ed84a82f89ed36e80b6a4a8dd22e1";
+        private const string Bn254G2YRe = "090689d0585ff0756c27a122072274f89d4d1c6d2f9d3af03d86c6b29b53e2b";
+        private const string Bn254DoubleX = "030644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd3";
+        private const string Bn254DoubleY = "15ed738c0e0a7c92e7845f96b2ae9c0a68a6a449e3538fc7ff3ebf7a5a18a2c4";
+        private const string Bn254PairingPositive =
+            "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002203e205db4f19b37b60121b83a7333706db86431c6d835849957ed8c3928ad7927dc7234fd11d3e8c36c59277c3e6f149d5cd3cfa9a62aee49f8130962b4b3b9195e8aa5b7827463722b8c153931579d3505566b4edf48d498e185f0509de15204bb53b8977e5f92a0bc372742c4830944a59b4fe6b1c0466e2a6dad122b5d2e104316c97997c17267a1bb67365523b4388e1306d66ea6e4d8f4a4a4b65f5c7d06e286b49c56f6293b2cea30764f0d5eabe5817905468a41f09b77588f692e8b081070efe3d4913dde35bba2513c426d065dee815c478700cef07180fb6146182432428b1490a4f25053d4c20c8723a73de6f0681bd3a8fca41008a6c3c288252d50f18403272e96c10135f96db0f8d0aec25033ebdffb88d2e7956c9bb198ec072462211ebc0a2f042f993d5bd76caf4adb5e99610dcf7c1d992595e6976aa3";
+        private const string Bn254PairingNegative =
+            "0x142c9123c08a0d7f66d95f3ad637a06b95700bc525073b75610884ef45416e1610104c796f40bfeef3588e996c040d2a88c0b4b85afd2578327b99413c6fe820198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed275dc4a288d1afb3cbb1ac09187524c7db36395df7be3b99e673b13a075a65ec1d9befcd05a5323e6da4d435f3b617cdb3af83285c2df711ef39c01571827f9d";
+        private const string Bn254PairingInvalidG1 =
+            "0x00000000000000000000000000000000000000000000000000000000000000000000000000be00be00bebebebebebe00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
 
         private readonly byte[] notG1 =
@@ -1152,6 +1170,157 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsFalse(CallVerifyWithEd25519(message, invalidPublicKey, signature));
         }
 
+        [TestMethod]
+        public void TestBn254Add()
+        {
+            byte[] input = new byte[128];
+            WriteBn254Field(Bn254G1X, input, 0);
+            WriteBn254Field(Bn254G1Y, input, 32);
+            WriteBn254Field(Bn254G1X, input, 64);
+            WriteBn254Field(Bn254G1Y, input, 96);
+
+            byte[] result = CryptoLib.Bn254Add(input);
+
+            byte[] expected = new byte[64];
+            WriteBn254Field(Bn254DoubleX, expected, 0);
+            WriteBn254Field(Bn254DoubleY, expected, 32);
+
+            CollectionAssert.AreEqual(expected, result);
+        }
+
+        [TestMethod]
+        public void TestBn254Mul()
+        {
+            byte[] input = new byte[96];
+            WriteBn254Field(Bn254G1X, input, 0);
+            WriteBn254Field(Bn254G1Y, input, 32);
+            WriteBn254Field("2", input, 64);
+
+            byte[] result = CryptoLib.Bn254Mul(input);
+
+            byte[] expected = new byte[64];
+            WriteBn254Field(Bn254DoubleX, expected, 0);
+            WriteBn254Field(Bn254DoubleY, expected, 32);
+
+            CollectionAssert.AreEqual(expected, result);
+        }
+
+        [TestMethod]
+        public void TestBn254PairingGenerator()
+        {
+            byte[] input = new byte[192];
+            WriteBn254Field(Bn254G1X, input, 0);
+            WriteBn254Field(Bn254G1Y, input, 32);
+            WriteBn254Field(Bn254G2XIm, input, 64);
+            WriteBn254Field(Bn254G2XRe, input, 96);
+            WriteBn254Field(Bn254G2YIm, input, 128);
+            WriteBn254Field(Bn254G2YRe, input, 160);
+
+            byte[] result = CryptoLib.Bn254Pairing(input);
+
+            Assert.IsTrue(result.All(b => b == 0));
+        }
+
+        [TestMethod]
+        public void TestBn254PairingEmpty()
+        {
+            byte[] result = CryptoLib.Bn254Pairing(Array.Empty<byte>());
+            Assert.IsTrue(result.Take(result.Length - 1).All(b => b == 0));
+            Assert.AreEqual(1, result[^1]);
+        }
+
+        [TestMethod]
+        public void TestBn254PairingVectors()
+        {
+            // Vectors sourced from ethereum/tests (MIT) GeneralStateTests/stZeroKnowledge/ecpairing_inputs.json
+            // commit c67e485ff8b5be9abc8ad15345ec21aa22e290d9 labels 5 (positive), 0 (negative), 38 (invalid_g1_point)
+            var cases = new (string Hex, bool ExpectedSuccess, string Label)[]
+            {
+                (Bn254PairingPositive, true, "positive"),
+                (Bn254PairingNegative, false, "negative"),
+                (Bn254PairingInvalidG1, false, "invalid_g1_point"),
+            };
+
+            foreach (var (hex, expectedSuccess, label) in cases)
+            {
+                byte[] input = HexToBytes(hex);
+                byte[] result = CryptoLib.Bn254Pairing(input);
+
+                Assert.AreEqual(32, result.Length, label);
+                if (expectedSuccess)
+                {
+                    Assert.AreEqual(1, result[^1], label);
+                    Assert.IsTrue(result.Take(result.Length - 1).All(b => b == 0), label);
+                }
+                else
+                {
+            Assert.IsTrue(result.All(b => b == 0), label);
+        }
+            }
+        }
+
+        [TestMethod]
+        public void TestBn254InvalidInputs()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Add(Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Mul(Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Pairing(new byte[1]));
+        }
+
+        [TestMethod]
+        public void TestBn254AddGethVectors()
+        {
+            foreach (var vector in LoadGethPrecompileVectors("bn256Add.json"))
+            {
+                byte[] input = HexToBytes(vector.Input);
+                if (input.Length != BN254.G1EncodedLength * 2)
+                {
+                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Add(input), vector.Name);
+                    continue;
+                }
+
+                byte[] expected = HexToBytes(vector.Expected);
+                byte[] actual = CryptoLib.Bn254Add(input);
+                CollectionAssert.AreEqual(expected, actual, vector.Name);
+            }
+        }
+
+        [TestMethod]
+        public void TestBn254MulGethVectors()
+        {
+            foreach (var vector in LoadGethPrecompileVectors("bn256ScalarMul.json"))
+            {
+                byte[] input = HexToBytes(vector.Input);
+                if (input.Length != BN254.G1EncodedLength + BN254.FieldElementLength)
+                {
+                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Mul(input), vector.Name);
+                    continue;
+                }
+
+                byte[] expected = HexToBytes(vector.Expected);
+                byte[] actual = CryptoLib.Bn254Mul(input);
+                CollectionAssert.AreEqual(expected, actual, vector.Name);
+            }
+        }
+
+        [TestMethod]
+        public void TestBn254PairingGethVectors()
+        {
+            foreach (var vector in LoadGethPrecompileVectors("bn256Pairing.json"))
+            {
+                byte[] input = HexToBytes(vector.Input);
+                if (input.Length % BN254.PairInputLength != 0)
+                {
+                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Pairing(input), vector.Name);
+                    continue;
+                }
+
+                byte[] expected = HexToBytes(vector.Expected);
+                byte[] actual = CryptoLib.Bn254Pairing(input);
+                CollectionAssert.AreEqual(expected, actual, vector.Name);
+            }
+        }
+
         private bool CallVerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
@@ -1174,5 +1343,52 @@ namespace Neo.UnitTests.SmartContract.Native
                 return engine.ResultStack.Pop().GetBoolean();
             }
         }
+
+        private static void WriteBn254Field(string hex, byte[] buffer, int offset)
+        {
+            var field = Bn254Field(hex);
+            Buffer.BlockCopy(field, 0, buffer, offset, field.Length);
+        }
+
+        private static byte[] Bn254Field(string hex)
+        {
+            if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                hex = hex[2..];
+            if (hex.Length > 64)
+                throw new ArgumentOutOfRangeException(nameof(hex));
+            return hex.PadLeft(64, '0').HexToBytes();
+        }
+
+        private static byte[] HexToBytes(string hex)
+        {
+            if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                hex = hex[2..];
+            return Convert.FromHexString(hex);
+        }
+
+        private static IEnumerable<GethPrecompileVector> LoadGethPrecompileVectors(string fileName)
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "SmartContract", "Native", "BN254TestVectors", fileName);
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"BN254 test vector file not found: {path}", path);
+
+            using var stream = File.OpenRead(path);
+            var vectors = JsonSerializer.Deserialize<List<GethPrecompileVector>>(stream, s_jsonOptions);
+            if (vectors is null || vectors.Count == 0)
+                throw new InvalidOperationException($"Unable to read BN254 test vectors from {path}.");
+            return vectors;
+        }
+
+        private sealed record GethPrecompileVector
+        {
+            public string Name { get; init; } = string.Empty;
+            public string Input { get; init; } = string.Empty;
+            public string Expected { get; init; } = string.Empty;
+        }
+
+        private static readonly JsonSerializerOptions s_jsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
     }
 }
