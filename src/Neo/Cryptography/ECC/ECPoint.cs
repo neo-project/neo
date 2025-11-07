@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Neo.Extensions;
 using Neo.IO;
 using Neo.IO.Caching;
@@ -28,7 +26,7 @@ namespace Neo.Cryptography.ECC
     public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable, ISerializableSpan
     {
         internal ECFieldElement? X, Y;
-        internal readonly ECCurve Curve;
+        internal ECCurve Curve { get => field ??= ECCurve.Secp256r1; private init; }
         private byte[]? _compressedPoint, _uncompressedPoint;
 
         /// <summary>
@@ -473,5 +471,3 @@ namespace Neo.Cryptography.ECC
         }
     }
 }
-
-#nullable disable

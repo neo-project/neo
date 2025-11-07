@@ -17,14 +17,9 @@ namespace Neo.Builders
 {
     public sealed class WitnessConditionBuilder
     {
-        WitnessCondition _condition;
+        WitnessCondition? _condition;
 
         private WitnessConditionBuilder() { }
-
-        private WitnessConditionBuilder(WitnessCondition condition)
-        {
-            _condition = condition;
-        }
 
         public static WitnessConditionBuilder Create()
         {

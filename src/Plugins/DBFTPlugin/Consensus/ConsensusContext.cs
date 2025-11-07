@@ -204,12 +204,15 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     Header = new Header
                     {
                         PrevHash = NativeContract.Ledger.CurrentHash(Snapshot),
+                        MerkleRoot = null!,
                         Index = height + 1,
                         NextConsensus = Contract.GetBFTAddress(
                             NeoToken.ShouldRefreshCommittee(height + 1, neoSystem.Settings.CommitteeMembersCount) ?
                             NativeContract.NEO.ComputeNextBlockValidators(Snapshot, neoSystem.Settings) :
-                            NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount))
-                    }
+                            NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount)),
+                        Witness = null!
+                    },
+                    Transactions = null!
                 };
                 TimePerBlock = neoSystem.GetTimePerBlock();
                 var pv = Validators;
@@ -269,10 +272,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             ViewNumber = viewNumber;
             Block.Header.PrimaryIndex = GetPrimaryIndex(viewNumber);
-            Block.Header.MerkleRoot = null;
             Block.Header.Timestamp = 0;
             Block.Header.Nonce = 0;
-            Block.Transactions = null;
             TransactionHashes = null;
             PreparationPayloads = new ExtensiblePayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[Validators[MyIndex]] = Block.Index;

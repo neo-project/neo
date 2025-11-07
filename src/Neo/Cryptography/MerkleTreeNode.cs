@@ -11,12 +11,12 @@
 
 namespace Neo.Cryptography
 {
-    internal class MerkleTreeNode
+    class MerkleTreeNode
     {
-        public UInt256 Hash { get; set; }
-        public MerkleTreeNode Parent { get; set; }
-        public MerkleTreeNode LeftChild { get; set; }
-        public MerkleTreeNode RightChild { get; set; }
+        public UInt256? Hash { get; set; }
+        public MerkleTreeNode? Parent { get; set; }
+        public MerkleTreeNode? LeftChild { get; set; }
+        public MerkleTreeNode? RightChild { get; set; }
 
         public bool IsLeaf => LeftChild == null && RightChild == null;
         public bool IsRoot => Parent == null;

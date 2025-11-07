@@ -145,16 +145,26 @@ namespace Neo.UnitTests.SmartContract
                 engine.LoadScript(script.ToArray());
                 engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
                 {
+                    Hash = UInt160.Zero,
+                    Nef = null!,
                     Manifest = new()
                     {
-                        Abi = new(),
+                        Name = "",
+                        Groups = [],
+                        SupportedStandards = [],
+                        Abi = new()
+                        {
+                            Methods = [],
+                            Events = []
+                        },
                         Permissions = [
                             new ContractPermission
                             {
                                 Contract = ContractPermissionDescriptor.Create(scriptHash),
                                 Methods = WildcardContainer<string>.Create(["test"]) // allowed to call only "test" method of the target contract.
                             }
-                        ]
+                        ],
+                        Trusts = WildcardContainer<ContractPermissionDescriptor>.CreateWildcard()
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;
@@ -181,16 +191,26 @@ namespace Neo.UnitTests.SmartContract
                 engine.LoadScript(script.ToArray());
                 engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
                 {
+                    Hash = UInt160.Zero,
+                    Nef = null!,
                     Manifest = new()
                     {
-                        Abi = new(),
+                        Name = "",
+                        Groups = [],
+                        SupportedStandards = [],
+                        Abi = new()
+                        {
+                            Methods = [],
+                            Events = []
+                        },
                         Permissions = [
                             new ContractPermission
                             {
                                 Contract = ContractPermissionDescriptor.Create(scriptHash),
                                 Methods = WildcardContainer<string>.Create(["test"]) // allowed to call only "test" method of the target contract.
                             }
-                        ]
+                        ],
+                        Trusts = WildcardContainer<ContractPermissionDescriptor>.CreateWildcard()
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;
