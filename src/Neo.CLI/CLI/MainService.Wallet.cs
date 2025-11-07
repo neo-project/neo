@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
+using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -27,9 +28,11 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using static Neo.SmartContract.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
+using ECCurve = Neo.Cryptography.ECC.ECCurve;
 
 namespace Neo.CLI
 {
@@ -505,6 +508,81 @@ namespace Neo.CLI
             catch (Exception e)
             {
                 ConsoleHelper.Error(GetExceptionMessage(e));
+            }
+        }
+
+        /// <summary>
+        /// Process "sign_message" command
+        /// </summary>
+        /// <param name="message">Message to sign</param>
+        /// <param name="curve">Optional curve (secp256r1 or secp256k1)</param>
+        [ConsoleCommand("sign_message", Category = "Wallet Commands")]
+        private void OnSignMessageCommand(string message, string? curve = "secp256r1")
+        {
+            if (NoWallet()) return;
+
+            string password = ConsoleHelper.ReadUserInput("password", true);
+            if (password.Length == 0)
+            {
+                ConsoleHelper.Info("Cancelled");
+                return;
+            }
+            if (!CurrentWallet!.VerifyPassword(password))
+            {
+                ConsoleHelper.Error("Incorrect password");
+                return;
+            }
+
+            // Select ECC curve
+            ECCurve selectedCurve;
+            switch (curve?.ToLowerInvariant())
+            {
+                case "secp256r1":
+                    selectedCurve = ECCurve.Secp256r1;
+                    break;
+                case "secp256k1":
+                    selectedCurve = ECCurve.Secp256k1;
+                    break;
+                default:
+                    ConsoleHelper.Error($"Unsupported curve: {curve}");
+                    ConsoleHelper.Info("Supported curves: secp256r1 (default), secp256k1");
+                    return;
+            }
+
+            var saltBytes = new byte[16];
+            RandomNumberGenerator.Fill(saltBytes);
+            var saltHex = saltBytes.ToHexString().ToLowerInvariant();
+
+            var paramBytes = Encoding.UTF8.GetBytes(saltHex + message);
+
+            byte[] payload;
+            using (var ms = new MemoryStream())
+            using (var w = new BinaryWriter(ms, Encoding.UTF8, true))
+            {
+                w.Write((byte)0x01);
+                w.Write((byte)0x00);
+                w.Write((byte)0x01);
+                w.Write((byte)0xF0);
+                w.WriteVarBytes(paramBytes);
+                w.Write((ushort)0);
+                w.Flush();
+                payload = ms.ToArray();
+            }
+
+            ConsoleHelper.Info("Curve: ", selectedCurve == ECCurve.Secp256r1 ? "secp256r1" : "secp256k1");
+            ConsoleHelper.Info("Signed Payload: ", $"{Environment.NewLine}{payload.ToHexString()}");
+            Console.WriteLine();
+
+            foreach (WalletAccount account in CurrentWallet.GetAccounts().Where(p => p.HasKey))
+            {
+                var key = account.GetKey();
+                var signature = Crypto.Sign(payload, key.PrivateKey, selectedCurve);
+
+                ConsoleHelper.Info("Address: ", account.Address);
+                ConsoleHelper.Info("  PublicKey: ", key.PublicKey.EncodePoint(true).ToHexString());
+                ConsoleHelper.Info("  Salt: ", saltHex);
+                ConsoleHelper.Info("  Signature: ", signature.ToHexString());
+                Console.WriteLine();
             }
         }
 
