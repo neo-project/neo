@@ -13,6 +13,7 @@ using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -29,6 +30,11 @@ namespace Neo.SmartContract.Manifest
         public ContractParameterType ReturnType { get; set; }
 
         /// <summary>
+        /// NEP-25 extended return type
+        /// </summary>
+        public ExtendedType ExtendedReturnType { get; set; }
+
+        /// <summary>
         /// The position of the method in the contract script.
         /// </summary>
         public int Offset { get; set; }
@@ -42,46 +48,63 @@ namespace Neo.SmartContract.Manifest
         public override void FromStackItem(StackItem stackItem)
         {
             base.FromStackItem(stackItem);
-            Struct @struct = (Struct)stackItem;
-            ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
-            Offset = (int)@struct[3].GetInteger();
-            Safe = @struct[4].GetBoolean();
+            var item = (Struct)stackItem;
+            ReturnType = (ContractParameterType)(byte)item[2].GetInteger();
+            Offset = (int)item[3].GetInteger();
+            Safe = item[4].GetBoolean();
+
+            if (item.Count >= 6)
+            {
+                ExtendedReturnType = new ExtendedType();
+                ExtendedReturnType.FromStackItem(item[5]);
+                ExtendedReturnType.ValidateForParameterOrReturn(ReturnType, null);
+            }
+            else
+            {
+                ExtendedReturnType = null;
+            }
         }
 
         public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            Struct @struct = (Struct)base.ToStackItem(referenceCounter);
-            @struct.Add((byte)ReturnType);
-            @struct.Add(Offset);
-            @struct.Add(Safe);
-            return @struct;
+            var item = (Struct)base.ToStackItem(referenceCounter);
+            item.Add((byte)ReturnType);
+            item.Add(Offset);
+            item.Add(Safe);
+            if (ExtendedReturnType != null)
+            {
+                item.Add(ExtendedReturnType.ToStackItem(referenceCounter));
+            }
+            return item;
         }
 
         /// <summary>
         /// Converts the method from a JSON object.
         /// </summary>
         /// <param name="json">The method represented by a JSON object.</param>
+        /// <param name="knownNamedTypes">Set of named type identifiers declared in the manifest, if any.</param>
         /// <returns>The converted method.</returns>
-        public new static ContractMethodDescriptor FromJson(JObject json)
+        public new static ContractMethodDescriptor FromJson(JObject json, ISet<string> knownNamedTypes = null)
         {
             ContractMethodDescriptor descriptor = new()
             {
                 Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
+                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u, knownNamedTypes)).ToArray(),
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
                 Offset = json["offset"].GetInt32(),
-                Safe = json["safe"].GetBoolean()
+                Safe = json["safe"].GetBoolean(),
+                ExtendedReturnType = json["extendedreturntype"] != null ? ExtendedType.FromJson((JObject)json["extendedreturntype"]) : null
             };
 
             if (string.IsNullOrEmpty(descriptor.Name))
                 throw new FormatException("Name in ContractMethodDescriptor is empty");
 
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
-
             if (!Enum.IsDefined(typeof(ContractParameterType), descriptor.ReturnType))
                 throw new FormatException($"ReturnType({descriptor.ReturnType}) in ContractMethodDescriptor is not valid");
             if (descriptor.Offset < 0)
                 throw new FormatException($"Offset({descriptor.Offset}) in ContractMethodDescriptor is not valid");
+            descriptor.ExtendedReturnType?.ValidateForParameterOrReturn(descriptor.ReturnType, knownNamedTypes);
             return descriptor;
         }
 
@@ -95,6 +118,10 @@ namespace Neo.SmartContract.Manifest
             json["returntype"] = ReturnType.ToString();
             json["offset"] = Offset;
             json["safe"] = Safe;
+            if (ExtendedReturnType != null)
+            {
+                json["extendedreturntype"] = ExtendedReturnType.ToJson();
+            }
             return json;
         }
 
@@ -106,7 +133,8 @@ namespace Neo.SmartContract.Manifest
                 base.Equals(other) && // Already check null
                 ReturnType == other.ReturnType
                 && Offset == other.Offset
-                && Safe == other.Safe;
+                && Safe == other.Safe
+                && Equals(ExtendedReturnType, other.ExtendedReturnType);
         }
 
         public override bool Equals(object other)
@@ -119,7 +147,7 @@ namespace Neo.SmartContract.Manifest
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(ReturnType, Offset, Safe, base.GetHashCode());
+            return HashCode.Combine(ReturnType, Offset, Safe, ExtendedReturnType?.GetHashCode() ?? -1, base.GetHashCode());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

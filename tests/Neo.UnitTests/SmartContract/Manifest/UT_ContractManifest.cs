@@ -216,6 +216,85 @@ namespace Neo.UnitTests.SmartContract.Manifest
         }
 
         [TestMethod]
+        public void ParseFromJson_ExtendedTypeMismatch_ShouldThrow()
+        {
+            var json = """
+            {
+                "name":"testManifest",
+                "groups":[],
+                "features":{},
+                "supportedstandards":[],
+                "abi":{
+                    "methods":[
+                        {
+                            "name":"testMethod",
+                            "parameters":[
+                                {
+                                    "name":"arg",
+                                    "type":"Integer",
+                                    "extendedtype":{
+                                        "type":"String"
+                                    }
+                                }
+                            ],
+                            "returntype":"Void",
+                            "offset":0,
+                            "safe":true
+                        }
+                    ],
+                    "events":[]
+                },
+                "permissions":[],
+                "trusts":[],
+                "extra":null
+            }
+            """;
+
+            json = Regex.Replace(json, @"\s+", "");
+            Assert.ThrowsExactly<FormatException>(() => ContractManifest.Parse(json));
+        }
+
+        [TestMethod]
+        public void ParseFromJson_UnknownNamedType_ShouldThrow()
+        {
+            var json = """
+            {
+                "name":"testManifest",
+                "groups":[],
+                "features":{},
+                "supportedstandards":[],
+                "abi":{
+                    "methods":[
+                        {
+                            "name":"testMethod",
+                            "parameters":[
+                                {
+                                    "name":"arg",
+                                    "type":"Array",
+                                    "extendedtype":{
+                                        "type":"Array",
+                                        "namedtype":"Custom.Struct"
+                                    }
+                                }
+                            ],
+                            "returntype":"Void",
+                            "offset":0,
+                            "safe":true
+                        }
+                    ],
+                    "events":[]
+                },
+                "permissions":[],
+                "trusts":[],
+                "extra":null
+            }
+            """;
+
+            json = Regex.Replace(json, @"\s+", "");
+            Assert.ThrowsExactly<FormatException>(() => ContractManifest.Parse(json));
+        }
+
+        [TestMethod]
         public void ToInteroperable_Trust()
         {
             var json = """
