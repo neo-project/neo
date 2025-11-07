@@ -26,14 +26,6 @@ namespace Neo.Benchmark
         static readonly byte[] hash = "9182abedfbb9b18d81a05d8bcb45489e7daa2858".HexToBytes();
 
         [Benchmark]
-        public void RIPEMD160_ComputeHash()
-        {
-            using var ripemd160 = new RIPEMD160Managed();
-            var result = ripemd160.ComputeHash(data);
-            Debug.Assert(result.SequenceEqual(hash));
-        }
-
-        [Benchmark]
         public void XxHash32_HashToUInt32()
         {
             var result = XxHash32.HashToUInt32(data);
