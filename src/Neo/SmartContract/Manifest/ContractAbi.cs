@@ -47,6 +47,14 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public Dictionary<string, ExtendedType>? NamedTypes { get; set; }
 
+        public bool HasNEP25
+        {
+            get
+            {
+                return NamedTypes != null || Events.Any(x => x.HasNEP25) || Methods.Any(x => x.HasNEP25);
+            }
+        }
+
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             var data = (Struct)stackItem;

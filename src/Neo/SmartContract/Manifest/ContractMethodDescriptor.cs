@@ -45,6 +45,14 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public bool Safe { get; set; }
 
+        public virtual bool HasNEP25
+        {
+            get
+            {
+                return base.HasNEP25 || ExtendedReturnType != null;
+            }
+        }
+
         public override void FromStackItem(StackItem stackItem)
         {
             base.FromStackItem(stackItem);

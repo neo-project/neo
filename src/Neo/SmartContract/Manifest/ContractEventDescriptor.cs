@@ -35,6 +35,14 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterDefinition[] Parameters { get; set; }
 
+        public virtual bool HasNEP25
+        {
+            get
+            {
+                return Parameters.Any(x => x.ExtendedType != null);
+            }
+        }
+
         public virtual void FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
