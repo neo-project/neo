@@ -272,8 +272,10 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             ViewNumber = viewNumber;
             Block.Header.PrimaryIndex = GetPrimaryIndex(viewNumber);
+            Block.Header.MerkleRoot = null;
             Block.Header.Timestamp = 0;
             Block.Header.Nonce = 0;
+            Block.Transactions = null;
             TransactionHashes = null;
             PreparationPayloads = new ExtensiblePayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[Validators[MyIndex]] = Block.Index;
