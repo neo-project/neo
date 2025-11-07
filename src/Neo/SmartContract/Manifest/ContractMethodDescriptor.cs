@@ -45,7 +45,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public bool Safe { get; set; }
 
-        public virtual bool HasNEP25
+        public override bool HasNEP25
         {
             get
             {
