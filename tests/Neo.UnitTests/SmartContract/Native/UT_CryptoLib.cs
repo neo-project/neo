@@ -1254,8 +1254,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 }
                 else
                 {
-            Assert.IsTrue(result.All(b => b == 0), label);
-        }
+                    Assert.IsTrue(result.All(b => b == 0), label);
+                }
             }
         }
 
