@@ -255,7 +255,6 @@ namespace Neo.Cryptography
             return result;
         }
 
-
         /// <summary>
         /// Computes the hash value for the specified byte array using the blake2b-256 algorithm.
         /// </summary>
@@ -270,7 +269,6 @@ namespace Neo.Cryptography
             blake2b.DoFinal(result, 0);
             return result;
         }
-
 
         /// <summary>
         /// Computes the hash value for the specified byte array using the sha256 algorithm.
@@ -299,7 +297,6 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha3_512(this Span<byte> source) => Sha3_512((ReadOnlySpan<byte>)source);
-
 
         /// <summary>
         /// Computes the hash value for the specified byte array using the sha3-256 algorithm.
