@@ -10,7 +10,7 @@ BASE_PORT=${3:-20333}  # Default P2P port, can be overridden
 BASE_RPC_PORT=${4:-10330}  # Default RPC port, can be overridden
 BASE_DATA_DIR="localnet_nodes"
 
-DOTNET_VERSION="net9.0"
+DOTNET_VERSION="net10.0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NEO_CLI_DIR="${NEO_CLI_DIR:-$SCRIPT_DIR/../bin/Neo.CLI/$DOTNET_VERSION}"
@@ -355,7 +355,7 @@ stop_node() {
         local pid=$(cat "$pid_file")
         if kill -0 $pid 2>/dev/null; then
             log_info "Stopping node $node_id (PID: $pid)..."
-            kill $pid
+            kill -9 $pid
             rm -f "$pid_file"
             log_success "Node $node_id stopped"
         else

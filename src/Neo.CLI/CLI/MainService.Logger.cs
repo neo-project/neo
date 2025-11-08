@@ -33,6 +33,11 @@ namespace Neo.CLI
 
         private void Initialize_Logger()
         {
+            if (!Settings.Default.Logger.Active) return;
+
+            // According to the legacy logic, if the log path is set, the log is disabled.
+            if (!string.IsNullOrEmpty(Settings.Default.Logger.Path))
+                Logs.LogDirectory = Settings.Default.Logger.Path;
             Utility.Logging += ((ILoggingHandler)this).Utility_Logging_Handler;
         }
 
@@ -125,20 +130,9 @@ namespace Neo.CLI
                 }
 
                 if (string.IsNullOrEmpty(Settings.Default.Logger.Path)) return;
-                var sb = new StringBuilder(source);
-                foreach (var c in GetInvalidFileNameChars())
-                    sb.Replace(c, '-');
-                var path = Combine(Settings.Default.Logger.Path, sb.ToString());
-                Directory.CreateDirectory(path);
-                path = Combine(path, $"{now:yyyy-MM-dd}.log");
-                try
-                {
-                    File.AppendAllLines(path, new[] { $"[{level}]{log} {message}" });
-                }
-                catch (IOException)
-                {
-                    Console.WriteLine("Error writing the log file: " + path);
-                }
+
+                var logEventLevel = level.ToLogEventLevel();
+                Logs.GetLogger(source).Write(logEventLevel, "{message}", message);
             }
         }
 
