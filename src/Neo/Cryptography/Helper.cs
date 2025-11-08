@@ -142,7 +142,6 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha3_256(this byte[] source) => Sha3_256(source.AsSpan());
 
-
         /// <summary>
         /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
         /// </summary>
