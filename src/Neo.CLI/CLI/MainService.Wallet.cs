@@ -559,11 +559,14 @@ namespace Neo.CLI
             using (var ms = new MemoryStream())
             using (var w = new BinaryWriter(ms, Encoding.UTF8, true))
             {
+                // We add these 4 bytes to prevent the signature from being a valid transaction
                 w.Write((byte)0x01);
                 w.Write((byte)0x00);
                 w.Write((byte)0x01);
                 w.Write((byte)0xF0);
+                // Write the actual message to sign
                 w.WriteVarBytes(paramBytes);
+                // We add these 2 bytes to prevent the signature from being a valid transaction
                 w.Write((ushort)0);
                 w.Flush();
                 payload = ms.ToArray();
