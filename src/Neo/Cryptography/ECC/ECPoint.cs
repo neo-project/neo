@@ -26,7 +26,7 @@ namespace Neo.Cryptography.ECC
     public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable, ISerializableSpan
     {
         internal ECFieldElement? X, Y;
-        internal ECCurve Curve { get => field ??= ECCurve.Secp256r1; private init; }
+        internal ECCurve Curve { get => field ?? ECCurve.Secp256r1; private init; }
         private byte[]? _compressedPoint, _uncompressedPoint;
 
         /// <summary>
