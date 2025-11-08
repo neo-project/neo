@@ -13,6 +13,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
@@ -51,6 +52,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_GasPerBlock = 29;
         private const byte Prefix_RegisterPrice = 13;
         private const byte Prefix_VoterRewardPerCommittee = 23;
+        private const byte Prefix_BaseMillisecondsPerBlock = 31;
 
         private const byte NeoHolderRewardRatio = 10;
         private const byte CommitteeRewardRatio = 10;
@@ -58,6 +60,7 @@ namespace Neo.SmartContract.Native
 
         private readonly StorageKey _votersCount;
         private readonly StorageKey _registerPrice;
+        private readonly StorageKey _baseMillisecondsPerBlock;
 
         [ContractEvent(1, name: "CandidateStateChanged",
            "pubkey", ContractParameterType.PublicKey,
@@ -76,6 +79,7 @@ namespace Neo.SmartContract.Native
             TotalAmount = 100000000 * Factor;
             _votersCount = CreateStorageKey(Prefix_VotersCount);
             _registerPrice = CreateStorageKey(Prefix_RegisterPrice);
+            _baseMillisecondsPerBlock = CreateStorageKey(Prefix_BaseMillisecondsPerBlock);
         }
 
         public override BigInteger TotalSupply(IReadOnlyStore snapshot)
@@ -164,21 +168,117 @@ namespace Neo.SmartContract.Native
         private BigInteger CalculateNeoHolderReward(DataCache snapshot, BigInteger value, uint start, uint end)
         {
             // In the unit of datoshi, 1 GAS = 10^8 datoshi
-            BigInteger sum = 0;
+            ulong referenceMillisecondsValue = GetReferenceMillisecondsPerBlock(snapshot);
+            BigInteger referenceMilliseconds = referenceMillisecondsValue;
+            var timestampCache = new Dictionary<uint, ulong>();
+            BigInteger weightedSum = BigInteger.Zero;
+            uint currentEnd = end;
+            ulong upperTimestamp = GetBlockTimestamp(snapshot, currentEnd - 1, timestampCache, referenceMillisecondsValue);
+
             foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end - 1))
             {
-                if (index > start)
+                uint segmentStart = index > start ? index : start;
+                if (segmentStart >= currentEnd)
                 {
-                    sum += gasPerBlock * (end - index);
-                    end = index;
+                    currentEnd = index;
+                    upperTimestamp = currentEnd == 0
+                        ? GetGenesisTimestamp(snapshot, timestampCache, referenceMillisecondsValue)
+                        : GetBlockTimestamp(snapshot, currentEnd - 1, timestampCache, referenceMillisecondsValue);
+                    continue;
+                }
+
+                ulong lowerTimestamp;
+                if (segmentStart == 0)
+                {
+                    var genesisTimestamp = GetGenesisTimestamp(snapshot, timestampCache, referenceMillisecondsValue);
+                    lowerTimestamp = genesisTimestamp >= referenceMillisecondsValue
+                        ? genesisTimestamp - referenceMillisecondsValue
+                        : 0;
                 }
                 else
                 {
-                    sum += gasPerBlock * (end - start);
-                    break;
+                    lowerTimestamp = GetBlockTimestamp(snapshot, segmentStart - 1, timestampCache, referenceMillisecondsValue);
                 }
+
+                if (upperTimestamp < lowerTimestamp)
+                    throw new InvalidOperationException("Detected non-monotonic block timestamps.");
+
+                BigInteger elapsedMilliseconds = (BigInteger)(upperTimestamp - lowerTimestamp);
+                if (!elapsedMilliseconds.IsZero)
+                    weightedSum += gasPerBlock * elapsedMilliseconds;
+
+                if (index <= start)
+                    break;
+
+                currentEnd = index;
+                upperTimestamp = currentEnd == 0
+                    ? GetGenesisTimestamp(snapshot, timestampCache, referenceMillisecondsValue)
+                    : GetBlockTimestamp(snapshot, currentEnd - 1, timestampCache, referenceMillisecondsValue);
             }
-            return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
+
+            if (weightedSum.IsZero)
+                return BigInteger.Zero;
+
+            BigInteger normalizedSum = weightedSum / referenceMilliseconds;
+            return value * normalizedSum * NeoHolderRewardRatio / 100 / TotalAmount;
+        }
+
+        private ulong GetReferenceMillisecondsPerBlock(IReadOnlyStore snapshot)
+        {
+            try
+            {
+                return NativeContract.Policy.GetMillisecondsPerBlock(snapshot);
+            }
+            catch (KeyNotFoundException)
+            {
+                if (snapshot.TryGet(_baseMillisecondsPerBlock, out var stored) && stored is not null)
+                    return (ulong)(BigInteger)stored;
+                return ProtocolSettings.Default.MillisecondsPerBlock;
+            }
+        }
+
+        private static ulong GetGenesisTimestamp(IReadOnlyStore snapshot, Dictionary<uint, ulong> cache, ulong referenceMilliseconds)
+        {
+            return GetBlockTimestamp(snapshot, 0, cache, referenceMilliseconds);
+        }
+
+        private static ulong GetBlockTimestamp(IReadOnlyStore snapshot, uint index, Dictionary<uint, ulong> cache, ulong referenceMilliseconds)
+        {
+            if (!cache.TryGetValue(index, out var timestamp))
+            {
+                Header header;
+                if (snapshot is DataCache dataCache)
+                {
+                    header = NativeContract.Ledger.GetHeader(dataCache, index);
+                }
+                else
+                {
+                    var hash = NativeContract.Ledger.GetBlockHash(snapshot, index);
+                    header = hash is null ? null : NativeContract.Ledger.GetHeader(snapshot, hash);
+                }
+                if (header is null)
+                {
+                    ulong genesisTimestamp = cache.TryGetValue(0, out var genesis)
+                        ? genesis
+                        : TryGetGenesisTimestamp(snapshot) ?? NeoSystem.CreateGenesisBlock(ProtocolSettings.Default).Timestamp;
+                    timestamp = genesisTimestamp + referenceMilliseconds * index;
+                }
+                else
+                {
+                    timestamp = header.Timestamp;
+                }
+                cache[index] = timestamp;
+            }
+            return timestamp;
+        }
+
+        private static ulong? TryGetGenesisTimestamp(IReadOnlyStore snapshot)
+        {
+            var hash = NativeContract.Ledger.GetBlockHash(snapshot, 0);
+            if (hash is null)
+                return null;
+            var header = NativeContract.Ledger.GetHeader(snapshot, hash);
+            return header?.Timestamp;
         }
 
         private void CheckCandidate(DataCache snapshot, ECPoint pubkey, CandidateState candidate)
@@ -207,6 +307,7 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_votersCount, new StorageItem(Array.Empty<byte>()));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock, 0u), new StorageItem(5 * GAS.Factor));
                 engine.SnapshotCache.Add(_registerPrice, new StorageItem(1000 * GAS.Factor));
+                engine.SnapshotCache.Add(_baseMillisecondsPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
                 return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
             }
             return ContractTask.CompletedTask;
@@ -251,16 +352,18 @@ namespace Neo.SmartContract.Native
             int n = engine.ProtocolSettings.ValidatorsCount;
             int index = (int)(engine.PersistingBlock.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.SnapshotCache);
+            BigInteger gasForElapsedTime = CalculateGasForElapsedTime(engine, gasPerBlock);
             var committee = GetCommitteeFromCache(engine.SnapshotCache);
             var pubkey = committee[index].PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            await GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
+            if (!gasForElapsedTime.IsZero)
+                await GAS.Mint(engine, account, gasForElapsedTime * CommitteeRewardRatio / 100, false);
 
             // Record the cumulative reward of the voters of committee
 
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, m))
             {
-                BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
+                BigInteger voterRewardOfEachCommittee = gasForElapsedTime * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
                 for (index = 0; index < committee.Count; index++)
                 {
                     var (PublicKey, Votes) = committee[index];
@@ -274,6 +377,52 @@ namespace Neo.SmartContract.Native
                     }
                 }
             }
+        }
+
+        private BigInteger CalculateGasForElapsedTime(ApplicationEngine engine, BigInteger gasPerBlock)
+        {
+            if (gasPerBlock.IsZero)
+                return BigInteger.Zero;
+
+            ulong referenceMilliseconds = GetReferenceMillisecondsPerBlock(engine.SnapshotCache);
+            ulong elapsedMilliseconds;
+
+            if (engine.PersistingBlock.Index == 0)
+            {
+                elapsedMilliseconds = referenceMilliseconds;
+            }
+            else
+            {
+                ulong previousTimestamp;
+                var previousHeader = NativeContract.Ledger.GetHeader(engine.SnapshotCache, engine.PersistingBlock.Index - 1);
+                if (previousHeader is null)
+                {
+                    ulong genesisTimestamp = TryGetGenesisTimestamp(engine.SnapshotCache)
+                        ?? NeoSystem.CreateGenesisBlock(engine.ProtocolSettings).Timestamp;
+                    previousTimestamp = genesisTimestamp + referenceMilliseconds * (engine.PersistingBlock.Index - 1);
+                }
+                else
+                {
+                    previousTimestamp = previousHeader.Timestamp;
+                }
+
+                ulong currentTimestamp = engine.PersistingBlock.Timestamp;
+                if (engine.PersistingBlock.Index == 1 || previousHeader is null)
+                {
+                    elapsedMilliseconds = referenceMilliseconds;
+                }
+                else
+                {
+                    elapsedMilliseconds = currentTimestamp > previousTimestamp
+                        ? currentTimestamp - previousTimestamp
+                        : referenceMilliseconds;
+                }
+            }
+
+            if (elapsedMilliseconds == 0)
+                return BigInteger.Zero;
+
+            return gasPerBlock * (BigInteger)elapsedMilliseconds / referenceMilliseconds;
         }
 
         /// <summary>
