@@ -127,6 +127,33 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Computes the hash value for the specified byte array using the sha3-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentNullException">If <paramref name="source"/> is null.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Sha3_512(this byte[] source)
+        {
+            ArgumentNullException.ThrowIfNull(source);
+            return Sha3_512(source.AsSpan());
+        }
+
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentNullException">If <paramref name="source"/> is null.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Blake2b_512(this byte[] source)
+        {
+            ArgumentNullException.ThrowIfNull(source);
+            return Blake2b_512(source.AsSpan());
+        }
+
+        /// <summary>
         /// Computes the hash value for the specified region of the specified byte array using the sha256 algorithm.
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
@@ -179,6 +206,36 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Computes the hash value for the specified byte array using the sha3-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Sha3_512(this ReadOnlySpan<byte> source)
+        {
+            var sha3 = new Sha3Digest(512); // not all platforms support SHA3-512 for C# standard library.
+            sha3.BlockUpdate(source);
+
+            var result = new byte[sha3.GetDigestSize()];
+            sha3.DoFinal(result, 0);
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Blake2b_512(this ReadOnlySpan<byte> source)
+        {
+            var blake2b = new Blake2bDigest(512);
+            blake2b.BlockUpdate(source);
+
+            var result = new byte[blake2b.GetDigestSize()];
+            blake2b.DoFinal(result, 0);
+            return result;
+        }
+
+        /// <summary>
         /// Computes the hash value for the specified byte array using the sha256 algorithm.
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
@@ -197,6 +254,22 @@ namespace Neo.Cryptography
         {
             return Sha512((ReadOnlySpan<byte>)value);
         }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the sha3-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Sha3_512(this Span<byte> source) => Sha3_512((ReadOnlySpan<byte>)source);
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Blake2b_512(this Span<byte> source) => Blake2b_512((ReadOnlySpan<byte>)source);
 
         /// <summary>
         /// Computes the hash value for the specified byte array using the keccak256 algorithm.

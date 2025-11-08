@@ -86,7 +86,7 @@ namespace Neo.UnitTests
             Assert.AreEqual("", empty.ToHexString(false));
             Assert.AreEqual("", empty.ToHexString(true));
 
-            byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
+            byte[] str1 = [(byte)'n', (byte)'e', (byte)'o'];
             Assert.AreEqual("6e656f", str1.ToHexString());
             Assert.AreEqual("6e656f", str1.ToHexString(false));
             Assert.AreEqual("6f656e", str1.ToHexString(true));
@@ -117,7 +117,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestUnmapForIPAddress()
         {
-            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+            var addr = new IPAddress([127, 0, 0, 1]);
             Assert.AreEqual(addr, addr.UnMap());
 
             var addr2 = addr.MapToIPv6();
@@ -127,7 +127,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestUnmapForIPEndPoin()
         {
-            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+            var addr = new IPAddress([127, 0, 0, 1]);
             var endPoint = new IPEndPoint(addr, 8888);
             Assert.AreEqual(endPoint, endPoint.UnMap());
 
