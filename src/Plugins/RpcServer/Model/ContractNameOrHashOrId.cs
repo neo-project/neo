@@ -1,0 +1,99 @@
+// Copyright (C) 2015-2025 The Neo Project.
+//
+// ContractNameOrHashOrId.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+using System.Diagnostics.CodeAnalysis;
+
+namespace Neo.Plugins.RpcServer.Model
+{
+    public class ContractNameOrHashOrId
+    {
+        private readonly object _value;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="id">Contract Id</param>
+        public ContractNameOrHashOrId(int id)
+        {
+            _value = id;
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="hash">Contract hash</param>
+        public ContractNameOrHashOrId(UInt160 hash)
+        {
+            _value = hash;
+        }
+
+        /// <summary>
+        ///  The name is one of the native contract names:
+        ///  ContractManagement, StdLib, CryptoLib, LedgerContract, NeoToken, GasToken, PolicyContract, RoleManagement, OracleContract, Notary
+        /// <para>
+        ///  Or use `list nativecontract` in neo-cli to get the native contract names.
+        /// </para>
+        /// </summary>
+        /// <param name="nameOrId">Contract Name or Id</param>
+        public ContractNameOrHashOrId(string nameOrId)
+        {
+            _value = nameOrId;
+        }
+
+        public bool IsId => _value is int;
+        public bool IsHash => _value is UInt160;
+        public bool IsName => _value is string;
+
+        public static bool TryParse(string value, [NotNullWhen(true)] out ContractNameOrHashOrId? contractNameOrHashOrId)
+        {
+            if (int.TryParse(value, out var id))
+            {
+                contractNameOrHashOrId = new ContractNameOrHashOrId(id);
+                return true;
+            }
+            if (UInt160.TryParse(value, out var hash))
+            {
+                contractNameOrHashOrId = new ContractNameOrHashOrId(hash);
+                return true;
+            }
+
+            if (value.Length > 0)
+            {
+                contractNameOrHashOrId = new ContractNameOrHashOrId(value);
+                return true;
+            }
+
+            contractNameOrHashOrId = null;
+            return false;
+        }
+
+        public int AsId()
+        {
+            if (_value is int intValue)
+                return intValue;
+            throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid contract id"));
+        }
+
+        public UInt160 AsHash()
+        {
+            if (_value is UInt160 hash)
+                return hash;
+            throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid contract hash"));
+        }
+
+        public string AsName()
+        {
+            if (_value is string name)
+                return name;
+            throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid contract name"));
+        }
+    }
+}

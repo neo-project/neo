@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <RootNamespace>Neo</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\LevelDBStore\LevelDBStore.csproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

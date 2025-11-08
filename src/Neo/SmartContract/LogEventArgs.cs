@@ -1,0 +1,50 @@
+// Copyright (C) 2015-2025 The Neo Project.
+//
+// LogEventArgs.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+using Neo.Network.P2P.Payloads;
+using System;
+
+namespace Neo.SmartContract
+{
+    /// <summary>
+    /// The <see cref="EventArgs"/> of <see cref="ApplicationEngine.Log"/>.
+    /// </summary>
+    public class LogEventArgs : EventArgs
+    {
+        /// <summary>
+        /// The container that containing the executed script.
+        /// </summary>
+        public IVerifiable ScriptContainer { get; }
+
+        /// <summary>
+        /// The script hash of the contract that sends the log.
+        /// </summary>
+        public UInt160 ScriptHash { get; }
+
+        /// <summary>
+        /// The message of the log.
+        /// </summary>
+        public string Message { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LogEventArgs"/> class.
+        /// </summary>
+        /// <param name="container">The container that containing the executed script.</param>
+        /// <param name="scriptHash">The script hash of the contract that sends the log.</param>
+        /// <param name="message">The message of the log.</param>
+        public LogEventArgs(IVerifiable container, UInt160 scriptHash, string message)
+        {
+            ScriptContainer = container;
+            ScriptHash = scriptHash;
+            Message = message;
+        }
+    }
+}

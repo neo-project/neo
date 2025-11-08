@@ -1,0 +1,149 @@
+// Copyright (C) 2015-2025 The Neo Project.
+//
+// UT_JObject.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+namespace Neo.Json.UnitTests
+{
+    [TestClass]
+    public class UT_JObject
+    {
+        private JObject _alice;
+        private JObject _bob;
+
+        [TestInitialize]
+        public void SetUp()
+        {
+            _alice = new JObject()
+            {
+                ["name"] = "alice",
+                ["age"] = 30,
+                ["score"] = 100.001,
+                ["gender"] = Foo.female,
+                ["isMarried"] = true,
+            };
+
+            var pet1 = new JObject(new Dictionary<string, JToken>()
+            {
+                ["name"] = "Tom",
+                ["type"] = "cat",
+            });
+            _alice["pet"] = pet1;
+            _bob = new JObject()
+            {
+                ["name"] = "bob",
+                ["age"] = 100000,
+                ["score"] = 0.001,
+                ["gender"] = Foo.male,
+                ["isMarried"] = false,
+            };
+            var pet2 = new JObject()
+            {
+                ["name"] = "Paul",
+                ["type"] = "dog",
+            };
+            _bob["pet"] = pet2;
+        }
+
+        [TestMethod]
+        public void TestAsBoolean()
+        {
+            Assert.IsTrue(_alice.AsBoolean());
+        }
+
+        [TestMethod]
+        public void TestAsNumber()
+        {
+            Assert.AreEqual(double.NaN, _alice.AsNumber());
+        }
+
+        [TestMethod]
+        public void TestParse()
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = JObject.Parse("", -1));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("aaa"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("hello world"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("100.a"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("100.+"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"\\s\""));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"a"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\":\"v1\",\"k1\":\"v2\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\",\"k1\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\":\"v1\""));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(new byte[] { 0x22, 0x01, 0x22 }));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"color\":\"\\uDBFF\\u0DFFF\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"\\uDBFF\\u0DFFF\""));
+
+            Assert.IsNull(JObject.Parse("null"));
+            Assert.IsTrue(JObject.Parse("true").AsBoolean());
+            Assert.IsFalse(JObject.Parse("false").AsBoolean());
+            Assert.AreEqual("hello world", JObject.Parse("\"hello world\"").AsString());
+            Assert.AreEqual("\"\\/\b\f\n\r\t", JObject.Parse("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\"").AsString());
+            Assert.AreEqual("0", JObject.Parse("\"\\u0030\"").AsString());
+            Assert.AreEqual("{\"k1\":\"v1\"}", JObject.Parse("{\"k1\":\"v1\"}", 100).ToString());
+        }
+
+        [TestMethod]
+        public void TestGetEnum()
+        {
+            Assert.AreEqual(Woo.Tom, _alice.AsEnum<Woo>());
+
+            Action action = () => _alice.GetEnum<Woo>();
+            Assert.ThrowsExactly<InvalidCastException>(action);
+        }
+
+        [TestMethod]
+        public void TestOpImplicitEnum()
+        {
+            JToken obj = Woo.Tom;
+            Assert.AreEqual("Tom", obj.AsString());
+        }
+
+        [TestMethod]
+        public void TestOpImplicitString()
+        {
+            JToken obj = null;
+            Assert.IsNull(obj);
+
+            obj = "{\"aaa\":\"111\"}";
+            Assert.AreEqual("{\"aaa\":\"111\"}", obj.AsString());
+        }
+
+        [TestMethod]
+        public void TestGetNull()
+        {
+            Assert.IsNull(JToken.Null);
+        }
+
+        [TestMethod]
+        public void TestClone()
+        {
+            var bobClone = (JObject)_bob.Clone();
+            Assert.AreNotSame(_bob, bobClone);
+            foreach (var key in bobClone.Properties.Keys)
+            {
+                switch (_bob[key])
+                {
+                    case JToken.Null:
+                        Assert.IsNull(bobClone[key]);
+                        break;
+                    case JObject obj:
+                        CollectionAssert.AreEqual(
+                            ((JObject)_bob[key]).Properties.ToList(),
+                            ((JObject)bobClone[key]).Properties.ToList());
+                        break;
+                    default:
+                        Assert.AreEqual(_bob[key], bobClone[key]);
+                        break;
+                }
+            }
+        }
+    }
+}

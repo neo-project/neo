@@ -1,0 +1,57 @@
+name: Package Cleanup
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Run every day at 24:00
+
+jobs:
+
+  delete-git-docker-pkgs:
+    name: Delete Old Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Delete Neo Package (docker)
+      uses: actions/delete-package-versions@v4
+      continue-on-error: true
+      with:
+        package-name: Neo
+        package-type: docker
+        min-versions-to-keep: 1
+        token: "${{ secrets.GITHUB_TOKEN }}"
+
+  delete-git-nuget-pkgs:
+    name: Delete Old Nuget Packages
+    strategy:
+      matrix:
+        pkgs:
+          - "Neo.Plugins.StatesDumper"
+          - "Neo.Plugins.StateService"
+          - "Neo.Plugins.Storage.LevelDBStore"
+          - "Neo.Plugins.Storage.RocksDBStore"
+          - "Neo.Plugins.StorageDumper"
+          - "Neo.Plugins.TokensTracker"
+          - "Neo.Wallets.SQLite"
+          - "Neo.Consensus.DBFT"
+          - "Neo.ConsoleService"
+          - "Neo.Cryptography.MPT"
+          - "Neo.Extensions"
+          - "Neo.Network.RPC.RpcClient"
+          - "Neo.Plugins.ApplicationLogs"
+          - "Neo.Plugins.OracleService"
+          - "Neo.Plugins.RpcServer"
+          - "Neo.Json"
+          - "Neo.IO"
+          - "Neo"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Delete ${{ matrix.pkgs }} Package
+      uses: actions/delete-package-versions@v4
+      continue-on-error: true
+      with:
+        package-name: ${{ matrix.pkgs }}
+        package-type: nuget
+        min-versions-to-keep: 3
+        delete-only-pre-release-versions: "true"
+        token: "${{ secrets.GITHUB_TOKEN }}"

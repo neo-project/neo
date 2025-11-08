@@ -1,90 +1,209 @@
-NEO: A distributed network for the Smart Economy
-================
+<p align="center">
+  <a href="https://neo.org/">
+      <img
+      src="https://neo3.azureedge.net/images/logo%20files-dark.svg"
+      width="250px" alt="neo-logo">
+  </a>
+</p>
 
-NEO uses digital identity and blockchain technology to digitize assets and leverages smart contracts for autonomously managed digital assets to create a "smart economy" within a decentralized network.
+<h3 align="center">CSharp implementation of the neo blockchain protocol.</h3>
 
-To learn more about NEO, please read the [White Paper](http://docs.neo.org/en-us/index.html)|[白皮书](http://docs.neo.org/zh-cn/index.html).
+<p align="center">
+   A modern distributed network for the Smart Economy.
+  <br>
+  <a href="https://docs.neo.org/"><strong>Documentation »</strong></a>
+  <br>
+  <br>
+  <a href="https://github.com/neo-project/neo"><strong>Neo</strong></a>
+  ·
+  <a href="https://github.com/neo-project/neo-modules">Neo Modules</a>
+  ·
+  <a href="https://github.com/neo-project/neo-devpack-dotnet">Neo DevPack</a>
+</p>
+<p align="center">
+  <a href="https://twitter.com/neo_blockchain">
+      <img
+      src=".github/images/twitter-logo.png"
+      width="25px">
+  </a>
+  &nbsp;
+  <a href="https://medium.com/neo-smart-economy">
+      <img
+      src=".github/images/medium-logo.png"
+      width="23px">
+  </a>
+  &nbsp;
+  <a href="https://neonewstoday.com">
+      <img
+      src=".github/images/nnt-logo.jpg"
+      width="23px">
+  </a>
+  &nbsp;
+  <a href="https://t.me/NEO_EN">
+      <img
+      src=".github/images/telegram-logo.png"
+      width="24px" >
+  </a>
+  &nbsp;
+  <a href="https://www.reddit.com/r/NEO/">
+      <img
+      src=".github/images/reddit-logo.png"
+      width="24px">
+  </a>
+  &nbsp;
+  <a href="https://discord.com/invite/rvZFQ5382k">
+      <img
+      src=".github/images/discord-logo.png"
+      width="25px">
+  </a>
+  &nbsp;
+  <a href="https://www.youtube.com/neosmarteconomy">
+      <img
+      src=".github/images/youtube-logo.png"
+      width="32px">
+  </a>
+  &nbsp;
+  <!--How to get a link? -->
+  <a href="https://neo.org/">
+      <img
+      src=".github/images/we-chat-logo.png"
+      width="25px">
+  </a>
+  &nbsp;
+  <a href="https://weibo.com/neosmarteconomy">
+      <img
+      src=".github/images/weibo-logo.png"
+      width="28px">
+  </a>
+</p>
+<p align="center">
+  <a href="https://github.com/neo-project/neo/releases">
+    <img src="https://badge.fury.io/gh/neo-project%2Fneo.svg" alt="Current neo version.">
+  </a>
+  <a href='https://coveralls.io/github/neo-project/neo'>
+    <img src='https://coveralls.io/repos/github/neo-project/neo/badge.svg' alt='Coverage Status' />
+  </a>
+  <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License.">
+  </a>
+</p>
 
-Supported Platforms
---------
+<p align="center">
+  <a href="https://codespaces.new/neo-project/neo">
+    <img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces.">
+  </a>
+</p>
 
-We already support the following platforms:
+## Quick Start A Mainnet Node
+1. git clone https://github.com/neo-project/neo.git
+2. cd neo/src/Neo.CLI
+3. make build
 
-* CentOS 7
-* Docker
-* macOS 10 +
-* Red Hat Enterprise Linux 7.0 +
-* Ubuntu 14.04, Ubuntu 14.10, Ubuntu 15.04, Ubuntu 15.10, Ubuntu 16.04, Ubuntu 16.10
-* Windows 7 SP1 +, Windows Server 2008 R2 +
+## Table of Contents
+1. [Overview](#overview)
+2. [Project structure](#project-structure)
+3. [Related projects](#related-projects)
+4. [Opening a new issue](#opening-a-new-issue)
+5. [Contributing](#contributing)
+6. [Bounty program](#bounty-program)
+7. [License](#license)
 
-We will support the following platforms in the future:
+## Overview
+This repository is a csharp implementation of the [neo](https://neo.org) blockchain. It is jointly maintained by the neo core developers and neo global development community.
+Visit the [tutorials](https://docs.neo.org) to get started.
 
-* Debian
-* Fedora
-* FreeBSD
-* Linux Mint
-* OpenSUSE
-* Oracle Linux
 
-Development
---------
+## Project structure
+An overview of the project folders can be seen below.
 
-To start building peer applications for NEO on Windows, you need to download [Visual Studio 2017](https://www.visualstudio.com/products/visual-studio-community-vs), install the [.NET Framework 4.7 Developer Pack](https://www.microsoft.com/en-us/download/details.aspx?id=55168) and the [.NET Core SDK](https://www.microsoft.com/net/core).
+|Folder|Content|
+|---|---|
+|[/src/neo/Cryptography/](https://github.com/neo-project/neo/tree/master/src/Neo/Cryptography)|General cryptography implementation, including ECC.|
+|[/src/neo/IO/](https://github.com/neo-project/neo/tree/master/src/Neo/IO)|Data structures used for caching and collection interaction.|
+|[/src/neo/Ledger/](https://github.com/neo-project/neo/tree/master/src/Neo/Ledger)|Classes responsible for the state control, including the `MemoryPool` and `Blockchain`.|
+|[/src/neo/Network/](https://github.com/neo-project/neo/tree/master/src/Neo/Network)|Peer-to-peer protocol implementation.|
+|[/src/neo/Persistence/](https://github.com/neo-project/neo/tree/master/src/Neo/Persistence)|Classes used to allow other classes to access application state.|
+|[/src/neo/Plugins/](https://github.com/neo-project/neo/tree/master/src/Neo/Plugins)|Interfaces used to extend Neo, including the storage interface.|
+|[/src/neo/SmartContract/](https://github.com/neo-project/neo/tree/master/src/Neo/SmartContract)|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
+|[/src/neo/Wallets/](https://github.com/neo-project/neo/tree/master/src/Neo/Wallets)|Wallet and account implementation.|
+|[/src/Neo.CLI/](https://github.com/neo-project/neo/tree/master/src/Neo.CLI)| `neo-cli` console application for running a _FULL_ node.|
+|[/src/Neo.Extensions/](https://github.com/neo-project/neo/tree/master/src/Neo.Extensions)| Extensions to expand the existing functionality.|
+|[/src/Neo.Json/](https://github.com/neo-project/neo/tree/master/src/Neo.Json)| Neo's JSON specification.|
+|[/src/Neo.VM/](https://github.com/neo-project/neo/tree/master/src/Neo.VM)|Neo virtual machine.|
+|[/src/plugins/](https://github.com/neo-project/neo/tree/master/src/Plugins)| Include `ApplicationLogs`, `LevelDBStore`, `RpcServer`, `OracleService`, `DBFTPlugin` and more.|
+|[/tests/](https://github.com/neo-project/neo/tree/master/tests)|All unit tests.|
 
-If you need to develop on Linux or macOS, just install the [.NET Core SDK](https://www.microsoft.com/net/core).
+## Related projects
+Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler.
 
-To install Neo SDK to your project, run the following command in the [Package Manager Console](https://docs.nuget.org/ndocs/tools/package-manager-console):
+* [neo:](https://github.com/neo-project/neo/) Included libraries are Neo, Neo-CLI, Neo-GUI, Neo-VM, test and plugin modules.
+* [neo-express:](https://github.com/neo-project/neo-express/) A private net optimized for development scenarios.
+* [neo-devpack-dotnet:](https://github.com/neo-project/neo-devpack-dotnet/) These are the official tools used to convert a C# smart-contract into a *neo executable file*.
+* [neo-proposals:](https://github.com/neo-project/proposals) NEO Enhancement Proposals (NEPs) describe standards for the NEO platform, including core protocol specifications, client APIs, and contract standards.
+* [neo-non-native-contracts:](https://github.com/neo-project/non-native-contracts) Includes non-native contracts that live on the blockchain, included but not limited to NeoNameService.
+
+## Opening a new issue
+Please feel free to create new issues to suggest features or ask questions.
+
+- [Feature request](https://github.com/neo-project/neo/issues/new?assignees=&labels=discussion&template=feature-or-enhancement-request.md&title=)
+- [Bug report](https://github.com/neo-project/neo/issues/new?assignees=&labels=&template=bug_report.md&title=)
+- [Questions](https://github.com/neo-project/neo/issues/new?assignees=&labels=question&template=questions.md&title=)
+
+If you found a security issue, please refer to our [security policy](https://github.com/neo-project/neo/security/policy).
+
+## Contributing
+
+We welcome contributions to the Neo project! To ensure a smooth collaboration process, please follow these guidelines:
+
+### Branch Rules
+
+- **`master`** - Contains the latest stable release version. This branch reflects the current production state.
+- **`dev`** - The main development branch where all new features and improvements are integrated.
+
+### Pull Request Guidelines
+
+**Important**: All pull requests must be based on the `dev` branch, not `master`.
+
+1. **Fork the repository** and create your feature branch from `dev`:
+   ```bash
+   git checkout dev
+   git pull origin dev
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes** following the project's coding standards and conventions.
+
+3. **Test your changes** thoroughly to ensure they don't break existing functionality.
+
+4. **Commit your changes** with clear, descriptive commit messages:
+   ```bash
+   git commit -m "feat: add new feature description"
+   ```
+
+5. **Push to your fork** and create a pull request against the `dev` branch:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+6. **Create a Pull Request** targeting the `dev` branch with:
+   - Clear title and description
+   - Reference to any related issues
+   - Summary of changes made
+
+### Development Workflow
 
 ```
-PM> Install-Package Neo
+feature/bug-fix → dev → master (via release)
 ```
 
-For more information about how to build DAPPs for NEO, please read the [documentation](http://docs.neo.org/en-us/sc/introduction.html)|[文档](http://docs.neo.org/zh-cn/sc/introduction.html).
+- Feature branches are merged into `dev`
+- `dev` is periodically merged into `master` for releases
+- Never create PRs directly against `master`
 
-Daily builds
---------
+For more detailed contribution guidelines, please check our documentation or reach out to the maintainers.
 
-If you want to use the latest daily build then you need to add a NuGet.Config to your app with the following content:
+## Bounty program
+You can be rewarded by finding security issues. Please refer to our [bounty program page](https://neo.org/bounty) for more information.
 
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-    <packageSources>
-        <clear />
-        <add key="MyGet-neo" value="https://www.myget.org/F/neo/api/v3/index.json" />
-        <add key="NuGet.org" value="https://api.nuget.org/v3/index.json" />
-    </packageSources>
-</configuration>
-```
-
-*NOTE: This NuGet.Config should be with your application unless you want nightly packages to potentially start being restored for other apps on the machine.*
-
-How to Contribute
---------
-
-You can contribute to NEO with [issues](https://github.com/neo-project/neo/issues) and [PRs](https://github.com/neo-project/neo/pulls). Simply filing issues for problems you encounter is a great way to contribute. Contributing implementations is greatly appreciated.
-
-We use and recommend the following workflow:
-
-1. Create an issue for your work.
-    * You can skip this step for trivial changes.
-	* Reuse an existing issue on the topic, if there is one.
-	* Clearly state that you are going to take on implementing it, if that's the case. You can request that the issue be assigned to you. Note: The issue filer and the implementer don't have to be the same person.
-1. Create a personal fork of the repository on GitHub (if you don't already have one).
-1. Create a branch off of master(`git checkout -b mybranch`).
-    * Name the branch so that it clearly communicates your intentions, such as issue-123 or githubhandle-issue.
-	* Branches are useful since they isolate your changes from incoming changes from upstream. They also enable you to create multiple PRs from the same fork.
-1. Make and commit your changes.
-1. Add new tests corresponding to your change, if applicable.
-1. Build the repository with your changes.
-    * Make sure that the builds are clean.
-	* Make sure that the tests are all passing, including your new tests.
-1. Create a pull request (PR) against the upstream repository's master branch.
-    * Push your changes to your fork on GitHub.
-
-Note: It is OK for your PR to include a large number of commits. Once your change is accepted, you will be asked to squash your commits into one or some appropriately small number of commits before your PR is merged.
-
-License
-------
-
+## License
 The NEO project is licensed under the [MIT license](LICENSE).
