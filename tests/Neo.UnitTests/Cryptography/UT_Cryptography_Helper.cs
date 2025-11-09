@@ -197,6 +197,11 @@ namespace Neo.UnitTests.Cryptography
 
             hash = data.ToArray().Blake2b_512();
             Assert.AreEqual(expected, hash.ToHexString());
+
+            var salt = "0123456789abcdef"u8;
+            expected = "d986f099932b14a65ebc5a6fb1b8bff8d05b6924a4ff74d4972949b880c1f74b5ab263357f332726d98fac3cabeacf415099f1a2a9b97b66cd989ca865539640";
+            hash = data.Blake2b_512(salt.ToArray());
+            Assert.AreEqual(expected, hash.ToHexString());
         }
 
         [TestMethod]
@@ -209,6 +214,10 @@ namespace Neo.UnitTests.Cryptography
 
             hash = data.ToArray().Blake2b_256();
             Assert.AreEqual(expected, hash.ToHexString());
+
+            var salt = "0123456789abcdef"u8;
+            hash = data.Blake2b_256(salt.ToArray());
+            Assert.AreEqual("779c5f2194a9c2c03e73e3ffcf3e1508dd83cb85cd861029415ab961a755cc4e", hash.ToHexString());
         }
     }
 }
