@@ -102,7 +102,7 @@ namespace Neo.Cryptography.MPTTrie
                 {
                     case TrackState.Added:
                     case TrackState.Changed:
-                        _store.Put(Key(item.Key), item.Value.Node.ToArray());
+                        _store.Put(Key(item.Key), item.Value.Node!.ToArray());
                         break;
                     case TrackState.Deleted:
                         _store.Delete(Key(item.Key));

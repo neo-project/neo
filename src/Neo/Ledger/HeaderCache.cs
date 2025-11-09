@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Neo.IO.Caching;
 using Neo.Network.P2P.Payloads;
 using System;
@@ -154,5 +152,3 @@ namespace Neo.Ledger
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
-
-#nullable disable

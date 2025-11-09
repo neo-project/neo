@@ -141,12 +141,17 @@ namespace Neo.Plugins.ApplicationLogs
         [ConsoleCommand("log block", Category = "ApplicationLog Commands")]
         internal void OnGetBlockCommand(string blockHashOrIndex, string? eventName = null)
         {
-            UInt256 blockhash;
+            UInt256? blockhash;
             if (uint.TryParse(blockHashOrIndex, out var blockIndex))
             {
                 blockhash = NativeContract.Ledger.GetBlockHash(_neosystem.StoreView, blockIndex);
             }
-            else if (UInt256.TryParse(blockHashOrIndex, out blockhash) == false)
+            else
+            {
+                UInt256.TryParse(blockHashOrIndex, out blockhash);
+            }
+
+            if (blockhash is null)
             {
                 ConsoleHelper.Error("Invalid block hash or index.");
                 return;
@@ -235,9 +240,9 @@ namespace Neo.Plugins.ApplicationLogs
             {
                 foreach (var appEng in applicationExecutedList.Where(w => w.Transaction != null))
                 {
-                    var logs = _logEvents.Where(w => w.ScriptContainer.Hash == appEng.Transaction.Hash).ToList();
+                    var logs = _logEvents.Where(w => w.ScriptContainer?.Hash == appEng.Transaction!.Hash).ToList();
                     if (logs.Any())
-                        _neostore.PutTransactionEngineLogState(appEng.Transaction.Hash, logs);
+                        _neostore.PutTransactionEngineLogState(appEng.Transaction!.Hash, logs);
                 }
                 _logEvents.Clear();
             }
@@ -341,7 +346,7 @@ namespace Neo.Plugins.ApplicationLogs
             if (contract == null)
                 return $"{parameterIndex}";
             var contractEvent = contract.Manifest.Abi.Events.SingleOrDefault(s => s.Name == methodName && (uint)s.Parameters.Length == ncount);
-            if (contractEvent == null)
+            if (contractEvent is null)
                 return $"{parameterIndex}";
             return contractEvent.Parameters[parameterIndex].Name;
         }

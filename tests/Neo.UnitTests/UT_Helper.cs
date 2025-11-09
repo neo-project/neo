@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests
 {
@@ -38,7 +39,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestTryGetHash()
         {
-            var tx = new Transaction();
+            var tx = (Transaction)RuntimeHelpers.GetUninitializedObject(typeof(Transaction));
             Assert.IsFalse(tx.TryGetHash(out _));
         }
 

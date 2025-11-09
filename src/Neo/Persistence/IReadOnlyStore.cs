@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -75,5 +73,3 @@ namespace Neo.Persistence
         public IEnumerable<(TKey Key, TValue Value)> Find(TKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward);
     }
 }
-
-#nullable disable

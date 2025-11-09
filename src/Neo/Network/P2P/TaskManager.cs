@@ -31,22 +31,17 @@ namespace Neo.Network.P2P
     /// </summary>
     public class TaskManager : UntypedActor
     {
-        internal class Register { public VersionPayload Version; }
-        internal class Update { public uint LastBlockIndex; }
-        internal class NewTasks { public InvPayload Payload; }
+        internal record Register(VersionPayload Version);
+        internal record Update(uint LastBlockIndex);
+        internal record NewTasks(InvPayload Payload);
 
         /// <summary>
         /// Sent to <see cref="TaskManager"/> to restart tasks for inventories.
         /// </summary>
-        public class RestartTasks
-        {
-            /// <summary>
-            /// The inventories that need to restart.
-            /// </summary>
-            public InvPayload Payload { get; init; }
-        }
+        /// <param name="Payload">The inventories that need to restart.</param>
+        public record RestartTasks(InvPayload Payload);
 
-        private class Timer { }
+        private record Timer;
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
@@ -145,7 +140,7 @@ namespace Neo.Network.P2P
             lastSeenPersistedIndex = block.Index;
 
             foreach (var (actor, session) in sessions)
-                if (session.ReceivedBlock.Remove(block.Index, out Block receivedBlock))
+                if (session.ReceivedBlock.Remove(block.Index, out Block? receivedBlock))
                 {
                     if (block.Hash == receivedBlock.Hash)
                         RequestTasks(actor, session);

@@ -14,8 +14,6 @@ using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
 using System;
 
-#nullable enable
-
 namespace Neo.SmartContract
 {
     partial class ApplicationEngine
@@ -103,7 +101,8 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetStorageContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!)
+                ?? throw new InvalidOperationException("This method can only be called by a deployed contract.");
             return new StorageContext
             {
                 Id = contract.Id,
@@ -118,7 +117,8 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetReadOnlyContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!)
+                ?? throw new InvalidOperationException("This method can only be called by a deployed contract.");
             return new StorageContext
             {
                 Id = contract.Id,
@@ -299,5 +299,3 @@ namespace Neo.SmartContract
         }
     }
 }
-
-#nullable disable
