@@ -348,7 +348,13 @@ namespace Neo.CLI
             CustomApplicationSettings(options, Settings.Default);
 
             var engineConfig = Settings.Default.Storage.Engine;
-            var engine = string.IsNullOrWhiteSpace(engineConfig) ? nameof(MemoryStore) : engineConfig;
+            var engine = engineConfig;
+            if (string.IsNullOrWhiteSpace(engineConfig))
+            {
+                ConsoleHelper.Warning("No persistence engine specified, using MemoryStore now");
+                engine = nameof(MemoryStore);
+            }
+
             var storagePath = string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8"));
 
             if (!engine.Equals(nameof(MemoryStore), StringComparison.OrdinalIgnoreCase))
