@@ -82,6 +82,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                         Script = Convert.FromBase64String(NeoTransferScript),
                         NetworkFee = 1000_0000,
                         SystemFee = 1000_0000,
+                        Witnesses = []
                     }
                 ];
                 byte[] signature = txs[0].Sign(_walletAccount.GetKey(), ApplicationLogsSettings.Default.Network);
@@ -100,6 +101,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                         Timestamp = _neoSystem.GenesisBlock.Timestamp + 15_000,
                         Index = 1,
                         NextConsensus = _neoSystem.GenesisBlock.NextConsensus,
+                        Witness = null!
                     },
                     Transactions = txs,
                 };

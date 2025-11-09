@@ -18,6 +18,7 @@ using Neo.UnitTests.Extensions;
 using Neo.Wallets;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 using Helper = Neo.SmartContract.Helper;
@@ -139,7 +140,13 @@ namespace Neo.UnitTests.SmartContract
                 Hashes = [UInt256.Zero],
             });
             TestUtils.BlocksDelete(snapshotCache1, index1);
-            Assert.IsFalse(Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, TestProtocolSettings.Default, snapshotCache1, 100));
+            Assert.IsFalse(Helper.VerifyWitnesses(new Header()
+            {
+                PrevHash = index1,
+                MerkleRoot = UInt256.Zero,
+                NextConsensus = UInt160.Zero,
+                Witness = null!
+            }, TestProtocolSettings.Default, snapshotCache1, 100));
 
             var snapshotCache2 = TestBlockchain.GetTestSnapshotCache();
             var index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
@@ -156,9 +163,15 @@ namespace Neo.UnitTests.SmartContract
                 Hashes = [UInt256.Zero],
             };
             TestUtils.BlocksAdd(snapshotCache2, index2, block2);
-            Header header2 = new() { PrevHash = index2, Witness = Witness.Empty };
+            Header header2 = new()
+            {
+                PrevHash = index2,
+                MerkleRoot = UInt256.Zero,
+                NextConsensus = UInt160.Zero,
+                Witness = Witness.Empty
+            };
 
-            snapshotCache2.AddContract(UInt160.Zero, new ContractState());
+            snapshotCache2.AddContract(UInt160.Zero, (ContractState)RuntimeHelpers.GetUninitializedObject(typeof(ContractState)));
             snapshotCache2.DeleteContract(UInt160.Zero);
             Assert.IsFalse(Helper.VerifyWitnesses(header2, TestProtocolSettings.Default, snapshotCache2, 100));
 
@@ -186,7 +199,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshotCache3.AddContract(UInt160.Zero, new ContractState()
             {
-                Nef = new NefFile { Script = ReadOnlyMemory<byte>.Empty },
+                Nef = (NefFile)RuntimeHelpers.GetUninitializedObject(typeof(NefFile)),
                 Hash = Array.Empty<byte>().ToScriptHash(),
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
@@ -196,7 +209,13 @@ namespace Neo.UnitTests.SmartContract
 
             var contract = new ContractState()
             {
-                Nef = new NefFile { Script = "11".HexToBytes() }, // 17 PUSH1
+                Nef = new NefFile
+                {
+                    Compiler = "",
+                    Source = "",
+                    Tokens = [],
+                    Script = "11".HexToBytes()
+                }, // 17 PUSH1
                 Hash = "11".HexToBytes().ToScriptHash(),
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
             };

@@ -160,10 +160,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (context.Transactions.Count < context.TransactionHashes.Length)
             {
                 UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
-                taskManager.Tell(new TaskManager.RestartTasks
-                {
-                    Payload = InvPayload.Create(InventoryType.TX, hashes)
-                });
+                taskManager.Tell(new TaskManager.RestartTasks(InvPayload.Create(InventoryType.TX, hashes)));
             }
         }
 
@@ -315,7 +312,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
                 if (!shouldSendRecovery) return;
             }
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+            localNode.Tell(new LocalNode.SendDirectly(context.MakeRecoveryMessage()));
         }
     }
 }

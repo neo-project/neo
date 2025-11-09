@@ -47,7 +47,7 @@ namespace Neo.SmartContract.Native
             Handler = member switch
             {
                 MethodInfo m => m,
-                PropertyInfo p => p.GetMethod,
+                PropertyInfo p => p.GetMethod ?? throw new ArgumentException("Property must have a get method."),
                 _ => throw new ArgumentException("Member type not supported", nameof(member))
             };
             ParameterInfo[] parameterInfos = Handler.GetParameters();
@@ -70,7 +70,7 @@ namespace Neo.SmartContract.Native
             {
                 Name = Name,
                 ReturnType = ToParameterType(Handler.ReturnType),
-                Parameters = Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
+                Parameters = Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name! }).ToArray(),
                 Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
             };
         }

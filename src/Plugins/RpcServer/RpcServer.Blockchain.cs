@@ -102,7 +102,7 @@ namespace Neo.Plugins.RpcServer
             {
                 JObject json = block.ToJson(system.Settings);
                 json["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
-                UInt256 hash = NativeContract.Ledger.GetBlockHash(snapshot, block.Index + 1);
+                UInt256? hash = NativeContract.Ledger.GetBlockHash(snapshot, block.Index + 1);
                 if (hash != null)
                     json["nextblockhash"] = hash.ToString();
                 return json;
@@ -153,11 +153,8 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken GetBlockHash(uint height)
         {
             var snapshot = system.StoreView;
-            if (height <= NativeContract.Ledger.CurrentIndex(snapshot))
-            {
-                return NativeContract.Ledger.GetBlockHash(snapshot, height).ToString();
-            }
-            throw new RpcException(RpcError.UnknownHeight);
+            return NativeContract.Ledger.GetBlockHash(snapshot, height)?.ToString()
+                ?? throw new RpcException(RpcError.UnknownHeight);
         }
 
         /// <summary>
@@ -373,7 +370,7 @@ namespace Neo.Plugins.RpcServer
             var json = tx!.ToJson(system.Settings);
             if (state is not null)
             {
-                var block = NativeContract.Ledger.GetTrimmedBlock(snapshot, NativeContract.Ledger.GetBlockHash(snapshot, state.BlockIndex));
+                var block = NativeContract.Ledger.GetTrimmedBlock(snapshot, NativeContract.Ledger.GetBlockHash(snapshot, state.BlockIndex)!)!;
                 json["blockhash"] = block.Hash.ToString();
                 json["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
                 json["blocktime"] = block.Header.Timestamp;
@@ -573,7 +570,7 @@ namespace Neo.Plugins.RpcServer
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                script = sb.EmitDynamicCall(NativeContract.NEO.Hash, "getCandidates", null).ToArray();
+                script = sb.EmitDynamicCall(NativeContract.NEO.Hash, "getCandidates").ToArray();
             }
             StackItem[] resultstack;
             try
@@ -721,7 +718,7 @@ namespace Neo.Plugins.RpcServer
             var contractStates = NativeContract.Contracts
                 .Select(p => NativeContract.ContractManagement.GetContract(storeView, p.Hash))
                 .Where(p => p != null) // if not active
-                .Select(p => p.ToJson());
+                .Select(p => p!.ToJson());
             return new JArray(contractStates);
         }
     }

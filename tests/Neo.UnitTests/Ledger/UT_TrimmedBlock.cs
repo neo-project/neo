@@ -18,6 +18,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -124,7 +125,7 @@ namespace Neo.UnitTests.Ledger
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
-            var newBlock = new TrimmedBlock();
+            var newBlock = (TrimmedBlock)RuntimeHelpers.GetUninitializedObject(typeof(TrimmedBlock));
             using (MemoryStream ms = new(1024))
             using (BinaryWriter writer = new(ms))
             {

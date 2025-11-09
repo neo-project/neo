@@ -49,7 +49,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 ExtendTimerByFactor(2);
 
                 Log($"Sending {nameof(PrepareResponse)}");
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
+                localNode.Tell(new LocalNode.SendDirectly(context.MakePrepareResponse()));
                 CheckPreparations();
             }
             return true;
@@ -79,7 +79,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     // Communicate the network about my agreement to move to `viewNumber`
                     // if my last change view payload, `message`, has NewViewNumber lower than current view to change
                     if (message is null || message.NewViewNumber < viewNumber)
-                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(ChangeViewReason.ChangeAgreement) });
+                        localNode.Tell(new LocalNode.SendDirectly(context.MakeChangeView(ChangeViewReason.ChangeAgreement)));
                 }
                 InitializeConsensus(viewNumber);
             }
@@ -92,7 +92,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 ExtensiblePayload payload = context.MakeCommit();
                 Log($"Sending {nameof(Commit)}");
                 context.Save();
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+                localNode.Tell(new LocalNode.SendDirectly(payload));
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(context.TimePerBlock);
                 CheckCommits();
