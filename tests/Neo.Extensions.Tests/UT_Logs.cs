@@ -46,5 +46,4 @@ namespace Neo.Tests
             logger.Information("test");
         }
     }
-
 }
