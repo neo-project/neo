@@ -30,13 +30,13 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The group to be checked.
         /// </summary>
-        public ECPoint Group;
+        public required ECPoint Group;
 
         public override int Size => base.Size + Group.Size;
         public override WitnessConditionType Type => WitnessConditionType.Group;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(GroupCondition other)
+        public bool Equals(GroupCondition? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -47,7 +47,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null) return false;
             return obj is GroupCondition gc && Equals(gc);
@@ -66,7 +66,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override bool Match(ApplicationEngine engine)
         {
             engine.ValidateCallFlags(CallFlags.ReadStates);
-            ContractState contract = NativeContract.ContractManagement.GetContract(engine.SnapshotCache, engine.CurrentScriptHash);
+            ContractState? contract = NativeContract.ContractManagement.GetContract(engine.SnapshotCache, engine.CurrentScriptHash!);
             return contract is not null && contract.Manifest.Groups.Any(p => p.PubKey.Equals(Group));
         }
 
@@ -77,7 +77,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            Group = ECPoint.Parse(json["group"].GetString(), ECCurve.Secp256r1);
+            Group = ECPoint.Parse(json["group"]!.GetString(), ECCurve.Secp256r1);
         }
 
         public override JObject ToJson()
@@ -87,7 +87,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var result = (Array)base.ToStackItem(referenceCounter);
             result.Add(Group.ToArray());

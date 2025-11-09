@@ -38,7 +38,7 @@ namespace Neo.Plugins.RpcServer
                 Signers = signers,
                 Attributes = [],
                 Script = script,
-                Witnesses = witnesses
+                Witnesses = witnesses ?? []
             };
             Engine = ApplicationEngine.Run(script, Snapshot, container: tx, settings: system.Settings, gas: datoshi, diagnostic: diagnostic);
             ResetExpiration();

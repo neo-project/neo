@@ -13,22 +13,13 @@ using Akka.Actor;
 using Akka.TestKit;
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using Neo.Cryptography.ECC;
-using Neo.Extensions;
-using Neo.IO;
 using Neo.Ledger;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence.Providers;
 using Neo.Plugins.DBFTPlugin.Consensus;
-using Neo.Plugins.DBFTPlugin.Messages;
-using Neo.Plugins.DBFTPlugin.Types;
 using Neo.SmartContract;
 using Neo.VM;
-using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
@@ -116,7 +107,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var genesisBlock = neoSystem.GenesisBlock;
             foreach (var service in consensusServices)
             {
-                service.Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
+                service.Tell(new Blockchain.PersistCompleted(genesisBlock));
             }
 
             // Assert - Services should start consensus without throwing
@@ -146,7 +137,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             // Simulate block persistence to trigger consensus
             var genesisBlock = neoSystem.GenesisBlock;
-            primaryService.Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
+            primaryService.Tell(new Blockchain.PersistCompleted(genesisBlock));
 
             // Assert - Primary should start consensus process
             ExpectNoMsg(TimeSpan.FromMilliseconds(500), cancellationToken: CancellationToken.None);
@@ -187,7 +178,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                     Transactions = Array.Empty<Transaction>()
                 };
 
-                consensusService.Tell(new Blockchain.PersistCompleted { Block = block });
+                consensusService.Tell(new Blockchain.PersistCompleted(block));
 
                 // Wait between rounds
                 ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);

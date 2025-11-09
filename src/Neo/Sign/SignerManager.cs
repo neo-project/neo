@@ -26,7 +26,7 @@ namespace Neo.Sign
         /// <returns>
         /// The signer; <see langword="null"/> if not found or no signer or multiple signers are registered.
         /// </returns>
-        public static ISigner GetSignerOrDefault(string name)
+        public static ISigner? GetSignerOrDefault(string name)
         {
             if (!string.IsNullOrEmpty(name) && s_signers.TryGetValue(name, out var signer)) return signer;
             if (s_signers.Count == 1) return s_signers.Values.First();

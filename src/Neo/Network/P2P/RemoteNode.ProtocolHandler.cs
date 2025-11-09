@@ -46,7 +46,7 @@ namespace Neo.Network.P2P
         private readonly HashSetCache<UInt256> _knownHashes;
         private readonly HashSetCache<UInt256> _sentHashes;
         private bool _verack = false;
-        private BloomFilter _bloomFilter;
+        private BloomFilter? _bloomFilter;
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private readonly ICancelable timer = Context.System.Scheduler
@@ -61,7 +61,7 @@ namespace Neo.Network.P2P
             {
                 if (msg.Command != MessageCommand.Version)
                     throw new ProtocolViolationException();
-                OnVersionMessageReceived((VersionPayload)msg.Payload);
+                OnVersionMessageReceived((VersionPayload)msg.Payload!);
                 return;
             }
             if (!_verack)
@@ -74,53 +74,53 @@ namespace Neo.Network.P2P
             switch (msg.Command)
             {
                 case MessageCommand.Addr:
-                    OnAddrMessageReceived((AddrPayload)msg.Payload);
+                    OnAddrMessageReceived((AddrPayload)msg.Payload!);
                     break;
                 case MessageCommand.Block:
                 case MessageCommand.Extensible:
-                    OnInventoryReceived((IInventory)msg.Payload);
+                    OnInventoryReceived((IInventory)msg.Payload!);
                     break;
                 case MessageCommand.FilterAdd:
-                    OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
+                    OnFilterAddMessageReceived((FilterAddPayload)msg.Payload!);
                     break;
                 case MessageCommand.FilterClear:
                     OnFilterClearMessageReceived();
                     break;
                 case MessageCommand.FilterLoad:
-                    OnFilterLoadMessageReceived((FilterLoadPayload)msg.Payload);
+                    OnFilterLoadMessageReceived((FilterLoadPayload)msg.Payload!);
                     break;
                 case MessageCommand.GetAddr:
                     OnGetAddrMessageReceived();
                     break;
                 case MessageCommand.GetBlocks:
-                    OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
+                    OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload!);
                     break;
                 case MessageCommand.GetBlockByIndex:
-                    OnGetBlockByIndexMessageReceived((GetBlockByIndexPayload)msg.Payload);
+                    OnGetBlockByIndexMessageReceived((GetBlockByIndexPayload)msg.Payload!);
                     break;
                 case MessageCommand.GetData:
-                    OnGetDataMessageReceived((InvPayload)msg.Payload);
+                    OnGetDataMessageReceived((InvPayload)msg.Payload!);
                     break;
                 case MessageCommand.GetHeaders:
-                    OnGetHeadersMessageReceived((GetBlockByIndexPayload)msg.Payload);
+                    OnGetHeadersMessageReceived((GetBlockByIndexPayload)msg.Payload!);
                     break;
                 case MessageCommand.Headers:
-                    OnHeadersMessageReceived((HeadersPayload)msg.Payload);
+                    OnHeadersMessageReceived((HeadersPayload)msg.Payload!);
                     break;
                 case MessageCommand.Inv:
-                    OnInvMessageReceived((InvPayload)msg.Payload);
+                    OnInvMessageReceived((InvPayload)msg.Payload!);
                     break;
                 case MessageCommand.Mempool:
                     OnMemPoolMessageReceived();
                     break;
                 case MessageCommand.Ping:
-                    OnPingMessageReceived((PingPayload)msg.Payload);
+                    OnPingMessageReceived((PingPayload)msg.Payload!);
                     break;
                 case MessageCommand.Pong:
-                    OnPongMessageReceived((PingPayload)msg.Payload);
+                    OnPongMessageReceived((PingPayload)msg.Payload!);
                     break;
                 case MessageCommand.Transaction:
-                    if (msg.Payload.Size <= Transaction.MaxTransactionSize)
+                    if (msg.Payload!.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
                 case MessageCommand.Verack:
@@ -139,10 +139,11 @@ namespace Neo.Network.P2P
             ref bool sent = ref _sentCommands[(byte)MessageCommand.GetAddr];
             if (!sent) return;
             sent = false;
-            _system.LocalNode.Tell(new Peer.Peers
-            {
-                EndPoints = payload.AddressList.Select(p => p.EndPoint).Where(p => p.Port > 0)
-            });
+            var endPoints = payload.AddressList
+                .Select(p => p.EndPoint)
+                .Where(p => p.Port > 0)
+                .ToArray();
+            _system.LocalNode.Tell(new Peer.Peers(endPoints));
         }
 
         private void OnFilterAddMessageReceived(FilterAddPayload payload)
@@ -172,7 +173,7 @@ namespace Neo.Network.P2P
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => RandomNumberFactory.NextInt32())
                 .Take(AddrPayload.MaxCountToSend);
-            NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
+            NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version!.Timestamp, p.Version.Capabilities)).ToArray();
             if (networkAddresses.Length == 0) return;
             EnqueueMessage(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
@@ -188,8 +189,8 @@ namespace Neo.Network.P2P
             // The default value of payload.Count is -1
             int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
             var snapshot = _system.StoreView;
-            UInt256 hash = payload.HashStart;
-            TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
+            UInt256? hash = payload.HashStart;
+            TrimmedBlock? state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
             if (state == null) return;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             List<UInt256> hashes = new();
@@ -211,7 +212,7 @@ namespace Neo.Network.P2P
             uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
             for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
-                Block block = NativeContract.Ledger.GetBlock(_system.StoreView, i);
+                Block? block = NativeContract.Ledger.GetBlock(_system.StoreView, i);
                 if (block == null)
                     break;
 
@@ -242,13 +243,13 @@ namespace Neo.Network.P2P
                 switch (payload.Type)
                 {
                     case InventoryType.TX:
-                        if (_system.MemPool.TryGetValue(hash, out Transaction tx))
+                        if (_system.MemPool.TryGetValue(hash, out Transaction? tx))
                             EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
                         else
                             notFound.Add(hash);
                         break;
                     case InventoryType.Block:
-                        Block block = NativeContract.Ledger.GetBlock(_system.StoreView, hash);
+                        Block? block = NativeContract.Ledger.GetBlock(_system.StoreView, hash);
                         if (block != null)
                         {
                             if (_bloomFilter == null)
@@ -358,7 +359,7 @@ namespace Neo.Network.P2P
             if (hashes.Length == 0) return;
             foreach (var hash in hashes)
                 _pendingKnownHashes.TryAdd(Tuple.Create(hash, TimeProvider.Current.UtcNow));
-            _system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
+            _system.TaskManager.Tell(new TaskManager.NewTasks(InvPayload.Create(payload.Type, hashes)));
         }
 
         private void OnMemPoolMessageReceived()
@@ -381,7 +382,7 @@ namespace Neo.Network.P2P
         private void OnVerackMessageReceived()
         {
             _verack = true;
-            _system.TaskManager.Tell(new TaskManager.Register { Version = Version });
+            _system.TaskManager.Tell(new TaskManager.Register(Version!));
             CheckMessageQueue();
         }
 
@@ -415,7 +416,7 @@ namespace Neo.Network.P2P
             var oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
             while (_pendingKnownHashes.Count > 0)
             {
-                var (_, time) = _pendingKnownHashes.FirstOrDefault;
+                var (_, time) = _pendingKnownHashes.FirstOrDefault!;
                 if (oneMinuteAgo <= time) break;
                 if (!_pendingKnownHashes.RemoveFirst()) break;
             }
@@ -428,7 +429,7 @@ namespace Neo.Network.P2P
             if (lastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = lastBlockIndex;
-                _system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+                _system.TaskManager.Tell(new TaskManager.Update(LastBlockIndex));
             }
         }
     }

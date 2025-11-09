@@ -65,7 +65,7 @@ namespace Neo.Plugins.RestServer.Helpers
                 Signers = signers,
                 Attributes = [],
                 Script = script,
-                Witnesses = witnesses
+                Witnesses = witnesses ?? []
             };
             return ApplicationEngine.Run(script, snapshot, tx, settings: neoSystem.Settings, gas: RestServerSettings.Current.MaxGasInvoke);
         }

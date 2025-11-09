@@ -32,7 +32,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override WitnessConditionType Type => WitnessConditionType.Boolean;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(BooleanCondition other)
+        public bool Equals(BooleanCondition? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -43,7 +43,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null) return false;
             return obj is BooleanCondition bc && Equals(bc);
@@ -71,7 +71,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            Expression = json["expression"].GetBoolean();
+            Expression = json["expression"]!.GetBoolean();
         }
 
         public override JObject ToJson()
@@ -81,7 +81,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var result = (Array)base.ToStackItem(referenceCounter);
             result.Add(Expression);

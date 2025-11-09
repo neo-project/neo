@@ -60,7 +60,18 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestInitNonce()
         {
-            var block = new Block { Header = new() { Nonce = 0x0102030405060708 } };
+            var block = new Block
+            {
+                Header = new()
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Nonce = 0x0102030405060708,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             using var app = new TestEngine(TriggerType.Application,
                 null, null, block, TestProtocolSettings.Default, 0, null, null);
 

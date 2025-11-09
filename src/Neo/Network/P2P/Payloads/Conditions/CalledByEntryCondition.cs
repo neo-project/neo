@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override WitnessConditionType Type => WitnessConditionType.CalledByEntry;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(CalledByEntryCondition other)
+        public bool Equals(CalledByEntryCondition? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -32,7 +32,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null) return false;
             return obj is CalledByEntryCondition cc && Equals(cc);
@@ -45,7 +45,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override bool Match(ApplicationEngine engine)
         {
-            var state = engine.CurrentContext.GetState<ExecutionContextState>();
+            var state = engine.CurrentContext!.GetState<ExecutionContextState>();
             if (state.CallingContext is null) return true;
             state = state.CallingContext.GetState<ExecutionContextState>();
             return state.CallingContext is null;

@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask OnPersistAsync(ApplicationEngine engine)
         {
-            TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
+            TransactionState[] transactions = engine.PersistingBlock!.Transactions.Select(p => new TransactionState
             {
                 BlockIndex = engine.PersistingBlock.Index,
                 Transaction = p,
@@ -53,7 +53,7 @@ namespace Neo.SmartContract.Native
             {
                 // It's possible that there are previously saved malicious conflict records for this transaction.
                 // If so, then remove it and store the relevant transaction itself.
-                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(new TransactionState()))
+                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction!.Hash), () => new StorageItem(new TransactionState()))
                     .FromReplica(new StorageItem(tx));
 
                 // Store transaction's conflicits.
@@ -79,7 +79,7 @@ namespace Neo.SmartContract.Native
             var state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState()))
                 // Don't need to seal because the size is fixed and it can't grow
                 .GetInteroperable<HashIndexState>();
-            state.Hash = engine.PersistingBlock.Hash;
+            state.Hash = engine.PersistingBlock!.Hash;
             state.Index = engine.PersistingBlock.Index;
             return ContractTask.CompletedTask;
         }
@@ -133,7 +133,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="index">The index of the block.</param>
         /// <returns>The hash of the block.</returns>
-        public UInt256 GetBlockHash(IReadOnlyStore snapshot, uint index)
+        public UInt256? GetBlockHash(IReadOnlyStore snapshot, uint index)
         {
             ArgumentNullException.ThrowIfNull(snapshot);
 
@@ -238,7 +238,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="hash">The hash of the block.</param>
         /// <returns>The trimmed block.</returns>
-        public TrimmedBlock GetTrimmedBlock(IReadOnlyStore snapshot, UInt256 hash)
+        public TrimmedBlock? GetTrimmedBlock(IReadOnlyStore snapshot, UInt256 hash)
         {
             ArgumentNullException.ThrowIfNull(snapshot);
 
@@ -249,9 +249,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private TrimmedBlock GetBlock(ApplicationEngine engine, byte[] indexOrHash)
+        private TrimmedBlock? GetBlock(ApplicationEngine engine, byte[] indexOrHash)
         {
-            UInt256 hash;
+            UInt256? hash;
             if (indexOrHash.Length < UInt256.Length)
                 hash = GetBlockHash(engine.SnapshotCache, (uint)new BigInteger(indexOrHash));
             else if (indexOrHash.Length == UInt256.Length)
@@ -259,7 +259,7 @@ namespace Neo.SmartContract.Native
             else
                 throw new ArgumentException($"Invalid indexOrHash length: {indexOrHash.Length}", nameof(indexOrHash));
             if (hash is null) return null;
-            TrimmedBlock block = GetTrimmedBlock(engine.SnapshotCache, hash);
+            TrimmedBlock? block = GetTrimmedBlock(engine.SnapshotCache, hash);
             if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
             return block;
         }
@@ -270,14 +270,14 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="hash">The hash of the block.</param>
         /// <returns>The block with the specified hash.</returns>
-        public Block GetBlock(IReadOnlyStore snapshot, UInt256 hash)
+        public Block? GetBlock(IReadOnlyStore snapshot, UInt256 hash)
         {
-            TrimmedBlock state = GetTrimmedBlock(snapshot, hash);
+            TrimmedBlock? state = GetTrimmedBlock(snapshot, hash);
             if (state is null) return null;
             return new Block
             {
                 Header = state.Header,
-                Transactions = state.Hashes.Select(p => GetTransaction(snapshot, p)).ToArray()
+                Transactions = state.Hashes.Select(p => GetTransaction(snapshot, p)!).ToArray()
             };
         }
 
@@ -287,9 +287,9 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="index">The index of the block.</param>
         /// <returns>The block with the specified index.</returns>
-        public Block GetBlock(IReadOnlyStore snapshot, uint index)
+        public Block? GetBlock(IReadOnlyStore snapshot, uint index)
         {
-            UInt256 hash = GetBlockHash(snapshot, index);
+            UInt256? hash = GetBlockHash(snapshot, index);
             if (hash is null) return null;
             return GetBlock(snapshot, hash);
         }
@@ -300,7 +300,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="hash">The hash of the block.</param>
         /// <returns>The block header with the specified hash.</returns>
-        public Header GetHeader(IReadOnlyStore snapshot, UInt256 hash)
+        public Header? GetHeader(IReadOnlyStore snapshot, UInt256 hash)
         {
             return GetTrimmedBlock(snapshot, hash)?.Header;
         }
@@ -311,9 +311,9 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="index">The index of the block.</param>
         /// <returns>The block header with the specified index.</returns>
-        public Header GetHeader(DataCache snapshot, uint index)
+        public Header? GetHeader(DataCache snapshot, uint index)
         {
-            UInt256 hash = GetBlockHash(snapshot, index);
+            UInt256? hash = GetBlockHash(snapshot, index);
             if (hash is null) return null;
             return GetHeader(snapshot, hash);
         }
@@ -324,7 +324,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="hash">The hash of the transaction.</param>
         /// <returns>The <see cref="TransactionState"/> with the specified hash.</returns>
-        public TransactionState GetTransactionState(IReadOnlyStore snapshot, UInt256 hash)
+        public TransactionState? GetTransactionState(IReadOnlyStore snapshot, UInt256 hash)
         {
             ArgumentNullException.ThrowIfNull(snapshot);
 
@@ -339,31 +339,31 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="hash">The hash of the transaction.</param>
         /// <returns>The transaction with the specified hash.</returns>
-        public Transaction GetTransaction(IReadOnlyStore snapshot, UInt256 hash)
+        public Transaction? GetTransaction(IReadOnlyStore snapshot, UInt256 hash)
         {
             return GetTransactionState(snapshot, hash)?.Transaction;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getTransaction")]
-        private Transaction GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
+        private Transaction? GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
+            TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
             if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
             return state.Transaction;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private Signer[] GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
+        private Signer[]? GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
+            TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
             if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
-            return state.Transaction.Signers;
+            return state.Transaction!.Signers;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private VMState GetTransactionVMState(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
+            TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
             if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return VMState.NONE;
             return state.State;
         }
@@ -371,15 +371,15 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private int GetTransactionHeight(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
+            TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
             if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return -1;
             return (int)state.BlockIndex;
         }
 
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
-        private Transaction GetTransactionFromBlock(ApplicationEngine engine, byte[] blockIndexOrHash, int txIndex)
+        private Transaction? GetTransactionFromBlock(ApplicationEngine engine, byte[] blockIndexOrHash, int txIndex)
         {
-            UInt256 hash;
+            UInt256? hash;
             if (blockIndexOrHash.Length < UInt256.Length)
                 hash = GetBlockHash(engine.SnapshotCache, (uint)new BigInteger(blockIndexOrHash));
             else if (blockIndexOrHash.Length == UInt256.Length)
@@ -387,7 +387,7 @@ namespace Neo.SmartContract.Native
             else
                 throw new ArgumentException($"Invalid blockIndexOrHash length: {blockIndexOrHash.Length}", nameof(blockIndexOrHash));
             if (hash is null) return null;
-            TrimmedBlock block = GetTrimmedBlock(engine.SnapshotCache, hash);
+            TrimmedBlock? block = GetTrimmedBlock(engine.SnapshotCache, hash);
             if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
             if (txIndex < 0 || txIndex >= block.Hashes.Length)
                 throw new ArgumentOutOfRangeException(nameof(txIndex));

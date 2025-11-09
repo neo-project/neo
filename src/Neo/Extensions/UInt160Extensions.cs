@@ -22,7 +22,7 @@ namespace Neo.Extensions
         /// <param name="method">The method to be called in the contract.</param>
         /// <param name="args">The arguments for calling the contract.</param>
         /// <returns>The generated script.</returns>
-        public static byte[] MakeScript(this UInt160 scriptHash, string method, params object[] args)
+        public static byte[] MakeScript(this UInt160 scriptHash, string method, params object?[] args)
         {
             using ScriptBuilder sb = new();
             sb.EmitDynamicCall(scriptHash, method, args);

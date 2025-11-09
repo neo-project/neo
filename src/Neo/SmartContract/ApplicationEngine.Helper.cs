@@ -26,13 +26,13 @@ namespace Neo.SmartContract
             StringBuilder traceback = new();
             if (CallingScriptHash != null)
                 traceback.AppendLine($"CallingScriptHash={CallingScriptHash}[{NativeContract.ContractManagement.GetContract(SnapshotCache, CallingScriptHash)?.Manifest.Name}]");
-            traceback.AppendLine($"CurrentScriptHash={CurrentScriptHash}[{NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash)?.Manifest.Name}]");
+            traceback.AppendLine($"CurrentScriptHash={CurrentScriptHash}[{NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!)?.Manifest.Name}]");
             traceback.AppendLine($"EntryScriptHash={EntryScriptHash}");
 
             foreach (ExecutionContext context in InvocationStack.Reverse())
             {
                 UInt160 contextScriptHash = context.GetScriptHash();
-                string contextContractName = NativeContract.ContractManagement.GetContract(SnapshotCache, contextScriptHash)?.Manifest.Name;
+                string? contextContractName = NativeContract.ContractManagement.GetContract(SnapshotCache, contextScriptHash)?.Manifest.Name;
                 traceback.AppendLine($"\tInstructionPointer={context.InstructionPointer}, OpCode {context.CurrentInstruction?.OpCode}, Script Length={context.Script.Length} {contextScriptHash}[{contextContractName}]");
             }
             traceback.Append(GetEngineExceptionInfo(exceptionStackTrace: exceptionStackTrace, exceptionMessage: exceptionMessage));
