@@ -70,7 +70,7 @@ namespace Neo.Plugins.RestServer.Tokens
 
         public BigDecimal TotalSupply()
         {
-            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "totalSupply", 0) == null)
+            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "totalSupply", 0) is null)
                 throw new NotSupportedException(nameof(ScriptHash));
             if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _snapshot, ScriptHash, "totalSupply", out var results))
                 return new(results[0].GetInteger(), Decimals);
@@ -79,7 +79,7 @@ namespace Neo.Plugins.RestServer.Tokens
 
         public BigDecimal BalanceOf(UInt160 owner)
         {
-            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "balanceOf", 1) == null)
+            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "balanceOf", 1) is null)
                 throw new NotSupportedException(nameof(ScriptHash));
             if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _snapshot, ScriptHash, "balanceOf", out var results, owner))
                 return new(results[0].GetInteger(), Decimals);
@@ -90,7 +90,7 @@ namespace Neo.Plugins.RestServer.Tokens
         {
             if (Decimals == 0)
                 throw new InvalidOperationException();
-            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "balanceOf", 2) == null)
+            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "balanceOf", 2) is null)
                 throw new NotSupportedException(nameof(ScriptHash));
             ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));
             if (tokenId.Length > 64)
@@ -102,7 +102,7 @@ namespace Neo.Plugins.RestServer.Tokens
 
         public IEnumerable<byte[]> TokensOf(UInt160 owner)
         {
-            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "tokensOf", 1) == null)
+            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "tokensOf", 1) is null)
                 throw new NotSupportedException(nameof(ScriptHash));
             if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _snapshot, ScriptHash, "tokensOf", out var results, owner))
             {
@@ -117,7 +117,7 @@ namespace Neo.Plugins.RestServer.Tokens
 
         public UInt160[] OwnerOf(byte[] tokenId)
         {
-            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "ownerOf", 1) == null)
+            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "ownerOf", 1) is null)
                 throw new NotSupportedException(nameof(ScriptHash));
             ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));
             if (tokenId.Length > 64)
@@ -146,7 +146,7 @@ namespace Neo.Plugins.RestServer.Tokens
 
         public IEnumerable<byte[]> Tokens()
         {
-            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "tokens", 0) == null)
+            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "tokens", 0) is null)
                 throw new NotImplementedException();
             if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _snapshot, ScriptHash, "tokens", out var results))
             {
@@ -162,7 +162,7 @@ namespace Neo.Plugins.RestServer.Tokens
         public IReadOnlyDictionary<string, StackItem>? Properties(byte[] tokenId)
         {
             ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));
-            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "properties", 1) == null)
+            if (ContractHelper.GetContractMethod(_snapshot, ScriptHash, "properties", 1) is null)
                 throw new NotImplementedException("no 'properties' with 1 arguments method for NEP-11 contract");
             if (tokenId.Length > 64)
                 throw new ArgumentOutOfRangeException(nameof(tokenId));

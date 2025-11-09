@@ -33,7 +33,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The value of the parameter.
         /// </summary>
-        public object Value;
+        public object? Value;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractParameter"/> class.
@@ -73,21 +73,21 @@ namespace Neo.SmartContract
         {
             ContractParameter parameter = new()
             {
-                Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
+                Type = Enum.Parse<ContractParameterType>(json["type"]!.GetString())
             };
             if (json["value"] != null)
             {
                 parameter.Value = parameter.Type switch
                 {
-                    ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"].AsString()),
-                    ContractParameterType.Boolean => json["value"].AsBoolean(),
-                    ContractParameterType.Integer => BigInteger.Parse(json["value"].AsString()),
-                    ContractParameterType.Hash160 => UInt160.Parse(json["value"].AsString()),
-                    ContractParameterType.Hash256 => UInt256.Parse(json["value"].AsString()),
-                    ContractParameterType.PublicKey => ECPoint.Parse(json["value"].AsString(), ECCurve.Secp256r1),
-                    ContractParameterType.String => json["value"].AsString(),
-                    ContractParameterType.Array => ((JArray)json["value"]).Select(p => FromJson((JObject)p)).ToList(),
-                    ContractParameterType.Map => ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson((JObject)p["key"]), FromJson((JObject)p["value"]))).ToList(),
+                    ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"]!.AsString()),
+                    ContractParameterType.Boolean => json["value"]!.AsBoolean(),
+                    ContractParameterType.Integer => BigInteger.Parse(json["value"]!.AsString()),
+                    ContractParameterType.Hash160 => UInt160.Parse(json["value"]!.AsString()),
+                    ContractParameterType.Hash256 => UInt256.Parse(json["value"]!.AsString()),
+                    ContractParameterType.PublicKey => ECPoint.Parse(json["value"]!.AsString(), ECCurve.Secp256r1),
+                    ContractParameterType.String => json["value"]!.AsString(),
+                    ContractParameterType.Array => ((JArray)json["value"]!).Select(p => FromJson((JObject)p!)).ToList(),
+                    ContractParameterType.Map => ((JArray)json["value"]!).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson((JObject)p!["key"]!), FromJson((JObject)p["value"]!))).ToList(),
                     _ => throw new ArgumentException($"Parameter type '{parameter.Type}' is not supported.", nameof(json)),
                 };
             }
@@ -142,7 +142,7 @@ namespace Neo.SmartContract
             return ToJson(this, null);
         }
 
-        private static JObject ToJson(ContractParameter parameter, HashSet<ContractParameter> context)
+        private static JObject ToJson(ContractParameter parameter, HashSet<ContractParameter>? context)
         {
             JObject json = new();
             json["type"] = parameter.Type;
@@ -192,7 +192,7 @@ namespace Neo.SmartContract
             return ToString(this, null);
         }
 
-        private static string ToString(ContractParameter parameter, HashSet<ContractParameter> context)
+        private static string ToString(ContractParameter parameter, HashSet<ContractParameter>? context)
         {
             switch (parameter.Value)
             {
@@ -247,7 +247,7 @@ namespace Neo.SmartContract
                         return sb.ToString();
                     }
                 default:
-                    return parameter.Value.ToString();
+                    return parameter.Value.ToString()!;
             }
         }
     }

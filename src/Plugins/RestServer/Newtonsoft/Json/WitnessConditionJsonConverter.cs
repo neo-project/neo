@@ -78,7 +78,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
                         break;
                     case WitnessConditionType.ScriptHash:
                         valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "hash"));
-                        return new ScriptHashCondition() { Hash = UInt160.Parse(valueProp.Value<string>()) };
+                        return new ScriptHashCondition() { Hash = UInt160.Parse(valueProp.Value<string>()!) };
                     case WitnessConditionType.Group:
                         valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "group"));
                         return new GroupCondition() { Group = ECPoint.Parse(valueProp.Value<string>() ?? throw new NullReferenceException("In the witness json data, group is null."), ECCurve.Secp256r1) };
@@ -86,7 +86,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
                         return new CalledByEntryCondition();
                     case WitnessConditionType.CalledByContract:
                         valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "hash"));
-                        return new CalledByContractCondition { Hash = UInt160.Parse(valueProp.Value<string>()) };
+                        return new CalledByContractCondition { Hash = UInt160.Parse(valueProp.Value<string>()!) };
                     case WitnessConditionType.CalledByGroup:
                         valueProp = json.Properties().Single(s => EqualsIgnoreCase(s.Name, "group"));
                         return new CalledByGroupCondition { Group = ECPoint.Parse(valueProp.Value<string>() ?? throw new NullReferenceException("In the witness json data, group is null."), ECCurve.Secp256r1) };

@@ -15,6 +15,7 @@ using Neo.IO;
 using Neo.SmartContract;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -45,7 +46,7 @@ namespace Neo.UnitTests.SmartContract
                 ((ISerializable)file).Serialize(writer);
                 ms.Seek(0, SeekOrigin.Begin);
                 ms.Write(wrongMagic, 0, 4);
-                ISerializable newFile = new NefFile();
+                ISerializable newFile = (NefFile)RuntimeHelpers.GetUninitializedObject(typeof(NefFile));
                 Assert.ThrowsExactly<FormatException>(() =>
                 {
                     MemoryReader reader = new(ms.ToArray());
@@ -59,7 +60,7 @@ namespace Neo.UnitTests.SmartContract
             using (BinaryWriter writer = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
-                ISerializable newFile = new NefFile();
+                ISerializable newFile = (NefFile)RuntimeHelpers.GetUninitializedObject(typeof(NefFile));
                 Assert.ThrowsExactly<FormatException>(() =>
                 {
                     MemoryReader reader = new(ms.ToArray());
@@ -74,7 +75,7 @@ namespace Neo.UnitTests.SmartContract
             using (BinaryWriter writer = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
-                ISerializable newFile = new NefFile();
+                ISerializable newFile = (NefFile)RuntimeHelpers.GetUninitializedObject(typeof(NefFile));
                 Assert.ThrowsExactly<ArgumentException>(() =>
                 {
                     MemoryReader reader = new(ms.ToArray());

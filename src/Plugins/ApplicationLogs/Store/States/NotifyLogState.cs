@@ -38,7 +38,7 @@ namespace Neo.Plugins.ApplicationLogs.Store.States
 
         public virtual void Deserialize(ref MemoryReader reader)
         {
-            ScriptHash.Deserialize(ref reader);
+            ScriptHash = reader.ReadSerializable<UInt160>();
             EventName = reader.ReadVarString();
 
             // It should be safe because it filled from a transaction's notifications.

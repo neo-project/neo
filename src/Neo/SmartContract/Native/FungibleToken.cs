@@ -88,7 +88,7 @@ namespace Neo.SmartContract.Native
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount), "cannot be negative");
             if (amount.IsZero) return;
             StorageKey key = CreateStorageKey(Prefix_Account, account);
-            StorageItem storage = engine.SnapshotCache.GetAndChange(key);
+            StorageItem storage = engine.SnapshotCache.GetAndChange(key)!;
             TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
             OnBalanceChanging(engine, account, state, -amount);
@@ -96,7 +96,7 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Delete(key);
             else
                 state.Balance -= amount;
-            storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
+            storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_TotalSupply))!;
             storage.Add(-amount);
             await PostTransferAsync(engine, account, null, amount, StackItem.Null, false);
         }
@@ -138,7 +138,7 @@ namespace Neo.SmartContract.Native
                 return false;
 
             StorageKey keyFrom = CreateStorageKey(Prefix_Account, from);
-            StorageItem storageFrom = engine.SnapshotCache.GetAndChange(keyFrom);
+            StorageItem? storageFrom = engine.SnapshotCache.GetAndChange(keyFrom);
             if (amount.IsZero)
             {
                 if (storageFrom != null)
@@ -178,7 +178,7 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        private protected virtual async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private protected virtual async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             // Send notification
 

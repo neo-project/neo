@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using System;
 
 namespace Neo.Persistence
@@ -42,5 +40,3 @@ namespace Neo.Persistence
         IStoreSnapshot GetSnapshot();
     }
 }
-
-#nullable disable

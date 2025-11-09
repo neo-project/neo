@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract;
@@ -39,7 +40,7 @@ namespace Neo.Plugins.ApplicationLogs.Store.States
 
         public override void Deserialize(ref MemoryReader reader)
         {
-            TransactionHash.Deserialize(ref reader);
+            TransactionHash = reader.ReadSerializable<UInt256>();
             Trigger = (TriggerType)reader.ReadByte();
             base.Deserialize(ref reader);
         }

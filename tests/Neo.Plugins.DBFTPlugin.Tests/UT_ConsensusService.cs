@@ -13,21 +13,15 @@ using Akka.Actor;
 using Akka.TestKit;
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Ledger;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence.Providers;
 using Neo.Plugins.DBFTPlugin.Consensus;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.SmartContract;
 using Neo.VM;
-using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
@@ -156,7 +150,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             };
 
             // Act
-            consensusService.Tell(new Blockchain.PersistCompleted { Block = block });
+            consensusService.Tell(new Blockchain.PersistCompleted(block));
 
             // Assert - The service should handle the message without throwing
             ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);

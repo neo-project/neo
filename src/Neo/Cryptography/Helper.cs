@@ -226,7 +226,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] Keccak256(this Span<byte> value) => ((ReadOnlySpan<byte>)value).Keccak256();
 
-        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
+        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[]? associatedData = null)
         {
             if (nonce.Length != AesNonceSizeBytes)
                 throw new ArgumentOutOfRangeException(nameof(nonce), $"`nonce` must be {AesNonceSizeBytes} bytes");
@@ -254,7 +254,7 @@ namespace Neo.Cryptography
             return [.. nonce, .. cipherBytes, .. tag];
         }
 
-        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
+        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[]? associatedData = null)
         {
             if (encryptedData.Length < AesNonceSizeBytes + AesTagSizeBytes)
                 throw new ArgumentException($"The encryptedData.Length must be greater than {AesNonceSizeBytes} + {AesTagSizeBytes}");

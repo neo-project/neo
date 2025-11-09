@@ -54,7 +54,11 @@ namespace Neo.CLI
         [ConsoleCommand("broadcast block", Category = "Network Commands")]
         private void OnBroadcastGetBlocksByHashCommand(UInt256 hash)
         {
-            OnBroadcastCommand(MessageCommand.Block, NativeContract.Ledger.GetBlock(NeoSystem.StoreView, hash));
+            Block? block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, hash);
+            if (block is null)
+                ConsoleHelper.Error("Block is not found.");
+            else
+                OnBroadcastCommand(MessageCommand.Block, block);
         }
 
         /// <summary>
@@ -64,7 +68,11 @@ namespace Neo.CLI
         [ConsoleCommand("broadcast block", Category = "Network Commands")]
         private void OnBroadcastGetBlocksByHeightCommand(uint height)
         {
-            OnBroadcastCommand(MessageCommand.Block, NativeContract.Ledger.GetBlock(NeoSystem.StoreView, height));
+            Block? block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, height);
+            if (block is null)
+                ConsoleHelper.Error("Block is not found.");
+            else
+                OnBroadcastCommand(MessageCommand.Block, block);
         }
 
         /// <summary>
