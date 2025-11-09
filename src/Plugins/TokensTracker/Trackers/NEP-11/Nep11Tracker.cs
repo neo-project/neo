@@ -87,16 +87,16 @@ namespace Neo.Plugins.Trackers.NEP_11
             {
                 if (!contracts.ContainsKey(transferRecord.asset))
                 {
-                    var state = NativeContract.ContractManagement.GetContract(snapshot, transferRecord.asset);
+                    var state = NativeContract.ContractManagement.GetContract(snapshot, transferRecord.asset)!;
                     var balanceMethod = state.Manifest.Abi.GetMethod("balanceOf", 1);
                     var balanceMethod2 = state.Manifest.Abi.GetMethod("balanceOf", 2);
-                    if (balanceMethod == null && balanceMethod2 == null)
+                    if (balanceMethod is null && balanceMethod2 is null)
                     {
                         Log($"{state.Hash} is not nft!", LogLevel.Warning);
                         continue;
                     }
 
-                    var isDivisible = balanceMethod2 != null;
+                    var isDivisible = balanceMethod2 is not null;
                     contracts[transferRecord.asset] = (isDivisible, state);
                 }
 
@@ -168,7 +168,7 @@ namespace Neo.Plugins.Trackers.NEP_11
         }
 
 
-        private void HandleNotificationNep11(IVerifiable scriptContainer, UInt160 asset, Array stateItems, List<TransferRecord> transfers, ref uint transferIndex)
+        private void HandleNotificationNep11(IVerifiable? scriptContainer, UInt160 asset, Array stateItems, List<TransferRecord> transfers, ref uint transferIndex)
         {
             if (stateItems.Count != 4) return;
             var transferRecord = GetTransferRecord(asset, stateItems);
@@ -277,7 +277,7 @@ namespace Neo.Plugins.Trackers.NEP_11
                     var engine = ApplicationEngine.Run(script.ToArray(), _neoSystem.StoreView, settings: _neoSystem.Settings);
                     var symbol = engine.ResultStack.Pop().GetString();
                     var decimals = engine.ResultStack.Pop().GetInteger();
-                    var name = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, key).Manifest.Name;
+                    var name = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, key)!.Manifest.Name;
 
                     balances.Add(new JObject
                     {

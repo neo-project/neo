@@ -41,10 +41,16 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(Array.Empty<byte>());
             engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
             {
+                Hash = UInt160.Zero,
+                Nef = null!,
                 Manifest = new()
                 {
+                    Name = "",
+                    Groups = [],
+                    SupportedStandards = [],
                     Abi = new()
                     {
+                        Methods = [],
                         Events = new[]
                         {
                             new ContractEventDescriptor
@@ -54,12 +60,15 @@ namespace Neo.UnitTests.SmartContract
                                 {
                                     new ContractParameterDefinition
                                     {
+                                        Name = "p1",
                                         Type = ContractParameterType.Array
                                     }
                                 }
                             }
                         }
-                    }
+                    },
+                    Permissions = [],
+                    Trusts = WildcardContainer<ContractPermissionDescriptor>.CreateWildcard()
                 }
             };
 

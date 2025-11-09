@@ -77,8 +77,9 @@ namespace Neo.Cryptography
         /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature, default is <see cref="ECC.ECCurve.Secp256r1"/>.</param>
         /// <param name="hashAlgorithm">The hash algorithm to hash the message, default is SHA256.</param>
         /// <returns>The ECDSA signature for the specified message.</returns>
-        public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+        public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve? ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
+            ecCurve ??= ECC.ECCurve.Secp256r1;
             if (hashAlgorithm == HashAlgorithm.Keccak256 || (s_isOSX && ecCurve == ECC.ECCurve.Secp256k1))
             {
                 var signer = new ECDsaSigner();
@@ -99,7 +100,7 @@ namespace Neo.Cryptography
             }
 
             var curve =
-                ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
+                ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
                 ecCurve == ECC.ECCurve.Secp256k1 ? s_secP256k1 :
                 throw new NotSupportedException($"The elliptic curve {ecCurve} is not supported. Only Secp256r1 and Secp256k1 curves are supported for ECDSA signing operations.");
 
@@ -143,8 +144,8 @@ namespace Neo.Cryptography
             if (hashAlgorithm == HashAlgorithm.Keccak256 || (s_isOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
             {
                 var point = pubkey.Curve.BouncyCastleCurve.Curve.CreatePoint(
-                    new BigInteger(pubkey.X.Value.ToString()),
-                    new BigInteger(pubkey.Y.Value.ToString()));
+                    new BigInteger(pubkey.X!.Value.ToString()),
+                    new BigInteger(pubkey.Y!.Value.ToString()));
                 var pubKey = new ECPublicKeyParameters("ECDSA", point, pubkey.Curve.BouncyCastleDomainParams);
                 var signer = new ECDsaSigner();
                 signer.Init(false, pubKey);

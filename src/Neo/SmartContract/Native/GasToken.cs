@@ -39,7 +39,7 @@ namespace Neo.SmartContract.Native
         internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             long totalNetworkFee = 0;
-            foreach (Transaction tx in engine.PersistingBlock.Transactions)
+            foreach (Transaction tx in engine.PersistingBlock!.Transactions)
             {
                 await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;

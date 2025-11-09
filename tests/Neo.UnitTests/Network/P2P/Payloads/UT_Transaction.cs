@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
@@ -25,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Array = System.Array;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestInitialize]
         public void TestSetup()
         {
-            _uut = new Transaction();
+            _uut = (Transaction)RuntimeHelpers.GetUninitializedObject(typeof(Transaction));
         }
 
         [TestMethod]
@@ -110,22 +110,23 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void CheckNoItems()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            byte[] script = [(byte)OpCode.PUSH0, (byte)OpCode.DROP];
             var tx = new Transaction
             {
                 NetworkFee = 1000000,
                 SystemFee = 1000000,
                 Script = ReadOnlyMemory<byte>.Empty,
+                Signers = [new() { Account = script.ToScriptHash() }],
                 Attributes = [],
                 Witnesses =
                 [
                     new()
                     {
                         InvocationScript = ReadOnlyMemory<byte>.Empty,
-                        VerificationScript = new byte[]{ (byte)OpCode.PUSH0, (byte)OpCode.DROP }
+                        VerificationScript = script
                     }
                 ]
             };
-            tx.Signers = [new() { Account = tx.Witnesses[0].ScriptHash }];
             Assert.IsFalse(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
         }
 
@@ -237,7 +238,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             ], acc.ScriptHash);
 
             Assert.IsNotNull(tx);
-            Assert.IsNull(tx.Witnesses);
 
             // check pre-computed network fee (already guessing signature sizes)
             Assert.AreEqual(1228520L, tx.NetworkFee);
@@ -352,7 +352,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers);
 
             Assert.IsNotNull(tx);
-            Assert.IsNull(tx.Witnesses);
 
             // ----
             // Sign
@@ -433,7 +432,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers);
 
             Assert.IsNotNull(tx);
-            Assert.IsNull(tx.Witnesses);
 
             // ----
             // Sign
@@ -518,7 +516,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers);
 
             Assert.IsNotNull(tx);
-            Assert.IsNull(tx.Witnesses);
 
             // ----
             // Sign
@@ -645,7 +642,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers);
 
             Assert.IsNotNull(tx);
-            Assert.IsNull(tx.Witnesses);
 
             // ----
             // Sign
@@ -990,8 +986,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_FeeOnly_Default()
         {
-            // Global is supposed to be default
-            var signer = new Signer();
+            // None is supposed to be default
+            var signer = (Signer)RuntimeHelpers.GetUninitializedObject(typeof(Signer));
             Assert.AreEqual(WitnessScope.None, signer.Scopes);
 
             var wallet = TestUtils.GenerateTestWallet("");
@@ -1036,7 +1032,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers);
 
             Assert.IsNotNull(tx);
-            Assert.IsNull(tx.Witnesses);
 
             // ----
             // Sign
@@ -1302,11 +1297,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 "IDIpqGSDpKiWUd4BgwhAqeDS+mzLimB0VfLW706y0LP0R6lw7ECJNekTpjFkQ8bDCECuixw9ZlvNXpDGYcFhZ+uLP6hPhFyligA" +
                 "dys9WIqdSr0XQZ7Q3Do=");
 
-            var tx = new Transaction();
+            var tx = (Transaction)RuntimeHelpers.GetUninitializedObject(typeof(Transaction));
             MemoryReader reader = new(txData);
             ((ISerializable)tx).Deserialize(ref reader);
 
-            var settings = new ProtocolSettings() { Network = 844378958 };
+            var settings = ProtocolSettings.Default with { Network = 844378958 };
             var result = tx.VerifyStateIndependent(settings);
             Assert.AreEqual(VerifyResult.Succeed, result);
         }

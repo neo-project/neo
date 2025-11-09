@@ -48,7 +48,7 @@ namespace Neo.Network.P2P
         /// <returns>
         /// <see langword="true"/> if the hash was successfully retrieved; otherwise, <see langword="false"/>.
         /// </returns>
-        public static bool TryGetHash(this IVerifiable verifiable, [NotNullWhen(true)] out UInt256 hash)
+        public static bool TryGetHash(this IVerifiable verifiable, [NotNullWhen(true)] out UInt256? hash)
         {
             try
             {

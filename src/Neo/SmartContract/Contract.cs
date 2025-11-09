@@ -25,14 +25,14 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script of the contract.
         /// </summary>
-        public byte[] Script;
+        public byte[] Script { get => field ??= []; set; }
 
         /// <summary>
         /// The parameters of the contract.
         /// </summary>
-        public ContractParameterType[] ParameterList;
+        public ContractParameterType[] ParameterList { get => field ?? []; set; }
 
-        private UInt160 _scriptHash;
+        private UInt160? _scriptHash;
         /// <summary>
         /// The hash of the contract.
         /// </summary>

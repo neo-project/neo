@@ -15,6 +15,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -66,7 +67,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Witness()
         {
-            IVerifiable item = new ExtensiblePayload();
+            IVerifiable item = (ExtensiblePayload)RuntimeHelpers.GetUninitializedObject(typeof(ExtensiblePayload));
             Action actual = () => item.Witnesses = null;
             Assert.ThrowsExactly<ArgumentNullException>(actual);
 

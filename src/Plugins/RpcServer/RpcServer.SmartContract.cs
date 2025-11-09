@@ -88,7 +88,7 @@ namespace Neo.Plugins.RpcServer
                 }));
                 if (useDiagnostic)
                 {
-                    var diagnostic = (Diagnostic)session.Engine.Diagnostic;
+                    var diagnostic = (Diagnostic)session.Engine.Diagnostic!;
                     json["diagnostics"] = new JObject()
                     {
                         ["invokedcontracts"] = ToJson(diagnostic.InvocationTree.Root!),
@@ -242,7 +242,7 @@ namespace Neo.Plugins.RpcServer
             byte[] script;
             using (var sb = new ScriptBuilder())
             {
-                script = sb.EmitDynamicCall(scriptHash, operation, args).ToArray();
+                script = sb.EmitDynamicCall(scriptHash, operation, args ?? []).ToArray();
             }
             return GetInvokeResult(script, signers, witnesses, useDiagnostic);
         }

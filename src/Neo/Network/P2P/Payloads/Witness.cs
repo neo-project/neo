@@ -40,20 +40,13 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public ReadOnlyMemory<byte> VerificationScript;
 
-        private UInt160 _scriptHash;
         /// <summary>
         /// The hash of the <see cref="VerificationScript"/>.
         /// </summary>
         public UInt160 ScriptHash
         {
-            get
-            {
-                if (_scriptHash == null)
-                {
-                    _scriptHash = VerificationScript.Span.ToScriptHash();
-                }
-                return _scriptHash;
-            }
+            get => field ??= VerificationScript.Span.ToScriptHash();
+            private set;
         }
 
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
@@ -95,7 +88,7 @@ namespace Neo.Network.P2P.Payloads
         {
             return new Witness()
             {
-                _scriptHash = _scriptHash,
+                ScriptHash = ScriptHash,
                 InvocationScript = InvocationScript.ToArray(),
                 VerificationScript = VerificationScript.ToArray()
             };

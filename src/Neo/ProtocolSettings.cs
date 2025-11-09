@@ -40,7 +40,7 @@ namespace Neo
         /// <summary>
         /// The public keys of the standby committee members.
         /// </summary>
-        public IReadOnlyList<ECPoint> StandbyCommittee { get; init; }
+        public required IReadOnlyList<ECPoint> StandbyCommittee { get; init; }
 
         /// <summary>
         /// The number of members of the committee in NEO system.
@@ -55,7 +55,7 @@ namespace Neo
         /// <summary>
         /// The default seed nodes list.
         /// </summary>
-        public string[] SeedList { get; init; }
+        public required string[] SeedList { get; init; }
 
         /// <summary>
         /// Indicates the time in milliseconds between two blocks. Note that starting from
@@ -99,7 +99,7 @@ namespace Neo
         /// <summary>
         /// Sets the block height from which a hardfork is activated.
         /// </summary>
-        public ImmutableDictionary<Hardfork, uint> Hardforks { get; init; }
+        public required ImmutableDictionary<Hardfork, uint> Hardforks { get; init; }
 
         /// <summary>
         /// Indicates the amount of gas to distribute during initialization.
@@ -107,11 +107,10 @@ namespace Neo
         /// </summary>
         public ulong InitialGasDistribution { get; init; }
 
-        private IReadOnlyList<ECPoint> _standbyValidators;
         /// <summary>
         /// The public keys of the standby validators.
         /// </summary>
-        public IReadOnlyList<ECPoint> StandbyValidators => _standbyValidators ??= StandbyCommittee.Take(ValidatorsCount).ToArray();
+        public IReadOnlyList<ECPoint> StandbyValidators => field ??= StandbyCommittee.Take(ValidatorsCount).ToArray();
 
         /// <summary>
         /// The default protocol settings for NEO MainNet.
@@ -132,7 +131,7 @@ namespace Neo
             Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary()
         };
 
-        public static ProtocolSettings Custom { get; set; }
+        public static ProtocolSettings? Custom { get; set; }
 
         /// <summary>
         /// Searches for a file in the given path. If not found, checks in the executable directory.
@@ -140,7 +139,7 @@ namespace Neo
         /// <param name="fileName">The name of the file to search for.</param>
         /// <param name="path">The primary path to search in.</param>
         /// <returns>Full path of the file if found, null otherwise.</returns>
-        public static string FindFile(string fileName, string path)
+        public static string? FindFile(string fileName, string path)
         {
             // Check if the given path is relative
             if (!Path.IsPathRooted(path))
@@ -188,14 +187,14 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(string path)
         {
-            path = FindFile(path, Environment.CurrentDirectory);
+            string? fullpath = FindFile(path, Environment.CurrentDirectory);
 
-            if (path is null)
+            if (fullpath is null)
             {
                 return Default;
             }
 
-            using var stream = File.OpenRead(path);
+            using var stream = File.OpenRead(fullpath);
             return Load(stream);
         }
 
@@ -211,11 +210,11 @@ namespace Neo
                 Network = section.GetValue("Network", Default.Network),
                 AddressVersion = section.GetValue("AddressVersion", Default.AddressVersion),
                 StandbyCommittee = section.GetSection("StandbyCommittee").Exists()
-                    ? section.GetSection("StandbyCommittee").GetChildren().Select(p => ECPoint.Parse(p.Get<string>(), ECCurve.Secp256r1)).ToArray()
+                    ? section.GetSection("StandbyCommittee").GetChildren().Select(p => ECPoint.Parse(p.Get<string>()!, ECCurve.Secp256r1)).ToArray()
                     : Default.StandbyCommittee,
                 ValidatorsCount = section.GetValue("ValidatorsCount", Default.ValidatorsCount),
                 SeedList = section.GetSection("SeedList").Exists()
-                    ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()).ToArray()
+                    ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()!).ToArray()
                     : Default.SeedList,
                 MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
@@ -224,7 +223,7 @@ namespace Neo
                 MaxValidUntilBlockIncrement = section.GetValue("MaxValidUntilBlockIncrement", Default.MaxValidUntilBlockIncrement),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
-                    ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
+                    ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value!))).ToImmutableDictionary()
                     : Default.Hardforks
             };
             CheckingHardfork(Custom);

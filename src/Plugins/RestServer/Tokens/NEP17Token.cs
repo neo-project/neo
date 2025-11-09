@@ -60,7 +60,7 @@ namespace Neo.Plugins.RestServer.Tokens
 
         public BigDecimal BalanceOf(UInt160 address)
         {
-            if (ContractHelper.GetContractMethod(_dataCache, ScriptHash, "balanceOf", 1) == null)
+            if (ContractHelper.GetContractMethod(_dataCache, ScriptHash, "balanceOf", 1) is null)
                 throw new NotSupportedException(nameof(ScriptHash));
             if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _dataCache, ScriptHash, "balanceOf", out var result, address))
             {
@@ -76,7 +76,7 @@ namespace Neo.Plugins.RestServer.Tokens
 
         public BigDecimal TotalSupply()
         {
-            if (ContractHelper.GetContractMethod(_dataCache, ScriptHash, "totalSupply", 0) == null)
+            if (ContractHelper.GetContractMethod(_dataCache, ScriptHash, "totalSupply", 0) is null)
                 throw new NotSupportedException(nameof(ScriptHash));
             if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _dataCache, ScriptHash, "totalSupply", out var result))
                 return new BigDecimal(result[0].GetInteger(), Decimals);

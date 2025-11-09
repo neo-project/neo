@@ -19,6 +19,7 @@ using Neo.Wallets;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -38,7 +39,7 @@ namespace Neo.Plugins.RestServer
             return address.ToScriptHash(settings.AddressVersion);
         }
 
-        public static bool TryConvertToScriptHash(string address, ProtocolSettings settings, out UInt160 scriptHash)
+        public static bool TryConvertToScriptHash(string address, ProtocolSettings settings, [NotNullWhen(true)] out UInt160? scriptHash)
         {
             try
             {
@@ -288,7 +289,7 @@ namespace Neo.Plugins.RestServer
 
             return new()
             {
-                Account = UInt160.Parse(accountProp.ToObject<string>()),
+                Account = UInt160.Parse(accountProp.ToObject<string>()!),
                 Scopes = Enum.Parse<WitnessScope>(scopesProp.ToObject<string>()!),
             };
         }
@@ -350,13 +351,13 @@ namespace Neo.Plugins.RestServer
                     return new ContractParameter
                     {
                         Type = ContractParameterType.Hash160,
-                        Value = UInt160.Parse(valueProp.ToObject<string>()),
+                        Value = UInt160.Parse(valueProp.ToObject<string>()!),
                     };
                 case ContractParameterType.Hash256:
                     return new ContractParameter
                     {
                         Type = ContractParameterType.Hash256,
-                        Value = UInt256.Parse(valueProp.ToObject<string>()),
+                        Value = UInt256.Parse(valueProp.ToObject<string>()!),
                     };
                 case ContractParameterType.PublicKey:
                     return new ContractParameter
