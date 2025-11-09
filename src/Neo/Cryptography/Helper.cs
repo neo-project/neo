@@ -149,7 +149,7 @@ namespace Neo.Cryptography
         /// <param name="salt">The salt to use for the hash, and must be 16 bytes.</param>
         /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Blake2b_512(this byte[] source, byte[] salt = null) => Blake2b_512(source.AsSpan(), salt);
+        public static byte[] Blake2b_512(this byte[] source, byte[]? salt = null) => Blake2b_512(source.AsSpan(), salt);
 
         /// <summary>
         /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
@@ -158,7 +158,7 @@ namespace Neo.Cryptography
         /// <param name="salt">The salt to use for the hash, and must be 16 bytes.</param>
         /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Blake2b_256(this byte[] source, byte[] salt = null) => Blake2b_256(source.AsSpan(), salt);
+        public static byte[] Blake2b_256(this byte[] source, byte[]? salt = null) => Blake2b_256(source.AsSpan(), salt);
 
         /// <summary>
         /// Computes the hash value for the specified region of the specified byte array using the sha256 algorithm.
@@ -248,7 +248,7 @@ namespace Neo.Cryptography
         /// <param name="source">The input to compute the hash code for.</param>
         /// <param name="salt">The salt to use for the hash and must be 16 bytes.</param>
         /// <returns>The computed hash code.</returns>
-        public static byte[] Blake2b_512(this ReadOnlySpan<byte> source, byte[] salt = null)
+        public static byte[] Blake2b_512(this ReadOnlySpan<byte> source, byte[]? salt = null)
         {
             var blake2b = new Blake2bDigest(null, 64, salt, null);
             blake2b.BlockUpdate(source);
@@ -264,7 +264,7 @@ namespace Neo.Cryptography
         /// <param name="source">The input to compute the hash code for.</param>
         /// <param name="salt">The salt to use for the hash and must be 16 bytes.</param>
         /// <returns>The computed hash code.</returns>
-        public static byte[] Blake2b_256(this ReadOnlySpan<byte> source, byte[] salt = null)
+        public static byte[] Blake2b_256(this ReadOnlySpan<byte> source, byte[]? salt = null)
         {
             var blake2b = new Blake2bDigest(null, 32, salt, null);
             blake2b.BlockUpdate(source);
@@ -317,7 +317,7 @@ namespace Neo.Cryptography
         /// <param name="salt">The salt to use for the hash, and must be 16 bytes.</param>
         /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Blake2b_512(this Span<byte> source, byte[] salt = null)
+        public static byte[] Blake2b_512(this Span<byte> source, byte[]? salt = null)
             => Blake2b_512((ReadOnlySpan<byte>)source, salt);
 
         /// <summary>
@@ -327,7 +327,7 @@ namespace Neo.Cryptography
         /// <param name="salt">The salt to use for the hash, and must be 16 bytes.</param>
         /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Blake2b_256(this Span<byte> source, byte[] salt = null)
+        public static byte[] Blake2b_256(this Span<byte> source, byte[]? salt = null)
             => Blake2b_256((ReadOnlySpan<byte>)source, salt);
 
         /// <summary>
