@@ -85,16 +85,9 @@ namespace Neo
 
         private class NoopLogger : ILogger
         {
-            public void Write(LogEvent logEvent)
-            {
-                if (logEvent.Level == LogEventLevel.Fatal)
-                {
-                    Console.Error.WriteLine(logEvent.RenderMessage());
-                    Environment.Exit(1); // Only handle fatal errors.
-                }
-            }
+            public void Write(LogEvent logEvent) { }
 
-            public bool IsEnabled(LogEventLevel level) => level == LogEventLevel.Fatal;
+            public bool IsEnabled(LogEventLevel level) => false;
         }
     }
 }
