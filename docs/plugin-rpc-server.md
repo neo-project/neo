@@ -1652,6 +1652,18 @@ Submits the oracle response of an Oracle request.
 }
 ```
 
+### Oracle URL schemes
+
+The built-in Oracle plugin can serve data from multiple off-chain transports. Alongside `https://` and `neofs://`, it now supports querying DNS data over HTTPS via the `dns://` scheme. A DNS request is encoded as `dns://<base-domain>?selector=<label>&type=<rr-type>&format=<output>`, where:
+
+- `selector` (optional) appends the specified label to the base domain. When omitted, the path component is used, or the raw host if neither is provided.
+- `type` (optional) selects the DNS RR type (defaults to `TXT`). Standard names (`TXT`, `CERT`, `TLSA`, etc.) and numeric codes are accepted.
+- `format` (optional) can be set to `x509` to have TXT/CERT payloads decoded as X.509 certificates before returning them on-chain.
+
+When a DNS request succeeds the oracle returns JSON containing the original query, the resolved answers (name, type, TTL and data) and, when requested, the parsed certificate (subject, issuer, thumbprint, validity window and DER payload). The DNS resolver endpoint and timeout are configurable via the plugin's `OracleService.json` under the `Dns` section.
+
+See [Oracle DNS Protocol](./oracle-dns-protocol.md) for full configuration instructions, sample requests, and contract-side parsing examples.
+
 ## Plugin: StateService
 
 ### getstateroot

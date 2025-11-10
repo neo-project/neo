@@ -59,7 +59,7 @@ namespace Neo.Plugins.OracleService
         private int counter;
         private NeoSystem _system;
 
-        private readonly Dictionary<string, IOracleProtocol> protocols = new Dictionary<string, IOracleProtocol>();
+        private readonly Dictionary<string, IOracleProtocol> protocols = new Dictionary<string, IOracleProtocol>(StringComparer.OrdinalIgnoreCase);
 
         public override string Description => "Built-in oracle plugin";
 
@@ -145,8 +145,14 @@ namespace Neo.Plugins.OracleService
             }
 
             this.wallet = wallet;
+            foreach (var protocol in protocols.Values.ToArray())
+                protocol.Dispose();
+            protocols.Clear();
             protocols["https"] = new OracleHttpsProtocol();
+            protocols["dns"] = new OracleDnsProtocol();
             protocols["neofs"] = new OracleNeoFSProtocol(wallet, oracles);
+            foreach (var protocol in protocols.Values)
+                protocol.Configure();
             status = OracleStatus.Running;
             timer = new Timer(OnTimer, null, RefreshIntervalMilliSeconds, Timeout.Infinite);
             ConsoleHelper.Info($"Oracle started");
