@@ -95,6 +95,38 @@ namespace Neo.Plugins.OracleService.Tests
         }
 
         [TestMethod]
+        public async Task ProcessAsync_ReturnsEcPublicKeyFields()
+        {
+            string base64Cert = GenerateEcCertificateBase64("CN=example-ec.com");
+            var dohResponse = new
+            {
+                Status = 0,
+                Answer = new[]
+                {
+                    new { name = "ec.example.com.", type = 16, ttl = 60, data = $"\"{base64Cert}\"" }
+                }
+            };
+            string json = JsonSerializer.Serialize(dohResponse);
+            var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/dns-json")
+            });
+            using var protocol = new OracleDnsProtocol(handler);
+            (OracleResponseCode code, string payload) = await protocol.ProcessAsync(new Uri("dns://ec.example.com?format=x509"), CancellationToken.None);
+            Assert.AreEqual(OracleResponseCode.Success, code);
+            using JsonDocument doc = JsonDocument.Parse(payload);
+            var pkElement = doc.RootElement.GetProperty("Certificate").GetProperty("PublicKey");
+            using var parsedCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(base64Cert));
+            using ECDsa ecdsa = parsedCert.GetECDsaPublicKey();
+            Assert.IsNotNull(ecdsa);
+            ECParameters parameters = ecdsa.ExportParameters(false);
+            string expectedCurve = parameters.Curve.Oid?.FriendlyName ?? parameters.Curve.Oid?.Value;
+            Assert.AreEqual(expectedCurve, pkElement.GetProperty("Curve").GetString());
+            Assert.AreEqual(Convert.ToHexString(parameters.Q.X), pkElement.GetProperty("X").GetString());
+            Assert.AreEqual(Convert.ToHexString(parameters.Q.Y), pkElement.GetProperty("Y").GetString());
+        }
+
+        [TestMethod]
         public async Task ProcessAsync_ReturnsNotFoundForNxDomain()
         {
             const string response = "{\"Status\":3}";
@@ -177,6 +209,14 @@ namespace Neo.Plugins.OracleService.Tests
         {
             using RSA rsa = RSA.Create(2048);
             var request = new CertificateRequest(subject, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            using X509Certificate2 certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
+            return Convert.ToBase64String(certificate.Export(X509ContentType.Cert));
+        }
+
+        private static string GenerateEcCertificateBase64(string subject)
+        {
+            using ECDsa ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            var request = new CertificateRequest(subject, ecdsa, HashAlgorithmName.SHA256);
             using X509Certificate2 certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
             return Convert.ToBase64String(certificate.Export(X509ContentType.Cert));
         }
