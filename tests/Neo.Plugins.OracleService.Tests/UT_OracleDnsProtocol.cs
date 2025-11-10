@@ -79,7 +79,13 @@ namespace Neo.Plugins.OracleService.Tests
             Assert.IsNotNull(payload);
             using JsonDocument doc = JsonDocument.Parse(payload);
             Assert.AreEqual("oracle.example.com", doc.RootElement.GetProperty("Name").GetString());
-            Assert.AreEqual(base64Cert, doc.RootElement.GetProperty("Certificate").GetProperty("Der").GetString());
+            var certElement = doc.RootElement.GetProperty("Certificate");
+            Assert.AreEqual(base64Cert, certElement.GetProperty("Der").GetString());
+            using var parsedCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(base64Cert));
+            string expectedPublicKey = Convert.ToBase64String(parsedCert.GetPublicKey());
+            string expectedAlgorithm = parsedCert.PublicKey.Oid?.FriendlyName ?? parsedCert.PublicKey.Oid?.Value;
+            Assert.AreEqual(expectedPublicKey, certElement.GetProperty("PublicKey").GetString());
+            Assert.AreEqual(expectedAlgorithm, certElement.GetProperty("PublicKeyAlgorithm").GetString());
         }
 
         [TestMethod]

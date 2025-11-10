@@ -59,6 +59,8 @@ namespace Neo.Plugins.OracleService
             public DateTime NotBefore { get; set; }
             public DateTime NotAfter { get; set; }
             public string Der { get; set; }
+            public string PublicKeyAlgorithm { get; set; }
+            public string PublicKey { get; set; }
         }
 
         private sealed class ResultEnvelope
@@ -330,7 +332,9 @@ namespace Neo.Plugins.OracleService
                         Thumbprint = cert.Thumbprint,
                         NotBefore = cert.NotBefore,
                         NotAfter = cert.NotAfter,
-                        Der = Convert.ToBase64String(cert.Export(X509ContentType.Cert))
+                        Der = Convert.ToBase64String(cert.Export(X509ContentType.Cert)),
+                        PublicKeyAlgorithm = cert.PublicKey.Oid?.FriendlyName ?? cert.PublicKey.Oid?.Value,
+                        PublicKey = Convert.ToBase64String(cert.GetPublicKey())
                     };
                     return true;
                 }
