@@ -21,7 +21,8 @@ namespace Neo.Cryptography
     {
         public const int FieldElementLength = 32;
         public const int G1EncodedLength = 64;
-        public const int PairInputLength = 192;
+        public const int G2EncodedLength = FieldElementLength * 4;
+        public const int PairInputLength = G1EncodedLength + G2EncodedLength;
 
         private static readonly object s_sync = new();
         private static bool s_initialized;
@@ -68,24 +69,23 @@ namespace Neo.Cryptography
 
         public static byte[] Pairing(ReadOnlySpan<byte> input)
         {
-            if (input.Length % PairInputLength != 0)
-                throw new ArgumentException("Invalid BN254 pairing input length", nameof(input));
-
             EnsureInitialized();
 
             if (input.Length == 0)
                 return SuccessWord();
 
+            if (input.Length % PairInputLength != 0)
+                throw new ArgumentException("Invalid BN254 pairing input length", nameof(input));
+
             int pairCount = input.Length / PairInputLength;
             bool hasEffectivePair = false;
-
             mclBnGT accumulator = default;
 
             for (int pairIndex = 0; pairIndex < pairCount; pairIndex++)
             {
                 int offset = pairIndex * PairInputLength;
                 var g1Slice = input.Slice(offset, G1EncodedLength);
-                var g2Slice = input.Slice(offset + G1EncodedLength, 2 * G1EncodedLength);
+                var g2Slice = input.Slice(offset + G1EncodedLength, G2EncodedLength);
 
                 if (!TryDeserializeG1(g1Slice, out var g1))
                     return new byte[FieldElementLength];
@@ -96,7 +96,6 @@ namespace Neo.Cryptography
                 if (Mcl.mclBnG1_isZero(g1) == 1 || Mcl.mclBnG2_isZero(g2) == 1)
                     continue;
 
-                // Accumulate Miller loops so we only run the final exponent once.
                 if (!hasEffectivePair)
                 {
                     Mcl.mclBn_millerLoop(ref accumulator, g1, g2);
@@ -119,7 +118,7 @@ namespace Neo.Cryptography
             return Mcl.mclBnGT_isOne(accumulator) == 1 ? SuccessWord() : new byte[FieldElementLength];
         }
 
-        private static unsafe bool TryDeserializeG1(ReadOnlySpan<byte> encoded, out mclBnG1 point)
+        internal static unsafe bool TryDeserializeG1(ReadOnlySpan<byte> encoded, out mclBnG1 point)
         {
             point = default;
 
@@ -145,7 +144,7 @@ namespace Neo.Cryptography
             return Mcl.mclBnG1_isValid(point) == 1;
         }
 
-        private static unsafe bool TryDeserializeScalar(ReadOnlySpan<byte> encoded, out mclBnFr scalar)
+        internal static unsafe bool TryDeserializeScalar(ReadOnlySpan<byte> encoded, out mclBnFr scalar)
         {
             scalar = default;
 
@@ -164,7 +163,7 @@ namespace Neo.Cryptography
             return Mcl.mclBnFr_isValid(scalar) == 1;
         }
 
-        private static unsafe bool TryDeserializeG2(ReadOnlySpan<byte> encoded, out mclBnG2 point)
+        internal static unsafe bool TryDeserializeG2(ReadOnlySpan<byte> encoded, out mclBnG2 point)
         {
             point = default;
 
@@ -210,7 +209,7 @@ namespace Neo.Cryptography
             return true;
         }
 
-        private static unsafe byte[] SerializeG1(in mclBnG1 point)
+        internal static unsafe byte[] SerializeG1(in mclBnG1 point)
         {
             var output = new byte[G1EncodedLength];
 
@@ -238,6 +237,50 @@ namespace Neo.Cryptography
             return output;
         }
 
+        internal static unsafe byte[] SerializeG2(in mclBnG2 point)
+        {
+            var output = new byte[G2EncodedLength];
+
+            if (Mcl.mclBnG2_isZero(point) == 1)
+                return output;
+
+            Span<byte> scratch = stackalloc byte[FieldElementLength];
+
+            // x imaginary
+            fixed (byte* ptr = scratch)
+            {
+                if (Mcl.mclBnFp_getLittleEndian((nint)ptr, (nuint)scratch.Length, point.x.d1) == UIntPtr.Zero)
+                    throw new ArgumentException("Failed to serialize BN254 point");
+            }
+            WriteBigEndian(scratch, output.AsSpan(0, FieldElementLength));
+
+            // x real
+            fixed (byte* ptr = scratch)
+            {
+                if (Mcl.mclBnFp_getLittleEndian((nint)ptr, (nuint)scratch.Length, point.x.d0) == UIntPtr.Zero)
+                    throw new ArgumentException("Failed to serialize BN254 point");
+            }
+            WriteBigEndian(scratch, output.AsSpan(FieldElementLength, FieldElementLength));
+
+            // y imaginary
+            fixed (byte* ptr = scratch)
+            {
+                if (Mcl.mclBnFp_getLittleEndian((nint)ptr, (nuint)scratch.Length, point.y.d1) == UIntPtr.Zero)
+                    throw new ArgumentException("Failed to serialize BN254 point");
+            }
+            WriteBigEndian(scratch, output.AsSpan(FieldElementLength * 2, FieldElementLength));
+
+            // y real
+            fixed (byte* ptr = scratch)
+            {
+                if (Mcl.mclBnFp_getLittleEndian((nint)ptr, (nuint)scratch.Length, point.y.d0) == UIntPtr.Zero)
+                    throw new ArgumentException("Failed to serialize BN254 point");
+            }
+            WriteBigEndian(scratch, output.AsSpan(FieldElementLength * 3, FieldElementLength));
+
+            return output;
+        }
+
         private static byte[] SuccessWord()
         {
             var output = new byte[FieldElementLength];
@@ -258,7 +301,7 @@ namespace Neo.Cryptography
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void EnsureInitialized()
+        internal static void EnsureInitialized()
         {
             if (s_initialized)
                 return;

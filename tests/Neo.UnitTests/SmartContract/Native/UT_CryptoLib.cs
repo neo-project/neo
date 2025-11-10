@@ -20,6 +20,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -1143,7 +1145,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             // byte[] privateKey = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60".HexToBytes();
             byte[] publicKey = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a".HexToBytes();
-            byte[] message = Array.Empty<byte>();
+            byte[] message = System.Array.Empty<byte>();
             byte[] signature = ("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155" +
                                 "5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b").HexToBytes();
 
@@ -1159,13 +1161,13 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Test with an invalid signature
             byte[] invalidSignature = new byte[signature.Length];
-            Array.Copy(signature, invalidSignature, signature.Length);
+            System.Array.Copy(signature, invalidSignature, signature.Length);
             invalidSignature[0] ^= 0x01; // Flip one bit
             Assert.IsFalse(CallVerifyWithEd25519(message, publicKey, invalidSignature));
 
             // Test with an invalid public key
             byte[] invalidPublicKey = new byte[publicKey.Length];
-            Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
+            System.Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
             invalidPublicKey[0] ^= 0x01; // Flip one bit
             Assert.IsFalse(CallVerifyWithEd25519(message, invalidPublicKey, signature));
         }
@@ -1173,50 +1175,37 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBn254Add()
         {
-            byte[] input = new byte[128];
-            WriteBn254Field(Bn254G1X, input, 0);
-            WriteBn254Field(Bn254G1Y, input, 32);
-            WriteBn254Field(Bn254G1X, input, 64);
-            WriteBn254Field(Bn254G1Y, input, 96);
-
-            byte[] result = CryptoLib.Bn254Add(input);
-
+            var point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            var result = CryptoLib.Bn254Add(point, point);
+            var serialized = CryptoLib.Bn254Serialize(result);
             byte[] expected = new byte[64];
             WriteBn254Field(Bn254DoubleX, expected, 0);
             WriteBn254Field(Bn254DoubleY, expected, 32);
 
-            CollectionAssert.AreEqual(expected, result);
+            CollectionAssert.AreEqual(expected, serialized);
         }
 
         [TestMethod]
         public void TestBn254Mul()
         {
-            byte[] input = new byte[96];
-            WriteBn254Field(Bn254G1X, input, 0);
-            WriteBn254Field(Bn254G1Y, input, 32);
-            WriteBn254Field("2", input, 64);
-
-            byte[] result = CryptoLib.Bn254Mul(input);
-
+            var point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            byte[] scalar = Bn254Field("2");
+            var result = CryptoLib.Bn254Mul(point, scalar);
+            var serialized = CryptoLib.Bn254Serialize(result);
             byte[] expected = new byte[64];
             WriteBn254Field(Bn254DoubleX, expected, 0);
             WriteBn254Field(Bn254DoubleY, expected, 32);
 
-            CollectionAssert.AreEqual(expected, result);
+            CollectionAssert.AreEqual(expected, serialized);
         }
 
         [TestMethod]
         public void TestBn254PairingGenerator()
         {
-            byte[] input = new byte[192];
-            WriteBn254Field(Bn254G1X, input, 0);
-            WriteBn254Field(Bn254G1Y, input, 32);
-            WriteBn254Field(Bn254G2XIm, input, 64);
-            WriteBn254Field(Bn254G2XRe, input, 96);
-            WriteBn254Field(Bn254G2YIm, input, 128);
-            WriteBn254Field(Bn254G2YRe, input, 160);
-
-            byte[] result = CryptoLib.Bn254Pairing(input);
+            var g1Point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            var g2Point = DecodeBn254G2(Bn254G2XIm, Bn254G2XRe, Bn254G2YIm, Bn254G2YRe);
+            var pairs = BuildBn254PairArray(new[] { (g1Point, g2Point) });
+            byte[] result = CryptoLib.Bn254Pairing(pairs);
 
             Assert.IsTrue(result.All(b => b == 0));
         }
@@ -1224,7 +1213,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBn254PairingEmpty()
         {
-            byte[] result = CryptoLib.Bn254Pairing(Array.Empty<byte>());
+            byte[] result = CryptoLib.Bn254Pairing(new VMArray());
             Assert.IsTrue(result.Take(result.Length - 1).All(b => b == 0));
             Assert.AreEqual(1, result[^1]);
         }
@@ -1244,7 +1233,7 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (var (hex, expectedSuccess, label) in cases)
             {
                 byte[] input = HexToBytes(hex);
-                byte[] result = CryptoLib.Bn254Pairing(input);
+                byte[] result = CryptoLib.Bn254PairingRaw(input);
 
                 Assert.AreEqual(32, result.Length, label);
                 if (expectedSuccess)
@@ -1262,9 +1251,9 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBn254InvalidInputs()
         {
-            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Add(Array.Empty<byte>()));
-            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Mul(Array.Empty<byte>()));
-            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Pairing(new byte[1]));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254AddRaw(System.Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254MulRaw(System.Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254PairingRaw(new byte[1]));
         }
 
         [TestMethod]
@@ -1275,12 +1264,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 byte[] input = HexToBytes(vector.Input);
                 if (input.Length != BN254.G1EncodedLength * 2)
                 {
-                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Add(input), vector.Name);
+                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254AddRaw(input), vector.Name);
                     continue;
                 }
 
                 byte[] expected = HexToBytes(vector.Expected);
-                byte[] actual = CryptoLib.Bn254Add(input);
+                byte[] actual = CryptoLib.Bn254AddRaw(input);
                 CollectionAssert.AreEqual(expected, actual, vector.Name);
             }
         }
@@ -1293,12 +1282,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 byte[] input = HexToBytes(vector.Input);
                 if (input.Length != BN254.G1EncodedLength + BN254.FieldElementLength)
                 {
-                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Mul(input), vector.Name);
+                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254MulRaw(input), vector.Name);
                     continue;
                 }
 
                 byte[] expected = HexToBytes(vector.Expected);
-                byte[] actual = CryptoLib.Bn254Mul(input);
+                byte[] actual = CryptoLib.Bn254MulRaw(input);
                 CollectionAssert.AreEqual(expected, actual, vector.Name);
             }
         }
@@ -1311,12 +1300,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 byte[] input = HexToBytes(vector.Input);
                 if (input.Length % BN254.PairInputLength != 0)
                 {
-                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Pairing(input), vector.Name);
+                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254PairingRaw(input), vector.Name);
                     continue;
                 }
 
                 byte[] expected = HexToBytes(vector.Expected);
-                byte[] actual = CryptoLib.Bn254Pairing(input);
+                byte[] actual = CryptoLib.Bn254PairingRaw(input);
                 CollectionAssert.AreEqual(expected, actual, vector.Name);
             }
         }
@@ -1347,7 +1336,38 @@ namespace Neo.UnitTests.SmartContract.Native
         private static void WriteBn254Field(string hex, byte[] buffer, int offset)
         {
             var field = Bn254Field(hex);
-            Buffer.BlockCopy(field, 0, buffer, offset, field.Length);
+            System.Buffer.BlockCopy(field, 0, buffer, offset, field.Length);
+        }
+
+        private static InteropInterface DecodeBn254G1(string x, string y)
+        {
+            byte[] encoded = new byte[BN254.G1EncodedLength];
+            WriteBn254Field(x, encoded, 0);
+            WriteBn254Field(y, encoded, BN254.FieldElementLength);
+            return CryptoLib.Bn254Deserialize(encoded);
+        }
+
+        private static InteropInterface DecodeBn254G2(string xImag, string xReal, string yImag, string yReal)
+        {
+            byte[] encoded = new byte[BN254.G2EncodedLength];
+            WriteBn254Field(xImag, encoded, 0);
+            WriteBn254Field(xReal, encoded, BN254.FieldElementLength);
+            WriteBn254Field(yImag, encoded, BN254.FieldElementLength * 2);
+            WriteBn254Field(yReal, encoded, BN254.FieldElementLength * 3);
+            return CryptoLib.Bn254Deserialize(encoded);
+        }
+
+        private static VMArray BuildBn254PairArray(IEnumerable<(InteropInterface G1, InteropInterface G2)> pairs)
+        {
+            VMArray array = new();
+            foreach (var (g1, g2) in pairs)
+            {
+                VMArray pair = new();
+                pair.Add(g1);
+                pair.Add(g2);
+                array.Add(pair);
+            }
+            return array;
         }
 
         private static byte[] Bn254Field(string hex)

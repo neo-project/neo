@@ -79,9 +79,14 @@ When calling a native contract method by transaction script, there are several t
 | bls12381Add | Add operation of two points. | InteropInterface(*x*), InteropInterface(*y*) | InteropInterface | 1<<19 | 0 | -- | -- |
 | bls12381Mul | Mul operation of gt point and multiplier | InteropInterface(*x*), Byte[](*mul*), Boolean(*neg*) | InteropInterface | 1<<21 | 0 | -- | -- |
 | bls12381Pairing | Pairing operation of g1 and g2 | InteropInterface(*g1*), InteropInterface(*g2*) | InteropInterface | 1<<23 | 0 | -- | -- |
-| bn254Add | -- | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Gorgon |
-| bn254Mul | -- | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Gorgon |
-| bn254Pairing | -- | Byte[](*input*) | Byte[] | 1<<21 | 0 | -- | HF_Gorgon |
+| bn254Serialize | -- | InteropInterface(*point*) | Byte[] | 1<<19 | 0 | -- | HF_Gorgon |
+| bn254Deserialize | -- | Byte[](*data*) | InteropInterface | 1<<19 | 0 | -- | HF_Gorgon |
+| bn254Add | -- | InteropInterface(*x*), InteropInterface(*y*) | InteropInterface | 1<<19 | 0 | -- | HF_Gorgon |
+| bn254Mul | -- | InteropInterface(*point*), Byte[](*scalar*) | InteropInterface | 1<<21 | 0 | -- | HF_Gorgon |
+| bn254Pairing | -- | Array(*pairs*) | Byte[] | 1<<21 | 0 | -- | HF_Gorgon |
+| bn254_add | -- | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Gorgon |
+| bn254_mul | -- | Byte[](*input*) | Byte[] | 1<<21 | 0 | -- | HF_Gorgon |
+| bn254_pairing | -- | Byte[](*input*) | Byte[] | 1<<21 | 0 | -- | HF_Gorgon |
 | recoverSecp256K1 | Recovers the public key from a secp256k1 signature in a single byte array format. | Byte[](*messageHash*), Byte[](*signature*) | Byte[] | 1<<15 | 0 | -- | HF_Echidna |
 | ripemd160 | Computes the hash value for the specified byte array using the ripemd160 algorithm. | Byte[](*data*) | Byte[] | 1<<15 | 0 | -- | -- |
 | sha256 | Computes the hash value for the specified byte array using the sha256 algorithm. | Byte[](*data*) | Byte[] | 1<<15 | 0 | -- | -- |
