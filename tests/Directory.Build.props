@@ -11,9 +11,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
-    <EnableMSTestRunner>true</EnableMSTestRunner>
-    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <MSTestVersion>3.10.0</MSTestVersion>
     <MSTestAnalysisMode>Recommended</MSTestAnalysisMode>
   </PropertyGroup>
