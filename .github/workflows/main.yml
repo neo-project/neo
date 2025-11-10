@@ -50,14 +50,8 @@ jobs:
     - name: Check Format (*.cs)
       if: matrix.os == 'ubuntu-latest'
       run: dotnet format --verify-no-changes --verbosity diagnostic
-    - name: Test (ALL OS)
-      if: matrix.os != 'ubuntu-latest'
+    - name: Test
       run: |
-        dotnet test -p:GITHUB_ACTIONS=true
-    - name: Test (ubuntu)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get --assume-yes install libleveldb-dev
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
         dotnet test /p:GITHUB_ACTIONS=true /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:CoverletOutputFormat=\"lcov,json\" -m:1
     - name: Coveralls
