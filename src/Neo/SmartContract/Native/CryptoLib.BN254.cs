@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native
             return BN254.Add(input);
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19)]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21)]
         public static byte[] Bn254Mul(byte[] input)
         {
             ArgumentNullException.ThrowIfNull(input);
