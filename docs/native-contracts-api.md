@@ -82,6 +82,7 @@ When calling a native contract method by transaction script, there are several t
 | bn254Serialize | -- | InteropInterface(*point*) | Byte[] | 1<<19 | 0 | -- | HF_Gorgon |
 | bn254Deserialize | -- | Byte[](*data*) | InteropInterface | 1<<19 | 0 | -- | HF_Gorgon |
 | bn254Add | -- | InteropInterface(*x*), InteropInterface(*y*) | InteropInterface | 1<<19 | 0 | -- | HF_Gorgon |
+| bn254Equal | -- | InteropInterface(*x*), InteropInterface(*y*) | Boolean | 1<<5 | 0 | -- | HF_Gorgon |
 | bn254Mul | -- | InteropInterface(*point*), Byte[](*scalar*) | InteropInterface | 1<<21 | 0 | -- | HF_Gorgon |
 | bn254Pairing | -- | Array(*pairs*) | Byte[] | 1<<21 | 0 | -- | HF_Gorgon |
 | bn254_add | -- | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Gorgon |

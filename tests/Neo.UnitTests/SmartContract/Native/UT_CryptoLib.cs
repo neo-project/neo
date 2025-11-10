@@ -1200,6 +1200,21 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestBn254Equal()
+        {
+            var point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            var same = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+
+            Assert.IsTrue(CryptoLib.Bn254Equal(point, same));
+
+            var doubled = CryptoLib.Bn254Add(point, same);
+            Assert.IsFalse(CryptoLib.Bn254Equal(point, doubled));
+
+            var g2Point = DecodeBn254G2(Bn254G2XIm, Bn254G2XRe, Bn254G2YIm, Bn254G2YRe);
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254Equal(point, g2Point));
+        }
+
+        [TestMethod]
         public void TestBn254PairingGenerator()
         {
             var g1Point = DecodeBn254G1(Bn254G1X, Bn254G1Y);

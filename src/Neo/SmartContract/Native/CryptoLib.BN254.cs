@@ -13,6 +13,7 @@ using Neo.Cryptography;
 using Neo.VM.Types;
 using Nethermind.MclBindings;
 using System;
+using System.Linq;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -57,6 +58,17 @@ namespace Neo.SmartContract.Native
             Mcl.mclBnG1_normalize(ref result, result);
 
             return new InteropInterface(new Bn254G1(BN254.SerializeG1(result)));
+        }
+
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 5)]
+        public static bool Bn254Equal(InteropInterface x, InteropInterface y)
+        {
+            return (x.GetInterface<object>(), y.GetInterface<object>()) switch
+            {
+                (Bn254G1 a, Bn254G1 b) => a.SequenceEqual(b),
+                (Bn254G2 a, Bn254G2 b) => a.SequenceEqual(b),
+                _ => throw new ArgumentException("BN254 type mismatch")
+            };
         }
 
         [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21)]
@@ -162,6 +174,8 @@ namespace Neo.SmartContract.Native
             }
 
             public byte[] ToArray() => (byte[])_encoded.Clone();
+
+            public bool SequenceEqual(Bn254G1 other) => Encoded.SequenceEqual(other.Encoded);
         }
 
         private sealed class Bn254G2
@@ -182,6 +196,8 @@ namespace Neo.SmartContract.Native
             }
 
             public byte[] ToArray() => (byte[])_encoded.Clone();
+
+            public bool SequenceEqual(Bn254G2 other) => Encoded.SequenceEqual(other.Encoded);
         }
     }
 }
