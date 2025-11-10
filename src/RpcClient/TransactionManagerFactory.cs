@@ -64,6 +64,7 @@ namespace Neo.Network.RPC
                 ValidUntilBlock = blockCount - 1 + rpcClient.protocolSettings.MaxValidUntilBlockIncrement,
                 SystemFee = systemFee,
                 Attributes = attributes ?? Array.Empty<TransactionAttribute>(),
+                Witnesses = []
             };
 
             return new TransactionManager(tx, rpcClient);

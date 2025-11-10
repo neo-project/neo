@@ -42,7 +42,7 @@ namespace Neo.CLI
 {
     public partial class MainService : ConsoleServiceBase, IWalletProvider
     {
-        public event EventHandler<Wallet?>? WalletChanged = null;
+        public event EventHandler<Wallet?>? WalletChanged;
 
         public const long TestModeGas = 20_00000000;
 
@@ -142,7 +142,7 @@ namespace Neo.CLI
 
         public void CreateWallet(string path, string password, bool createDefaultAccount = true, string? walletName = null)
         {
-            Wallet wallet = Wallet.Create(walletName, path, password, NeoSystem.Settings);
+            Wallet? wallet = Wallet.Create(walletName, path, password, NeoSystem.Settings);
             if (wallet == null)
             {
                 ConsoleHelper.Warning("Wallet files in that format are not supported, please use a .json or .db3 file extension.");
@@ -152,7 +152,7 @@ namespace Neo.CLI
             {
                 WalletAccount account = wallet.CreateAccount();
                 ConsoleHelper.Info("   Address: ", account.Address);
-                ConsoleHelper.Info("    Pubkey: ", account.GetKey().PublicKey.EncodePoint(true).ToHexString());
+                ConsoleHelper.Info("    Pubkey: ", account.GetKey()!.PublicKey.EncodePoint(true).ToHexString());
                 ConsoleHelper.Info("ScriptHash: ", $"{account.ScriptHash}");
             }
             wallet.Save();
@@ -503,7 +503,7 @@ namespace Neo.CLI
             }
             else
             {
-                if (contract.Manifest.Abi.GetMethod(operation, parameters.Count) == null)
+                if (contract.Manifest.Abi.GetMethod(operation, parameters.Count) is null)
                 {
                     ConsoleHelper.Error("This method does not not exist in this contract.");
                     result = StackItem.Null;
@@ -539,7 +539,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info("Result Stack: ", new JArray(engine.ResultStack.Select(p => p.ToJson())).ToString());
 
             if (engine.State == VMState.FAULT)
-                ConsoleHelper.Error(GetExceptionMessage(engine.FaultException));
+                ConsoleHelper.Error(GetExceptionMessage(engine.FaultException!));
         }
 
         static string GetExceptionMessage(Exception exception)
@@ -570,7 +570,7 @@ namespace Neo.CLI
                 {
                     try
                     {
-                        var addressData = data.GetString();
+                        var addressData = data.GetString()!;
                         if (UInt160.TryParse(addressData, out var address))
                             return address;
                         else

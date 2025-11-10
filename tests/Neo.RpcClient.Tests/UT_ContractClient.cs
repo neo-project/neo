@@ -54,6 +54,7 @@ namespace Neo.Network.RPC.Tests
             byte[] script;
             var manifest = new ContractManifest()
             {
+                Name = "",
                 Permissions = [ContractPermission.DefaultPermission],
                 Abi = new ContractAbi() { Events = [], Methods = [] },
                 Groups = [],

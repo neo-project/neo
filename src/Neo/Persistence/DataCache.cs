@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Neo.Extensions;
 using Neo.SmartContract;
 using System;
@@ -594,5 +592,3 @@ namespace Neo.Persistence
         protected abstract void UpdateInternal(StorageKey key, StorageItem value);
     }
 }
-
-#nullable disable

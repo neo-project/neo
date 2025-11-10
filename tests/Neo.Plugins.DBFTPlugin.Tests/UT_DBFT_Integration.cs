@@ -13,23 +13,13 @@ using Akka.Actor;
 using Akka.TestKit;
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using Neo.Cryptography.ECC;
-using Neo.IO;
 using Neo.Ledger;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence.Providers;
 using Neo.Plugins.DBFTPlugin.Consensus;
-using Neo.Plugins.DBFTPlugin.Messages;
-using Neo.SmartContract;
-using Neo.VM;
-using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -128,7 +118,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var genesisBlock = neoSystem.GenesisBlock;
             foreach (var service in consensusServices)
             {
-                service.Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
+                service.Tell(new Blockchain.PersistCompleted(genesisBlock));
             }
 
             // Assert - Wait for consensus messages to be exchanged
@@ -161,14 +151,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var genesisBlock = neoSystem.GenesisBlock;
             for (int i = 1; i < ValidatorCount; i++) // Skip primary
             {
-                consensusServices[i].Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
+                consensusServices[i].Tell(new Blockchain.PersistCompleted(genesisBlock));
             }
 
             // Wait for timeout and view change
             ExpectNoMsg(TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             // Now start the new primary (index 1) after view change
-            consensusServices[0].Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
+            consensusServices[0].Tell(new Blockchain.PersistCompleted(genesisBlock));
 
             // Assert - Consensus should eventually succeed with new primary
             ExpectNoMsg(TimeSpan.FromSeconds(2), cancellationToken: CancellationToken.None);
@@ -199,7 +189,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var genesisBlock = neoSystem.GenesisBlock;
             for (int i = 0; i < honestValidators; i++)
             {
-                consensusServices[i].Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
+                consensusServices[i].Tell(new Blockchain.PersistCompleted(genesisBlock));
             }
 
             // Assert - Consensus should succeed with 3 honest validators out of 4
@@ -232,14 +222,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             // Start consensus with first 3 validators
             for (int i = 0; i < ValidatorCount - 1; i++)
             {
-                consensusServices[i].Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
+                consensusServices[i].Tell(new Blockchain.PersistCompleted(genesisBlock));
             }
 
             // Wait a bit for consensus to start
             ExpectNoMsg(TimeSpan.FromMilliseconds(500), cancellationToken: CancellationToken.None);
 
             // Late validator joins and should request recovery
-            consensusServices[ValidatorCount - 1].Tell(new Blockchain.PersistCompleted { Block = genesisBlock });
+            consensusServices[ValidatorCount - 1].Tell(new Blockchain.PersistCompleted(genesisBlock));
 
             // Assert - Recovery should allow late validator to catch up
             ExpectNoMsg(TimeSpan.FromSeconds(2), cancellationToken: CancellationToken.None);

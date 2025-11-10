@@ -59,7 +59,7 @@ namespace Neo.Plugins.RestServer
                 block.NextConsensus,
                 Witness = WitnessToJToken(block.Witness, serializer),
                 block.Size,
-                Confirmations = NativeContract.Ledger.CurrentIndex(RestServerPlugin.NeoSystem?.StoreView) - block.Index + 1,
+                Confirmations = NativeContract.Ledger.CurrentIndex(RestServerPlugin.NeoSystem.StoreView) - block.Index + 1,
                 Transactions = block.Transactions.Select(s => TransactionToJToken(s, serializer)),
             }, serializer);
 

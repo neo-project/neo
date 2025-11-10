@@ -15,6 +15,7 @@ using Neo.Extensions.Factories;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -32,7 +33,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Signature = new byte[20]
             };
 
-            ContractGroup clone = new();
+            ContractGroup clone = (ContractGroup)RuntimeHelpers.GetUninitializedObject(typeof(ContractGroup));
             ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
             Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
         }

@@ -71,7 +71,13 @@ namespace Neo.Plugins.OracleService.Tests
             snapshotCache.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, request.OriginalTxid), new(new TransactionState()
             {
                 BlockIndex = 1,
-                Transaction = new() { ValidUntilBlock = 1 }
+                Transaction = new()
+                {
+                    Signers = [],
+                    Attributes = [],
+                    ValidUntilBlock = 1,
+                    Witnesses = []
+                }
             }));
 
             OracleResponse response = new() { Id = 1, Code = OracleResponseCode.Success, Result = new byte[] { 0x00 } };

@@ -34,7 +34,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public virtual int Size => sizeof(WitnessConditionType);
 
-        public abstract override bool Equals(object obj);
+        public abstract override bool Equals(object? obj);
 
         public abstract override int GetHashCode();
 
@@ -115,7 +115,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         {
             if (maxNestDepth <= 0)
                 throw new FormatException($"`maxNestDepth`({maxNestDepth}) in WitnessCondition is out of range (min:1)");
-            WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
+            WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"]!.GetString());
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException($"Invalid WitnessConditionType({type})");
             condition.ParseJson(json, maxNestDepth);
@@ -139,7 +139,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             throw new NotSupportedException();
         }
 
-        public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public virtual StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Array(referenceCounter, new StackItem[] { (byte)Type });
         }

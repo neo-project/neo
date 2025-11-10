@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Persistence;
+using System;
 
 namespace Neo.Plugins.Storage
 {
@@ -26,8 +27,9 @@ namespace Neo.Plugins.Storage
         /// Get store
         /// </summary>
         /// <returns>RocksDbStore</returns>
-        public IStore GetStore(string path)
+        public IStore GetStore(string? path)
         {
+            ArgumentNullException.ThrowIfNull(path);
             return new Store(path);
         }
     }

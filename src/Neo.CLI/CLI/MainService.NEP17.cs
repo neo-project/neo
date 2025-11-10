@@ -105,7 +105,7 @@ namespace Neo.CLI
         [ConsoleCommand("name", Category = "NEP17 Commands")]
         private void OnNameCommand(UInt160 tokenHash)
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, tokenHash);
+            ContractState? contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, tokenHash);
             if (contract == null) Console.WriteLine($"Contract hash not exist: {tokenHash}");
             else ConsoleHelper.Info("Result: ", contract.Manifest.Name);
         }

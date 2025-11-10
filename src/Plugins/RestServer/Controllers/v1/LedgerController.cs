@@ -269,9 +269,8 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute( Name = "hash")]
             UInt256 hash)
         {
-            if (NativeContract.Ledger.ContainsTransaction(_neoSystem.StoreView, hash) == false)
-                throw new TransactionNotFoundException(hash);
-            var tx = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash);
+            var tx = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash)
+                ?? throw new TransactionNotFoundException(hash);
             return Ok(tx.Witnesses);
         }
 
@@ -288,9 +287,8 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute( Name = "hash")]
             UInt256 hash)
         {
-            if (NativeContract.Ledger.ContainsTransaction(_neoSystem.StoreView, hash) == false)
-                throw new TransactionNotFoundException(hash);
-            var tx = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash);
+            var tx = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash)
+                ?? throw new TransactionNotFoundException(hash);
             return Ok(tx.Signers);
         }
 
@@ -307,9 +305,8 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute( Name = "hash")]
             UInt256 hash)
         {
-            if (NativeContract.Ledger.ContainsTransaction(_neoSystem.StoreView, hash) == false)
-                throw new TransactionNotFoundException(hash);
-            var tx = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash);
+            var tx = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash)
+                ?? throw new TransactionNotFoundException(hash);
             return Ok(tx.Attributes);
         }
 

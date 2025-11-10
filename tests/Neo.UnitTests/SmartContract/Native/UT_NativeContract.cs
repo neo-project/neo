@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -270,7 +271,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var result = engine.ResultStack.Pop();
             Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
 
-            var cs = new ContractState();
+            var cs = (ContractState)RuntimeHelpers.GetUninitializedObject(typeof(ContractState));
             ((IInteroperable)cs).FromStackItem(result);
 
             return cs;

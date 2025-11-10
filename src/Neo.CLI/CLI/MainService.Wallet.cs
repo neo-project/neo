@@ -206,11 +206,11 @@ namespace Neo.CLI
             }
             IEnumerable<KeyPair> keys;
             if (scriptHash == null)
-                keys = CurrentWallet.GetAccounts().Where(p => p.HasKey).Select(p => p.GetKey());
+                keys = CurrentWallet.GetAccounts().Where(p => p.HasKey).Select(p => p.GetKey()!);
             else
             {
                 var account = CurrentWallet.GetAccount(scriptHash);
-                keys = account?.HasKey != true ? Array.Empty<KeyPair>() : new[] { account.GetKey() };
+                keys = account?.HasKey != true ? Array.Empty<KeyPair>() : new[] { account.GetKey()! };
             }
             if (path == null)
                 foreach (KeyPair key in keys)
@@ -276,7 +276,7 @@ namespace Neo.CLI
             }
 
             Contract multiSignContract = Contract.CreateMultiSigContract(m, publicKeys);
-            KeyPair? keyPair = CurrentWallet!.GetAccounts().FirstOrDefault(p => p.HasKey && publicKeys.Contains(p.GetKey().PublicKey))?.GetKey();
+            KeyPair? keyPair = CurrentWallet!.GetAccounts().FirstOrDefault(p => p.HasKey && publicKeys.Contains(p.GetKey()!.PublicKey))?.GetKey();
 
             CurrentWallet.CreateAccount(multiSignContract, keyPair);
             if (CurrentWallet is NEP6Wallet wallet)
@@ -336,7 +336,7 @@ namespace Neo.CLI
                 WalletAccount account = CurrentWallet!.CreateAccount(prikey);
                 Array.Clear(prikey, 0, prikey.Length);
                 ConsoleHelper.Info("Address: ", account.Address);
-                ConsoleHelper.Info(" Pubkey: ", account.GetKey().PublicKey.EncodePoint(true).ToHexString());
+                ConsoleHelper.Info(" Pubkey: ", account.GetKey()!.PublicKey.EncodePoint(true).ToHexString());
             }
             if (CurrentWallet is NEP6Wallet wallet)
                 wallet.Save();
@@ -386,7 +386,7 @@ namespace Neo.CLI
             }
             else
             {
-                WalletAccount account = CurrentWallet!.GetAccount(address);
+                WalletAccount? account = CurrentWallet!.GetAccount(address);
                 if (account is not null)
                 {
                     ConsoleHelper.Warning("This address is already in your wallet");
@@ -418,7 +418,7 @@ namespace Neo.CLI
                 {
                     type = "WatchOnly";
                 }
-                else if (IsMultiSigContract(contract.Script))
+                else if (IsMultiSigContract(contract!.Script))
                 {
                     type = "MultiSignature";
                 }
@@ -470,7 +470,7 @@ namespace Neo.CLI
             {
                 ConsoleHelper.Info("   Address: ", account.Address);
                 ConsoleHelper.Info("ScriptHash: ", account.ScriptHash.ToString());
-                ConsoleHelper.Info(" PublicKey: ", account.GetKey().PublicKey.EncodePoint(true).ToHexString());
+                ConsoleHelper.Info(" PublicKey: ", account.GetKey()!.PublicKey.EncodePoint(true).ToHexString());
                 Console.WriteLine();
             }
         }
@@ -664,7 +664,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
 
-            TransactionState state = NativeContract.Ledger.GetTransactionState(NeoSystem.StoreView, txid);
+            TransactionState? state = NativeContract.Ledger.GetTransactionState(NeoSystem.StoreView, txid);
             if (state != null)
             {
                 ConsoleHelper.Error("This tx is already confirmed, can't be cancelled.");

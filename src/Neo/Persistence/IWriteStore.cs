@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 namespace Neo.Persistence
 {
     /// <summary>
@@ -39,5 +37,3 @@ namespace Neo.Persistence
         void PutSync(TKey key, TValue value) => Put(key, value);
     }
 }
-
-#nullable disable

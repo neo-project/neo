@@ -28,9 +28,9 @@ namespace Neo.Plugins.RpcServer
         {
             var state = context.GetState<ExecutionContextState>();
             if (currentNodeOfInvocationTree is null)
-                currentNodeOfInvocationTree = InvocationTree.AddRoot(state.ScriptHash);
+                currentNodeOfInvocationTree = InvocationTree.AddRoot(state.ScriptHash!);
             else
-                currentNodeOfInvocationTree = currentNodeOfInvocationTree.AddChild(state.ScriptHash);
+                currentNodeOfInvocationTree = currentNodeOfInvocationTree.AddChild(state.ScriptHash!);
         }
 
         public void ContextUnloaded(ExecutionContext context)

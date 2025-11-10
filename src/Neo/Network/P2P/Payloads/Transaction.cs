@@ -46,17 +46,48 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public const int MaxTransactionAttributes = 16;
 
-        private byte version;
-        private uint nonce;
-        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-        private long sysfee;
-        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-        private long netfee;
-        private uint validUntilBlock;
-        private Signer[] _signers;
-        private TransactionAttribute[] attributes;
-        private ReadOnlyMemory<byte> script;
-        private Witness[] witnesses;
+        /// <summary>
+        /// The version of the transaction.
+        /// </summary>
+        public byte Version { get; set { field = value; _hash = null; } }
+
+        /// <summary>
+        /// The nonce of the transaction.
+        /// </summary>
+        public uint Nonce { get; set { field = value; _hash = null; } }
+
+        /// <summary>
+        /// The system fee of the transaction.
+        /// </summary>
+        public long SystemFee { get; set { field = value; _hash = null; } }
+
+        /// <summary>
+        /// The network fee of the transaction.
+        /// </summary>
+        public long NetworkFee { get; set { field = value; _hash = null; } }
+
+        /// <summary>
+        /// Indicates that the transaction is only valid before this block height.
+        /// </summary>
+        public uint ValidUntilBlock { get; set { field = value; _hash = null; } }
+
+        /// <summary>
+        /// The signers of the transaction.
+        /// </summary>
+        public required Signer[] Signers { get; set { field = value; _hash = null; _size = 0; } }
+
+        private Dictionary<Type, TransactionAttribute[]>? _attributesCache;
+        /// <summary>
+        /// The attributes of the transaction.
+        /// </summary>
+        public required TransactionAttribute[] Attributes { get; set { field = value; _attributesCache = null; _hash = null; _size = 0; } }
+
+        /// <summary>
+        /// The script of the transaction.
+        /// </summary>
+        public ReadOnlyMemory<byte> Script { get; set { field = value; _hash = null; _size = 0; } }
+
+        public required Witness[] Witnesses { get; set { field = value; _size = 0; } }
 
         /// <summary>
         /// The size of a transaction header.
@@ -68,22 +99,12 @@ namespace Neo.Network.P2P.Payloads
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
-        private Dictionary<Type, TransactionAttribute[]> _attributesCache;
-        /// <summary>
-        /// The attributes of the transaction.
-        /// </summary>
-        public TransactionAttribute[] Attributes
-        {
-            get => attributes;
-            set { attributes = value; _attributesCache = null; _hash = null; _size = 0; }
-        }
-
         /// <summary>
         /// The <see cref="NetworkFee"/> for the transaction divided by its <see cref="Size"/>.
         /// </summary>
         public long FeePerByte => NetworkFee / Size;
 
-        private UInt256 _hash = null;
+        private UInt256? _hash = null;
 
         /// <inheritdoc/>
         public UInt256 Hash
@@ -101,46 +122,10 @@ namespace Neo.Network.P2P.Payloads
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
         /// <summary>
-        /// The network fee of the transaction.
-        /// </summary>
-        public long NetworkFee //Distributed to consensus nodes.
-        {
-            get => netfee;
-            set { netfee = value; _hash = null; }
-        }
-
-        /// <summary>
-        /// The nonce of the transaction.
-        /// </summary>
-        public uint Nonce
-        {
-            get => nonce;
-            set { nonce = value; _hash = null; }
-        }
-
-        /// <summary>
-        /// The script of the transaction.
-        /// </summary>
-        public ReadOnlyMemory<byte> Script
-        {
-            get => script;
-            set { script = value; _hash = null; _size = 0; }
-        }
-
-        /// <summary>
         /// The sender is the first signer of the transaction, regardless of its <see cref="WitnessScope"/>.
         /// </summary>
         /// <remarks>Note: The sender will pay the fees of the transaction.</remarks>
-        public UInt160 Sender => _signers[0].Account;
-
-        /// <summary>
-        /// The signers of the transaction.
-        /// </summary>
-        public Signer[] Signers
-        {
-            get => _signers;
-            set { _signers = value; _hash = null; _size = 0; }
-        }
+        public UInt160 Sender => Signers[0].Account;
 
         private int _size;
         public int Size
@@ -157,39 +142,6 @@ namespace Neo.Network.P2P.Payloads
                 }
                 return _size;
             }
-        }
-
-        /// <summary>
-        /// The system fee of the transaction.
-        /// </summary>
-        public long SystemFee //Fee to be burned.
-        {
-            get => sysfee;
-            set { sysfee = value; _hash = null; }
-        }
-
-        /// <summary>
-        /// Indicates that the transaction is only valid before this block height.
-        /// </summary>
-        public uint ValidUntilBlock
-        {
-            get => validUntilBlock;
-            set { validUntilBlock = value; _hash = null; }
-        }
-
-        /// <summary>
-        /// The version of the transaction.
-        /// </summary>
-        public byte Version
-        {
-            get => version;
-            set { version = value; _hash = null; }
-        }
-
-        public Witness[] Witnesses
-        {
-            get => witnesses;
-            set { witnesses = value; _size = 0; }
         }
 
         void ISerializable.Deserialize(ref MemoryReader reader)
@@ -254,14 +206,14 @@ namespace Neo.Network.P2P.Payloads
             if (Script.Length == 0) throw new FormatException("Script in Transaction is empty");
         }
 
-        public bool Equals(Transaction other)
+        public bool Equals(Transaction? other)
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
             return Hash.Equals(other.Hash);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as Transaction);
         }
@@ -276,7 +228,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <typeparam name="T">The type of the attribute.</typeparam>
         /// <returns>The first attribute of this type. Or <see langword="null"/> if there is no attribute of this type.</returns>
-        public T GetAttribute<T>() where T : TransactionAttribute
+        public T? GetAttribute<T>() where T : TransactionAttribute
         {
             return GetAttributes<T>().FirstOrDefault();
         }
@@ -288,7 +240,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>All the attributes of this type.</returns>
         public IEnumerable<T> GetAttributes<T>() where T : TransactionAttribute
         {
-            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => p.ToArray());
+            _attributesCache ??= Attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => p.ToArray());
             if (_attributesCache.TryGetValue(typeof(T), out var result))
                 return result.OfType<T>();
             return Enumerable.Empty<T>();
@@ -394,15 +346,15 @@ namespace Neo.Network.P2P.Payloads
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (IsSignatureContract(witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(witnesses[i].InvocationScript, out var _))
+                if (IsSignatureContract(Witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(Witnesses[i].InvocationScript, out var _))
                     netFeeDatoshi -= execFeeFactor * SignatureContractCost();
-                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n) && IsMultiSignatureInvocationScript(m, witnesses[i].InvocationScript, out var _))
+                else if (IsMultiSigContract(Witnesses[i].VerificationScript.Span, out int m, out int n) && IsMultiSignatureInvocationScript(m, Witnesses[i].InvocationScript, out var _))
                 {
                     netFeeDatoshi -= execFeeFactor * MultiSignatureContractCost(m, n);
                 }
                 else
                 {
-                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], netFeeDatoshi, out long fee))
+                    if (!this.VerifyWitness(settings, snapshot, hashes[i], Witnesses[i], netFeeDatoshi, out long fee))
                         return VerifyResult.Invalid;
                     netFeeDatoshi -= fee;
                 }
@@ -427,10 +379,10 @@ namespace Neo.Network.P2P.Payloads
             {
                 return VerifyResult.InvalidScript;
             }
-            UInt160[] hashes = GetScriptHashesForVerifying(null);
+            UInt160[] hashes = GetScriptHashesForVerifying(null!);
             for (int i = 0; i < hashes.Length; i++)
             {
-                var witness = witnesses[i];
+                var witness = Witnesses[i];
                 if (IsSignatureContract(witness.VerificationScript.Span) && IsSingleSignatureInvocationScript(witness.InvocationScript, out var signature))
                 {
                     if (hashes[i] != witness.ScriptHash) return VerifyResult.Invalid;
@@ -445,7 +397,7 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-                else if (IsMultiSigContract(witness.VerificationScript.Span, out var m, out ECPoint[] points) && IsMultiSignatureInvocationScript(m, witness.InvocationScript, out var signatures))
+                else if (IsMultiSigContract(witness.VerificationScript.Span, out var m, out ECPoint[]? points) && IsMultiSignatureInvocationScript(m, witness.InvocationScript, out var signatures))
                 {
                     if (hashes[i] != witness.ScriptHash) return VerifyResult.Invalid;
                     var n = points.Length;
@@ -470,9 +422,9 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
-            if (_signers == null || _signers.Length == 0) throw new ArgumentException("Sender is not specified in the transaction.");
+            if (Signers.Length == 0) throw new ArgumentException("Sender is not specified in the transaction.");
             return new Array(referenceCounter, new StackItem[]
             {
                 // Computed properties
@@ -490,7 +442,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         private static bool IsMultiSignatureInvocationScript(int m, ReadOnlyMemory<byte> invocationScript,
-            [NotNullWhen(true)] out ReadOnlyMemory<byte>[] sigs)
+            [NotNullWhen(true)] out ReadOnlyMemory<byte>[]? sigs)
         {
             sigs = null;
             ReadOnlySpan<byte> span = invocationScript.Span;
