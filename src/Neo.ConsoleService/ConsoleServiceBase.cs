@@ -130,7 +130,8 @@ namespace Neo.ConsoleService
 
             var possibleHelp = "";
             var tokens = commandLine.Tokenize();
-            var availableCommands = new List<(ConsoleCommandMethod Command, object?[] Arguments)>();
+            var availableCommands = new List<(ConsoleCommandMethod Command, Func<object?[]> Arguments)>();
+
             foreach (var entries in _verbs.Values)
             {
                 foreach (var command in entries)
@@ -139,19 +140,11 @@ namespace Neo.ConsoleService
                     if (consumed <= 0) continue;
 
                     var args = tokens.Skip(consumed).ToList().Trim();
-                    try
-                    {
-                        if (args.Any(u => u.IsIndicator))
-                            availableCommands.Add((command, ParseIndicatorArguments(command.Method, args)));
-                        else
-                            availableCommands.Add((command, ParseSequentialArguments(command.Method, args)));
-                    }
-                    catch (Exception ex)
-                    {
-                        // Skip parse errors
-                        possibleHelp = command.Key;
-                        ConsoleHelper.Error($"{ex.InnerException?.Message ?? ex.Message}");
-                    }
+
+                    if (args.Any(u => u.IsIndicator))
+                        availableCommands.Add((command, () => ParseIndicatorArguments(command.Method, args)));
+                    else
+                        availableCommands.Add((command, () => ParseSequentialArguments(command.Method, args)));
                 }
             }
 
@@ -167,7 +160,9 @@ namespace Neo.ConsoleService
 
             if (availableCommands.Count == 1)
             {
-                var (command, arguments) = availableCommands[0];
+                // var (command, arguments) = availableCommands[0];
+                var (command, getArguments) = availableCommands[0];
+                var arguments = getArguments();
                 object? result = command.Method.Invoke(command.Instance, arguments);
 
                 if (result is Task task) task.Wait();
@@ -176,7 +171,8 @@ namespace Neo.ConsoleService
 
             // Show Ambiguous call
             var ambiguousCommands = availableCommands.Select(u => u.Command.Key).Distinct().ToList();
-            throw new ArgumentException($"Ambiguous calls for: {string.Join(',', ambiguousCommands)}");
+            var ambiguousCommandsQuoted = ambiguousCommands.Select(u => $"'{u}'").ToList();
+            throw new ArgumentException($"Ambiguous calls for: {string.Join(',', ambiguousCommandsQuoted)}");
         }
 
         private bool TryProcessValue(Type parameterType, IList<CommandToken> args, bool consumeAll, out object? value)

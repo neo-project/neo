@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
+using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -27,9 +28,11 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using static Neo.SmartContract.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
+using ECCurve = Neo.Cryptography.ECC.ECCurve;
 
 namespace Neo.CLI
 {
@@ -475,8 +478,8 @@ namespace Neo.CLI
         /// <summary>
         /// Process "sign" command
         /// </summary>
-        /// <param name="jsonObjectToSign">Json object to sign</param>
-        [ConsoleCommand("sign", Category = "Wallet Commands")]
+        /// <param name="jsonObjectToSign">The json string that records the transaction information</param>
+        [ConsoleCommand("sign tx", Category = "Wallet Commands")]
         private void OnSignCommand(JObject jsonObjectToSign)
         {
             if (NoWallet()) return;
@@ -505,6 +508,73 @@ namespace Neo.CLI
             catch (Exception e)
             {
                 ConsoleHelper.Error(GetExceptionMessage(e));
+            }
+        }
+
+        /// <summary>
+        /// Process "sign message" command
+        /// </summary>
+        /// <param name="message">Message to sign</param>
+        [ConsoleCommand("sign message", Category = "Wallet Commands")]
+        private void OnSignMessageCommand(string message)
+        {
+            if (NoWallet()) return;
+
+            string password = ConsoleHelper.ReadUserInput("password", true);
+            if (password.Length == 0)
+            {
+                ConsoleHelper.Info("Cancelled");
+                return;
+            }
+            if (!CurrentWallet!.VerifyPassword(password))
+            {
+                ConsoleHelper.Error("Incorrect password");
+                return;
+            }
+
+            var saltBytes = new byte[16];
+            RandomNumberGenerator.Fill(saltBytes);
+            var saltHex = saltBytes.ToHexString().ToLowerInvariant();
+
+            var paramBytes = Encoding.UTF8.GetBytes(saltHex + message);
+
+            byte[] payload;
+            using (var ms = new MemoryStream())
+            using (var w = new BinaryWriter(ms, Encoding.UTF8, true))
+            {
+                // We add these 4 bytes to prevent the signature from being a valid transaction
+                w.Write((byte)0x01);
+                w.Write((byte)0x00);
+                w.Write((byte)0x01);
+                w.Write((byte)0xF0);
+                // Write the actual message to sign
+                w.WriteVarBytes(paramBytes);
+                // We add these 2 bytes to prevent the signature from being a valid transaction
+                w.Write((ushort)0);
+                w.Flush();
+                payload = ms.ToArray();
+            }
+
+            ConsoleHelper.Info("Signed Payload: ", $"{Environment.NewLine}{payload.ToHexString()}");
+            Console.WriteLine();
+            ConsoleHelper.Info("    Curve: ", "secp256r1");
+            ConsoleHelper.Info("Algorithm: ", "010001f0 + VarBytes(Salt + Message) + 0000");
+            ConsoleHelper.Info("           ", "See the online documentation for details on how to verify this signature.");
+            ConsoleHelper.Info("           ", "https://developers.neo.org/docs/n3/node/cli/cli#sign_message");
+            Console.WriteLine();
+            ConsoleHelper.Info("Generated signatures:");
+            Console.WriteLine();
+
+            foreach (WalletAccount account in CurrentWallet.GetAccounts().Where(p => p.HasKey))
+            {
+                var key = account.GetKey();
+                var signature = Crypto.Sign(payload, key.PrivateKey, ECCurve.Secp256r1);
+
+                ConsoleHelper.Info("    Address: ", account.Address);
+                ConsoleHelper.Info("  PublicKey: ", key.PublicKey.EncodePoint(true).ToHexString());
+                ConsoleHelper.Info("  Signature: ", signature.ToHexString());
+                ConsoleHelper.Info("       Salt: ", saltHex);
+                Console.WriteLine();
             }
         }
 
