@@ -478,8 +478,8 @@ namespace Neo.CLI
         /// <summary>
         /// Process "sign" command
         /// </summary>
-        /// <param name="jsonObjectToSign">Json object to sign</param>
-        [ConsoleCommand("sign", Category = "Wallet Commands")]
+        /// <param name="jsonObjectToSign">The json string that records the transaction information</param>
+        [ConsoleCommand("sign transaction", Category = "Wallet Commands")]
         private void OnSignCommand(JObject jsonObjectToSign)
         {
             if (NoWallet()) return;
@@ -512,12 +512,11 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Process "sign_message" command
+        /// Process "sign message" command
         /// </summary>
         /// <param name="message">Message to sign</param>
-        /// <param name="curve">Optional curve (secp256r1 or secp256k1)</param>
-        [ConsoleCommand("sign_message", Category = "Wallet Commands")]
-        private void OnSignMessageCommand(string message, string? curve = "secp256r1")
+        [ConsoleCommand("sign message", Category = "Wallet Commands")]
+        private void OnSignMessageCommand(string message)
         {
             if (NoWallet()) return;
 
@@ -531,22 +530,6 @@ namespace Neo.CLI
             {
                 ConsoleHelper.Error("Incorrect password");
                 return;
-            }
-
-            // Select ECC curve
-            ECCurve selectedCurve;
-            switch (curve?.ToLowerInvariant())
-            {
-                case "secp256r1":
-                    selectedCurve = ECCurve.Secp256r1;
-                    break;
-                case "secp256k1":
-                    selectedCurve = ECCurve.Secp256k1;
-                    break;
-                default:
-                    ConsoleHelper.Error($"Unsupported curve: {curve}");
-                    ConsoleHelper.Info("Supported curves: secp256r1 (default), secp256k1");
-                    return;
             }
 
             var saltBytes = new byte[16];
@@ -572,19 +555,25 @@ namespace Neo.CLI
                 payload = ms.ToArray();
             }
 
-            ConsoleHelper.Info("Curve: ", selectedCurve == ECCurve.Secp256r1 ? "secp256r1" : "secp256k1");
             ConsoleHelper.Info("Signed Payload: ", $"{Environment.NewLine}{payload.ToHexString()}");
+            Console.WriteLine();
+            ConsoleHelper.Info("    Curve: ", "secp256r1");
+            ConsoleHelper.Info("Algorithm: ", "010001f0 + VarBytes(Salt + Message) + 0000");
+            ConsoleHelper.Info("           ", "See the online documentation for details on how to verify this signature.");
+            ConsoleHelper.Info("           ", "https://developers.neo.org/docs/n3/node/cli/cli#sign_message");
+            Console.WriteLine();
+            ConsoleHelper.Info("Generated signatures:");
             Console.WriteLine();
 
             foreach (WalletAccount account in CurrentWallet.GetAccounts().Where(p => p.HasKey))
             {
                 var key = account.GetKey();
-                var signature = Crypto.Sign(payload, key.PrivateKey, selectedCurve);
+                var signature = Crypto.Sign(payload, key.PrivateKey, ECCurve.Secp256r1);
 
-                ConsoleHelper.Info("Address: ", account.Address);
+                ConsoleHelper.Info("    Address: ", account.Address);
                 ConsoleHelper.Info("  PublicKey: ", key.PublicKey.EncodePoint(true).ToHexString());
-                ConsoleHelper.Info("  Salt: ", saltHex);
                 ConsoleHelper.Info("  Signature: ", signature.ToHexString());
+                ConsoleHelper.Info("       Salt: ", saltHex);
                 Console.WriteLine();
             }
         }
