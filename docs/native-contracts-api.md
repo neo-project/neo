@@ -77,9 +77,14 @@ When calling a native contract method by transaction script, there are several t
 | bls12381Deserialize | Deserialize a bls12381 point. | Byte[](*data*) | InteropInterface | 1<<19 | 0 | -- | -- |
 | bls12381Equal | Determines whether the specified points are equal. | InteropInterface(*x*), InteropInterface(*y*) | Boolean | 1<<5 | 0 | -- | -- |
 | bls12381Add | Add operation of two points. | InteropInterface(*x*), InteropInterface(*y*) | InteropInterface | 1<<19 | 0 | -- | -- |
+| bls12_g1add | -- | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Faun |
+| bls12_g2add | -- | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Faun |
 | bls12381Mul | Mul operation of gt point and multiplier | InteropInterface(*x*), Byte[](*mul*), Boolean(*neg*) | InteropInterface | 1<<21 | 0 | -- | -- |
+| bls12_g1mul | -- | Byte[](*input*) | Byte[] | 1<<21 | 0 | -- | HF_Faun |
+| bls12_g2mul | -- | Byte[](*input*) | Byte[] | 1<<21 | 0 | -- | HF_Faun |
 | bls12381MultiExp | Multi exponentiation operation for bls12381 points. | Array(*pairs*) | InteropInterface | 1<<23 | 0 | -- | HF_Faun |
 | bls12381Pairing | Pairing operation of g1 and g2 | InteropInterface(*g1*), InteropInterface(*g2*) | InteropInterface | 1<<23 | 0 | -- | -- |
+| bls12_pairing | -- | Byte[](*input*) | Byte[] | 1<<23 | 0 | -- | HF_Faun |
 | recoverSecp256K1 | Recovers the public key from a secp256k1 signature in a single byte array format. | Byte[](*messageHash*), Byte[](*signature*) | Byte[] | 1<<15 | 0 | -- | HF_Echidna |
 | ripemd160 | Computes the hash value for the specified byte array using the ripemd160 algorithm. | Byte[](*data*) | Byte[] | 1<<15 | 0 | -- | -- |
 | sha256 | Computes the hash value for the specified byte array using the sha256 algorithm. | Byte[](*data*) | Byte[] | 1<<15 | 0 | -- | -- |

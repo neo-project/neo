@@ -180,6 +180,133 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestBls12G1AddAlias()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            byte[] encoded = EncodeEthereumG1Point(new G1Projective(g1Point));
+            byte[] input = new byte[Bls12G1EncodedLength * 2];
+            encoded.CopyTo(input, 0);
+            encoded.CopyTo(input, encoded.Length);
+
+            byte[] result = CryptoLib.Bls12G1Add(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(g1Point) + g1Point;
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G2AddAlias()
+        {
+            var g2Point = G2Affine.FromCompressed(g2);
+            byte[] encoded = EncodeEthereumG2Point(new G2Projective(g2Point));
+            byte[] input = new byte[Bls12G2EncodedLength * 2];
+            encoded.CopyTo(input, 0);
+            encoded.CopyTo(input, encoded.Length);
+
+            byte[] result = CryptoLib.Bls12G2Add(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(g2Point) + g2Point;
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G1MulAlias()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            byte[] input = new byte[Bls12G1EncodedLength + Scalar.Size];
+            EncodeEthereumG1Point(new G1Projective(g1Point)).CopyTo(input, 0);
+            CreateScalarBytes(2).CopyTo(input, Bls12G1EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G1Mul(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(g1Point) * CreateScalar(2);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G2MulAlias()
+        {
+            var g2Point = G2Affine.FromCompressed(g2);
+            byte[] input = new byte[Bls12G2EncodedLength + Scalar.Size];
+            EncodeEthereumG2Point(new G2Projective(g2Point)).CopyTo(input, 0);
+            CreateScalarBytes(3).CopyTo(input, Bls12G2EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G2Mul(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(g2Point) * CreateScalar(3);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12PairingAliasSinglePair()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+            byte[] input = BuildPairInput(g1Point, g2Point);
+
+            byte[] result = CryptoLib.Bls12Pairing(input);
+            Assert.AreEqual(32, result.Length);
+            Assert.IsTrue(result.All(b => b == 0));
+        }
+
+        [TestMethod]
+        public void TestBls12PairingAliasMultiplePairs()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+            var negG1 = -g1Point;
+
+            byte[] input = BuildPairInput(g1Point, g2Point)
+                .Concat(BuildPairInput(negG1, g2Point))
+                .ToArray();
+
+            byte[] result = CryptoLib.Bls12Pairing(input);
+            Assert.IsTrue(result.Take(result.Length - 1).All(b => b == 0));
+            Assert.AreEqual(1, result[^1]);
+        }
+
+        [TestMethod]
+        public void TestBls12PairingAliasNonUnitProduct()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+            byte[] input = BuildPairInput(g1Point, g2Point)
+                .Concat(BuildPairInput(g1Point, g2Point))
+                .ToArray();
+
+            byte[] result = CryptoLib.Bls12Pairing(input);
+            Assert.IsTrue(result.Take(result.Length - 1).All(b => b == 0));
+            Assert.AreEqual(0, result[^1]);
+        }
+
+        [TestMethod]
+        public void TestBls12PairingAliasInvalidLength()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12Pairing(new byte[10]));
+        }
+
+        [TestMethod]
+        public void TestBls12PairingAliasInvalidPoint()
+        {
+            byte[] input = new byte[Bls12PairInputLength];
+            // Write identity G2 but invalid G1 (non-zero y but zero x prefix)
+            EncodeEthereumG2Point(G2Projective.Identity).CopyTo(input, Bls12G1EncodedLength);
+            input[Bls12FieldElementLength + 10] = 1;
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12Pairing(input));
+        }
+
+        [TestMethod]
+        public void TestBls12PairingAliasEmptyInput()
+        {
+            byte[] result = CryptoLib.Bls12Pairing(System.Array.Empty<byte>());
+            Assert.AreEqual(1, result[^1]);
+            Assert.IsTrue(result.Take(result.Length - 1).All(b => b == 0));
+        }
+        [TestMethod]
         public void TestBls12381Mul()
         {
             var data = new byte[32];
@@ -1468,5 +1595,50 @@ namespace Neo.UnitTests.SmartContract.Native
             return Scalar.FromBytes(littleEndian);
         }
 
+        private const int Bls12FieldElementLength = 64;
+        private const int Bls12G1EncodedLength = Bls12FieldElementLength * 2;
+        private const int Bls12G2EncodedLength = Bls12FieldElementLength * 4;
+        private const int Bls12PairInputLength = Bls12G1EncodedLength + Bls12G2EncodedLength;
+
+        private static byte[] EncodeEthereumG1Point(G1Projective point)
+        {
+            var affine = new G1Affine(point);
+            if (affine.IsIdentity)
+                return new byte[Bls12G1EncodedLength];
+
+            byte[] output = new byte[Bls12G1EncodedLength];
+            WriteEthereumFp(affine.X, output.AsSpan(0, Bls12FieldElementLength));
+            WriteEthereumFp(affine.Y, output.AsSpan(Bls12FieldElementLength, Bls12FieldElementLength));
+            return output;
+        }
+
+        private static byte[] EncodeEthereumG2Point(G2Projective point)
+        {
+            var affine = new G2Affine(point);
+            if (affine.IsIdentity)
+                return new byte[Bls12G2EncodedLength];
+
+            byte[] output = new byte[Bls12G2EncodedLength];
+            WriteEthereumFp(affine.X.C0, output.AsSpan(0, Bls12FieldElementLength));
+            WriteEthereumFp(affine.X.C1, output.AsSpan(Bls12FieldElementLength, Bls12FieldElementLength));
+            WriteEthereumFp(affine.Y.C0, output.AsSpan(Bls12FieldElementLength * 2, Bls12FieldElementLength));
+            WriteEthereumFp(affine.Y.C1, output.AsSpan(Bls12FieldElementLength * 3, Bls12FieldElementLength));
+            return output;
+        }
+
+        private static byte[] BuildPairInput(G1Affine g1Point, G2Affine g2Point)
+        {
+            return EncodeEthereumG1Point(new G1Projective(g1Point))
+                .Concat(EncodeEthereumG2Point(new G2Projective(g2Point)))
+                .ToArray();
+        }
+
+        private static void WriteEthereumFp(Fp fp, Span<byte> destination)
+        {
+            destination.Clear();
+            Span<byte> buffer = stackalloc byte[Fp.Size];
+            fp.TryWrite(buffer);
+            buffer.CopyTo(destination[(Bls12FieldElementLength - Fp.Size)..]);
+        }
     }
 }
