@@ -479,7 +479,7 @@ namespace Neo.CLI
         /// Process "sign" command
         /// </summary>
         /// <param name="jsonObjectToSign">The json string that records the transaction information</param>
-        [ConsoleCommand("sign transaction", Category = "Wallet Commands")]
+        [ConsoleCommand("sign tx", Category = "Wallet Commands")]
         private void OnSignCommand(JObject jsonObjectToSign)
         {
             if (NoWallet()) return;
