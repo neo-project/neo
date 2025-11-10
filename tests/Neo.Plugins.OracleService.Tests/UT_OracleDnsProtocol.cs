@@ -82,10 +82,16 @@ namespace Neo.Plugins.OracleService.Tests
             var certElement = doc.RootElement.GetProperty("Certificate");
             Assert.AreEqual(base64Cert, certElement.GetProperty("Der").GetString());
             using var parsedCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(base64Cert));
+            var pkElement = certElement.GetProperty("PublicKey");
             string expectedPublicKey = Convert.ToBase64String(parsedCert.GetPublicKey());
             string expectedAlgorithm = parsedCert.PublicKey.Oid?.FriendlyName ?? parsedCert.PublicKey.Oid?.Value;
-            Assert.AreEqual(expectedPublicKey, certElement.GetProperty("PublicKey").GetString());
-            Assert.AreEqual(expectedAlgorithm, certElement.GetProperty("PublicKeyAlgorithm").GetString());
+            Assert.AreEqual(expectedPublicKey, pkElement.GetProperty("Encoded").GetString());
+            Assert.AreEqual(expectedAlgorithm, pkElement.GetProperty("Algorithm").GetString());
+            using RSA rsa = parsedCert.GetRSAPublicKey();
+            Assert.IsNotNull(rsa);
+            RSAParameters parameters = rsa.ExportParameters(false);
+            Assert.AreEqual(Convert.ToHexString(parameters.Modulus), pkElement.GetProperty("Modulus").GetString());
+            Assert.AreEqual(Convert.ToHexString(parameters.Exponent), pkElement.GetProperty("Exponent").GetString());
         }
 
         [TestMethod]

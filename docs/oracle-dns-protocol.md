@@ -73,14 +73,19 @@ Successful queries return UTF-8 JSON. Attributes correspond to the `ResultEnvelo
     "NotBefore": "2024-01-16T00:00:00Z",
     "NotAfter": "2025-01-16T00:00:00Z",
     "Der": "MIIC...",
-    "PublicKeyAlgorithm": "RSA",
-    "PublicKey": "MIIBIjANBg..."
+    "PublicKey": {
+      "Algorithm": "RSA",
+      "Encoded": "MIIBIjANBg...",
+      "Modulus": "B968DE...",
+      "Exponent": "010001"
+    }
   }
 }
 ```
 
 - `Answers` mirrors the DoH response but normalizes record types and names.
-- `Certificate` is present only when `type=CERT` or `format=x509`. `Der` is the base64-encoded certificate, while `PublicKeyAlgorithm`/`PublicKey` expose the decoded subject public key info (base64-encoded raw key) so it can be stored or verified without parsing DER on-chain.
+- `Certificate` is present only when `type=CERT` or `format=x509`. `Der` is the base64-encoded certificate, while `PublicKey` provides both the encoded SubjectPublicKeyInfo (`Encoded`) and algorithm-specific fields (`Modulus`/`Exponent` for RSA, `Curve`/`X`/`Y` for EC) so contracts can consume the key without doing ASN.1 parsing.
+- For RSA keys the modulus/exponent strings are big-endian hex. For EC keys the X/Y coordinates are hex-encoded affine coordinates on the reported `Curve`.
 - If the DoH server responds with NXDOMAIN, the oracle returns `OracleResponseCode.NotFound`.
 - Responses exceeding `OracleResponse.MaxResultSize` yield `OracleResponseCode.ResponseTooLarge`.
 

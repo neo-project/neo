@@ -18,6 +18,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
@@ -59,8 +60,18 @@ namespace Neo.Plugins.OracleService
             public DateTime NotBefore { get; set; }
             public DateTime NotAfter { get; set; }
             public string Der { get; set; }
-            public string PublicKeyAlgorithm { get; set; }
-            public string PublicKey { get; set; }
+            public CertificatePublicKey PublicKey { get; set; }
+        }
+
+        private sealed class CertificatePublicKey
+        {
+            public string Algorithm { get; set; }
+            public string Encoded { get; set; }
+            public string Modulus { get; set; }
+            public string Exponent { get; set; }
+            public string Curve { get; set; }
+            public string X { get; set; }
+            public string Y { get; set; }
         }
 
         private sealed class ResultEnvelope
@@ -333,8 +344,7 @@ namespace Neo.Plugins.OracleService
                         NotBefore = cert.NotBefore,
                         NotAfter = cert.NotAfter,
                         Der = Convert.ToBase64String(cert.Export(X509ContentType.Cert)),
-                        PublicKeyAlgorithm = cert.PublicKey.Oid?.FriendlyName ?? cert.PublicKey.Oid?.Value,
-                        PublicKey = Convert.ToBase64String(cert.GetPublicKey())
+                        PublicKey = BuildPublicKey(cert)
                     };
                     return true;
                 }
@@ -344,6 +354,49 @@ namespace Neo.Plugins.OracleService
                 }
             }
             return false;
+        }
+
+        private static CertificatePublicKey BuildPublicKey(X509Certificate2 cert)
+        {
+            CertificatePublicKey key = new()
+            {
+                Algorithm = cert.PublicKey.Oid?.FriendlyName ?? cert.PublicKey.Oid?.Value,
+                Encoded = Convert.ToBase64String(cert.GetPublicKey())
+            };
+
+            try
+            {
+                using RSA rsa = cert.GetRSAPublicKey();
+                if (rsa is not null)
+                {
+                    RSAParameters parameters = rsa.ExportParameters(false);
+                    key.Modulus = Convert.ToHexString(parameters.Modulus);
+                    key.Exponent = Convert.ToHexString(parameters.Exponent);
+                    return key;
+                }
+            }
+            catch
+            {
+                // ignore and fall through
+            }
+
+            try
+            {
+                using ECDsa ecdsa = cert.GetECDsaPublicKey();
+                if (ecdsa is not null)
+                {
+                    ECParameters parameters = ecdsa.ExportParameters(false);
+                    key.Curve = parameters.Curve.Oid?.FriendlyName ?? parameters.Curve.Oid?.Value;
+                    key.X = Convert.ToHexString(parameters.Q.X);
+                    key.Y = Convert.ToHexString(parameters.Q.Y);
+                    return key;
+                }
+            }
+            catch
+            {
+            }
+
+            return key;
         }
 
         private static bool CanContainCertificate(DohAnswer answer)
