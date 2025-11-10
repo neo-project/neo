@@ -80,7 +80,6 @@ namespace Neo.Cryptography
             bool hasEffectivePair = false;
 
             mclBnGT accumulator = default;
-            Mcl.mclBnGT_setInt32(ref accumulator, 1);
 
             for (int pairIndex = 0; pairIndex < pairCount; pairIndex++)
             {
@@ -97,20 +96,25 @@ namespace Neo.Cryptography
                 if (Mcl.mclBnG1_isZero(g1) == 1 || Mcl.mclBnG2_isZero(g2) == 1)
                     continue;
 
-                hasEffectivePair = true;
-
-                mclBnGT current = default;
-                Mcl.mclBn_pairing(ref current, g1, g2);
-
-                if (Mcl.mclBnGT_isValid(current) == 0)
-                    return new byte[FieldElementLength];
-
-                mclBnGT temp = accumulator;
-                Mcl.mclBnGT_mul(ref accumulator, temp, current);
+                // Accumulate Miller loops so we only run the final exponent once.
+                if (!hasEffectivePair)
+                {
+                    Mcl.mclBn_millerLoop(ref accumulator, g1, g2);
+                    hasEffectivePair = true;
+                }
+                else
+                {
+                    mclBnGT loop = default;
+                    Mcl.mclBn_millerLoop(ref loop, g1, g2);
+                    mclBnGT temp = accumulator;
+                    Mcl.mclBnGT_mul(ref accumulator, temp, loop);
+                }
             }
 
             if (!hasEffectivePair)
                 return SuccessWord();
+
+            Mcl.mclBn_finalExp(ref accumulator, accumulator);
 
             return Mcl.mclBnGT_isOne(accumulator) == 1 ? SuccessWord() : new byte[FieldElementLength];
         }
