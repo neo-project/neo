@@ -117,6 +117,49 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_SetFeePerByte()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            // Fake blockchain
+
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+
+            // Without signature
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(1000, ret.GetInteger());
+
+            // With signature
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
+            Assert.IsTrue(ret.IsNull);
+
+            ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(1, ret.GetInteger());
+        }
+
+        [TestMethod]
         public void Check_SetBaseExecFee()
         {
             var snapshot = _snapshotCache.CloneCache();
@@ -168,6 +211,60 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(50, ret.GetInteger());
+        }
+
+        [TestMethod]
+        public void Check_SetStoragePrice()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            // Fake blockchain
+
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+
+            // Without signature
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                "setStoragePrice", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(100000, ret.GetInteger());
+
+            // With signature, wrong value
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setStoragePrice", new ContractParameter(ContractParameterType.Integer) { Value = 100000000 });
+            });
+
+            ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(100000, ret.GetInteger());
+
+            // Proper set
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setStoragePrice", new ContractParameter(ContractParameterType.Integer) { Value = 300300 });
+            Assert.IsTrue(ret.IsNull);
+
+            ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(300300, ret.GetInteger());
         }
 
         [TestMethod]
