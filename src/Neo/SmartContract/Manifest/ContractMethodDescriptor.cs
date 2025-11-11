@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// NEP-25 extended return type
         /// </summary>
-        public ExtendedType ExtendedReturnType { get; set; }
+        public ExtendedType? ExtendedReturnType { get; set; }
 
         /// <summary>
         /// The position of the method in the contract script.
@@ -92,7 +92,7 @@ namespace Neo.SmartContract.Manifest
         /// <param name="json">The method represented by a JSON object.</param>
         /// <param name="knownNamedTypes">Set of named type identifiers declared in the manifest, if any.</param>
         /// <returns>The converted method.</returns>
-        public new static ContractMethodDescriptor FromJson(JObject json, ISet<string> knownNamedTypes = null)
+        public new static ContractMethodDescriptor FromJson(JObject json, ISet<string>? knownNamedTypes = null)
         {
             ContractMethodDescriptor descriptor = new()
             {
@@ -101,7 +101,7 @@ namespace Neo.SmartContract.Manifest
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"]!.GetString()),
                 Offset = json["offset"]!.GetInt32(),
                 Safe = json["safe"]!.GetBoolean(),
-                ExtendedReturnType = json["extendedreturntype"] != null ? ExtendedType.FromJson((JObject)json["extendedreturntype"]) : null
+                ExtendedReturnType = json["extendedreturntype"] != null ? ExtendedType.FromJson((JObject)json["extendedreturntype"]!) : null
             };
 
             if (string.IsNullOrEmpty(descriptor.Name))

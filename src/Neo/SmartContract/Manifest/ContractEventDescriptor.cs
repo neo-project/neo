@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Manifest
         /// <param name="json">The event represented by a JSON object.</param>
         /// <param name="knownNamedTypes">Set of named type identifiers declared in the manifest, if any.</param>
         /// <returns>The converted event.</returns>
-        public static ContractEventDescriptor FromJson(JObject json, ISet<string> knownNamedTypes = null)
+        public static ContractEventDescriptor FromJson(JObject json, ISet<string>? knownNamedTypes = null)
         {
             ContractEventDescriptor descriptor = new()
             {

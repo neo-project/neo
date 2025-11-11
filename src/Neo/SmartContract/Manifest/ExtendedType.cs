@@ -226,7 +226,7 @@ namespace Neo.SmartContract.Manifest
                     Fields = new ContractParameterDefinition[fields.Count];
                     for (var i = 0; i < fields.Count; i++)
                     {
-                        var field = new ContractParameterDefinition();
+                        var field = new ContractParameterDefinition() { Name = null! };
                         field.FromStackItem((VM.Types.Array)fields[i]);
                         Fields[i] = field;
                     }
@@ -239,13 +239,13 @@ namespace Neo.SmartContract.Manifest
             }
         }
 
-        internal StackItem ToStackItem(IReferenceCounter referenceCounter)
+        internal StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var map = new Map(referenceCounter);
             return ToStackItem(referenceCounter, map);
         }
 
-        internal Map ToStackItem(IReferenceCounter referenceCounter, Map map)
+        internal Map ToStackItem(IReferenceCounter? referenceCounter, Map map)
         {
             map["type"] = (byte)Type;
 
@@ -267,7 +267,7 @@ namespace Neo.SmartContract.Manifest
             return map;
         }
 
-        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
         {
             var item = new Map(referenceCounter);
             ToStackItem(referenceCounter, item);

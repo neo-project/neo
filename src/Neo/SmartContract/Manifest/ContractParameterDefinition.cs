@@ -36,7 +36,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// NEP-25 extended type
         /// </summary>
-        public ExtendedType ExtendedType { get; set; }
+        public ExtendedType? ExtendedType { get; set; }
 
         public void FromStackItem(StackItem stackItem)
         {
@@ -74,7 +74,7 @@ namespace Neo.SmartContract.Manifest
         /// <param name="json">The parameter represented by a JSON object.</param>
         /// <param name="knownNamedTypes">Set of named type identifiers declared in the manifest, if any.</param>
         /// <returns>The converted parameter.</returns>
-        public static ContractParameterDefinition FromJson(JObject json, ISet<string> knownNamedTypes = null)
+        public static ContractParameterDefinition FromJson(JObject json, ISet<string>? knownNamedTypes = null)
         {
             ContractParameterDefinition parameter = new()
             {
