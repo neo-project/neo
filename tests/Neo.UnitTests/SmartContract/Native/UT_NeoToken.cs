@@ -649,9 +649,22 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestCalculateBonus()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = (Block)RuntimeHelpers.GetUninitializedObject(typeof(Block));
+            var persistingBlock = new Block
+            {
+                Header = new()
+                {
+                    Index = 1,
+                    Witness = Witness.Empty,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero
+                },
+                Transactions = [],
+            };
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: TestProtocolSettings.Default);
 
-            StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
+            var key = CreateStorageKey(20, UInt160.Zero.ToArray());
 
             // Fault: balance < 0
 
@@ -661,7 +674,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }));
             try
             {
-                NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10);
+                NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 10);
                 Assert.Fail("Should have thrown ArgumentOutOfRangeException");
             }
             catch (ArgumentOutOfRangeException) { }
@@ -676,7 +689,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }));
             try
             {
-                NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10);
+                NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 10);
                 Assert.Fail("Should have thrown ArgumentOutOfRangeException");
             }
             catch (ArgumentOutOfRangeException) { }
@@ -691,7 +704,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }));
             try
             {
-                NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10);
+                NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 10);
                 Assert.Fail("Should have thrown ArgumentOutOfRangeException");
             }
             catch (ArgumentOutOfRangeException) { }
@@ -708,7 +721,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var item = clonedCache.GetAndChange(storageKey).GetInteroperable<HashIndexState>();
             item.Index = 99;
 
-            Assert.AreEqual(new BigInteger(0.5 * 100 * 100), NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100));
+            Assert.AreEqual(new BigInteger(0.5 * 100 * 100), NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 100));
             clonedCache.Delete(key);
 
             // Normal 2) votee is not committee
@@ -718,7 +731,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Balance = 100,
                 VoteTo = ECCurve.Secp256r1.G
             }));
-            Assert.AreEqual(new BigInteger(0.5 * 100 * 100), NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100));
+            Assert.AreEqual(new BigInteger(0.5 * 100 * 100), NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 100));
             clonedCache.Delete(key);
 
             // Normal 3) votee is committee
@@ -729,7 +742,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 VoteTo = TestProtocolSettings.Default.StandbyCommittee[0]
             }));
             clonedCache.Add(new KeyBuilder(NativeContract.NEO.Id, 23).Add(TestProtocolSettings.Default.StandbyCommittee[0]).AddBigEndian(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
-            Assert.AreEqual(new BigInteger(50 * 100), NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100));
+            Assert.AreEqual(new BigInteger(50 * 100), NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 100));
             clonedCache.Delete(key);
         }
 
@@ -944,7 +957,10 @@ namespace Neo.UnitTests.SmartContract.Native
             state.Balance = 1000;
             state.BalanceHeight = 0;
             height.Index = persistingBlock.Index + 1;
-            Assert.AreEqual(6500, NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, persistingBlock.Index + 2));
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: TestProtocolSettings.Default);
+            Assert.AreEqual(6500, NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, persistingBlock.Index + 2));
         }
 
         [TestMethod]
@@ -1052,7 +1068,11 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(1999800, NativeContract.NEO.BalanceOf(clonedCache, account));
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             clonedCache.GetAndChange(storageKey).GetInteroperable<HashIndexState>().Index = 29 + 2;
-            BigInteger value = NativeContract.NEO.UnclaimedGas(clonedCache, account, 29 + 3);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, _persistingBlock, settings: TestProtocolSettings.Default);
+
+            var value = NativeContract.NEO.UnclaimedGas(engine, account, 29 + 3);
             Assert.AreEqual(1999800 * 30000000000 / 100000000L + (1999800L * 10 * 5 * 29 / 100), value);
         }
 
@@ -1060,9 +1080,12 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestUnclaimedGas()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10));
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, _persistingBlock, settings: TestProtocolSettings.Default);
+
+            Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 10));
             clonedCache.Add(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem(new NeoAccountState()));
-            Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10));
+            Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 10));
         }
 
         [TestMethod]
