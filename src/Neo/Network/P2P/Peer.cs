@@ -365,14 +365,51 @@ namespace Neo.Network.P2P
 
         private void OnTimer()
         {
-            // Check if the number of desired connections is already enough
-            if (ConnectedPeers.Count >= Config.MinDesiredConnections) return;
+            var deficit = Config.MinDesiredConnections - ConnectedPeers.Count;
 
-            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers
+            if (deficit <= 0 && ConnectingPeers.Count == 0)
+                return;
+
+            if (deficit > 0 && UnconnectedPeers.Count == 0)
+            {
+                NeedMorePeers(deficit);
+                if (UnconnectedPeers.Count == 0)
+                    return;
+            }
+
+            // Check min values
+
             if (UnconnectedPeers.Count == 0)
-                NeedMorePeers(Config.MinDesiredConnections - ConnectedPeers.Count);
+                return;
 
-            var endpoints = UnconnectedPeers.Sample(Config.MinDesiredConnections - ConnectedPeers.Count);
+            var maxConnections = Config.MaxConnections < 0
+                ? int.MaxValue
+                : Config.MaxConnections - ConnectedPeers.Count;
+            if (maxConnections <= 0)
+                return;
+
+            var connectingCapacity = ConnectingMax - ConnectingPeers.Count;
+            if (connectingCapacity <= 0)
+                return;
+
+            var toConnect = Math.Max(deficit, 0);
+            if (ConnectedPeers.IsEmpty)
+            {
+                var perAddressCap = Config.MaxConnectionsPerAddress == -1
+                    ? Config.MinDesiredConnections
+                    : Config.MaxConnectionsPerAddress;
+                var bootstrapTarget = Math.Min(UnconnectedPeers.Count, Config.MinDesiredConnections + perAddressCap);
+                toConnect = Math.Max(toConnect, bootstrapTarget);
+            }
+
+            toConnect = Math.Min(toConnect, UnconnectedPeers.Count);
+            toConnect = Math.Min(toConnect, maxConnections);
+            toConnect = Math.Min(toConnect, connectingCapacity);
+
+            if (toConnect <= 0)
+                return;
+
+            var endpoints = UnconnectedPeers.Sample(toConnect);
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (var endpoint in endpoints)
             {
