@@ -23,14 +23,14 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void CreateTest()
         {
-            var ses = new TaskSession(new VersionPayload() { Capabilities = new NodeCapability[] { new FullNodeCapability(123) } });
+            var ses = new TaskSession(new VersionPayload() { Capabilities = new NodeCapability[] { new FullNodeCapability(123) }, UserAgent = "" });
 
             Assert.IsFalse(ses.HasTooManyTasks);
             Assert.AreEqual((uint)123, ses.LastBlockIndex);
             Assert.IsEmpty(ses.IndexTasks);
             Assert.IsTrue(ses.IsFullNode);
 
-            ses = new TaskSession(new VersionPayload() { Capabilities = Array.Empty<NodeCapability>() });
+            ses = new TaskSession(new VersionPayload() { Capabilities = Array.Empty<NodeCapability>(), UserAgent = "" });
 
             Assert.IsFalse(ses.HasTooManyTasks);
             Assert.AreEqual((uint)0, ses.LastBlockIndex);

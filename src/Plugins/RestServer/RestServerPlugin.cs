@@ -32,8 +32,8 @@ namespace Neo.Plugins.RestServer
 
         #region Static Globals
 
-        internal static NeoSystem? NeoSystem { get; private set; }
-        internal static LocalNode? LocalNode { get; private set; }
+        internal static NeoSystem NeoSystem { get; private set; } = null!;
+        internal static LocalNode LocalNode { get; private set; } = null!;
 
         #endregion
 

@@ -26,7 +26,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The name of the parameter.
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// The type of the parameter. It can be any value of <see cref="ContractParameterType"/> except <see cref="ContractParameterType.Void"/>.
@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Manifest
         public void FromStackItem(StackItem stackItem)
         {
             var item = (Struct)stackItem;
-            Name = item[0].GetString();
+            Name = item[0].GetString()!;
             Type = (ContractParameterType)(byte)item[1].GetInteger();
 
             if (item.Count >= 3)
@@ -56,7 +56,7 @@ namespace Neo.SmartContract.Manifest
             }
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var item = new Struct(referenceCounter) { Name, (byte)Type };
 
@@ -78,9 +78,9 @@ namespace Neo.SmartContract.Manifest
         {
             ContractParameterDefinition parameter = new()
             {
-                Name = json["name"].GetString(),
-                Type = Enum.Parse<ContractParameterType>(json["type"].GetString()),
-                ExtendedType = json["extendedtype"] != null ? ExtendedType.FromJson((JObject)json["extendedtype"]) : null
+                Name = json["name"]!.GetString(),
+                Type = Enum.Parse<ContractParameterType>(json["type"]!.GetString()),
+                ExtendedType = json["extendedtype"] != null ? ExtendedType.FromJson((JObject)json["extendedtype"]!) : null
             };
             if (string.IsNullOrEmpty(parameter.Name))
                 throw new FormatException("Name in ContractParameterDefinition is empty");
@@ -110,16 +110,16 @@ namespace Neo.SmartContract.Manifest
             return json;
         }
 
-        public bool Equals(ContractParameterDefinition other)
+        public bool Equals(ContractParameterDefinition? other)
         {
-            if (other == null) return false;
+            if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
 
             return Name == other.Name && Type == other.Type
                 && Equals(ExtendedType, other.ExtendedType);
         }
 
-        public override bool Equals(object other)
+        public override bool Equals(object? other)
         {
             if (other is not ContractParameterDefinition parm)
                 return false;

@@ -25,8 +25,9 @@ namespace Neo.Plugins.Storage
             StoreFactory.RegisterProvider(this);
         }
 
-        public IStore GetStore(string path)
+        public IStore GetStore(string? path)
         {
+            ArgumentNullException.ThrowIfNull(path);
             if (Environment.CommandLine.Split(' ').Any(p => p == "/repair" || p == "--repair"))
                 DB.Repair(path, Options.Default);
             return new Store(path);

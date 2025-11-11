@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -21,7 +22,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGeneratorAndGet()
         {
-            IVerifiable container = new Header();
+            IVerifiable container = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header));
             UInt160 scripthash = UInt160.Zero;
             string message = "lalala";
             LogEventArgs logEventArgs = new LogEventArgs(container, scripthash, message);

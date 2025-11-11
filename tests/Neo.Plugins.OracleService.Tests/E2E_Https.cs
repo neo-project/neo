@@ -67,6 +67,7 @@ namespace Neo.Plugins.OracleService.Tests
                     Script = script,
                     NetworkFee = 1000_0000,
                     SystemFee = 2_0000_0000,
+                    Witnesses = []
                 }
             ];
             byte[] signature = txs[0].Sign(s_walletAccount.GetKey(), settings.Network);
@@ -81,9 +82,11 @@ namespace Neo.Plugins.OracleService.Tests
                 {
                     Version = 0,
                     PrevHash = s_theNeoSystem.GenesisBlock.Hash,
+                    MerkleRoot = null!,
                     Timestamp = s_theNeoSystem.GenesisBlock.Timestamp + 15_000,
                     Index = 1,
                     NextConsensus = s_theNeoSystem.GenesisBlock.NextConsensus,
+                    Witness = null!
                 },
                 Transactions = txs,
             };

@@ -204,12 +204,15 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     Header = new Header
                     {
                         PrevHash = NativeContract.Ledger.CurrentHash(Snapshot),
+                        MerkleRoot = null!,
                         Index = height + 1,
                         NextConsensus = Contract.GetBFTAddress(
                             NeoToken.ShouldRefreshCommittee(height + 1, neoSystem.Settings.CommitteeMembersCount) ?
                             NativeContract.NEO.ComputeNextBlockValidators(Snapshot, neoSystem.Settings) :
-                            NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount))
-                    }
+                            NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount)),
+                        Witness = null!
+                    },
+                    Transactions = null!
                 };
                 TimePerBlock = neoSystem.GetTimePerBlock();
                 var pv = Validators;

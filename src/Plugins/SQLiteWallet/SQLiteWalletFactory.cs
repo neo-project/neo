@@ -29,7 +29,7 @@ namespace Neo.Wallets.SQLite
             return GetExtension(path).Equals(".db3", StringComparison.InvariantCultureIgnoreCase);
         }
 
-        public Wallet CreateWallet(string name, string path, string password, ProtocolSettings settings)
+        public Wallet CreateWallet(string? name, string path, string password, ProtocolSettings settings)
         {
             return SQLiteWallet.Create(path, password, settings);
         }

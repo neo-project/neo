@@ -31,7 +31,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The name of the parameter.
         /// </summary>
-        public string Name { get; }
+        public string? Name { get; }
 
         /// <summary>
         /// The type of the parameter.
@@ -41,7 +41,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The converter to convert the parameter from <see cref="StackItem"/> to <see cref="object"/>.
         /// </summary>
-        public Func<StackItem, object> Converter { get; }
+        public Func<StackItem, object?> Converter { get; }
 
         /// <summary>
         /// Indicates whether the parameter is an enumeration.
@@ -58,7 +58,7 @@ namespace Neo.SmartContract
         /// </summary>
         public bool IsInterface { get; }
 
-        private static readonly Dictionary<Type, Func<StackItem, object>> converters = new()
+        private static readonly Dictionary<Type, Func<StackItem, object?>> converters = new()
         {
             [typeof(StackItem)] = p => p,
             [typeof(Pointer)] = p => p,
@@ -97,15 +97,17 @@ namespace Neo.SmartContract
             }
             else if (IsArray)
             {
-                Converter = converters[type.GetElementType()];
+                Converter = converters[type.GetElementType()!];
+            }
+            else if (converters.TryGetValue(type, out var converter))
+            {
+                IsInterface = false;
+                Converter = converter;
             }
             else
             {
-                IsInterface = !converters.TryGetValue(type, out var converter);
-                if (IsInterface)
-                    Converter = converters[typeof(InteropInterface)];
-                else
-                    Converter = converter;
+                IsInterface = true;
+                Converter = converters[typeof(InteropInterface)];
             }
         }
 

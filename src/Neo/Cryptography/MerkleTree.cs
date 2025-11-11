@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Neo.Extensions;
 using System;
 using System.Collections;
@@ -66,7 +64,7 @@ namespace Neo.Cryptography
                     parents[i].RightChild = leaves[i * 2 + 1];
                     leaves[i * 2 + 1].Parent = parents[i];
                 }
-                parents[i].Hash = Concat(buffer, parents[i].LeftChild.Hash, parents[i].RightChild.Hash);
+                parents[i].Hash = Concat(buffer, parents[i].LeftChild!.Hash!, parents[i].RightChild!.Hash!);
             }
             return Build(parents); //TailCall
         }
@@ -91,7 +89,7 @@ namespace Neo.Cryptography
             if (hashes.Length == 1) return hashes[0];
 
             var tree = new MerkleTree(hashes);
-            return tree._root!.Hash;
+            return tree._root!.Hash!;
         }
 
         private static void DepthFirstSearch(MerkleTreeNode node, List<UInt256> hashes)
@@ -99,12 +97,12 @@ namespace Neo.Cryptography
             if (node.LeftChild == null)
             {
                 // if left is null, then right must be null
-                hashes.Add(node.Hash);
+                hashes.Add(node.Hash!);
             }
             else
             {
                 DepthFirstSearch(node.LeftChild, hashes);
-                DepthFirstSearch(node.RightChild, hashes);
+                DepthFirstSearch(node.RightChild!, hashes);
             }
         }
 
@@ -149,8 +147,8 @@ namespace Neo.Cryptography
             else
             {
                 Trim(node.LeftChild, index * 2, depth - 1, flags);
-                Trim(node.RightChild, index * 2 + 1, depth - 1, flags);
-                if (node.LeftChild.LeftChild == null && node.RightChild.RightChild == null)
+                Trim(node.RightChild!, index * 2 + 1, depth - 1, flags);
+                if (node.LeftChild.LeftChild == null && node.RightChild!.RightChild == null)
                 {
                     node.LeftChild = null;
                     node.RightChild = null;
@@ -159,5 +157,3 @@ namespace Neo.Cryptography
         }
     }
 }
-
-#nullable disable

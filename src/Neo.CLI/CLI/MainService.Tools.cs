@@ -263,7 +263,7 @@ namespace Neo.CLI
         {
             try
             {
-                UInt160 scriptHash;
+                UInt160? scriptHash;
                 if (script.StartsWith("0x"))
                 {
                     if (!UInt160.TryParse(script, out scriptHash))
@@ -273,7 +273,7 @@ namespace Neo.CLI
                 }
                 else
                 {
-                    if (!UInt160.TryParse(script, out UInt160 littleEndScript))
+                    if (!UInt160.TryParse(script, out UInt160? littleEndScript))
                     {
                         return null;
                     }

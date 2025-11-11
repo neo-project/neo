@@ -35,17 +35,17 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Sent to <see cref="LocalNode"/> to relay an <see cref="IInventory"/>.
         /// </summary>
-        public class RelayDirectly { public IInventory Inventory; }
+        public record RelayDirectly(IInventory Inventory);
 
         /// <summary>
         /// Sent to <see cref="LocalNode"/> to send an <see cref="IInventory"/>.
         /// </summary>
-        public class SendDirectly { public IInventory Inventory; }
+        public record SendDirectly(IInventory Inventory);
 
         /// <summary>
         /// Sent to <see cref="LocalNode"/> to request for an instance of <see cref="LocalNode"/>.
         /// </summary>
-        public class GetInstance { }
+        public record GetInstance;
 
         /// <summary>
         /// Indicates the protocol version of the local node.
@@ -53,7 +53,7 @@ namespace Neo.Network.P2P
         public const uint ProtocolVersion = 0;
 
         private const int MaxCountFromSeedList = 5;
-        private readonly IPEndPoint[] SeedList;
+        private readonly IPEndPoint?[] SeedList;
 
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new();
@@ -108,7 +108,7 @@ namespace Neo.Network.P2P
         /// </summary>
         /// <param name="command">The message command to be packed.</param>
         /// <param name="payload">Optional payload to be Serialized along the message.</param>
-        private void BroadcastMessage(MessageCommand command, ISerializable payload = null)
+        private void BroadcastMessage(MessageCommand command, ISerializable? payload = null)
         {
             BroadcastMessage(Message.Create(command, payload));
         }
@@ -132,7 +132,7 @@ namespace Neo.Network.P2P
 
         private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
         {
-            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
+            if (IPAddress.TryParse(hostNameOrAddress, out var ipAddress))
                 return new IPEndPoint(ipAddress, port);
             var entry = hostNameOrAddress.TryCatchThrow<string, SocketException, IPHostEntry>(Dns.GetHostEntry);
             ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo);
@@ -140,12 +140,12 @@ namespace Neo.Network.P2P
             return new IPEndPoint(ipAddress, port);
         }
 
-        internal static IPEndPoint GetIpEndPoint(string hostAndPort)
+        internal static IPEndPoint? GetIpEndPoint(string hostAndPort)
         {
             if (string.IsNullOrEmpty(hostAndPort)) return null;
 
             return hostAndPort.Split(':')
-                .TryCatch<IList<string>, Exception, IPEndPoint>(
+                .TryCatch<IList<string>, Exception, IPEndPoint?>(
                     t => GetIPEndpointFromHostPort(t[0], int.Parse(t[1])), static (_, _) => null);
         }
 
@@ -159,7 +159,7 @@ namespace Neo.Network.P2P
         /// <returns><see langword="true"/> if the new connection is allowed; otherwise, <see langword="false"/>.</returns>
         public bool AllowNewConnection(IActorRef actor, RemoteNode node)
         {
-            if (node.Version.Network != system.Settings.Network) return false;
+            if (node.Version!.Network != system.Settings.Network) return false;
             if (node.Version.Nonce == Nonce) return false;
 
             // filter duplicate connections
@@ -210,7 +210,11 @@ namespace Neo.Network.P2P
                 // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
                 // It will try to add those, sequentially, to the list of currently unconnected ones.
 
-                AddPeers(SeedList.Where(u => u != null).OrderBy(p => RandomNumberFactory.NextInt32()).Take(count));
+                AddPeers(SeedList
+                    .Where(p => p != null)
+                    .Select(p => p!)
+                    .OrderBy(p => RandomNumberFactory.NextInt32())
+                    .Take(count));
             }
         }
 
@@ -236,7 +240,7 @@ namespace Neo.Network.P2P
 
         private void OnRelayDirectly(IInventory inventory)
         {
-            var message = new RemoteNode.Relay { Inventory = inventory };
+            var message = new RemoteNode.Relay(inventory);
             // When relaying a block, if the block's index is greater than
             // 'LastBlockIndex' of the RemoteNode, relay the block;
             // otherwise, don't relay.

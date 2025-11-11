@@ -35,12 +35,12 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Gets the methods in the ABI.
         /// </summary>
-        public ContractMethodDescriptor[] Methods { get; set; } = [];
+        public required ContractMethodDescriptor[] Methods { get; set; }
 
         /// <summary>
         /// Gets the events in the ABI.
         /// </summary>
-        public ContractEventDescriptor[] Events { get; set; } = [];
+        public required ContractEventDescriptor[] Events { get; set; }
 
         /// <summary>
         /// An object with each member having a name (a string consisting of one or more identifiers joined by dots) and a value of ExtendedType object.
@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Manifest
             ValidateExtendedTypes();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var ret = new Struct(referenceCounter)
             {
@@ -119,8 +119,8 @@ namespace Neo.SmartContract.Manifest
 
             ContractAbi abi = new()
             {
-                Methods = ((JArray)json!["methods"]!)?.Select(u => ContractMethodDescriptor.FromJson((JObject)u!, knownNamedTypes)).ToArray() ?? [],
-                Events = ((JArray)json!["events"]!)?.Select(u => ContractEventDescriptor.FromJson((JObject)u!, knownNamedTypes)).ToArray() ?? [],
+                Methods = ((JArray?)json["methods"])?.Select(u => ContractMethodDescriptor.FromJson((JObject)u!)).ToArray() ?? [],
+                Events = ((JArray?)json["events"])?.Select(u => ContractEventDescriptor.FromJson((JObject)u!)).ToArray() ?? [],
                 NamedTypes = namedTypes
             };
             if (abi.Methods.Length == 0) throw new FormatException("Methods in ContractAbi is empty");

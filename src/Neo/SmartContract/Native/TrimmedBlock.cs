@@ -29,12 +29,12 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The header of the block.
         /// </summary>
-        public Header Header;
+        public required Header Header;
 
         /// <summary>
         /// The hashes of the transactions of the block.
         /// </summary>
-        public UInt256[] Hashes;
+        public required UInt256[] Hashes;
 
         /// <summary>
         /// The hash of the block.
@@ -108,7 +108,7 @@ namespace Neo.SmartContract.Native
             throw new NotSupportedException();
         }
 
-        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Array(referenceCounter,
             [

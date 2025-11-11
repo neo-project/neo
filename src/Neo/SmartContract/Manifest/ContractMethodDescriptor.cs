@@ -73,7 +73,7 @@ namespace Neo.SmartContract.Manifest
             }
         }
 
-        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var item = (Struct)base.ToStackItem(referenceCounter);
             item.Add((byte)ReturnType);
@@ -96,11 +96,11 @@ namespace Neo.SmartContract.Manifest
         {
             ContractMethodDescriptor descriptor = new()
             {
-                Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u, knownNamedTypes)).ToArray(),
-                ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
-                Offset = json["offset"].GetInt32(),
-                Safe = json["safe"].GetBoolean(),
+                Name = json["name"]!.GetString(),
+                Parameters = ((JArray)json["parameters"]!).Select(u => ContractParameterDefinition.FromJson((JObject)u!, knownNamedTypes)).ToArray(),
+                ReturnType = Enum.Parse<ContractParameterType>(json["returntype"]!.GetString()),
+                Offset = json["offset"]!.GetInt32(),
+                Safe = json["safe"]!.GetBoolean(),
                 ExtendedReturnType = json["extendedreturntype"] != null ? ExtendedType.FromJson((JObject)json["extendedreturntype"]) : null
             };
 
@@ -133,7 +133,7 @@ namespace Neo.SmartContract.Manifest
             return json;
         }
 
-        public bool Equals(ContractMethodDescriptor other)
+        public bool Equals(ContractMethodDescriptor? other)
         {
             if (ReferenceEquals(this, other)) return true;
 
@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Manifest
                 && Equals(ExtendedReturnType, other.ExtendedReturnType);
         }
 
-        public override bool Equals(object other)
+        public override bool Equals(object? other)
         {
             if (other is not ContractMethodDescriptor ev)
                 return false;

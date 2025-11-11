@@ -210,7 +210,7 @@ namespace Neo.Plugins.SignClient
                     contract?.Script?.ToByteArray() ?? []);
                 if (accountStatus == AccountStatus.Multiple)
                 {
-                    if (!IsMultiSigContract(accountContract.Script, out int m, out ECPoint[] publicKeys))
+                    if (!IsMultiSigContract(accountContract.Script, out int m, out ECPoint[]? publicKeys))
                         throw new SignException("Sign context: multi-sign account but not multi-sign contract");
 
                     foreach (var sign in accountSigns.Signs)

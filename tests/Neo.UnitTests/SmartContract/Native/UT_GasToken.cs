@@ -10,19 +10,17 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
-using Neo.VM;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -37,7 +35,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestSetup()
         {
             _snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            _persistingBlock = new Block { Header = new Header() };
+            _persistingBlock = (Block)RuntimeHelpers.GetUninitializedObject(typeof(Block));
         }
 
         [TestMethod]
@@ -53,7 +51,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public async Task Check_BalanceOfTransferAndBurn()
         {
             var snapshot = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
             var supply = NativeContract.GAS.TotalSupply(snapshot);

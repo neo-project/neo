@@ -28,12 +28,12 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The name of the event or method.
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// The parameters of the event or method.
         /// </summary>
-        public ContractParameterDefinition[] Parameters { get; set; }
+        public required ContractParameterDefinition[] Parameters { get; set; }
 
         public virtual bool HasNEP25
         {
@@ -46,11 +46,11 @@ namespace Neo.SmartContract.Manifest
         public virtual void FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            Name = @struct[0].GetString();
+            Name = @struct[0].GetString()!;
             Parameters = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractParameterDefinition>()).ToArray();
         }
 
-        public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public virtual StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Struct(referenceCounter)
             {
@@ -69,8 +69,8 @@ namespace Neo.SmartContract.Manifest
         {
             ContractEventDescriptor descriptor = new()
             {
-                Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u, knownNamedTypes)).ToArray(),
+                Name = json["name"]!.GetString(),
+                Parameters = ((JArray)json["parameters"]!).Select(u => ContractParameterDefinition.FromJson((JObject)u!, knownNamedTypes)).ToArray(),
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException("Name in ContractEventDescriptor is empty");
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
@@ -90,15 +90,15 @@ namespace Neo.SmartContract.Manifest
             };
         }
 
-        public bool Equals(ContractEventDescriptor other)
+        public bool Equals(ContractEventDescriptor? other)
         {
-            if (other == null) return false;
+            if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
 
             return Name == other.Name && Parameters.SequenceEqual(other.Parameters);
         }
 
-        public override bool Equals(object other)
+        public override bool Equals(object? other)
         {
             if (other is not ContractEventDescriptor ev)
                 return false;
