@@ -127,6 +127,40 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Computes the hash value for the specified byte array using the sha3-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Sha3_512(this byte[] source) => Sha3_512(source.AsSpan());
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the sha3-256 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Sha3_256(this byte[] source) => Sha3_256(source.AsSpan());
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <param name="salt">The salt to use for the hash, and must be 16 bytes.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Blake2b_512(this byte[] source, byte[]? salt = null) => Blake2b_512(source.AsSpan(), salt);
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <param name="salt">The salt to use for the hash, and must be 16 bytes.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Blake2b_256(this byte[] source, byte[]? salt = null) => Blake2b_256(source.AsSpan(), salt);
+
+        /// <summary>
         /// Computes the hash value for the specified region of the specified byte array using the sha256 algorithm.
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
@@ -179,6 +213,76 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Computes the hash value for the specified byte array using the sha3-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Sha3_512(this ReadOnlySpan<byte> source)
+        {
+            var sha3 = new Sha3Digest(512); // not all platforms support SHA3-512 for C# standard library.
+            sha3.BlockUpdate(source);
+
+            var result = new byte[sha3.GetDigestSize()];
+            sha3.DoFinal(result, 0);
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the sha3-256 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Sha3_256(this ReadOnlySpan<byte> source)
+        {
+            var sha3 = new Sha3Digest(256);
+            sha3.BlockUpdate(source);
+
+            var result = new byte[sha3.GetDigestSize()];
+            sha3.DoFinal(result, 0);
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <param name="salt">The salt to use for the hash and must be null or 16 bytes.</param>
+        /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentException">Thrown when the salt is not null or 16 bytes.</exception>
+        public static byte[] Blake2b_512(this ReadOnlySpan<byte> source, byte[]? salt = null)
+        {
+            if (salt is not null && salt.Length != 16)
+                throw new ArgumentException("The salt must be null or 16 bytes.", nameof(salt));
+
+            var blake2b = new Blake2bDigest(null, 64, salt, null);
+            blake2b.BlockUpdate(source);
+
+            var result = new byte[blake2b.GetDigestSize()];
+            blake2b.DoFinal(result, 0);
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the blake2b-256 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <param name="salt">The salt to use for the hash and must be null or 16 bytes.</param>
+        /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentException">Thrown when the salt is not null or 16 bytes.</exception>
+        public static byte[] Blake2b_256(this ReadOnlySpan<byte> source, byte[]? salt = null)
+        {
+            if (salt is not null && salt.Length != 16)
+                throw new ArgumentException("The salt must be null or 16 bytes.", nameof(salt));
+
+            var blake2b = new Blake2bDigest(null, 32, salt, null);
+            blake2b.BlockUpdate(source);
+
+            var result = new byte[blake2b.GetDigestSize()];
+            blake2b.DoFinal(result, 0);
+            return result;
+        }
+
+        /// <summary>
         /// Computes the hash value for the specified byte array using the sha256 algorithm.
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
@@ -199,14 +303,57 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Computes the hash value for the specified byte array using the sha3-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Sha3_512(this Span<byte> source) => Sha3_512((ReadOnlySpan<byte>)source);
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the sha3-256 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Sha3_256(this Span<byte> source) => Sha3_256((ReadOnlySpan<byte>)source);
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <param name="salt">The salt to use for the hash, and must be 16 bytes.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Blake2b_512(this Span<byte> source, byte[]? salt = null)
+            => Blake2b_512((ReadOnlySpan<byte>)source, salt);
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the blake2b-256 algorithm.
+        /// </summary>
+        /// <param name="source">The input to compute the hash code for.</param>
+        /// <param name="salt">The salt to use for the hash, and must be 16 bytes.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Blake2b_256(this Span<byte> source, byte[]? salt = null)
+            => Blake2b_256((ReadOnlySpan<byte>)source, salt);
+
+        /// <summary>
         /// Computes the hash value for the specified byte array using the keccak256 algorithm.
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
-        public static byte[] Keccak256(this byte[] value)
+        public static byte[] Keccak256(this byte[] value) => value.AsSpan().Keccak256();
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Keccak256(this ReadOnlySpan<byte> value)
         {
             var keccak = new KeccakDigest(256);
-            keccak.BlockUpdate(value, 0, value.Length);
+            keccak.BlockUpdate(value);
             var result = new byte[keccak.GetDigestSize()];
             keccak.DoFinal(result, 0);
             return result;
@@ -217,22 +364,9 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
-        public static byte[] Keccak256(this ReadOnlySpan<byte> value)
-        {
-            return Keccak256(value.ToArray());
-        }
+        public static byte[] Keccak256(this Span<byte> value) => ((ReadOnlySpan<byte>)value).Keccak256();
 
-        /// <summary>
-        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
-        /// </summary>
-        /// <param name="value">The input to compute the hash code for.</param>
-        /// <returns>The computed hash code.</returns>
-        public static byte[] Keccak256(this Span<byte> value)
-        {
-            return Keccak256(value.ToArray());
-        }
-
-        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
+        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[]? associatedData = null)
         {
             if (nonce.Length != AesNonceSizeBytes)
                 throw new ArgumentOutOfRangeException(nameof(nonce), $"`nonce` must be {AesNonceSizeBytes} bytes");
@@ -260,7 +394,7 @@ namespace Neo.Cryptography
             return [.. nonce, .. cipherBytes, .. tag];
         }
 
-        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
+        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[]? associatedData = null)
         {
             if (encryptedData.Length < AesNonceSizeBytes + AesTagSizeBytes)
                 throw new ArgumentException($"The encryptedData.Length must be greater than {AesNonceSizeBytes} + {AesTagSizeBytes}");

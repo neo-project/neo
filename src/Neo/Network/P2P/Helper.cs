@@ -48,7 +48,7 @@ namespace Neo.Network.P2P
         /// <returns>
         /// <see langword="true"/> if the hash was successfully retrieved; otherwise, <see langword="false"/>.
         /// </returns>
-        public static bool TryGetHash(this IVerifiable verifiable, [NotNullWhen(true)] out UInt256 hash)
+        public static bool TryGetHash(this IVerifiable verifiable, [NotNullWhen(true)] out UInt256? hash)
         {
             try
             {
@@ -68,7 +68,15 @@ namespace Neo.Network.P2P
         /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
         /// <param name="network">The magic number of the network.</param>
         /// <returns>The data to hash.</returns>
-        public static byte[] GetSignData(this IVerifiable verifiable, uint network)
+        public static byte[] GetSignData(this IVerifiable verifiable, uint network) => GetSignData(verifiable.Hash, network);
+
+        /// <summary>
+        /// Gets the data to be hashed.
+        /// </summary>
+        /// <param name="messageHash">Message.</param>
+        /// <param name="network">The magic number of the network.</param>
+        /// <returns>The data to hash.</returns>
+        public static byte[] GetSignData(this UInt256 messageHash, uint network)
         {
             /* Same as:
             using MemoryStream ms = new();
@@ -82,7 +90,7 @@ namespace Neo.Network.P2P
             var buffer = new byte[SignDataLength];
 
             BinaryPrimitives.WriteUInt32LittleEndian(buffer, network);
-            verifiable.Hash.Serialize(buffer.AsSpan(sizeof(uint)));
+            messageHash.Serialize(buffer.AsSpan(sizeof(uint)));
 
             return buffer;
         }

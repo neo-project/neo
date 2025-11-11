@@ -30,8 +30,8 @@ namespace Neo.Network.P2P
     /// </summary>
     public partial class RemoteNode : Connection
     {
-        internal class StartProtocol { }
-        internal class Relay { public IInventory Inventory; }
+        internal record StartProtocol;
+        internal record Relay(IInventory Inventory);
 
         private readonly NeoSystem _system;
         private readonly LocalNode _localNode;
@@ -56,7 +56,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// The <see cref="VersionPayload"/> sent by the remote node.
         /// </summary>
-        public VersionPayload Version { get; private set; }
+        public VersionPayload? Version { get; private set; }
 
         /// <summary>
         /// The index of the last block sent by the remote node.
@@ -105,7 +105,7 @@ namespace Neo.Network.P2P
             SendMessage(queue.Dequeue());
         }
 
-        private void EnqueueMessage(MessageCommand command, ISerializable payload = null)
+        private void EnqueueMessage(MessageCommand command, ISerializable? payload = null)
         {
             EnqueueMessage(Message.Create(command, payload));
         }
@@ -144,7 +144,7 @@ namespace Neo.Network.P2P
         {
             _messageBuffer = _messageBuffer.Concat(data);
 
-            for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
+            for (var message = TryParseMessage(); message != null; message = TryParseMessage())
                 OnMessage(message);
         }
 
@@ -230,7 +230,7 @@ namespace Neo.Network.P2P
             _sentCommands[(byte)message.Command] = true;
         }
 
-        private Message TryParseMessage()
+        private Message? TryParseMessage()
         {
             var length = Message.TryDeserialize(_messageBuffer, out var msg);
             if (length <= 0) return null;

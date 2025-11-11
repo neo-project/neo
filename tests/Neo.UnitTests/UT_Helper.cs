@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests
 {
@@ -32,13 +33,17 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new();
             var res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
+
+            Assert.AreEqual("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5", res.ToHexString());
+
+            res = verifiable.CalculateHash().GetSignData(TestProtocolSettings.Default.Network);
             Assert.AreEqual("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5", res.ToHexString());
         }
 
         [TestMethod]
         public void TestTryGetHash()
         {
-            var tx = new Transaction();
+            var tx = (Transaction)RuntimeHelpers.GetUninitializedObject(typeof(Transaction));
             Assert.IsFalse(tx.TryGetHash(out _));
         }
 
@@ -86,7 +91,7 @@ namespace Neo.UnitTests
             Assert.AreEqual("", empty.ToHexString(false));
             Assert.AreEqual("", empty.ToHexString(true));
 
-            byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
+            byte[] str1 = [(byte)'n', (byte)'e', (byte)'o'];
             Assert.AreEqual("6e656f", str1.ToHexString());
             Assert.AreEqual("6e656f", str1.ToHexString(false));
             Assert.AreEqual("6f656e", str1.ToHexString(true));
@@ -117,7 +122,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestUnmapForIPAddress()
         {
-            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+            var addr = new IPAddress([127, 0, 0, 1]);
             Assert.AreEqual(addr, addr.UnMap());
 
             var addr2 = addr.MapToIPv6();
@@ -127,7 +132,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestUnmapForIPEndPoin()
         {
-            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+            var addr = new IPAddress([127, 0, 0, 1]);
             var endPoint = new IPEndPoint(addr, 8888);
             Assert.AreEqual(endPoint, endPoint.UnMap());
 

@@ -37,7 +37,7 @@ namespace Neo
         /// <summary>
         /// Triggered when a service is added to the <see cref="NeoSystem"/>.
         /// </summary>
-        public event EventHandler<object> ServiceAdded;
+        public event EventHandler<object>? ServiceAdded;
 
         /// <summary>
         /// The protocol settings of the <see cref="NeoSystem"/>.
@@ -101,7 +101,7 @@ namespace Neo
 
         private ImmutableList<object> _services = ImmutableList<object>.Empty;
         private readonly IStore _store;
-        private ChannelsConfig _startMessage = null;
+        private ChannelsConfig? _startMessage = null;
         private int _suspend = 0;
 
         static NeoSystem()
@@ -124,7 +124,7 @@ namespace Neo
         /// The path of the storage.
         /// If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.
         /// </param>
-        public NeoSystem(ProtocolSettings settings, string storageProvider = null, string storagePath = null) :
+        public NeoSystem(ProtocolSettings settings, string? storageProvider = null, string? storagePath = null) :
             this(settings, StoreFactory.GetStoreProvider(storageProvider ?? nameof(MemoryStore))
                 ?? throw new ArgumentException($"Can't find the storage provider {storageProvider}", nameof(storageProvider)), storagePath)
         {
@@ -139,7 +139,7 @@ namespace Neo
         /// The path of the storage.
         /// If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.
         /// </param>
-        public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string storagePath = null)
+        public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string? storagePath = null)
         {
             Settings = settings;
             GenesisBlock = CreateGenesisBlock(settings);
@@ -217,7 +217,7 @@ namespace Neo
         /// An action used to filter the service objects. his parameter can be <see langword="null"/>.
         /// </param>
         /// <returns>The service object found.</returns>
-        public T GetService<T>(Func<T, bool> filter = null)
+        public T? GetService<T>(Func<T, bool>? filter = null)
         {
             var result = _services.OfType<T>();
             if (filter is null)

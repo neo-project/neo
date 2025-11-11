@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
@@ -60,7 +58,7 @@ namespace Neo.SmartContract.Native
             State = (VMState)(byte)@struct[2].GetInteger();
         }
 
-        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
         {
             if (Transaction is null)
                 return new Struct(referenceCounter) { BlockIndex };
@@ -68,5 +66,3 @@ namespace Neo.SmartContract.Native
         }
     }
 }
-
-#nullable disable

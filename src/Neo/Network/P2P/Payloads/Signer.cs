@@ -37,7 +37,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The account of the signer.
         /// </summary>
-        public UInt160 Account;
+        public required UInt160 Account;
 
         /// <summary>
         /// The scopes of the witness.
@@ -48,29 +48,29 @@ namespace Neo.Network.P2P.Payloads
         /// The contracts that allowed by the witness.
         /// Only available when the <see cref="WitnessScope.CustomContracts"/> flag is set.
         /// </summary>
-        public UInt160[] AllowedContracts;
+        public UInt160[]? AllowedContracts;
 
         /// <summary>
         /// The groups that allowed by the witness.
         /// Only available when the <see cref="WitnessScope.CustomGroups"/> flag is set.
         /// </summary>
-        public ECPoint[] AllowedGroups;
+        public ECPoint[]? AllowedGroups;
 
         /// <summary>
         /// The rules that the witness must meet.
         /// Only available when the <see cref="WitnessScope.WitnessRules"/> flag is set.
         /// </summary>
-        public WitnessRule[] Rules;
+        public WitnessRule[]? Rules;
 
         public int Size =>
             /*Account*/             UInt160.Length +
             /*Scopes*/              sizeof(WitnessScope) +
-            /*AllowedContracts*/    (Scopes.HasFlag(WitnessScope.CustomContracts) ? AllowedContracts.GetVarSize() : 0) +
-            /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0) +
-            /*Rules*/               (Scopes.HasFlag(WitnessScope.WitnessRules) ? Rules.GetVarSize() : 0);
+            /*AllowedContracts*/    (Scopes.HasFlag(WitnessScope.CustomContracts) ? AllowedContracts!.GetVarSize() : 0) +
+            /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups!.GetVarSize() : 0) +
+            /*Rules*/               (Scopes.HasFlag(WitnessScope.WitnessRules) ? Rules!.GetVarSize() : 0);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(Signer other)
+        public bool Equals(Signer? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -92,7 +92,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is Signer signerObj && Equals(signerObj);
         }
@@ -144,7 +144,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 if (Scopes.HasFlag(WitnessScope.CustomContracts))
                 {
-                    foreach (var hash in AllowedContracts)
+                    foreach (var hash in AllowedContracts!)
                         yield return new WitnessRule
                         {
                             Action = WitnessRuleAction.Allow,
@@ -153,7 +153,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 {
-                    foreach (var group in AllowedGroups)
+                    foreach (var group in AllowedGroups!)
                         yield return new WitnessRule
                         {
                             Action = WitnessRuleAction.Allow,
@@ -162,7 +162,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 {
-                    foreach (var rule in Rules)
+                    foreach (var rule in Rules!)
                         yield return rule;
                 }
             }
@@ -173,11 +173,11 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Account);
             writer.Write((byte)Scopes);
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
-                writer.Write(AllowedContracts);
+                writer.Write(AllowedContracts!);
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
-                writer.Write(AllowedGroups);
+                writer.Write(AllowedGroups!);
             if (Scopes.HasFlag(WitnessScope.WitnessRules))
-                writer.Write(Rules);
+                writer.Write(Rules!);
         }
 
         /// <summary>
@@ -189,15 +189,15 @@ namespace Neo.Network.P2P.Payloads
         {
             Signer signer = new()
             {
-                Account = UInt160.Parse(json["account"].GetString()),
-                Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetString())
+                Account = UInt160.Parse(json["account"]!.GetString()),
+                Scopes = Enum.Parse<WitnessScope>(json["scopes"]!.GetString())
             };
             if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
-                signer.AllowedContracts = ((JArray)json["allowedcontracts"]).Select(p => UInt160.Parse(p.GetString())).ToArray();
+                signer.AllowedContracts = ((JArray)json["allowedcontracts"]!).Select(p => UInt160.Parse(p!.GetString())).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
-                signer.AllowedGroups = ((JArray)json["allowedgroups"]).Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1)).ToArray();
+                signer.AllowedGroups = ((JArray)json["allowedgroups"]!).Select(p => ECPoint.Parse(p!.GetString(), ECCurve.Secp256r1)).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
-                signer.Rules = ((JArray)json["rules"]).Select(p => WitnessRule.FromJson((JObject)p)).ToArray();
+                signer.Rules = ((JArray)json["rules"]!).Select(p => WitnessRule.FromJson((JObject)p!)).ToArray();
             return signer;
         }
 
@@ -213,11 +213,11 @@ namespace Neo.Network.P2P.Payloads
                 ["scopes"] = Scopes
             };
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
-                json["allowedcontracts"] = AllowedContracts.Select(p => (JToken)p.ToString()).ToArray();
+                json["allowedcontracts"] = AllowedContracts!.Select(p => (JToken)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
-                json["allowedgroups"] = AllowedGroups.Select(p => (JToken)p.ToString()).ToArray();
+                json["allowedgroups"] = AllowedGroups!.Select(p => (JToken)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.WitnessRules))
-                json["rules"] = Rules.Select(p => p.ToJson()).ToArray();
+                json["rules"] = Rules!.Select(p => p.ToJson()).ToArray();
             return json;
         }
 
@@ -226,15 +226,15 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Array(referenceCounter,
             [
                 Account.ToArray(),
                 (byte)Scopes,
-                Scopes.HasFlag(WitnessScope.CustomContracts) ? new Array(referenceCounter, AllowedContracts.Select(u => new ByteString(u.ToArray()))) : new Array(referenceCounter),
-                Scopes.HasFlag(WitnessScope.CustomGroups) ? new Array(referenceCounter, AllowedGroups.Select(u => new ByteString(u.ToArray()))) : new Array(referenceCounter),
-                Scopes.HasFlag(WitnessScope.WitnessRules) ? new Array(referenceCounter, Rules.Select(u => u.ToStackItem(referenceCounter))) : new Array(referenceCounter)
+                Scopes.HasFlag(WitnessScope.CustomContracts) ? new Array(referenceCounter, AllowedContracts!.Select(u => new ByteString(u.ToArray()))) : new Array(referenceCounter),
+                Scopes.HasFlag(WitnessScope.CustomGroups) ? new Array(referenceCounter, AllowedGroups!.Select(u => new ByteString(u.ToArray()))) : new Array(referenceCounter),
+                Scopes.HasFlag(WitnessScope.WitnessRules) ? new Array(referenceCounter, Rules!.Select(u => u.ToStackItem(referenceCounter))) : new Array(referenceCounter)
             ]);
         }
 

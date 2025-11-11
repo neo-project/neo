@@ -19,6 +19,7 @@ using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace Neo.UnitTests.SmartContract
@@ -164,12 +165,19 @@ namespace Neo.UnitTests.SmartContract
             var context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
             Assert.IsTrue(context.AddSignature(contract, key.PublicKey, [0x01]));
 
-            var contract1 = Contract.CreateSignatureContract(key.PublicKey);
-            contract1.ParameterList = Array.Empty<ContractParameterType>();
+            var contract1 = new Contract
+            {
+                Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
+                ParameterList = Array.Empty<ContractParameterType>()
+            };
             context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
             Assert.IsFalse(context.AddSignature(contract1, key.PublicKey, [0x01]));
 
-            contract1.ParameterList = [ContractParameterType.Signature, ContractParameterType.Signature];
+            contract1 = new Contract
+            {
+                Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
+                ParameterList = [ContractParameterType.Signature, ContractParameterType.Signature]
+            };
             Action action1 = () => context.AddSignature(contract1, key.PublicKey, [0x01]);
             Assert.ThrowsExactly<NotSupportedException>(action1);
 
@@ -207,13 +215,15 @@ namespace Neo.UnitTests.SmartContract
             var contract = new ContractState()
             {
                 Hash = h160,
-                Nef = new(),
+                Nef = (NefFile)RuntimeHelpers.GetUninitializedObject(typeof(NefFile)),
                 Manifest = new()
                 {
                     Name = "TestContract",
                     Groups = [],
                     SupportedStandards = [],
-                    Abi = new() { Methods = [new() { Name = ContractBasicMethod.Verify, Parameters = [] }], Events = [] }
+                    Abi = new() { Methods = [new() { Name = ContractBasicMethod.Verify, Parameters = [] }], Events = [] },
+                    Permissions = [],
+                    Trusts = WildcardContainer<ContractPermissionDescriptor>.CreateWildcard()
                 }
             };
             snapshotCache.AddContract(h160, contract);
