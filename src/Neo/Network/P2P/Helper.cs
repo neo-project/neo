@@ -79,10 +79,30 @@ namespace Neo.Network.P2P
             return ms.ToArray();
             */
 
+            return GetSignData(verifiable.Hash, network);
+        }
+
+        /// <summary>
+        /// Gets the data to be hashed.
+        /// </summary>
+        /// <param name="messageHash">Message.</param>
+        /// <param name="network">The magic number of the network.</param>
+        /// <returns>The data to hash.</returns>
+        public static byte[] GetSignData(this UInt256 messageHash, uint network)
+        {
+            /* Same as:
+            using MemoryStream ms = new();
+            using BinaryWriter writer = new(ms);
+            writer.Write(network);
+            writer.Write(verifiable.Hash);
+            writer.Flush();
+            return ms.ToArray();
+            */
+
             var buffer = new byte[SignDataLength];
 
             BinaryPrimitives.WriteUInt32LittleEndian(buffer, network);
-            verifiable.Hash.Serialize(buffer.AsSpan(sizeof(uint)));
+            messageHash.Serialize(buffer.AsSpan(sizeof(uint)));
 
             return buffer;
         }

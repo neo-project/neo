@@ -33,6 +33,10 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new();
             var res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
+
+            Assert.AreEqual("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5", res.ToHexString());
+
+            res = verifiable.CalculateHash().GetSignData(TestProtocolSettings.Default.Network);
             Assert.AreEqual("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5", res.ToHexString());
         }
 
