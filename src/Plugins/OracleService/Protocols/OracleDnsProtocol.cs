@@ -22,6 +22,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -105,7 +106,10 @@ namespace Neo.Plugins.OracleService
         {
             PropertyNameCaseInsensitive = true
         };
-        private readonly JsonSerializerOptions resultSerializerOptions = new();
+        private readonly JsonSerializerOptions resultSerializerOptions = new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
         private readonly object syncRoot = new();
         private bool configured;
         private Uri endpoint;

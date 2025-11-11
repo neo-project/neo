@@ -141,6 +141,29 @@ namespace Neo.Plugins.OracleService.Tests
         }
 
         [TestMethod]
+        public async Task ProcessAsync_OmitsCertificateWhenNotRequested()
+        {
+            var dohResponse = new
+            {
+                Status = 0,
+                Answer = new[]
+                {
+                    new { name = "plain.example.com.", type = 16, ttl = 120, data = "\"hello\"" }
+                }
+            };
+            string json = JsonSerializer.Serialize(dohResponse);
+            var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/dns-json")
+            });
+            using var protocol = new OracleDnsProtocol(handler);
+            (OracleResponseCode code, string payload) = await protocol.ProcessAsync(new Uri("dns://plain.example.com"), CancellationToken.None);
+            Assert.AreEqual(OracleResponseCode.Success, code);
+            using JsonDocument doc = JsonDocument.Parse(payload);
+            Assert.IsFalse(doc.RootElement.TryGetProperty("Certificate", out _));
+        }
+
+        [TestMethod]
         public async Task ProcessAsync_ParsesCloudflareTxtExample()
         {
             const string dohResponse = """
