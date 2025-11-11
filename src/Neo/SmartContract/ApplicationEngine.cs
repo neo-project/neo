@@ -477,7 +477,6 @@ namespace Neo.SmartContract
         {
             var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             settings ??= ProtocolSettings.Default;
-
             // Adjust jump table according persistingBlock
             var jumpTable = settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
             var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
