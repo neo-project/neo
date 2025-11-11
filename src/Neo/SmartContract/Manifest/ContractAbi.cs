@@ -17,8 +17,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
 
-#nullable enable
-
 namespace Neo.SmartContract.Manifest
 {
     /// <summary>
@@ -241,5 +239,3 @@ namespace Neo.SmartContract.Manifest
         }
     }
 }
-
-#nullable disable

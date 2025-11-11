@@ -18,8 +18,6 @@ using System.Text.RegularExpressions;
 
 namespace Neo.SmartContract.Manifest
 {
-#nullable enable
-
     public class ExtendedType : IInteroperable, IEquatable<ExtendedType>
     {
 #pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
@@ -510,5 +508,4 @@ namespace Neo.SmartContract.Manifest
             }
         }
     }
-#nullable disable
 }
