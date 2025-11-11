@@ -20,6 +20,7 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Array = Neo.VM.Types.Array;
 
@@ -361,14 +362,14 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var expected = TestUtils.CreateDefaultManifest();
             expected.Extra = (JObject)JToken.Parse(@"{""a"":123}");
 
-            var clone = new ContractManifest();
+            var clone = (ContractManifest)RuntimeHelpers.GetUninitializedObject(typeof(ContractManifest));
             ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
 
             Assert.AreEqual(@"{""a"":123}", expected.Extra.ToString());
             Assert.AreEqual(expected.ToString(), clone.ToString());
 
             expected.Extra = null;
-            clone = new ContractManifest();
+            clone = (ContractManifest)RuntimeHelpers.GetUninitializedObject(typeof(ContractManifest));
             ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
 
             Assert.AreEqual(expected.Extra, clone.Extra);
@@ -390,13 +391,6 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.AreEqual(((Array)actualTrusts)[0], new ByteString(UInt160.Parse("0x0000000000000000000000000000000000000001").ToArray()));
             // Wildcard trust should be represented as Null stackitem (not as zero-length ByteString):
             Assert.AreEqual(((Array)actualTrusts)[1], StackItem.Null);
-        }
-
-        [TestMethod]
-        public void TestGenerator()
-        {
-            ContractManifest contractManifest = new();
-            Assert.IsNotNull(contractManifest);
         }
     }
 }

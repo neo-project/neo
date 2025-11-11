@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -241,5 +239,3 @@ namespace Neo
         }
     }
 }
-
-#nullable disable

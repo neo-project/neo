@@ -12,7 +12,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
@@ -21,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using Array = Neo.VM.Types.Array;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
@@ -66,7 +66,11 @@ namespace Neo.UnitTests.SmartContract.Native
                 var ret = NativeContract.RoleManagement.Call(
                     snapshot1,
                     new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                    new Block { Header = new Header() },
+                    new Block
+                    {
+                        Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                        Transactions = []
+                    },
                     "designateAsRole", Ev,
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Array) { Value = publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }

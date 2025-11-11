@@ -31,7 +31,7 @@ namespace Neo.Wallets
         /// <summary>
         /// The label of the account.
         /// </summary>
-        public string Label;
+        public string? Label;
 
         /// <summary>
         /// Indicates whether the account is the default account in the wallet.
@@ -46,7 +46,7 @@ namespace Neo.Wallets
         /// <summary>
         /// The contract of the account.
         /// </summary>
-        public Contract Contract;
+        public Contract? Contract;
 
         /// <summary>
         /// The address of the account.
@@ -67,7 +67,7 @@ namespace Neo.Wallets
         /// Gets the private key of the account.
         /// </summary>
         /// <returns>The private key of the account. Or <see langword="null"/> if there is no private key in the account.</returns>
-        public abstract KeyPair GetKey();
+        public abstract KeyPair? GetKey();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WalletAccount"/> class.

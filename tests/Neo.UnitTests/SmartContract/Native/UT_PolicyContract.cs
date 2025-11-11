@@ -63,9 +63,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
 
             var attr = new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)TransactionAttributeType.Conflicts };
@@ -123,9 +127,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
 
             // Without signature
@@ -162,9 +170,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
 
             // Without signature
@@ -212,9 +224,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
 
             // Without signature
@@ -261,9 +277,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
 
             // Without signature
@@ -321,9 +341,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
 
             // Without signature.
@@ -379,9 +403,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
 
             // Without signature
@@ -435,9 +463,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
@@ -490,9 +522,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
 
             // Without signature.
@@ -562,9 +598,13 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
                     Index = 1000,
-                    PrevHash = UInt256.Zero
-                }
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
             };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 

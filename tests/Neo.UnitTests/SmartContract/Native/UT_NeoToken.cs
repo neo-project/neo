@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using static Neo.SmartContract.Native.NeoToken;
 using Array = System.Array;
@@ -43,7 +44,7 @@ namespace Neo.UnitTests.SmartContract.Native
             _snapshotCache = TestBlockchain.GetTestSnapshotCache();
             _persistingBlock = new Block
             {
-                Header = new Header(),
+                Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
                 Transactions = Array.Empty<Transaction>()
             };
         }
@@ -65,7 +66,11 @@ namespace Neo.UnitTests.SmartContract.Native
             var settings = ProtocolSettings.Load(stream);
 
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header() };
+            var persistingBlock = new Block
+            {
+                Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                Transactions = []
+            };
 
             foreach (var method in new string[] { "vote", "registerCandidate", "unregisterCandidate" })
             {
@@ -103,7 +108,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Vote()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             clonedCache.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
@@ -161,7 +177,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Vote_Sameaccounts()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             clonedCache.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
@@ -194,7 +221,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Vote_ChangeVote()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             clonedCache.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
             //from vote to G
@@ -229,7 +267,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Vote_VoteToNull()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             clonedCache.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
             byte[] from = TestProtocolSettings.Default.StandbyValidators[0].ToArray();
@@ -266,7 +315,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_UnclaimedGas()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             clonedCache.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
@@ -472,7 +532,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Transfer()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
 
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
@@ -578,7 +649,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestCalculateBonus()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block();
+            var persistingBlock = (Block)RuntimeHelpers.GetUninitializedObject(typeof(Block));
 
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
 
@@ -835,13 +906,28 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             const byte Prefix_CurrentBlock = 12;
             var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header() };
+            var persistingBlock = new Block
+            {
+                Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                Transactions = []
+            };
 
             (BigInteger, bool) result = Check_GetGasPerBlock(clonedCache, persistingBlock);
             Assert.IsTrue(result.Item2);
             Assert.AreEqual(5 * NativeContract.GAS.Factor, result.Item1);
 
-            persistingBlock = new Block { Header = new Header { Index = 10 } };
+            persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 10,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             (Boolean, bool) result1 = Check_SetGasPerBlock(clonedCache, 10 * NativeContract.GAS.Factor, persistingBlock);
             Assert.IsTrue(result1.Item2);
             Assert.IsTrue(result1.Item1.GetBoolean());

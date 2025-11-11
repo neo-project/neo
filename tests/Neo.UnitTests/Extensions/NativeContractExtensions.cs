@@ -17,6 +17,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.Extensions
 {
@@ -38,7 +39,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest, null);
 
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                sender != null ? new Transaction() { Signers = [new() { Account = sender }], Attributes = [] } : null,
+                sender != null ? new Transaction() { Signers = [new() { Account = sender }], Attributes = [], Witnesses = null! } : null,
                 snapshot, settings: TestProtocolSettings.Default, gas: datoshi);
             engine.LoadScript(script.ToArray());
 
@@ -49,7 +50,7 @@ namespace Neo.UnitTests.Extensions
                 throw exception ?? new InvalidOperationException();
             }
 
-            var ret = new ContractState();
+            var ret = (ContractState)RuntimeHelpers.GetUninitializedObject(typeof(ContractState));
             ((IInteroperable)ret).FromStackItem(engine.ResultStack.Pop());
             return ret;
         }

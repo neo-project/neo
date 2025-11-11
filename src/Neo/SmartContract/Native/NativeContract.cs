@@ -30,11 +30,7 @@ namespace Neo.SmartContract.Native
     {
         private class NativeContractsCache
         {
-            public class CacheEntry
-            {
-                public Dictionary<int, ContractMethodMetadata> Methods { get; set; }
-                public byte[] Script { get; set; }
-            }
+            public record CacheEntry(Dictionary<int, ContractMethodMetadata> Methods, byte[] Script);
 
             internal Dictionary<int, CacheEntry> NativeContracts { get; set; } = new();
 
@@ -157,11 +153,11 @@ namespace Neo.SmartContract.Native
 
             // Reflection to get the events
             _eventsDescriptors =
-                GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
+                GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)!.
                 GetCustomAttributes<ContractEventAttribute>().
                 // Take into account not only the contract constructor, but also the base type constructor for proper FungibleToken events handling.
-                Concat(GetType().BaseType?.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
-                GetCustomAttributes<ContractEventAttribute>()).
+                Concat(GetType().BaseType?.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)!.
+                GetCustomAttributes<ContractEventAttribute>() ?? []).
                 OrderBy(p => p.Order).ToList().AsReadOnly();
 
             // Calculate the initializations forks
@@ -171,7 +167,8 @@ namespace Neo.SmartContract.Native
                     .Concat(_eventsDescriptors.Select(u => u.DeprecatedIn))
                     .Concat(_eventsDescriptors.Select(u => u.ActiveIn))
                     .Concat([ActiveIn])
-                    .Where(u => u is not null)
+                    .Where(u => u.HasValue)
+                    .Select(u => u!.Value)
                     .OrderBy(u => (byte)u)
                     .Cast<Hardfork>().ToImmutableHashSet();
             s_contractsList.Add(this);
@@ -203,7 +200,7 @@ namespace Neo.SmartContract.Native
                 script = sb.ToArray();
             }
 
-            return new NativeContractsCache.CacheEntry { Methods = methods, Script = script };
+            return new NativeContractsCache.CacheEntry(methods, script);
         }
 
         /// <summary>
@@ -286,7 +283,7 @@ namespace Neo.SmartContract.Native
         /// <param name="index">Block index</param>
         /// <param name="hardforks">Active hardforks</param>
         /// <returns>True if the native contract must be initialized</returns>
-        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, [NotNullWhen(true)] out Hardfork[] hardforks)
+        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, [NotNullWhen(true)] out Hardfork[]? hardforks)
         {
             var hfs = new List<Hardfork>();
 
@@ -404,7 +401,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="hash">The hash of the native contract.</param>
         /// <returns>The native contract with the specified hash.</returns>
-        public static NativeContract GetContract(UInt160 hash)
+        public static NativeContract? GetContract(UInt160 hash)
         {
             s_contractsDictionary.TryGetValue(hash, out var contract);
             return contract;
@@ -426,7 +423,7 @@ namespace Neo.SmartContract.Native
                 // Get native contracts invocation cache
                 var currentAllowedMethods = GetContractMethods(engine);
                 // Check if the method is allowed
-                var context = engine.CurrentContext;
+                var context = engine.CurrentContext!;
                 var method = currentAllowedMethods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
@@ -437,12 +434,12 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                 engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
-                List<object> parameters = new();
+                List<object?> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
                 for (int i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
-                object returnValue = method.Handler.Invoke(this, parameters.ToArray());
+                object? returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
                     await task;

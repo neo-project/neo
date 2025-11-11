@@ -14,8 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-#nullable enable
-
 namespace Neo.Extensions
 {
     public static class BinaryWriterExtensions
@@ -141,5 +139,3 @@ namespace Neo.Extensions
         }
     }
 }
-
-#nullable disable

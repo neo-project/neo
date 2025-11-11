@@ -36,12 +36,12 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The condition of the rule.
         /// </summary>
-        public WitnessCondition Condition;
+        public required WitnessCondition Condition;
 
         int ISerializable.Size => sizeof(WitnessRuleAction) + Condition.Size;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(WitnessRule other)
+        public bool Equals(WitnessRule? other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (other is null) return false;
@@ -50,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null) return false;
             return obj is WitnessRule wr && Equals(wr);
@@ -82,14 +82,14 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The converted <see cref="WitnessRule"/>.</returns>
         public static WitnessRule FromJson(JObject json)
         {
-            WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"].GetString());
+            WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"]!.GetString());
             if (action != WitnessRuleAction.Allow && action != WitnessRuleAction.Deny)
                 throw new FormatException($"Invalid action: {action}.");
 
             return new()
             {
                 Action = action,
-                Condition = WitnessCondition.FromJson((JObject)json["condition"], WitnessCondition.MaxNestingDepth)
+                Condition = WitnessCondition.FromJson((JObject)json["condition"]!, WitnessCondition.MaxNestingDepth)
             };
         }
 
@@ -111,7 +111,7 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Array(referenceCounter, new StackItem[]
             {

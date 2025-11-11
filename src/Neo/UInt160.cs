@@ -61,15 +61,16 @@ namespace Neo
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (ReferenceEquals(obj, this)) return 0;
             return CompareTo(obj as UInt160);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int CompareTo(UInt160 other)
+        public int CompareTo(UInt160? other)
         {
+            if (other is null) return 1;
             var result = _value3.CompareTo(other._value3);
             if (result != 0) return result;
             result = _value2.CompareTo(other._value2);
@@ -85,14 +86,14 @@ namespace Neo
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(obj, this)) return true;
             return Equals(obj as UInt160);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(UInt160 other)
+        public bool Equals(UInt160? other)
         {
             if (other == null) return false;
             return _value1 == other._value1 &&
@@ -174,7 +175,7 @@ namespace Neo
         /// <returns>
         /// <see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.
         /// </returns>
-        public static bool TryParse(string value, [NotNullWhen(true)] out UInt160 result)
+        public static bool TryParse(string value, [NotNullWhen(true)] out UInt160? result)
         {
             result = null;
             var data = value.AsSpan().TrimStartIgnoreCase("0x");
@@ -215,14 +216,14 @@ namespace Neo
             return new UInt160(b);
         }
 
-        public static bool operator ==(UInt160 left, UInt160 right)
+        public static bool operator ==(UInt160? left, UInt160? right)
         {
             if (left is null || right is null)
                 return Equals(left, right);
             return left.Equals(right);
         }
 
-        public static bool operator !=(UInt160 left, UInt160 right)
+        public static bool operator !=(UInt160? left, UInt160? right)
         {
             if (left is null || right is null)
                 return !Equals(left, right);

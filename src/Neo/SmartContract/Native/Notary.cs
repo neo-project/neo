@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
@@ -62,7 +61,7 @@ namespace Neo.SmartContract.Native
         {
             long nFees = 0;
             ECPoint[]? notaries = null;
-            foreach (var tx in engine.PersistingBlock.Transactions)
+            foreach (var tx in engine.PersistingBlock!.Transactions)
             {
                 var attr = tx.GetAttribute<NotaryAssisted>();
                 if (attr is not null)
@@ -138,12 +137,12 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
         {
-            if (engine.CallingScriptHash != GAS.Hash) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash.ToString()));
+            if (engine.CallingScriptHash != GAS.Hash) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash!.ToString()));
             if (data is not Array additionalParams || additionalParams.Count != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
             var to = from;
             if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
             var till = (uint)additionalParams[1].GetInteger();
-            var tx = (Transaction)engine.ScriptContainer;
+            var tx = (Transaction)engine.ScriptContainer!;
             var allowedChangeTill = tx.Sender == to;
             var currentHeight = Ledger.CurrentIndex(engine.SnapshotCache);
             if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
@@ -335,12 +334,10 @@ namespace Neo.SmartContract.Native
                 Till = (uint)@struct[1].GetInteger();
             }
 
-            public StackItem ToStackItem(IReferenceCounter referenceCounter)
+            public StackItem ToStackItem(IReferenceCounter? referenceCounter)
             {
                 return new Struct(referenceCounter) { Amount, Till };
             }
         }
     }
 }
-
-#nullable disable

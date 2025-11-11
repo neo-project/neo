@@ -59,7 +59,7 @@ namespace Neo.Ledger
             return otherTx.Hash.CompareTo(Tx.Hash);
         }
 
-        public int CompareTo(PoolItem otherItem)
+        public int CompareTo(PoolItem? otherItem)
         {
             if (otherItem == null) return 1;
             return CompareTo(otherItem.Tx);

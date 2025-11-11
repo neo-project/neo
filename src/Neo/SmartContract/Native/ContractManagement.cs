@@ -44,7 +44,7 @@ namespace Neo.SmartContract.Native
 
         private int GetNextAvailableId(DataCache snapshot)
         {
-            StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId));
+            StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId))!;
             int value = (int)(BigInteger)item;
             item.Add(1);
             return value;
@@ -62,7 +62,7 @@ namespace Neo.SmartContract.Native
 
         private async ContractTask OnDeployAsync(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
         {
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Deploy, ContractBasicMethod.DeployPCount);
+            ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Deploy, ContractBasicMethod.DeployPCount);
             if (md is not null)
                 await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
             engine.SendNotification(Hash, update ? "Update" : "Deploy", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
@@ -72,10 +72,10 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out var hfs))
+                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock!.Index, out var hfs))
                 {
                     ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
-                    StorageItem state = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, contract.Hash));
+                    StorageItem? state = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, contract.Hash));
 
                     if (state is null)
                     {
@@ -141,7 +141,7 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "cannot be negative");
             AssertCommittee(engine);
-            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee))!.Set(value);
         }
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace Neo.SmartContract.Native
         /// <param name="hash">The hash of the deployed contract.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContract(IReadOnlyStore snapshot, UInt160 hash)
+        public ContractState? GetContract(IReadOnlyStore snapshot, UInt160 hash)
         {
             var key = CreateStorageKey(Prefix_Contract, hash);
             return snapshot.TryGet(key, out var item) ? item.GetInteroperable<ContractState>(false) : null;
@@ -177,7 +177,7 @@ namespace Neo.SmartContract.Native
         /// <param name="id">Contract ID.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContractById(IReadOnlyStore snapshot, int id)
+        public ContractState? GetContractById(IReadOnlyStore snapshot, int id)
         {
             var key = CreateStorageKey(Prefix_ContractHash, id);
             return snapshot.TryGet(key, out var item) ? GetContract(snapshot, new UInt160(item.Value.Span)) : null;
@@ -256,7 +256,7 @@ namespace Neo.SmartContract.Native
             // Require CallFlags.All flag for post-Aspidochelone transactions, ref. #2653, #2673.
             if (engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
-                var state = engine.CurrentContext.GetState<ExecutionContextState>();
+                var state = engine.CurrentContext!.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(CallFlags.All))
                     throw new InvalidOperationException($"Cannot call Deploy with the flag {state.CallFlags}.");
             }
@@ -329,7 +329,7 @@ namespace Neo.SmartContract.Native
             // Require CallFlags.All flag for post-Aspidochelone transactions, ref. #2653, #2673.
             if (engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
-                var state = engine.CurrentContext.GetState<ExecutionContextState>();
+                var state = engine.CurrentContext!.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(CallFlags.All))
                     throw new InvalidOperationException($"Cannot call Update with the flag {state.CallFlags}.");
             }
@@ -338,7 +338,7 @@ namespace Neo.SmartContract.Native
 
             engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
-            var contractState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash))
+            var contractState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash!))
                 ?? throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
 
             using var sealInterop = contractState.GetInteroperable(out ContractState contract, false);
@@ -379,9 +379,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
-            UInt160 hash = engine.CallingScriptHash;
+            UInt160 hash = engine.CallingScriptHash!;
             StorageKey ckey = CreateStorageKey(Prefix_Contract, hash);
-            ContractState contract = engine.SnapshotCache.TryGet(ckey)?.GetInteroperable<ContractState>(false);
+            ContractState? contract = engine.SnapshotCache.TryGet(ckey)?.GetInteroperable<ContractState>(false);
             if (contract is null) return;
             engine.SnapshotCache.Delete(ckey);
             engine.SnapshotCache.Delete(CreateStorageKey(Prefix_ContractHash, contract.Id));

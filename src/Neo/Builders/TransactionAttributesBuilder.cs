@@ -26,10 +26,9 @@ namespace Neo.Builders
             return new TransactionAttributesBuilder();
         }
 
-        public TransactionAttributesBuilder AddConflict(Action<Conflicts> config)
+        public TransactionAttributesBuilder AddConflict(UInt256 hash)
         {
-            var conflicts = new Conflicts();
-            config(conflicts);
+            var conflicts = new Conflicts { Hash = hash };
             _attributes = [.. _attributes, conflicts];
             return this;
         }

@@ -15,6 +15,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -75,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestIInteroperable()
         {
-            IInteroperable newContract = new ContractState();
+            IInteroperable newContract = (ContractState)RuntimeHelpers.GetUninitializedObject(typeof(ContractState));
             newContract.FromStackItem(contract.ToStackItem(null));
             Assert.AreEqual(contract.Manifest.ToJson().ToString(), ((ContractState)newContract).Manifest.ToJson().ToString());
             Assert.IsTrue(((ContractState)newContract).Script.Span.SequenceEqual(contract.Script.Span));
@@ -84,8 +85,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCanCall()
         {
-            var temp = new ContractState() { Manifest = TestUtils.CreateDefaultManifest() };
-            Assert.IsTrue(temp.CanCall(new() { Hash = UInt160.Zero, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
+            var temp = new ContractState() { Hash = UInt160.Zero, Nef = null!, Manifest = TestUtils.CreateDefaultManifest() };
+            Assert.IsTrue(temp.CanCall(new() { Hash = UInt160.Zero, Nef = null!, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
         }
 
         [TestMethod]

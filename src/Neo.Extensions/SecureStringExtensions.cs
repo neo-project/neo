@@ -17,16 +17,14 @@ namespace Neo.Extensions
 {
     public static class SecureStringExtensions
     {
-        public static string? GetClearText(this SecureString secureString)
+        public static string GetClearText(this SecureString secureString)
         {
-            ArgumentNullException.ThrowIfNull(secureString);
-
             var unmanagedStringPtr = IntPtr.Zero;
 
             try
             {
                 unmanagedStringPtr = Marshal.SecureStringToGlobalAllocUnicode(secureString);
-                return Marshal.PtrToStringUni(unmanagedStringPtr);
+                return Marshal.PtrToStringUni(unmanagedStringPtr)!;
             }
             finally
             {

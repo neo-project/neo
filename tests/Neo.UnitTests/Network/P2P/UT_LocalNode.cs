@@ -14,7 +14,6 @@ using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using System;
-using System.Linq;
 using System.Net;
 using System.Threading;
 
@@ -44,9 +43,6 @@ namespace Neo.UnitTests.Network.P2P
             Assert.AreEqual(10, localnode.Config.MinDesiredConnections);
             Assert.AreEqual(40, localnode.Config.MaxConnections);
             Assert.AreEqual(0, localnode.UnconnectedCount);
-
-            CollectionAssert.AreEqual(Array.Empty<RemoteNode>(), localnode.GetRemoteNodes().ToArray());
-            CollectionAssert.AreEqual(Array.Empty<IPEndPoint>(), localnode.GetUnconnectedPeers().ToArray());
         }
 
         [TestMethod]

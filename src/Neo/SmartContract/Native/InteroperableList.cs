@@ -19,8 +19,7 @@ namespace Neo.SmartContract.Native
 {
     abstract class InteroperableList<T> : IList<T>, IInteroperable
     {
-        private List<T> list;
-        private List<T> List => list ??= new();
+        private List<T> List => field ??= new();
 
         public T this[int index] { get => List[index]; set => List[index] = value; }
         public int Count => List.Count;
@@ -40,7 +39,7 @@ namespace Neo.SmartContract.Native
         public void Sort() => List.Sort();
 
         protected abstract T ElementFromStackItem(StackItem item);
-        protected abstract StackItem ElementToStackItem(T element, IReferenceCounter referenceCounter);
+        protected abstract StackItem ElementToStackItem(T element, IReferenceCounter? referenceCounter);
 
         public void FromStackItem(StackItem stackItem)
         {
@@ -51,7 +50,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Array(referenceCounter, this.Select(p => ElementToStackItem(p, referenceCounter)));
         }

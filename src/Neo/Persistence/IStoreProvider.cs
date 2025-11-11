@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 namespace Neo.Persistence
 {
     /// <summary>
@@ -28,8 +26,6 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="path">The path of the database.</param>
         /// <returns>The created <see cref="IStore"/> instance.</returns>
-        IStore GetStore(string path);
+        IStore GetStore(string? path);
     }
 }
-
-#nullable disable

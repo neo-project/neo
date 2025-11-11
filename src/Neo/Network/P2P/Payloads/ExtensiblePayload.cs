@@ -28,7 +28,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The category of the extension.
         /// </summary>
-        public string Category;
+        public required string Category;
 
         /// <summary>
         /// Indicates that the payload is only valid when the block height is greater than or equal to this value.
@@ -43,7 +43,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The sender of the payload.
         /// </summary>
-        public UInt160 Sender;
+        public required UInt160 Sender;
 
         /// <summary>
         /// The data of the payload.
@@ -53,22 +53,12 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The witness of the payload. It must match the <see cref="Sender"/>.
         /// </summary>
-        public Witness Witness;
+        public required Witness Witness;
 
-        private UInt256 _hash = null;
+        private UInt256? _hash = null;
 
         /// <inheritdoc/>
-        public UInt256 Hash
-        {
-            get
-            {
-                if (_hash == null)
-                {
-                    _hash = this.CalculateHash();
-                }
-                return _hash;
-            }
-        }
+        public UInt256 Hash => _hash ??= this.CalculateHash();
 
         InventoryType IInventory.InventoryType => InventoryType.Extensible;
 

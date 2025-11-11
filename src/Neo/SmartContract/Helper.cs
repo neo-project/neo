@@ -23,6 +23,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract
 {
@@ -115,7 +116,7 @@ namespace Neo.SmartContract
         /// <returns>The script hash of the context.</returns>
         public static UInt160 GetScriptHash(this ExecutionContext context)
         {
-            return context.GetState<ExecutionContextState>().ScriptHash;
+            return context.GetState<ExecutionContextState>().ScriptHash!;
         }
 
         /// <summary>
@@ -147,7 +148,7 @@ namespace Neo.SmartContract
         /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="points">The public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, [NotNullWhen(true)] out ECPoint[] points)
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, [NotNullWhen(true)] out ECPoint[]? points)
         {
             List<ECPoint> list = new();
             if (IsMultiSigContract(script, out m, out _, list))
@@ -162,7 +163,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, List<ECPoint> points)
+        private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, List<ECPoint>? points)
         {
             m = 0; n = 0;
             int i = 0;
@@ -257,9 +258,9 @@ namespace Neo.SmartContract
         /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
         /// <param name="item">The <see cref="StackItem"/> to convert.</param>
         /// <returns>The converted <see cref="IInteroperable"/>.</returns>
-        public static T ToInteroperable<T>(this StackItem item) where T : IInteroperable, new()
+        public static T ToInteroperable<T>(this StackItem item) where T : IInteroperable
         {
-            T t = new();
+            T t = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
             t.FromStackItem(item);
             return t;
         }
@@ -329,13 +330,14 @@ namespace Neo.SmartContract
             {
                 return false;
             }
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CloneCache(), null, settings, datoshi))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot.CloneCache(), null, settings, datoshi))
             {
                 if (witness.VerificationScript.Length == 0)
                 {
-                    ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
+                    if (snapshot is null) throw new ArgumentNullException(nameof(snapshot), "Snapshot cannot be null when verification script is empty.");
+                    ContractState? cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
+                    ContractMethodDescriptor? md = cs.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
                     if (md?.ReturnType != ContractParameterType.Boolean) return false;
                     engine.LoadContract(cs, md, CallFlags.ReadOnly);
                 }

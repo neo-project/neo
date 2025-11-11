@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Indicates the conflict transaction hash.
         /// </summary>
-        public UInt256 Hash;
+        public required UInt256 Hash;
 
         public override TransactionAttributeType Type => TransactionAttributeType.Conflicts;
 

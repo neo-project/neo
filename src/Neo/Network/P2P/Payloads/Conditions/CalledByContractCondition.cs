@@ -27,13 +27,13 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The script hash to be checked.
         /// </summary>
-        public UInt160 Hash;
+        public required UInt160 Hash;
 
         public override int Size => base.Size + UInt160.Length;
         public override WitnessConditionType Type => WitnessConditionType.CalledByContract;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(CalledByContractCondition other)
+        public bool Equals(CalledByContractCondition? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -44,7 +44,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null) return false;
             return obj is CalledByContractCondition cc && Equals(cc);
@@ -72,7 +72,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            Hash = UInt160.Parse(json["hash"].GetString());
+            Hash = UInt160.Parse(json["hash"]!.GetString());
         }
 
         public override JObject ToJson()
@@ -82,7 +82,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var result = (Array)base.ToStackItem(referenceCounter);
             result.Add(Hash.ToArray());

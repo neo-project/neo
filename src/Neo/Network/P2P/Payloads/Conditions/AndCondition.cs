@@ -31,13 +31,13 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The expressions of the condition.
         /// </summary>
-        public WitnessCondition[] Expressions;
+        public required WitnessCondition[] Expressions;
 
         public override int Size => base.Size + Expressions.GetVarSize();
         public override WitnessConditionType Type => WitnessConditionType.And;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(AndCondition other)
+        public bool Equals(AndCondition? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -48,7 +48,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null) return false;
             return obj is AndCondition ac && Equals(ac);
@@ -77,10 +77,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            JArray expressions = (JArray)json["expressions"];
+            JArray expressions = (JArray)json["expressions"]!;
             if (expressions.Count > MaxSubitems)
                 throw new FormatException($"`expressions`({expressions.Count}) in AndCondition is out of range (max:{MaxSubitems})");
-            Expressions = expressions.Select(p => FromJson((JObject)p, maxNestDepth - 1)).ToArray();
+            Expressions = expressions.Select(p => FromJson((JObject)p!, maxNestDepth - 1)).ToArray();
             if (Expressions.Length == 0) throw new FormatException("`Expressions` in AndCondition is empty");
         }
 
@@ -91,7 +91,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var result = (Array)base.ToStackItem(referenceCounter);
             result.Add(new Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));

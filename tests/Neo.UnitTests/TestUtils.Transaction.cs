@@ -168,7 +168,8 @@ namespace Neo.UnitTests
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + wallet.ProtocolSettings.MaxValidUntilBlockIncrement,
                 Signers = [new Signer { Account = sender, Scopes = WitnessScope.CalledByEntry }],
                 Attributes = [],
-                Script = new[] { (byte)OpCode.RET }
+                Script = new[] { (byte)OpCode.RET },
+                Witnesses = []
             };
 
             switch (type)

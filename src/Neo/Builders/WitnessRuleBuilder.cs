@@ -10,17 +10,19 @@
 // modifications are permitted.
 
 using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P.Payloads.Conditions;
 using System;
 
 namespace Neo.Builders
 {
     public sealed class WitnessRuleBuilder
     {
-        private readonly WitnessRule _rule = new();
+        private readonly WitnessRuleAction _action;
+        private WitnessCondition? _condition;
 
         private WitnessRuleBuilder(WitnessRuleAction action)
         {
-            _rule.Action = action;
+            _action = action;
         }
 
         public static WitnessRuleBuilder Create(WitnessRuleAction action)
@@ -32,13 +34,17 @@ namespace Neo.Builders
         {
             var cb = WitnessConditionBuilder.Create();
             config(cb);
-            _rule.Condition = cb.Build();
+            _condition = cb.Build();
             return this;
         }
 
         public WitnessRule Build()
         {
-            return _rule;
+            return new()
+            {
+                Action = _action,
+                Condition = _condition ?? throw new InvalidOperationException("Condition is not set."),
+            };
         }
     }
 }

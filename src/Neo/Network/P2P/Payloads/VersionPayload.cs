@@ -51,7 +51,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// A <see cref="string"/> used to identify the client software of the node.
         /// </summary>
-        public string UserAgent;
+        public required string UserAgent;
 
         /// <summary>
         /// True if allow compression
@@ -61,7 +61,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The capabilities of the node.
         /// </summary>
-        public NodeCapability[] Capabilities;
+        public required NodeCapability[] Capabilities;
 
         public int Size =>
             sizeof(uint) +              // Network

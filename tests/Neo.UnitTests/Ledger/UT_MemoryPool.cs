@@ -167,7 +167,13 @@ namespace Neo.UnitTests.Ledger
 
             var block = new Block
             {
-                Header = new Header(),
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
                 Transactions = _unit.GetSortedVerifiedTransactions(10)
                     .Concat(_unit.GetSortedVerifiedTransactions(5)).ToArray()
             };
@@ -218,7 +224,13 @@ namespace Neo.UnitTests.Ledger
 
             var block = new Block
             {
-                Header = new Header(),
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
                 Transactions = _unit.GetSortedVerifiedTransactions(10)
             };
 
@@ -290,7 +302,13 @@ namespace Neo.UnitTests.Ledger
             // Act: persist block and reverify all mempooled txs.
             var block = new Block
             {
-                Header = new Header(),
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
                 Transactions = new Transaction[] { tx1, tx2, tx3, tx4, tx5, tx6 },
             };
             _unit.UpdatePoolForBlockPersisted(block, engine.SnapshotCache);
@@ -441,7 +459,13 @@ namespace Neo.UnitTests.Ledger
             var tx1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx1 doesn't conflict with anyone and is aimed to trigger reverification
             var block = new Block
             {
-                Header = new Header(),
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
                 Transactions = new Transaction[] { tx1 },
             };
             _unit.UpdatePoolForBlockPersisted(block, engine.SnapshotCache);
@@ -485,7 +509,13 @@ namespace Neo.UnitTests.Ledger
             // move all to unverified
             var block = new Block
             {
-                Header = new Header(),
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
                 Transactions = Array.Empty<Transaction>()
             };
             _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
@@ -510,7 +540,13 @@ namespace Neo.UnitTests.Ledger
                 Assert.AreEqual(maxTransaction, verifiedTxs[0]);
                 var blockWith2Tx = new Block
                 {
-                    Header = new Header(),
+                    Header = new Header
+                    {
+                        PrevHash = null!,
+                        MerkleRoot = null!,
+                        NextConsensus = null!,
+                        Witness = null!
+                    },
                     Transactions = new[] { maxTransaction, minTransaction }
                 };
                 // verify and remove the 2 transactions from the verified pool
@@ -553,7 +589,13 @@ namespace Neo.UnitTests.Ledger
             // move all to unverified
             var block = new Block
             {
-                Header = new Header(),
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
                 Transactions = Array.Empty<Transaction>()
             };
             _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
@@ -719,7 +761,13 @@ namespace Neo.UnitTests.Ledger
 
             var block = new Block
             {
-                Header = new Header(),
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
                 Transactions = transactions
             };
 

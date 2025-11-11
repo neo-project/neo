@@ -33,7 +33,7 @@ namespace Neo.SmartContract
     {
         private class ContextItem
         {
-            public readonly byte[] Script;
+            public readonly byte[]? Script;
             public readonly ContractParameter[] Parameters;
             public readonly Dictionary<ECPoint, byte[]> Signatures;
 
@@ -46,12 +46,12 @@ namespace Neo.SmartContract
 
             public ContextItem(JObject json)
             {
-                Script = json["script"] is JToken.Null ? null : Convert.FromBase64String(json["script"].AsString());
-                Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray();
-                Signatures = ((JObject)json["signatures"]).Properties.Select(p => new
+                Script = json["script"] is JToken.Null ? null : Convert.FromBase64String(json["script"]!.AsString());
+                Parameters = ((JArray)json["parameters"]!).Select(p => ContractParameter.FromJson((JObject)p!)).ToArray();
+                Signatures = ((JObject)json["signatures"]!).Properties.Select(p => new
                 {
                     PublicKey = ECPoint.Parse(p.Key, ECCurve.Secp256r1),
-                    Signature = Convert.FromBase64String(p.Value.AsString())
+                    Signature = Convert.FromBase64String(p.Value!.AsString())
                 }).ToDictionary(p => p.PublicKey, p => p.Signature);
             }
 
@@ -62,7 +62,7 @@ namespace Neo.SmartContract
                 json["parameters"] = new JArray(Parameters.Select(p => p.ToJson()));
                 json["signatures"] = new JObject();
                 foreach (var signature in Signatures)
-                    json["signatures"][signature.Key.ToString()] = Convert.ToBase64String(signature.Value);
+                    json["signatures"]![signature.Key.ToString()] = Convert.ToBase64String(signature.Value);
                 return json;
             }
         }
@@ -108,12 +108,10 @@ namespace Neo.SmartContract
             }
         }
 
-        private UInt160[] _scriptHashes = null;
-
         /// <summary>
         /// Gets the script hashes to be verified for the <see cref="Verifiable"/>.
         /// </summary>
-        public IReadOnlyList<UInt160> ScriptHashes => _scriptHashes ??= Verifiable.GetScriptHashesForVerifying(SnapshotCache);
+        public IReadOnlyList<UInt160> ScriptHashes => field ??= Verifiable.GetScriptHashesForVerifying(SnapshotCache);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractParametersContext"/> class.
@@ -185,7 +183,7 @@ namespace Neo.SmartContract
         /// </returns>
         public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature)
         {
-            if (IsMultiSigContract(contract.Script, out _, out ECPoint[] points))
+            if (IsMultiSigContract(contract.Script, out _, out ECPoint[]? points))
             {
                 if (!points.Contains(pubkey)) return false; // the public key not in the multi-signature contract
 
@@ -269,7 +267,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private ContextItem CreateItem(Contract contract)
+        private ContextItem? CreateItem(Contract contract)
         {
             if (ContextItems.TryGetValue(contract.ScriptHash, out var item))
                 return item;
@@ -288,27 +286,27 @@ namespace Neo.SmartContract
         /// <returns>The converted context.</returns>
         public static ContractParametersContext FromJson(JObject json, DataCache snapshot)
         {
-            var typeName = json["type"].AsString();
+            var typeName = json["type"]!.AsString();
             var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(typeName);
             if (!typeof(IVerifiable).IsAssignableFrom(type))
                 throw new FormatException($"json['type']({typeName}) is not an {nameof(IVerifiable)}");
 
-            var verifiable = (IVerifiable)Activator.CreateInstance(type);
-            var data = Convert.FromBase64String(json["data"].AsString());
+            var verifiable = (IVerifiable)Activator.CreateInstance(type)!;
+            var data = Convert.FromBase64String(json["data"]!.AsString());
             var reader = new MemoryReader(data);
 
             verifiable.DeserializeUnsigned(ref reader);
             if (json.ContainsProperty("hash"))
             {
-                var hash = json["hash"].GetString();
+                var hash = json["hash"]!.GetString();
                 var h256 = UInt256.Parse(hash);
                 if (h256 != verifiable.Hash) throw new FormatException($"json['hash']({hash}) != {verifiable.Hash}");
             }
 
-            var context = new ContractParametersContext(snapshot, verifiable, (uint)json["network"].GetInt32());
-            foreach (var (key, value) in ((JObject)json["items"]).Properties)
+            var context = new ContractParametersContext(snapshot, verifiable, (uint)json["network"]!.GetInt32());
+            foreach (var (key, value) in ((JObject)json["items"]!).Properties)
             {
-                context.ContextItems.Add(UInt160.Parse(key), new ContextItem((JObject)value));
+                context.ContextItems.Add(UInt160.Parse(key), new ContextItem((JObject)value!));
             }
             return context;
         }
@@ -319,7 +317,7 @@ namespace Neo.SmartContract
         /// <param name="scriptHash">The hash of the witness script.</param>
         /// <param name="index">The specified index.</param>
         /// <returns>The parameter with the specified index, null if the script hash not exists in context.</returns>
-        public ContractParameter GetParameter(UInt160 scriptHash, int index)
+        public ContractParameter? GetParameter(UInt160 scriptHash, int index)
         {
             return GetParameters(scriptHash)?[index];
         }
@@ -329,7 +327,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
         /// <returns>The parameters from the witness script, null if the script hash not exists in context.</returns>
-        public IReadOnlyList<ContractParameter> GetParameters(UInt160 scriptHash)
+        public IReadOnlyList<ContractParameter>? GetParameters(UInt160 scriptHash)
         {
             if (!ContextItems.TryGetValue(scriptHash, out var item))
                 return null;
@@ -341,7 +339,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
         /// <returns>The signatures from the witness script. null if the script hash not exists in context.</returns>
-        public IReadOnlyDictionary<ECPoint, byte[]> GetSignatures(UInt160 scriptHash)
+        public IReadOnlyDictionary<ECPoint, byte[]>? GetSignatures(UInt160 scriptHash)
         {
             if (!ContextItems.TryGetValue(scriptHash, out var item))
                 return null;
@@ -353,7 +351,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
         /// <returns>The witness script, null if the script hash not exists in context.</returns>
-        public byte[] GetScript(UInt160 scriptHash)
+        public byte[]? GetScript(UInt160 scriptHash)
         {
             if (!ContextItems.TryGetValue(scriptHash, out var item))
                 return null;
@@ -395,7 +393,7 @@ namespace Neo.SmartContract
         /// <returns>The parsed context.</returns>
         public static ContractParametersContext Parse(string value, DataCache snapshot)
         {
-            return FromJson((JObject)JToken.Parse(value), snapshot);
+            return FromJson((JObject)JToken.Parse(value)!, snapshot);
         }
 
         /// <summary>
@@ -406,7 +404,7 @@ namespace Neo.SmartContract
         {
             var json = new JObject()
             {
-                ["type"] = Verifiable.GetType().FullName,
+                ["type"] = Verifiable.GetType().FullName!,
                 ["hash"] = Verifiable.Hash.ToString()
             };
 
@@ -420,7 +418,7 @@ namespace Neo.SmartContract
 
             json["items"] = new JObject();
             foreach (var item in ContextItems)
-                json["items"][item.Key.ToString()] = item.Value.ToJson();
+                json["items"]![item.Key.ToString()] = item.Value.ToJson();
             json["network"] = Network;
             return json;
         }

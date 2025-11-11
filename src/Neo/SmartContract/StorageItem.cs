@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Neo.Extensions;
 using Neo.IO;
 using Neo.VM;
@@ -19,6 +17,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract
 {
@@ -188,7 +187,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
-        public T GetInteroperable<T>() where T : IInteroperable, new()
+        public T GetInteroperable<T>() where T : IInteroperable
         {
             _cache ??= GetInteroperableClone<T>();
             _value = null;
@@ -201,7 +200,7 @@ namespace Neo.SmartContract
         /// <param name="verify">Verify deserialization</param>
         /// <typeparam name="T">The type of the <see cref="IInteroperableVerifiable"/>.</typeparam>
         /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
-        public T GetInteroperable<T>(bool verify = true) where T : IInteroperableVerifiable, new()
+        public T GetInteroperable<T>(bool verify = true) where T : IInteroperableVerifiable
         {
             _cache ??= GetInteroperableClone<T>(verify);
             _value = null;
@@ -213,7 +212,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
-        public T GetInteroperableClone<T>() where T : IInteroperable, new()
+        public T GetInteroperableClone<T>() where T : IInteroperable
         {
             // If it's interoperable and not sealed
             if (_value.IsEmpty && _cache is T interoperable)
@@ -222,7 +221,7 @@ namespace Neo.SmartContract
                 return (T)interoperable.Clone();
             }
 
-            interoperable = new T();
+            interoperable = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
             interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
             return interoperable;
         }
@@ -233,7 +232,7 @@ namespace Neo.SmartContract
         /// <param name="verify">Verify deserialization</param>
         /// <typeparam name="T">The type of the <see cref="IInteroperableVerifiable"/>.</typeparam>
         /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
-        public T GetInteroperableClone<T>(bool verify = true) where T : IInteroperableVerifiable, new()
+        public T GetInteroperableClone<T>(bool verify = true) where T : IInteroperableVerifiable
         {
             // If it's interoperable and not sealed
             if (_value.IsEmpty && _cache is T interoperable)
@@ -241,7 +240,7 @@ namespace Neo.SmartContract
                 return (T)interoperable.Clone();
             }
 
-            interoperable = new T();
+            interoperable = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
             interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
             return interoperable;
         }
@@ -265,7 +264,7 @@ namespace Neo.SmartContract
         /// <param name="verify">Verify deserialization</param>
         /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
         /// <returns>The <see cref="IDisposable"/> that seal the item when disposed.</returns>
-        public IDisposable GetInteroperable<T>(out T interop, bool verify = true) where T : IInteroperableVerifiable, new()
+        public IDisposable GetInteroperable<T>(out T interop, bool verify = true) where T : IInteroperableVerifiable
         {
             interop = GetInteroperable<T>(verify);
             return new SealInteroperable(this);
@@ -309,5 +308,3 @@ namespace Neo.SmartContract
         }
     }
 }
-
-#nullable disable

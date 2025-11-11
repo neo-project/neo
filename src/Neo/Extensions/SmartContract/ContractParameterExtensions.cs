@@ -32,11 +32,11 @@ namespace Neo.Extensions
             return ToStackItem(parameter, null);
         }
 
-        private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)> context)
+        private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)>? context)
         {
             ArgumentNullException.ThrowIfNull(parameter);
             if (parameter.Value is null) return StackItem.Null;
-            StackItem stackItem = null;
+            StackItem? stackItem = null;
             switch (parameter.Type)
             {
                 case ContractParameterType.Array:

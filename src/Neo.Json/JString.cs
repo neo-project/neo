@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
 
@@ -89,18 +90,20 @@ namespace Neo.Json
             return new JString(value.ToString());
         }
 
+        [return: NotNullIfNotNull(nameof(value))]
         public static implicit operator JString?(string? value)
         {
-            return value == null ? null : new JString(value);
+            return value is null ? null : new JString(value);
         }
 
-        public static bool operator ==(JString left, JString? right)
+        public static bool operator ==(JString? left, JString? right)
         {
-            if (right is null) return false;
-            return ReferenceEquals(left, right) || left.Value.Equals(right.Value);
+            if (ReferenceEquals(left, right)) return true;
+            if (left is null || right is null) return false;
+            return left.Value.Equals(right.Value);
         }
 
-        public static bool operator !=(JString left, JString right)
+        public static bool operator !=(JString? left, JString? right)
         {
             return !(left == right);
         }

@@ -29,7 +29,7 @@ namespace Neo.Wallets
         /// <param name="path">The path of the wallet file.</param>
         /// <param name="password">The password of the wallet.</param>
         /// <param name="settings">The settings of the wallet.</param>
-        public Wallet CreateWallet(string name, string path, string password, ProtocolSettings settings);
+        public Wallet CreateWallet(string? name, string path, string password, ProtocolSettings settings);
 
         /// <summary>
         /// Opens a wallet.

@@ -44,17 +44,17 @@ namespace Neo.UnitTests.Network.P2P
         public void TaskManager_Test_IsHighPriority()
         {
             // high priority
-            Assert.IsTrue(uut.IsHighPriority(new TaskManager.Register()));
-            Assert.IsTrue(uut.IsHighPriority(new TaskManager.RestartTasks()));
+            Assert.IsTrue(uut.IsHighPriority(new TaskManager.Register(null!)));
+            Assert.IsTrue(uut.IsHighPriority(new TaskManager.RestartTasks(null!)));
 
             // low priority
             // -> NewTasks: generic InvPayload
-            Assert.IsFalse(uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload() }));
+            Assert.IsFalse(uut.IsHighPriority(new TaskManager.NewTasks(new InvPayload { Hashes = null! })));
 
             // high priority
             // -> NewTasks: payload Block or Consensus
-            Assert.IsTrue(uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Block } }));
-            Assert.IsTrue(uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Extensible } }));
+            Assert.IsTrue(uut.IsHighPriority(new TaskManager.NewTasks(new InvPayload { Type = InventoryType.Block, Hashes = null! })));
+            Assert.IsTrue(uut.IsHighPriority(new TaskManager.NewTasks(new InvPayload { Type = InventoryType.Extensible, Hashes = null! })));
 
             // any random object should not have priority
             object obj = null;

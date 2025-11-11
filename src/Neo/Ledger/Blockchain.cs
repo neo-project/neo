@@ -45,93 +45,61 @@ namespace Neo.Ledger
         /// <summary>
         /// Sent by the <see cref="Blockchain"/> when a <see cref="Network.P2P.Payloads.Block"/> is persisted.
         /// </summary>
-        public class PersistCompleted
-        {
-            /// <summary>
-            /// The <see cref="Network.P2P.Payloads.Block"/> that is persisted.
-            /// </summary>
-            public Block Block { get; init; }
-        }
+        /// <param name="Block">The <see cref="Network.P2P.Payloads.Block"/> that is persisted.</param>
+        public record PersistCompleted(Block Block);
 
         /// <summary>
         /// Sent to the <see cref="Blockchain"/> when importing blocks.
         /// </summary>
-        public class Import
-        {
-            /// <summary>
-            /// The blocks to be imported.
-            /// </summary>
-            public IEnumerable<Block> Blocks { get; init; }
-
-            /// <summary>
-            /// Indicates whether the blocks need to be verified when importing.
-            /// </summary>
-            public bool Verify { get; init; } = true;
-        }
+        /// <param name="Blocks">The blocks to be imported.</param>
+        /// <param name="Verify">Indicates whether the blocks need to be verified when importing.</param>
+        public record Import(IEnumerable<Block> Blocks, bool Verify = true);
 
         /// <summary>
         /// Sent by the <see cref="Blockchain"/> when the import is complete.
         /// </summary>
-        public class ImportCompleted { }
+        public record ImportCompleted;
 
         /// <summary>
         /// Sent to the <see cref="Blockchain"/> when the consensus is filling the memory pool.
         /// </summary>
-        public class FillMemoryPool
-        {
-            /// <summary>
-            /// The transactions to be sent.
-            /// </summary>
-            public IEnumerable<Transaction> Transactions { get; init; }
-        }
+        /// <param name="Transactions">The transactions to be sent.</param>
+        public record FillMemoryPool(IEnumerable<Transaction> Transactions);
 
         /// <summary>
         /// Sent by the <see cref="Blockchain"/> when the memory pool is filled.
         /// </summary>
-        public class FillCompleted { }
+        public record FillCompleted;
 
         /// <summary>
         /// Sent to the <see cref="Blockchain"/> when inventories need to be re-verified.
         /// </summary>
-        public class Reverify
-        {
-            /// <summary>
-            /// The inventories to be re-verified.
-            /// </summary>
-            public IReadOnlyList<IInventory> Inventories { get; init; }
-        }
+        /// <param name="Inventories">The inventories to be re-verified.</param>
+        public record Reverify(IReadOnlyList<IInventory> Inventories);
 
         /// <summary>
         /// Sent by the <see cref="Blockchain"/> when an <see cref="IInventory"/> is relayed.
         /// </summary>
-        public class RelayResult
-        {
-            /// <summary>
-            /// The <see cref="IInventory"/> that is relayed.
-            /// </summary>
-            public IInventory Inventory { get; init; }
-            /// <summary>
-            /// The result.
-            /// </summary>
-            public VerifyResult Result { get; init; }
-        }
+        /// <param name="Inventory">The <see cref="IInventory"/> that is relayed.</param>
+        /// <param name="Result">The result.</param>
+        public record RelayResult(IInventory Inventory, VerifyResult Result);
 
-        internal class Initialize { }
+        internal record Initialize;
         private class UnverifiedBlocksList
         {
             public List<Block> Blocks { get; } = [];
             public HashSet<IActorRef> Nodes { get; } = [];
         }
 
-        public static event CommittingHandler Committing;
-        public static event CommittedHandler Committed;
+        public static event CommittingHandler? Committing;
+        public static event CommittedHandler? Committed;
 
         private static readonly Script s_onPersistScript, s_postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private readonly NeoSystem _system;
         private readonly Dictionary<UInt256, Block> _blockCache = [];
         private readonly Dictionary<uint, UnverifiedBlocksList> _blockCacheUnverified = [];
-        private ImmutableHashSet<UInt160> _extensibleWitnessWhiteList;
+        private ImmutableHashSet<UInt160>? _extensibleWitnessWhiteList;
 
         static Blockchain()
         {
@@ -244,7 +212,7 @@ namespace Neo.Ledger
             };
             if (result == VerifyResult.Succeed && relay)
             {
-                _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
+                _system.LocalNode.Tell(new LocalNode.RelayDirectly(inventory));
             }
             SendRelayResult(inventory, result);
         }
@@ -303,7 +271,7 @@ namespace Neo.Ledger
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
                     if (blockToPersist.Index + 99 >= headerHeight)
-                        _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
+                        _system.LocalNode.Tell(new LocalNode.RelayDirectly(blockToPersist));
                 }
                 if (_blockCacheUnverified.TryGetValue(currentHeight + 1, out var unverifiedBlocks))
                 {
@@ -315,7 +283,7 @@ namespace Neo.Ledger
             else
             {
                 if (block.Index + 99 >= headerHeight)
-                    _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
+                    _system.LocalNode.Tell(new LocalNode.RelayDirectly(block));
                 if (block.Index == headerHeight + 1)
                     _system.HeaderCache.Add(block.Header);
             }
@@ -459,14 +427,14 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(applicationExecuted);
 
                     allApplicationExecuted.Add(applicationExecuted);
-                    transactionStates = engine.GetState<TransactionState[]>();
+                    transactionStates = engine.GetState<TransactionState[]>()!;
                 }
 
                 var clonedSnapshot = snapshot.CloneCache();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (var transactionState in transactionStates)
                 {
-                    var tx = transactionState.Transaction;
+                    var tx = transactionState.Transaction!;
                     using var engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, _system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();
@@ -507,7 +475,7 @@ namespace Neo.Ledger
             _system.MemPool.UpdatePoolForBlockPersisted(block, _system.StoreView);
             _extensibleWitnessWhiteList = null;
             _blockCache.Remove(block.PrevHash);
-            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            Context.System.EventStream.Publish(new PersistCompleted(block));
             if (_system.HeaderCache.TryRemoveFirst(out var header))
                 Debug.Assert(header.Index == block.Index);
         }
@@ -524,7 +492,7 @@ namespace Neo.Ledger
             InvokeHandlers(Committed?.GetInvocationList(), h => ((CommittedHandler)h)(system, block));
         }
 
-        private static void InvokeHandlers(Delegate[] handlers, Action<Delegate> handlerAction)
+        private static void InvokeHandlers(Delegate[]? handlers, Action<Delegate> handlerAction)
         {
             if (handlers == null) return;
 
@@ -574,11 +542,7 @@ namespace Neo.Ledger
 
         private void SendRelayResult(IInventory inventory, VerifyResult result)
         {
-            RelayResult rr = new()
-            {
-                Inventory = inventory,
-                Result = result
-            };
+            RelayResult rr = new(inventory, result);
             Sender.Tell(rr);
             Context.System.EventStream.Publish(rr);
         }

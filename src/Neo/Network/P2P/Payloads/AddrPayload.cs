@@ -29,7 +29,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The list of nodes.
         /// </summary>
-        public NetworkAddressWithTime[] AddressList;
+        public required NetworkAddressWithTime[] AddressList;
 
         public int Size => AddressList.GetVarSize();
 

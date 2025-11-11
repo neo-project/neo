@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Network.P2P;
@@ -232,5 +230,3 @@ namespace Neo.Wallets
         }
     }
 }
-
-#nullable disable

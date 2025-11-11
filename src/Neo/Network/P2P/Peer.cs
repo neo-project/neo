@@ -29,42 +29,28 @@ namespace Neo.Network.P2P
     /// </summary>
     public abstract class Peer : UntypedActor, IWithUnboundedStash
     {
-        public IStash Stash { get; set; }
+        public IStash Stash { get; set; } = null!;
 
         /// <summary>
         /// Sent to <see cref="Peer"/> to add more unconnected peers.
         /// </summary>
-        public class Peers
-        {
-            /// <summary>
-            /// The unconnected peers to be added.
-            /// </summary>
-            public IEnumerable<IPEndPoint> EndPoints { get; init; }
-        }
+        /// <param name="EndPoints">The unconnected peers to be added.</param>
+        public record Peers(IEnumerable<IPEndPoint> EndPoints);
 
         /// <summary>
         /// Sent to <see cref="Peer"/> to connect to a remote node.
         /// </summary>
-        public class Connect
-        {
-            /// <summary>
-            /// The address of the remote node.
-            /// </summary>
-            public IPEndPoint EndPoint { get; init; }
-
-            /// <summary>
-            /// Indicates whether the remote node is trusted. A trusted node will always be connected.
-            /// </summary>
-            public bool IsTrusted { get; init; }
-        }
+        /// <param name="EndPoint">The address of the remote node.</param>
+        /// <param name="IsTrusted">Indicates whether the remote node is trusted. A trusted node will always be connected.</param>
+        public record Connect(IPEndPoint EndPoint, bool IsTrusted);
 
         private class Timer { }
 
         private static readonly IActorRef s_tcpManager = Context.System.Tcp();
 
-        private IActorRef _tcpListener;
+        private IActorRef? _tcpListener;
 
-        private ICancelable _timer;
+        private ICancelable _timer = null!;
 
         private static readonly HashSet<IPAddress> s_localAddresses = new();
 
@@ -100,7 +86,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Channel configuration.
         /// </summary>
-        public ChannelsConfig Config { get; private set; }
+        public ChannelsConfig Config { get; private set; } = null!;
 
         /// <summary>
         /// Indicates the maximum number of unconnected peers stored in <see cref="UnconnectedPeers"/>.
@@ -352,7 +338,7 @@ namespace Neo.Network.P2P
 
         private void OnTerminated(IActorRef actorRef)
         {
-            if (ConnectedPeers.TryRemove(actorRef, out IPEndPoint endPoint))
+            if (ConnectedPeers.TryRemove(actorRef, out IPEndPoint? endPoint))
             {
                 ConnectedAddresses.TryGetValue(endPoint.Address, out int count);
                 if (count > 0) count--;

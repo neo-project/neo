@@ -33,7 +33,7 @@ namespace Neo.SmartContract
 
         protected virtual ContractTaskAwaiter CreateAwaiter() => new();
         public ContractTaskAwaiter GetAwaiter() => _awaiter;
-        public virtual object GetResult() => null;
+        public virtual object? GetResult() => null;
     }
 
     [AsyncMethodBuilder(typeof(ContractTaskMethodBuilder<>))]
@@ -51,6 +51,6 @@ namespace Neo.SmartContract
 #pragma warning disable CS0108 // Member hides inherited member; missing new keyword
         public ContractTaskAwaiter<T> GetAwaiter() => (ContractTaskAwaiter<T>)_awaiter;
 #pragma warning restore CS0108 // Member hides inherited member; missing new keyword
-        public override object GetResult() => GetAwaiter().GetResult();
+        public override object? GetResult() => GetAwaiter().GetResult();
     }
 }

@@ -18,6 +18,7 @@ using System;
 using System.Buffers.Binary;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract
 {
@@ -52,17 +53,17 @@ namespace Neo.SmartContract
         /// <summary>
         /// The name and version of the compiler that generated this nef file.
         /// </summary>
-        public string Compiler { get; set; }
+        public required string Compiler { get; set; }
 
         /// <summary>
         /// The url of the source files.
         /// </summary>
-        public string Source { get; set; }
+        public required string Source { get; set; }
 
         /// <summary>
         /// The methods that to be called statically.
         /// </summary>
-        public MethodToken[] Tokens { get; set; }
+        public required MethodToken[] Tokens { get; set; }
 
         /// <summary>
         /// The script of the contract.
@@ -96,7 +97,7 @@ namespace Neo.SmartContract
         public static NefFile Parse(ReadOnlyMemory<byte> memory, bool verify = true)
         {
             var reader = new MemoryReader(memory);
-            var nef = new NefFile();
+            var nef = (NefFile)RuntimeHelpers.GetUninitializedObject(typeof(NefFile));
             nef.Deserialize(ref reader, verify);
             return nef;
         }

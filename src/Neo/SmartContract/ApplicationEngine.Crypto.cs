@@ -47,7 +47,7 @@ namespace Neo.SmartContract
         {
             try
             {
-                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, ECCurve.Secp256r1);
+                return Crypto.VerifySignature(ScriptContainer!.GetSignData(ProtocolSettings.Network), signature, pubkey, ECCurve.Secp256r1);
             }
             catch (ArgumentException)
             {
@@ -64,7 +64,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the signatures are valid; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckMultisig(byte[][] pubkeys, byte[][] signatures)
         {
-            var message = ScriptContainer.GetSignData(ProtocolSettings.Network);
+            var message = ScriptContainer!.GetSignData(ProtocolSettings.Network);
             int m = signatures.Length, n = pubkeys.Length;
             if (n == 0) throw new ArgumentException("pubkeys array cannot be empty.");
             if (m == 0) throw new ArgumentException("signatures array cannot be empty.");

@@ -23,6 +23,6 @@ namespace Neo.Sign
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
         /// <param name="cause">The cause of the exception.</param>
-        public SignException(string message, Exception cause = null) : base(message, cause) { }
+        public SignException(string message, Exception? cause = null) : base(message, cause) { }
     }
 }

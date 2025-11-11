@@ -17,8 +17,8 @@ namespace Neo.SmartContract
 {
     internal class ContractTaskAwaiter : INotifyCompletion
     {
-        private Action _continuation;
-        private Exception _exception;
+        private Action? _continuation;
+        private Exception? _exception;
 
         public bool IsCompleted { get; private set; }
 
@@ -52,9 +52,9 @@ namespace Neo.SmartContract
 
     internal class ContractTaskAwaiter<T> : ContractTaskAwaiter
     {
-        private T _result;
+        private T? _result;
 
-        public new T GetResult()
+        public new T? GetResult()
         {
             base.GetResult();
             return _result;
@@ -68,7 +68,7 @@ namespace Neo.SmartContract
 
         public override void SetResult(ApplicationEngine engine)
         {
-            SetResult((T)engine.Convert(engine.Pop(), new InteropParameterDescriptor(typeof(T))));
+            SetResult((T)engine.Convert(engine.Pop(), new InteropParameterDescriptor(typeof(T)))!);
         }
     }
 }

@@ -35,48 +35,48 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The name of the contract.
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// The groups of the contract.
         /// </summary>
-        public ContractGroup[] Groups { get; set; }
+        public required ContractGroup[] Groups { get; set; }
 
         /// <summary>
         /// Indicates which standards the contract supports. It can be a list of NEPs.
         /// </summary>
-        public string[] SupportedStandards { get; set; }
+        public required string[] SupportedStandards { get; set; }
 
         /// <summary>
         /// The ABI of the contract.
         /// </summary>
-        public ContractAbi Abi { get; set; }
+        public required ContractAbi Abi { get; set; }
 
         /// <summary>
         /// The permissions of the contract.
         /// </summary>
-        public ContractPermission[] Permissions { get; set; }
+        public required ContractPermission[] Permissions { get; set; }
 
         /// <summary>
         /// The trusted contracts and groups of the contract.
         /// If a contract is trusted, the user interface will not give any warnings when called by the contract.
         /// </summary>
-        public WildcardContainer<ContractPermissionDescriptor> Trusts { get; set; }
+        public required WildcardContainer<ContractPermissionDescriptor> Trusts { get; set; }
 
         /// <summary>
         /// Custom user data.
         /// </summary>
-        public JObject Extra { get; set; }
+        public JObject? Extra { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            Name = @struct[0].GetString();
+            Name = @struct[0].GetString()!;
             Groups = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractGroup>()).ToArray();
             if (((Map)@struct[2]).Count != 0)
                 throw new ArgumentException("Features field must be empty", nameof(stackItem));
 
-            SupportedStandards = ((Array)@struct[3]).Select(p => p.GetString()).ToArray();
+            SupportedStandards = ((Array)@struct[3]).Select(p => p.GetString()!).ToArray();
             Abi = @struct[4].ToInteroperable<ContractAbi>();
             Permissions = ((Array)@struct[5]).Select(p => p.ToInteroperable<ContractPermission>()).ToArray();
             Trusts = @struct[6] switch
@@ -86,10 +86,10 @@ namespace Neo.SmartContract.Manifest
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(ContractPermissionDescriptor.Create).ToArray()),
                 _ => throw new ArgumentException("Trusts field must be null or array", nameof(stackItem))
             };
-            Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
+            Extra = (JObject?)JToken.Parse(@struct[7].GetSpan());
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Struct(referenceCounter)
             {
@@ -114,12 +114,12 @@ namespace Neo.SmartContract.Manifest
             ContractManifest manifest = new()
             {
                 Name = json["name"]!.GetString(),
-                Groups = ((JArray)json["groups"])?.Select(u => ContractGroup.FromJson((JObject)u)).ToArray() ?? [],
-                SupportedStandards = ((JArray)json["supportedstandards"])?.Select(u => u.GetString()).ToArray() ?? [],
-                Abi = ContractAbi.FromJson((JObject)json["abi"]),
-                Permissions = ((JArray)json["permissions"])?.Select(u => ContractPermission.FromJson((JObject)u)).ToArray() ?? [],
-                Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson((JString)u)),
-                Extra = (JObject)json["extra"]
+                Groups = ((JArray?)json["groups"])?.Select(u => ContractGroup.FromJson((JObject)u!)).ToArray() ?? [],
+                SupportedStandards = ((JArray?)json["supportedstandards"])?.Select(u => u!.GetString()).ToArray() ?? [],
+                Abi = ContractAbi.FromJson((JObject)json["abi"]!),
+                Permissions = ((JArray?)json["permissions"])?.Select(u => ContractPermission.FromJson((JObject)u!)).ToArray() ?? [],
+                Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"]!, u => ContractPermissionDescriptor.FromJson((JString)u)),
+                Extra = (JObject?)json["extra"]
             };
 
             if (string.IsNullOrEmpty(manifest.Name))
@@ -144,7 +144,7 @@ namespace Neo.SmartContract.Manifest
         {
             if (json.Length > MaxLength)
                 throw new ArgumentException($"JSON content length {json.Length} exceeds maximum allowed size of {MaxLength} bytes", nameof(json));
-            return FromJson((JObject)JToken.Parse(json));
+            return FromJson((JObject)JToken.Parse(json)!);
         }
 
         /// <summary>

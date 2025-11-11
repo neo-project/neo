@@ -26,6 +26,7 @@ using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using Array = System.Array;
@@ -144,10 +145,16 @@ namespace Neo.UnitTests.SmartContract
                 engine.LoadScript(script.ToArray());
                 engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
                 {
+                    Hash = UInt160.Zero,
+                    Nef = null!,
                     Manifest = new()
                     {
+                        Name = "",
+                        Groups = [],
+                        SupportedStandards = [],
                         Abi = new()
                         {
+                            Methods = [],
                             Events =
                             [
                                 new ContractEventDescriptor
@@ -164,7 +171,8 @@ namespace Neo.UnitTests.SmartContract
                                 Contract = ContractPermissionDescriptor.Create(scriptHash2),
                                 Methods = WildcardContainer<string>.Create(["test"])
                             }
-                        ]
+                        ],
+                        Trusts = WildcardContainer<ContractPermissionDescriptor>.CreateWildcard()
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;
@@ -221,10 +229,16 @@ namespace Neo.UnitTests.SmartContract
                 engine.LoadScript(script.ToArray());
                 engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
                 {
+                    Hash = UInt160.Zero,
+                    Nef = null!,
                     Manifest = new()
                     {
+                        Name = "",
+                        Groups = [],
+                        SupportedStandards = [],
                         Abi = new()
                         {
+                            Methods = [],
                             Events =
                             [
                                 new ContractEventDescriptor
@@ -241,7 +255,8 @@ namespace Neo.UnitTests.SmartContract
                                 Contract = ContractPermissionDescriptor.Create(scriptHash2),
                                 Methods = WildcardContainer<string>.Create(["test"])
                             }
-                        ]
+                        ],
+                        Trusts = WildcardContainer<ContractPermissionDescriptor>.CreateWildcard()
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;
@@ -377,7 +392,11 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestRuntime_GetTime()
         {
-            Block block = new() { Header = new Header() };
+            Block block = new()
+            {
+                Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                Transactions = []
+            };
             var engine = GetEngine(true, hasBlock: true);
             Assert.AreEqual(block.Timestamp, engine.GetTime());
         }
@@ -783,7 +802,11 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = _snapshotCache.CloneCache();
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
-            var block = hasBlock ? new Block { Header = new Header() } : null;
+            var block = hasBlock ? new Block
+            {
+                Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                Transactions = []
+            } : null;
             var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestProtocolSettings.Default, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;

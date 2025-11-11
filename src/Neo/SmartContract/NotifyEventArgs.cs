@@ -26,7 +26,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The container that containing the executed script.
         /// </summary>
-        public IVerifiable ScriptContainer { get; }
+        public IVerifiable? ScriptContainer { get; }
 
         /// <summary>
         /// The script hash of the contract that sends the log.
@@ -50,7 +50,7 @@ namespace Neo.SmartContract
         /// <param name="scriptHash">The script hash of the contract that sends the log.</param>
         /// <param name="eventName">The name of the event.</param>
         /// <param name="state">The arguments of the event.</param>
-        public NotifyEventArgs(IVerifiable container, UInt160 scriptHash, string eventName, Array state)
+        public NotifyEventArgs(IVerifiable? container, UInt160 scriptHash, string eventName, Array state)
         {
             ScriptContainer = container;
             ScriptHash = scriptHash;
@@ -63,7 +63,7 @@ namespace Neo.SmartContract
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Array(referenceCounter)
                 {

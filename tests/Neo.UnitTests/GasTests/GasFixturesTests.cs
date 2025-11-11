@@ -62,7 +62,18 @@ namespace Neo.UnitTests.GasTests
                 }
             }
 
-            var persistingBlock = new Block { Header = new Header() { Index = 1 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = null!,
+                    Index = 1,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = null!
+            };
 
             // Signature
 

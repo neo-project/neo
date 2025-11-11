@@ -26,10 +26,12 @@ namespace Neo.UnitTests
         public TestWalletAccount(UInt160 hash)
             : base(hash, TestProtocolSettings.Default)
         {
-            var mock = new Mock<Contract>();
+            var mock = new Mock<Contract>(() => new Contract
+            {
+                Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
+                ParameterList = new[] { ContractParameterType.Signature }
+            });
             mock.SetupGet(p => p.ScriptHash).Returns(hash);
-            mock.Object.Script = Contract.CreateSignatureRedeemScript(key.PublicKey);
-            mock.Object.ParameterList = new[] { ContractParameterType.Signature };
             Contract = mock.Object;
         }
 

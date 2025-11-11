@@ -194,6 +194,8 @@ namespace Neo.SmartContract
         /// <returns>The timestamp of the current block.</returns>
         protected internal ulong GetTime()
         {
+            if (PersistingBlock is null)
+                throw new InvalidOperationException("GetTime can only be called with Application trigger.");
             return PersistingBlock.Timestamp;
         }
 
@@ -217,7 +219,7 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
 
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContextState state = CurrentContext!.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
             {
                 p.CallingContext = CurrentContext;
@@ -258,17 +260,17 @@ namespace Neo.SmartContract
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
-                OracleResponse response = tx.GetAttribute<OracleResponse>();
+                OracleResponse? response = tx.GetAttribute<OracleResponse>();
                 if (response is null)
                 {
                     signers = tx.Signers;
                 }
                 else
                 {
-                    OracleRequest request = NativeContract.Oracle.GetRequest(SnapshotCache, response.Id);
-                    signers = NativeContract.Ledger.GetTransaction(SnapshotCache, request.OriginalTxid).Signers;
+                    OracleRequest request = NativeContract.Oracle.GetRequest(SnapshotCache, response.Id)!;
+                    signers = NativeContract.Ledger.GetTransaction(SnapshotCache, request.OriginalTxid)!.Signers;
                 }
-                Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
+                Signer? signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
                 foreach (WitnessRule rule in signer.GetAllRules())
                 {
@@ -295,9 +297,9 @@ namespace Neo.SmartContract
         /// <returns>The number of times the current contract has been called during the execution.</returns>
         protected internal int GetInvocationCounter()
         {
-            if (!invocationCounter.TryGetValue(CurrentScriptHash, out var counter))
+            if (!invocationCounter.TryGetValue(CurrentScriptHash!, out var counter))
             {
-                invocationCounter[CurrentScriptHash] = counter = 1;
+                invocationCounter[CurrentScriptHash!] = counter = 1;
             }
             return counter;
         }
@@ -338,7 +340,7 @@ namespace Neo.SmartContract
             try
             {
                 string message = state.ToStrictUtf8String();
-                Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
+                Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash!, message));
             }
             catch
             {
@@ -363,7 +365,7 @@ namespace Neo.SmartContract
                 throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
 
             string name = eventName.ToStrictUtf8String();
-            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
+            ContractState? contract = CurrentContext!.GetState<ExecutionContextState>().Contract;
             if (contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             var @event = contract.Manifest.Abi.Events.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.Ordinal));
@@ -380,19 +382,19 @@ namespace Neo.SmartContract
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
-            SendNotification(CurrentScriptHash, name, state);
+            SendNotification(CurrentScriptHash!, name, state);
         }
 
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName)
                 throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
-            if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
+            if (CurrentContext!.GetState<ExecutionContextState>().Contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
-            SendNotification(CurrentScriptHash, eventName.ToStrictUtf8String(), state);
+            SendNotification(CurrentScriptHash!, eventName.ToStrictUtf8String(), state);
         }
 
         /// <summary>
@@ -414,7 +416,7 @@ namespace Neo.SmartContract
             NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
-            CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
+            CurrentContext!.GetState<ExecutionContextState>().NotificationCount++;
         }
 
         /// <summary>
@@ -454,7 +456,7 @@ namespace Neo.SmartContract
         /// Get the Signers of the current transaction.
         /// </summary>
         /// <returns>The signers of the current transaction, or null if is not related to a transaction execution.</returns>
-        protected internal Signer[] GetCurrentSigners()
+        protected internal Signer[]? GetCurrentSigners()
         {
             if (ScriptContainer is Transaction tx)
                 return tx.Signers;

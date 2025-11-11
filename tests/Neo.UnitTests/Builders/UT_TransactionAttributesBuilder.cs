@@ -30,7 +30,7 @@ namespace Neo.UnitTests.Builders
         public void TestConflict()
         {
             var attr = TransactionAttributesBuilder.CreateEmpty()
-                .AddConflict(c => c.Hash = UInt256.Zero)
+                .AddConflict(UInt256.Zero)
                 .Build();
 
             Assert.IsNotNull(attr);

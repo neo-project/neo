@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Manifest
             Safe = @struct[4].GetBoolean();
         }
 
-        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             Struct @struct = (Struct)base.ToStackItem(referenceCounter);
             @struct.Add((byte)ReturnType);
@@ -66,11 +66,11 @@ namespace Neo.SmartContract.Manifest
         {
             ContractMethodDescriptor descriptor = new()
             {
-                Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
-                ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
-                Offset = json["offset"].GetInt32(),
-                Safe = json["safe"].GetBoolean()
+                Name = json["name"]!.GetString(),
+                Parameters = ((JArray)json["parameters"]!).Select(u => ContractParameterDefinition.FromJson((JObject)u!)).ToArray(),
+                ReturnType = Enum.Parse<ContractParameterType>(json["returntype"]!.GetString()),
+                Offset = json["offset"]!.GetInt32(),
+                Safe = json["safe"]!.GetBoolean()
             };
 
             if (string.IsNullOrEmpty(descriptor.Name))
@@ -98,7 +98,7 @@ namespace Neo.SmartContract.Manifest
             return json;
         }
 
-        public bool Equals(ContractMethodDescriptor other)
+        public bool Equals(ContractMethodDescriptor? other)
         {
             if (ReferenceEquals(this, other)) return true;
 
@@ -109,7 +109,7 @@ namespace Neo.SmartContract.Manifest
                 && Safe == other.Safe;
         }
 
-        public override bool Equals(object other)
+        public override bool Equals(object? other)
         {
             if (other is not ContractMethodDescriptor ev)
                 return false;

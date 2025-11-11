@@ -23,7 +23,7 @@ namespace Neo.Wallets.NEP6
             return Path.GetExtension(path).Equals(".json", StringComparison.InvariantCultureIgnoreCase);
         }
 
-        public Wallet CreateWallet(string name, string path, string password, ProtocolSettings settings)
+        public Wallet CreateWallet(string? name, string path, string password, ProtocolSettings settings)
         {
             if (File.Exists(path))
                 throw new InvalidOperationException("The wallet file already exists.");

@@ -29,7 +29,7 @@ namespace Neo.Extensions
         /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
         /// <param name="list">The elements of the array.</param>
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
-        public static ScriptBuilder CreateArray<T>(this ScriptBuilder builder, IReadOnlyList<T> list = null)
+        public static ScriptBuilder CreateArray<T>(this ScriptBuilder builder, IReadOnlyList<T>? list = null)
         {
             if (list is null || list.Count == 0)
                 return builder.Emit(OpCode.NEWARRAY0);
@@ -128,7 +128,7 @@ namespace Neo.Extensions
         /// <param name="method">The method to be called in the contract.</param>
         /// <param name="args">The arguments for calling the contract.</param>
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder builder, UInt160 scriptHash, string method, params object[] args)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder builder, UInt160 scriptHash, string method, params object?[] args)
         {
             return EmitDynamicCall(builder, scriptHash, method, CallFlags.All, args);
         }
@@ -142,7 +142,7 @@ namespace Neo.Extensions
         /// <param name="flags">The <see cref="CallFlags"/> for calling the contract.</param>
         /// <param name="args">The arguments for calling the contract.</param>
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder builder, UInt160 scriptHash, string method, CallFlags flags, params object[] args)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder builder, UInt160 scriptHash, string method, CallFlags flags, params object?[] args)
         {
             builder.CreateArray(args);
             builder.EmitPush(flags);
@@ -187,7 +187,7 @@ namespace Neo.Extensions
                         if (parameter.Value is BigInteger bi)
                             builder.EmitPush(bi);
                         else
-                            builder.EmitPush((BigInteger)typeof(BigInteger).GetConstructor([parameter.Value.GetType()]).Invoke([parameter.Value]));
+                            builder.EmitPush((BigInteger)typeof(BigInteger).GetConstructor([parameter.Value.GetType()])!.Invoke([parameter.Value]));
                         break;
                     case ContractParameterType.Hash160:
                         builder.EmitPush((UInt160)parameter.Value);
@@ -228,7 +228,7 @@ namespace Neo.Extensions
         /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
         /// <param name="obj">The data to be pushed.</param>
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
-        public static ScriptBuilder EmitPush(this ScriptBuilder builder, object obj)
+        public static ScriptBuilder EmitPush(this ScriptBuilder builder, object? obj)
         {
             switch (obj)
             {

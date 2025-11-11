@@ -80,9 +80,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             test.Height = NativeContract.Ledger.CurrentIndex(snapshotCache) + 1;
 
-            Assert.IsFalse(test.Verify(snapshotCache, new Transaction()));
+            Assert.IsFalse(test.Verify(snapshotCache, new Transaction { Signers = null!, Attributes = [test], Witnesses = null! }));
             test.Height--;
-            Assert.IsTrue(test.Verify(snapshotCache, new Transaction()));
+            Assert.IsTrue(test.Verify(snapshotCache, new Transaction { Signers = null!, Attributes = [test], Witnesses = null! }));
         }
     }
 }

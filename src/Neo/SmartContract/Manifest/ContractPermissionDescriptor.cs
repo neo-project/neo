@@ -14,6 +14,7 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.VM.Types;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -25,21 +26,23 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The hash of the contract. It can't be set with <see cref="Group"/>.
         /// </summary>
-        public UInt160 Hash { get; }
+        public UInt160? Hash { get; }
 
         /// <summary>
         /// The group of the contracts. It can't be set with <see cref="Hash"/>.
         /// </summary>
-        public ECPoint Group { get; }
+        public ECPoint? Group { get; }
 
         /// <summary>
         /// Indicates whether <see cref="Hash"/> is set.
         /// </summary>
+        [MemberNotNullWhen(true, nameof(Hash))]
         public bool IsHash => Hash != null;
 
         /// <summary>
         /// Indicates whether <see cref="Group"/> is set.
         /// </summary>
+        [MemberNotNullWhen(true, nameof(Group))]
         public bool IsGroup => Group != null;
 
         /// <summary>
@@ -47,7 +50,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public bool IsWildcard => Hash is null && Group is null;
 
-        private ContractPermissionDescriptor(UInt160 hash, ECPoint group)
+        private ContractPermissionDescriptor(UInt160? hash, ECPoint? group)
         {
             Hash = hash;
             Group = group;
@@ -102,13 +105,13 @@ namespace Neo.SmartContract.Manifest
             return new ContractPermissionDescriptor(null, null);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is not ContractPermissionDescriptor other) return false;
             return Equals(other);
         }
 
-        public bool Equals(ContractPermissionDescriptor other)
+        public bool Equals(ContractPermissionDescriptor? other)
         {
             if (other is null) return false;
             if (this == other) return true;
@@ -155,7 +158,7 @@ namespace Neo.SmartContract.Manifest
         /// Converts the permission descriptor to byte array.
         /// </summary>
         /// <returns>The converted byte array. Or <see langword="null"/> if it is a wildcard.</returns>
-        public byte[] ToArray()
+        public byte[]? ToArray()
         {
             return Hash?.ToArray() ?? Group?.EncodePoint(true);
         }

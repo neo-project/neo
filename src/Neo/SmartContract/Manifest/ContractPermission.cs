@@ -34,14 +34,14 @@ namespace Neo.SmartContract.Manifest
         /// If it specifies a public key of a group, then any contract in this group
         /// may be invoked; If it specifies a wildcard *, then any contract may be invoked.
         /// </summary>
-        public ContractPermissionDescriptor Contract { get; set; }
+        public required ContractPermissionDescriptor Contract { get; set; }
 
         /// <summary>
         /// Indicates which methods to be called.
         /// It can also be assigned with a wildcard *. If it is a wildcard *,
         /// then it means that any method can be called.
         /// </summary>
-        public WildcardContainer<string> Methods { get; set; }
+        public required WildcardContainer<string> Methods { get; set; }
 
         /// <summary>
         /// A default permission that both <see cref="Contract"/> and <see cref="Methods"/> fields are set to wildcard *.
@@ -63,16 +63,16 @@ namespace Neo.SmartContract.Manifest
             Methods = @struct[1] switch
             {
                 Null => WildcardContainer<string>.CreateWildcard(),
-                Array array => WildcardContainer<string>.Create(array.Select(p => p.GetString()).ToArray()),
+                Array array => WildcardContainer<string>.Create(array.Select(p => p.GetString()!).ToArray()),
                 _ => throw new ArgumentException("Methods field must be null or array", nameof(stackItem))
             };
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Struct(referenceCounter)
             {
-                Contract.IsWildcard ? StackItem.Null : Contract.IsHash ? Contract.Hash.ToArray() : Contract.Group.ToArray(),
+                Contract.IsWildcard ? StackItem.Null : Contract.IsHash ? Contract.Hash.ToArray() : Contract.Group!.ToArray(),
                 Methods.IsWildcard ? StackItem.Null : new Array(referenceCounter, Methods.Select(p => (StackItem)p)),
             };
         }
@@ -86,8 +86,8 @@ namespace Neo.SmartContract.Manifest
         {
             ContractPermission permission = new()
             {
-                Contract = ContractPermissionDescriptor.FromJson((JString)json["contract"]),
-                Methods = WildcardContainer<string>.FromJson(json["methods"], u => u.GetString()),
+                Contract = ContractPermissionDescriptor.FromJson((JString)json["contract"]!),
+                Methods = WildcardContainer<string>.FromJson(json["methods"]!, u => u.GetString()),
             };
             if (permission.Methods.Any(p => string.IsNullOrEmpty(p)))
                 throw new FormatException("Methods in ContractPermission has empty string");

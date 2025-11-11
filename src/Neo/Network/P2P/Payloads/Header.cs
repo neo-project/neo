@@ -27,93 +27,52 @@ namespace Neo.Network.P2P.Payloads
     /// </summary>
     public sealed class Header : IEquatable<Header>, IVerifiable
     {
-        private uint version;
-        private UInt256 prevHash;
-        private UInt256 merkleRoot;
-        private ulong timestamp;
-        private ulong nonce;
-        private uint index;
-        private byte primaryIndex;
-        private UInt160 nextConsensus;
-
-        /// <summary>
-        /// The witness of the block.
-        /// </summary>
-        public Witness Witness;
-
         /// <summary>
         /// The version of the block.
         /// </summary>
-        public uint Version
-        {
-            get => version;
-            set { version = value; _hash = null; }
-        }
+        public uint Version { get; set { field = value; _hash = null; } }
 
         /// <summary>
         /// The hash of the previous block.
         /// </summary>
-        public UInt256 PrevHash
-        {
-            get => prevHash;
-            set { prevHash = value; _hash = null; }
-        }
+        public required UInt256 PrevHash { get; set { field = value; _hash = null; } }
 
         /// <summary>
         /// The merkle root of the transactions.
         /// </summary>
-        public UInt256 MerkleRoot
-        {
-            get => merkleRoot;
-            set { merkleRoot = value; _hash = null; }
-        }
+        public required UInt256 MerkleRoot { get; set { field = value; _hash = null; } }
 
         /// <summary>
         /// The timestamp of the block.
         /// </summary>
-        public ulong Timestamp
-        {
-            get => timestamp;
-            set { timestamp = value; _hash = null; }
-        }
+        public ulong Timestamp { get; set { field = value; _hash = null; } }
 
         /// <summary>
         /// The first eight bytes of random number generated.
         /// </summary>
-        public ulong Nonce
-        {
-            get => nonce;
-            set { nonce = value; _hash = null; }
-        }
+        public ulong Nonce { get; set { field = value; _hash = null; } }
 
         /// <summary>
         /// The index of the block.
         /// </summary>
-        public uint Index
-        {
-            get => index;
-            set { index = value; _hash = null; }
-        }
+        public uint Index { get; set { field = value; _hash = null; } }
 
         /// <summary>
         /// The primary index of the consensus node that generated this block.
         /// </summary>
-        public byte PrimaryIndex
-        {
-            get => primaryIndex;
-            set { primaryIndex = value; _hash = null; }
-        }
+        public byte PrimaryIndex { get; set { field = value; _hash = null; } }
 
         /// <summary>
         /// The multi-signature address of the consensus nodes that generates the next block.
         /// </summary>
-        public UInt160 NextConsensus
-        {
-            get => nextConsensus;
-            set { nextConsensus = value; _hash = null; }
-        }
+        public required UInt160 NextConsensus { get; set { field = value; _hash = null; } }
 
-        private UInt256 _hash = null;
+        /// <summary>
+        /// The witness of the block.
+        /// </summary>
+        public required Witness Witness;
+
+        private UInt256? _hash = null;
 
         /// <inheritdoc/>
         public UInt256 Hash
@@ -165,25 +124,25 @@ namespace Neo.Network.P2P.Payloads
         void IVerifiable.DeserializeUnsigned(ref MemoryReader reader)
         {
             _hash = null;
-            version = reader.ReadUInt32();
-            if (version > 0) throw new FormatException($"`version`({version}) in Header must be 0");
-            prevHash = reader.ReadSerializable<UInt256>();
-            merkleRoot = reader.ReadSerializable<UInt256>();
-            timestamp = reader.ReadUInt64();
-            nonce = reader.ReadUInt64();
-            index = reader.ReadUInt32();
-            primaryIndex = reader.ReadByte();
-            nextConsensus = reader.ReadSerializable<UInt160>();
+            Version = reader.ReadUInt32();
+            if (Version > 0) throw new FormatException($"`version`({Version}) in Header must be 0");
+            PrevHash = reader.ReadSerializable<UInt256>();
+            MerkleRoot = reader.ReadSerializable<UInt256>();
+            Timestamp = reader.ReadUInt64();
+            Nonce = reader.ReadUInt64();
+            Index = reader.ReadUInt32();
+            PrimaryIndex = reader.ReadByte();
+            NextConsensus = reader.ReadSerializable<UInt160>();
         }
 
-        public bool Equals(Header other)
+        public bool Equals(Header? other)
         {
             if (other is null) return false;
             if (ReferenceEquals(other, this)) return true;
             return Hash.Equals(other.Hash);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as Header);
         }
@@ -195,10 +154,10 @@ namespace Neo.Network.P2P.Payloads
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
-            if (prevHash == UInt256.Zero) return [Witness.ScriptHash];
-            var prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash)
-                ?? throw new InvalidOperationException($"Block {prevHash} was not found");
-            return [prev.Header.nextConsensus];
+            if (PrevHash == UInt256.Zero) return [Witness.ScriptHash];
+            var prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash)
+                ?? throw new InvalidOperationException($"Block {PrevHash} was not found");
+            return [prev.Header.NextConsensus];
         }
 
         public void Serialize(BinaryWriter writer)
@@ -209,14 +168,14 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(version);
-            writer.Write(prevHash);
-            writer.Write(merkleRoot);
-            writer.Write(timestamp);
-            writer.Write(nonce);
-            writer.Write(index);
-            writer.Write(primaryIndex);
-            writer.Write(nextConsensus);
+            writer.Write(Version);
+            writer.Write(PrevHash);
+            writer.Write(MerkleRoot);
+            writer.Write(Timestamp);
+            writer.Write(Nonce);
+            writer.Write(Index);
+            writer.Write(PrimaryIndex);
+            writer.Write(NextConsensus);
         }
 
         /// <summary>
@@ -229,56 +188,56 @@ namespace Neo.Network.P2P.Payloads
             JObject json = new();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
-            json["version"] = version;
-            json["previousblockhash"] = prevHash.ToString();
-            json["merkleroot"] = merkleRoot.ToString();
-            json["time"] = timestamp;
-            json["nonce"] = nonce.ToString("X16");
-            json["index"] = index;
-            json["primary"] = primaryIndex;
-            json["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion);
+            json["version"] = Version;
+            json["previousblockhash"] = PrevHash.ToString();
+            json["merkleroot"] = MerkleRoot.ToString();
+            json["time"] = Timestamp;
+            json["nonce"] = Nonce.ToString("X16");
+            json["index"] = Index;
+            json["primary"] = PrimaryIndex;
+            json["nextconsensus"] = NextConsensus.ToAddress(settings.AddressVersion);
             json["witnesses"] = new JArray(Witness.ToJson());
             return json;
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
-            if (primaryIndex >= settings.ValidatorsCount)
+            if (PrimaryIndex >= settings.ValidatorsCount)
                 return false;
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
+            TrimmedBlock? prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
             if (prev is null) return false;
-            if (prev.Index + 1 != index) return false;
-            if (prev.Hash != prevHash) return false;
-            if (prev.Header.timestamp >= timestamp) return false;
+            if (prev.Index + 1 != Index) return false;
+            if (prev.Hash != PrevHash) return false;
+            if (prev.Header.Timestamp >= Timestamp) return false;
             if (!this.VerifyWitnesses(settings, snapshot, 3_00000000L)) return false;
             return true;
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
         {
-            Header prev = headerCache.Last;
+            Header? prev = headerCache.Last;
             if (prev is null) return Verify(settings, snapshot);
-            if (primaryIndex >= settings.ValidatorsCount)
+            if (PrimaryIndex >= settings.ValidatorsCount)
                 return false;
-            if (prev.Hash != prevHash) return false;
-            if (prev.index + 1 != index) return false;
-            if (prev.timestamp >= timestamp) return false;
-            return this.VerifyWitness(settings, snapshot, prev.nextConsensus, Witness, 3_00000000L, out _);
+            if (prev.Hash != PrevHash) return false;
+            if (prev.Index + 1 != Index) return false;
+            if (prev.Timestamp >= Timestamp) return false;
+            return this.VerifyWitness(settings, snapshot, prev.NextConsensus, Witness, 3_00000000L, out _);
         }
 
         public Header Clone()
         {
             return new Header()
             {
-                Version = version,
-                PrevHash = prevHash,
+                Version = Version,
+                PrevHash = PrevHash,
                 MerkleRoot = MerkleRoot,
-                Timestamp = timestamp,
-                Nonce = nonce,
-                Index = index,
-                PrimaryIndex = primaryIndex,
-                NextConsensus = nextConsensus,
-                Witness = Witness?.Clone(),
+                Timestamp = Timestamp,
+                Nonce = Nonce,
+                Index = Index,
+                PrimaryIndex = PrimaryIndex,
+                NextConsensus = NextConsensus,
+                Witness = Witness.Clone(),
                 _hash = _hash
             };
         }

@@ -62,7 +62,7 @@ namespace Neo.SmartContract.Native
             if (price <= 0) throw new ArgumentOutOfRangeException(nameof(price), "Price must be positive");
             AssertCommittee(engine);
 
-            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Price)).Set(price);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Price))!.Set(price);
         }
 
         /// <summary>
@@ -86,10 +86,10 @@ namespace Neo.SmartContract.Native
         {
             if (engine.InvocationStack.Count != 2) throw new InvalidOperationException();
             if (engine.GetInvocationCounter() != 1) throw new InvalidOperationException();
-            Transaction tx = (Transaction)engine.ScriptContainer;
-            OracleResponse response = tx.GetAttribute<OracleResponse>();
+            Transaction tx = (Transaction)engine.ScriptContainer!;
+            OracleResponse? response = tx.GetAttribute<OracleResponse>();
             if (response == null) throw new ArgumentException("Oracle response not found");
-            OracleRequest request = GetRequest(engine.SnapshotCache, response.Id);
+            OracleRequest? request = GetRequest(engine.SnapshotCache, response.Id);
             if (request == null) throw new ArgumentException("Oracle request not found");
             engine.SendNotification(Hash, "OracleResponse", new Array(engine.ReferenceCounter) { response.Id, request.OriginalTxid.ToArray() });
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits, engine.ReferenceCounter);
@@ -98,10 +98,10 @@ namespace Neo.SmartContract.Native
 
         private UInt256 GetOriginalTxid(ApplicationEngine engine)
         {
-            Transaction tx = (Transaction)engine.ScriptContainer;
-            OracleResponse response = tx.GetAttribute<OracleResponse>();
+            Transaction tx = (Transaction)engine.ScriptContainer!;
+            OracleResponse? response = tx.GetAttribute<OracleResponse>();
             if (response is null) return tx.Hash;
-            OracleRequest request = GetRequest(engine.SnapshotCache, response.Id);
+            OracleRequest request = GetRequest(engine.SnapshotCache, response.Id)!;
             return request.OriginalTxid;
         }
 
@@ -111,7 +111,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="id">The id of the request.</param>
         /// <returns>The pending request. Or <see langword="null"/> if no request with the specified id is found.</returns>
-        public OracleRequest GetRequest(IReadOnlyStore snapshot, ulong id)
+        public OracleRequest? GetRequest(IReadOnlyStore snapshot, ulong id)
         {
             var key = CreateStorageKey(Prefix_Request, id);
             return snapshot.TryGet(key, out var item) ? item.GetInteroperableClone<OracleRequest>() : null;
@@ -138,7 +138,7 @@ namespace Neo.SmartContract.Native
         public IEnumerable<(ulong, OracleRequest)> GetRequestsByUrl(IReadOnlyStore snapshot, string url)
         {
             var listKey = CreateStorageKey(Prefix_IdList, GetUrlHash(url));
-            IdList list = snapshot.TryGet(listKey, out var item) ? item.GetInteroperable<IdList>() : null;
+            IdList? list = snapshot.TryGet(listKey, out var item) ? item.GetInteroperable<IdList>() : null;
             if (list is null) yield break;
             foreach (ulong id in list)
             {
@@ -164,11 +164,11 @@ namespace Neo.SmartContract.Native
 
         internal override async ContractTask PostPersistAsync(ApplicationEngine engine)
         {
-            (UInt160 Account, BigInteger GAS)[] nodes = null;
-            foreach (Transaction tx in engine.PersistingBlock.Transactions)
+            (UInt160 Account, BigInteger GAS)[]? nodes = null;
+            foreach (Transaction tx in engine.PersistingBlock!.Transactions)
             {
                 //Filter the response transactions
-                OracleResponse response = tx.GetAttribute<OracleResponse>();
+                OracleResponse? response = tx.GetAttribute<OracleResponse>();
                 if (response is null) continue;
 
                 //Remove the request from storage
@@ -180,7 +180,7 @@ namespace Neo.SmartContract.Native
 
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList, GetUrlHash(request.Url));
-                using (var sealInterop = engine.SnapshotCache.GetAndChange(key).GetInteroperable(out IdList list))
+                using (var sealInterop = engine.SnapshotCache.GetAndChange(key)!.GetInteroperable(out IdList list))
                 {
                     if (!list.Remove(response.Id)) throw new InvalidOperationException();
                     if (list.Count == 0) engine.SnapshotCache.Delete(key);
@@ -207,7 +207,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback,
+        private async ContractTask Request(ApplicationEngine engine, string url, string? filter, string callback,
             StackItem userData, long gasForResponse /* In the unit of datoshi, 1 datoshi = 1e-8 GAS */)
         {
             var urlSize = url.GetStrictUtf8ByteCount();
@@ -218,7 +218,7 @@ namespace Neo.SmartContract.Native
             if (filterSize > MaxFilterLength)
                 throw new ArgumentException($"Filter size {filterSize} bytes exceeds maximum allowed size of {MaxFilterLength} bytes.");
 
-            var callbackSize = callback is null ? 0 : callback.GetStrictUtf8ByteCount();
+            var callbackSize = callback.GetStrictUtf8ByteCount();
             if (callbackSize > MaxCallbackLength)
                 throw new ArgumentException($"Callback size {callbackSize} bytes exceeds maximum allowed size of {MaxCallbackLength} bytes.");
 
@@ -235,12 +235,12 @@ namespace Neo.SmartContract.Native
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
-            var itemId = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId));
+            var itemId = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId))!;
             var id = (ulong)(BigInteger)itemId;
             itemId.Add(1);
 
             //Put the request to storage
-            if (!ContractManagement.IsContract(engine.SnapshotCache, engine.CallingScriptHash))
+            if (!ContractManagement.IsContract(engine.SnapshotCache, engine.CallingScriptHash!))
                 throw new InvalidOperationException();
             var request = new OracleRequest
             {
@@ -248,7 +248,7 @@ namespace Neo.SmartContract.Native
                 GasForResponse = gasForResponse,
                 Url = url,
                 Filter = filter,
-                CallbackContract = engine.CallingScriptHash,
+                CallbackContract = engine.CallingScriptHash!,
                 CallbackMethod = callback,
                 UserData = BinarySerializer.Serialize(userData, MaxUserDataLength, engine.Limits.MaxStackSize)
             };
@@ -266,7 +266,7 @@ namespace Neo.SmartContract.Native
 
             engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) {
                 id,
-                engine.CallingScriptHash.ToArray(),
+                engine.CallingScriptHash!.ToArray(),
                 url,
                 filter ?? StackItem.Null
             });
@@ -275,7 +275,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15)]
         private bool Verify(ApplicationEngine engine)
         {
-            Transaction tx = (Transaction)engine.ScriptContainer;
+            Transaction? tx = (Transaction?)engine.ScriptContainer;
             return tx?.GetAttribute<OracleResponse>() != null;
         }
 
@@ -286,7 +286,7 @@ namespace Neo.SmartContract.Native
                 return (ulong)item.GetInteger();
             }
 
-            protected override StackItem ElementToStackItem(ulong element, IReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ulong element, IReferenceCounter? referenceCounter)
             {
                 return element;
             }

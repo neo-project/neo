@@ -15,6 +15,7 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -88,13 +89,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Equals_Null()
-        {
-            var uut = new Header();
-            Assert.IsFalse(uut.Equals(null));
-        }
-
-        [TestMethod]
         public void CloneTest()
         {
             var uut = TestUtils.MakeHeader(null, UInt256.Zero);
@@ -108,7 +102,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameHeader()
         {
-            var uut = new Header();
+            var uut = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header));
             Assert.IsTrue(uut.Equals(uut));
         }
 
@@ -125,7 +119,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameObject()
         {
-            var uut = new Header();
+            var uut = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header));
             Assert.IsTrue(uut.Equals((object)uut));
         }
 
@@ -139,7 +133,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void TestWitness()
         {
-            IVerifiable item = new Header();
+            IVerifiable item = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header));
             void Actual() => item.Witnesses = null;
             Assert.ThrowsExactly<ArgumentNullException>(Actual);
 

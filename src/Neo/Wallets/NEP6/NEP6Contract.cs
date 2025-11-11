@@ -18,18 +18,18 @@ namespace Neo.Wallets.NEP6
 {
     internal class NEP6Contract : Contract
     {
-        public string[] ParameterNames;
+        public required string[] ParameterNames;
         public bool Deployed;
 
-        public static NEP6Contract FromJson(JObject json)
+        public static NEP6Contract? FromJson(JObject? json)
         {
             if (json == null) return null;
             return new NEP6Contract
             {
-                Script = Convert.FromBase64String(json["script"].AsString()),
-                ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].GetEnum<ContractParameterType>()).ToArray(),
-                ParameterNames = ((JArray)json["parameters"]).Select(p => p["name"].AsString()).ToArray(),
-                Deployed = json["deployed"].AsBoolean()
+                Script = Convert.FromBase64String(json["script"]!.AsString()),
+                ParameterList = ((JArray)json["parameters"]!).Select(p => p!["type"]!.GetEnum<ContractParameterType>()).ToArray(),
+                ParameterNames = ((JArray)json["parameters"]!).Select(p => p!["name"]!.AsString()).ToArray(),
+                Deployed = json["deployed"]!.AsBoolean()
             };
         }
 

@@ -21,12 +21,12 @@ namespace Neo.Wallets
         /// <summary>
         /// Triggered when a wallet is opened or closed.
         /// </summary>
-        event EventHandler<Wallet> WalletChanged;
+        event EventHandler<Wallet?> WalletChanged;
 
         /// <summary>
         /// Get the currently opened <see cref="Wallet"/> instance.
         /// </summary>
         /// <returns>The opened wallet. Or <see langword="null"/> if no wallet is opened.</returns>
-        Wallet GetWallet();
+        Wallet? GetWallet();
     }
 }

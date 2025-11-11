@@ -90,6 +90,7 @@ namespace Neo.UnitTests.Wallets.NEP6
                 Attributes = [],
                 Script = new byte[1],
                 Signers = [new Signer() { Account = acc.ScriptHash }],
+                Witnesses = []
             };
             var ctx = new ContractParametersContext(TestBlockchain.GetTestSnapshotCache(), tx, TestProtocolSettings.Default.Network);
             Assert.IsTrue(uut.Sign(ctx));

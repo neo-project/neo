@@ -22,7 +22,7 @@ namespace Neo.Ledger
         /// <summary>
         /// The <see cref="Transaction"/>s that is being removed.
         /// </summary>
-        public IReadOnlyCollection<Transaction> Transactions { get; init; }
+        public required IReadOnlyCollection<Transaction> Transactions { get; init; }
 
         /// <summary>
         /// The reason a transaction was removed.

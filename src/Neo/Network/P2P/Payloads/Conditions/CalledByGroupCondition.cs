@@ -30,13 +30,13 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The group to be checked.
         /// </summary>
-        public ECPoint Group;
+        public required ECPoint Group;
 
         public override int Size => base.Size + Group.Size;
         public override WitnessConditionType Type => WitnessConditionType.CalledByGroup;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(CalledByGroupCondition other)
+        public bool Equals(CalledByGroupCondition? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -47,7 +47,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null) return false;
             return obj is CalledByGroupCondition cc && Equals(cc);
@@ -66,7 +66,8 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override bool Match(ApplicationEngine engine)
         {
             engine.ValidateCallFlags(CallFlags.ReadStates);
-            ContractState contract = NativeContract.ContractManagement.GetContract(engine.SnapshotCache, engine.CallingScriptHash);
+            if (engine.CallingScriptHash is null) return false;
+            ContractState? contract = NativeContract.ContractManagement.GetContract(engine.SnapshotCache, engine.CallingScriptHash);
             return contract is not null && contract.Manifest.Groups.Any(p => p.PubKey.Equals(Group));
         }
 
@@ -77,7 +78,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            Group = ECPoint.Parse(json["group"].GetString(), ECCurve.Secp256r1);
+            Group = ECPoint.Parse(json["group"]!.GetString(), ECCurve.Secp256r1);
         }
 
         public override JObject ToJson()
@@ -87,7 +88,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var result = (Array)base.ToStackItem(referenceCounter);
             result.Add(Group.ToArray());

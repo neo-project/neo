@@ -44,7 +44,7 @@ namespace Neo.Extensions
         /// <param name="value">The byte array to be converted.</param>
         /// <param name="start">The offset into the byte array from which to begin using data.</param>
         /// <returns>The converted <see cref="ISerializable"/> object.</returns>
-        public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
+        public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable
         {
             MemoryReader reader = new(value.AsMemory(start));
             return reader.ReadSerializable<T>();
@@ -57,7 +57,7 @@ namespace Neo.Extensions
         /// <param name="value">The byte array to be converted.</param>
         /// <param name="max">The maximum number of elements contained in the converted array.</param>
         /// <returns>The converted <see cref="ISerializable"/> array.</returns>
-        public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x1000000) where T : ISerializable, new()
+        public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x1000000) where T : ISerializable
         {
             MemoryReader reader = new(value);
             return reader.ReadSerializableArray<T>(max);

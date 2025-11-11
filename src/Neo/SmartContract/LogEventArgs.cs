@@ -22,7 +22,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The container that containing the executed script.
         /// </summary>
-        public IVerifiable ScriptContainer { get; }
+        public IVerifiable? ScriptContainer { get; }
 
         /// <summary>
         /// The script hash of the contract that sends the log.
@@ -40,7 +40,7 @@ namespace Neo.SmartContract
         /// <param name="container">The container that containing the executed script.</param>
         /// <param name="scriptHash">The script hash of the contract that sends the log.</param>
         /// <param name="message">The message of the log.</param>
-        public LogEventArgs(IVerifiable container, UInt160 scriptHash, string message)
+        public LogEventArgs(IVerifiable? container, UInt160 scriptHash, string message)
         {
             ScriptContainer = container;
             ScriptHash = scriptHash;

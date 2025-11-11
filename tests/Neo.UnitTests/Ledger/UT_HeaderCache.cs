@@ -24,7 +24,11 @@ namespace Neo.UnitTests.Ledger
             var cache = new HeaderCache();
             var header = new Header
             {
-                Index = 1
+                PrevHash = UInt256.Zero,
+                MerkleRoot = null!,
+                Index = 1,
+                NextConsensus = null!,
+                Witness = null!
             };
             cache.Add(header);
 
@@ -76,7 +80,14 @@ namespace Neo.UnitTests.Ledger
             // Fill the cache
             for (uint i = 0; i < capacity; i++)
             {
-                cache.Add(new Header { Index = i });
+                cache.Add(new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = null!,
+                    Index = i,
+                    NextConsensus = null!,
+                    Witness = null!
+                });
             }
 
             Assert.AreEqual((int)capacity, cache.Count);
@@ -84,7 +95,14 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(capacity - 1, cache.Last.Index);
 
             // Try adding one more
-            cache.Add(new Header { Index = capacity });
+            cache.Add(new Header
+            {
+                PrevHash = null!,
+                MerkleRoot = null!,
+                Index = capacity,
+                NextConsensus = null!,
+                Witness = null!
+            });
 
             // Verify count did not increase and last item remains the same
             Assert.AreEqual((int)capacity, cache.Count);

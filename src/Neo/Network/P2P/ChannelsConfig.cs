@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using System.Net;
 
 namespace Neo.Network.P2P
@@ -76,5 +74,3 @@ namespace Neo.Network.P2P
         public int MaxKnownHashes { get; set; } = DefaultMaxKnownHashes;
     }
 }
-
-#nullable disable
