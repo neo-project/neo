@@ -361,7 +361,7 @@ namespace Neo.SmartContract.Native
             var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
                     ?? throw new InvalidOperationException("Is not a valid contract");
 
-            if (contract.Manifest.Abi.GetMethod(method, argCount) == null)
+            if (contract.Manifest.Abi.GetMethod(method, argCount) is null)
                 throw new InvalidOperationException($"{method} with {argCount} args is not a valid method of {contractHash}");
 
             // Set

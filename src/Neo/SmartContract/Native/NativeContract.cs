@@ -450,7 +450,7 @@ namespace Neo.SmartContract.Native
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
                 for (int i = 0; i < method.Parameters.Length; i++)
-                    parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
+                    parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i])!);
                 object? returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
