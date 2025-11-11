@@ -68,19 +68,7 @@ namespace Neo.Network.P2P
         /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
         /// <param name="network">The magic number of the network.</param>
         /// <returns>The data to hash.</returns>
-        public static byte[] GetSignData(this IVerifiable verifiable, uint network)
-        {
-            /* Same as:
-            using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms);
-            writer.Write(network);
-            writer.Write(verifiable.Hash);
-            writer.Flush();
-            return ms.ToArray();
-            */
-
-            return GetSignData(verifiable.Hash, network);
-        }
+        public static byte[] GetSignData(this IVerifiable verifiable, uint network) => GetSignData(verifiable.Hash, network);
 
         /// <summary>
         /// Gets the data to be hashed.
