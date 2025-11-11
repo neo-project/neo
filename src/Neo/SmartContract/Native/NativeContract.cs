@@ -442,11 +442,11 @@ namespace Neo.SmartContract.Native
                     // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                     engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
                 }
-                List<object> parameters = new();
+                List<object?> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
                 for (int i = 0; i < method.Parameters.Length; i++)
-                    parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i])!);
+                    parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
                 object? returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
