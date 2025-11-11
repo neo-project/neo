@@ -246,10 +246,14 @@ namespace Neo.Cryptography
         /// Computes the hash value for the specified byte array using the blake2b-512 algorithm.
         /// </summary>
         /// <param name="source">The input to compute the hash code for.</param>
-        /// <param name="salt">The salt to use for the hash and must be 16 bytes.</param>
+        /// <param name="salt">The salt to use for the hash and must be null or 16 bytes.</param>
         /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentException">Thrown when the salt is not null or 16 bytes.</exception>
         public static byte[] Blake2b_512(this ReadOnlySpan<byte> source, byte[]? salt = null)
         {
+            if (salt is not null && salt.Length != 16)
+                throw new ArgumentException("The salt must be null or 16 bytes.", nameof(salt));
+
             var blake2b = new Blake2bDigest(null, 64, salt, null);
             blake2b.BlockUpdate(source);
 
@@ -262,10 +266,14 @@ namespace Neo.Cryptography
         /// Computes the hash value for the specified byte array using the blake2b-256 algorithm.
         /// </summary>
         /// <param name="source">The input to compute the hash code for.</param>
-        /// <param name="salt">The salt to use for the hash and must be 16 bytes.</param>
+        /// <param name="salt">The salt to use for the hash and must be null or 16 bytes.</param>
         /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentException">Thrown when the salt is not null or 16 bytes.</exception>
         public static byte[] Blake2b_256(this ReadOnlySpan<byte> source, byte[]? salt = null)
         {
+            if (salt is not null && salt.Length != 16)
+                throw new ArgumentException("The salt must be null or 16 bytes.", nameof(salt));
+
             var blake2b = new Blake2bDigest(null, 32, salt, null);
             blake2b.BlockUpdate(source);
 
