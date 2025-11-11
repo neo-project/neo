@@ -86,7 +86,7 @@ namespace Neo.SmartContract.Native
         public const uint MaxMaxTraceableBlocks = 2102400;
 
         private const byte Prefix_BlockedAccount = 15;
-        internal const byte Prefix_WhitelistedFeeContracts = 16;
+        private const byte Prefix_WhitelistedFeeContracts = 16;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
@@ -330,11 +330,10 @@ namespace Neo.SmartContract.Native
                 // Emit event recovering the values from the Key
 
                 var keyData = key.ToArray().AsSpan();
-                var argCount = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(StorageKey.UInt160Length, 4));
-                var method = keyData[(StorageKey.UInt160Length + 4)..];
+                (var method, var argCount) = StorageKey.ReadMethodAndArgCount(key.ToArray().AsSpan());
 
                 engine.SendNotification(Hash, WhitelistChangedEventName,
-                    [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToArray()),
+                    [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
                     new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
             }
 

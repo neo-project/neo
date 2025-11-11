@@ -19,7 +19,6 @@ using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -77,7 +76,7 @@ namespace Neo.SmartContract
         private const int ByteLength = PrefixLength + sizeof(byte);
         private const int Int32Length = PrefixLength + sizeof(int);
         private const int Int64Length = PrefixLength + sizeof(long);
-        internal const int UInt160Length = PrefixLength + UInt160.Length;
+        private const int UInt160Length = PrefixLength + UInt160.Length;
         private const int UInt256Length = PrefixLength + UInt256.Length;
         private const int UInt256UInt160Length = PrefixLength + UInt256.Length + UInt160.Length;
 
@@ -197,7 +196,7 @@ namespace Neo.SmartContract
         {
             const int HashAndInt = UInt160Length + sizeof(int);
 
-            var methodData = Encoding.UTF8.GetBytes(methodName);
+            var methodData = methodName.ToStrictUtf8Bytes();
             var data = new byte[HashAndInt + methodData.Length];
 
             FillHeader(data, id, prefix);
@@ -206,6 +205,13 @@ namespace Neo.SmartContract
             Array.Copy(methodData, 0, data, HashAndInt, methodData.Length);
 
             return new(id, data);
+        }
+
+        internal static (string methodName, int bigEndian) ReadMethodAndArgCount(ReadOnlySpan<byte> keyData)
+        {
+            var argCount = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(UInt160Length, 4));
+            var method = keyData[(UInt160Length + 4)..];
+            return (method.ToStrictUtf8String(), argCount);
         }
 
         /// <summary>
