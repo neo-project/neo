@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Native
 {
     partial class CryptoLib
     {
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19)]
         public static byte[] Bn254Serialize(InteropInterface point)
         {
             return point.GetInterface<object>() switch
@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19)]
         public static InteropInterface Bn254Deserialize(byte[] data)
         {
             ArgumentNullException.ThrowIfNull(data);
@@ -44,7 +44,7 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19)]
         public static InteropInterface Bn254Add(InteropInterface x, InteropInterface y)
         {
             var pointX = GetBn254G1(x);
@@ -60,7 +60,7 @@ namespace Neo.SmartContract.Native
             return new InteropInterface(new Bn254G1(BN254.SerializeG1(result)));
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 5)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5)]
         public static bool Bn254Equal(InteropInterface x, InteropInterface y)
         {
             return (x.GetInterface<object>(), y.GetInterface<object>()) switch
@@ -71,7 +71,7 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21)]
         public static InteropInterface Bn254Mul(InteropInterface point, byte[] scalar)
         {
             ArgumentNullException.ThrowIfNull(scalar);
@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native
             return new InteropInterface(new Bn254G1(BN254.SerializeG1(result)));
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21)]
         public static byte[] Bn254Pairing(Array pairs)
         {
             ArgumentNullException.ThrowIfNull(pairs);
@@ -121,21 +121,21 @@ namespace Neo.SmartContract.Native
             return BN254.Pairing(buffer);
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19, Name = "bn254_add")]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19, Name = "bn254_add")]
         public static byte[] Bn254AddRaw(byte[] input)
         {
             ArgumentNullException.ThrowIfNull(input);
             return BN254.Add(input);
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21, Name = "bn254_mul")]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21, Name = "bn254_mul")]
         public static byte[] Bn254MulRaw(byte[] input)
         {
             ArgumentNullException.ThrowIfNull(input);
             return BN254.Mul(input);
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21, Name = "bn254_pairing")]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21, Name = "bn254_pairing")]
         public static byte[] Bn254PairingRaw(byte[] input)
         {
             ArgumentNullException.ThrowIfNull(input);
