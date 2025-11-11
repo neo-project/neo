@@ -26,6 +26,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -39,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestSetup()
         {
             _snapshot = TestBlockchain.GetTestSnapshotCache();
-            _persistingBlock = new Block { Header = new() };
+            _persistingBlock = (Block)RuntimeHelpers.GetUninitializedObject(typeof(Block));
         }
 
         [TestMethod]
@@ -52,7 +53,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_OnNEP17Payment()
         {
             var snapshot = _snapshot.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             var to = NativeContract.Notary.Hash.ToArray();
 
@@ -117,7 +129,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_ExpirationOf()
         {
             var snapshot = _snapshot.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             var ntr = NativeContract.Notary.Hash.ToArray();
 
@@ -189,7 +212,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_LockDepositUntil()
         {
             var snapshot = _snapshot.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
             // Set proper current index for deposit's Till parameter check.
@@ -239,7 +273,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_BalanceOf()
         {
             var snapshot = _snapshot.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             var fromAddr = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
             var from = fromAddr.ToArray();
             var hash = NativeContract.Notary.Hash.ToArray();
@@ -324,7 +369,11 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.RoleManagement.Call(
                 snapshot,
                 new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                new Block { Header = new() },
+                new Block
+                {
+                    Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                    Transactions = []
+                },
                 "designateAsRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
                 new ContractParameter(ContractParameterType.Array)
@@ -362,7 +411,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Withdraw()
         {
             var snapshot = _snapshot.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             var fromAddr = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
             var from = fromAddr.ToArray();
 
@@ -450,6 +510,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 {
                     Signers = [new() { Account = new UInt160(address), Scopes = WitnessScope.Global }],
                     Attributes = [],
+                    Witnesses = null!
                 },
                 snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
@@ -477,6 +538,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 {
                     Signers = [new() { Account = accFrom, Scopes = WitnessScope.Global }],
                     Attributes = [],
+                    Witnesses = null!
                 },
                 snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
@@ -506,7 +568,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_SetMaxNotValidBeforeDelta()
         {
             var snapshot = _snapshot.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
             var committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             using var engine = ApplicationEngine.Create(TriggerType.Application,
@@ -566,7 +639,11 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.RoleManagement.Call(
                 snapshot,
                 new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                new Block { Header = new() },
+                new Block
+                {
+                    Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                    Transactions = []
+                },
                 "designateAsRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
                 new ContractParameter(ContractParameterType.Array)
@@ -689,7 +766,11 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.RoleManagement.Call(
                 snapshot,
                 new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                new Block { Header = new() },
+                new Block
+                {
+                    Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                    Transactions = []
+                },
                 "designateAsRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
                 new ContractParameter(ContractParameterType.Array)

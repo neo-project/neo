@@ -27,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The header of the block.
         /// </summary>
-        public Header Header;
+        public required Header Header;
 
         /// <summary>
         /// The number of the transactions in the block.
@@ -37,7 +37,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The nodes of the transactions hash tree.
         /// </summary>
-        public UInt256[] Hashes;
+        public required UInt256[] Hashes;
 
         /// <summary>
         /// The data in the <see cref="BloomFilter"/> that filtered the block.

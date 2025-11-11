@@ -12,6 +12,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Plugins.RpcServer
 {
@@ -49,7 +50,7 @@ namespace Neo.Plugins.RpcServer
         /// <typeparam name="T">The return type</typeparam>
         /// <returns>The execution result</returns>
         /// <exception cref="RpcException">The Rpc exception</exception>
-        public static T NotNull_Or<T>(this T? result, RpcError err)
+        public static T NotNull_Or<T>([NotNull] this T? result, RpcError err)
         {
             if (result == null) throw new RpcException(err);
             return result;

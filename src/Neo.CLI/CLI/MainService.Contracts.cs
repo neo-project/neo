@@ -101,7 +101,7 @@ namespace Neo.CLI
                 ConsoleHelper.Error(GetExceptionMessage(e));
                 return;
             }
-            ContractState contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
+            ContractState? contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
             if (contract == null)
             {
                 ConsoleHelper.Warning($"Can't upgrade, contract hash not exist: {scriptHash}");
@@ -220,17 +220,17 @@ namespace Neo.CLI
             // Find the method in the ABI with matching parameter count
             var paramCount = args?.Count ?? 0;
             var method = contract.Manifest.Abi.GetMethod(operation, paramCount);
-            if (method == null)
+            if (method is null)
             {
                 // Try to find any method with that name for a better error message
                 var anyMethod = contract.Manifest.Abi.GetMethod(operation, -1);
-                if (anyMethod != null)
+                if (anyMethod is null)
                 {
-                    ConsoleHelper.Error($"Method '{operation}' exists but expects {anyMethod.Parameters.Length} parameters, not {paramCount}.");
+                    ConsoleHelper.Error($"Method '{operation}' does not exist in this contract.");
                 }
                 else
                 {
-                    ConsoleHelper.Error($"Method '{operation}' does not exist in this contract.");
+                    ConsoleHelper.Error($"Method '{operation}' exists but expects {anyMethod.Parameters.Length} parameters, not {paramCount}.");
                 }
                 return;
             }

@@ -23,22 +23,22 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the current context.
         /// </summary>
-        public UInt160 ScriptHash { get; set; }
+        public UInt160? ScriptHash { get; set; }
 
         /// <summary>
         /// The calling context.
         /// </summary>
-        public ExecutionContext CallingContext { get; set; }
+        public ExecutionContext? CallingContext { get; set; }
 
         /// <summary>
         /// The script hash of the calling native contract. Used in native contracts only.
         /// </summary>
-        internal UInt160 NativeCallingScriptHash { get; set; }
+        internal UInt160? NativeCallingScriptHash { get; set; }
 
         /// <summary>
         /// The <see cref="ContractState"/> of the current context.
         /// </summary>
-        public ContractState Contract { get; set; }
+        public ContractState? Contract { get; set; }
 
         /// <summary>
         /// The <see cref="SmartContract.CallFlags"/> of the current context.
@@ -46,9 +46,9 @@ namespace Neo.SmartContract
         public CallFlags CallFlags { get; set; } = CallFlags.All;
 
         [Obsolete("Use SnapshotCache instead")]
-        public DataCache Snapshot => SnapshotCache;
+        public DataCache? Snapshot => SnapshotCache;
 
-        public DataCache SnapshotCache { get; set; }
+        public DataCache? SnapshotCache { get; set; }
 
         public int NotificationCount { get; set; }
 

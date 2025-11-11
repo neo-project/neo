@@ -42,8 +42,11 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] RIPEMD160(this byte[] value)
         {
-            using var ripemd160 = new RIPEMD160Managed();
-            return ripemd160.ComputeHash(value);
+            var digest = new RipeMD160Digest();
+            var buffer = new byte[digest.GetDigestSize()];
+            digest.BlockUpdate(value, 0, value.Length);
+            digest.DoFinal(buffer, 0);
+            return buffer;
         }
 
         /// <summary>
@@ -53,12 +56,11 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] RIPEMD160(this ReadOnlySpan<byte> value)
         {
-            using var ripemd160 = new RIPEMD160Managed();
-
-            var output = new byte[ripemd160.HashSize / 8];
-            if (!ripemd160.TryComputeHash(value, output.AsSpan(), out _))
-                throw new CryptographicException("Failed to compute RIPEMD160 hash. The hash computation operation could not be completed.");
-            return output;
+            var digest = new RipeMD160Digest();
+            var buffer = new byte[digest.GetDigestSize()];
+            digest.BlockUpdate(value);
+            digest.DoFinal(buffer, 0);
+            return buffer;
         }
 
         /// <summary>
@@ -201,10 +203,17 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
-        public static byte[] Keccak256(this byte[] value)
+        public static byte[] Keccak256(this byte[] value) => value.AsSpan().Keccak256();
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Keccak256(this ReadOnlySpan<byte> value)
         {
             var keccak = new KeccakDigest(256);
-            keccak.BlockUpdate(value, 0, value.Length);
+            keccak.BlockUpdate(value);
             var result = new byte[keccak.GetDigestSize()];
             keccak.DoFinal(result, 0);
             return result;
@@ -215,22 +224,9 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
-        public static byte[] Keccak256(this ReadOnlySpan<byte> value)
-        {
-            return Keccak256(value.ToArray());
-        }
+        public static byte[] Keccak256(this Span<byte> value) => ((ReadOnlySpan<byte>)value).Keccak256();
 
-        /// <summary>
-        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
-        /// </summary>
-        /// <param name="value">The input to compute the hash code for.</param>
-        /// <returns>The computed hash code.</returns>
-        public static byte[] Keccak256(this Span<byte> value)
-        {
-            return Keccak256(value.ToArray());
-        }
-
-        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
+        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[]? associatedData = null)
         {
             if (nonce.Length != AesNonceSizeBytes)
                 throw new ArgumentOutOfRangeException(nameof(nonce), $"`nonce` must be {AesNonceSizeBytes} bytes");
@@ -258,7 +254,7 @@ namespace Neo.Cryptography
             return [.. nonce, .. cipherBytes, .. tag];
         }
 
-        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
+        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[]? associatedData = null)
         {
             if (encryptedData.Length < AesNonceSizeBytes + AesTagSizeBytes)
                 throw new ArgumentException($"The encryptedData.Length must be greater than {AesNonceSizeBytes} + {AesTagSizeBytes}");

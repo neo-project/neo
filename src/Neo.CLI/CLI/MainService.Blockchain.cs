@@ -99,7 +99,7 @@ namespace Neo.CLI
                     return;
                 }
 
-                var block = NativeContract.Ledger.GetHeader(NeoSystem.StoreView, tx.BlockIndex);
+                var block = NativeContract.Ledger.GetHeader(NeoSystem.StoreView, tx.BlockIndex)!;
 
                 var transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 transactionDatetime = transactionDatetime.AddMilliseconds(block.Timestamp).ToLocalTime();
@@ -126,20 +126,20 @@ namespace Neo.CLI
 
                 foreach (var signer in tx.Transaction.Signers)
                 {
-                    if (signer.Rules.Length == 0)
-                        ConsoleHelper.Info("", "             Rules: ", "[]");
-                    else
+                    if (signer.Rules?.Length > 0)
                         ConsoleHelper.Info("", "             Rules: ", $"[{string.Join(", ", signer.Rules.Select(s => $"\"{s.ToJson()}\""))}]");
+                    else
+                        ConsoleHelper.Info("", "             Rules: ", "[]");
                     ConsoleHelper.Info("", "           Account: ", $"{signer.Account}");
                     ConsoleHelper.Info("", "            Scopes: ", $"{signer.Scopes}");
-                    if (signer.AllowedContracts.Length == 0)
-                        ConsoleHelper.Info("", "  AllowedContracts: ", "[]");
-                    else
+                    if (signer.AllowedContracts?.Length > 0)
                         ConsoleHelper.Info("", "  AllowedContracts: ", $"[{string.Join(", ", signer.AllowedContracts.Select(s => s.ToString()))}]");
-                    if (signer.AllowedGroups.Length == 0)
-                        ConsoleHelper.Info("", "     AllowedGroups: ", "[]");
                     else
+                        ConsoleHelper.Info("", "  AllowedContracts: ", "[]");
+                    if (signer.AllowedGroups?.Length > 0)
                         ConsoleHelper.Info("", "     AllowedGroups: ", $"[{string.Join(", ", signer.AllowedGroups.Select(s => s.ToString()))}]");
+                    else
+                        ConsoleHelper.Info("", "     AllowedGroups: ", "[]");
                     ConsoleHelper.Info("", "              Size: ", $"{signer.Size} Byte(s)");
                     ConsoleHelper.Info();
                 }
@@ -209,15 +209,17 @@ namespace Neo.CLI
             {
                 ContractState? contract = null;
                 NativeContract? nativeContract = null;
-                var isHash = UInt160.TryParse(nameOrHash, out var scriptHash);
-                if (isHash)
+                bool isHash;
+                if (UInt160.TryParse(nameOrHash, out var scriptHash))
                 {
+                    isHash = true;
                     contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
                     if (contract is null)
                         nativeContract = NativeContract.Contracts.SingleOrDefault(s => s.Hash == scriptHash);
                 }
                 else
                 {
+                    isHash = false;
                     nativeContract = NativeContract.Contracts.SingleOrDefault(s => s.Name.Equals(nameOrHash, StringComparison.InvariantCultureIgnoreCase));
                     if (nativeContract != null)
                         contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, nativeContract.Hash);

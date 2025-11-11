@@ -91,7 +91,7 @@ namespace Neo.Plugins.Trackers.NEP_17
             }
         }
 
-        private void HandleNotificationNep17(IVerifiable scriptContainer, UInt160 asset, Array stateItems, HashSet<BalanceChangeRecord> balanceChangeRecords, ref uint transferIndex)
+        private void HandleNotificationNep17(IVerifiable? scriptContainer, UInt160 asset, Array stateItems, HashSet<BalanceChangeRecord> balanceChangeRecords, ref uint transferIndex)
         {
             if (stateItems.Count != 3) return;
             var transferRecord = GetTransferRecord(asset, stateItems);
@@ -192,7 +192,7 @@ namespace Neo.Plugins.Trackers.NEP_17
                     var engine = ApplicationEngine.Run(script.ToArray(), _neoSystem.StoreView, settings: _neoSystem.Settings);
                     var symbol = engine.ResultStack.Pop().GetString();
                     var decimals = engine.ResultStack.Pop().GetInteger();
-                    var name = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, key.AssetScriptHash).Manifest.Name;
+                    var name = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, key.AssetScriptHash)!.Manifest.Name;
 
                     balances.Add(new JObject
                     {

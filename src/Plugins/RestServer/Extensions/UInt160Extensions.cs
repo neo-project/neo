@@ -19,6 +19,7 @@ namespace Neo.Plugins.RestServer.Extensions
         public static bool IsValidNep17(this UInt160 scriptHash)
         {
             var contractState = NativeContract.ContractManagement.GetContract(RestServerPlugin.NeoSystem!.StoreView, scriptHash);
+            if (contractState is null) return false;
             return ContractHelper.IsNep17Supported(contractState);
         }
 

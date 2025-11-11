@@ -14,6 +14,7 @@ using Neo.Json;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -31,10 +32,10 @@ namespace Neo.Wallets.NEP6
     public class NEP6Wallet : Wallet
     {
         private SecureString password;
-        private string name;
+        private string? name;
         private Version version;
         private readonly Dictionary<UInt160, NEP6Account> accounts;
-        private readonly JToken extra;
+        private readonly JToken? extra;
 
         /// <summary>
         /// The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.
@@ -60,12 +61,12 @@ namespace Neo.Wallets.NEP6
         /// <param name="password">The password of the wallet.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <param name="name">The name of the wallet. If the wallet is loaded from an existing file, this parameter is ignored.</param>
-        public NEP6Wallet(string path, string password, ProtocolSettings settings, string name = null) : base(path, settings)
+        public NEP6Wallet(string path, string password, ProtocolSettings settings, string? name = null) : base(path, settings)
         {
             this.password = password.ToSecureString();
             if (File.Exists(path))
             {
-                var wallet = (JObject)JToken.Parse(File.ReadAllBytes(path));
+                var wallet = (JObject)JToken.Parse(File.ReadAllBytes(path))!;
                 LoadFromJson(wallet, out Scrypt, out accounts, out extra);
             }
             else
@@ -91,12 +92,13 @@ namespace Neo.Wallets.NEP6
             LoadFromJson(json, out Scrypt, out accounts, out extra);
         }
 
-        private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JToken extra)
+        [MemberNotNull(nameof(version))]
+        private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JToken? extra)
         {
-            version = Version.Parse(wallet["version"].AsString());
+            version = Version.Parse(wallet["version"]!.AsString());
             name = wallet["name"]?.AsString();
-            scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]);
-            accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JObject)p, this)).ToDictionary(p => p.ScriptHash);
+            scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]!);
+            accounts = ((JArray)wallet["accounts"]!).Select(p => NEP6Account.FromJson((JObject)p!, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
             if (!VerifyPasswordInternal(password.GetClearText()))
                 throw new InvalidOperationException("Incorrect password provided for NEP6 wallet. Please verify the password and try again.");
@@ -117,7 +119,7 @@ namespace Neo.Wallets.NEP6
                     }
                     else
                     {
-                        var contractOld = (NEP6Contract)accountOld.Contract;
+                        var contractOld = (NEP6Contract?)accountOld.Contract;
                         if (contractOld != null)
                         {
                             NEP6Contract contract = (NEP6Contract)account.Contract;
@@ -159,7 +161,7 @@ namespace Neo.Wallets.NEP6
             return account;
         }
 
-        public override WalletAccount CreateAccount(Contract contract, KeyPair key = null)
+        public override WalletAccount CreateAccount(Contract contract, KeyPair? key = null)
         {
             if (contract is not NEP6Contract nep6contract)
             {
@@ -211,11 +213,11 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        public override WalletAccount GetAccount(UInt160 scriptHash)
+        public override WalletAccount? GetAccount(UInt160 scriptHash)
         {
             lock (accounts)
             {
-                accounts.TryGetValue(scriptHash, out NEP6Account account);
+                accounts.TryGetValue(scriptHash, out NEP6Account? account);
                 return account;
             }
         }
@@ -236,9 +238,9 @@ namespace Neo.Wallets.NEP6
                 throw new PlatformNotSupportedException("Importing certificates is not supported on macOS.");
             }
             KeyPair key;
-            using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
+            using (ECDsa ecdsa = cert.GetECDsaPrivateKey() ?? throw new ArgumentException("The certificate must contains a private key.", nameof(cert)))
             {
-                key = new KeyPair(ecdsa.ExportParameters(true).D);
+                key = new KeyPair(ecdsa.ExportParameters(true).D!);
             }
             NEP6Contract contract = new()
             {
@@ -328,7 +330,7 @@ namespace Neo.Wallets.NEP6
         {
             lock (accounts)
             {
-                NEP6Account account = accounts.Values.FirstOrDefault(p => !p.Decrypted);
+                NEP6Account? account = accounts.Values.FirstOrDefault(p => !p.Decrypted);
                 if (account == null)
                 {
                     account = accounts.Values.FirstOrDefault(p => p.HasKey);

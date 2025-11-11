@@ -9,15 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 namespace Neo.Persistence.Providers
 {
     public class MemoryStoreProvider : IStoreProvider
     {
         public string Name => nameof(MemoryStore);
-        public IStore GetStore(string path) => new MemoryStore();
+        public IStore GetStore(string? path) => new MemoryStore();
     }
 }
-
-#nullable disable

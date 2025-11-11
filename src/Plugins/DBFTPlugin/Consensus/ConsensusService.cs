@@ -150,10 +150,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             {
                 if (context.Transactions != null)
                 {
-                    blockchain.Ask<FillCompleted>(new FillMemoryPool
-                    {
-                        Transactions = context.Transactions.Values
-                    }).Wait();
+                    blockchain.Ask<FillCompleted>(new FillMemoryPool(context.Transactions.Values)).Wait();
                 }
                 if (context.CommitSent)
                 {
@@ -181,7 +178,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 {
                     // Re-send commit periodically by sending recover message in case of a network issue.
                     Log($"Sending {nameof(RecoveryMessage)} to resend {nameof(Commit)}");
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+                    localNode.Tell(new LocalNode.SendDirectly(context.MakeRecoveryMessage()));
                     ChangeTimer(TimeSpan.FromMilliseconds((int)context.TimePerBlock.TotalMilliseconds << 1));
                 }
                 else
@@ -201,7 +198,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void SendPrepareRequest()
         {
             Log($"Sending {nameof(PrepareRequest)}: height={context.Block.Index} view={context.ViewNumber}");
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+            localNode.Tell(new LocalNode.SendDirectly(context.MakePrepareRequest()));
 
             if (context.Validators.Length == 1)
                 CheckPreparations();
@@ -217,7 +214,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void RequestRecovery()
         {
             Log($"Sending {nameof(RecoveryRequest)}: height={context.Block.Index} view={context.ViewNumber} nc={context.CountCommitted} nf={context.CountFailed}");
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryRequest() });
+            localNode.Tell(new LocalNode.SendDirectly(context.MakeRecoveryRequest()));
         }
 
         private void RequestChangeView(ChangeViewReason reason)
@@ -236,14 +233,14 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             else
             {
                 Log($"Sending {nameof(ChangeView)}: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(reason) });
+                localNode.Tell(new LocalNode.SendDirectly(context.MakeChangeView(reason)));
                 CheckExpectedView(expectedView);
             }
         }
 
         private bool ReverifyAndProcessPayload(ExtensiblePayload payload)
         {
-            RelayResult relayResult = blockchain.Ask<RelayResult>(new Reverify { Inventories = new IInventory[] { payload } }).Result;
+            RelayResult relayResult = blockchain.Ask<RelayResult>(new Reverify(new IInventory[] { payload })).Result;
             if (relayResult.Result != VerifyResult.Succeed) return false;
             OnConsensusPayload(payload);
             return true;

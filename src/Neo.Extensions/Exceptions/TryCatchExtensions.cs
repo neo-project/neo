@@ -29,8 +29,8 @@ namespace Neo.Extensions.Exceptions
             return obj;
         }
 
-        public static TSource TryCatch<TSource, TException>(this TSource obj, Action<TSource?> action, Action<TSource?, TException>? onError = default)
-            where TSource : class?
+        public static TSource TryCatch<TSource, TException>(this TSource obj, Action<TSource> action, Action<TSource?, TException>? onError = default)
+            where TSource : notnull
             where TException : Exception
         {
             try
@@ -45,10 +45,9 @@ namespace Neo.Extensions.Exceptions
             return obj;
         }
 
-        public static TResult? TryCatch<TSource, TException, TResult>(this TSource obj, Func<TSource?, TResult?> func, Func<TSource?, TException, TResult?>? onError = default)
-            where TSource : class?
+        public static TResult TryCatch<TSource, TException, TResult>(this TSource obj, Func<TSource, TResult> func, Func<TSource, TException, TResult>? onError = default)
+            where TSource : notnull
             where TException : Exception
-            where TResult : class?
         {
             try
             {
@@ -56,7 +55,8 @@ namespace Neo.Extensions.Exceptions
             }
             catch (TException ex)
             {
-                return onError?.Invoke(obj, ex);
+                if (onError == null) throw;
+                return onError(obj, ex);
             }
         }
 
@@ -76,10 +76,9 @@ namespace Neo.Extensions.Exceptions
             }
         }
 
-        public static TResult? TryCatchThrow<TSource, TException, TResult>(this TSource obj, Func<TSource?, TResult?> func)
-            where TSource : class?
+        public static TResult TryCatchThrow<TSource, TException, TResult>(this TSource obj, Func<TSource, TResult> func)
+            where TSource : notnull
             where TException : Exception
-            where TResult : class?
         {
             try
             {

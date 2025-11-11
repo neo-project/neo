@@ -21,17 +21,9 @@ namespace Neo.UnitTests.Builders
     public class UT_SignerBuilder
     {
         [TestMethod]
-        public void TestCreateEmpty()
-        {
-            var sb = SignerBuilder.CreateEmpty();
-            Assert.IsNotNull(sb);
-        }
-
-        [TestMethod]
         public void TestAccount()
         {
-            var signer = SignerBuilder.CreateEmpty()
-                .Account(UInt160.Zero)
+            var signer = SignerBuilder.Create(UInt160.Zero)
                 .Build();
 
             Assert.IsNotNull(signer);
@@ -41,11 +33,10 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestAllowContract()
         {
-            var signer = SignerBuilder.CreateEmpty()
+            var signer = SignerBuilder.Create(UInt160.Zero)
                 .AllowContract(UInt160.Zero)
                 .Build();
 
-            Assert.IsNotNull(signer);
             Assert.HasCount(1, signer.AllowedContracts);
             Assert.AreEqual(UInt160.Zero, signer.AllowedContracts[0]);
         }
@@ -54,11 +45,10 @@ namespace Neo.UnitTests.Builders
         public void TestAllowGroup()
         {
             var myPublicKey = ECPoint.Parse("021821807f923a3da004fb73871509d7635bcc05f41edef2a3ca5c941d8bbc1231", ECCurve.Secp256r1);
-            var signer = SignerBuilder.CreateEmpty()
+            var signer = SignerBuilder.Create(UInt160.Zero)
                 .AllowGroup(myPublicKey)
                 .Build();
 
-            Assert.IsNotNull(signer);
             Assert.HasCount(1, signer.AllowedGroups);
             Assert.AreEqual(myPublicKey, signer.AllowedGroups[0]);
         }
@@ -66,18 +56,17 @@ namespace Neo.UnitTests.Builders
         [TestMethod]
         public void TestAddWitnessScope()
         {
-            var signer = SignerBuilder.CreateEmpty()
+            var signer = SignerBuilder.Create(UInt160.Zero)
                 .AddWitnessScope(WitnessScope.Global)
                 .Build();
 
-            Assert.IsNotNull(signer);
             Assert.AreEqual(WitnessScope.Global, signer.Scopes);
         }
 
         [TestMethod]
         public void TestAddWitnessRule()
         {
-            var signer = SignerBuilder.CreateEmpty()
+            var signer = SignerBuilder.Create(UInt160.Zero)
                 .AddWitnessRule(WitnessRuleAction.Allow, rb =>
                 {
                     rb.AddCondition(cb =>
@@ -87,7 +76,6 @@ namespace Neo.UnitTests.Builders
                 })
                 .Build();
 
-            Assert.IsNotNull(signer);
             Assert.HasCount(1, signer.Rules);
             Assert.AreEqual(WitnessRuleAction.Allow, signer.Rules[0].Action);
             Assert.IsInstanceOfType<ScriptHashCondition>(signer.Rules[0].Condition);

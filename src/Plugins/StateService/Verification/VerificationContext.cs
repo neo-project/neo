@@ -175,6 +175,7 @@ namespace Neo.Plugins.StateService.Verification
                 ValidBlockEnd = StateRoot.Index + validBlockEndThreshold,
                 Sender = Contract.CreateSignatureRedeemScript(verifiers[MyIndex]).ToScriptHash(),
                 Data = data,
+                Witness = null!
             };
 
             var sc = new ContractParametersContext(StatePlugin.NeoSystem.StoreView, msg, StatePlugin.NeoSystem.Settings.Network);

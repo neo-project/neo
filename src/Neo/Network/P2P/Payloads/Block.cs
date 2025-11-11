@@ -30,12 +30,12 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The header of the block.
         /// </summary>
-        public Header Header;
+        public required Header Header;
 
         /// <summary>
         /// The transaction list of the block.
         /// </summary>
-        public Transaction[] Transactions;
+        public required Transaction[] Transactions;
 
         /// <inheritdoc/>
         public UInt256 Hash => Header.Hash;
@@ -127,14 +127,14 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.DeserializeUnsigned(ref MemoryReader reader) => throw new NotSupportedException();
 
-        public bool Equals(Block other)
+        public bool Equals(Block? other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (other is null) return false;
             return Hash.Equals(other.Hash);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as Block);
         }
