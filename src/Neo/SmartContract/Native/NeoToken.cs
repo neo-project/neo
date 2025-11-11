@@ -423,7 +423,7 @@ namespace Neo.SmartContract.Native
             if (!state.Registered)
                 throw new Exception("Only registered candidates are availables");
 
-            if (proofOfWork.ToString().StartsWith("0x0000")) // TODO: Decide the proper value
+            if (!proofOfWork.ToString().StartsWith("0x0000")) // TODO: Decide the proper value
                 throw new Exception("Proof of work is too easy");
 
             if (ComputeProofOfLife(engine.SnapshotCache, blockIndex, (engine.ScriptContainer as Transaction)?.Nonce) != proofOfWork)
