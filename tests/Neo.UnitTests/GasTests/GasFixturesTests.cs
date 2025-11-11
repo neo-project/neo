@@ -51,6 +51,19 @@ namespace Neo.UnitTests.GasTests
 
         public static void AssertFixture(GasTestFixture fixture, DataCache snapshot)
         {
+            // Set state
+
+            if (fixture.PreExecution?.Storage != null)
+            {
+                foreach (var preStore in fixture.PreExecution.Storage)
+                {
+                    var key = new StorageKey(Convert.FromBase64String(preStore.Key));
+                    var value = Convert.FromBase64String(preStore.Value);
+
+                    snapshot.Add(key, value);
+                }
+            }
+
             var persistingBlock = new Block
             {
                 Header = new Header

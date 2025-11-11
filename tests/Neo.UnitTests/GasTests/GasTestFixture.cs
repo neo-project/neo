@@ -28,6 +28,11 @@ namespace Neo.UnitTests.GasTests
             public bool SignedByCommittee { get; set; } = false;
         }
 
+        public class PreExecutionData
+        {
+            public Dictionary<string, string> Storage { get; set; } = [];
+        }
+
         public class PolicyValues
         {
             public BigInteger ExecutionFee { get; set; } = PolicyContract.DefaultExecFeeFactor * ApplicationEngine.FeeFactor;
@@ -52,6 +57,7 @@ namespace Neo.UnitTests.GasTests
 
         public string? Name { get; set; }
         public SignatureData? Signature { get; set; } = null;
+        public PreExecutionData? PreExecution { get; set; } = null;
         public EnvironmentState? Environment { get; set; } = null;
         public List<NeoExecution> Execute { get; set; } = [];
     }
