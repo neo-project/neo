@@ -13,7 +13,6 @@
     <IsPackable>true</IsPackable>
     <PackageId>$(MSBuildProjectName)</PackageId>
     <PackageIcon>neo.png</PackageIcon>
-    <PackageOutputPath>../../pkgs/</PackageOutputPath>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -23,12 +22,10 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Company>The Neo Project</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <VersionPrefix>3.8.1</VersionPrefix>
+    <VersionPrefix>3.9.0</VersionPrefix>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
-    <OutputPath>../../bin/$(PackageId)</OutputPath>
-    <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
   </PropertyGroup>
 
   <ItemGroup>
