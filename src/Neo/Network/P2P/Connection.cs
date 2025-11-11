@@ -46,7 +46,7 @@ namespace Neo.Network.P2P
         public IPEndPoint Local { get; }
 
         private ICancelable timer;
-        private readonly IActorRef tcp;
+        private readonly IActorRef? tcp;
         private bool disconnected = false;
 
         /// <summary>

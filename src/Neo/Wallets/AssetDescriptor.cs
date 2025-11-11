@@ -66,7 +66,7 @@ namespace Neo.Wallets
             if (engine.State != VMState.HALT) throw new ArgumentException($"Failed to execute 'decimals' or 'symbol' method for asset {assetId}. The contract execution did not complete successfully (VM state: {engine.State}).", nameof(assetId));
             AssetId = assetId;
             AssetName = contract.Manifest.Name;
-            Symbol = engine.ResultStack.Pop().GetString();
+            Symbol = engine.ResultStack.Pop().GetString()!;
             Decimals = (byte)engine.ResultStack.Pop().GetInteger();
         }
 

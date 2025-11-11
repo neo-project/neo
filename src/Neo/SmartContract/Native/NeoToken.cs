@@ -85,25 +85,25 @@ namespace Neo.SmartContract.Native
 
         internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
-            GasDistribution distribution = DistributeGas(engine, account, state);
+            GasDistribution? distribution = DistributeGas(engine, account, state);
             if (distribution is not null)
             {
-                var list = engine.CurrentContext.GetState<List<GasDistribution>>();
+                var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
                 list.Add(distribution);
             }
             if (amount.IsZero) return;
             if (state.VoteTo is null) return;
-            engine.SnapshotCache.GetAndChange(_votersCount).Add(amount);
+            engine.SnapshotCache.GetAndChange(_votersCount)!.Add(amount);
             StorageKey key = CreateStorageKey(Prefix_Candidate, state.VoteTo);
-            CandidateState candidate = engine.SnapshotCache.GetAndChange(key).GetInteroperable<CandidateState>();
+            CandidateState candidate = engine.SnapshotCache.GetAndChange(key)!.GetInteroperable<CandidateState>();
             candidate.Votes += amount;
             CheckCandidate(engine.SnapshotCache, state.VoteTo, candidate);
         }
 
-        private protected override async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private protected override async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
-            var list = engine.CurrentContext.GetState<List<GasDistribution>>();
+            var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
             foreach (var distribution in list)
                 await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
         }
@@ -120,7 +120,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        private GasDistribution DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
+        private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
@@ -215,9 +215,9 @@ namespace Neo.SmartContract.Native
         internal override ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             // Set next committee
-            if (ShouldRefreshCommittee(engine.PersistingBlock.Index, engine.ProtocolSettings.CommitteeMembersCount))
+            if (ShouldRefreshCommittee(engine.PersistingBlock!.Index, engine.ProtocolSettings.CommitteeMembersCount))
             {
-                var storageItem = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Committee));
+                var storageItem = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Committee))!;
                 var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
 
                 var prevCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
@@ -249,7 +249,7 @@ namespace Neo.SmartContract.Native
 
             int m = engine.ProtocolSettings.CommitteeMembersCount;
             int n = engine.ProtocolSettings.ValidatorsCount;
-            int index = (int)(engine.PersistingBlock.Index % (uint)m);
+            int index = (int)(engine.PersistingBlock!.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.SnapshotCache);
             var committee = GetCommitteeFromCache(engine.SnapshotCache);
             var pubkey = committee[index].PublicKey;
@@ -288,7 +288,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(gasPerBlock), $"GasPerBlock must be between [0, {10 * GAS.Factor}]");
             AssertCommittee(engine);
 
-            var index = engine.PersistingBlock.Index + 1;
+            var index = engine.PersistingBlock!.Index + 1;
             var entry = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_GasPerBlock, index), () => new StorageItem(gasPerBlock));
             entry.Set(gasPerBlock);
         }
@@ -316,7 +316,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(registerPrice), "RegisterPrice must be positive");
             AssertCommittee(engine);
 
-            engine.SnapshotCache.GetAndChange(_registerPrice).Set(registerPrice);
+            engine.SnapshotCache.GetAndChange(_registerPrice)!.Set(registerPrice);
         }
 
         /// <summary>
@@ -349,7 +349,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account, account));
+            StorageItem? storage = snapshot.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state, end);
@@ -427,7 +427,7 @@ namespace Neo.SmartContract.Native
                 return false;
             StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
             if (engine.SnapshotCache.TryGet(key) is null) return true;
-            StorageItem item = engine.SnapshotCache.GetAndChange(key);
+            StorageItem item = engine.SnapshotCache.GetAndChange(key)!;
             CandidateState state = item.GetInteroperable<CandidateState>();
             if (!state.Registered) return true;
             state.Registered = false;
@@ -449,11 +449,11 @@ namespace Neo.SmartContract.Native
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
-            NeoAccountState stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
+            NeoAccountState? stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
             if (stateAccount is null) return false;
             if (stateAccount.Balance == 0) return false;
 
-            CandidateState validatorNew = null;
+            CandidateState? validatorNew = null;
             if (voteTo != null)
             {
                 validatorNew = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Candidate, voteTo))?.GetInteroperable<CandidateState>();
@@ -462,17 +462,17 @@ namespace Neo.SmartContract.Native
             }
             if (stateAccount.VoteTo is null ^ voteTo is null)
             {
-                StorageItem item = engine.SnapshotCache.GetAndChange(_votersCount);
+                StorageItem item = engine.SnapshotCache.GetAndChange(_votersCount)!;
                 if (stateAccount.VoteTo is null)
                     item.Add(stateAccount.Balance);
                 else
                     item.Add(-stateAccount.Balance);
             }
-            GasDistribution gasDistribution = DistributeGas(engine, account, stateAccount);
+            GasDistribution? gasDistribution = DistributeGas(engine, account, stateAccount);
             if (stateAccount.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, stateAccount.VoteTo);
-                StorageItem storageValidator = engine.SnapshotCache.GetAndChange(key);
+                StorageItem storageValidator = engine.SnapshotCache.GetAndChange(key)!;
                 CandidateState stateValidator = storageValidator.GetInteroperable<CandidateState>();
                 stateValidator.Votes -= stateAccount.Balance;
                 CheckCandidate(engine.SnapshotCache, stateAccount.VoteTo, stateValidator);
@@ -483,7 +483,7 @@ namespace Neo.SmartContract.Native
                 var latestGasPerVote = engine.SnapshotCache.TryGet(voterRewardKey) ?? BigInteger.Zero;
                 stateAccount.LastGasPerVote = latestGasPerVote;
             }
-            ECPoint from = stateAccount.VoteTo;
+            ECPoint? from = stateAccount.VoteTo;
             stateAccount.VoteTo = voteTo;
 
             if (validatorNew != null)
@@ -571,7 +571,7 @@ namespace Neo.SmartContract.Native
         /// <param name="account">account</param>
         /// <returns>The state of the account.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public NeoAccountState GetAccountState(IReadOnlyStore snapshot, UInt160 account)
+        public NeoAccountState? GetAccountState(IReadOnlyStore snapshot, UInt160 account)
         {
             var key = CreateStorageKey(Prefix_Account, account);
             return snapshot.TryGet(key, out var item) ? item.GetInteroperableClone<NeoAccountState>() : null;
@@ -659,7 +659,7 @@ namespace Neo.SmartContract.Native
             /// <summary>
             /// The voting target of the account. This field can be <see langword="null"/>.
             /// </summary>
-            public ECPoint VoteTo;
+            public ECPoint? VoteTo;
 
             public BigInteger LastGasPerVote;
 
@@ -672,7 +672,7 @@ namespace Neo.SmartContract.Native
                 LastGasPerVote = @struct[3].GetInteger();
             }
 
-            public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+            public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
             {
                 Struct @struct = (Struct)base.ToStackItem(referenceCounter);
                 @struct.Add(BalanceHeight);
@@ -694,7 +694,7 @@ namespace Neo.SmartContract.Native
                 Votes = @struct[1].GetInteger();
             }
 
-            public StackItem ToStackItem(IReferenceCounter referenceCounter)
+            public StackItem ToStackItem(IReferenceCounter? referenceCounter)
             {
                 return new Struct(referenceCounter) { Registered, Votes };
             }
@@ -711,7 +711,7 @@ namespace Neo.SmartContract.Native
                 return (ECPoint.DecodePoint(@struct[0].GetSpan(), ECCurve.Secp256r1), @struct[1].GetInteger());
             }
 
-            protected override StackItem ElementToStackItem((ECPoint PublicKey, BigInteger Votes) element, IReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem((ECPoint PublicKey, BigInteger Votes) element, IReferenceCounter? referenceCounter)
             {
                 return new Struct(referenceCounter) { element.PublicKey.ToArray(), element.Votes };
             }
@@ -719,7 +719,7 @@ namespace Neo.SmartContract.Native
 
         private record GasDistribution
         {
-            public UInt160 Account { get; init; }
+            public required UInt160 Account { get; init; }
             public BigInteger Amount { get; init; }
         }
     }

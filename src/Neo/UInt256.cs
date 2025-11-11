@@ -61,14 +61,15 @@ namespace Neo
             value.CopyTo(span);
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (ReferenceEquals(obj, this)) return 0;
             return CompareTo(obj as UInt256);
         }
 
-        public int CompareTo(UInt256 other)
+        public int CompareTo(UInt256? other)
         {
+            if (other is null) return 1;
             var result = _value4.CompareTo(other._value4);
             if (result != 0) return result;
             result = _value3.CompareTo(other._value3);
@@ -86,13 +87,13 @@ namespace Neo
             _value4 = reader.ReadUInt64();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(obj, this)) return true;
             return Equals(obj as UInt256);
         }
 
-        public bool Equals(UInt256 other)
+        public bool Equals(UInt256? other)
         {
             if (other is null) return false;
             return _value1 == other._value1
@@ -183,7 +184,7 @@ namespace Neo
         /// <see langword="true"/> if an <see cref="UInt256"/> is successfully parsed; otherwise, <see langword="false"/>.
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryParse(string value, [NotNullWhen(true)] out UInt256 result)
+        public static bool TryParse(string value, [NotNullWhen(true)] out UInt256? result)
         {
             result = null;
             var data = value.AsSpan().TrimStartIgnoreCase("0x");
@@ -223,14 +224,14 @@ namespace Neo
             return new UInt256(b);
         }
 
-        public static bool operator ==(UInt256 left, UInt256 right)
+        public static bool operator ==(UInt256? left, UInt256? right)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null) return false;
             return left.Equals(right);
         }
 
-        public static bool operator !=(UInt256 left, UInt256 right)
+        public static bool operator !=(UInt256? left, UInt256? right)
         {
             return !(left == right);
         }

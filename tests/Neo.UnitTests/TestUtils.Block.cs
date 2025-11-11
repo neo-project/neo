@@ -22,6 +22,7 @@ using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests
 {
@@ -57,7 +58,7 @@ namespace Neo.UnitTests
 
         public static Block MakeBlock(DataCache snapshot, UInt256 prevHash, int numberOfTransactions)
         {
-            var block = new Block();
+            var block = (Block)RuntimeHelpers.GetUninitializedObject(typeof(Block));
             var header = MakeHeader(snapshot, prevHash);
             var transactions = new Transaction[numberOfTransactions];
             if (numberOfTransactions > 0)
@@ -89,7 +90,7 @@ namespace Neo.UnitTests
         public static Block CreateBlockWithValidTransactions(DataCache snapshot,
             WalletAccount account, Transaction[] transactions)
         {
-            var block = new Block();
+            var block = (Block)RuntimeHelpers.GetUninitializedObject(typeof(Block));
             var key = NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock);
             var state = snapshot.TryGet(key).GetInteroperable<HashIndexState>();
             var header = MakeHeader(snapshot, state.Hash);

@@ -34,15 +34,15 @@ namespace Neo.Plugins.RpcServer
     {
         private class DummyWallet : Wallet
         {
-            public DummyWallet(ProtocolSettings settings) : base(null, settings) { }
+            public DummyWallet(ProtocolSettings settings) : base(null!, settings) { }
             public override string Name => "";
             public override Version Version => new();
 
             public override bool ChangePassword(string oldPassword, string newPassword) => false;
             public override bool Contains(UInt160 scriptHash) => false;
-            public override WalletAccount? CreateAccount(byte[] privateKey) => null;
-            public override WalletAccount? CreateAccount(Contract contract, KeyPair? key = null) => null;
-            public override WalletAccount? CreateAccount(UInt160 scriptHash) => null;
+            public override WalletAccount CreateAccount(byte[] privateKey) => null!;
+            public override WalletAccount CreateAccount(Contract contract, KeyPair? key = null) => null!;
+            public override WalletAccount CreateAccount(UInt160 scriptHash) => null!;
             public override void Delete() { }
             public override bool DeleteAccount(UInt160 scriptHash) => false;
             public override WalletAccount? GetAccount(UInt160 scriptHash) => null;
@@ -93,7 +93,7 @@ namespace Neo.Plugins.RpcServer
         {
             return CheckWallet().GetAccount(address.ScriptHash)
                 .NotNull_Or(RpcError.UnknownAccount.WithData($"{address.ScriptHash}"))
-                .GetKey()
+                .GetKey()!
                 .Export();
         }
 
@@ -720,7 +720,7 @@ namespace Neo.Plugins.RpcServer
             {
                 Signers = signers ?? [new() { Account = scriptHash }],
                 Attributes = [],
-                Witnesses = witnesses,
+                Witnesses = witnesses ?? [],
                 Script = new[] { (byte)OpCode.RET }
             };
 

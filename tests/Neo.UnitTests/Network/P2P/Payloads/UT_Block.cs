@@ -17,6 +17,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -35,18 +36,21 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var system = TestBlockchain.GetSystem();
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
             var snapshotCache = hasSnapshot ? system.GetTestSnapshotCache() : null;
-            var block = hasBlock ? new Block { Header = new Header() } : null;
+            var block = hasBlock ? new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = null!
+            } : null;
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 tx, snapshotCache, block, system.Settings, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
-        }
-
-        [TestMethod]
-        public void Transactions_Get()
-        {
-            var uut = new Block();
-            Assert.IsNull(uut.Transactions);
         }
 
         [TestMethod]
@@ -113,7 +117,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameObj()
         {
-            var uut = new Block();
+            var uut = (Block)RuntimeHelpers.GetUninitializedObject(typeof(Block));
             Assert.IsTrue(uut.Equals(uut));
 
             var obj = uut as object;
@@ -140,7 +144,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_Null()
         {
-            var uut = new Block();
+            var uut = (Block)RuntimeHelpers.GetUninitializedObject(typeof(Block));
             Assert.IsFalse(uut.Equals(null));
         }
 
@@ -185,7 +189,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Witness()
         {
-            IVerifiable item = new Block() { Header = new(), };
+            IVerifiable item = new Block()
+            {
+                Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                Transactions = []
+            };
             Assert.HasCount(1, item.Witnesses);
             void Actual() => item.Witnesses = null;
             Assert.ThrowsExactly<NotSupportedException>(Actual);

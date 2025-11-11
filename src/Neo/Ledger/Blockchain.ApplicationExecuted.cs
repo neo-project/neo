@@ -24,7 +24,7 @@ namespace Neo.Ledger
             /// <summary>
             /// The transaction that contains the executed script. This field could be <see langword="null"/> if the contract is invoked by system.
             /// </summary>
-            public Transaction Transaction { get; }
+            public Transaction? Transaction { get; }
 
             /// <summary>
             /// The trigger of the execution.
@@ -39,7 +39,7 @@ namespace Neo.Ledger
             /// <summary>
             /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if the execution ends normally.
             /// </summary>
-            public Exception Exception { get; }
+            public Exception? Exception { get; }
 
             /// <summary>
             /// GAS spent to execute.
