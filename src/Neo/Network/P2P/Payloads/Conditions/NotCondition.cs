@@ -30,13 +30,13 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The expression of the condition to be reversed.
         /// </summary>
-        public WitnessCondition Expression;
+        public required WitnessCondition Expression;
 
         public override int Size => base.Size + Expression.Size;
         public override WitnessConditionType Type => WitnessConditionType.Not;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(NotCondition other)
+        public bool Equals(NotCondition? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -47,7 +47,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null) return false;
             return obj is NotCondition nc && Equals(nc);
@@ -75,7 +75,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            Expression = FromJson((JObject)json["expression"], maxNestDepth - 1);
+            Expression = FromJson((JObject)json["expression"]!, maxNestDepth - 1);
         }
 
         public override JObject ToJson()
@@ -85,7 +85,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             var result = (Array)base.ToStackItem(referenceCounter);
             result.Add(Expression.ToStackItem(referenceCounter));

@@ -11,7 +11,6 @@
 
 using Neo.Json;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -35,13 +34,13 @@ namespace Neo.Extensions
             return ToJson(item, null, ref maxSize);
         }
 
-        public static JObject ToJson(this StackItem item, HashSet<StackItem> context, ref int maxSize)
+        public static JObject ToJson(this StackItem item, HashSet<StackItem>? context, ref int maxSize)
         {
             JObject json = new()
             {
                 ["type"] = item.Type
             };
-            JToken value = null;
+            JToken? value = null;
             maxSize -= 11/*{"type":""}*/+ item.Type.ToString().Length;
             switch (item)
             {
@@ -125,10 +124,10 @@ namespace Neo.Extensions
             return ToParameter(item, null);
         }
 
-        public static ContractParameter ToParameter(this StackItem item, List<(StackItem, ContractParameter)> context)
+        public static ContractParameter ToParameter(this StackItem item, List<(StackItem, ContractParameter)>? context)
         {
             ArgumentNullException.ThrowIfNull(item);
-            ContractParameter parameter = null;
+            ContractParameter? parameter = null;
             switch (item)
             {
                 case Array array:

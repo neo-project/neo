@@ -89,7 +89,7 @@ namespace Neo.Plugins.SignClient.Tests
                 {
                     if (req.PublicKey.ToByteArray().ToHexString() == PublicKey)
                     {
-                        var sign = Crypto.Sign(block.GetSignData(s_testNetwork), PrivateKey.HexToBytes(), ECCurve.Secp256r1);
+                        var sign = Crypto.Sign(block!.GetSignData(s_testNetwork), PrivateKey.HexToBytes(), ECCurve.Secp256r1);
                         return new() { Signature = ByteString.CopyFrom(sign) };
                     }
                     throw new RpcException(new Status(StatusCode.NotFound, "no such account"));
@@ -113,7 +113,7 @@ namespace Neo.Plugins.SignClient.Tests
                             var contract = new AccountContract() { Script = ByteString.CopyFrom(script) };
                             contract.Parameters.Add((uint)ContractParameterType.Signature);
 
-                            var sign = Crypto.Sign(payload.GetSignData(s_testNetwork), PrivateKey.HexToBytes(), ECCurve.Secp256r1);
+                            var sign = Crypto.Sign(payload!.GetSignData(s_testNetwork), PrivateKey.HexToBytes(), ECCurve.Secp256r1);
                             var signs = new AccountSigns() { Status = AccountStatus.Single, Contract = contract };
                             signs.Signs.Add(new AccountSign()
                             {
@@ -170,6 +170,7 @@ namespace Neo.Plugins.SignClient.Tests
                 ValidBlockEnd = 100,
                 Sender = signer,
                 Data = new byte[] { 1, 2, 3 },
+                Witness = null!
             };
             using var signClient = NewClient(null, payload);
             using var store = new MemoryStore();

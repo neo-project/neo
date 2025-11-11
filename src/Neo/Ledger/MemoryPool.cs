@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -626,7 +624,7 @@ namespace Neo.Ledger
                     {
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
                         {
-                            _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = item.Tx }, _system.Blockchain);
+                            _system.LocalNode.Tell(new LocalNode.RelayDirectly(item.Tx), _system.Blockchain);
                             item.LastBroadcastTimestamp = TimeProvider.Current.UtcNow;
                         }
                     }
@@ -701,5 +699,3 @@ namespace Neo.Ledger
         }
     }
 }
-
-#nullable disable

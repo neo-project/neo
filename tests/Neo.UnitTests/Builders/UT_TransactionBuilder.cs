@@ -161,9 +161,8 @@ namespace Neo.UnitTests.Builders
             var expectedContractHash = UInt160.Zero;
 
             var tx = TransactionBuilder.CreateEmpty()
-                .AddSigner((sb, tx) =>
+                .AddSigner(expectedContractHash, (sb, tx) =>
                 {
-                    sb.Account(expectedContractHash);
                     sb.AllowContract(expectedContractHash);
                     sb.AllowGroup(expectedPublicKey);
                     sb.AddWitnessScope(WitnessScope.WitnessRules);
@@ -184,7 +183,7 @@ namespace Neo.UnitTests.Builders
             Assert.AreEqual(expectedContractHash, tx.Signers[0].AllowedContracts[0]);
             Assert.HasCount(1, tx.Signers[0].AllowedGroups);
             Assert.AreEqual(expectedPublicKey, tx.Signers[0].AllowedGroups[0]);
-            Assert.AreEqual(WitnessScope.WitnessRules, tx.Signers[0].Scopes);
+            Assert.AreEqual(WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.WitnessRules, tx.Signers[0].Scopes);
             Assert.HasCount(1, tx.Signers[0].Rules);
             Assert.AreEqual(WitnessRuleAction.Deny, tx.Signers[0].Rules[0].Action);
             Assert.IsNotNull(tx.Signers[0].Rules[0].Condition);

@@ -15,7 +15,6 @@ using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
@@ -193,7 +192,7 @@ namespace Neo.CLI
             {
                 for (uint i = start; i <= end; i++)
                 {
-                    Block block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, i);
+                    Block block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, i)!;
                     byte[] array = block.ToArray();
                     fs.Write(BitConverter.GetBytes(array.Length), 0, sizeof(int));
                     fs.Write(array, 0, array.Length);
@@ -220,11 +219,7 @@ namespace Neo.CLI
                         blocksToImport.Add(blocksBeingImported.Current);
                     }
                     if (blocksToImport.Count == 0) break;
-                    await NeoSystem.Blockchain.Ask<Blockchain.ImportCompleted>(new Blockchain.Import
-                    {
-                        Blocks = blocksToImport,
-                        Verify = verifyImport
-                    });
+                    await NeoSystem.Blockchain.Ask<Blockchain.ImportCompleted>(new Blockchain.Import(blocksToImport, verifyImport));
                     if (NeoSystem is null) return;
                 }
             }

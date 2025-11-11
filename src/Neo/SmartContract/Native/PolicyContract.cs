@@ -392,7 +392,7 @@ namespace Neo.SmartContract.Native
             AssertCommittee(engine);
 
             var oldTime = GetMillisecondsPerBlock(engine.SnapshotCache);
-            engine.SnapshotCache.GetAndChange(_millisecondsPerBlock).Set(value);
+            engine.SnapshotCache.GetAndChange(_millisecondsPerBlock)!.Set(value);
 
             engine.SendNotification(Hash, MillisecondsPerBlockChangedEventName,
                 [new VM.Types.Integer(oldTime), new VM.Types.Integer(value)]);
@@ -456,7 +456,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(value), $"FeePerByte must be between [0, 100000000], got {value}");
             AssertCommittee(engine);
 
-            engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);
+            engine.SnapshotCache.GetAndChange(_feePerByte)!.Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -466,7 +466,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {MaxExecFeeFactor}], got {value}");
             AssertCommittee(engine);
 
-            engine.SnapshotCache.GetAndChange(_execFeeFactor).Set(value);
+            engine.SnapshotCache.GetAndChange(_execFeeFactor)!.Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -476,7 +476,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(value), $"StoragePrice must be between [1, {MaxStoragePrice}], got {value}");
             AssertCommittee(engine);
 
-            engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
+            engine.SnapshotCache.GetAndChange(_storagePrice)!.Set(value);
         }
 
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -489,7 +489,7 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException($"MaxValidUntilBlockIncrement must be lower than MaxTraceableBlocks ({value} vs {mtb})");
             AssertCommittee(engine);
 
-            engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement).Set(value);
+            engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement)!.Set(value);
         }
 
         /// <summary>
@@ -513,7 +513,7 @@ namespace Neo.SmartContract.Native
 
             AssertCommittee(engine);
 
-            engine.SnapshotCache.GetAndChange(_maxTraceableBlocks).Set(value);
+            engine.SnapshotCache.GetAndChange(_maxTraceableBlocks)!.Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

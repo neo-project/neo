@@ -25,17 +25,17 @@ namespace Neo.SmartContract.Manifest
     /// <remarks>For more details, see NEP-14.</remarks>
     public class ContractAbi : IInteroperable
     {
-        private IReadOnlyDictionary<(string, int), ContractMethodDescriptor> methodDictionary;
+        private IReadOnlyDictionary<(string, int), ContractMethodDescriptor>? methodDictionary;
 
         /// <summary>
         /// Gets the methods in the ABI.
         /// </summary>
-        public ContractMethodDescriptor[] Methods { get; set; }
+        public required ContractMethodDescriptor[] Methods { get; set; }
 
         /// <summary>
         /// Gets the events in the ABI.
         /// </summary>
-        public ContractEventDescriptor[] Events { get; set; }
+        public required ContractEventDescriptor[] Events { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -44,7 +44,7 @@ namespace Neo.SmartContract.Manifest
             Events = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>()).ToArray();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Struct(referenceCounter)
             {
@@ -62,8 +62,8 @@ namespace Neo.SmartContract.Manifest
         {
             ContractAbi abi = new()
             {
-                Methods = ((JArray)json!["methods"])?.Select(u => ContractMethodDescriptor.FromJson((JObject)u)).ToArray() ?? [],
-                Events = ((JArray)json!["events"])?.Select(u => ContractEventDescriptor.FromJson((JObject)u)).ToArray() ?? []
+                Methods = ((JArray?)json["methods"])?.Select(u => ContractMethodDescriptor.FromJson((JObject)u!)).ToArray() ?? [],
+                Events = ((JArray?)json["events"])?.Select(u => ContractEventDescriptor.FromJson((JObject)u!)).ToArray() ?? []
             };
             if (abi.Methods.Length == 0) throw new FormatException("Methods in ContractAbi is empty");
             return abi;
@@ -81,7 +81,7 @@ namespace Neo.SmartContract.Manifest
         /// The method that matches the specified name and number of parameters.
         /// If <paramref name="pcount"/> is set to -1, the first method with the specified name will be returned.
         /// </returns>
-        public ContractMethodDescriptor GetMethod(string name, int pcount)
+        public ContractMethodDescriptor? GetMethod(string name, int pcount)
         {
             if (pcount < -1 || pcount > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(pcount), $"`pcount` must be between [-1, {ushort.MaxValue}]");
