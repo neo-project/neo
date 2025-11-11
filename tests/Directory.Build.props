@@ -8,29 +8,12 @@
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
-    <CollectCoverage>true</CollectCoverage>
-    <CoverletOutput>../../TestResults/$(MSBuildProjectName)/</CoverletOutput>
-    <CoverletOutputFormat>lcov</CoverletOutputFormat>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
-    <OutputPath>../../bin/tests/$(MSBuildProjectName)</OutputPath>
-    <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
-    <EnableMSTestRunner>true</EnableMSTestRunner>
-    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <MSTestVersion>3.10.0</MSTestVersion>
     <MSTestAnalysisMode>Recommended</MSTestAnalysisMode>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.4" >
-      <IncludeAssets>all</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
-      <IncludeAssets>all</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.cs" Visible="false" />
