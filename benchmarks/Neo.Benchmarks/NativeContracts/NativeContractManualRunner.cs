@@ -460,7 +460,7 @@ namespace Neo.Benchmarks.NativeContracts
                 writer.WriteLine($"<h2>{contractGroup.Key}</h2>");
                 writer.WriteLine("<table>");
                 writer.WriteLine("<thead><tr>" +
-                    "<th>Method</th><th>Profile</th><th>Mean (µs)</th><th>Median (µs)</th><th>P95 (µs)</th><th>StdDev (µs)</th><th>Min (µs)</th><th>Max (µs)</th><th>Status</th>" +
+                    "<th>Method</th><th>Profile</th><th>Mean (us)</th><th>Median (us)</th><th>P95 (us)</th><th>StdDev (us)</th><th>Min (us)</th><th>Max (us)</th><th>Status</th>" +
                     "</tr></thead><tbody>");
 
                 bool isGray = false;

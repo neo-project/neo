@@ -58,7 +58,7 @@ Any additional arguments placed after `--` are forwarded directly to `dotnet
 run`, so you can still customise the build configuration or framework.
 
 By default the manual runner uses the *Balanced* profile (20 measured iterations,
-3 warmup passes, 10 % trimmed mean). Switch to `--native-job quick` for the old
+3 warmup passes, 10% trimmed mean). Switch to `--native-job quick` for the old
 smoke-test behaviour, or `--native-job thorough` for 40 iterations / 5 warmups
 with heavier outlier trimming.
 
@@ -68,7 +68,7 @@ with heavier outlier trimming.
 dotnet run -c Release --framework net10.0 -- -f '*NativeContractMethodBenchmarks*'
 ```
 
-Use this variant when you can afford a longer run and want BDN’s job/diagnostic
+Use this variant when you can afford a longer run and want BDN's job/diagnostic
 output. It relies on the same discovery and argument generation pipeline but
 lets you pick the built-in BDN jobs via `NEO_NATIVE_BENCH_JOB=Quick|Short|Default`.
 
@@ -84,12 +84,12 @@ following environment variables (applies to both runners unless noted):
 | `NEO_NATIVE_BENCH_METHOD` | Wildcard patterns applied to method names (case-insensitive, e.g. `get*`, `*Payment`). |
 | `NEO_NATIVE_BENCH_SIZES` | Restrict workload sizes (`Tiny`, `Small`, `Medium`, `Large`). Multiple values allowed. |
 | `NEO_NATIVE_BENCH_LIMIT` | Stop after the first _N_ benchmark cases. |
-| `NEO_NATIVE_BENCH_JOB` | BenchmarkDotNet only – select `Quick`, `Short`, or `Default`. |
-| `NEO_NATIVE_BENCH_ITERATIONS` | Manual runner only – override measured iterations per case (default `5`). |
-| `NEO_NATIVE_BENCH_WARMUP` | Manual runner only – warmup passes before measuring (default `1`). |
-| `NEO_NATIVE_BENCH_VERBOSE` | Manual runner only – `1/true` streams per-case statistics. |
+| `NEO_NATIVE_BENCH_JOB` | BenchmarkDotNet only - select `Quick`, `Short`, or `Default`. |
+| `NEO_NATIVE_BENCH_ITERATIONS` | Manual runner only - override measured iterations per case (default `5`). |
+| `NEO_NATIVE_BENCH_WARMUP` | Manual runner only - warmup passes before measuring (default `1`). |
+| `NEO_NATIVE_BENCH_VERBOSE` | Manual runner only - `1/true` streams per-case statistics. |
 
-Example – only benchmark `StdLib` methods with tiny inputs:
+Example - only benchmark `StdLib` methods with tiny inputs:
 
 ```
 NEO_NATIVE_BENCH_CONTRACT=StdLib \
