@@ -581,8 +581,8 @@ namespace Neo.SmartContract.Native
 
         internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(IReadOnlyStore snapshot, bool withProofOfLife)
         {
-            var requiredProofOfLife = Ledger.CurrentIndex(snapshot) - 10_000; // TODO: Decide the proper value
             var prefixKey = CreateStorageKey(Prefix_Candidate);
+            var requiredProofOfLife = Ledger.CurrentIndex(snapshot) - Policy.GetMaxProofOfNodeHeight(snapshot);
 
             return snapshot.Find(prefixKey)
                 .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key[1..].AsSerializable<ECPoint>(), State: p.Value.GetInteroperable<CandidateState>()))

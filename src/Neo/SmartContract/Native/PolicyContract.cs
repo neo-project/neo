@@ -51,6 +51,11 @@ namespace Neo.SmartContract.Native
         public const uint DefaultNotaryAssistedAttributeFee = 1000_0000;
 
         /// <summary>
+        /// The default max proof of node height.
+        /// </summary>
+        public const uint DefaultMaxProofOfNodeHeight = 10_000;
+
+        /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
         public const uint MaxExecFeeFactor = 100;
@@ -90,6 +95,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MillisecondsPerBlock = 21;
         private const byte Prefix_MaxValidUntilBlockIncrement = 22;
         private const byte Prefix_MaxTraceableBlocks = 23;
+        private const byte Prefix_MaxProofOfNodeHeight = 24;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
@@ -97,6 +103,7 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
+        private readonly StorageKey _maxProofOfNodeHeight;
 
         /// <summary>
         /// The event name for the block generation time changed.
@@ -115,6 +122,7 @@ namespace Neo.SmartContract.Native
             _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
             _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
             _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
+            _maxProofOfNodeHeight = CreateStorageKey(Prefix_MaxProofOfNodeHeight);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -130,7 +138,11 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
                 engine.SnapshotCache.Add(_millisecondsPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
                 engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
-                engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
+                engine.SnapshotCache.Add(_maxProofOfNodeHeight, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
+            }
+            if (hardfork == Hardfork.HF_Faun)
+            {
+                engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(DefaultMaxProofOfNodeHeight));
             }
             return ContractTask.CompletedTask;
         }
@@ -224,6 +236,17 @@ namespace Neo.SmartContract.Native
         public uint GetAttributeFeeV1(IReadOnlyStore snapshot, byte attributeType)
         {
             return GetAttributeFee(snapshot, attributeType, true);
+        }
+
+        /// <summary>
+        /// Gets the max proof of node height.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The proof of node height.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetMaxProofOfNodeHeight(IReadOnlyStore snapshot)
+        {
+            return (uint)(BigInteger)snapshot[_maxProofOfNodeHeight];
         }
 
         /// <summary>
@@ -328,6 +351,16 @@ namespace Neo.SmartContract.Native
             AssertCommittee(engine);
 
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee, attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetMaxProofOfNodeHeight(ApplicationEngine engine, uint value)
+        {
+            if (value < 100 || value > 1_000_000)
+                throw new ArgumentOutOfRangeException(nameof(value), $"MaxProofOfNodeHeight must be between [100, 100000000], got {value}");
+            AssertCommittee(engine);
+
+            engine.SnapshotCache.GetAndChange(_maxProofOfNodeHeight)!.Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
