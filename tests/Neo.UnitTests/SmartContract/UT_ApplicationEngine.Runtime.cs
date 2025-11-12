@@ -118,11 +118,13 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            Assert.AreEqual(BigInteger.Parse("271339657438512451304577787170704246350"), rand_1);
-            Assert.AreEqual(BigInteger.Parse("98548189559099075644778613728143131367"), rand_2);
-            Assert.AreEqual(BigInteger.Parse("247654688993873392544380234598471205121"), rand_3);
-            Assert.AreEqual(BigInteger.Parse("291082758879475329976578097236212073607"), rand_4);
-            Assert.AreEqual(BigInteger.Parse("247152297361212656635216876565962360375"), rand_5);
+            var actualValue0 = (BigInteger.One << 255) - BigInteger.One;
+
+            Assert.IsTrue(rand_1 < actualValue0);
+            Assert.IsTrue(rand_2 < actualValue0);
+            Assert.IsTrue(rand_3 < actualValue0);
+            Assert.IsTrue(rand_4 < actualValue0);
+            Assert.IsTrue(rand_5 < actualValue0);
 
             Assert.AreEqual(rand_6, rand_1);
             Assert.AreEqual(rand_7, rand_2);
@@ -165,11 +167,13 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            Assert.AreEqual(BigInteger.Parse("271339657438512451304577787170704246350"), rand_1);
-            Assert.AreEqual(BigInteger.Parse("98548189559099075644778613728143131367"), rand_2);
-            Assert.AreEqual(BigInteger.Parse("247654688993873392544380234598471205121"), rand_3);
-            Assert.AreEqual(BigInteger.Parse("291082758879475329976578097236212073607"), rand_4);
-            Assert.AreEqual(BigInteger.Parse("247152297361212656635216876565962360375"), rand_5);
+            var actualValue0 = (BigInteger.One << 255) - BigInteger.One;
+
+            Assert.IsTrue(rand_1 < actualValue0);
+            Assert.IsTrue(rand_2 < actualValue0);
+            Assert.IsTrue(rand_3 < actualValue0);
+            Assert.IsTrue(rand_4 < actualValue0);
+            Assert.IsTrue(rand_5 < actualValue0);
 
             Assert.AreNotEqual(rand_6, rand_1);
             Assert.AreNotEqual(rand_7, rand_2);

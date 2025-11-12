@@ -276,5 +276,34 @@ namespace Neo.SmartContract.Native
 
             return count;
         }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 13)]
+        private static BigInteger GetRandom(ApplicationEngine engine, BigInteger maxValue)
+        {
+            if (maxValue.Sign < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            if (maxValue <= BigInteger.One)
+                return BigInteger.Zero;
+
+            var maxValueBits = maxValue.GetByteCount() * 8;
+            var maxMaxValue = BigInteger.One << maxValueBits;
+
+            var randomProduct = maxValue * (engine.GetRandom() % maxMaxValue);
+            var lowPart = randomProduct % maxMaxValue;
+
+            if (lowPart < maxValue)
+            {
+                var threshold = (maxMaxValue - maxValue) % maxValue;
+
+                while (lowPart < threshold)
+                {
+                    randomProduct = maxValue * (engine.GetRandom() % maxMaxValue);
+                    lowPart = randomProduct % maxMaxValue;
+                }
+            }
+
+            return randomProduct >> maxValueBits;
+        }
     }
 }

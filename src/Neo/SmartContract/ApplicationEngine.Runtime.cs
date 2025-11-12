@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -309,10 +310,39 @@ namespace Neo.SmartContract
         /// <returns>The next random number.</returns>
         protected internal BigInteger GetRandom()
         {
-            byte[] buffer;
+            Span<byte> buffer;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             long price;
-            if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
+            if (IsHardforkEnabled(Hardfork.HF_Faun))
+            {
+                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
+                var s0 = BitConverter.ToUInt64(buffer[0..8]);
+                var s1 = BitConverter.ToUInt64(buffer[8..16]);
+
+                buffer = Cryptography.Helper.Murmur128(buffer, ProtocolSettings.Network + random_times++);
+                var s2 = BitConverter.ToUInt64(buffer[0..8]);
+                var s3 = BitConverter.ToUInt64(buffer[8..16]);
+
+                // Update PRNG state.
+                ulong t = s1 << 17;
+                s2 ^= s0;
+                s3 ^= s1;
+                s1 ^= s2;
+                s0 ^= s3;
+                s2 ^= t;
+                s3 = BitOperations.RotateLeft(s3, 45);
+
+                buffer = new byte[32];
+                MemoryMarshal.Write(buffer[0..8], s0);
+                MemoryMarshal.Write(buffer[8..16], s1);
+                MemoryMarshal.Write(buffer[16..24], s2);
+                MemoryMarshal.Write(buffer[24..32], s3);
+
+                price = 1 << 13;
+                AddFee(price * ExecFeeFactor);
+                return new BigInteger(buffer, isUnsigned: true) % (BigInteger.One << 255) - BigInteger.One;
+            }
+            else if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
                 buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++);
                 price = 1 << 13;

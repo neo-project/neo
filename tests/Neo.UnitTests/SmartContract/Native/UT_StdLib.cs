@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Builders;
 using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -455,6 +456,92 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestGetRandomRanges()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using (var script = new ScriptBuilder())
+            {
+                // Test encoding
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 255) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 127) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 63) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 31) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 15) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 7) - BigInteger.One);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Zero);
+
+                var tx = TransactionBuilder.CreateEmpty()
+                    .Nonce((uint)Random.Shared.Next())
+                    .Build();
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default, gas: long.MaxValue);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual(7, engine.ResultStack.Count);
+
+                var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue <= 0);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue < (BigInteger.One << 7) - BigInteger.One);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue < (BigInteger.One << 15) - BigInteger.One);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue < (BigInteger.One << 31) - BigInteger.One);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue < (BigInteger.One << 63) - BigInteger.One);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue < (BigInteger.One << 127) - BigInteger.One);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+
+                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsTrue(actualValue < (BigInteger.One << 255) - BigInteger.One);
+                Assert.IsTrue(actualValue >= BigInteger.Zero);
+            }
+        }
+
+
+        [TestMethod]
+        public void TestGetRandomRanges2()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using (var script = new ScriptBuilder())
+            {
+                // Test encoding
+                for (var i = 0; i < 2000; i++)
+                    script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 10);
+
+                var tx = TransactionBuilder.CreateEmpty()
+                    .Nonce((uint)Random.Shared.Next())
+                    .Build();
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default, gas: long.MaxValue);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual(2000, engine.ResultStack.Count);
+
+                for (var i = 0; i < engine.ResultStack.Count; i++)
+                {
+                    var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                    Assert.IsTrue(actualValue < 10);
+                    Assert.IsTrue(actualValue >= BigInteger.Zero);
+                }
+            }
+        }
+
         public void TestMemorySearch()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
