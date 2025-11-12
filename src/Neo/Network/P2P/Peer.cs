@@ -12,7 +12,6 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions;
-using Neo.Extensions.Factories;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -28,8 +27,10 @@ namespace Neo.Network.P2P
     /// <summary>
     /// Actor used to manage the connections of the local node.
     /// </summary>
-    public abstract class Peer : UntypedActor
+    public abstract class Peer : UntypedActor, IWithUnboundedStash
     {
+        public IStash Stash { get; set; }
+
         /// <summary>
         /// Sent to <see cref="Peer"/> to add more unconnected peers.
         /// </summary>
@@ -190,26 +191,74 @@ namespace Neo.Network.P2P
             {
                 case ChannelsConfig config:
                     OnStart(config);
-                    break;
+                    Stash.UnstashAll();
+                    return;
+
                 case Timer _:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTimer();
                     break;
+
                 case Peers peers:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     AddPeers(peers.EndPoints);
                     break;
+
                 case Connect connect:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     ConnectToPeer(connect.EndPoint, connect.IsTrusted);
                     break;
+
                 case Tcp.Connected connected:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
+                    if (connected.RemoteAddress is null)
+                    {
+                        Sender.Tell(Tcp.Abort.Instance);
+                        break;
+                    }
                     OnTcpConnected(((IPEndPoint)connected.RemoteAddress).UnMap(), ((IPEndPoint)connected.LocalAddress).UnMap());
                     break;
+
                 case Tcp.Bound _:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     _tcpListener = Sender;
                     break;
+
                 case Tcp.CommandFailed commandFailed:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTcpCommandFailed(commandFailed.Cmd);
                     break;
+
                 case Terminated terminated:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
                     OnTerminated(terminated.ActorRef);
                     break;
             }
@@ -249,6 +298,12 @@ namespace Neo.Network.P2P
         /// <param name="local">The local endpoint of TCP connection.</param>
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
+            if (Config is null) // OnStart is not called yet
+            {
+                Sender.Tell(Tcp.Abort.Instance);
+                return;
+            }
+
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             if (Config.MaxConnections != -1 && ConnectedPeers.Count >= Config.MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
