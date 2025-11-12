@@ -60,22 +60,32 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
         /// </summary>
+        /// <param name="engine">The engine that is executing the method.</param>
         /// <param name="data">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if data is null before HF_Faun.</exception>
         [ContractMethod(CpuFee = 1 << 15, Name = "ripemd160")]
-        public static byte[] RIPEMD160(byte[] data)
+        public static byte[] RIPEMD160(ApplicationEngine engine, byte[] data)
         {
+            // Before HF_Faun, data cannot be null for compatibility
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Faun)) ArgumentNullException.ThrowIfNull(data);
+
             return data.RIPEMD160();
         }
 
         /// <summary>
         /// Computes the hash value for the specified byte array using the sha256 algorithm.
         /// </summary>
+        /// <param name="engine">The engine that is executing the method.</param>
         /// <param name="data">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if data is null before HF_Faun.</exception>
         [ContractMethod(CpuFee = 1 << 15)]
-        public static byte[] Sha256(byte[] data)
+        public static byte[] Sha256(ApplicationEngine engine, byte[] data)
         {
+            // Before HF_Faun, data cannot be null for compatibility
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Faun)) ArgumentNullException.ThrowIfNull(data);
+
             return data.Sha256();
         }
 
