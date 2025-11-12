@@ -9,28 +9,25 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network;
-using System;
 using System.Net.Sockets;
 
-namespace Neo.UnitTests.Network
-{
-    [TestClass]
-    public class UT_UPnP
-    {
-        [TestMethod]
-        public void GetTimeOut()
-        {
-            Assert.AreEqual(3, UPnP.TimeOut.TotalSeconds);
-        }
+namespace Neo.UnitTests.Network;
 
-        [TestMethod]
-        public void NoService()
-        {
-            Assert.ThrowsExactly<InvalidOperationException>(() => UPnP.ForwardPort(1, ProtocolType.Tcp, ""));
-            Assert.ThrowsExactly<InvalidOperationException>(() => UPnP.DeleteForwardingRule(1, ProtocolType.Tcp));
-            Assert.ThrowsExactly<InvalidOperationException>(() => _ = UPnP.GetExternalIP());
-        }
+[TestClass]
+public class UT_UPnP
+{
+    [TestMethod]
+    public void GetTimeOut()
+    {
+        Assert.AreEqual(3, UPnP.TimeOut.TotalSeconds);
+    }
+
+    [TestMethod]
+    public void NoService()
+    {
+        Assert.ThrowsExactly<InvalidOperationException>(() => UPnP.ForwardPort(1, ProtocolType.Tcp, ""));
+        Assert.ThrowsExactly<InvalidOperationException>(() => UPnP.DeleteForwardingRule(1, ProtocolType.Tcp));
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = UPnP.GetExternalIP());
     }
 }

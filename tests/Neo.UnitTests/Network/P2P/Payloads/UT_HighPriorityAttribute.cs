@@ -9,76 +9,74 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
-using System;
 
-namespace Neo.UnitTests.Network.P2P.Payloads
+namespace Neo.UnitTests.Network.P2P.Payloads;
+
+[TestClass]
+public class UT_HighPriorityAttribute
 {
-    [TestClass]
-    public class UT_HighPriorityAttribute
+    [TestMethod]
+    public void Size_Get()
     {
-        [TestMethod]
-        public void Size_Get()
+        var test = new HighPriorityAttribute();
+        Assert.AreEqual(1, test.Size);
+    }
+
+    [TestMethod]
+    public void ToJson()
+    {
+        var test = new HighPriorityAttribute();
+        var json = test.ToJson().ToString();
+        Assert.AreEqual(@"{""type"":""HighPriority""}", json);
+    }
+
+    [TestMethod]
+    public void DeserializeAndSerialize()
+    {
+        var test = new HighPriorityAttribute();
+
+        var clone = test.ToArray().AsSerializable<HighPriorityAttribute>();
+        Assert.AreEqual(clone.Type, test.Type);
+
+        // As transactionAttribute
+
+        byte[] buffer = test.ToArray();
+        var reader = new MemoryReader(buffer);
+        clone = (HighPriorityAttribute)TransactionAttribute.DeserializeFrom(ref reader);
+        Assert.AreEqual(clone.Type, test.Type);
+
+        // Wrong type
+
+        buffer[0] = 0xff;
+        reader = new MemoryReader(buffer);
+        try
         {
-            var test = new HighPriorityAttribute();
-            Assert.AreEqual(1, test.Size);
+            TransactionAttribute.DeserializeFrom(ref reader);
+            Assert.Fail();
         }
-
-        [TestMethod]
-        public void ToJson()
+        catch (FormatException) { }
+        reader = new MemoryReader(buffer);
+        try
         {
-            var test = new HighPriorityAttribute();
-            var json = test.ToJson().ToString();
-            Assert.AreEqual(@"{""type"":""HighPriority""}", json);
+            new HighPriorityAttribute().Deserialize(ref reader);
+            Assert.Fail();
         }
+        catch (FormatException) { }
+    }
 
-        [TestMethod]
-        public void DeserializeAndSerialize()
-        {
-            var test = new HighPriorityAttribute();
+    [TestMethod]
+    public void Verify()
+    {
+        var test = new HighPriorityAttribute();
+        var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
-            var clone = test.ToArray().AsSerializable<HighPriorityAttribute>();
-            Assert.AreEqual(clone.Type, test.Type);
-
-            // As transactionAttribute
-
-            byte[] buffer = test.ToArray();
-            var reader = new MemoryReader(buffer);
-            clone = TransactionAttribute.DeserializeFrom(ref reader) as HighPriorityAttribute;
-            Assert.AreEqual(clone.Type, test.Type);
-
-            // Wrong type
-
-            buffer[0] = 0xff;
-            reader = new MemoryReader(buffer);
-            try
-            {
-                TransactionAttribute.DeserializeFrom(ref reader);
-                Assert.Fail();
-            }
-            catch (FormatException) { }
-            reader = new MemoryReader(buffer);
-            try
-            {
-                new HighPriorityAttribute().Deserialize(ref reader);
-                Assert.Fail();
-            }
-            catch (FormatException) { }
-        }
-
-        [TestMethod]
-        public void Verify()
-        {
-            var test = new HighPriorityAttribute();
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-
-            Assert.IsFalse(test.Verify(snapshotCache, new Transaction() { Signers = Array.Empty<Signer>(), Attributes = [test], Witnesses = null! }));
-            Assert.IsFalse(test.Verify(snapshotCache, new Transaction() { Signers = new Signer[] { new Signer() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") } }, Attributes = [test], Witnesses = null! }));
-            Assert.IsTrue(test.Verify(snapshotCache, new Transaction() { Signers = new Signer[] { new Signer() { Account = NativeContract.NEO.GetCommitteeAddress(snapshotCache) } }, Attributes = [test], Witnesses = null! }));
-        }
+        Assert.IsFalse(test.Verify(snapshotCache, new Transaction() { Signers = Array.Empty<Signer>(), Attributes = [test], Witnesses = null! }));
+        Assert.IsFalse(test.Verify(snapshotCache, new Transaction() { Signers = new Signer[] { new() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") } }, Attributes = [test], Witnesses = null! }));
+        Assert.IsTrue(test.Verify(snapshotCache, new Transaction() { Signers = new Signer[] { new() { Account = NativeContract.NEO.GetCommitteeAddress(snapshotCache) } }, Attributes = [test], Witnesses = null! }));
     }
 }

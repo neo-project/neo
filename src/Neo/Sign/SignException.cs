@@ -9,20 +9,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+namespace Neo.Sign;
 
-namespace Neo.Sign
+/// <summary>
+/// The exception that is thrown when `Sign` fails.
+/// </summary>
+public class SignException : Exception
 {
     /// <summary>
-    /// The exception that is thrown when `Sign` fails.
+    /// Initializes a new instance of the <see cref="SignException"/> class.
     /// </summary>
-    public class SignException : Exception
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SignException"/> class.
-        /// </summary>
-        /// <param name="message">The message that describes the error.</param>
-        /// <param name="cause">The cause of the exception.</param>
-        public SignException(string message, Exception? cause = null) : base(message, cause) { }
-    }
+    /// <param name="message">The message that describes the error.</param>
+    /// <param name="cause">The cause of the exception.</param>
+    public SignException(string message, Exception? cause = null) : base(message, cause) { }
 }

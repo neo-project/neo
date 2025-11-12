@@ -11,78 +11,76 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Neo.Benchmark
+namespace Neo.Benchmarks;
+
+public class Benchmarks_UInt160
 {
-    public class Benchmarks_UInt160
+    static readonly UInt160 s_newUInt160 = new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+
+    [Benchmark]
+    public static void TestGernerator1()
     {
-        static readonly UInt160 s_newUInt160 = new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+        _ = new UInt160();
+    }
 
-        [Benchmark]
-        public void TestGernerator1()
-        {
-            _ = new UInt160();
-        }
+    [Benchmark]
+    public static void TestGernerator2()
+    {
+        _ = new UInt160(new byte[20]);
+    }
 
-        [Benchmark]
-        public void TestGernerator2()
-        {
-            _ = new UInt160(new byte[20]);
-        }
+    [Benchmark]
+    public static void TestCompareTo()
+    {
+        UInt160.Zero.CompareTo(UInt160.Zero);
+        UInt160.Zero.CompareTo(s_newUInt160);
+        s_newUInt160.CompareTo(UInt160.Zero);
+    }
 
-        [Benchmark]
-        public void TestCompareTo()
-        {
-            UInt160.Zero.CompareTo(UInt160.Zero);
-            UInt160.Zero.CompareTo(s_newUInt160);
-            s_newUInt160.CompareTo(UInt160.Zero);
-        }
+    [Benchmark]
+    public static void TestEquals()
+    {
+        UInt160.Zero.Equals(UInt160.Zero);
+        UInt160.Zero.Equals(s_newUInt160);
+        s_newUInt160.Equals(null);
+    }
 
-        [Benchmark]
-        public void TestEquals()
-        {
-            UInt160.Zero.Equals(UInt160.Zero);
-            UInt160.Zero.Equals(s_newUInt160);
-            s_newUInt160.Equals(null);
-        }
+    [Benchmark]
+    public static void TestParse()
+    {
+        _ = UInt160.Parse("0x0000000000000000000000000000000000000000");
+        _ = UInt160.Parse("0000000000000000000000000000000000000000");
+    }
 
-        [Benchmark]
-        public void TestParse()
-        {
-            _ = UInt160.Parse("0x0000000000000000000000000000000000000000");
-            _ = UInt160.Parse("0000000000000000000000000000000000000000");
-        }
+    [Benchmark]
+    public static void TestTryParse()
+    {
+        _ = UInt160.TryParse("0x0000000000000000000000000000000000000000", out _);
+        _ = UInt160.TryParse("0x1230000000000000000000000000000000000000", out _);
+        _ = UInt160.TryParse("000000000000000000000000000000000000000", out _);
+    }
 
-        [Benchmark]
-        public void TestTryParse()
-        {
-            UInt160.TryParse(null, out _);
-            UInt160.TryParse("0x0000000000000000000000000000000000000000", out var temp);
-            UInt160.TryParse("0x1230000000000000000000000000000000000000", out temp);
-            UInt160.TryParse("000000000000000000000000000000000000000", out _);
-        }
+    [Benchmark]
+    public static void TestOperatorLarger()
+    {
+        _ = s_newUInt160 > UInt160.Zero;
+    }
 
-        [Benchmark]
-        public void TestOperatorLarger()
-        {
-            _ = s_newUInt160 > UInt160.Zero;
-        }
+    [Benchmark]
+    public static void TestOperatorLargerAndEqual()
+    {
+        _ = s_newUInt160 >= UInt160.Zero;
+    }
 
-        [Benchmark]
-        public void TestOperatorLargerAndEqual()
-        {
-            _ = s_newUInt160 >= UInt160.Zero;
-        }
+    [Benchmark]
+    public static void TestOperatorSmaller()
+    {
+        _ = s_newUInt160 < UInt160.Zero;
+    }
 
-        [Benchmark]
-        public void TestOperatorSmaller()
-        {
-            _ = s_newUInt160 < UInt160.Zero;
-        }
-
-        [Benchmark]
-        public void TestOperatorSmallerAndEqual()
-        {
-            _ = s_newUInt160 <= UInt160.Zero;
-        }
+    [Benchmark]
+    public static void TestOperatorSmallerAndEqual()
+    {
+        _ = s_newUInt160 <= UInt160.Zero;
     }
 }

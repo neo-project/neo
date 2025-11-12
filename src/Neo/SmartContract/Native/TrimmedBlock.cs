@@ -10,124 +10,122 @@
 // modifications are permitted.
 
 using Neo.Extensions;
+using Neo.Extensions.Collections;
+using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.IO;
-using System.Linq;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract.Native;
+
+/// <summary>
+/// Represents a block which the transactions are trimmed.
+/// </summary>
+public class TrimmedBlock : IInteroperable, ISerializable
 {
     /// <summary>
-    /// Represents a block which the transactions are trimmed.
+    /// The header of the block.
     /// </summary>
-    public class TrimmedBlock : IInteroperable, ISerializable
+    public required Header Header;
+
+    /// <summary>
+    /// The hashes of the transactions of the block.
+    /// </summary>
+    public required UInt256[] Hashes;
+
+    /// <summary>
+    /// The hash of the block.
+    /// </summary>
+    public UInt256 Hash => Header.Hash;
+
+    /// <summary>
+    /// The index of the block.
+    /// </summary>
+    public uint Index => Header.Index;
+
+    public int Size => Header.Size + Hashes.GetVarSize();
+
+    /// <summary>
+    /// Create Trimmed block
+    /// </summary>
+    /// <param name="block">Block</param>
+    /// <returns></returns>
+    public static TrimmedBlock Create(Block block)
     {
-        /// <summary>
-        /// The header of the block.
-        /// </summary>
-        public required Header Header;
+        return Create(block.Header, block.Transactions.Select(p => p.Hash).ToArray());
+    }
 
-        /// <summary>
-        /// The hashes of the transactions of the block.
-        /// </summary>
-        public required UInt256[] Hashes;
-
-        /// <summary>
-        /// The hash of the block.
-        /// </summary>
-        public UInt256 Hash => Header.Hash;
-
-        /// <summary>
-        /// The index of the block.
-        /// </summary>
-        public uint Index => Header.Index;
-
-        public int Size => Header.Size + Hashes.GetVarSize();
-
-        /// <summary>
-        /// Create Trimmed block
-        /// </summary>
-        /// <param name="block">Block</param>
-        /// <returns></returns>
-        public static TrimmedBlock Create(Block block)
+    /// <summary>
+    /// Create Trimmed block
+    /// </summary>
+    /// <param name="header">Block header</param>
+    /// <param name="txHashes">Transaction hashes</param>
+    /// <returns></returns>
+    public static TrimmedBlock Create(Header header, UInt256[] txHashes)
+    {
+        return new TrimmedBlock
         {
-            return Create(block.Header, block.Transactions.Select(p => p.Hash).ToArray());
-        }
+            Header = header,
+            Hashes = txHashes
+        };
+    }
 
-        /// <summary>
-        /// Create Trimmed block
-        /// </summary>
-        /// <param name="header">Block header</param>
-        /// <param name="txHashes">Transaction hashes</param>
-        /// <returns></returns>
-        public static TrimmedBlock Create(Header header, UInt256[] txHashes)
+    public void Deserialize(ref MemoryReader reader)
+    {
+        Header = reader.ReadSerializable<Header>();
+        Hashes = reader.ReadSerializableArray<UInt256>(ushort.MaxValue);
+    }
+
+    public void Serialize(BinaryWriter writer)
+    {
+        writer.Write(Header);
+        writer.Write(Hashes);
+    }
+
+    IInteroperable IInteroperable.Clone()
+    {
+        // FromStackItem is not supported so we need to do the copy
+
+        return new TrimmedBlock
         {
-            return new TrimmedBlock
-            {
-                Header = header,
-                Hashes = txHashes
-            };
-        }
+            Header = Header.Clone(),
+            Hashes = [.. Hashes]
+        };
+    }
 
-        public void Deserialize(ref MemoryReader reader)
-        {
-            Header = reader.ReadSerializable<Header>();
-            Hashes = reader.ReadSerializableArray<UInt256>(ushort.MaxValue);
-        }
+    void IInteroperable.FromReplica(IInteroperable replica)
+    {
+        var from = (TrimmedBlock)replica;
+        Header = from.Header;
+        Hashes = from.Hashes;
+    }
 
-        public void Serialize(BinaryWriter writer)
-        {
-            writer.Write(Header);
-            writer.Write(Hashes);
-        }
+    void IInteroperable.FromStackItem(StackItem stackItem)
+    {
+        throw new NotSupportedException();
+    }
 
-        IInteroperable IInteroperable.Clone()
-        {
-            // FromStackItem is not supported so we need to do the copy
+    StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
+    {
+        return new Array(referenceCounter,
+        [
+            // Computed properties
+            Header.Hash.ToArray(),
 
-            return new TrimmedBlock
-            {
-                Header = Header.Clone(),
-                Hashes = [.. Hashes]
-            };
-        }
+            // BlockBase properties
+            Header.Version,
+            Header.PrevHash.ToArray(),
+            Header.MerkleRoot.ToArray(),
+            Header.Timestamp,
+            Header.Nonce,
+            Header.Index,
+            Header.PrimaryIndex,
+            Header.NextConsensus.ToArray(),
 
-        void IInteroperable.FromReplica(IInteroperable replica)
-        {
-            var from = (TrimmedBlock)replica;
-            Header = from.Header;
-            Hashes = from.Hashes;
-        }
-
-        void IInteroperable.FromStackItem(StackItem stackItem)
-        {
-            throw new NotSupportedException();
-        }
-
-        StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
-        {
-            return new Array(referenceCounter,
-            [
-                // Computed properties
-                Header.Hash.ToArray(),
-
-                // BlockBase properties
-                Header.Version,
-                Header.PrevHash.ToArray(),
-                Header.MerkleRoot.ToArray(),
-                Header.Timestamp,
-                Header.Nonce,
-                Header.Index,
-                Header.PrimaryIndex,
-                Header.NextConsensus.ToArray(),
-
-                // Block properties
-                Hashes.Length
-            ]);
-        }
+            // Block properties
+            Hashes.Length
+        ]);
     }
 }
