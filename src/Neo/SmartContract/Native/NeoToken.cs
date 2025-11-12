@@ -225,7 +225,7 @@ namespace Neo.SmartContract.Native
                 var prevCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
 
                 cachedCommittee.Clear();
-                cachedCommittee.AddRange(ComputeCommitteeMembers(engine.SnapshotCache, engine.ProtocolSettings));
+                cachedCommittee.AddRange(ComputeCommitteeMembers(engine));
 
                 // Hardfork check for https://github.com/neo-project/neo/pull/3158
                 // New notification will case 3.7.0 and 3.6.0 have different behavior
@@ -276,6 +276,13 @@ namespace Neo.SmartContract.Native
                     }
                 }
             }
+
+            // Set primary as alive
+
+            var key = CreateStorageKey(Prefix_Candidate, pubkey);
+            var item = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(new CandidateState()));
+            var state = item.GetInteroperable<CandidateState>();
+            state.LastProofOfLife = engine.PersistingBlock.Index;
         }
 
         /// <summary>
@@ -546,12 +553,12 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the first 256 registered candidates.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The ApplicationEngine used.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
+        internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(ApplicationEngine engine)
         {
-            return GetCandidatesInternal(snapshot, true)
+            return GetCandidatesInternal(engine.SnapshotCache, engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 .Select(p => (p.PublicKey, p.State.Votes))
                 .Take(256)
                 .ToArray();
@@ -560,13 +567,13 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the registered candidates iterator.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The ApplicationEngine used.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetAllCandidates(IReadOnlyStore snapshot)
+        private IIterator GetAllCandidates(ApplicationEngine engine)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
-            var enumerator = GetCandidatesInternal(snapshot, true)
+            var enumerator = GetCandidatesInternal(engine.SnapshotCache, engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 .Select(p => (p.Key, p.Value))
                 .GetEnumerator();
             return new StorageIterator(enumerator, 1, options);
@@ -641,36 +648,35 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Computes the validators of the next block.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> used during computing.</param>
+        /// <param name="engine">The ApplicationEngine used.</param>
         /// <returns>The public keys of the validators.</returns>
-        public ECPoint[] ComputeNextBlockValidators(DataCache snapshot, ProtocolSettings settings)
+        public ECPoint[] ComputeNextBlockValidators(ApplicationEngine engine)
         {
-            return ComputeCommitteeMembers(snapshot, settings).Select(p => p.PublicKey).Take(settings.ValidatorsCount).OrderBy(p => p).ToArray();
+            return ComputeCommitteeMembers(engine).Select(p => p.PublicKey).Take(engine.ProtocolSettings.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
-        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(DataCache snapshot, ProtocolSettings settings)
+        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(ApplicationEngine engine)
         {
-            var votersCount = (decimal)(BigInteger)snapshot[_votersCount];
+            var votersCount = (decimal)(BigInteger)engine.SnapshotCache[_votersCount];
             var voterTurnout = votersCount / (decimal)TotalAmount;
-            var candidates = GetCandidatesInternal(snapshot, true)
+            var candidates = GetCandidatesInternal(engine.SnapshotCache, engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 .Select(p => (p.PublicKey, p.State.Votes))
                 .ToArray();
 
-            if (candidates.Length < settings.CommitteeMembersCount)
+            if (candidates.Length < engine.ProtocolSettings.CommitteeMembersCount)
             {
                 // If there are not enough candidates, include those without proof of life
-                candidates = GetCandidatesInternal(snapshot, false)
+                candidates = GetCandidatesInternal(engine.SnapshotCache, false)
                     .Select(p => (p.PublicKey, p.State.Votes))
                     .ToArray();
             }
 
-            if (voterTurnout < EffectiveVoterTurnout || candidates.Length < settings.CommitteeMembersCount)
-                return settings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
+            if (voterTurnout < EffectiveVoterTurnout || candidates.Length < engine.ProtocolSettings.CommitteeMembersCount)
+                return engine.ProtocolSettings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
             return candidates
                 .OrderByDescending(p => p.Votes)
                 .ThenBy(p => p.PublicKey)
-                .Take(settings.CommitteeMembersCount);
+                .Take(engine.ProtocolSettings.CommitteeMembersCount);
         }
 
         /// <summary>
