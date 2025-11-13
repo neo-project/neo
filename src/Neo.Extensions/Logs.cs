@@ -21,8 +21,9 @@ namespace Neo
     {
         private static string? s_logDirectory;
 
-        // For compatibility with the old Log api,
         private static readonly ConcurrentDictionary<string, ILogger> s_loggers = new();
+
+        private static readonly ILogger s_noopLogger = new LoggerConfiguration().CreateLogger();
 
         /// <summary>
         /// The directory where the logs are stored. If not set, the logs will be disabled.
@@ -46,12 +47,12 @@ namespace Neo
         /// <returns>A logger for the given source.</returns>
         public static ILogger GetLogger(string source)
         {
-            return (LogDirectory is null) ? new NoopLogger() : s_loggers.GetOrAdd(source, CreateLogger);
+            return (LogDirectory is null) ? s_noopLogger : s_loggers.GetOrAdd(source, CreateLogger);
         }
 
         private static ILogger CreateLogger(string source)
         {
-            if (LogDirectory is null) return new NoopLogger();
+            if (LogDirectory is null) return s_noopLogger;
 
             foreach (var ch in Path.GetInvalidFileNameChars())
             {
@@ -80,13 +81,5 @@ namespace Neo
             LogLevel.Fatal => LogEventLevel.Fatal,
             _ => LogEventLevel.Information,
         };
-
-
-        private class NoopLogger : ILogger
-        {
-            public void Write(LogEvent logEvent) { }
-
-            public bool IsEnabled(LogEventLevel level) => false;
-        }
     }
 }
