@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native
             if (engine.PersistingBlock is null) return null;
 
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            var datoshi = CalculateBonus(engine, state, engine.PersistingBlock.Index);
+            var datoshi = CalculateBonus(engine.SnapshotCache, state, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
             if (state.VoteTo is not null)
             {
@@ -143,21 +143,21 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        private BigInteger CalculateBonus(ApplicationEngine engine, NeoAccountState state, uint end)
+        private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state, uint end)
         {
             if (state.Balance.IsZero) return BigInteger.Zero;
             if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance), "cannot be negative");
 
-            var expectEnd = Ledger.CurrentIndex(engine.SnapshotCache) + 1;
+            var expectEnd = Ledger.CurrentIndex(snapshot) + 1;
             if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
             if (state.BalanceHeight >= end) return BigInteger.Zero;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            (var neoHolderReward, var voteReward) = CalculateReward(engine, state, end);
+            (var neoHolderReward, var voteReward) = CalculateReward(snapshot, state, end);
 
             return neoHolderReward + voteReward;
         }
 
-        private (BigInteger neoHold, BigInteger voteReward) CalculateReward(ApplicationEngine engine, NeoAccountState state, uint end)
+        private (BigInteger neoHold, BigInteger voteReward) CalculateReward(DataCache snapshot, NeoAccountState state, uint end)
         {
             var start = state.BalanceHeight;
 
@@ -165,7 +165,7 @@ namespace Neo.SmartContract.Native
 
             // In the unit of datoshi, 1 GAS = 10^8 datoshi
             BigInteger sumNeoHold = 0;
-            foreach (var (index, gasPerBlock) in GetSortedGasRecords(engine.SnapshotCache, end - 1))
+            foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end - 1))
             {
                 if (index > start)
                 {
@@ -186,7 +186,7 @@ namespace Neo.SmartContract.Native
             if (state.VoteTo != null)
             {
                 var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee, state.VoteTo);
-                var latestGasPerVote = engine.SnapshotCache.TryGet(keyLastest) ?? BigInteger.Zero;
+                var latestGasPerVote = snapshot.TryGet(keyLastest) ?? BigInteger.Zero;
                 voteReward = state.Balance * (latestGasPerVote - state.LastGasPerVote) / VoteFactor;
             }
 
@@ -364,7 +364,7 @@ namespace Neo.SmartContract.Native
             var storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
             var state = storage.GetInteroperable<NeoAccountState>();
-            return CalculateBonus(engine, state, end);
+            return CalculateBonus(engine.SnapshotCache, state, end);
         }
 
         /// <summary>
