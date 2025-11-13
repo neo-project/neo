@@ -259,7 +259,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the max proof of node height.
+        /// Gets the max proof of node difficulty.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The proof of node height.</returns>
