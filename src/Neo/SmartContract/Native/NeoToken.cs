@@ -430,6 +430,8 @@ namespace Neo.SmartContract.Native
             if (!state.Registered)
                 throw new Exception("Only registered candidates are availables");
 
+            // Take the first 8 bytes in order to check the proof of work difficulty
+
             if (BitConverter.ToUInt64(proofOfWork.ToArray()) >= Policy.GetProofOfLifeDifficulty(engine.SnapshotCache))
                 throw new Exception("Proof of work is too easy");
 
