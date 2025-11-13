@@ -354,17 +354,17 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Get the amount of unclaimed GAS in the specified account.
         /// </summary>
-        /// <param name="engine">The engine used to check unclaimed gas.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="account">The account to check.</param>
         /// <param name="end">The block index used when calculating GAS.</param>
         /// <returns>The amount of unclaimed GAS.</returns>
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
+        public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
         {
-            var storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Account, account));
+            var storage = snapshot.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
             var state = storage.GetInteroperable<NeoAccountState>();
-            return CalculateBonus(engine.SnapshotCache, state, end);
+            return CalculateBonus(snapshot, state, end);
         }
 
         /// <summary>
