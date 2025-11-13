@@ -225,7 +225,7 @@ namespace Neo.SmartContract.Native
                 var prevCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
 
                 cachedCommittee.Clear();
-                cachedCommittee.AddRange(ComputeCommitteeMembers(engine));
+                cachedCommittee.AddRange(ComputeCommitteeMembers(engine.SnapshotCache, engine.ProtocolSettings));
 
                 // Hardfork check for https://github.com/neo-project/neo/pull/3158
                 // New notification will case 3.7.0 and 3.6.0 have different behavior
@@ -430,24 +430,15 @@ namespace Neo.SmartContract.Native
             if (!state.Registered)
                 throw new Exception("Only registered candidates are availables");
 
-            // Take the first 8 bytes in order to check the proof of work difficulty
-
-            if (BitConverter.ToUInt64(proofOfWork.ToArray()) >= Policy.GetProofOfLifeDifficulty(engine.SnapshotCache))
+            if (!ProofOfWork.VerifyDifficulty(proofOfWork, Policy.GetProofOfLifeDifficulty(engine.SnapshotCache)))
                 throw new Exception("Proof of work is too easy");
 
-            if (ComputeProofOfLife(engine.SnapshotCache, blockIndex, (engine.ScriptContainer as Transaction)?.Nonce) != proofOfWork)
+            var blockHash = Ledger.GetBlockHash(engine.SnapshotCache, blockIndex);
+
+            if (blockHash == null || ProofOfWork.Compute(blockHash, (engine.ScriptContainer as Transaction)?.Nonce) != proofOfWork)
                 throw new Exception("Invalid proof of work");
 
             state.LastProofOfLife = blockIndex;
-        }
-
-        private static UInt256 ComputeProofOfLife(DataCache snapshotCache, uint blockIndex, long? nonce = 0)
-        {
-            var blockHash = Ledger.GetBlockHash(snapshotCache, blockIndex);
-
-            return blockHash == null
-                ? throw new Exception("Invalid blockIndex")
-                : (UInt256)Cryptography.Helper.Blake2b_256(blockHash.ToArray(), BitConverter.GetBytes(nonce ?? 0));
         }
 
         private bool RegisterInternal(ApplicationEngine engine, ECPoint pubkey)
@@ -650,35 +641,36 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Computes the validators of the next block.
         /// </summary>
-        /// <param name="engine">The ApplicationEngine used.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used during computing.</param>
         /// <returns>The public keys of the validators.</returns>
-        public ECPoint[] ComputeNextBlockValidators(ApplicationEngine engine)
+        public ECPoint[] ComputeNextBlockValidators(DataCache snapshot, ProtocolSettings settings)
         {
-            return ComputeCommitteeMembers(engine).Select(p => p.PublicKey).Take(engine.ProtocolSettings.ValidatorsCount).OrderBy(p => p).ToArray();
+            return ComputeCommitteeMembers(snapshot, settings).Select(p => p.PublicKey).Take(settings.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
-        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(ApplicationEngine engine)
+        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(DataCache snapshot, ProtocolSettings settings)
         {
-            var votersCount = (decimal)(BigInteger)engine.SnapshotCache[_votersCount];
+            var votersCount = (decimal)(BigInteger)snapshot[_votersCount];
             var voterTurnout = votersCount / (decimal)TotalAmount;
-            var candidates = GetCandidatesInternal(engine.SnapshotCache, engine.IsHardforkEnabled(Hardfork.HF_Faun))
+            var candidates = GetCandidatesInternal(snapshot, settings.IsHardforkEnabled(Hardfork.HF_Faun, Ledger.CurrentIndex(snapshot)))
                 .Select(p => (p.PublicKey, p.State.Votes))
                 .ToArray();
 
-            if (candidates.Length < engine.ProtocolSettings.CommitteeMembersCount)
+            if (candidates.Length < settings.CommitteeMembersCount)
             {
                 // If there are not enough candidates, include those without proof of life
-                candidates = GetCandidatesInternal(engine.SnapshotCache, false)
+                candidates = GetCandidatesInternal(snapshot, false)
                     .Select(p => (p.PublicKey, p.State.Votes))
                     .ToArray();
             }
 
-            if (voterTurnout < EffectiveVoterTurnout || candidates.Length < engine.ProtocolSettings.CommitteeMembersCount)
-                return engine.ProtocolSettings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
+            if (voterTurnout < EffectiveVoterTurnout || candidates.Length < settings.CommitteeMembersCount)
+                return settings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
             return candidates
                 .OrderByDescending(p => p.Votes)
                 .ThenBy(p => p.PublicKey)
-                .Take(engine.ProtocolSettings.CommitteeMembersCount);
+                .Take(settings.CommitteeMembersCount);
         }
 
         /// <summary>
