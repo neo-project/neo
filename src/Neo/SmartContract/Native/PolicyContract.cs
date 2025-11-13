@@ -385,7 +385,6 @@ namespace Neo.SmartContract.Native
             engine.SnapshotCache.GetAndChange(_maxProofOfNodeHeight)!.Set(value);
         }
 
-
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetProofOfNodeDifficulty(ApplicationEngine engine, ulong value)
         {
