@@ -56,6 +56,11 @@ namespace Neo.SmartContract.Native
         public const uint DefaultMaxProofOfNodeHeight = 10_000;
 
         /// <summary>
+        /// The default proof of node difficulty.
+        /// </summary>
+        public const ulong DefaultProofOfNodeDifficulty = 0x0000FFFFFFFFFFFF;
+
+        /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
         public const uint MaxExecFeeFactor = 100;
@@ -96,6 +101,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MaxValidUntilBlockIncrement = 22;
         private const byte Prefix_MaxTraceableBlocks = 23;
         private const byte Prefix_MaxProofOfNodeHeight = 24;
+        private const byte Prefix_ProofOfNodeDifficulty = 25;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
@@ -104,6 +110,7 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
         private readonly StorageKey _maxProofOfNodeHeight;
+        private readonly StorageKey _proofOfNodeDifficulty;
 
         /// <summary>
         /// The event name for the block generation time changed.
@@ -123,6 +130,7 @@ namespace Neo.SmartContract.Native
             _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
             _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
             _maxProofOfNodeHeight = CreateStorageKey(Prefix_MaxProofOfNodeHeight);
+            _proofOfNodeDifficulty = CreateStorageKey(Prefix_ProofOfNodeDifficulty);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -143,6 +151,7 @@ namespace Neo.SmartContract.Native
             if (hardfork == Hardfork.HF_Faun)
             {
                 engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(DefaultMaxProofOfNodeHeight));
+                engine.SnapshotCache.Add(_proofOfNodeDifficulty, new StorageItem(DefaultProofOfNodeDifficulty));
             }
             return ContractTask.CompletedTask;
         }
@@ -247,6 +256,17 @@ namespace Neo.SmartContract.Native
         public uint GetMaxProofOfNodeHeight(IReadOnlyStore snapshot)
         {
             return (uint)(BigInteger)snapshot[_maxProofOfNodeHeight];
+        }
+
+        /// <summary>
+        /// Gets the max proof of node height.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The proof of node height.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public ulong GetProofOfLifeDifficulty(IReadOnlyStore snapshot)
+        {
+            return (ulong)(BigInteger)snapshot[_proofOfNodeDifficulty];
         }
 
         /// <summary>
@@ -356,11 +376,22 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMaxProofOfNodeHeight(ApplicationEngine engine, uint value)
         {
-            if (value < 100 || value > 1_000_000)
-                throw new ArgumentOutOfRangeException(nameof(value), $"MaxProofOfNodeHeight must be between [100, 100000000], got {value}");
+            var maxValue = GetMaxTraceableBlocks(engine.SnapshotCache);
+
+            if (value < 100 || value > maxValue)
+                throw new ArgumentOutOfRangeException(nameof(value), $"MaxProofOfNodeHeight must be between [100, {maxValue}], got {value}");
             AssertCommittee(engine);
 
             engine.SnapshotCache.GetAndChange(_maxProofOfNodeHeight)!.Set(value);
+        }
+
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetProofOfNodeDifficulty(ApplicationEngine engine, ulong value)
+        {
+            AssertCommittee(engine);
+
+            engine.SnapshotCache.GetAndChange(_proofOfNodeDifficulty)!.Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
