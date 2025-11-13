@@ -40,14 +40,10 @@ namespace Neo.Cryptography
         /// <param name="blockHash">BlockHash</param>
         /// <param name="nonce">Nonce</param>
         /// <returns>Proof of Work</returns>
-        public static UInt256 Compute(UInt256 blockHash, long? nonce = 0)
+        public static UInt256 Compute(UInt256 blockHash, long nonce)
         {
             var salt = new byte[16];
-
-            if (nonce.HasValue)
-            {
-                BinaryPrimitives.WriteInt64BigEndian(salt, nonce.Value);
-            }
+            BinaryPrimitives.WriteInt64BigEndian(salt, nonce);
 
             return (UInt256)Helper.Blake2b_256(blockHash.ToArray(), salt);
         }

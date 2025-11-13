@@ -435,7 +435,7 @@ namespace Neo.SmartContract.Native
 
             var blockHash = Ledger.GetBlockHash(engine.SnapshotCache, blockIndex);
 
-            if (blockHash == null || ProofOfWork.Compute(blockHash, (engine.ScriptContainer as Transaction)?.Nonce) != proofOfWork)
+            if (blockHash == null || ProofOfWork.Compute(blockHash, (engine.ScriptContainer as Transaction)?.Nonce ?? 0) != proofOfWork)
                 throw new Exception("Invalid proof of work");
 
             state.LastProofOfLife = blockIndex;
