@@ -40,14 +40,8 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
-        public static byte[] RIPEMD160(this byte[] value)
-        {
-            var digest = new RipeMD160Digest();
-            var buffer = new byte[digest.GetDigestSize()];
-            digest.BlockUpdate(value, 0, value.Length);
-            digest.DoFinal(buffer, 0);
-            return buffer;
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] RIPEMD160(this byte[] value) => ((ReadOnlySpan<byte>)value.AsSpan()).RIPEMD160();
 
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
@@ -112,7 +106,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value)
         {
-            return SHA256.HashData(value);
+            return SHA256.HashData((ReadOnlySpan<byte>)value.AsSpan());
         }
 
         /// <summary>
@@ -123,7 +117,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha512(this byte[] value)
         {
-            return SHA512.HashData(value);
+            return SHA512.HashData((ReadOnlySpan<byte>)value.AsSpan());
         }
 
         /// <summary>
@@ -167,6 +161,7 @@ namespace Neo.Cryptography
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when offset or count is negative.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
@@ -180,6 +175,7 @@ namespace Neo.Cryptography
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash code.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when offset or count is negative.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha512(this byte[] value, int offset, int count)
         {
