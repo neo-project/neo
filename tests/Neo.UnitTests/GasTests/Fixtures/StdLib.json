@@ -1,6 +1,6 @@
 [
   {
-
+    "Name": "Test Stdlib with default execution fee",
     "Execute": [
       {
         "Script": "ERHAHwwEaXRvYQwUwO85zuDk6SXGwqBqeeFEDdhvzqxBYn1bUg==",
@@ -9,6 +9,26 @@
       {
         "Script": "DAExEcAfDARhdG9pDBTA7znO4OTpJcbCoGp54UQN2G/OrEFifVtS",
         "Fee": 1047210
+      }
+    ]
+  },
+  {
+    "Name" : "Test Stdlib with half default execution fee",
+    "Environment": {
+      "Policy": {
+        "ExecutionFee": 150000,
+        "StorageFee": 100000,
+        "FeePerByte": 1000
+      }
+    },
+    "Execute": [
+      {
+        "Script": "ERHAHwwEaXRvYQwUwO85zuDk6SXGwqBqeeFEDdhvzqxBYn1bUg==",
+        "Fee": 583980
+      },
+      {
+        "Script": "DAExEcAfDARhdG9pDBTA7znO4OTpJcbCoGp54UQN2G/OrEFifVtS",
+        "Fee": 523605
       }
     ]
   }

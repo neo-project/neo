@@ -406,8 +406,8 @@ namespace Neo.SmartContract.Native
             if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna) &&
                 !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            engine.AddFee(GetRegisterPrice(engine.SnapshotCache));
+            // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+            engine.AddFee(GetRegisterPrice(engine.SnapshotCache) * ApplicationEngine.FeeFactor);
             return RegisterInternal(engine, pubkey);
         }
 
