@@ -17,7 +17,6 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Net;
 using System.Net.NetworkInformation;
-using System.Net.Sockets;
 
 namespace Neo.Network.P2P;
 
@@ -254,18 +253,6 @@ public abstract class Peer : UntypedActor, IWithUnboundedStash
 
         // schedule time to trigger `OnTimer` event every TimerMillisecondsInterval ms
         _timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-        if ((ListenerTcpPort > 0)
-            && s_localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
-            && UPnP.Discover())
-        {
-            try
-            {
-                s_localAddresses.Add(UPnP.GetExternalIP());
-
-                if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
-            }
-            catch { }
-        }
         if (ListenerTcpPort > 0)
         {
             s_tcpManager.Tell(new Tcp.Bind(Self, config.Tcp, options: [new Inet.SO.ReuseAddress(true)]));
