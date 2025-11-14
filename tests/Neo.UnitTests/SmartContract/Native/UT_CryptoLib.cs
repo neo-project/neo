@@ -1220,17 +1220,21 @@ namespace Neo.UnitTests.SmartContract.Native
             var g1Point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
             var g2Point = DecodeBn254G2(Bn254G2XIm, Bn254G2XRe, Bn254G2YIm, Bn254G2YRe);
             var pairs = BuildBn254PairArray(new[] { (g1Point, g2Point) });
-            byte[] result = CryptoLib.Bn254Pairing(pairs);
+            var result = CryptoLib.Bn254Pairing(pairs);
+            var serialized = CryptoLib.Bn254Serialize(result);
 
-            Assert.IsTrue(result.All(b => b == 0));
+            Assert.AreEqual(BN254.FieldElementLength, serialized.Length);
+            Assert.IsTrue(serialized.All(b => b == 0));
         }
 
         [TestMethod]
         public void TestBn254PairingEmpty()
         {
-            byte[] result = CryptoLib.Bn254Pairing(new VMArray());
-            Assert.IsTrue(result.Take(result.Length - 1).All(b => b == 0));
-            Assert.AreEqual(1, result[^1]);
+            var result = CryptoLib.Bn254Pairing(new VMArray());
+            var serialized = CryptoLib.Bn254Serialize(result);
+            Assert.AreEqual(BN254.FieldElementLength, serialized.Length);
+            Assert.IsTrue(serialized.Take(serialized.Length - 1).All(b => b == 0));
+            Assert.AreEqual(1, serialized[^1]);
         }
 
         [TestMethod]
@@ -1248,7 +1252,7 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (var (hex, expectedSuccess, label) in cases)
             {
                 byte[] input = HexToBytes(hex);
-                byte[] result = CryptoLib.Bn254PairingRaw(input);
+                byte[] result = BN254.Pairing(input);
 
                 Assert.AreEqual(32, result.Length, label);
                 if (expectedSuccess)
@@ -1266,9 +1270,9 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBn254InvalidInputs()
         {
-            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254AddRaw(System.Array.Empty<byte>()));
-            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254MulRaw(System.Array.Empty<byte>()));
-            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254PairingRaw(new byte[1]));
+            Assert.ThrowsExactly<ArgumentException>(() => BN254.Add(System.Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => BN254.Mul(System.Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => BN254.Pairing(new byte[1]));
         }
 
         [TestMethod]
@@ -1279,12 +1283,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 byte[] input = HexToBytes(vector.Input);
                 if (input.Length != BN254.G1EncodedLength * 2)
                 {
-                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254AddRaw(input), vector.Name);
+                    Assert.ThrowsExactly<ArgumentException>(() => BN254.Add(input), vector.Name);
                     continue;
                 }
 
                 byte[] expected = HexToBytes(vector.Expected);
-                byte[] actual = CryptoLib.Bn254AddRaw(input);
+                byte[] actual = BN254.Add(input);
                 CollectionAssert.AreEqual(expected, actual, vector.Name);
             }
         }
@@ -1297,12 +1301,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 byte[] input = HexToBytes(vector.Input);
                 if (input.Length != BN254.G1EncodedLength + BN254.FieldElementLength)
                 {
-                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254MulRaw(input), vector.Name);
+                    Assert.ThrowsExactly<ArgumentException>(() => BN254.Mul(input), vector.Name);
                     continue;
                 }
 
                 byte[] expected = HexToBytes(vector.Expected);
-                byte[] actual = CryptoLib.Bn254MulRaw(input);
+                byte[] actual = BN254.Mul(input);
                 CollectionAssert.AreEqual(expected, actual, vector.Name);
             }
         }
@@ -1315,12 +1319,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 byte[] input = HexToBytes(vector.Input);
                 if (input.Length % BN254.PairInputLength != 0)
                 {
-                    Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bn254PairingRaw(input), vector.Name);
+                    Assert.ThrowsExactly<ArgumentException>(() => BN254.Pairing(input), vector.Name);
                     continue;
                 }
 
                 byte[] expected = HexToBytes(vector.Expected);
-                byte[] actual = CryptoLib.Bn254PairingRaw(input);
+                byte[] actual = BN254.Pairing(input);
                 CollectionAssert.AreEqual(expected, actual, vector.Name);
             }
         }

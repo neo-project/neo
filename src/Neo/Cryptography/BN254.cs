@@ -20,7 +20,7 @@ namespace Neo.Cryptography
     public static class BN254
     {
         public const int FieldElementLength = 32;
-        public const int G1EncodedLength = 64;
+        public const int G1EncodedLength = FieldElementLength * 2;
         public const int G2EncodedLength = FieldElementLength * 4;
         public const int PairInputLength = G1EncodedLength + G2EncodedLength;
 
@@ -281,12 +281,14 @@ namespace Neo.Cryptography
             return output;
         }
 
+
         private static byte[] SuccessWord()
         {
             var output = new byte[FieldElementLength];
             output[^1] = 1;
             return output;
         }
+
 
         private static void WriteBigEndian(ReadOnlySpan<byte> littleEndian, Span<byte> destination)
         {

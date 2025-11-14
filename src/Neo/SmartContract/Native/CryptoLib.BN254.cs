@@ -20,18 +20,19 @@ namespace Neo.SmartContract.Native
 {
     partial class CryptoLib
     {
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19)]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19)]
         public static byte[] Bn254Serialize(InteropInterface point)
         {
             return point.GetInterface<object>() switch
             {
                 Bn254G1 g1 => g1.ToArray(),
                 Bn254G2 g2 => g2.ToArray(),
+                Bn254PairingResult pairing => pairing.ToArray(),
                 _ => throw new ArgumentException("BN254 type mismatch")
             };
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19)]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19)]
         public static InteropInterface Bn254Deserialize(byte[] data)
         {
             ArgumentNullException.ThrowIfNull(data);
@@ -44,7 +45,7 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19)]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 19)]
         public static InteropInterface Bn254Add(InteropInterface x, InteropInterface y)
         {
             var pointX = GetBn254G1(x);
@@ -60,18 +61,19 @@ namespace Neo.SmartContract.Native
             return new InteropInterface(new Bn254G1(BN254.SerializeG1(result)));
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5)]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 5)]
         public static bool Bn254Equal(InteropInterface x, InteropInterface y)
         {
             return (x.GetInterface<object>(), y.GetInterface<object>()) switch
             {
                 (Bn254G1 a, Bn254G1 b) => a.SequenceEqual(b),
                 (Bn254G2 a, Bn254G2 b) => a.SequenceEqual(b),
+                (Bn254PairingResult a, Bn254PairingResult b) => a.SequenceEqual(b),
                 _ => throw new ArgumentException("BN254 type mismatch")
             };
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21)]
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21)]
         public static InteropInterface Bn254Mul(InteropInterface point, byte[] scalar)
         {
             ArgumentNullException.ThrowIfNull(scalar);
@@ -89,13 +91,10 @@ namespace Neo.SmartContract.Native
             return new InteropInterface(new Bn254G1(BN254.SerializeG1(result)));
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21)]
-        public static byte[] Bn254Pairing(Array pairs)
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 21)]
+        public static InteropInterface Bn254Pairing(Array pairs)
         {
             ArgumentNullException.ThrowIfNull(pairs);
-
-            if (pairs.Count == 0)
-                return BN254.Pairing(System.Array.Empty<byte>());
 
             byte[] buffer = new byte[pairs.Count * BN254.PairInputLength];
             for (int i = 0; i < pairs.Count; i++)
@@ -103,9 +102,7 @@ namespace Neo.SmartContract.Native
                 if (pairs[i] is not Array pair || pair.Count != 2)
                     throw new ArgumentException("BN254 pairing pairs must contain g1 and g2 points");
 
-                if (pair[0] is not InteropInterface g1Interface)
-                    throw new ArgumentException("BN254 pairing requires interop points");
-                if (pair[1] is not InteropInterface g2Interface)
+                if (pair[0] is not InteropInterface g1Interface || pair[1] is not InteropInterface g2Interface)
                     throw new ArgumentException("BN254 pairing requires interop points");
 
                 var g1 = GetBn254G1(g1Interface);
@@ -118,28 +115,8 @@ namespace Neo.SmartContract.Native
                 g2Bytes.CopyTo(slice[g1Bytes.Length..]);
             }
 
-            return BN254.Pairing(buffer);
-        }
-
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19, Name = "bn254_add")]
-        public static byte[] Bn254AddRaw(byte[] input)
-        {
-            ArgumentNullException.ThrowIfNull(input);
-            return BN254.Add(input);
-        }
-
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21, Name = "bn254_mul")]
-        public static byte[] Bn254MulRaw(byte[] input)
-        {
-            ArgumentNullException.ThrowIfNull(input);
-            return BN254.Mul(input);
-        }
-
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21, Name = "bn254_pairing")]
-        public static byte[] Bn254PairingRaw(byte[] input)
-        {
-            ArgumentNullException.ThrowIfNull(input);
-            return BN254.Pairing(input);
+            byte[] result = BN254.Pairing(buffer);
+            return new InteropInterface(new Bn254PairingResult(result));
         }
 
         private static Bn254G1 GetBn254G1(InteropInterface item)
@@ -198,6 +175,20 @@ namespace Neo.SmartContract.Native
             public byte[] ToArray() => (byte[])_encoded.Clone();
 
             public bool SequenceEqual(Bn254G2 other) => Encoded.SequenceEqual(other.Encoded);
+        }
+
+        private sealed class Bn254PairingResult
+        {
+            private readonly byte[] _word;
+
+            public Bn254PairingResult(byte[] word)
+            {
+                _word = word;
+            }
+
+            public byte[] ToArray() => (byte[])_word.Clone();
+
+            public bool SequenceEqual(Bn254PairingResult other) => _word.AsSpan().SequenceEqual(other._word);
         }
     }
 }
