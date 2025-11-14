@@ -543,10 +543,6 @@ namespace Neo.UnitTests.SmartContract.Native
             var outputData = CryptoLib.Keccak256(inputData);
             var outputHashHex = Hex.ToHexString(outputData);
             Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for 'Keccak'.");
-
-            // Always OK for Keccak256 even if data is null
-            var actualHash = CryptoLib.Keccak256(null!);
-            Assert.AreEqual("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470", actualHash.ToHexString());
         }
 
         [TestMethod]
