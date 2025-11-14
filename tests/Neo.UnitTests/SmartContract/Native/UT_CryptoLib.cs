@@ -550,6 +550,18 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void EnsureNullBehavior()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
+
+            Assert.AreEqual("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470", CryptoLib.Keccak256(null!).ToHexString());
+            Assert.AreEqual("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", CryptoLib.Sha256(engine, null!).ToHexString());
+            Assert.AreEqual("00000000", CryptoLib.Murmur32(null!, 0).ToHexString());
+            Assert.AreEqual("9c1185a5c5e9fc54612808977ee8f548b2258d31", CryptoLib.RIPEMD160(engine, null!).ToHexString());
+        }
+
+        [TestMethod]
         public void TestKeccak256_Cryptography()
         {
             var inputData = "Cryptography"u8.ToArray();
