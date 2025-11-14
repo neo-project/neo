@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native
             if (engine.PersistingBlock is null) return null;
 
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            var datoshi = CalculateBonus(engine.SnapshotCache, state, engine.PersistingBlock.Index);
+            BigInteger datoshi = CalculateBonus(engine.SnapshotCache, state, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
             if (state.VoteTo is not null)
             {
@@ -259,9 +259,9 @@ namespace Neo.SmartContract.Native
         {
             // Distribute GAS for committee
 
-            var m = engine.ProtocolSettings.CommitteeMembersCount;
-            var n = engine.ProtocolSettings.ValidatorsCount;
-            var index = (int)(engine.PersistingBlock!.Index % (uint)m);
+            int m = engine.ProtocolSettings.CommitteeMembersCount;
+            int n = engine.ProtocolSettings.ValidatorsCount;
+            int index = (int)(engine.PersistingBlock!.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.SnapshotCache);
             var committee = GetCommitteeFromCache(engine.SnapshotCache);
             var pubkey = committee[index].PublicKey;
@@ -272,16 +272,16 @@ namespace Neo.SmartContract.Native
 
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, m))
             {
-                var voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100; // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
+                BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100; // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
                 for (index = 0; index < committee.Count; index++)
                 {
                     var (publicKey, votes) = committee[index];
                     var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
                     if (votes > 0)
                     {
-                        var voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
-                        var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
-                        var lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
+                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
+                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
+                        StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
                         lastRewardPerNeo.Add(voterSumRewardPerNEO);
                     }
                 }
@@ -361,9 +361,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
         {
-            var storage = snapshot.TryGet(CreateStorageKey(Prefix_Account, account));
+            StorageItem? storage = snapshot.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
-            var state = storage.GetInteroperable<NeoAccountState>();
+            NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state, end);
         }
 
@@ -619,8 +619,8 @@ namespace Neo.SmartContract.Native
 
         private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(DataCache snapshot, ProtocolSettings settings)
         {
-            var votersCount = (decimal)(BigInteger)snapshot[_votersCount];
-            var voterTurnout = votersCount / (decimal)TotalAmount;
+            decimal votersCount = (decimal)(BigInteger)snapshot[_votersCount];
+            decimal voterTurnout = votersCount / (decimal)TotalAmount;
             var candidates = GetCandidatesInternal(snapshot)
                 .Select(p => (p.PublicKey, p.State.Votes))
                 .ToArray();
