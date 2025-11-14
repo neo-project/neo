@@ -162,5 +162,68 @@ namespace Neo.UnitTests.Cryptography
             filter.Add(tx.Hash.ToArray());
             Assert.IsTrue(filter.Test(tx));
         }
+
+        [TestMethod]
+        public void TestSha3_512()
+        {
+            var data = "hello world"u8;
+            var hash = data.Sha3_512();
+            var expected = "840006653e9ac9e95117a15c915caab81662918e925de9e004f774ff82d7079a40d4d27b1b372657c61d46d470304c88c788b3a4527ad074d1dccbee5dbaa99a";
+            Assert.AreEqual(expected, hash.ToHexString());
+
+            hash = data.ToArray().Sha3_512();
+            Assert.AreEqual(expected, hash.ToHexString());
+        }
+
+        [TestMethod]
+        public void TestSha3_256()
+        {
+            var data = "hello world"u8;
+            var hash = data.Sha3_256();
+            var expected = "644bcc7e564373040999aac89e7622f3ca71fba1d972fd94a31c3bfbf24e3938";
+            Assert.AreEqual(expected, hash.ToHexString());
+
+            hash = data.ToArray().Sha3_256();
+            Assert.AreEqual(expected, hash.ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBlake2b_512()
+        {
+            var data = "hello world"u8;
+            var hash = data.Blake2b_512();
+            var expected = "021ced8799296ceca557832ab941a50b4a11f83478cf141f51f933f653ab9fbcc05a037cddbed06e309bf334942c4e58cdf1a46e237911ccd7fcf9787cbc7fd0";
+            Assert.AreEqual(expected, hash.ToHexString());
+
+            hash = data.ToArray().Blake2b_512();
+            Assert.AreEqual(expected, hash.ToHexString());
+
+            var salt = "0123456789abcdef"u8;
+            expected = "d986f099932b14a65ebc5a6fb1b8bff8d05b6924a4ff74d4972949b880c1f74b5ab263357f332726d98fac3cabeacf415099f1a2a9b97b66cd989ca865539640";
+            hash = data.Blake2b_512(salt.ToArray());
+            Assert.AreEqual(expected, hash.ToHexString());
+
+            Assert.ThrowsExactly<ArgumentException>(() => "abc"u8.Blake2b_512(new byte[15]));
+            Assert.ThrowsExactly<ArgumentException>(() => "abc"u8.Blake2b_512(new byte[17]));
+        }
+
+        [TestMethod]
+        public void TestBlake2b_256()
+        {
+            var data = "hello world"u8;
+            var hash = data.Blake2b_256();
+            var expected = "256c83b297114d201b30179f3f0ef0cace9783622da5974326b436178aeef610";
+            Assert.AreEqual(expected, hash.ToHexString());
+
+            hash = data.ToArray().Blake2b_256();
+            Assert.AreEqual(expected, hash.ToHexString());
+
+            var salt = "0123456789abcdef"u8;
+            hash = data.Blake2b_256(salt.ToArray());
+            Assert.AreEqual("779c5f2194a9c2c03e73e3ffcf3e1508dd83cb85cd861029415ab961a755cc4e", hash.ToHexString());
+
+            Assert.ThrowsExactly<ArgumentException>(() => "abc"u8.Blake2b_256(new byte[15]));
+            Assert.ThrowsExactly<ArgumentException>(() => "abc"u8.Blake2b_256(new byte[17]));
+        }
     }
 }

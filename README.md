@@ -94,11 +94,6 @@
   </a>
 </p>
 
-## Quick Start A Mainnet Node
-1. git clone https://github.com/neo-project/neo.git
-2. cd neo/src/Neo.CLI
-3. make build
-
 ## Table of Contents
 1. [Overview](#overview)
 2. [Project structure](#project-structure)
@@ -126,11 +121,8 @@ An overview of the project folders can be seen below.
 |[/src/neo/Plugins/](https://github.com/neo-project/neo/tree/master/src/Neo/Plugins)|Interfaces used to extend Neo, including the storage interface.|
 |[/src/neo/SmartContract/](https://github.com/neo-project/neo/tree/master/src/Neo/SmartContract)|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
 |[/src/neo/Wallets/](https://github.com/neo-project/neo/tree/master/src/Neo/Wallets)|Wallet and account implementation.|
-|[/src/Neo.CLI/](https://github.com/neo-project/neo/tree/master/src/Neo.CLI)| `neo-cli` console application for running a _FULL_ node.|
 |[/src/Neo.Extensions/](https://github.com/neo-project/neo/tree/master/src/Neo.Extensions)| Extensions to expand the existing functionality.|
 |[/src/Neo.Json/](https://github.com/neo-project/neo/tree/master/src/Neo.Json)| Neo's JSON specification.|
-|[/src/Neo.VM/](https://github.com/neo-project/neo/tree/master/src/Neo.VM)|Neo virtual machine.|
-|[/src/plugins/](https://github.com/neo-project/neo/tree/master/src/Plugins)| Include `ApplicationLogs`, `LevelDBStore`, `RpcServer`, `OracleService`, `DBFTPlugin` and more.|
 |[/tests/](https://github.com/neo-project/neo/tree/master/tests)|All unit tests.|
 
 ## Related projects
