@@ -34,7 +34,7 @@ namespace Neo
         /// <summary>
         /// Represents 0.
         /// </summary>
-        public static readonly UInt256 Zero = new();
+        public static UInt256 Zero => new();
 
         [FieldOffset(0)] private ulong _value1;
         [FieldOffset(8)] private ulong _value2;

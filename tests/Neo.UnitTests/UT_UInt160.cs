@@ -16,6 +16,7 @@ using Neo.Extensions;
 using Neo.Extensions.Factories;
 using Neo.IO;
 using System;
+using System.IO;
 
 namespace Neo.UnitTests.IO
 {
@@ -178,6 +179,23 @@ namespace Neo.UnitTests.IO
             var shortBuffer = new byte[UInt160.Length - 1];
             Assert.ThrowsExactly<ArgumentException>(() => value.Serialize(shortBuffer.AsSpan()));
             Assert.ThrowsExactly<ArgumentException>(() => value.SafeSerialize(shortBuffer.AsSpan()));
+        }
+
+        [TestMethod]
+        public void TestZero()
+        {
+            var value = UInt160.Zero;
+            var data = RandomNumberFactory.NextBytes(UInt160.Length);
+
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.Write(data);
+
+            var reader = new MemoryReader(stream.ToArray());
+            value.Deserialize(ref reader);
+
+            var another = UInt160.Zero;
+            Assert.AreEqual("0x0000000000000000000000000000000000000000", another.ToString());
         }
     }
 }

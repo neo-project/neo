@@ -213,5 +213,22 @@ namespace Neo.UnitTests.IO
             Assert.ThrowsExactly<ArgumentException>(() => value.Serialize(shortBuffer.AsSpan()));
             Assert.ThrowsExactly<ArgumentException>(() => value.SafeSerialize(shortBuffer.AsSpan()));
         }
+
+        [TestMethod]
+        public void TestZero()
+        {
+            var value = UInt256.Zero;
+            var data = RandomNumberFactory.NextBytes(UInt256.Length);
+
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.Write(data);
+
+            var reader = new MemoryReader(stream.ToArray());
+            value.Deserialize(ref reader);
+
+            var another = UInt256.Zero;
+            Assert.AreEqual("0x0000000000000000000000000000000000000000000000000000000000000000", another.ToString());
+        }
     }
 }
