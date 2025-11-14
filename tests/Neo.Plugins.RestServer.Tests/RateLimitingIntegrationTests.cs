@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Hosting;
+
 namespace Neo.Plugins.RestServer.Tests
 {
     [TestClass]
@@ -93,8 +95,9 @@ namespace Neo.Plugins.RestServer.Tests
         private void SetupTestServer(int permitLimit, int windowSeconds, int queueLimit, bool enableRateLimiting = true)
         {
             // Create a test server with rate limiting
-            var builder = new WebHostBuilder()
-                .ConfigureServices(services =>
+            var host = new HostBuilder().ConfigureWebHost(builder =>
+            {
+                builder.UseTestServer().ConfigureServices(services =>
                 {
                     if (enableRateLimiting)
                     {
@@ -127,8 +130,7 @@ namespace Neo.Plugins.RestServer.Tests
                             };
                         });
                     }
-                })
-                .Configure(app =>
+                }).Configure(app =>
                 {
                     if (enableRateLimiting)
                     {
@@ -148,8 +150,10 @@ namespace Neo.Plugins.RestServer.Tests
                         }
                     });
                 });
+            }).Build();
 
-            _server = new TestServer(builder);
+            host.Start();
+            _server = host.GetTestServer();
             _client = _server.CreateClient();
         }
 

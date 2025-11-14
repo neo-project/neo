@@ -1,17 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net9.0</TargetFrameworks>
+    <TargetFrameworks>net10.0</TargetFrameworks>
     <RootNamespace>Neo</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IO.Hashing" Version="9.0.7" />
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
     <ProjectReference Include="..\..\src\Plugins\LevelDBStore\LevelDBStore.csproj" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.5" />
   </ItemGroup>
 
   <ItemGroup>
