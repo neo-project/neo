@@ -162,17 +162,17 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         // Compute Neo holder reward
 
         // In the unit of datoshi, 1 GAS = 10^8 datoshi
-        BigInteger sumNeoHold = 0;
+        BigInteger sumGasPerBlock = 0;
         foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end - 1))
         {
             if (index > start)
             {
-                sumNeoHold += gasPerBlock * (end - index);
+                sumGasPerBlock += gasPerBlock * (end - index);
                 end = index;
             }
             else
             {
-                sumNeoHold += gasPerBlock * (end - start);
+                sumGasPerBlock += gasPerBlock * (end - start);
                 break;
             }
         }
@@ -188,7 +188,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
             voteReward = state.Balance * (latestGasPerVote - state.LastGasPerVote) / VoteFactor;
         }
 
-        return (state.Balance * sumNeoHold * NeoHolderRewardRatio / 100 / TotalAmount, voteReward);
+        return (state.Balance * sumGasPerBlock * NeoHolderRewardRatio / 100 / TotalAmount, voteReward);
     }
 
     private void CheckCandidate(DataCache snapshot, ECPoint pubkey, CandidateState candidate)
