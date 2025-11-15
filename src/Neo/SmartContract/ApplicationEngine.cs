@@ -300,6 +300,14 @@ namespace Neo.SmartContract
         /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
         protected internal void AddFee(long datoshi)
         {
+            // Check whitelist
+
+            if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
+            {
+                // The execution is whitelisted
+                return;
+            }
+
 #pragma warning disable CS0618 // Type or member is obsolete
             FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -342,10 +350,19 @@ namespace Neo.SmartContract
             else
             {
                 var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
-                ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
-                : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!);
+                    ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
+                    : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!);
                 if (executingContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
+            }
+
+            // Check whitelist
+
+            if (IsHardforkEnabled(Hardfork.HF_Faun) &&
+                NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method.Name, method.Parameters.Length, out var fixedFee))
+            {
+                AddFee(fixedFee.Value);
+                state.WhiteListed = true;
             }
 
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))

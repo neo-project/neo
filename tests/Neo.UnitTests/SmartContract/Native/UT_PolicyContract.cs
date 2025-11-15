@@ -10,11 +10,13 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
@@ -22,6 +24,7 @@ using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -625,6 +628,173 @@ namespace Neo.UnitTests.SmartContract.Native
             var iter = engine.ResultStack[0].GetInterface<object>() as StorageIterator;
             Assert.IsTrue(iter.Next());
             Assert.AreEqual(new UInt160(iter.Value(new ReferenceCounter()).GetSpan()), UInt160.Zero);
+        }
+
+        [TestMethod]
+        public void TestWhiteListFee()
+        {
+            // Create script
+
+            var snapshotCache = _snapshotCache.CloneCache();
+
+            byte[] script;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.EmitDynamicCall(NativeContract.NEO.Hash, "balanceOf", NativeContract.NEO.GetCommitteeAddress(_snapshotCache.CloneCache()));
+                script = sb.ToArray();
+            }
+
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+            // Not whitelisted
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(2028330, engine.FeeConsumed);
+            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.Hash));
+            Assert.IsEmpty(engine.Notifications);
+
+            // Whitelist
+
+            engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 1, 0);
+            engine.SnapshotCache.Commit();
+
+            // Whitelisted
+
+            Assert.HasCount(1, engine.Notifications); // Whitelist changed
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1045290, engine.FeeConsumed);
+
+            // Clean white list
+
+            engine.SnapshotCache.Commit();
+            engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.Hash));
+            Assert.HasCount(1, engine.Notifications); // Whitelist deleted
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractNegativeFixedFee()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+
+            // Register a dummy contract
+            UInt160 contractHash;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.Emit(OpCode.RET);
+                var script = sb.ToArray();
+                contractHash = script.ToScriptHash();
+                snapshotCache.DeleteContract(contractHash);
+                var manifest = TestUtils.CreateManifest("dummy", ContractParameterType.Any);
+                manifest.Abi.Methods = [
+                    new ContractMethodDescriptor
+                    {
+                        Name = "foo",
+                        Parameters = [],
+                        ReturnType = ContractParameterType.Any,
+                        Offset = 0,
+                        Safe = false
+                    }
+                ];
+
+                var contract = TestUtils.GetContract(script, manifest);
+                snapshotCache.AddContract(contractHash, contract);
+            }
+
+            // Invoke SetWhiteListFeeContract with fixedFee negative
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, contractHash, "foo", 1, -1L));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenContractNotFound()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+            var randomHash = new UInt160(Crypto.Hash160([1, 2, 3]).ToArray());
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, randomHash, "transfer", 3, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenContractNotInAbi()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "noexists", 0, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenArgCountMismatch()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+            // transfer exists with 4 args
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 0, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenNotCommittee()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                Signers = [new() { Account = UInt160.Zero, Scopes = WitnessScope.Global }],
+                Attributes = [],
+                Witnesses = [new Witness { }],
+                Script = new byte[1],
+                NetworkFee = 0,
+                SystemFee = 0,
+                ValidUntilBlock = 0
+            };
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractSetContract()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 123_456);
+
+            Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(engine.SnapshotCache, NativeContract.NEO.Hash, "transfer", 4, out var fixedFee));
+            Assert.AreEqual(123_456, fixedFee);
+        }
+
+        private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[] script = null)
+        {
+            // Get committe public keys and calculate m
+            var committee = NativeContract.NEO.GetCommittee(snapshotCache);
+            var m = (committee.Length / 2) + 1;
+            var committeeContract = Contract.CreateMultiSigContract(m, committee);
+
+            // Create Tx needed for CheckWitness / CheckCommittee
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                Signers = [new() { Account = committeeContract.ScriptHash, Scopes = WitnessScope.Global }],
+                Attributes = [],
+                Witnesses = [new Witness { InvocationScript = new byte[1], VerificationScript = committeeContract.Script }],
+                Script = script ?? [(byte)OpCode.NOP],
+                NetworkFee = 0,
+                SystemFee = 0,
+                ValidUntilBlock = 0
+            };
+
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+            engine.LoadScript(tx.Script);
+
+            return engine;
         }
     }
 }
