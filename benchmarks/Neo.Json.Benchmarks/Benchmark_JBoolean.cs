@@ -11,36 +11,35 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Neo.Json.Benchmarks
+namespace Neo.Json.Benchmarks;
+
+[MemoryDiagnoser]
+[CsvMeasurementsExporter]
+[MarkdownExporter]
+public class Benchmark_JBoolean
 {
-    [MemoryDiagnoser]
-    [CsvMeasurementsExporter]
-    [MarkdownExporter]
-    public class Benchmark_JBoolean
+    private JBoolean _jFalse = new();
+    private JBoolean _jTrue = new(true);
+
+    [GlobalSetup]
+    public void Setup()
     {
-        private JBoolean _jFalse = new();
-        private JBoolean _jTrue = new(true);
+        _jFalse = new JBoolean();
+        _jTrue = new JBoolean(true);
+    }
 
-        [GlobalSetup]
-        public void Setup()
-        {
-            _jFalse = new JBoolean();
-            _jTrue = new JBoolean(true);
-        }
+    [Benchmark]
+    public void TestAsNumber()
+    {
+        _ = _jFalse.AsNumber();
+        _ = _jTrue.AsNumber();
+    }
 
-        [Benchmark]
-        public void TestAsNumber()
-        {
-            _ = _jFalse.AsNumber();
-            _ = _jTrue.AsNumber();
-        }
-
-        [Benchmark]
-        public void TestConversionToString()
-        {
-            _ = _jTrue.ToString();
-            _ = _jFalse.ToString();
-        }
+    [Benchmark]
+    public void TestConversionToString()
+    {
+        _ = _jTrue.ToString();
+        _ = _jFalse.ToString();
     }
 }
 

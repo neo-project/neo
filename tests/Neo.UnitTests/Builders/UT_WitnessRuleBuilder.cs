@@ -9,56 +9,53 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Builders;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
 
-namespace Neo.UnitTests.Builders
+namespace Neo.UnitTests.Builders;
+
+[TestClass]
+public class UT_WitnessRuleBuilder
 {
-    [TestClass]
-    public class UT_WitnessRuleBuilder
+    [TestMethod]
+    public void TestCreate()
     {
-        [TestMethod]
-        public void TestCreate()
-        {
-            var builder = WitnessRuleBuilder.Create(WitnessRuleAction.Allow);
+        var builder = WitnessRuleBuilder.Create(WitnessRuleAction.Allow);
 
-            Assert.IsNotNull(builder);
-        }
+        Assert.IsNotNull(builder);
+    }
 
-        [TestMethod]
-        public void TestCondition()
-        {
-            var rule = WitnessRuleBuilder.Create(WitnessRuleAction.Allow)
-                .AddCondition(wcb =>
+    [TestMethod]
+    public void TestCondition()
+    {
+        var rule = WitnessRuleBuilder.Create(WitnessRuleAction.Allow)
+            .AddCondition(wcb =>
+            {
+                wcb.ScriptHash(UInt160.Zero);
+            }).Build();
+
+        Assert.IsNotNull(rule.Condition);
+        Assert.AreEqual(WitnessRuleAction.Allow, rule.Action);
+        Assert.IsInstanceOfType<ScriptHashCondition>(rule.Condition);
+        Assert.AreEqual(UInt160.Zero, ((ScriptHashCondition)rule.Condition).Hash);
+    }
+
+    [TestMethod]
+    public void TestCondition2()
+    {
+        var rule = WitnessRuleBuilder.Create(WitnessRuleAction.Allow)
+            .AddCondition(wcb =>
+            {
+                wcb.And(and =>
                 {
-                    wcb.ScriptHash(UInt160.Zero);
-                }).Build();
+                    and.ScriptHash(UInt160.Zero);
+                });
+            }).Build();
 
-            Assert.IsNotNull(rule.Condition);
-            Assert.AreEqual(WitnessRuleAction.Allow, rule.Action);
-            Assert.IsInstanceOfType<ScriptHashCondition>(rule.Condition);
-            Assert.AreEqual(UInt160.Zero, ((ScriptHashCondition)rule.Condition).Hash);
-        }
-
-        [TestMethod]
-        public void TestCondition2()
-        {
-            var rule = WitnessRuleBuilder.Create(WitnessRuleAction.Allow)
-                .AddCondition(wcb =>
-                {
-                    wcb.And(and =>
-                    {
-                        and.ScriptHash(UInt160.Zero);
-                    });
-                }).Build();
-
-            Assert.IsNotNull(rule.Condition);
-            Assert.AreEqual(WitnessRuleAction.Allow, rule.Action);
-            Assert.IsInstanceOfType<AndCondition>(rule.Condition);
-            Assert.IsInstanceOfType<ScriptHashCondition>((rule.Condition as AndCondition).Expressions[0]);
-            Assert.AreEqual(UInt160.Zero, ((rule.Condition as AndCondition).Expressions[0] as ScriptHashCondition).Hash);
-        }
+        Assert.AreEqual(WitnessRuleAction.Allow, rule.Action);
+        Assert.IsInstanceOfType<AndCondition>(rule.Condition, out var condition);
+        Assert.IsInstanceOfType<ScriptHashCondition>(condition.Expressions[0], out var exp0);
+        Assert.AreEqual(UInt160.Zero, exp0.Hash);
     }
 }

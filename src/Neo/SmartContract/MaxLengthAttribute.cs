@@ -10,23 +10,21 @@
 // modifications are permitted.
 
 using Neo.VM.Types;
-using System;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract;
+
+class MaxLengthAttribute : ValidatorAttribute
 {
-    class MaxLengthAttribute : ValidatorAttribute
+    public readonly int MaxLength;
+
+    public MaxLengthAttribute(int maxLength)
     {
-        public readonly int MaxLength;
+        MaxLength = maxLength;
+    }
 
-        public MaxLengthAttribute(int maxLength)
-        {
-            MaxLength = maxLength;
-        }
-
-        public override void Validate(StackItem item)
-        {
-            if (item.GetSpan().Length > MaxLength)
-                throw new InvalidOperationException("The input exceeds the maximum length.");
-        }
+    public override void Validate(StackItem item)
+    {
+        if (item.GetSpan().Length > MaxLength)
+            throw new InvalidOperationException("The input exceeds the maximum length.");
     }
 }

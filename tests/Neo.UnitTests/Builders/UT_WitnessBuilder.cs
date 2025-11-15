@@ -9,78 +9,76 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Builders;
 using Neo.VM;
 
-namespace Neo.UnitTests.Builders
+namespace Neo.UnitTests.Builders;
+
+[TestClass]
+public class UT_WitnessBuilder
 {
-    [TestClass]
-    public class UT_WitnessBuilder
+    [TestMethod]
+    public void TestCreateEmpty()
     {
-        [TestMethod]
-        public void TestCreateEmpty()
-        {
-            var wb = WitnessBuilder.CreateEmpty();
-            Assert.IsNotNull(wb);
-        }
+        var wb = WitnessBuilder.CreateEmpty();
+        Assert.IsNotNull(wb);
+    }
 
-        [TestMethod]
-        public void TestAddInvocationWithScriptBuilder()
-        {
-            var witness = WitnessBuilder.CreateEmpty()
-                .AddInvocation(sb =>
-                {
-                    sb.Emit(OpCode.NOP);
-                    sb.Emit(OpCode.NOP);
-                    sb.Emit(OpCode.NOP);
-                })
-                .Build();
+    [TestMethod]
+    public void TestAddInvocationWithScriptBuilder()
+    {
+        var witness = WitnessBuilder.CreateEmpty()
+            .AddInvocation(sb =>
+            {
+                sb.Emit(OpCode.NOP);
+                sb.Emit(OpCode.NOP);
+                sb.Emit(OpCode.NOP);
+            })
+            .Build();
 
-            Assert.IsNotNull(witness);
-            Assert.AreEqual(3, witness.InvocationScript.Length);
-            CollectionAssert.AreEqual(new byte[] { 0x21, 0x21, 0x21 }, witness.InvocationScript.ToArray());
-        }
+        Assert.IsNotNull(witness);
+        Assert.AreEqual(3, witness.InvocationScript.Length);
+        CollectionAssert.AreEqual(new byte[] { 0x21, 0x21, 0x21 }, witness.InvocationScript.ToArray());
+    }
 
-        [TestMethod]
-        public void TestAddInvocation()
-        {
-            var witness = WitnessBuilder.CreateEmpty()
-                .AddInvocation(new byte[] { 0x01, 0x02, 0x03 })
-                .Build();
+    [TestMethod]
+    public void TestAddInvocation()
+    {
+        var witness = WitnessBuilder.CreateEmpty()
+            .AddInvocation(new byte[] { 0x01, 0x02, 0x03 })
+            .Build();
 
-            Assert.IsNotNull(witness);
-            Assert.AreEqual(3, witness.InvocationScript.Length);
-            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, witness.InvocationScript.ToArray());
-        }
+        Assert.IsNotNull(witness);
+        Assert.AreEqual(3, witness.InvocationScript.Length);
+        CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, witness.InvocationScript.ToArray());
+    }
 
-        [TestMethod]
-        public void TestAddVerificationWithScriptBuilder()
-        {
-            var witness = WitnessBuilder.CreateEmpty()
-                .AddVerification(sb =>
-                {
-                    sb.Emit(OpCode.NOP);
-                    sb.Emit(OpCode.NOP);
-                    sb.Emit(OpCode.NOP);
-                })
-                .Build();
+    [TestMethod]
+    public void TestAddVerificationWithScriptBuilder()
+    {
+        var witness = WitnessBuilder.CreateEmpty()
+            .AddVerification(sb =>
+            {
+                sb.Emit(OpCode.NOP);
+                sb.Emit(OpCode.NOP);
+                sb.Emit(OpCode.NOP);
+            })
+            .Build();
 
-            Assert.IsNotNull(witness);
-            Assert.AreEqual(3, witness.VerificationScript.Length);
-            CollectionAssert.AreEqual(new byte[] { 0x21, 0x21, 0x21 }, witness.VerificationScript.ToArray());
-        }
+        Assert.IsNotNull(witness);
+        Assert.AreEqual(3, witness.VerificationScript.Length);
+        CollectionAssert.AreEqual(new byte[] { 0x21, 0x21, 0x21 }, witness.VerificationScript.ToArray());
+    }
 
-        [TestMethod]
-        public void TestAddVerification()
-        {
-            var witness = WitnessBuilder.CreateEmpty()
-                .AddVerification(new byte[] { 0x01, 0x02, 0x03 })
-                .Build();
+    [TestMethod]
+    public void TestAddVerification()
+    {
+        var witness = WitnessBuilder.CreateEmpty()
+            .AddVerification(new byte[] { 0x01, 0x02, 0x03 })
+            .Build();
 
-            Assert.IsNotNull(witness);
-            Assert.AreEqual(3, witness.VerificationScript.Length);
-            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, witness.VerificationScript.ToArray());
-        }
+        Assert.IsNotNull(witness);
+        Assert.AreEqual(3, witness.VerificationScript.Length);
+        CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, witness.VerificationScript.ToArray());
     }
 }

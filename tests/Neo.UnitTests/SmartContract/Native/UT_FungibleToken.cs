@@ -10,19 +10,17 @@
 // modifications are permitted.
 
 using Akka.TestKit.MsTest;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
 
-namespace Neo.UnitTests.SmartContract.Native
+namespace Neo.UnitTests.SmartContract.Native;
+
+[TestClass]
+public class UT_FungibleToken : TestKit
 {
-    [TestClass]
-    public class UT_FungibleToken : TestKit
+    [TestMethod]
+    public void TestTotalSupply()
     {
-        [TestMethod]
-        public void TestTotalSupply()
-        {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            Assert.AreEqual(5200000050000000, NativeContract.GAS.TotalSupply(snapshotCache));
-        }
+        var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        Assert.AreEqual(5200000050000000, NativeContract.GAS.TotalSupply(snapshotCache));
     }
 }

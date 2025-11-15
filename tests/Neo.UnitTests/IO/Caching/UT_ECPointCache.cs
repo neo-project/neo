@@ -9,30 +9,27 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.IO.Caching;
 
-namespace Neo.UnitTests.IO.Caching
+namespace Neo.UnitTests.IO.Caching;
+
+[TestClass]
+public class UT_ECPointCache
 {
-    [TestClass]
-    public class UT_ECPointCache
+    ECPointCache relayCache = null!;
+
+    [TestInitialize]
+    public void SetUp()
     {
-        ECPointCache relayCache;
+        relayCache = new ECPointCache(10);
+    }
 
-        [TestInitialize]
-        public void SetUp()
-        {
-            relayCache = new ECPointCache(10);
-        }
-
-        [TestMethod]
-        public void TestGetKeyForItem()
-        {
-            relayCache.Add(ECCurve.Secp256r1.G);
-            Assert.Contains(ECCurve.Secp256r1.G, relayCache);
-            Assert.IsTrue(relayCache.TryGet(ECCurve.Secp256r1.G.EncodePoint(true), out ECPoint tmp));
-            Assert.IsTrue(tmp is ECPoint);
-        }
+    [TestMethod]
+    public void TestGetKeyForItem()
+    {
+        relayCache.Add(ECCurve.Secp256r1.G);
+        Assert.Contains(ECCurve.Secp256r1.G, relayCache);
+        Assert.IsTrue(relayCache.TryGet(ECCurve.Secp256r1.G.EncodePoint(true), out _));
     }
 }

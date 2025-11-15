@@ -9,66 +9,65 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions.IO;
 using Neo.IO;
-using System;
 using System.Reflection;
 
-namespace Neo.Extensions
+namespace Neo.Extensions;
+
+public static class MemoryExtensions
 {
-    public static class MemoryExtensions
+    /// <summary>
+    /// Converts a byte array to an <see cref="ISerializable"/> array.
+    /// </summary>
+    /// <typeparam name="T">The type of the array element.</typeparam>
+    /// <param name="value">The byte array to be converted.</param>
+    /// <param name="max">The maximum number of elements contained in the converted array.</param>
+    /// <returns>The converted <see cref="ISerializable"/> array.</returns>
+    public static T[] AsSerializableArray<T>(this ReadOnlyMemory<byte> value, int max = 0x1000000) where T : ISerializable, new()
     {
-        /// <summary>
-        /// Converts a byte array to an <see cref="ISerializable"/> array.
-        /// </summary>
-        /// <typeparam name="T">The type of the array element.</typeparam>
-        /// <param name="value">The byte array to be converted.</param>
-        /// <param name="max">The maximum number of elements contained in the converted array.</param>
-        /// <returns>The converted <see cref="ISerializable"/> array.</returns>
-        public static T[] AsSerializableArray<T>(this ReadOnlyMemory<byte> value, int max = 0x1000000) where T : ISerializable, new()
-        {
-            if (value.IsEmpty) throw new FormatException("`value` is empty");
-            MemoryReader reader = new(value);
-            return reader.ReadSerializableArray<T>(max);
-        }
+        if (value.IsEmpty) throw new FormatException("`value` is empty");
+        MemoryReader reader = new(value);
+        return reader.ReadSerializableArray<T>(max);
+    }
 
-        /// <summary>
-        /// Converts a byte array to an <see cref="ISerializable"/> object.
-        /// </summary>
-        /// <typeparam name="T">The type to convert to.</typeparam>
-        /// <param name="value">The byte array to be converted.</param>
-        /// <returns>The converted <see cref="ISerializable"/> object.</returns>
-        public static T AsSerializable<T>(this ReadOnlyMemory<byte> value)
-            where T : ISerializable
-        {
-            if (value.IsEmpty) throw new FormatException("`value` is empty");
-            MemoryReader reader = new(value);
-            return reader.ReadSerializable<T>();
-        }
+    /// <summary>
+    /// Converts a byte array to an <see cref="ISerializable"/> object.
+    /// </summary>
+    /// <typeparam name="T">The type to convert to.</typeparam>
+    /// <param name="value">The byte array to be converted.</param>
+    /// <returns>The converted <see cref="ISerializable"/> object.</returns>
+    public static T AsSerializable<T>(this ReadOnlyMemory<byte> value)
+        where T : ISerializable
+    {
+        if (value.IsEmpty) throw new FormatException("`value` is empty");
+        MemoryReader reader = new(value);
+        return reader.ReadSerializable<T>();
+    }
 
-        /// <summary>
-        /// Converts a byte array to an <see cref="ISerializable"/> object.
-        /// </summary>
-        /// <param name="value">The byte array to be converted.</param>
-        /// <param name="type">The type to convert to.</param>
-        /// <returns>The converted <see cref="ISerializable"/> object.</returns>
-        public static ISerializable AsSerializable(this ReadOnlyMemory<byte> value, Type type)
-        {
-            if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
-                throw new InvalidCastException($"`{type.Name}` is not assignable from `ISerializable`");
-            var serializable = (ISerializable)Activator.CreateInstance(type)!;
-            MemoryReader reader = new(value);
-            serializable.Deserialize(ref reader);
-            return serializable;
-        }
+    /// <summary>
+    /// Converts a byte array to an <see cref="ISerializable"/> object.
+    /// </summary>
+    /// <param name="value">The byte array to be converted.</param>
+    /// <param name="type">The type to convert to.</param>
+    /// <returns>The converted <see cref="ISerializable"/> object.</returns>
+    public static ISerializable AsSerializable(this ReadOnlyMemory<byte> value, Type type)
+    {
+        if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
+            throw new InvalidCastException($"`{type.Name}` is not assignable from `ISerializable`");
+        var serializable = (ISerializable)Activator.CreateInstance(type)!;
+        MemoryReader reader = new(value);
+        serializable.Deserialize(ref reader);
+        return serializable;
+    }
 
-        /// <summary>
-        /// Gets the size of the specified array encoded in variable-length encoding.
-        /// </summary>
-        /// <param name="value">The specified array.</param>
-        /// <returns>The size of the array.</returns>
-        public static int GetVarSize(this ReadOnlyMemory<byte> value)
-        {
-            return value.Length.GetVarSize() + value.Length;
-        }
+    /// <summary>
+    /// Gets the size of the specified array encoded in variable-length encoding.
+    /// </summary>
+    /// <param name="value">The specified array.</param>
+    /// <returns>The size of the array.</returns>
+    public static int GetVarSize(this ReadOnlyMemory<byte> value)
+    {
+        return value.Length.GetVarSize() + value.Length;
     }
 }

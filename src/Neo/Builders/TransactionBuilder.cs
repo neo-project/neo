@@ -11,106 +11,104 @@
 
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
-using System;
 
-namespace Neo.Builders
+namespace Neo.Builders;
+
+public sealed class TransactionBuilder
 {
-    public sealed class TransactionBuilder
+    private readonly Transaction _tx = new()
     {
-        private readonly Transaction _tx = new()
-        {
-            Script = new[] { (byte)OpCode.RET },
-            Attributes = [],
-            Signers = [],
-            Witnesses = [],
-        };
+        Script = new[] { (byte)OpCode.RET },
+        Attributes = [],
+        Signers = [],
+        Witnesses = [],
+    };
 
-        private TransactionBuilder() { }
+    private TransactionBuilder() { }
 
-        public static TransactionBuilder CreateEmpty()
-        {
-            return new TransactionBuilder();
-        }
+    public static TransactionBuilder CreateEmpty()
+    {
+        return new TransactionBuilder();
+    }
 
-        public TransactionBuilder Version(byte version)
-        {
-            _tx.Version = version;
-            return this;
-        }
+    public TransactionBuilder Version(byte version)
+    {
+        _tx.Version = version;
+        return this;
+    }
 
-        public TransactionBuilder Nonce(uint nonce)
-        {
-            _tx.Nonce = nonce;
-            return this;
-        }
+    public TransactionBuilder Nonce(uint nonce)
+    {
+        _tx.Nonce = nonce;
+        return this;
+    }
 
-        public TransactionBuilder SystemFee(uint systemFee)
-        {
-            _tx.SystemFee = systemFee;
-            return this;
-        }
+    public TransactionBuilder SystemFee(uint systemFee)
+    {
+        _tx.SystemFee = systemFee;
+        return this;
+    }
 
-        public TransactionBuilder NetworkFee(uint networkFee)
-        {
-            _tx.NetworkFee = networkFee;
-            return this;
-        }
+    public TransactionBuilder NetworkFee(uint networkFee)
+    {
+        _tx.NetworkFee = networkFee;
+        return this;
+    }
 
-        public TransactionBuilder ValidUntil(uint blockIndex)
-        {
-            _tx.ValidUntilBlock = blockIndex;
-            return this;
-        }
+    public TransactionBuilder ValidUntil(uint blockIndex)
+    {
+        _tx.ValidUntilBlock = blockIndex;
+        return this;
+    }
 
-        public TransactionBuilder AttachSystem(Action<ScriptBuilder> config)
-        {
-            using var sb = new ScriptBuilder();
-            config(sb);
-            _tx.Script = sb.ToArray();
-            return this;
-        }
+    public TransactionBuilder AttachSystem(Action<ScriptBuilder> config)
+    {
+        using var sb = new ScriptBuilder();
+        config(sb);
+        _tx.Script = sb.ToArray();
+        return this;
+    }
 
-        public TransactionBuilder AttachSystem(byte[] script)
-        {
-            _tx.Script = script;
-            return this;
-        }
+    public TransactionBuilder AttachSystem(byte[] script)
+    {
+        _tx.Script = script;
+        return this;
+    }
 
-        public TransactionBuilder AddAttributes(Action<TransactionAttributesBuilder> config)
-        {
-            var ab = TransactionAttributesBuilder.CreateEmpty();
-            config(ab);
-            _tx.Attributes = ab.Build();
-            return this;
-        }
+    public TransactionBuilder AddAttributes(Action<TransactionAttributesBuilder> config)
+    {
+        var ab = TransactionAttributesBuilder.CreateEmpty();
+        config(ab);
+        _tx.Attributes = ab.Build();
+        return this;
+    }
 
-        public TransactionBuilder AddWitness(Action<WitnessBuilder> config)
-        {
-            var wb = WitnessBuilder.CreateEmpty();
-            config(wb);
-            _tx.Witnesses = [.. _tx.Witnesses, wb.Build()];
-            return this;
-        }
+    public TransactionBuilder AddWitness(Action<WitnessBuilder> config)
+    {
+        var wb = WitnessBuilder.CreateEmpty();
+        config(wb);
+        _tx.Witnesses = [.. _tx.Witnesses, wb.Build()];
+        return this;
+    }
 
-        public TransactionBuilder AddWitness(Action<WitnessBuilder, Transaction> config)
-        {
-            var wb = WitnessBuilder.CreateEmpty();
-            config(wb, _tx);
-            _tx.Witnesses = [.. _tx.Witnesses, wb.Build()];
-            return this;
-        }
+    public TransactionBuilder AddWitness(Action<WitnessBuilder, Transaction> config)
+    {
+        var wb = WitnessBuilder.CreateEmpty();
+        config(wb, _tx);
+        _tx.Witnesses = [.. _tx.Witnesses, wb.Build()];
+        return this;
+    }
 
-        public TransactionBuilder AddSigner(UInt160 account, Action<SignerBuilder, Transaction> config)
-        {
-            var wb = SignerBuilder.Create(account);
-            config(wb, _tx);
-            _tx.Signers = [.. _tx.Signers, wb.Build()];
-            return this;
-        }
+    public TransactionBuilder AddSigner(UInt160 account, Action<SignerBuilder, Transaction> config)
+    {
+        var wb = SignerBuilder.Create(account);
+        config(wb, _tx);
+        _tx.Signers = [.. _tx.Signers, wb.Build()];
+        return this;
+    }
 
-        public Transaction Build()
-        {
-            return _tx;
-        }
+    public Transaction Build()
+    {
+        return _tx;
     }
 }

@@ -10,53 +10,53 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
+using Neo.SmartContract;
 using System.Text;
 
-namespace Neo.SmartContract.Benchmark
+namespace Neo.Benchmarks.SmartContract;
+
+public class Benchmarks_StorageKey
 {
-    public class Benchmarks_StorageKey
+    // for avoiding overhead of encoding
+    private static readonly byte[] testBytes = Encoding.ASCII.GetBytes("StorageKey");
+
+    private const int prefixSize = sizeof(int) + sizeof(byte);
+
+    [Benchmark]
+    public static void KeyBuilder_AddInt()
     {
-        // for avoiding overhead of encoding
-        private static readonly byte[] testBytes = Encoding.ASCII.GetBytes("StorageKey");
+        var key = new KeyBuilder(1, 0)
+            .AddBigEndian(1)
+            .AddBigEndian(2)
+            .AddBigEndian(3);
 
-        private const int prefixSize = sizeof(int) + sizeof(byte);
+        var bytes = key.ToArray();
+        if (bytes.Length != prefixSize + 3 * sizeof(int))
+            throw new InvalidOperationException();
+    }
 
-        [Benchmark]
-        public void KeyBuilder_AddInt()
-        {
-            var key = new KeyBuilder(1, 0)
-                .AddBigEndian(1)
-                .AddBigEndian(2)
-                .AddBigEndian(3);
+    [Benchmark]
+    public static void KeyBuilder_AddBytes()
+    {
+        var key = new KeyBuilder(1, 0)
+            .Add(testBytes)
+            .Add(testBytes)
+            .Add(testBytes);
 
-            var bytes = key.ToArray();
-            if (bytes.Length != prefixSize + 3 * sizeof(int))
-                throw new InvalidOperationException();
-        }
+        var bytes = key.ToArray();
+        if (bytes.Length != prefixSize + 3 * testBytes.Length)
+            throw new InvalidOperationException();
+    }
 
-        [Benchmark]
-        public void KeyBuilder_AddBytes()
-        {
-            var key = new KeyBuilder(1, 0)
-                .Add(testBytes)
-                .Add(testBytes)
-                .Add(testBytes);
+    [Benchmark]
+    public void KeyBuilder_AddUInt160()
+    {
+        Span<byte> value = stackalloc byte[UInt160.Length];
+        var key = new KeyBuilder(1, 0)
+            .Add(new UInt160(value));
 
-            var bytes = key.ToArray();
-            if (bytes.Length != prefixSize + 3 * testBytes.Length)
-                throw new InvalidOperationException();
-        }
-
-        [Benchmark]
-        public void KeyBuilder_AddUInt160()
-        {
-            Span<byte> value = stackalloc byte[UInt160.Length];
-            var key = new KeyBuilder(1, 0)
-                .Add(new UInt160(value));
-
-            var bytes = key.ToArray();
-            if (bytes.Length != prefixSize + UInt160.Length)
-                throw new InvalidOperationException();
-        }
+        var bytes = key.ToArray();
+        if (bytes.Length != prefixSize + UInt160.Length)
+            throw new InvalidOperationException();
     }
 }

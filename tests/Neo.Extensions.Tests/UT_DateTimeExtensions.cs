@@ -9,33 +9,30 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+namespace Neo.Extensions.Tests;
 
-namespace Neo.Extensions.Tests
+[TestClass]
+public class UT_DateTimeExtensions
 {
-    [TestClass]
-    public class UT_DateTimeExtensions
+    private static readonly DateTime unixEpoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    [TestMethod]
+    public void TestToTimestamp()
     {
-        private static readonly DateTime unixEpoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var time = DateTime.UtcNow;
+        var expected = (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
+        var actual = time.ToTimestamp();
 
-        [TestMethod]
-        public void TestToTimestamp()
-        {
-            var time = DateTime.UtcNow;
-            var expected = (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
-            var actual = time.ToTimestamp();
+        Assert.AreEqual(expected, actual);
+    }
 
-            Assert.AreEqual(expected, actual);
-        }
+    [TestMethod]
+    public void TestToTimestampMS()
+    {
+        var time = DateTime.UtcNow;
+        var expected = (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
+        var actual = time.ToTimestampMS();
 
-        [TestMethod]
-        public void TestToTimestampMS()
-        {
-            var time = DateTime.UtcNow;
-            var expected = (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
-            var actual = time.ToTimestampMS();
-
-            Assert.AreEqual(expected, actual);
-        }
+        Assert.AreEqual(expected, actual);
     }
 }

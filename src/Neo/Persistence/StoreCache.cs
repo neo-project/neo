@@ -9,98 +9,94 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.SmartContract;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace Neo.Persistence
+namespace Neo.Persistence;
+
+/// <summary>
+/// Represents a cache for the snapshot or database of the NEO blockchain.
+/// </summary>
+public sealed class StoreCache : DataCache, IDisposable
 {
+    private readonly IReadOnlyStore<byte[], byte[]> _store;
+    private readonly IStoreSnapshot? _snapshot;
+
     /// <summary>
-    /// Represents a cache for the snapshot or database of the NEO blockchain.
+    /// Initializes a new instance of the <see cref="StoreCache"/> class.
     /// </summary>
-    public class StoreCache : DataCache, IDisposable
+    /// <param name="store">An <see cref="IStore"/> to create a readonly cache.</param>
+    /// <param name="readOnly">True if you don't want to track write changes</param>
+    public StoreCache(IStore store, bool readOnly = true) : base(readOnly)
     {
-        private readonly IReadOnlyStore<byte[], byte[]> _store;
-        private readonly IStoreSnapshot? _snapshot;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StoreCache"/> class.
-        /// </summary>
-        /// <param name="store">An <see cref="IStore"/> to create a readonly cache.</param>
-        /// <param name="readOnly">True if you don't want to track write changes</param>
-        public StoreCache(IStore store, bool readOnly = true) : base(readOnly)
-        {
-            _store = store;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StoreCache"/> class.
-        /// </summary>
-        /// <param name="snapshot">An <see cref="IStoreSnapshot"/> to create a snapshot cache.</param>
-        public StoreCache(IStoreSnapshot snapshot) : base(false)
-        {
-            _store = snapshot;
-            _snapshot = snapshot;
-        }
-
-        #region IStoreSnapshot
-
-        protected override void UpdateInternal(StorageKey key, StorageItem value)
-        {
-            _snapshot?.Put(key.ToArray(), value.ToArray());
-        }
-
-        protected override void AddInternal(StorageKey key, StorageItem value)
-        {
-            _snapshot?.Put(key.ToArray(), value.ToArray());
-        }
-
-        protected override void DeleteInternal(StorageKey key)
-        {
-            _snapshot?.Delete(key.ToArray());
-        }
-
-        public override void Commit()
-        {
-            base.Commit();
-            _snapshot?.Commit();
-        }
-
-        public void Dispose()
-        {
-            _snapshot?.Dispose();
-        }
-
-        #endregion
-
-        #region IReadOnlyStore
-
-        protected override bool ContainsInternal(StorageKey key)
-        {
-            return _store.Contains(key.ToArray());
-        }
-
-        /// <inheritdoc/>
-        protected override StorageItem GetInternal(StorageKey key)
-        {
-            if (_store.TryGet(key.ToArray(), out var value))
-                return new(value);
-            throw new KeyNotFoundException();
-        }
-
-        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
-        {
-            return _store.Find(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
-        }
-
-        /// <inheritdoc/>
-        protected override StorageItem? TryGetInternal(StorageKey key)
-        {
-            return _store.TryGet(key.ToArray(), out var value) ? new(value) : null;
-        }
-
-        #endregion
+        _store = store;
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StoreCache"/> class.
+    /// </summary>
+    /// <param name="snapshot">An <see cref="IStoreSnapshot"/> to create a snapshot cache.</param>
+    public StoreCache(IStoreSnapshot snapshot) : base(false)
+    {
+        _store = snapshot;
+        _snapshot = snapshot;
+    }
+
+    #region IStoreSnapshot
+
+    protected override void UpdateInternal(StorageKey key, StorageItem value)
+    {
+        _snapshot?.Put(key.ToArray(), value.ToArray());
+    }
+
+    protected override void AddInternal(StorageKey key, StorageItem value)
+    {
+        _snapshot?.Put(key.ToArray(), value.ToArray());
+    }
+
+    protected override void DeleteInternal(StorageKey key)
+    {
+        _snapshot?.Delete(key.ToArray());
+    }
+
+    public override void Commit()
+    {
+        base.Commit();
+        _snapshot?.Commit();
+    }
+
+    public void Dispose()
+    {
+        _snapshot?.Dispose();
+    }
+
+    #endregion
+
+    #region IReadOnlyStore
+
+    protected override bool ContainsInternal(StorageKey key)
+    {
+        return _store.Contains(key.ToArray());
+    }
+
+    /// <inheritdoc/>
+    protected override StorageItem GetInternal(StorageKey key)
+    {
+        if (_store.TryGet(key.ToArray(), out var value))
+            return new(value);
+        throw new KeyNotFoundException();
+    }
+
+    protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
+    {
+        return _store.Find(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
+    }
+
+    /// <inheritdoc/>
+    protected override StorageItem? TryGetInternal(StorageKey key)
+    {
+        return _store.TryGet(key.ToArray(), out var value) ? new(value) : null;
+    }
+
+    #endregion
 }

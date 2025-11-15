@@ -2,11 +2,8 @@ root = false
 
 [*.cs]
 
-# MSTEST0017: Assertion arguments should be passed in the correct order
-dotnet_diagnostic.MSTEST0017.severity = suggestion
+# CA1861: 不要将常量数组作为参数
+dotnet_diagnostic.CA1861.severity = silent
 
-# MSTEST0032: Review or remove the assertion as its condition is known to be always true
-dotnet_diagnostic.MSTEST0032.severity = suggestion
-
-# MSTEST0037: Use proper 'Assert' methods
-dotnet_diagnostic.MSTEST0037.severity = suggestion
+# SYSLIB1045: 转换为“GeneratedRegexAttribute”。
+dotnet_diagnostic.SYSLIB1045.severity = silent

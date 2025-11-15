@@ -11,41 +11,40 @@
 
 using Neo.IO.Caching;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads;
+
+/// <summary>
+/// Represents the type of a <see cref="TransactionAttribute"/>.
+/// </summary>
+public enum TransactionAttributeType : byte
 {
     /// <summary>
-    /// Represents the type of a <see cref="TransactionAttribute"/>.
+    /// Indicates that the transaction is of high priority.
     /// </summary>
-    public enum TransactionAttributeType : byte
-    {
-        /// <summary>
-        /// Indicates that the transaction is of high priority.
-        /// </summary>
-        [ReflectionCache(typeof(HighPriorityAttribute))]
-        HighPriority = 0x01,
+    [ReflectionCache(typeof(HighPriorityAttribute))]
+    HighPriority = 0x01,
 
-        /// <summary>
-        /// Indicates that the transaction is an oracle response.
-        /// </summary>
-        [ReflectionCache(typeof(OracleResponse))]
-        OracleResponse = 0x11,
+    /// <summary>
+    /// Indicates that the transaction is an oracle response.
+    /// </summary>
+    [ReflectionCache(typeof(OracleResponse))]
+    OracleResponse = 0x11,
 
-        /// <summary>
-        /// Indicates that the transaction is not valid before <see cref="NotValidBefore.Height"/>.
-        /// </summary>
-        [ReflectionCache(typeof(NotValidBefore))]
-        NotValidBefore = 0x20,
+    /// <summary>
+    /// Indicates that the transaction is not valid before <see cref="NotValidBefore.Height"/>.
+    /// </summary>
+    [ReflectionCache(typeof(NotValidBefore))]
+    NotValidBefore = 0x20,
 
-        /// <summary>
-        /// Indicates that the transaction conflicts with <see cref="Conflicts.Hash"/>.
-        /// </summary>
-        [ReflectionCache(typeof(Conflicts))]
-        Conflicts = 0x21,
+    /// <summary>
+    /// Indicates that the transaction conflicts with <see cref="Conflicts.Hash"/>.
+    /// </summary>
+    [ReflectionCache(typeof(Conflicts))]
+    Conflicts = 0x21,
 
-        /// <summary>
-        /// Indicates that the transaction uses notary request service with <see cref="NotaryAssisted.NKeys"/> number of keys.
-        /// </summary>
-        [ReflectionCache(typeof(NotaryAssisted))]
-        NotaryAssisted = 0x22
-    }
+    /// <summary>
+    /// Indicates that the transaction uses notary request service with <see cref="NotaryAssisted.NKeys"/> number of keys.
+    /// </summary>
+    [ReflectionCache(typeof(NotaryAssisted))]
+    NotaryAssisted = 0x22
 }

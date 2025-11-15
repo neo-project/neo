@@ -11,35 +11,34 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Neo.Json.Benchmarks
+namespace Neo.Json.Benchmarks;
+
+[MemoryDiagnoser]
+[CsvMeasurementsExporter]
+[MarkdownExporter]
+public class Benchmark_JNumber
 {
-    [MemoryDiagnoser]
-    [CsvMeasurementsExporter]
-    [MarkdownExporter]
-    public class Benchmark_JNumber
+    private JNumber _maxInt = new(JNumber.MAX_SAFE_INTEGER);
+    private JNumber _zero = new(0);
+
+    [GlobalSetup]
+    public void Setup()
     {
-        private JNumber _maxInt = new(JNumber.MAX_SAFE_INTEGER);
-        private JNumber _zero = new(0);
+        _maxInt = new JNumber(JNumber.MAX_SAFE_INTEGER);
+        _zero = new JNumber(0);
+    }
 
-        [GlobalSetup]
-        public void Setup()
-        {
-            _maxInt = new JNumber(JNumber.MAX_SAFE_INTEGER);
-            _zero = new JNumber(0);
-        }
+    [Benchmark]
+    public void TestAsBoolean()
+    {
+        _ = _maxInt.AsBoolean();
+        _ = _zero.AsBoolean();
+    }
 
-        [Benchmark]
-        public void TestAsBoolean()
-        {
-            _ = _maxInt.AsBoolean();
-            _ = _zero.AsBoolean();
-        }
-
-        [Benchmark]
-        public void TestAsString()
-        {
-            _ = _maxInt.AsString();
-        }
+    [Benchmark]
+    public void TestAsString()
+    {
+        _ = _maxInt.AsString();
     }
 }
 

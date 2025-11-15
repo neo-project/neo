@@ -12,69 +12,66 @@
 using Neo.IO;
 using Neo.Json;
 using Neo.Persistence;
-using System.IO;
-using System.Linq;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads;
+
+public class NotaryAssisted : TransactionAttribute
 {
-    public class NotaryAssisted : TransactionAttribute
+    /// <summary>
+    /// Native Notary contract hash stub used until native Notary contract is properly implemented.
+    /// </summary>
+    private static readonly UInt160 s_notaryHash = SmartContract.Helper.GetContractHash(UInt160.Zero, 0, "Notary");
+
+    /// <summary>
+    /// Indicates the number of keys participating in the transaction (main or fallback) signing process.
+    /// </summary>
+    public byte NKeys { get; set; }
+
+    public override TransactionAttributeType Type => TransactionAttributeType.NotaryAssisted;
+
+    public override bool AllowMultiple => false;
+
+    public override int Size => base.Size + sizeof(byte);
+
+    protected override void DeserializeWithoutType(ref MemoryReader reader)
     {
-        /// <summary>
-        /// Native Notary contract hash stub used until native Notary contract is properly implemented.
-        /// </summary>
-        private static readonly UInt160 s_notaryHash = SmartContract.Helper.GetContractHash(UInt160.Zero, 0, "Notary");
+        NKeys = reader.ReadByte();
+    }
 
-        /// <summary>
-        /// Indicates the number of keys participating in the transaction (main or fallback) signing process.
-        /// </summary>
-        public byte NKeys { get; set; }
+    protected override void SerializeWithoutType(BinaryWriter writer)
+    {
+        writer.Write(NKeys);
+    }
 
-        public override TransactionAttributeType Type => TransactionAttributeType.NotaryAssisted;
+    public override JObject ToJson()
+    {
+        var json = base.ToJson();
+        json["nkeys"] = NKeys;
+        return json;
+    }
 
-        public override bool AllowMultiple => false;
-
-        public override int Size => base.Size + sizeof(byte);
-
-        protected override void DeserializeWithoutType(ref MemoryReader reader)
+    public override bool Verify(DataCache snapshot, Transaction tx)
+    {
+        if (tx.Sender == s_notaryHash)
         {
-            NKeys = reader.ReadByte();
+            // Payer is in the second position
+            return tx.Signers.Length == 2;
         }
+        return tx.Signers.Any(p => p.Account.Equals(s_notaryHash));
+    }
 
-        protected override void SerializeWithoutType(BinaryWriter writer)
-        {
-            writer.Write(NKeys);
-        }
-
-        public override JObject ToJson()
-        {
-            var json = base.ToJson();
-            json["nkeys"] = NKeys;
-            return json;
-        }
-
-        public override bool Verify(DataCache snapshot, Transaction tx)
-        {
-            if (tx.Sender == s_notaryHash)
-            {
-                // Payer is in the second position
-                return tx.Signers.Length == 2;
-            }
-            return tx.Signers.Any(p => p.Account.Equals(s_notaryHash));
-        }
-
-        /// <summary>
-        /// Calculates the network fee needed to pay for NotaryAssisted attribute. According to the
-        /// https://github.com/neo-project/neo/issues/1573#issuecomment-704874472, network fee consists of
-        /// the base Notary service fee per key multiplied by the expected number of transactions that should
-        /// be collected by the service to complete Notary request increased by one (for Notary node witness
-        /// itself).
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="tx">The transaction to calculate.</param>
-        /// <returns>The network fee of the NotaryAssisted attribute.</returns>
-        public override long CalculateNetworkFee(DataCache snapshot, Transaction tx)
-        {
-            return (NKeys + 1) * base.CalculateNetworkFee(snapshot, tx);
-        }
+    /// <summary>
+    /// Calculates the network fee needed to pay for NotaryAssisted attribute. According to the
+    /// https://github.com/neo-project/neo/issues/1573#issuecomment-704874472, network fee consists of
+    /// the base Notary service fee per key multiplied by the expected number of transactions that should
+    /// be collected by the service to complete Notary request increased by one (for Notary node witness
+    /// itself).
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="tx">The transaction to calculate.</param>
+    /// <returns>The network fee of the NotaryAssisted attribute.</returns>
+    public override long CalculateNetworkFee(DataCache snapshot, Transaction tx)
+    {
+        return (NKeys + 1) * base.CalculateNetworkFee(snapshot, tx);
     }
 }

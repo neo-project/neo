@@ -9,95 +9,92 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
 using System.Reflection;
 
-namespace Neo.UnitTests.SmartContract
+namespace Neo.UnitTests.SmartContract;
+
+[TestClass]
+public class UT_ApplicationEngineProvider
 {
-    [TestClass]
-    public class UT_ApplicationEngineProvider
+    private DataCache _snapshotCache = null!;
+
+    [TestInitialize]
+    public void TestSetup()
     {
-        private DataCache _snapshotCache;
+        _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        ApplicationEngine.Provider = null;
+    }
 
-        [TestInitialize]
-        public void TestSetup()
+    [TestCleanup]
+    public void TestCleanup()
+    {
+        ApplicationEngine.Provider = null;
+    }
+
+    [TestMethod]
+    public void TestSetAppEngineProvider()
+    {
+        ApplicationEngine.Provider = new TestProvider();
+        var snapshot = _snapshotCache.CloneCache();
+
+        using var appEngine = ApplicationEngine.Create(TriggerType.Application,
+            null, snapshot, gas: 0, settings: TestProtocolSettings.Default);
+        Assert.IsTrue(appEngine is TestEngine);
+    }
+
+    [TestMethod]
+    public void TestDefaultAppEngineProvider()
+    {
+        var snapshot = _snapshotCache.CloneCache();
+        using var appEngine = ApplicationEngine.Create(TriggerType.Application,
+            null, snapshot, gas: 0, settings: TestProtocolSettings.Default);
+        Assert.IsNotNull(appEngine);
+    }
+
+    [TestMethod]
+    public void TestInitNonce()
+    {
+        var block = new Block
         {
-            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            ApplicationEngine.Provider = null;
-        }
-
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            ApplicationEngine.Provider = null;
-        }
-
-        [TestMethod]
-        public void TestSetAppEngineProvider()
-        {
-            ApplicationEngine.Provider = new TestProvider();
-            var snapshot = _snapshotCache.CloneCache();
-
-            using var appEngine = ApplicationEngine.Create(TriggerType.Application,
-                null, snapshot, gas: 0, settings: TestProtocolSettings.Default);
-            Assert.IsTrue(appEngine is TestEngine);
-        }
-
-        [TestMethod]
-        public void TestDefaultAppEngineProvider()
-        {
-            var snapshot = _snapshotCache.CloneCache();
-            using var appEngine = ApplicationEngine.Create(TriggerType.Application,
-                null, snapshot, gas: 0, settings: TestProtocolSettings.Default);
-            Assert.IsTrue(appEngine is ApplicationEngine);
-        }
-
-        [TestMethod]
-        public void TestInitNonce()
-        {
-            var block = new Block
+            Header = new()
             {
-                Header = new()
-                {
-                    PrevHash = UInt256.Zero,
-                    MerkleRoot = UInt256.Zero,
-                    Nonce = 0x0102030405060708,
-                    NextConsensus = UInt160.Zero,
-                    Witness = null!
-                },
-                Transactions = []
-            };
-            using var app = new TestEngine(TriggerType.Application,
-                null, null, block, TestProtocolSettings.Default, 0, null, null);
+                PrevHash = UInt256.Zero,
+                MerkleRoot = UInt256.Zero,
+                Nonce = 0x0102030405060708,
+                NextConsensus = UInt160.Zero,
+                Witness = null!
+            },
+            Transactions = []
+        };
+        using var app = new TestEngine(TriggerType.Application,
+            null, null!, block, TestProtocolSettings.Default, 0, null, null);
 
-            var nonceData = typeof(ApplicationEngine)
-                .GetField("nonceData", BindingFlags.NonPublic | BindingFlags.Instance)
-                .GetValue(app) as byte[];
-            Assert.IsNotNull(nonceData);
-            Assert.AreEqual("08070605040302010000000000000000", nonceData.ToHexString());
-        }
+        var nonceData = typeof(ApplicationEngine)
+            .GetField("nonceData", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(app) as byte[];
+        Assert.IsNotNull(nonceData);
+        Assert.AreEqual("08070605040302010000000000000000", nonceData.ToHexString());
+    }
 
-        class TestProvider : IApplicationEngineProvider
+    class TestProvider : IApplicationEngineProvider
+    {
+        public ApplicationEngine Create(TriggerType trigger, IVerifiable? container, DataCache snapshot,
+            Block? persistingBlock, ProtocolSettings settings, long gas, IDiagnostic? diagnostic, JumpTable? jumpTable)
         {
-            public ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot,
-                Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
-            {
-                return new TestEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
-            }
+            return new TestEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
+    }
 
-        class TestEngine : ApplicationEngine
+    class TestEngine : ApplicationEngine
+    {
+        public TestEngine(TriggerType trigger, IVerifiable? container, DataCache snapshotCache,
+            Block? persistingBlock, ProtocolSettings settings, long gas, IDiagnostic? diagnostic, JumpTable? jumpTable)
+            : base(trigger, container, snapshotCache, persistingBlock, settings, gas, diagnostic, jumpTable)
         {
-            public TestEngine(TriggerType trigger, IVerifiable container, DataCache snapshotCache,
-                Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
-                : base(trigger, container, snapshotCache, persistingBlock, settings, gas, diagnostic, jumpTable)
-            {
-            }
         }
     }
 }

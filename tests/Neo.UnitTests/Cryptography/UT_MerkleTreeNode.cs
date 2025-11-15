@@ -9,53 +9,51 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using System.Text;
 
-namespace Neo.UnitTests.Cryptography
+namespace Neo.UnitTests.Cryptography;
+
+[TestClass]
+public class UT_MerkleTreeNode
 {
-    [TestClass]
-    public class UT_MerkleTreeNode
+    private readonly MerkleTreeNode node = new();
+
+    [TestInitialize]
+    public void TestSetup()
     {
-        private readonly MerkleTreeNode node = new MerkleTreeNode();
+        node.Hash = null;
+        node.Parent = null;
+        node.LeftChild = null;
+        node.RightChild = null;
+    }
 
-        [TestInitialize]
-        public void TestSetup()
-        {
-            node.Hash = null;
-            node.Parent = null;
-            node.LeftChild = null;
-            node.RightChild = null;
-        }
+    [TestMethod]
+    public void TestConstructor()
+    {
+        byte[] byteArray = Encoding.ASCII.GetBytes("hello world");
+        var hash = new UInt256(Crypto.Hash256(byteArray));
+        node.Hash = hash;
 
-        [TestMethod]
-        public void TestConstructor()
-        {
-            byte[] byteArray = Encoding.ASCII.GetBytes("hello world");
-            var hash = new UInt256(Crypto.Hash256(byteArray));
-            node.Hash = hash;
+        Assert.AreEqual(hash, node.Hash);
+        Assert.IsNull(node.Parent);
+        Assert.IsNull(node.LeftChild);
+        Assert.IsNull(node.RightChild);
+    }
 
-            Assert.AreEqual(hash, node.Hash);
-            Assert.IsNull(node.Parent);
-            Assert.IsNull(node.LeftChild);
-            Assert.IsNull(node.RightChild);
-        }
+    [TestMethod]
+    public void TestGetIsLeaf()
+    {
+        Assert.IsTrue(node.IsLeaf);
 
-        [TestMethod]
-        public void TestGetIsLeaf()
-        {
-            Assert.IsTrue(node.IsLeaf);
+        var child = new MerkleTreeNode();
+        node.LeftChild = child;
+        Assert.IsFalse(node.IsLeaf);
+    }
 
-            MerkleTreeNode child = new MerkleTreeNode();
-            node.LeftChild = child;
-            Assert.IsFalse(node.IsLeaf);
-        }
-
-        [TestMethod]
-        public void TestGetIsRoot()
-        {
-            Assert.IsTrue(node.IsRoot);
-        }
+    [TestMethod]
+    public void TestGetIsRoot()
+    {
+        Assert.IsTrue(node.IsRoot);
     }
 }

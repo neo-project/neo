@@ -11,48 +11,45 @@
 
 using Akka.Actor;
 using Akka.Event;
-using Neo.Extensions;
-using System;
 using System.Text;
 
-namespace Neo
+namespace Neo;
+
+public delegate void LogEventHandler(string source, LogLevel level, object message);
+
+/// <summary>
+/// A utility class that provides common functions.
+/// </summary>
+public static class Utility
 {
-    public delegate void LogEventHandler(string source, LogLevel level, object message);
+    internal class Logger : ReceiveActor
+    {
+        public Logger()
+        {
+            Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
+            Receive<LogEvent>(e => Log("Akka", (LogLevel)e.LogLevel(), $"[{e.LogSource}] {e.Message}{Environment.NewLine}{e.Cause?.StackTrace ?? ""}"));
+        }
+    }
+
+    public static LogLevel LogLevel { get; set; } = LogLevel.Info;
+
+    public static event LogEventHandler? Logging;
 
     /// <summary>
-    /// A utility class that provides common functions.
+    /// A strict UTF8 encoding used in NEO system.
     /// </summary>
-    public static class Utility
+    public static Encoding StrictUTF8 => StringExtensions.StrictUTF8;
+
+    /// <summary>
+    /// Writes a log.
+    /// </summary>
+    /// <param name="source">The source of the log. Used to identify the producer of the log.</param>
+    /// <param name="level">The level of the log.</param>
+    /// <param name="message">The message of the log.</param>
+    public static void Log(string source, LogLevel level, object message)
     {
-        internal class Logger : ReceiveActor
-        {
-            public Logger()
-            {
-                Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
-                Receive<LogEvent>(e => Log("Akka", (LogLevel)e.LogLevel(), $"[{e.LogSource}] {e.Message}{Environment.NewLine}{e.Cause?.StackTrace ?? ""}"));
-            }
-        }
+        if ((int)level < (int)LogLevel) return;
 
-        public static LogLevel LogLevel { get; set; } = LogLevel.Info;
-
-        public static event LogEventHandler? Logging;
-
-        /// <summary>
-        /// A strict UTF8 encoding used in NEO system.
-        /// </summary>
-        public static Encoding StrictUTF8 => StringExtensions.StrictUTF8;
-
-        /// <summary>
-        /// Writes a log.
-        /// </summary>
-        /// <param name="source">The source of the log. Used to identify the producer of the log.</param>
-        /// <param name="level">The level of the log.</param>
-        /// <param name="message">The message of the log.</param>
-        public static void Log(string source, LogLevel level, object message)
-        {
-            if ((int)level < (int)LogLevel) return;
-
-            Logging?.Invoke(source, level, message);
-        }
+        Logging?.Invoke(source, level, message);
     }
 }

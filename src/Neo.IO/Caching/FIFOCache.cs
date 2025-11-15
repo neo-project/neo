@@ -9,13 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System.Collections.Generic;
+namespace Neo.IO.Caching;
 
-namespace Neo.IO.Caching
+public abstract class FIFOCache<TKey, TValue>(int maxCapacity, IEqualityComparer<TKey>? comparer = null)
+    : Cache<TKey, TValue>(maxCapacity, comparer) where TKey : notnull where TValue : notnull
 {
-    public abstract class FIFOCache<TKey, TValue>(int maxCapacity, IEqualityComparer<TKey>? comparer = null)
-        : Cache<TKey, TValue>(maxCapacity, comparer) where TKey : notnull
-    {
-        protected override void OnAccess(CacheItem item) { }
-    }
+    protected override void OnAccess(CacheItem item) { }
 }

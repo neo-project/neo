@@ -11,54 +11,50 @@
 
 using Akka.IO;
 using Akka.TestKit.MsTest;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
-using System;
 using System.Net;
-using System.Threading;
 
-namespace Neo.UnitTests.Network.P2P
+namespace Neo.UnitTests.Network.P2P;
+
+[TestClass]
+public class UT_LocalNode : TestKit
 {
-    [TestClass]
-    public class UT_LocalNode : TestKit
+    private static NeoSystem _system = null!;
+
+    [TestInitialize]
+    public void Init()
     {
-        private static NeoSystem _system;
+        _system = TestBlockchain.GetSystem();
+    }
 
-        [TestInitialize]
-        public void Init()
-        {
-            _system = TestBlockchain.GetSystem();
-        }
+    [TestMethod]
+    public void TestDefaults()
+    {
+        var senderProbe = CreateTestProbe();
+        senderProbe.Send(_system.LocalNode, new ChannelsConfig()); // No Tcp
+        senderProbe.Send(_system.LocalNode, new LocalNode.GetInstance());
+        var localnode = senderProbe.ExpectMsg<LocalNode>(cancellationToken: CancellationToken.None);
 
-        [TestMethod]
-        public void TestDefaults()
-        {
-            var senderProbe = CreateTestProbe();
-            senderProbe.Send(_system.LocalNode, new ChannelsConfig()); // No Tcp
-            senderProbe.Send(_system.LocalNode, new LocalNode.GetInstance());
-            var localnode = senderProbe.ExpectMsg<LocalNode>(cancellationToken: CancellationToken.None);
+        Assert.AreEqual(0, localnode.ListenerTcpPort);
+        Assert.AreEqual(3, localnode.Config.MaxConnectionsPerAddress);
+        Assert.AreEqual(10, localnode.Config.MinDesiredConnections);
+        Assert.AreEqual(40, localnode.Config.MaxConnections);
+        Assert.AreEqual(0, localnode.UnconnectedCount);
+    }
 
-            Assert.AreEqual(0, localnode.ListenerTcpPort);
-            Assert.AreEqual(3, localnode.Config.MaxConnectionsPerAddress);
-            Assert.AreEqual(10, localnode.Config.MinDesiredConnections);
-            Assert.AreEqual(40, localnode.Config.MaxConnections);
-            Assert.AreEqual(0, localnode.UnconnectedCount);
-        }
+    [TestMethod]
+    public void ProcessesTcpConnectedAfterConfigArrives()
+    {
+        var connectionProbe = CreateTestProbe();
+        var remote = new IPEndPoint(IPAddress.Parse("192.0.2.1"), 20333);
+        var local = new IPEndPoint(IPAddress.Loopback, 20334);
 
-        [TestMethod]
-        public void ProcessesTcpConnectedAfterConfigArrives()
-        {
-            var connectionProbe = CreateTestProbe();
-            var remote = new IPEndPoint(IPAddress.Parse("192.0.2.1"), 20333);
-            var local = new IPEndPoint(IPAddress.Loopback, 20334);
+        connectionProbe.Send(_system.LocalNode, new Tcp.Connected(remote, local));
+        connectionProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
-            connectionProbe.Send(_system.LocalNode, new Tcp.Connected(remote, local));
-            connectionProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
+        var configProbe = CreateTestProbe();
+        configProbe.Send(_system.LocalNode, new ChannelsConfig());
 
-            var configProbe = CreateTestProbe();
-            configProbe.Send(_system.LocalNode, new ChannelsConfig());
-
-            connectionProbe.ExpectMsg<Tcp.Register>(TimeSpan.FromSeconds(1), cancellationToken: CancellationToken.None);
-        }
+        connectionProbe.ExpectMsg<Tcp.Register>(TimeSpan.FromSeconds(1), cancellationToken: CancellationToken.None);
     }
 }

@@ -9,33 +9,30 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using System;
 
-namespace Neo.UnitTests.Network.P2P
+namespace Neo.UnitTests.Network.P2P;
+
+[TestClass]
+public class UT_TaskSession
 {
-    [TestClass]
-    public class UT_TaskSession
+    [TestMethod]
+    public void CreateTest()
     {
-        [TestMethod]
-        public void CreateTest()
-        {
-            var ses = new TaskSession(new VersionPayload() { Capabilities = new NodeCapability[] { new FullNodeCapability(123) }, UserAgent = "" });
+        var ses = new TaskSession(new VersionPayload() { Capabilities = new NodeCapability[] { new FullNodeCapability(123) }, UserAgent = "" });
 
-            Assert.IsFalse(ses.HasTooManyTasks);
-            Assert.AreEqual((uint)123, ses.LastBlockIndex);
-            Assert.IsEmpty(ses.IndexTasks);
-            Assert.IsTrue(ses.IsFullNode);
+        Assert.IsFalse(ses.HasTooManyTasks);
+        Assert.AreEqual((uint)123, ses.LastBlockIndex);
+        Assert.IsEmpty(ses.IndexTasks);
+        Assert.IsTrue(ses.IsFullNode);
 
-            ses = new TaskSession(new VersionPayload() { Capabilities = Array.Empty<NodeCapability>(), UserAgent = "" });
+        ses = new TaskSession(new VersionPayload() { Capabilities = Array.Empty<NodeCapability>(), UserAgent = "" });
 
-            Assert.IsFalse(ses.HasTooManyTasks);
-            Assert.AreEqual((uint)0, ses.LastBlockIndex);
-            Assert.IsEmpty(ses.IndexTasks);
-            Assert.IsFalse(ses.IsFullNode);
-        }
+        Assert.IsFalse(ses.HasTooManyTasks);
+        Assert.AreEqual((uint)0, ses.LastBlockIndex);
+        Assert.IsEmpty(ses.IndexTasks);
+        Assert.IsFalse(ses.IsFullNode);
     }
 }

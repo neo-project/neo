@@ -10,48 +10,45 @@
 // modifications are permitted.
 
 using Neo.Persistence;
-using Neo.VM;
-using System;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract;
+
+/// <summary>
+/// Represents the custom state in <see cref="VM.ExecutionContext"/>.
+/// </summary>
+public class ExecutionContextState
 {
     /// <summary>
-    /// Represents the custom state in <see cref="ExecutionContext"/>.
+    /// The script hash of the current context.
     /// </summary>
-    public class ExecutionContextState
-    {
-        /// <summary>
-        /// The script hash of the current context.
-        /// </summary>
-        public UInt160? ScriptHash { get; set; }
+    public UInt160? ScriptHash { get; set; }
 
-        /// <summary>
-        /// The calling context.
-        /// </summary>
-        public ExecutionContext? CallingContext { get; set; }
+    /// <summary>
+    /// The calling context.
+    /// </summary>
+    public VM.ExecutionContext? CallingContext { get; set; }
 
-        /// <summary>
-        /// The script hash of the calling native contract. Used in native contracts only.
-        /// </summary>
-        internal UInt160? NativeCallingScriptHash { get; set; }
+    /// <summary>
+    /// The script hash of the calling native contract. Used in native contracts only.
+    /// </summary>
+    internal UInt160? NativeCallingScriptHash { get; set; }
 
-        /// <summary>
-        /// The <see cref="ContractState"/> of the current context.
-        /// </summary>
-        public ContractState? Contract { get; set; }
+    /// <summary>
+    /// The <see cref="ContractState"/> of the current context.
+    /// </summary>
+    public ContractState? Contract { get; set; }
 
-        /// <summary>
-        /// The <see cref="SmartContract.CallFlags"/> of the current context.
-        /// </summary>
-        public CallFlags CallFlags { get; set; } = CallFlags.All;
+    /// <summary>
+    /// The <see cref="SmartContract.CallFlags"/> of the current context.
+    /// </summary>
+    public CallFlags CallFlags { get; set; } = CallFlags.All;
 
-        [Obsolete("Use SnapshotCache instead")]
-        public DataCache? Snapshot => SnapshotCache;
+    [Obsolete("Use SnapshotCache instead")]
+    public DataCache? Snapshot => SnapshotCache;
 
-        public DataCache? SnapshotCache { get; set; }
+    public DataCache? SnapshotCache { get; set; }
 
-        public int NotificationCount { get; set; }
+    public int NotificationCount { get; set; }
 
-        public bool IsDynamicCall { get; set; }
-    }
+    public bool IsDynamicCall { get; set; }
 }

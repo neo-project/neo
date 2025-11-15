@@ -9,59 +9,56 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+namespace Neo.Network.P2P.Capabilities;
 
-namespace Neo.Network.P2P.Capabilities
+/// <summary>
+/// Represents the type of <see cref="NodeCapability"/>.
+/// </summary>
+public enum NodeCapabilityType : byte
 {
+    #region Servers
+
     /// <summary>
-    /// Represents the type of <see cref="NodeCapability"/>.
+    /// Indicates that the node is listening on a Tcp port.
     /// </summary>
-    public enum NodeCapabilityType : byte
-    {
-        #region Servers
+    TcpServer = 0x01,
 
-        /// <summary>
-        /// Indicates that the node is listening on a Tcp port.
-        /// </summary>
-        TcpServer = 0x01,
+    /// <summary>
+    /// Indicates that the node is listening on a WebSocket port.
+    /// </summary>
+    [Obsolete("WebSocket is no longer supported.")]
+    WsServer = 0x02,
 
-        /// <summary>
-        /// Indicates that the node is listening on a WebSocket port.
-        /// </summary>
-        [Obsolete]
-        WsServer = 0x02,
+    /// <summary>
+    /// Disable p2p compression
+    /// </summary>
+    DisableCompression = 0x03,
 
-        /// <summary>
-        /// Disable p2p compression
-        /// </summary>
-        DisableCompression = 0x03,
+    #endregion
 
-        #endregion
+    #region Data availability
 
-        #region Data availability
+    /// <summary>
+    /// Indicates that the node has complete current state.
+    /// </summary>
+    FullNode = 0x10,
 
-        /// <summary>
-        /// Indicates that the node has complete current state.
-        /// </summary>
-        FullNode = 0x10,
+    /// <summary>
+    /// Indicates that the node stores full block history. These nodes can be used
+    /// for P2P synchronization from genesis (other ones can cut the tail and
+    /// won't respond to requests for old (wrt MaxTraceableBlocks) blocks).
+    /// </summary>
+    ArchivalNode = 0x11,
 
-        /// <summary>
-        /// Indicates that the node stores full block history. These nodes can be used
-        /// for P2P synchronization from genesis (other ones can cut the tail and
-        /// won't respond to requests for old (wrt MaxTraceableBlocks) blocks).
-        /// </summary>
-        ArchivalNode = 0x11,
+    #endregion
 
-        #endregion
+    #region Private extensions
 
-        #region Private extensions
+    /// <summary>
+    /// The first extension ID. Any subsequent can be used in an
+    /// implementation-specific way.
+    /// </summary>
+    Extension0 = 0xf0
 
-        /// <summary>
-        /// The first extension ID. Any subsequent can be used in an
-        /// implementation-specific way.
-        /// </summary>
-        Extension0 = 0xf0
-
-        #endregion
-    }
+    #endregion
 }

@@ -9,16 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads;
+
+/// <summary>
+/// Represents a message that can be relayed on the NEO network.
+/// </summary>
+public interface IInventory : IVerifiable
 {
     /// <summary>
-    /// Represents a message that can be relayed on the NEO network.
+    /// The type of the inventory.
     /// </summary>
-    public interface IInventory : IVerifiable
-    {
-        /// <summary>
-        /// The type of the inventory.
-        /// </summary>
-        InventoryType InventoryType { get; }
-    }
+    InventoryType InventoryType { get; }
 }

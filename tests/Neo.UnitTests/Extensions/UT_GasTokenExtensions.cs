@@ -9,34 +9,31 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Extensions;
+using Neo.Extensions.SmartContract;
 using Neo.SmartContract.Native;
-using System.Linq;
 
-namespace Neo.UnitTests.Extensions
+namespace Neo.UnitTests.Extensions;
+
+[TestClass]
+public class UT_GasTokenExtensions
 {
-    [TestClass]
-    public class UT_GasTokenExtensions
+    private NeoSystem _system = null!;
+
+    [TestInitialize]
+    public void Initialize()
     {
-        private NeoSystem _system;
+        _system = TestBlockchain.GetSystem();
+    }
 
-        [TestInitialize]
-        public void Initialize()
-        {
-            _system = TestBlockchain.GetSystem();
-        }
+    [TestMethod]
+    public void TestGetAccounts()
+    {
+        UInt160 expected = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
 
-        [TestMethod]
-        public void TestGetAccounts()
-        {
-            UInt160 expected = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
+        var accounts = NativeContract.GAS.GetAccounts(_system.StoreView);
+        var (address, balance) = accounts.FirstOrDefault();
 
-            var accounts = NativeContract.GAS.GetAccounts(_system.StoreView);
-            var actual = accounts.FirstOrDefault();
-
-            Assert.AreEqual(expected, actual.Address);
-            Assert.AreEqual(5200000000000000, actual.Balance);
-        }
+        Assert.AreEqual(expected, address);
+        Assert.AreEqual(5200000000000000, balance);
     }
 }

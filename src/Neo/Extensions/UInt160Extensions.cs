@@ -9,24 +9,24 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions.VM;
 using Neo.VM;
 
-namespace Neo.Extensions
+namespace Neo.Extensions;
+
+public static class UInt160Extensions
 {
-    public static class UInt160Extensions
+    /// <summary>
+    /// Generates the script for calling a contract dynamically.
+    /// </summary>
+    /// <param name="scriptHash">The hash of the contract to be called.</param>
+    /// <param name="method">The method to be called in the contract.</param>
+    /// <param name="args">The arguments for calling the contract.</param>
+    /// <returns>The generated script.</returns>
+    public static byte[] MakeScript(this UInt160 scriptHash, string method, params object?[] args)
     {
-        /// <summary>
-        /// Generates the script for calling a contract dynamically.
-        /// </summary>
-        /// <param name="scriptHash">The hash of the contract to be called.</param>
-        /// <param name="method">The method to be called in the contract.</param>
-        /// <param name="args">The arguments for calling the contract.</param>
-        /// <returns>The generated script.</returns>
-        public static byte[] MakeScript(this UInt160 scriptHash, string method, params object?[] args)
-        {
-            using ScriptBuilder sb = new();
-            sb.EmitDynamicCall(scriptHash, method, args);
-            return sb.ToArray();
-        }
+        using ScriptBuilder sb = new();
+        sb.EmitDynamicCall(scriptHash, method, args);
+        return sb.ToArray();
     }
 }

@@ -11,27 +11,25 @@
 
 using Neo.Json;
 using Neo.VM;
-using System;
 
-namespace Neo.Extensions
+namespace Neo.Extensions.VM;
+
+public static class EvaluationStackExtensions
 {
-    public static class EvaluationStackExtensions
+    /// <summary>
+    /// Converts the <see cref="EvaluationStack"/> to a JSON object.
+    /// </summary>
+    /// <param name="stack">The <see cref="EvaluationStack"/> to convert.</param>
+    /// <param name="maxSize">The maximum size in bytes of the result.</param>
+    /// <returns>The <see cref="EvaluationStack"/> represented by a JSON object.</returns>
+    public static JArray ToJson(this EvaluationStack stack, int maxSize = int.MaxValue)
     {
-        /// <summary>
-        /// Converts the <see cref="EvaluationStack"/> to a JSON object.
-        /// </summary>
-        /// <param name="stack">The <see cref="EvaluationStack"/> to convert.</param>
-        /// <param name="maxSize">The maximum size in bytes of the result.</param>
-        /// <returns>The <see cref="EvaluationStack"/> represented by a JSON object.</returns>
-        public static JArray ToJson(this EvaluationStack stack, int maxSize = int.MaxValue)
-        {
-            if (maxSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxSize), "must be positive");
-            maxSize -= 2/*[]*/+ Math.Max(0, (stack.Count - 1))/*,*/;
-            JArray result = [];
-            foreach (var item in stack)
-                result.Add(item.ToJson(null, ref maxSize));
-            if (maxSize < 0) throw new InvalidOperationException("Max size reached.");
-            return result;
-        }
+        if (maxSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxSize), "must be positive");
+        maxSize -= 2/*[]*/+ Math.Max(0, (stack.Count - 1))/*,*/;
+        JArray result = [];
+        foreach (var item in stack)
+            result.Add(item.ToJson(null, ref maxSize));
+        if (maxSize < 0) throw new InvalidOperationException("Max size reached.");
+        return result;
     }
 }

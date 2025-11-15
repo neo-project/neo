@@ -9,59 +9,55 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
 
-namespace Neo.UnitTests.Network.P2P.Payloads
+namespace Neo.UnitTests.Network.P2P.Payloads;
+
+[TestClass]
+public class UT_WitnessRule
 {
-    [TestClass]
-    public class UT_WitnessRule
+    [TestMethod]
+    public void Test_IEquatable()
     {
-        [TestMethod]
-        public void Test_IEquatable()
+        var expected = new WitnessRule
         {
-            var expected = new WitnessRule
+            Action = WitnessRuleAction.Allow,
+            Condition = new BooleanCondition
             {
-                Action = WitnessRuleAction.Allow,
-                Condition = new BooleanCondition
-                {
-                    Expression = true,
-                }
-            };
+                Expression = true,
+            }
+        };
 
-            var actual = new WitnessRule
+        var actual = new WitnessRule
+        {
+            Action = WitnessRuleAction.Allow,
+            Condition = new BooleanCondition
             {
-                Action = WitnessRuleAction.Allow,
-                Condition = new BooleanCondition
-                {
-                    Expression = true,
-                }
-            };
+                Expression = true,
+            }
+        };
 
-            var notEqual = new WitnessRule
+        var notEqual = new WitnessRule
+        {
+            Action = WitnessRuleAction.Deny,
+            Condition = new BooleanCondition
             {
-                Action = WitnessRuleAction.Deny,
-                Condition = new BooleanCondition
-                {
-                    Expression = false,
-                }
-            };
+                Expression = false,
+            }
+        };
 
-            Assert.IsTrue(expected.Equals(expected));
+        Assert.IsTrue(expected.Equals(expected));
 
-            Assert.AreEqual(expected, actual);
-            Assert.IsTrue(expected == actual);
-            Assert.IsTrue(expected.Equals(actual));
+        Assert.AreEqual(expected, actual);
+        Assert.IsTrue(expected == actual);
+        Assert.IsTrue(expected.Equals(actual));
 
-            Assert.AreNotEqual(expected, notEqual);
-            Assert.IsTrue(expected != notEqual);
-            Assert.IsFalse(expected.Equals(notEqual));
+        Assert.AreNotEqual(expected, notEqual);
+        Assert.IsTrue(expected != notEqual);
+        Assert.IsFalse(expected.Equals(notEqual));
 
-            Assert.IsFalse(expected == null);
-            Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(null, expected);
-            Assert.IsFalse(expected.Equals(null));
-        }
+        Assert.IsNotNull(expected);
+        Assert.IsFalse(expected.Equals(null));
     }
 }

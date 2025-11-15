@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 // Test projects that wish to enable parallelization should add the following in csproj:
 // <PropertyGroup>
 //   <DefineConstants>$(DefineConstants);DISABLE_TEST_PARALLELIZATION</DefineConstants>

@@ -9,26 +9,24 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 
-namespace Neo.UnitTests.Network.P2P.Capabilities
+namespace Neo.UnitTests.Network.P2P.Capabilities;
+
+[TestClass]
+public class UT_UnknownCapability
 {
-    [TestClass]
-    public class UT_UnknownCapability
+    [TestMethod]
+    public void DeserializeUnknown()
     {
-        [TestMethod]
-        public void DeserializeUnknown()
-        {
-            var buffer = new byte[] { 0xff, 0x03, 0x01, 0x02, 0x03 }; // Type 0xff, three bytes of data.
+        var buffer = new byte[] { 0xff, 0x03, 0x01, 0x02, 0x03 }; // Type 0xff, three bytes of data.
 
-            var br = new MemoryReader(buffer);
-            var capab = (NodeCapability)NodeCapability.DeserializeFrom(ref br);
+        var br = new MemoryReader(buffer);
+        var capab = (NodeCapability)NodeCapability.DeserializeFrom(ref br);
 
-            Assert.IsTrue(capab is UnknownCapability);
-            CollectionAssert.AreEqual(buffer, capab.ToArray());
-        }
+        Assert.IsTrue(capab is UnknownCapability);
+        CollectionAssert.AreEqual(buffer, capab.ToArray());
     }
 }

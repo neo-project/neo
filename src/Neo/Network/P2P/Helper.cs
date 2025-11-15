@@ -11,88 +11,85 @@
 
 using Neo.Cryptography;
 using Neo.Network.P2P.Payloads;
-using System;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 
-namespace Neo.Network.P2P
+namespace Neo.Network.P2P;
+
+/// <summary>
+/// A helper class for <see cref="IVerifiable"/>.
+/// </summary>
+public static class Helper
 {
+    private const int SignDataLength = sizeof(uint) + UInt256.Length;
+
     /// <summary>
-    /// A helper class for <see cref="IVerifiable"/>.
+    /// Calculates the hash of a <see cref="IVerifiable"/>.
     /// </summary>
-    public static class Helper
+    /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
+    /// <returns>The hash of the object.</returns>
+    public static UInt256 CalculateHash(this IVerifiable verifiable)
     {
-        private const int SignDataLength = sizeof(uint) + UInt256.Length;
+        using MemoryStream ms = new();
+        using BinaryWriter writer = new(ms);
+        verifiable.SerializeUnsigned(writer);
+        writer.Flush();
+        return new UInt256(ms.ToArray().Sha256());
+    }
 
-        /// <summary>
-        /// Calculates the hash of a <see cref="IVerifiable"/>.
-        /// </summary>
-        /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
-        /// <returns>The hash of the object.</returns>
-        public static UInt256 CalculateHash(this IVerifiable verifiable)
+    /// <summary>
+    /// Tries to get the hash of the transaction.
+    /// If this IVerifiable is not valid, the hash may be <see langword="null"/>.
+    /// </summary>
+    /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
+    /// <param name="hash">The hash of the transaction.</param>
+    /// <returns>
+    /// <see langword="true"/> if the hash was successfully retrieved; otherwise, <see langword="false"/>.
+    /// </returns>
+    public static bool TryGetHash(this IVerifiable verifiable, [NotNullWhen(true)] out UInt256? hash)
+    {
+        try
         {
-            using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms);
-            verifiable.SerializeUnsigned(writer);
-            writer.Flush();
-            return new UInt256(ms.ToArray().Sha256());
+            hash = verifiable.Hash;
+            return true;
         }
-
-        /// <summary>
-        /// Tries to get the hash of the transaction.
-        /// If this IVerifiable is not valid, the hash may be <see langword="null"/>.
-        /// </summary>
-        /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
-        /// <param name="hash">The hash of the transaction.</param>
-        /// <returns>
-        /// <see langword="true"/> if the hash was successfully retrieved; otherwise, <see langword="false"/>.
-        /// </returns>
-        public static bool TryGetHash(this IVerifiable verifiable, [NotNullWhen(true)] out UInt256? hash)
+        catch
         {
-            try
-            {
-                hash = verifiable.Hash;
-                return true;
-            }
-            catch
-            {
-                hash = null;
-                return false;
-            }
+            hash = null;
+            return false;
         }
+    }
 
-        /// <summary>
-        /// Gets the data of a <see cref="IVerifiable"/> object to be hashed.
-        /// </summary>
-        /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
-        /// <param name="network">The magic number of the network.</param>
-        /// <returns>The data to hash.</returns>
-        public static byte[] GetSignData(this IVerifiable verifiable, uint network) => GetSignData(verifiable.Hash, network);
+    /// <summary>
+    /// Gets the data of a <see cref="IVerifiable"/> object to be hashed.
+    /// </summary>
+    /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
+    /// <param name="network">The magic number of the network.</param>
+    /// <returns>The data to hash.</returns>
+    public static byte[] GetSignData(this IVerifiable verifiable, uint network) => GetSignData(verifiable.Hash, network);
 
-        /// <summary>
-        /// Gets the data to be hashed.
-        /// </summary>
-        /// <param name="messageHash">Message.</param>
-        /// <param name="network">The magic number of the network.</param>
-        /// <returns>The data to hash.</returns>
-        public static byte[] GetSignData(this UInt256 messageHash, uint network)
-        {
-            /* Same as:
-            using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms);
-            writer.Write(network);
-            writer.Write(verifiable.Hash);
-            writer.Flush();
-            return ms.ToArray();
-            */
+    /// <summary>
+    /// Gets the data to be hashed.
+    /// </summary>
+    /// <param name="messageHash">Message.</param>
+    /// <param name="network">The magic number of the network.</param>
+    /// <returns>The data to hash.</returns>
+    public static byte[] GetSignData(this UInt256 messageHash, uint network)
+    {
+        /* Same as:
+        using MemoryStream ms = new();
+        using BinaryWriter writer = new(ms);
+        writer.Write(network);
+        writer.Write(verifiable.Hash);
+        writer.Flush();
+        return ms.ToArray();
+        */
 
-            var buffer = new byte[SignDataLength];
+        var buffer = new byte[SignDataLength];
 
-            BinaryPrimitives.WriteUInt32LittleEndian(buffer, network);
-            messageHash.Serialize(buffer.AsSpan(sizeof(uint)));
+        BinaryPrimitives.WriteUInt32LittleEndian(buffer, network);
+        messageHash.Serialize(buffer.AsSpan(sizeof(uint)));
 
-            return buffer;
-        }
+        return buffer;
     }
 }

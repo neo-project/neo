@@ -11,66 +11,65 @@
 
 using System.Net;
 
-namespace Neo.Network.P2P
+namespace Neo.Network.P2P;
+
+/// <summary>
+/// Represents the settings to start <see cref="LocalNode"/>.
+/// </summary>
+public class ChannelsConfig
 {
     /// <summary>
-    /// Represents the settings to start <see cref="LocalNode"/>.
+    /// The default value for enable compression.
     /// </summary>
-    public class ChannelsConfig
-    {
-        /// <summary>
-        /// The default value for enable compression.
-        /// </summary>
-        public const bool DefaultEnableCompression = true;
+    public const bool DefaultEnableCompression = true;
 
-        /// <summary>
-        /// The default minimum number of desired connections.
-        /// </summary>
-        public const int DefaultMinDesiredConnections = 10;
+    /// <summary>
+    /// The default minimum number of desired connections.
+    /// </summary>
+    public const int DefaultMinDesiredConnections = 10;
 
-        /// <summary>
-        /// The default maximum number of desired connections.
-        /// </summary>
-        public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
+    /// <summary>
+    /// The default maximum number of desired connections.
+    /// </summary>
+    public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
-        /// <summary>
-        /// The default maximum allowed connections per address.
-        /// </summary>
-        public const int DefaultMaxConnectionsPerAddress = 3;
+    /// <summary>
+    /// The default maximum allowed connections per address.
+    /// </summary>
+    public const int DefaultMaxConnectionsPerAddress = 3;
 
-        /// <summary>
-        /// The default maximum knwon hashes.
-        /// </summary>
-        public const int DefaultMaxKnownHashes = 1000;
+    /// <summary>
+    /// The default maximum knwon hashes.
+    /// </summary>
+    public const int DefaultMaxKnownHashes = 1000;
 
-        /// <summary>
-        /// Tcp configuration.
-        /// </summary>
-        public IPEndPoint? Tcp { get; set; }
+    /// <summary>
+    /// Tcp configuration.
+    /// </summary>
+    public IPEndPoint? Tcp { get; set; }
 
-        /// <summary>
-        /// Enable compression.
-        /// </summary>
-        public bool EnableCompression { get; set; } = DefaultEnableCompression;
+    /// <summary>
+    /// Enable compression.
+    /// </summary>
+    public bool EnableCompression { get; set; } = DefaultEnableCompression;
 
-        /// <summary>
-        /// Minimum desired connections.
-        /// </summary>
-        public int MinDesiredConnections { get; set; } = DefaultMinDesiredConnections;
+    /// <summary>
+    /// Minimum desired connections.
+    /// </summary>
+    public int MinDesiredConnections { get; set; } = DefaultMinDesiredConnections;
 
-        /// <summary>
-        /// Max allowed connections.
-        /// </summary>
-        public int MaxConnections { get; set; } = DefaultMaxConnections;
+    /// <summary>
+    /// Max allowed connections.
+    /// </summary>
+    public int MaxConnections { get; set; } = DefaultMaxConnections;
 
-        /// <summary>
-        /// Max allowed connections per address.
-        /// </summary>
-        public int MaxConnectionsPerAddress { get; set; } = DefaultMaxConnectionsPerAddress;
+    /// <summary>
+    /// Max allowed connections per address.
+    /// </summary>
+    public int MaxConnectionsPerAddress { get; set; } = DefaultMaxConnectionsPerAddress;
 
-        /// <summary>
-        /// Max known hashes
-        /// </summary>
-        public int MaxKnownHashes { get; set; } = DefaultMaxKnownHashes;
-    }
+    /// <summary>
+    /// Max known hashes
+    /// </summary>
+    public int MaxKnownHashes { get; set; } = DefaultMaxKnownHashes;
 }

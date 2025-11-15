@@ -11,16 +11,15 @@
 
 using Neo.SmartContract;
 
-namespace Neo.IEventHandlers
+namespace Neo.IEventHandlers;
+
+public interface INotifyHandler
 {
-    public interface INotifyHandler
-    {
-        /// <summary>
-        /// The handler of Notify event from <see cref="ApplicationEngine"/>
-        /// Triggered when a contract calls System.Runtime.Notify.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="notifyEventArgs">The arguments of the notification.</param>
-        void ApplicationEngine_Notify_Handler(object sender, NotifyEventArgs notifyEventArgs);
-    }
+    /// <summary>
+    /// The handler of Notify event from <see cref="ApplicationEngine"/>
+    /// Triggered when a contract calls System.Runtime.Notify.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="notifyEventArgs">The arguments of the notification.</param>
+    void ApplicationEngine_Notify_Handler(object sender, NotifyEventArgs notifyEventArgs);
 }

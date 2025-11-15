@@ -9,77 +9,76 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.VM;
 using Neo.VM.Types;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract.Native;
+
+/// <summary>
+/// Represents an Oracle request in smart contracts.
+/// </summary>
+public class OracleRequest : IInteroperable
 {
     /// <summary>
-    /// Represents an Oracle request in smart contracts.
+    /// The original transaction that sent the related request.
     /// </summary>
-    public class OracleRequest : IInteroperable
+    public required UInt256 OriginalTxid;
+
+    /// <summary>
+    /// The maximum amount of GAS that can be used when executing response callback.
+    /// </summary>
+    public long GasForResponse;
+
+    /// <summary>
+    /// The url of the request.
+    /// </summary>
+    public required string Url;
+
+    /// <summary>
+    /// The filter for the response.
+    /// </summary>
+    public string? Filter;
+
+    /// <summary>
+    /// The hash of the callback contract.
+    /// </summary>
+    public required UInt160 CallbackContract;
+
+    /// <summary>
+    /// The name of the callback method.
+    /// </summary>
+    public required string CallbackMethod;
+
+    /// <summary>
+    /// The user-defined object that will be passed to the callback.
+    /// </summary>
+    public required byte[] UserData;
+
+    public void FromStackItem(StackItem stackItem)
     {
-        /// <summary>
-        /// The original transaction that sent the related request.
-        /// </summary>
-        public required UInt256 OriginalTxid;
+        Array array = (Array)stackItem;
+        OriginalTxid = new UInt256(array[0].GetSpan());
+        GasForResponse = (long)array[1].GetInteger();
+        Url = array[2].GetString()!;
+        Filter = array[3].GetString();
+        CallbackContract = new UInt160(array[4].GetSpan());
+        CallbackMethod = array[5].GetString()!;
+        UserData = array[6].GetSpan().ToArray();
+    }
 
-        /// <summary>
-        /// The maximum amount of GAS that can be used when executing response callback.
-        /// </summary>
-        public long GasForResponse;
-
-        /// <summary>
-        /// The url of the request.
-        /// </summary>
-        public required string Url;
-
-        /// <summary>
-        /// The filter for the response.
-        /// </summary>
-        public string? Filter;
-
-        /// <summary>
-        /// The hash of the callback contract.
-        /// </summary>
-        public required UInt160 CallbackContract;
-
-        /// <summary>
-        /// The name of the callback method.
-        /// </summary>
-        public required string CallbackMethod;
-
-        /// <summary>
-        /// The user-defined object that will be passed to the callback.
-        /// </summary>
-        public required byte[] UserData;
-
-        public void FromStackItem(StackItem stackItem)
+    public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+    {
+        return new Array(referenceCounter)
         {
-            Array array = (Array)stackItem;
-            OriginalTxid = new UInt256(array[0].GetSpan());
-            GasForResponse = (long)array[1].GetInteger();
-            Url = array[2].GetString()!;
-            Filter = array[3].GetString();
-            CallbackContract = new UInt160(array[4].GetSpan());
-            CallbackMethod = array[5].GetString()!;
-            UserData = array[6].GetSpan().ToArray();
-        }
-
-        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
-        {
-            return new Array(referenceCounter)
-            {
-                OriginalTxid.ToArray(),
-                GasForResponse,
-                Url,
-                Filter ?? StackItem.Null,
-                CallbackContract.ToArray(),
-                CallbackMethod,
-                UserData
-            };
-        }
+            OriginalTxid.ToArray(),
+            GasForResponse,
+            Url,
+            Filter ?? StackItem.Null,
+            CallbackContract.ToArray(),
+            CallbackMethod,
+            UserData
+        };
     }
 }

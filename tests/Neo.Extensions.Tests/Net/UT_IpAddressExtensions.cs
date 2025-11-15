@@ -9,33 +9,33 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Network;
 using System.Net;
 
-namespace Neo.Extensions.Tests.Net
+namespace Neo.Extensions.Tests.Net;
+
+[TestClass]
+public class UT_IpAddressExtensions
 {
-    [TestClass]
-    public class UT_IpAddressExtensions
+    [TestMethod]
+    public void TestUnmapForIPAddress()
     {
-        [TestMethod]
-        public void TestUnmapForIPAddress()
-        {
-            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
-            Assert.AreEqual(addr, addr.UnMap());
+        var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+        Assert.AreEqual(addr, addr.UnMap());
 
-            var addr2 = addr.MapToIPv6();
-            Assert.AreEqual(addr, addr2.UnMap());
-        }
+        var addr2 = addr.MapToIPv6();
+        Assert.AreEqual(addr, addr2.UnMap());
+    }
 
-        [TestMethod]
-        public void TestUnmapForIPEndPoin()
-        {
-            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
-            var endPoint = new IPEndPoint(addr, 8888);
-            Assert.AreEqual(endPoint, endPoint.UnMap());
+    [TestMethod]
+    public void TestUnmapForIPEndPoin()
+    {
+        var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+        var endPoint = new IPEndPoint(addr, 8888);
+        Assert.AreEqual(endPoint, endPoint.UnMap());
 
-            var addr2 = addr.MapToIPv6();
-            var endPoint2 = new IPEndPoint(addr2, 8888);
-            Assert.AreEqual(endPoint, endPoint2.UnMap());
-        }
+        var addr2 = addr.MapToIPv6();
+        var endPoint2 = new IPEndPoint(addr2, 8888);
+        Assert.AreEqual(endPoint, endPoint2.UnMap());
     }
 }

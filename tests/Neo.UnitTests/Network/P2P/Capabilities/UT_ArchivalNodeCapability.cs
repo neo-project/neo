@@ -9,48 +9,45 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
-using System;
 
-namespace Neo.UnitTests.Network.P2P.Capabilities
+namespace Neo.UnitTests.Network.P2P.Capabilities;
+
+[TestClass]
+public class UT_ArchivalNodeCapability
 {
-    [TestClass]
-    public class UT_ArchivalNodeCapability
+    [TestMethod]
+    public void Size_Get()
     {
-        [TestMethod]
-        public void Size_Get()
+        var test = new ArchivalNodeCapability();
+        Assert.AreEqual(2, test.Size);
+    }
+
+    [TestMethod]
+    public void DeserializeAndSerialize()
+    {
+        var test = new ArchivalNodeCapability();
+        var buffer = test.ToArray();
+
+        var br = new MemoryReader(buffer);
+        var clone = (ArchivalNodeCapability)NodeCapability.DeserializeFrom(ref br);
+
+        Assert.AreEqual(test.Type, clone.Type);
+        buffer[1] = 0x01;
+        br = new MemoryReader(buffer);
+
+        var exceptionHappened = false;
+        // CS8175 prevents from using Assert.ThrowsException here
+        try
         {
-            var test = new ArchivalNodeCapability();
-            Assert.AreEqual(2, test.Size);
+            NodeCapability.DeserializeFrom(ref br);
         }
-
-        [TestMethod]
-        public void DeserializeAndSerialize()
+        catch (FormatException)
         {
-            var test = new ArchivalNodeCapability();
-            var buffer = test.ToArray();
-
-            var br = new MemoryReader(buffer);
-            var clone = (ArchivalNodeCapability)NodeCapability.DeserializeFrom(ref br);
-
-            Assert.AreEqual(test.Type, clone.Type);
-            buffer[1] = 0x01;
-            br = new MemoryReader(buffer);
-
-            var exceptionHappened = false;
-            // CS8175 prevents from using Assert.ThrowsException here
-            try
-            {
-                NodeCapability.DeserializeFrom(ref br);
-            }
-            catch (FormatException)
-            {
-                exceptionHappened = true;
-            }
-            Assert.IsTrue(exceptionHappened);
+            exceptionHappened = true;
         }
+        Assert.IsTrue(exceptionHappened);
     }
 }

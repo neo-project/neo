@@ -10,35 +10,34 @@
 // modifications are permitted.
 
 using Moq;
-using Neo.Extensions.Factories;
+using Neo.Factories;
 using Neo.SmartContract;
 using Neo.Wallets;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests;
+
+class TestWalletAccount : WalletAccount
 {
-    class TestWalletAccount : WalletAccount
+    private static readonly KeyPair key;
+
+    public override bool HasKey => true;
+    public override KeyPair GetKey() => key;
+
+    public TestWalletAccount(UInt160 hash)
+        : base(hash, TestProtocolSettings.Default)
     {
-        private static readonly KeyPair key;
-
-        public override bool HasKey => true;
-        public override KeyPair GetKey() => key;
-
-        public TestWalletAccount(UInt160 hash)
-            : base(hash, TestProtocolSettings.Default)
+        var mock = new Mock<Contract>(() => new Contract
         {
-            var mock = new Mock<Contract>(() => new Contract
-            {
-                Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
-                ParameterList = new[] { ContractParameterType.Signature }
-            });
-            mock.SetupGet(p => p.ScriptHash).Returns(hash);
-            Contract = mock.Object;
-        }
+            Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
+            ParameterList = new[] { ContractParameterType.Signature }
+        });
+        mock.SetupGet(p => p.ScriptHash).Returns(hash);
+        Contract = mock.Object;
+    }
 
-        static TestWalletAccount()
-        {
-            byte[] prikey = RandomNumberFactory.NextBytes(32);
-            key = new KeyPair(prikey);
-        }
+    static TestWalletAccount()
+    {
+        byte[] prikey = RandomNumberFactory.NextBytes(32);
+        key = new KeyPair(prikey);
     }
 }

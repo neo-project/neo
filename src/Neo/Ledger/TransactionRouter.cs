@@ -12,28 +12,26 @@
 using Akka.Actor;
 using Akka.Routing;
 using Neo.Network.P2P.Payloads;
-using System;
 
-namespace Neo.Ledger
+namespace Neo.Ledger;
+
+internal class TransactionRouter(NeoSystem system) : UntypedActor
 {
-    internal class TransactionRouter(NeoSystem system) : UntypedActor
+    public record Preverify(Transaction Transaction, bool Relay);
+    public record PreverifyCompleted(Transaction Transaction, bool Relay, VerifyResult Result);
+
+    private readonly NeoSystem _system = system;
+
+    protected override void OnReceive(object message)
     {
-        public record Preverify(Transaction Transaction, bool Relay);
-        public record PreverifyCompleted(Transaction Transaction, bool Relay, VerifyResult Result);
+        if (message is not Preverify preverify) return;
+        var send = new PreverifyCompleted(preverify.Transaction, preverify.Relay,
+                preverify.Transaction.VerifyStateIndependent(_system.Settings));
+        _system.Blockchain.Tell(send, Sender);
+    }
 
-        private readonly NeoSystem _system = system;
-
-        protected override void OnReceive(object message)
-        {
-            if (message is not Preverify preverify) return;
-            var send = new PreverifyCompleted(preverify.Transaction, preverify.Relay,
-                    preverify.Transaction.VerifyStateIndependent(_system.Settings));
-            _system.Blockchain.Tell(send, Sender);
-        }
-
-        internal static Props Props(NeoSystem system)
-        {
-            return Akka.Actor.Props.Create(() => new TransactionRouter(system)).WithRouter(new SmallestMailboxPool(Environment.ProcessorCount));
-        }
+    internal static Props Props(NeoSystem system)
+    {
+        return Akka.Actor.Props.Create(() => new TransactionRouter(system)).WithRouter(new SmallestMailboxPool(Environment.ProcessorCount));
     }
 }

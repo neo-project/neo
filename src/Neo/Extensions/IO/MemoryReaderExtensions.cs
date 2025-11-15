@@ -12,60 +12,59 @@
 using Neo.IO;
 using System.Runtime.CompilerServices;
 
-namespace Neo.Extensions
+namespace Neo.Extensions.IO;
+
+/// <summary>
+/// A helper class for serialization of NEO objects.
+/// </summary>
+public static class MemoryReaderExtensions
 {
     /// <summary>
-    /// A helper class for serialization of NEO objects.
+    /// Reads an <see cref="ISerializable"/> array from a <see cref="MemoryReader"/>.
     /// </summary>
-    public static class MemoryReaderExtensions
+    /// <typeparam name="T">The type of the array element.</typeparam>
+    /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+    /// <param name="max">The maximum number of elements in the array.</param>
+    /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
+    public static T?[] ReadNullableArray<T>(this ref MemoryReader reader, int max = 0x1000000)
+        where T : class, ISerializable
     {
-        /// <summary>
-        /// Reads an <see cref="ISerializable"/> array from a <see cref="MemoryReader"/>.
-        /// </summary>
-        /// <typeparam name="T">The type of the array element.</typeparam>
-        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
-        /// <param name="max">The maximum number of elements in the array.</param>
-        /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
-        public static T?[] ReadNullableArray<T>(this ref MemoryReader reader, int max = 0x1000000)
-            where T : class, ISerializable
-        {
-            var array = new T?[reader.ReadVarInt((ulong)max)];
-            for (var i = 0; i < array.Length; i++)
-                array[i] = reader.ReadBoolean() ? reader.ReadSerializable<T>() : null;
-            return array;
-        }
+        var array = new T?[reader.ReadVarInt((ulong)max)];
+        for (var i = 0; i < array.Length; i++)
+            array[i] = reader.ReadBoolean() ? reader.ReadSerializable<T>() : null;
+        return array;
+    }
 
-        /// <summary>
-        /// Reads an <see cref="ISerializable"/> object from a <see cref="MemoryReader"/>.
-        /// </summary>
-        /// <typeparam name="T">The type of the <see cref="ISerializable"/> object.</typeparam>
-        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
-        /// <returns>The object read from the <see cref="MemoryReader"/>.</returns>
-        public static T ReadSerializable<T>(this ref MemoryReader reader)
-            where T : ISerializable
-        {
-            T obj = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
-            obj.Deserialize(ref reader);
-            return obj;
-        }
+    /// <summary>
+    /// Reads an <see cref="ISerializable"/> object from a <see cref="MemoryReader"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the <see cref="ISerializable"/> object.</typeparam>
+    /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+    /// <returns>The object read from the <see cref="MemoryReader"/>.</returns>
+    public static T ReadSerializable<T>(this ref MemoryReader reader)
+        where T : ISerializable
+    {
+        T obj = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
+        obj.Deserialize(ref reader);
+        return obj;
+    }
 
-        /// <summary>
-        /// Reads an <see cref="ISerializable"/> array from a <see cref="MemoryReader"/>.
-        /// </summary>
-        /// <typeparam name="T">The type of the array element.</typeparam>
-        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
-        /// <param name="max">The maximum number of elements in the array.</param>
-        /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
-        public static T[] ReadSerializableArray<T>(this ref MemoryReader reader, int max = 0x1000000)
-            where T : ISerializable
+    /// <summary>
+    /// Reads an <see cref="ISerializable"/> array from a <see cref="MemoryReader"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the array element.</typeparam>
+    /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+    /// <param name="max">The maximum number of elements in the array.</param>
+    /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
+    public static T[] ReadSerializableArray<T>(this ref MemoryReader reader, int max = 0x1000000)
+        where T : ISerializable
+    {
+        var array = new T[reader.ReadVarInt((ulong)max)];
+        for (var i = 0; i < array.Length; i++)
         {
-            var array = new T[reader.ReadVarInt((ulong)max)];
-            for (var i = 0; i < array.Length; i++)
-            {
-                array[i] = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
-                array[i].Deserialize(ref reader);
-            }
-            return array;
+            array[i] = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
+            array[i].Deserialize(ref reader);
         }
+        return array;
     }
 }

@@ -9,217 +9,213 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.IO;
-using System;
-using System.IO;
 using System.Text;
 
-namespace Neo.UnitTests.IO
+namespace Neo.UnitTests.IO;
+
+[TestClass]
+public class UT_MemoryReader
 {
-    [TestClass]
-    public class UT_MemoryReader
+    [TestMethod]
+    public void TestReadFixedString()
     {
-        [TestMethod]
-        public void TestReadFixedString()
+        using var stream = new MemoryStream();
+        using var writer = new BinaryWriter(stream);
+        writer.WriteFixedString("AA", Encoding.UTF8.GetBytes("AA").Length + 1);
+        MemoryReader reader = new(stream.ToArray());
+        string result = reader.ReadFixedString(Encoding.UTF8.GetBytes("AA").Length + 1);
+        Assert.AreEqual("AA", result);
+    }
+
+    [TestMethod]
+    public void TestReadVarString()
+    {
+        using var stream = new MemoryStream();
+        using var writer = new BinaryWriter(stream);
+        writer.WriteVarString("AAAAAAA");
+        MemoryReader reader = new(stream.ToArray());
+        string result = reader.ReadVarString(10);
+        Assert.AreEqual("AAAAAAA", result);
+    }
+
+    [TestMethod]
+    public void TestReadNullableArray()
+    {
+        byte[] bs = "0400000000".HexToBytes();
+        MemoryReader reader = new(bs);
+        reader.ReadNullableArray<UInt256>();
+        Assert.AreEqual(5, reader.Position);
+    }
+
+    [TestMethod]
+    public void TestReadSByte()
+    {
+        var values = new sbyte[] { 0, 1, -1, 5, -5, sbyte.MaxValue, sbyte.MinValue };
+        foreach (var v in values)
         {
-            using var stream = new MemoryStream();
-            using var writer = new BinaryWriter(stream);
-            writer.WriteFixedString("AA", Encoding.UTF8.GetBytes("AA").Length + 1);
-            MemoryReader reader = new(stream.ToArray());
-            string result = reader.ReadFixedString(Encoding.UTF8.GetBytes("AA").Length + 1);
-            Assert.AreEqual("AA", result);
+            var byteArray = new byte[1];
+            byteArray[0] = (byte)v;
+            var reader = new MemoryReader(byteArray);
+            var n = reader.ReadSByte();
+            Assert.AreEqual(v, n);
         }
 
-        [TestMethod]
-        public void TestReadVarString()
+        var values2 = new long[] { (long)int.MaxValue + 1, (long)int.MinValue - 1 };
+        foreach (var v in values2)
         {
-            using var stream = new MemoryStream();
-            using var writer = new BinaryWriter(stream);
-            writer.WriteVarString("AAAAAAA");
-            MemoryReader reader = new(stream.ToArray());
-            string result = reader.ReadVarString(10);
-            Assert.AreEqual("AAAAAAA", result);
+            var byteArray = new byte[1];
+            byteArray[0] = (byte)v;
+            var reader = new MemoryReader(byteArray);
+            var n = reader.ReadSByte();
+            Assert.AreEqual((sbyte)v, n);
+        }
+    }
+
+    [TestMethod]
+    public void TestReadInt32()
+    {
+        var values = new int[] { 0, 1, -1, 5, -5, int.MaxValue, int.MinValue };
+        foreach (var v in values)
+        {
+            var bytes = BitConverter.GetBytes(v);
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadInt32();
+            Assert.AreEqual(v, n);
         }
 
-        [TestMethod]
-        public void TestReadNullableArray()
+        var values2 = new long[] { (long)int.MaxValue + 1, (long)int.MinValue - 1 };
+        foreach (var v in values2)
         {
-            byte[] bs = "0400000000".HexToBytes();
-            MemoryReader reader = new(bs);
-            var n = reader.ReadNullableArray<UInt256>();
-            Assert.AreEqual(5, reader.Position);
+            var bytes = BitConverter.GetBytes(v);
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadInt32();
+            Assert.AreEqual((int)v, n);
+        }
+    }
+
+    [TestMethod]
+    public void TestReadUInt64()
+    {
+        var values = new ulong[] { 0, 1, 5, ulong.MaxValue, ulong.MinValue };
+        foreach (var v in values)
+        {
+            var bytes = BitConverter.GetBytes(v);
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadUInt64();
+            Assert.AreEqual(v, n);
         }
 
-        [TestMethod]
-        public void TestReadSByte()
+        var values2 = new long[] { long.MinValue, -1, long.MaxValue };
+        foreach (var v in values2)
         {
-            var values = new sbyte[] { 0, 1, -1, 5, -5, sbyte.MaxValue, sbyte.MinValue };
-            foreach (var v in values)
-            {
-                var byteArray = new byte[1];
-                byteArray[0] = (byte)v;
-                var reader = new MemoryReader(byteArray);
-                var n = reader.ReadSByte();
-                Assert.AreEqual(v, n);
-            }
-
-            var values2 = new long[] { (long)int.MaxValue + 1, (long)int.MinValue - 1 };
-            foreach (var v in values2)
-            {
-                var byteArray = new byte[1];
-                byteArray[0] = (byte)v;
-                var reader = new MemoryReader(byteArray);
-                var n = reader.ReadSByte();
-                Assert.AreEqual((sbyte)v, n);
-            }
+            var bytes = BitConverter.GetBytes(v);
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadUInt64();
+            Assert.AreEqual((ulong)v, n);
         }
+    }
 
-        [TestMethod]
-        public void TestReadInt32()
+    [TestMethod]
+    public void TestReadInt16BigEndian()
+    {
+        var values = new short[] { short.MinValue, -1, 0, 1, 12345, short.MaxValue };
+        foreach (var v in values)
         {
-            var values = new int[] { 0, 1, -1, 5, -5, int.MaxValue, int.MinValue };
-            foreach (var v in values)
+            var bytes = BitConverter.GetBytes(v);
+            if (BitConverter.IsLittleEndian)
             {
-                var bytes = BitConverter.GetBytes(v);
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadInt32();
-                Assert.AreEqual(v, n);
+                Array.Reverse(bytes);
             }
-
-            var values2 = new long[] { (long)int.MaxValue + 1, (long)int.MinValue - 1 };
-            foreach (var v in values2)
-            {
-                var bytes = BitConverter.GetBytes(v);
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadInt32();
-                Assert.AreEqual((int)v, n);
-            }
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadInt16BigEndian();
+            Assert.AreEqual(v, n);
         }
+    }
 
-        [TestMethod]
-        public void TestReadUInt64()
+    [TestMethod]
+    public void TestReadUInt16BigEndian()
+    {
+        var values = new ushort[] { ushort.MinValue, 0, 1, 12345, ushort.MaxValue };
+        foreach (var v in values)
         {
-            var values = new ulong[] { 0, 1, 5, ulong.MaxValue, ulong.MinValue };
-            foreach (var v in values)
+            var bytes = BitConverter.GetBytes(v);
+            if (BitConverter.IsLittleEndian)
             {
-                var bytes = BitConverter.GetBytes(v);
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadUInt64();
-                Assert.AreEqual(v, n);
+                Array.Reverse(bytes);
             }
-
-            var values2 = new long[] { long.MinValue, -1, long.MaxValue };
-            foreach (var v in values2)
-            {
-                var bytes = BitConverter.GetBytes(v);
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadUInt64();
-                Assert.AreEqual((ulong)v, n);
-            }
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadUInt16BigEndian();
+            Assert.AreEqual(v, n);
         }
+    }
 
-        [TestMethod]
-        public void TestReadInt16BigEndian()
+    [TestMethod]
+    public void TestReadInt32BigEndian()
+    {
+        var values = new int[] { int.MinValue, -1, 0, 1, 12345, int.MaxValue };
+        foreach (var v in values)
         {
-            var values = new short[] { short.MinValue, -1, 0, 1, 12345, short.MaxValue };
-            foreach (var v in values)
+            var bytes = BitConverter.GetBytes(v);
+            if (BitConverter.IsLittleEndian)
             {
-                var bytes = BitConverter.GetBytes(v);
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadInt16BigEndian();
-                Assert.AreEqual(v, n);
+                Array.Reverse(bytes);
             }
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadInt32BigEndian();
+            Assert.AreEqual(v, n);
         }
+    }
 
-        [TestMethod]
-        public void TestReadUInt16BigEndian()
+    [TestMethod]
+    public void TestReadUInt32BigEndian()
+    {
+        var values = new uint[] { uint.MinValue, 0, 1, 12345, uint.MaxValue };
+        foreach (var v in values)
         {
-            var values = new ushort[] { ushort.MinValue, 0, 1, 12345, ushort.MaxValue };
-            foreach (var v in values)
+            var bytes = BitConverter.GetBytes(v);
+            if (BitConverter.IsLittleEndian)
             {
-                var bytes = BitConverter.GetBytes(v);
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadUInt16BigEndian();
-                Assert.AreEqual(v, n);
+                Array.Reverse(bytes);
             }
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadUInt32BigEndian();
+            Assert.AreEqual(v, n);
         }
+    }
 
-        [TestMethod]
-        public void TestReadInt32BigEndian()
+    [TestMethod]
+    public void TestReadInt64BigEndian()
+    {
+        var values = new long[] { long.MinValue, int.MinValue, -1, 0, 1, 12345, int.MaxValue, long.MaxValue };
+        foreach (var v in values)
         {
-            var values = new int[] { int.MinValue, -1, 0, 1, 12345, int.MaxValue };
-            foreach (var v in values)
+            var bytes = BitConverter.GetBytes(v);
+            if (BitConverter.IsLittleEndian)
             {
-                var bytes = BitConverter.GetBytes(v);
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadInt32BigEndian();
-                Assert.AreEqual(v, n);
+                Array.Reverse(bytes);
             }
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadInt64BigEndian();
+            Assert.AreEqual(v, n);
         }
+    }
 
-        [TestMethod]
-        public void TestReadUInt32BigEndian()
+    [TestMethod]
+    public void TestReadUInt64BigEndian()
+    {
+        var values = new ulong[] { ulong.MinValue, 0, 1, 12345, ulong.MaxValue };
+        foreach (var v in values)
         {
-            var values = new uint[] { uint.MinValue, 0, 1, 12345, uint.MaxValue };
-            foreach (var v in values)
+            var bytes = BitConverter.GetBytes(v);
+            if (BitConverter.IsLittleEndian)
             {
-                var bytes = BitConverter.GetBytes(v);
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadUInt32BigEndian();
-                Assert.AreEqual(v, n);
+                Array.Reverse(bytes);
             }
-        }
-
-        [TestMethod]
-        public void TestReadInt64BigEndian()
-        {
-            var values = new long[] { long.MinValue, int.MinValue, -1, 0, 1, 12345, int.MaxValue, long.MaxValue };
-            foreach (var v in values)
-            {
-                var bytes = BitConverter.GetBytes(v);
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadInt64BigEndian();
-                Assert.AreEqual(v, n);
-            }
-        }
-
-        [TestMethod]
-        public void TestReadUInt64BigEndian()
-        {
-            var values = new ulong[] { ulong.MinValue, 0, 1, 12345, ulong.MaxValue };
-            foreach (var v in values)
-            {
-                var bytes = BitConverter.GetBytes(v);
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
-                var reader = new MemoryReader(bytes);
-                var n = reader.ReadUInt64BigEndian();
-                Assert.AreEqual(v, n);
-            }
+            var reader = new MemoryReader(bytes);
+            var n = reader.ReadUInt64BigEndian();
+            Assert.AreEqual(v, n);
         }
     }
 }

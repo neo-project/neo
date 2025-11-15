@@ -9,48 +9,44 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-using System.Collections.Generic;
+namespace Neo.Collections;
 
-namespace Neo.Extensions
+public static class HashSetExtensions
 {
-    public static class HashSetExtensions
+    public static void Remove<T>(this HashSet<T> set, ISet<T> other)
     {
-        public static void Remove<T>(this HashSet<T> set, ISet<T> other)
+        if (set.Count > other.Count)
         {
-            if (set.Count > other.Count)
-            {
-                set.ExceptWith(other);
-            }
-            else
-            {
-                set.RemoveWhere(other.Contains);
-            }
+            set.ExceptWith(other);
         }
-
-        public static void Remove<T>(this HashSet<T> set, ICollection<T> other)
-            where T : IEquatable<T>
+        else
         {
-            if (set.Count > other.Count)
-            {
-                set.ExceptWith(other);
-            }
-            else
-            {
-                set.RemoveWhere(other.Contains);
-            }
+            set.RemoveWhere(other.Contains);
         }
+    }
 
-        public static void Remove<T, V>(this HashSet<T> set, IReadOnlyDictionary<T, V> other)
+    public static void Remove<T>(this HashSet<T> set, ICollection<T> other)
+        where T : IEquatable<T>
+    {
+        if (set.Count > other.Count)
         {
-            if (set.Count > other.Count)
-            {
-                set.ExceptWith(other.Keys);
-            }
-            else
-            {
-                set.RemoveWhere(other.ContainsKey);
-            }
+            set.ExceptWith(other);
+        }
+        else
+        {
+            set.RemoveWhere(other.Contains);
+        }
+    }
+
+    public static void Remove<T, V>(this HashSet<T> set, IReadOnlyDictionary<T, V> other)
+    {
+        if (set.Count > other.Count)
+        {
+            set.ExceptWith(other.Keys);
+        }
+        else
+        {
+            set.RemoveWhere(other.ContainsKey);
         }
     }
 }

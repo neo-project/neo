@@ -9,80 +9,78 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
-using System;
 
-namespace Neo.UnitTests.Network.P2P.Payloads
+namespace Neo.UnitTests.Network.P2P.Payloads;
+
+[TestClass]
+public class UT_NotValidBefore
 {
-    [TestClass]
-    public class UT_NotValidBefore
+    [TestMethod]
+    public void Size_Get()
     {
-        [TestMethod]
-        public void Size_Get()
+        var test = new NotValidBefore();
+        Assert.AreEqual(5, test.Size);
+    }
+
+    [TestMethod]
+    public void ToJson()
+    {
+        var test = new NotValidBefore
         {
-            var test = new NotValidBefore();
-            Assert.AreEqual(5, test.Size);
-        }
+            Height = 42
+        };
+        var json = test.ToJson().ToString();
+        Assert.AreEqual(@"{""type"":""NotValidBefore"",""height"":42}", json);
+    }
 
-        [TestMethod]
-        public void ToJson()
+    [TestMethod]
+    public void DeserializeAndSerialize()
+    {
+        var test = new NotValidBefore();
+
+        var clone = test.ToArray().AsSerializable<NotValidBefore>();
+        Assert.AreEqual(clone.Type, test.Type);
+
+        // As transactionAttribute
+
+        byte[] buffer = test.ToArray();
+        var reader = new MemoryReader(buffer);
+        clone = (NotValidBefore)TransactionAttribute.DeserializeFrom(ref reader);
+        Assert.AreEqual(clone.Type, test.Type);
+
+        // Wrong type
+
+        buffer[0] = 0xff;
+        reader = new MemoryReader(buffer);
+        try
         {
-            var test = new NotValidBefore
-            {
-                Height = 42
-            };
-            var json = test.ToJson().ToString();
-            Assert.AreEqual(@"{""type"":""NotValidBefore"",""height"":42}", json);
+            TransactionAttribute.DeserializeFrom(ref reader);
+            Assert.Fail();
         }
-
-        [TestMethod]
-        public void DeserializeAndSerialize()
+        catch (FormatException) { }
+        reader = new MemoryReader(buffer);
+        try
         {
-            var test = new NotValidBefore();
-
-            var clone = test.ToArray().AsSerializable<NotValidBefore>();
-            Assert.AreEqual(clone.Type, test.Type);
-
-            // As transactionAttribute
-
-            byte[] buffer = test.ToArray();
-            var reader = new MemoryReader(buffer);
-            clone = TransactionAttribute.DeserializeFrom(ref reader) as NotValidBefore;
-            Assert.AreEqual(clone.Type, test.Type);
-
-            // Wrong type
-
-            buffer[0] = 0xff;
-            reader = new MemoryReader(buffer);
-            try
-            {
-                TransactionAttribute.DeserializeFrom(ref reader);
-                Assert.Fail();
-            }
-            catch (FormatException) { }
-            reader = new MemoryReader(buffer);
-            try
-            {
-                new NotValidBefore().Deserialize(ref reader);
-                Assert.Fail();
-            }
-            catch (FormatException) { }
+            new NotValidBefore().Deserialize(ref reader);
+            Assert.Fail();
         }
+        catch (FormatException) { }
+    }
 
-        [TestMethod]
-        public void Verify()
-        {
-            var test = new NotValidBefore();
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            test.Height = NativeContract.Ledger.CurrentIndex(snapshotCache) + 1;
+    [TestMethod]
+    public void Verify()
+    {
+        var test = new NotValidBefore();
+        var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        test.Height = NativeContract.Ledger.CurrentIndex(snapshotCache) + 1;
 
-            Assert.IsFalse(test.Verify(snapshotCache, new Transaction { Signers = null!, Attributes = [test], Witnesses = null! }));
-            test.Height--;
-            Assert.IsTrue(test.Verify(snapshotCache, new Transaction { Signers = null!, Attributes = [test], Witnesses = null! }));
-        }
+        Assert.IsFalse(test.Verify(snapshotCache, new Transaction { Signers = null!, Attributes = [test], Witnesses = null! }));
+        test.Height--;
+        Assert.IsTrue(test.Verify(snapshotCache, new Transaction { Signers = null!, Attributes = [test], Witnesses = null! }));
     }
 }

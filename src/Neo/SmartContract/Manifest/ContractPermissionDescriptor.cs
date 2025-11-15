@@ -10,157 +10,155 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.Json;
 using Neo.VM.Types;
-using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Neo.SmartContract.Manifest
+namespace Neo.SmartContract.Manifest;
+
+/// <summary>
+/// Indicates which contracts are authorized to be called.
+/// </summary>
+public class ContractPermissionDescriptor : IEquatable<ContractPermissionDescriptor>
 {
     /// <summary>
-    /// Indicates which contracts are authorized to be called.
+    /// The hash of the contract. It can't be set with <see cref="Group"/>.
     /// </summary>
-    public class ContractPermissionDescriptor : IEquatable<ContractPermissionDescriptor>
+    public UInt160? Hash { get; }
+
+    /// <summary>
+    /// The group of the contracts. It can't be set with <see cref="Hash"/>.
+    /// </summary>
+    public ECPoint? Group { get; }
+
+    /// <summary>
+    /// Indicates whether <see cref="Hash"/> is set.
+    /// </summary>
+    [MemberNotNullWhen(true, nameof(Hash))]
+    public bool IsHash => Hash != null;
+
+    /// <summary>
+    /// Indicates whether <see cref="Group"/> is set.
+    /// </summary>
+    [MemberNotNullWhen(true, nameof(Group))]
+    public bool IsGroup => Group != null;
+
+    /// <summary>
+    /// Indicates whether it is a wildcard.
+    /// </summary>
+    public bool IsWildcard => Hash is null && Group is null;
+
+    private ContractPermissionDescriptor(UInt160? hash, ECPoint? group)
     {
-        /// <summary>
-        /// The hash of the contract. It can't be set with <see cref="Group"/>.
-        /// </summary>
-        public UInt160? Hash { get; }
+        Hash = hash;
+        Group = group;
+    }
 
-        /// <summary>
-        /// The group of the contracts. It can't be set with <see cref="Hash"/>.
-        /// </summary>
-        public ECPoint? Group { get; }
-
-        /// <summary>
-        /// Indicates whether <see cref="Hash"/> is set.
-        /// </summary>
-        [MemberNotNullWhen(true, nameof(Hash))]
-        public bool IsHash => Hash != null;
-
-        /// <summary>
-        /// Indicates whether <see cref="Group"/> is set.
-        /// </summary>
-        [MemberNotNullWhen(true, nameof(Group))]
-        public bool IsGroup => Group != null;
-
-        /// <summary>
-        /// Indicates whether it is a wildcard.
-        /// </summary>
-        public bool IsWildcard => Hash is null && Group is null;
-
-        private ContractPermissionDescriptor(UInt160? hash, ECPoint? group)
+    internal ContractPermissionDescriptor(ReadOnlySpan<byte> span)
+    {
+        switch (span.Length)
         {
-            Hash = hash;
-            Group = group;
+            case UInt160.Length:
+                Hash = new UInt160(span);
+                break;
+            case 33:
+                Group = ECPoint.DecodePoint(span, ECCurve.Secp256r1);
+                break;
+            default:
+                throw new ArgumentException($"Invalid span length: {span.Length}", nameof(span));
         }
+    }
 
-        internal ContractPermissionDescriptor(ReadOnlySpan<byte> span)
-        {
-            switch (span.Length)
-            {
-                case UInt160.Length:
-                    Hash = new UInt160(span);
-                    break;
-                case 33:
-                    Group = ECPoint.DecodePoint(span, ECCurve.Secp256r1);
-                    break;
-                default:
-                    throw new ArgumentException($"Invalid span length: {span.Length}", nameof(span));
-            }
-        }
+    public static ContractPermissionDescriptor Create(StackItem item)
+    {
+        return item.Equals(StackItem.Null) ? CreateWildcard() : new ContractPermissionDescriptor(item.GetSpan());
+    }
 
-        public static ContractPermissionDescriptor Create(StackItem item)
-        {
-            return item.Equals(StackItem.Null) ? CreateWildcard() : new ContractPermissionDescriptor(item.GetSpan());
-        }
+    /// <summary>
+    /// Creates a new instance of the <see cref="ContractPermissionDescriptor"/> class with the specified contract hash.
+    /// </summary>
+    /// <param name="hash">The contract to be called.</param>
+    /// <returns>The created permission descriptor.</returns>
+    public static ContractPermissionDescriptor Create(UInt160 hash)
+    {
+        return new ContractPermissionDescriptor(hash, null);
+    }
 
-        /// <summary>
-        /// Creates a new instance of the <see cref="ContractPermissionDescriptor"/> class with the specified contract hash.
-        /// </summary>
-        /// <param name="hash">The contract to be called.</param>
-        /// <returns>The created permission descriptor.</returns>
-        public static ContractPermissionDescriptor Create(UInt160 hash)
-        {
-            return new ContractPermissionDescriptor(hash, null);
-        }
+    /// <summary>
+    /// Creates a new instance of the <see cref="ContractPermissionDescriptor"/> class with the specified group.
+    /// </summary>
+    /// <param name="group">The group of the contracts to be called.</param>
+    /// <returns>The created permission descriptor.</returns>
+    public static ContractPermissionDescriptor Create(ECPoint group)
+    {
+        return new ContractPermissionDescriptor(null, group);
+    }
 
-        /// <summary>
-        /// Creates a new instance of the <see cref="ContractPermissionDescriptor"/> class with the specified group.
-        /// </summary>
-        /// <param name="group">The group of the contracts to be called.</param>
-        /// <returns>The created permission descriptor.</returns>
-        public static ContractPermissionDescriptor Create(ECPoint group)
-        {
-            return new ContractPermissionDescriptor(null, group);
-        }
+    /// <summary>
+    /// Creates a new instance of the <see cref="ContractPermissionDescriptor"/> class with wildcard.
+    /// </summary>
+    /// <returns>The created permission descriptor.</returns>
+    public static ContractPermissionDescriptor CreateWildcard()
+    {
+        return new ContractPermissionDescriptor(null, null);
+    }
 
-        /// <summary>
-        /// Creates a new instance of the <see cref="ContractPermissionDescriptor"/> class with wildcard.
-        /// </summary>
-        /// <returns>The created permission descriptor.</returns>
-        public static ContractPermissionDescriptor CreateWildcard()
-        {
-            return new ContractPermissionDescriptor(null, null);
-        }
+    public override bool Equals(object? obj)
+    {
+        if (obj is not ContractPermissionDescriptor other) return false;
+        return Equals(other);
+    }
 
-        public override bool Equals(object? obj)
-        {
-            if (obj is not ContractPermissionDescriptor other) return false;
-            return Equals(other);
-        }
+    public bool Equals(ContractPermissionDescriptor? other)
+    {
+        if (other is null) return false;
+        if (this == other) return true;
+        if (IsWildcard == other.IsWildcard) return true;
+        if (IsHash) return Hash.Equals(other.Hash);
+        if (IsGroup) return Group.Equals(other.Group);
+        return false;
+    }
 
-        public bool Equals(ContractPermissionDescriptor? other)
-        {
-            if (other is null) return false;
-            if (this == other) return true;
-            if (IsWildcard == other.IsWildcard) return true;
-            if (IsHash) return Hash.Equals(other.Hash);
-            if (IsGroup) return Group.Equals(other.Group);
-            return false;
-        }
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Hash, Group);
+    }
 
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Hash, Group);
-        }
+    /// <summary>
+    /// Converts the permission descriptor from a JSON object.
+    /// </summary>
+    /// <param name="json">The permission descriptor represented by a JSON object.</param>
+    /// <returns>The converted permission descriptor.</returns>
+    public static ContractPermissionDescriptor FromJson(JString json)
+    {
+        string str = json.GetString();
+        if (str.Length == 42)
+            return Create(UInt160.Parse(str));
+        if (str.Length == 66)
+            return Create(ECPoint.Parse(str, ECCurve.Secp256r1));
+        if (str == "*")
+            return CreateWildcard();
+        throw new FormatException($"Invalid ContractPermissionDescriptor({str})");
+    }
 
-        /// <summary>
-        /// Converts the permission descriptor from a JSON object.
-        /// </summary>
-        /// <param name="json">The permission descriptor represented by a JSON object.</param>
-        /// <returns>The converted permission descriptor.</returns>
-        public static ContractPermissionDescriptor FromJson(JString json)
-        {
-            string str = json.GetString();
-            if (str.Length == 42)
-                return Create(UInt160.Parse(str));
-            if (str.Length == 66)
-                return Create(ECPoint.Parse(str, ECCurve.Secp256r1));
-            if (str == "*")
-                return CreateWildcard();
-            throw new FormatException($"Invalid ContractPermissionDescriptor({str})");
-        }
+    /// <summary>
+    /// Converts the permission descriptor to a JSON object.
+    /// </summary>
+    /// <returns>The permission descriptor represented by a JSON object.</returns>
+    public JString ToJson()
+    {
+        if (IsHash) return Hash.ToString();
+        if (IsGroup) return Group.ToString();
+        return "*";
+    }
 
-        /// <summary>
-        /// Converts the permission descriptor to a JSON object.
-        /// </summary>
-        /// <returns>The permission descriptor represented by a JSON object.</returns>
-        public JString ToJson()
-        {
-            if (IsHash) return Hash.ToString();
-            if (IsGroup) return Group.ToString();
-            return "*";
-        }
-
-        /// <summary>
-        /// Converts the permission descriptor to byte array.
-        /// </summary>
-        /// <returns>The converted byte array. Or <see langword="null"/> if it is a wildcard.</returns>
-        public byte[]? ToArray()
-        {
-            return Hash?.ToArray() ?? Group?.EncodePoint(true);
-        }
+    /// <summary>
+    /// Converts the permission descriptor to byte array.
+    /// </summary>
+    /// <returns>The converted byte array. Or <see langword="null"/> if it is a wildcard.</returns>
+    public byte[]? ToArray()
+    {
+        return Hash?.ToArray() ?? Group?.EncodePoint(true);
     }
 }

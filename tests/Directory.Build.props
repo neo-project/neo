@@ -6,16 +6,23 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <LangVersion>latest</LangVersion>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningLevel>4</WarningLevel>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <MSTestVersion>3.10.0</MSTestVersion>
-    <MSTestAnalysisMode>Recommended</MSTestAnalysisMode>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest" Version="3.11.1" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.cs" Visible="false" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+  </ItemGroup>
+  
 </Project>

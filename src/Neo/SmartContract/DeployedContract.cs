@@ -10,31 +10,25 @@
 // modifications are permitted.
 
 using Neo.SmartContract.Manifest;
-using System;
-using System.Linq;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract;
+
+/// <summary>
+/// Represents a deployed contract that can be invoked.
+/// </summary>
+public class DeployedContract : Contract
 {
+    public override UInt160 ScriptHash { get; }
+
     /// <summary>
-    /// Represents a deployed contract that can be invoked.
+    /// Initializes a new instance of the <see cref="DeployedContract"/> class with the specified <see cref="ContractState"/>.
     /// </summary>
-    public class DeployedContract : Contract
+    /// <param name="contract">The <see cref="ContractState"/> corresponding to the contract.</param>
+    public DeployedContract(ContractState contract)
     {
-        public override UInt160 ScriptHash { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DeployedContract"/> class with the specified <see cref="ContractState"/>.
-        /// </summary>
-        /// <param name="contract">The <see cref="ContractState"/> corresponding to the contract.</param>
-        public DeployedContract(ContractState contract)
-        {
-            ArgumentNullException.ThrowIfNull(contract);
-
-            ScriptHash = contract.Hash;
-            ContractMethodDescriptor? descriptor = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
-            if (descriptor is null) throw new NotSupportedException("The smart contract haven't got verify method.");
-
-            ParameterList = descriptor.Parameters.Select(u => u.Type).ToArray();
-        }
+        ScriptHash = contract.Hash;
+        ContractMethodDescriptor descriptor = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount)
+            ?? throw new NotSupportedException("The smart contract haven't got verify method.");
+        ParameterList = descriptor.Parameters.Select(u => u.Type).ToArray();
     }
 }

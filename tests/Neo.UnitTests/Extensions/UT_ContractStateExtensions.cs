@@ -9,50 +9,49 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Extensions;
+using Neo.Extensions.IO;
+using Neo.Extensions.SmartContract;
 using Neo.SmartContract.Native;
 
-namespace Neo.UnitTests.Extensions
+namespace Neo.UnitTests.Extensions;
+
+[TestClass]
+public class UT_ContractStateExtensions
 {
-    [TestClass]
-    public class UT_ContractStateExtensions
+    private NeoSystem _system = null!;
+
+    [TestInitialize]
+    public void Initialize()
     {
-        private NeoSystem _system;
+        _system = TestBlockchain.GetSystem();
+    }
 
-        [TestInitialize]
-        public void Initialize()
-        {
-            _system = TestBlockchain.GetSystem();
-        }
+    [TestMethod]
+    public void TestGetStorage()
+    {
+        var contractStorage = NativeContract.ContractManagement.FindContractStorage(_system.StoreView, NativeContract.NEO.Id);
+        Assert.IsNotNull(contractStorage);
 
-        [TestMethod]
-        public void TestGetStorage()
-        {
-            var contractStorage = NativeContract.ContractManagement.FindContractStorage(_system.StoreView, NativeContract.NEO.Id);
+        var neoContract = NativeContract.ContractManagement.GetContractById(_system.StoreView, NativeContract.NEO.Id);
+        Assert.IsNotNull(neoContract);
 
-            Assert.IsNotNull(contractStorage);
+        contractStorage = neoContract.FindStorage(_system.StoreView);
 
-            var neoContract = NativeContract.ContractManagement.GetContractById(_system.StoreView, NativeContract.NEO.Id);
+        Assert.IsNotNull(contractStorage);
 
-            contractStorage = neoContract.FindStorage(_system.StoreView);
+        contractStorage = neoContract.FindStorage(_system.StoreView, [20]);
 
-            Assert.IsNotNull(contractStorage);
+        Assert.IsNotNull(contractStorage);
 
-            contractStorage = neoContract.FindStorage(_system.StoreView, [20]);
+        UInt160 address = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
+        var item = neoContract.GetStorage(_system.StoreView, [20, .. address.ToArray()]);
 
-            Assert.IsNotNull(contractStorage);
+        Assert.IsNotNull(item);
+        Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
 
-            UInt160 address = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
-            var item = neoContract.GetStorage(_system.StoreView, [20, .. address.ToArray()]);
+        // Ensure GetInteroperableClone don't change nothing
 
-            Assert.IsNotNull(item);
-            Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
-
-            // Ensure GetInteroperableClone don't change nothing
-
-            item.GetInteroperableClone<AccountState>().Balance = 123;
-            Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
-        }
+        item.GetInteroperableClone<AccountState>().Balance = 123;
+        Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
     }
 }

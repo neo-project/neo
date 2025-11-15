@@ -12,16 +12,15 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 
-namespace Neo.IEventHandlers
+namespace Neo.IEventHandlers;
+
+public interface ICommittedHandler
 {
-    public interface ICommittedHandler
-    {
-        /// <summary>
-        /// This is the handler of Commited event from <see cref="Blockchain"/>
-        /// Triggered after a new block is Commited, and state has being updated.
-        /// </summary>
-        /// <param name="system">The <see cref="NeoSystem"/> object.</param>
-        /// <param name="block">The committed <see cref="Block"/>.</param>
-        void Blockchain_Committed_Handler(NeoSystem system, Block block);
-    }
+    /// <summary>
+    /// This is the handler of Commited event from <see cref="Blockchain"/>
+    /// Triggered after a new block is Commited, and state has being updated.
+    /// </summary>
+    /// <param name="system">The <see cref="NeoSystem"/> object.</param>
+    /// <param name="block">The committed <see cref="Block"/>.</param>
+    void Blockchain_Committed_Handler(NeoSystem system, Block block);
 }

@@ -11,65 +11,62 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
-using System;
-using System.Collections.Generic;
 
-namespace Neo.Builders
+namespace Neo.Builders;
+
+public sealed class SignerBuilder
 {
-    public sealed class SignerBuilder
+    private readonly UInt160 _account;
+    private WitnessScope _scopes = WitnessScope.None;
+    private readonly List<UInt160> _allowedContracts = [];
+    private readonly List<ECPoint> _allowedGroups = [];
+    private readonly List<WitnessRule> _rules = [];
+
+    private SignerBuilder(UInt160 account)
     {
-        private readonly UInt160 _account;
-        private WitnessScope _scopes = WitnessScope.None;
-        private readonly List<UInt160> _allowedContracts = [];
-        private readonly List<ECPoint> _allowedGroups = [];
-        private readonly List<WitnessRule> _rules = [];
+        _account = account;
+    }
 
-        private SignerBuilder(UInt160 account)
-        {
-            _account = account;
-        }
+    public static SignerBuilder Create(UInt160 account)
+    {
+        return new SignerBuilder(account);
+    }
 
-        public static SignerBuilder Create(UInt160 account)
-        {
-            return new SignerBuilder(account);
-        }
+    public SignerBuilder AllowContract(UInt160 contractHash)
+    {
+        _allowedContracts.Add(contractHash);
+        return AddWitnessScope(WitnessScope.CustomContracts);
+    }
 
-        public SignerBuilder AllowContract(UInt160 contractHash)
-        {
-            _allowedContracts.Add(contractHash);
-            return AddWitnessScope(WitnessScope.CustomContracts);
-        }
+    public SignerBuilder AllowGroup(ECPoint publicKey)
+    {
+        _allowedGroups.Add(publicKey);
+        return AddWitnessScope(WitnessScope.CustomGroups);
+    }
 
-        public SignerBuilder AllowGroup(ECPoint publicKey)
-        {
-            _allowedGroups.Add(publicKey);
-            return AddWitnessScope(WitnessScope.CustomGroups);
-        }
+    public SignerBuilder AddWitnessScope(WitnessScope scope)
+    {
+        _scopes |= scope;
+        return this;
+    }
 
-        public SignerBuilder AddWitnessScope(WitnessScope scope)
-        {
-            _scopes |= scope;
-            return this;
-        }
+    public SignerBuilder AddWitnessRule(WitnessRuleAction action, Action<WitnessRuleBuilder> config)
+    {
+        var rb = WitnessRuleBuilder.Create(action);
+        config(rb);
+        _rules.Add(rb.Build());
+        return AddWitnessScope(WitnessScope.WitnessRules);
+    }
 
-        public SignerBuilder AddWitnessRule(WitnessRuleAction action, Action<WitnessRuleBuilder> config)
+    public Signer Build()
+    {
+        return new()
         {
-            var rb = WitnessRuleBuilder.Create(action);
-            config(rb);
-            _rules.Add(rb.Build());
-            return AddWitnessScope(WitnessScope.WitnessRules);
-        }
-
-        public Signer Build()
-        {
-            return new()
-            {
-                Account = _account,
-                Scopes = _scopes,
-                AllowedContracts = _scopes.HasFlag(WitnessScope.CustomContracts) ? _allowedContracts.ToArray() : null,
-                AllowedGroups = _scopes.HasFlag(WitnessScope.CustomGroups) ? _allowedGroups.ToArray() : null,
-                Rules = _scopes.HasFlag(WitnessScope.WitnessRules) ? _rules.ToArray() : null
-            };
-        }
+            Account = _account,
+            Scopes = _scopes,
+            AllowedContracts = _scopes.HasFlag(WitnessScope.CustomContracts) ? _allowedContracts.ToArray() : null,
+            AllowedGroups = _scopes.HasFlag(WitnessScope.CustomGroups) ? _allowedGroups.ToArray() : null,
+            Rules = _scopes.HasFlag(WitnessScope.WitnessRules) ? _rules.ToArray() : null
+        };
     }
 }

@@ -11,13 +11,12 @@
 
 using System.Reflection;
 
-namespace Neo.Extensions
+namespace Neo;
+
+public static class AssemblyExtensions
 {
-    public static class AssemblyExtensions
+    public static string GetVersion(this Assembly assembly)
     {
-        public static string GetVersion(this Assembly assembly)
-        {
-            return assembly.GetName().Version!.ToString(3);
-        }
+        return assembly.GetName().Version!.ToString(3);
     }
 }

@@ -9,322 +9,318 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
-using System;
 
-namespace Neo.UnitTests.Network.P2P.Payloads
+namespace Neo.UnitTests.Network.P2P.Payloads;
+
+[TestClass]
+public class UT_Signers
 {
-    [TestClass]
-    public class UT_Signers
+    [TestMethod]
+    public void Test_IEquatable()
     {
-        [TestMethod]
-        public void Test_IEquatable()
+        var ecPoint = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
+        var expected = new Signer()
         {
-            var ecPoint = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
-            var expected = new Signer()
-            {
-                Account = UInt160.Zero,
-                Scopes = WitnessScope.Global,
-                AllowedContracts = [UInt160.Zero],
-                AllowedGroups = [ecPoint],
-                Rules = [
-                    new WitnessRule
-                    {
-                        Condition = new BooleanCondition
-                        {
-                            Expression = true,
-                        },
-                        Action = WitnessRuleAction.Allow,
-                    },
-                ]
-            };
-
-            var actual = new Signer()
-            {
-                Account = UInt160.Zero,
-                Scopes = WitnessScope.Global,
-                AllowedContracts = [UInt160.Zero],
-                AllowedGroups = [ecPoint],
-                Rules = [
-                    new WitnessRule
-                    {
-                        Condition = new BooleanCondition
-                        {
-                            Expression = true,
-                        },
-                        Action = WitnessRuleAction.Allow,
-                    },
-                ]
-            };
-
-            var notEqual = new Signer()
-            {
-                Account = UInt160.Zero,
-                Scopes = WitnessScope.WitnessRules,
-                AllowedContracts = [],
-                AllowedGroups = [],
-                Rules = []
-            };
-
-            var cnull = new Signer
-            {
-                Account = null,
-                Scopes = WitnessScope.Global,
-                AllowedContracts = null,
-                AllowedGroups = null,
-                Rules = null,
-            };
-
-            Assert.IsTrue(expected.Equals(expected));
-
-            Assert.AreEqual(expected, actual);
-            Assert.IsTrue(expected == actual);
-            Assert.IsTrue(expected.Equals(actual));
-
-            Assert.AreNotEqual(expected, notEqual);
-            Assert.IsTrue(expected != notEqual);
-            Assert.IsFalse(expected.Equals(notEqual));
-
-            Assert.IsFalse(expected == null);
-            Assert.IsFalse(null == expected);
-            Assert.AreNotEqual(null, expected);
-            Assert.IsFalse(expected.Equals(null));
-
-            //Check null
-            Assert.AreNotEqual(cnull, notEqual);
-            Assert.IsFalse(cnull.Equals(notEqual));
-        }
-
-
-        [TestMethod]
-        public void Serialize_Deserialize_Global()
-        {
-            var attr = new Signer()
-            {
-                Scopes = WitnessScope.Global,
-                Account = UInt160.Zero
-            };
-
-            var hex = "000000000000000000000000000000000000000080";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
-
-            var copy = hex.HexToBytes().AsSerializable<Signer>();
-
-            Assert.AreEqual(attr.Scopes, copy.Scopes);
-            Assert.AreEqual(attr.Account, copy.Account);
-        }
-
-        [TestMethod]
-        public void Serialize_Deserialize_CalledByEntry()
-        {
-            var attr = new Signer()
-            {
-                Scopes = WitnessScope.CalledByEntry,
-                Account = UInt160.Zero
-            };
-
-            var hex = "000000000000000000000000000000000000000001";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
-
-            var copy = hex.HexToBytes().AsSerializable<Signer>();
-
-            Assert.AreEqual(attr.Scopes, copy.Scopes);
-            Assert.AreEqual(attr.Account, copy.Account);
-        }
-
-        [TestMethod]
-        public void Serialize_Deserialize_MaxNested_And()
-        {
-            var attr = new Signer()
-            {
-                Scopes = WitnessScope.WitnessRules,
-                Account = UInt160.Zero,
-                Rules = new WitnessRule[]{ new WitnessRule()
+            Account = UInt160.Zero,
+            Scopes = WitnessScope.Global,
+            AllowedContracts = [UInt160.Zero],
+            AllowedGroups = [ecPoint],
+            Rules = [
+                new WitnessRule
                 {
-                    Action = WitnessRuleAction.Allow,
-                    Condition = new AndCondition()
+                    Condition = new BooleanCondition
                     {
-                        Expressions = new WitnessCondition[]
+                        Expression = true,
+                    },
+                    Action = WitnessRuleAction.Allow,
+                },
+            ]
+        };
+
+        var actual = new Signer()
+        {
+            Account = UInt160.Zero,
+            Scopes = WitnessScope.Global,
+            AllowedContracts = [UInt160.Zero],
+            AllowedGroups = [ecPoint],
+            Rules = [
+                new WitnessRule
+                {
+                    Condition = new BooleanCondition
+                    {
+                        Expression = true,
+                    },
+                    Action = WitnessRuleAction.Allow,
+                },
+            ]
+        };
+
+        var notEqual = new Signer()
+        {
+            Account = UInt160.Zero,
+            Scopes = WitnessScope.WitnessRules,
+            AllowedContracts = [],
+            AllowedGroups = [],
+            Rules = []
+        };
+
+        var cnull = new Signer
+        {
+            Account = null!,
+            Scopes = WitnessScope.Global,
+            AllowedContracts = null,
+            AllowedGroups = null,
+            Rules = null,
+        };
+
+        Assert.IsTrue(expected.Equals(expected));
+
+        Assert.AreEqual(expected, actual);
+        Assert.IsTrue(expected == actual);
+        Assert.IsTrue(expected.Equals(actual));
+
+        Assert.AreNotEqual(expected, notEqual);
+        Assert.IsTrue(expected != notEqual);
+        Assert.IsFalse(expected.Equals(notEqual));
+
+        Assert.IsNotNull(expected);
+        Assert.IsFalse(expected.Equals(null));
+
+        //Check null
+        Assert.AreNotEqual(cnull, notEqual);
+        Assert.IsFalse(cnull.Equals(notEqual));
+    }
+
+
+    [TestMethod]
+    public void Serialize_Deserialize_Global()
+    {
+        var attr = new Signer()
+        {
+            Scopes = WitnessScope.Global,
+            Account = UInt160.Zero
+        };
+
+        var hex = "000000000000000000000000000000000000000080";
+        CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+
+        var copy = hex.HexToBytes().AsSerializable<Signer>();
+
+        Assert.AreEqual(attr.Scopes, copy.Scopes);
+        Assert.AreEqual(attr.Account, copy.Account);
+    }
+
+    [TestMethod]
+    public void Serialize_Deserialize_CalledByEntry()
+    {
+        var attr = new Signer()
+        {
+            Scopes = WitnessScope.CalledByEntry,
+            Account = UInt160.Zero
+        };
+
+        var hex = "000000000000000000000000000000000000000001";
+        CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+
+        var copy = hex.HexToBytes().AsSerializable<Signer>();
+
+        Assert.AreEqual(attr.Scopes, copy.Scopes);
+        Assert.AreEqual(attr.Account, copy.Account);
+    }
+
+    [TestMethod]
+    public void Serialize_Deserialize_MaxNested_And()
+    {
+        var attr = new Signer()
+        {
+            Scopes = WitnessScope.WitnessRules,
+            Account = UInt160.Zero,
+            Rules = new[]{ new WitnessRule()
+            {
+                Action = WitnessRuleAction.Allow,
+                Condition = new AndCondition()
+                {
+                    Expressions = new WitnessCondition[]
+                    {
+                        new AndCondition()
                         {
-                            new AndCondition()
+                            Expressions = new WitnessCondition[]
                             {
-                                Expressions = new WitnessCondition[]
+                                new AndCondition()
                                 {
-                                    new AndCondition()
+                                    Expressions = new WitnessCondition[]
                                     {
-                                        Expressions = new WitnessCondition[]
-                                        {
-                                            new BooleanCondition() { Expression=true }
-                                        }
+                                        new BooleanCondition() { Expression=true }
                                     }
                                 }
                             }
                         }
                     }
-                }}
-            };
+                }
+            }}
+        };
 
-            var hex = "00000000000000000000000000000000000000004001010201020102010001";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+        var hex = "00000000000000000000000000000000000000004001010201020102010001";
+        CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
-            Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
-        }
+        Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
+    }
 
-        [TestMethod]
-        public void Serialize_Deserialize_MaxNested_Or()
+    [TestMethod]
+    public void Serialize_Deserialize_MaxNested_Or()
+    {
+        var attr = new Signer()
         {
-            var attr = new Signer()
+            Scopes = WitnessScope.WitnessRules,
+            Account = UInt160.Zero,
+            Rules = new[]{ new WitnessRule()
             {
-                Scopes = WitnessScope.WitnessRules,
-                Account = UInt160.Zero,
-                Rules = new WitnessRule[]{ new WitnessRule()
+                Action = WitnessRuleAction.Allow,
+                Condition = new OrCondition()
                 {
-                    Action = WitnessRuleAction.Allow,
-                    Condition = new OrCondition()
+                    Expressions = new WitnessCondition[]
                     {
-                        Expressions = new WitnessCondition[]
+                        new OrCondition()
                         {
-                            new OrCondition()
+                            Expressions = new WitnessCondition[]
                             {
-                                Expressions = new WitnessCondition[]
+                                new OrCondition()
                                 {
-                                    new OrCondition()
+                                    Expressions = new WitnessCondition[]
                                     {
-                                        Expressions = new WitnessCondition[]
-                                        {
-                                            new BooleanCondition() { Expression=true }
-                                        }
+                                        new BooleanCondition() { Expression=true }
                                     }
                                 }
                             }
                         }
                     }
-                }}
-            };
+                }
+            }}
+        };
 
-            var hex = "00000000000000000000000000000000000000004001010301030103010001";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+        var hex = "00000000000000000000000000000000000000004001010301030103010001";
+        CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
-            Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
-        }
+        Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
+    }
 
-        [TestMethod]
-        public void Serialize_Deserialize_CustomContracts()
+    [TestMethod]
+    public void Serialize_Deserialize_CustomContracts()
+    {
+        var attr = new Signer()
         {
-            var attr = new Signer()
-            {
-                Scopes = WitnessScope.CustomContracts,
-                AllowedContracts = new[] { UInt160.Zero },
-                Account = UInt160.Zero
-            };
+            Scopes = WitnessScope.CustomContracts,
+            AllowedContracts = new[] { UInt160.Zero },
+            Account = UInt160.Zero
+        };
 
-            var hex = "000000000000000000000000000000000000000010010000000000000000000000000000000000000000";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+        var hex = "000000000000000000000000000000000000000010010000000000000000000000000000000000000000";
+        CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
-            var copy = hex.HexToBytes().AsSerializable<Signer>();
+        var copy = hex.HexToBytes().AsSerializable<Signer>();
 
-            Assert.AreEqual(attr.Scopes, copy.Scopes);
-            CollectionAssert.AreEqual(attr.AllowedContracts, copy.AllowedContracts);
-            Assert.AreEqual(attr.Account, copy.Account);
-        }
+        Assert.AreEqual(attr.Scopes, copy.Scopes);
+        CollectionAssert.AreEqual(attr.AllowedContracts, copy.AllowedContracts);
+        Assert.AreEqual(attr.Account, copy.Account);
+    }
 
-        [TestMethod]
-        public void Serialize_Deserialize_CustomGroups()
+    [TestMethod]
+    public void Serialize_Deserialize_CustomGroups()
+    {
+        var attr = new Signer()
         {
-            var attr = new Signer()
-            {
-                Scopes = WitnessScope.CustomGroups,
-                AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
-                Account = UInt160.Zero
-            };
+            Scopes = WitnessScope.CustomGroups,
+            AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
+            Account = UInt160.Zero
+        };
 
-            var hex = "0000000000000000000000000000000000000000200103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+        var hex = "0000000000000000000000000000000000000000200103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
+        CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
-            var copy = hex.HexToBytes().AsSerializable<Signer>();
+        var copy = hex.HexToBytes().AsSerializable<Signer>();
 
-            Assert.AreEqual(attr.Scopes, copy.Scopes);
-            CollectionAssert.AreEqual(attr.AllowedGroups, copy.AllowedGroups);
-            Assert.AreEqual(attr.Account, copy.Account);
-        }
+        Assert.AreEqual(attr.Scopes, copy.Scopes);
+        CollectionAssert.AreEqual(attr.AllowedGroups, copy.AllowedGroups);
+        Assert.AreEqual(attr.Account, copy.Account);
+    }
 
-        [TestMethod]
-        public void Json_Global()
+    [TestMethod]
+    public void Json_Global()
+    {
+        var attr = new Signer()
         {
-            var attr = new Signer()
-            {
-                Scopes = WitnessScope.Global,
-                Account = UInt160.Zero
-            };
+            Scopes = WitnessScope.Global,
+            Account = UInt160.Zero
+        };
 
-            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"Global\"}";
-            Assert.AreEqual(json, attr.ToJson().ToString());
-        }
+        var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"Global\"}";
+        Assert.AreEqual(json, attr.ToJson().ToString());
+    }
 
-        [TestMethod]
-        public void Json_CalledByEntry()
+    [TestMethod]
+    public void Json_CalledByEntry()
+    {
+        var attr = new Signer()
         {
-            var attr = new Signer()
-            {
-                Scopes = WitnessScope.CalledByEntry,
-                Account = UInt160.Zero
-            };
+            Scopes = WitnessScope.CalledByEntry,
+            Account = UInt160.Zero
+        };
 
-            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CalledByEntry\"}";
-            Assert.AreEqual(json, attr.ToJson().ToString());
-        }
+        var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CalledByEntry\"}";
+        Assert.AreEqual(json, attr.ToJson().ToString());
+    }
 
-        [TestMethod]
-        public void Json_CustomContracts()
+    [TestMethod]
+    public void Json_CustomContracts()
+    {
+        var attr = new Signer()
         {
-            var attr = new Signer()
-            {
-                Scopes = WitnessScope.CustomContracts,
-                AllowedContracts = new[] { UInt160.Zero },
-                Account = UInt160.Zero
-            };
+            Scopes = WitnessScope.CustomContracts,
+            AllowedContracts = new[] { UInt160.Zero },
+            Account = UInt160.Zero
+        };
 
-            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomContracts\",\"allowedcontracts\":[\"0x0000000000000000000000000000000000000000\"]}";
-            Assert.AreEqual(json, attr.ToJson().ToString());
-        }
+        var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomContracts\",\"allowedcontracts\":[\"0x0000000000000000000000000000000000000000\"]}";
+        Assert.AreEqual(json, attr.ToJson().ToString());
+    }
 
-        [TestMethod]
-        public void Json_CustomGroups()
+    [TestMethod]
+    public void Json_CustomGroups()
+    {
+        var attr = new Signer()
         {
-            var attr = new Signer()
-            {
-                Scopes = WitnessScope.CustomGroups,
-                AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
-                Account = UInt160.Zero
-            };
+            Scopes = WitnessScope.CustomGroups,
+            AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
+            Account = UInt160.Zero
+        };
 
-            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomGroups\",\"allowedgroups\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"]}";
-            Assert.AreEqual(json, attr.ToJson().ToString());
-        }
+        var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomGroups\",\"allowedgroups\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"]}";
+        Assert.AreEqual(json, attr.ToJson().ToString());
+    }
 
-        [TestMethod]
-        public void Json_From()
+    [TestMethod]
+    public void Json_From()
+    {
+        Signer signer = new()
         {
-            Signer signer = new()
-            {
-                Account = UInt160.Zero,
-                Scopes = WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.WitnessRules,
-                AllowedContracts = [UInt160.Zero],
-                AllowedGroups = [ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1)],
-                Rules = [new() { Action = WitnessRuleAction.Allow, Condition = new BooleanCondition() { Expression = true } }]
-            };
-            var json = signer.ToJson();
-            var newSigner = Signer.FromJson(json);
-            Assert.IsTrue(newSigner.Account.Equals(signer.Account));
-            Assert.AreEqual(signer.Scopes, newSigner.Scopes);
-            Assert.HasCount(1, newSigner.AllowedContracts);
-            Assert.IsTrue(newSigner.AllowedContracts[0].Equals(signer.AllowedContracts[0]));
-            Assert.HasCount(1, newSigner.AllowedGroups);
-            Assert.IsTrue(newSigner.AllowedGroups[0].Equals(signer.AllowedGroups[0]));
-        }
+            Account = UInt160.Zero,
+            Scopes = WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.WitnessRules,
+            AllowedContracts = [UInt160.Zero],
+            AllowedGroups = [ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1)],
+            Rules = [new() { Action = WitnessRuleAction.Allow, Condition = new BooleanCondition() { Expression = true } }]
+        };
+        var json = signer.ToJson();
+        var newSigner = Signer.FromJson(json);
+        Assert.IsTrue(newSigner.Account.Equals(signer.Account));
+        Assert.AreEqual(signer.Scopes, newSigner.Scopes);
+        Assert.HasCount(1, newSigner.AllowedContracts!);
+        Assert.IsTrue(newSigner.AllowedContracts![0].Equals(signer.AllowedContracts[0]));
+        Assert.HasCount(1, newSigner.AllowedGroups!);
+        Assert.IsTrue(newSigner.AllowedGroups![0].Equals(signer.AllowedGroups[0]));
     }
 }

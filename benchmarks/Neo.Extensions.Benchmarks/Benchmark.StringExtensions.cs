@@ -11,18 +11,17 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Neo.Extensions
-{
-    public class Benchmark_StringExtensions
-    {
-        private const string _testHex = "0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1e1f20";
+namespace Neo.Extensions.Benchmarks;
 
-        [Benchmark]
-        public void HexToBytes()
-        {
-            var bytes = _testHex.HexToBytes();
-            if (bytes.Length != 32)
-                throw new Exception("Invalid length");
-        }
+public class Benchmark_StringExtensions
+{
+    private const string _testHex = "0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1e1f20";
+
+    [Benchmark]
+    public static void HexToBytes()
+    {
+        var bytes = _testHex.HexToBytes();
+        if (bytes.Length != 32)
+            throw new Exception("Invalid length");
     }
 }

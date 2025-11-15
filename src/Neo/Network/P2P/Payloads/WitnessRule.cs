@@ -9,133 +9,130 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads;
+
+/// <summary>
+/// The rule used to describe the scope of the witness.
+/// </summary>
+public class WitnessRule : IInteroperable, ISerializable, IEquatable<WitnessRule>
 {
     /// <summary>
-    /// The rule used to describe the scope of the witness.
+    /// Indicates the action to be taken if the current context meets with the rule.
     /// </summary>
-    public class WitnessRule : IInteroperable, ISerializable, IEquatable<WitnessRule>
+    public WitnessRuleAction Action;
+
+    /// <summary>
+    /// The condition of the rule.
+    /// </summary>
+    public required WitnessCondition Condition;
+
+    int ISerializable.Size => sizeof(WitnessRuleAction) + Condition.Size;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Equals(WitnessRule? other)
     {
-        /// <summary>
-        /// Indicates the action to be taken if the current context meets with the rule.
-        /// </summary>
-        public WitnessRuleAction Action;
+        if (ReferenceEquals(this, other)) return true;
+        if (other is null) return false;
+        return Action == other.Action &&
+            Condition == other.Condition;
+    }
 
-        /// <summary>
-        /// The condition of the rule.
-        /// </summary>
-        public required WitnessCondition Condition;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override bool Equals(object? obj)
+    {
+        if (obj == null) return false;
+        return obj is WitnessRule wr && Equals(wr);
+    }
 
-        int ISerializable.Size => sizeof(WitnessRuleAction) + Condition.Size;
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Action, Condition.GetHashCode());
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(WitnessRule? other)
+    void ISerializable.Deserialize(ref MemoryReader reader)
+    {
+        Action = (WitnessRuleAction)reader.ReadByte();
+        if (Action != WitnessRuleAction.Allow && Action != WitnessRuleAction.Deny)
+            throw new FormatException($"Invalid action: {Action}.");
+        Condition = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+    }
+
+    void ISerializable.Serialize(BinaryWriter writer)
+    {
+        writer.Write((byte)Action);
+        writer.Write(Condition);
+    }
+
+    /// <summary>
+    /// Converts the <see cref="WitnessRule"/> from a JSON object.
+    /// </summary>
+    /// <param name="json">The <see cref="WitnessRule"/> represented by a JSON object.</param>
+    /// <returns>The converted <see cref="WitnessRule"/>.</returns>
+    public static WitnessRule FromJson(JObject json)
+    {
+        WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"]!.GetString());
+        if (action != WitnessRuleAction.Allow && action != WitnessRuleAction.Deny)
+            throw new FormatException($"Invalid action: {action}.");
+
+        return new()
         {
-            if (ReferenceEquals(this, other)) return true;
-            if (other is null) return false;
-            return Action == other.Action &&
-                Condition == other.Condition;
-        }
+            Action = action,
+            Condition = WitnessCondition.FromJson((JObject)json["condition"]!, WitnessCondition.MaxNestingDepth)
+        };
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object? obj)
+    /// <summary>
+    /// Converts the rule to a JSON object.
+    /// </summary>
+    /// <returns>The rule represented by a JSON object.</returns>
+    public JObject ToJson()
+    {
+        return new JObject
         {
-            if (obj == null) return false;
-            return obj is WitnessRule wr && Equals(wr);
-        }
+            ["action"] = Action,
+            ["condition"] = Condition.ToJson()
+        };
+    }
 
-        public override int GetHashCode()
+    void IInteroperable.FromStackItem(StackItem stackItem)
+    {
+        throw new NotSupportedException();
+    }
+
+    public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+    {
+        return new Array(referenceCounter, new StackItem[]
         {
-            return HashCode.Combine(Action, Condition.GetHashCode());
-        }
+            (byte)Action,
+            Condition.ToStackItem(referenceCounter)
+        });
+    }
 
-        void ISerializable.Deserialize(ref MemoryReader reader)
-        {
-            Action = (WitnessRuleAction)reader.ReadByte();
-            if (Action != WitnessRuleAction.Allow && Action != WitnessRuleAction.Deny)
-                throw new FormatException($"Invalid action: {Action}.");
-            Condition = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator ==(WitnessRule left, WitnessRule right)
+    {
+        if (left is null || right is null)
+            return Equals(left, right);
 
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            writer.Write((byte)Action);
-            writer.Write(Condition);
-        }
+        return left.Equals(right);
+    }
 
-        /// <summary>
-        /// Converts the <see cref="WitnessRule"/> from a JSON object.
-        /// </summary>
-        /// <param name="json">The <see cref="WitnessRule"/> represented by a JSON object.</param>
-        /// <returns>The converted <see cref="WitnessRule"/>.</returns>
-        public static WitnessRule FromJson(JObject json)
-        {
-            WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"]!.GetString());
-            if (action != WitnessRuleAction.Allow && action != WitnessRuleAction.Deny)
-                throw new FormatException($"Invalid action: {action}.");
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator !=(WitnessRule left, WitnessRule right)
+    {
+        if (left is null || right is null)
+            return !Equals(left, right);
 
-            return new()
-            {
-                Action = action,
-                Condition = WitnessCondition.FromJson((JObject)json["condition"]!, WitnessCondition.MaxNestingDepth)
-            };
-        }
-
-        /// <summary>
-        /// Converts the rule to a JSON object.
-        /// </summary>
-        /// <returns>The rule represented by a JSON object.</returns>
-        public JObject ToJson()
-        {
-            return new JObject
-            {
-                ["action"] = Action,
-                ["condition"] = Condition.ToJson()
-            };
-        }
-
-        void IInteroperable.FromStackItem(StackItem stackItem)
-        {
-            throw new NotSupportedException();
-        }
-
-        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
-        {
-            return new Array(referenceCounter, new StackItem[]
-            {
-                (byte)Action,
-                Condition.ToStackItem(referenceCounter)
-            });
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(WitnessRule left, WitnessRule right)
-        {
-            if (left is null || right is null)
-                return Equals(left, right);
-
-            return left.Equals(right);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(WitnessRule left, WitnessRule right)
-        {
-            if (left is null || right is null)
-                return !Equals(left, right);
-
-            return !left.Equals(right);
-        }
+        return !left.Equals(right);
     }
 }

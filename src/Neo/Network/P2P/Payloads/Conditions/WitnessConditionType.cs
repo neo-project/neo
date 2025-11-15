@@ -11,65 +11,64 @@
 
 using Neo.IO.Caching;
 
-namespace Neo.Network.P2P.Payloads.Conditions
+namespace Neo.Network.P2P.Payloads.Conditions;
+
+/// <summary>
+/// Represents the type of <see cref="WitnessCondition"/>.
+/// </summary>
+public enum WitnessConditionType : byte
 {
     /// <summary>
-    /// Represents the type of <see cref="WitnessCondition"/>.
+    /// Indicates that the condition will always be met or not met.
     /// </summary>
-    public enum WitnessConditionType : byte
-    {
-        /// <summary>
-        /// Indicates that the condition will always be met or not met.
-        /// </summary>
-        [ReflectionCache(typeof(BooleanCondition))]
-        Boolean = 0x00,
+    [ReflectionCache(typeof(BooleanCondition))]
+    Boolean = 0x00,
 
-        /// <summary>
-        /// Reverse another condition.
-        /// </summary>
-        [ReflectionCache(typeof(NotCondition))]
-        Not = 0x01,
+    /// <summary>
+    /// Reverse another condition.
+    /// </summary>
+    [ReflectionCache(typeof(NotCondition))]
+    Not = 0x01,
 
-        /// <summary>
-        /// Indicates that all conditions must be met.
-        /// </summary>
-        [ReflectionCache(typeof(AndCondition))]
-        And = 0x02,
+    /// <summary>
+    /// Indicates that all conditions must be met.
+    /// </summary>
+    [ReflectionCache(typeof(AndCondition))]
+    And = 0x02,
 
-        /// <summary>
-        /// Indicates that any of the conditions meets.
-        /// </summary>
-        [ReflectionCache(typeof(OrCondition))]
-        Or = 0x03,
+    /// <summary>
+    /// Indicates that any of the conditions meets.
+    /// </summary>
+    [ReflectionCache(typeof(OrCondition))]
+    Or = 0x03,
 
-        /// <summary>
-        /// Indicates that the condition is met when the current context has the specified script hash.
-        /// </summary>
-        [ReflectionCache(typeof(ScriptHashCondition))]
-        ScriptHash = 0x18,
+    /// <summary>
+    /// Indicates that the condition is met when the current context has the specified script hash.
+    /// </summary>
+    [ReflectionCache(typeof(ScriptHashCondition))]
+    ScriptHash = 0x18,
 
-        /// <summary>
-        /// Indicates that the condition is met when the current context has the specified group.
-        /// </summary>
-        [ReflectionCache(typeof(GroupCondition))]
-        Group = 0x19,
+    /// <summary>
+    /// Indicates that the condition is met when the current context has the specified group.
+    /// </summary>
+    [ReflectionCache(typeof(GroupCondition))]
+    Group = 0x19,
 
-        /// <summary>
-        /// Indicates that the condition is met when the current context is the entry point or is called by the entry point.
-        /// </summary>
-        [ReflectionCache(typeof(CalledByEntryCondition))]
-        CalledByEntry = 0x20,
+    /// <summary>
+    /// Indicates that the condition is met when the current context is the entry point or is called by the entry point.
+    /// </summary>
+    [ReflectionCache(typeof(CalledByEntryCondition))]
+    CalledByEntry = 0x20,
 
-        /// <summary>
-        /// Indicates that the condition is met when the current context is called by the specified contract.
-        /// </summary>
-        [ReflectionCache(typeof(CalledByContractCondition))]
-        CalledByContract = 0x28,
+    /// <summary>
+    /// Indicates that the condition is met when the current context is called by the specified contract.
+    /// </summary>
+    [ReflectionCache(typeof(CalledByContractCondition))]
+    CalledByContract = 0x28,
 
-        /// <summary>
-        /// Indicates that the condition is met when the current context is called by the specified group.
-        /// </summary>
-        [ReflectionCache(typeof(CalledByGroupCondition))]
-        CalledByGroup = 0x29
-    }
+    /// <summary>
+    /// Indicates that the condition is met when the current context is called by the specified group.
+    /// </summary>
+    [ReflectionCache(typeof(CalledByGroupCondition))]
+    CalledByGroup = 0x29
 }
