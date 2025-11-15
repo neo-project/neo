@@ -54,6 +54,8 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Default()
         {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
             var json = """
             {
                 "name": "testManifest",
@@ -75,9 +77,11 @@ namespace Neo.UnitTests.SmartContract.Manifest
             json = Regex.Replace(json, @"\s+", "");
             var manifest = ContractManifest.Parse(json);
 
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Assert.AreEqual(manifest.ToJson().ToString(), json);
             Assert.AreEqual(manifest.ToJson().ToString(), TestUtils.CreateDefaultManifest().ToJson().ToString());
-            Assert.IsTrue(manifest.IsValid(ExecutionEngineLimits.Default, UInt160.Zero));
+            Assert.IsTrue(manifest.IsValid(engine, UInt160.Zero));
+            Assert.IsFalse(manifest.Abi.HasNEP25);
         }
 
         [TestMethod]
@@ -214,6 +218,85 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001")),
                 ContractPermissionDescriptor.CreateWildcard());
             Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
+        }
+
+        [TestMethod]
+        public void ParseFromJson_ExtendedTypeMismatch_ShouldThrow()
+        {
+            var json = """
+            {
+                "name":"testManifest",
+                "groups":[],
+                "features":{},
+                "supportedstandards":[],
+                "abi":{
+                    "methods":[
+                        {
+                            "name":"testMethod",
+                            "parameters":[
+                                {
+                                    "name":"arg",
+                                    "type":"Integer",
+                                    "extendedtype":{
+                                        "type":"String"
+                                    }
+                                }
+                            ],
+                            "returntype":"Void",
+                            "offset":0,
+                            "safe":true
+                        }
+                    ],
+                    "events":[]
+                },
+                "permissions":[],
+                "trusts":[],
+                "extra":null
+            }
+            """;
+
+            json = Regex.Replace(json, @"\s+", "");
+            Assert.ThrowsExactly<FormatException>(() => ContractManifest.Parse(json));
+        }
+
+        [TestMethod]
+        public void ParseFromJson_UnknownNamedType_ShouldThrow()
+        {
+            var json = """
+            {
+                "name":"testManifest",
+                "groups":[],
+                "features":{},
+                "supportedstandards":[],
+                "abi":{
+                    "methods":[
+                        {
+                            "name":"testMethod",
+                            "parameters":[
+                                {
+                                    "name":"arg",
+                                    "type":"Array",
+                                    "extendedtype":{
+                                        "type":"Array",
+                                        "namedtype":"Custom.Struct"
+                                    }
+                                }
+                            ],
+                            "returntype":"Void",
+                            "offset":0,
+                            "safe":true
+                        }
+                    ],
+                    "events":[]
+                },
+                "permissions":[],
+                "trusts":[],
+                "extra":null
+            }
+            """;
+
+            json = Regex.Replace(json, @"\s+", "");
+            Assert.ThrowsExactly<FormatException>(() => ContractManifest.Parse(json));
         }
 
         [TestMethod]

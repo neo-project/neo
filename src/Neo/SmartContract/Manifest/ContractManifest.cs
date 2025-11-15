@@ -176,20 +176,24 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Determines whether the manifest is valid.
         /// </summary>
-        /// <param name="limits">The <see cref="ExecutionEngineLimits"/> used for test serialization.</param>
+        /// <param name="engine">The <see cref="ApplicationEngine"/> used for get the Limits.</param>
         /// <param name="hash">The hash of the contract.</param>
         /// <returns><see langword="true"/> if the manifest is valid; otherwise, <see langword="false"/>.</returns>
-        public bool IsValid(ExecutionEngineLimits limits, UInt160 hash)
+        public bool IsValid(ApplicationEngine engine, UInt160 hash)
         {
             // Ensure that is serializable
             try
             {
-                _ = BinarySerializer.Serialize(ToStackItem(null), limits);
+                _ = BinarySerializer.Serialize(ToStackItem(null), engine.Limits);
             }
             catch
             {
                 return false;
             }
+
+            if (Abi.HasNEP25 && !engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                return false;
+
             // Check groups
             return Groups.All(u => u.IsValid(hash));
         }
