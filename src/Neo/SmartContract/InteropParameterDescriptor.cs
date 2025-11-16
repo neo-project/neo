@@ -45,6 +45,8 @@ namespace Neo.SmartContract
 
         public bool IsNullable { get; }
 
+        public bool IsElementNullable { get; }
+
         /// <summary>
         /// Indicates whether the parameter is an enumeration.
         /// </summary>
@@ -90,8 +92,11 @@ namespace Neo.SmartContract
             if (!parameterInfo.ParameterType.IsValueType)
             {
                 var context = new NullabilityInfoContext();
-                if (context.Create(parameterInfo).ReadState == NullabilityState.Nullable)
+                var info = context.Create(parameterInfo);
+                if (info.ReadState == NullabilityState.Nullable)
                     IsNullable = true;
+                if (info.ElementType?.ReadState == NullabilityState.Nullable)
+                    IsElementNullable = true;
             }
         }
 
@@ -126,8 +131,6 @@ namespace Neo.SmartContract
 
         public void Validate(StackItem item)
         {
-            if (item.IsNull && !IsNullable && Type != typeof(StackItem))
-                throw new InvalidOperationException($"The argument `{Name}` can't be null.");
             foreach (var validator in _validators)
                 validator.Validate(item);
         }

@@ -597,6 +597,8 @@ namespace Neo.SmartContract
         protected internal object? Convert(StackItem item, InteropParameterDescriptor descriptor)
         {
             descriptor.Validate(item);
+            if (item.IsNull && !descriptor.IsNullable && descriptor.Type != typeof(StackItem))
+                throw new InvalidOperationException($"The argument `{descriptor.Name}` can't be null.");
             if (descriptor.IsArray)
             {
                 Array av;
@@ -604,7 +606,11 @@ namespace Neo.SmartContract
                 {
                     av = Array.CreateInstance(descriptor.Type.GetElementType()!, array.Count);
                     for (int i = 0; i < av.Length; i++)
+                    {
+                        if (array[i].IsNull && !descriptor.IsElementNullable)
+                            throw new InvalidOperationException($"The element of `{descriptor.Name}` can't be null.");
                         av.SetValue(descriptor.Converter(array[i]), i);
+                    }
                 }
                 else
                 {
@@ -612,7 +618,12 @@ namespace Neo.SmartContract
                     if (count > Limits.MaxStackSize) throw new InvalidOperationException();
                     av = Array.CreateInstance(descriptor.Type.GetElementType()!, count);
                     for (int i = 0; i < av.Length; i++)
-                        av.SetValue(descriptor.Converter(Pop()), i);
+                    {
+                        StackItem popped = Pop();
+                        if (popped.IsNull && !descriptor.IsElementNullable)
+                            throw new InvalidOperationException($"The element of `{descriptor.Name}` can't be null.");
+                        av.SetValue(descriptor.Converter(popped), i);
+                    }
                 }
                 return av;
             }
