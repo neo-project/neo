@@ -310,7 +310,7 @@ namespace Neo.SmartContract.Native
         /// <param name="manifest">The manifest of the contract.</param>
         /// <returns>The updated contract.</returns>
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        private ContractTask Update(ApplicationEngine engine, byte[]? nefFile, byte[]? manifest)
         {
             return Update(engine, nefFile, manifest, StackItem.Null);
         }
