@@ -9,27 +9,26 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.VM;
 using Neo.VM.Types;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract.Native;
+
+class HashIndexState : IInteroperable
 {
-    class HashIndexState : IInteroperable
+    public UInt256 Hash { get; set; } = UInt256.Zero;
+    public uint Index { get; set; }
+
+    void IInteroperable.FromStackItem(StackItem stackItem)
     {
-        public UInt256 Hash { get; set; } = UInt256.Zero;
-        public uint Index { get; set; }
+        var @struct = (Struct)stackItem;
+        Hash = new UInt256(@struct[0].GetSpan());
+        Index = (uint)@struct[1].GetInteger();
+    }
 
-        void IInteroperable.FromStackItem(StackItem stackItem)
-        {
-            var @struct = (Struct)stackItem;
-            Hash = new UInt256(@struct[0].GetSpan());
-            Index = (uint)@struct[1].GetInteger();
-        }
-
-        StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
-        {
-            return new Struct(referenceCounter) { Hash.ToArray(), Index };
-        }
+    StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
+    {
+        return new Struct(referenceCounter) { Hash.ToArray(), Index };
     }
 }

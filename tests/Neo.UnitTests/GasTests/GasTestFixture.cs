@@ -10,36 +10,34 @@
 // modifications are permitted.
 
 using Neo.VM;
-using System.Collections.Generic;
 using System.Numerics;
 
 #nullable enable
 
-namespace Neo.UnitTests.GasTests
+namespace Neo.UnitTests.GasTests;
+
+public class GasTestFixture
 {
-    public class GasTestFixture
+    public class SignatureData
     {
-        public class SignatureData
-        {
-            public bool SignedByCommittee { get; set; } = false;
-        }
-
-        public class PreExecutionData
-        {
-            public Dictionary<string, string> Storage { get; set; } = [];
-        }
-
-        public class NeoExecution
-        {
-            public byte[] Script { get; set; } = [];
-            public BigInteger Fee { get; set; } = BigInteger.Zero;
-            public VMState State { get; set; } = VMState.HALT;
-        }
-
-        public SignatureData? Signature { get; set; } = null;
-        public PreExecutionData? PreExecution { get; set; } = null;
-        public List<NeoExecution> Execute { get; set; } = [];
+        public bool SignedByCommittee { get; set; } = false;
     }
+
+    public class PreExecutionData
+    {
+        public Dictionary<string, string> Storage { get; set; } = [];
+    }
+
+    public class NeoExecution
+    {
+        public byte[] Script { get; set; } = [];
+        public BigInteger Fee { get; set; } = BigInteger.Zero;
+        public VMState State { get; set; } = VMState.HALT;
+    }
+
+    public SignatureData? Signature { get; set; } = null;
+    public PreExecutionData? PreExecution { get; set; } = null;
+    public List<NeoExecution> Execute { get; set; } = [];
 }
 
 #nullable disable

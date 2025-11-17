@@ -10,24 +10,22 @@
 // modifications are permitted.
 
 using Neo.IO;
-using System.IO;
 
-namespace Neo.Extensions
+namespace Neo.Extensions.IO;
+
+public static class ISerializableExtensions
 {
-    public static class ISerializableExtensions
+    /// <summary>
+    /// Converts an <see cref="ISerializable"/> object to a byte array.
+    /// </summary>
+    /// <param name="value">The <see cref="ISerializable"/> object to be converted.</param>
+    /// <returns>The converted byte array.</returns>
+    public static byte[] ToArray(this ISerializable value)
     {
-        /// <summary>
-        /// Converts an <see cref="ISerializable"/> object to a byte array.
-        /// </summary>
-        /// <param name="value">The <see cref="ISerializable"/> object to be converted.</param>
-        /// <returns>The converted byte array.</returns>
-        public static byte[] ToArray(this ISerializable value)
-        {
-            using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-            value.Serialize(writer);
-            writer.Flush();
-            return ms.ToArray();
-        }
+        using MemoryStream ms = new();
+        using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
+        value.Serialize(writer);
+        writer.Flush();
+        return ms.ToArray();
     }
 }

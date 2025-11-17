@@ -9,81 +9,81 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using System;
 
-namespace Neo.UnitTests.Network.P2P.Payloads
+namespace Neo.UnitTests.Network.P2P.Payloads;
+
+[TestClass]
+public class UT_NotaryAssisted
 {
-    [TestClass]
-    public class UT_NotaryAssisted
+    // Use the hard-coded Notary hash value from NeoGo to ensure hashes are compatible.
+    private static readonly UInt160 s_notaryHash = UInt160.Parse("0xc1e14f19c3e60d0b9244d06dd7ba9b113135ec3b");
+
+    [TestMethod]
+    public void Size_Get()
     {
-        // Use the hard-coded Notary hash value from NeoGo to ensure hashes are compatible.
-        private static readonly UInt160 s_notaryHash = UInt160.Parse("0xc1e14f19c3e60d0b9244d06dd7ba9b113135ec3b");
+        var attr = new NotaryAssisted() { NKeys = 4 };
+        Assert.AreEqual(1 + 1, attr.Size);
+    }
 
-        [TestMethod]
-        public void Size_Get()
+    [TestMethod]
+    public void ToJson()
+    {
+        var attr = new NotaryAssisted() { NKeys = 4 };
+        var json = attr.ToJson().ToString();
+        Assert.AreEqual(@"{""type"":""NotaryAssisted"",""nkeys"":4}", json);
+    }
+
+    [TestMethod]
+    public void DeserializeAndSerialize()
+    {
+        var attr = new NotaryAssisted() { NKeys = 4 };
+        var clone = attr.ToArray().AsSerializable<NotaryAssisted>();
+        Assert.AreEqual(clone.Type, attr.Type);
+
+        // As transactionAttribute
+        var buffer = attr.ToArray();
+        var reader = new MemoryReader(buffer);
+        clone = (NotaryAssisted)TransactionAttribute.DeserializeFrom(ref reader);
+        Assert.AreEqual(clone.Type, attr.Type);
+
+        // Wrong type
+        buffer[0] = 0xff;
+        Assert.ThrowsExactly<FormatException>(() => MemoryReaderDeserializeFrom(buffer));
+
+        static void MemoryReaderDeserializeFrom(byte[] buffer)
         {
-            var attr = new NotaryAssisted() { NKeys = 4 };
-            Assert.AreEqual(1 + 1, attr.Size);
-        }
-
-        [TestMethod]
-        public void ToJson()
-        {
-            var attr = new NotaryAssisted() { NKeys = 4 };
-            var json = attr.ToJson().ToString();
-            Assert.AreEqual(@"{""type"":""NotaryAssisted"",""nkeys"":4}", json);
-        }
-
-        [TestMethod]
-        public void DeserializeAndSerialize()
-        {
-            var attr = new NotaryAssisted() { NKeys = 4 };
-            var clone = attr.ToArray().AsSerializable<NotaryAssisted>();
-            Assert.AreEqual(clone.Type, attr.Type);
-
-            // As transactionAttribute
-            var buffer = attr.ToArray();
             var reader = new MemoryReader(buffer);
-            clone = TransactionAttribute.DeserializeFrom(ref reader) as NotaryAssisted;
-            Assert.AreEqual(clone.Type, attr.Type);
-
-            // Wrong type
-            buffer[0] = 0xff;
-            Assert.ThrowsExactly<FormatException>(() =>
-            {
-                var reader = new MemoryReader(buffer);
-                TransactionAttribute.DeserializeFrom(ref reader);
-            });
+            TransactionAttribute.DeserializeFrom(ref reader);
         }
+    }
 
-        [TestMethod]
-        public void Verify()
-        {
-            var attr = new NotaryAssisted() { NKeys = 4 };
+    [TestMethod]
+    public void Verify()
+    {
+        var attr = new NotaryAssisted() { NKeys = 4 };
 
-            // Temporary use Notary contract hash stub for valid transaction.
-            var txGood = new Transaction { Signers = [new() { Account = s_notaryHash }, new() { Account = UInt160.Zero }], Attributes = [attr], Witnesses = null! };
-            var txBad1 = new Transaction { Signers = [new() { Account = s_notaryHash }], Attributes = [attr], Witnesses = null! };
-            var txBad2 = new Transaction { Signers = [new() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") }], Attributes = [attr], Witnesses = null! };
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
+        // Temporary use Notary contract hash stub for valid transaction.
+        var txGood = new Transaction { Signers = [new() { Account = s_notaryHash }, new() { Account = UInt160.Zero }], Attributes = [attr], Witnesses = null! };
+        var txBad1 = new Transaction { Signers = [new() { Account = s_notaryHash }], Attributes = [attr], Witnesses = null! };
+        var txBad2 = new Transaction { Signers = [new() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") }], Attributes = [attr], Witnesses = null! };
+        var snapshot = TestBlockchain.GetTestSnapshotCache();
 
-            Assert.IsTrue(attr.Verify(snapshot, txGood));
-            Assert.IsFalse(attr.Verify(snapshot, txBad1));
-            Assert.IsFalse(attr.Verify(snapshot, txBad2));
-        }
+        Assert.IsTrue(attr.Verify(snapshot, txGood));
+        Assert.IsFalse(attr.Verify(snapshot, txBad1));
+        Assert.IsFalse(attr.Verify(snapshot, txBad2));
+    }
 
-        [TestMethod]
-        public void CalculateNetworkFee()
-        {
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
-            var attr = new NotaryAssisted() { NKeys = 4 };
-            var tx = new Transaction { Signers = [new() { Account = s_notaryHash }], Attributes = [attr], Witnesses = null! };
+    [TestMethod]
+    public void CalculateNetworkFee()
+    {
+        var snapshot = TestBlockchain.GetTestSnapshotCache();
+        var attr = new NotaryAssisted() { NKeys = 4 };
+        var tx = new Transaction { Signers = [new() { Account = s_notaryHash }], Attributes = [attr], Witnesses = null! };
 
-            Assert.AreEqual((4 + 1) * 1000_0000, attr.CalculateNetworkFee(snapshot, tx));
-        }
+        Assert.AreEqual((4 + 1) * 1000_0000, attr.CalculateNetworkFee(snapshot, tx));
     }
 }

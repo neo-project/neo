@@ -9,52 +9,51 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.Collections;
+using Neo.Extensions.IO;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using System;
 using System.Net;
 
-namespace Neo.UnitTests.Network.P2P.Payloads
+namespace Neo.UnitTests.Network.P2P.Payloads;
+
+[TestClass]
+public class UT_NetworkAddressWithTime
 {
-    [TestClass]
-    public class UT_NetworkAddressWithTime
+    [TestMethod]
+    public void SizeAndEndPoint_Get()
     {
-        [TestMethod]
-        public void SizeAndEndPoint_Get()
-        {
-            var test = new NetworkAddressWithTime() { Capabilities = [], Address = IPAddress.Any, Timestamp = 1 };
-            Assert.AreEqual(21, test.Size);
-            Assert.AreEqual(0, test.EndPoint.Port);
+        var test = new NetworkAddressWithTime() { Capabilities = [], Address = IPAddress.Any, Timestamp = 1 };
+        Assert.AreEqual(21, test.Size);
+        Assert.AreEqual(0, test.EndPoint.Port);
 
-            test = NetworkAddressWithTime.Create(IPAddress.Any, 1, [new ServerCapability(NodeCapabilityType.TcpServer, 22)]);
-            Assert.AreEqual(24, test.Size);
-            Assert.AreEqual(22, test.EndPoint.Port);
-        }
+        test = NetworkAddressWithTime.Create(IPAddress.Any, 1, [new ServerCapability(NodeCapabilityType.TcpServer, 22)]);
+        Assert.AreEqual(24, test.Size);
+        Assert.AreEqual(22, test.EndPoint.Port);
+    }
 
-        [TestMethod]
-        public void DeserializeAndSerialize()
-        {
-            var test = NetworkAddressWithTime.Create(IPAddress.Any, 1,
-                [
-                    new ServerCapability(NodeCapabilityType.TcpServer, 22),
-                    new UnknownCapability(NodeCapabilityType.Extension0),
-                    new UnknownCapability(NodeCapabilityType.Extension0)
-                ]);
-            var clone = test.ToArray().AsSerializable<NetworkAddressWithTime>();
+    [TestMethod]
+    public void DeserializeAndSerialize()
+    {
+        var test = NetworkAddressWithTime.Create(IPAddress.Any, 1,
+            [
+                new ServerCapability(NodeCapabilityType.TcpServer, 22),
+                new UnknownCapability(NodeCapabilityType.Extension0),
+                new UnknownCapability(NodeCapabilityType.Extension0)
+            ]);
+        var clone = test.ToArray().AsSerializable<NetworkAddressWithTime>();
 
-            Assert.AreEqual(test.Address, clone.Address);
-            Assert.AreEqual(test.EndPoint.ToString(), clone.EndPoint.ToString());
-            Assert.AreEqual(test.Timestamp, clone.Timestamp);
-            CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
+        Assert.AreEqual(test.Address, clone.Address);
+        Assert.AreEqual(test.EndPoint.ToString(), clone.EndPoint.ToString());
+        Assert.AreEqual(test.Timestamp, clone.Timestamp);
+        CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
 
-            test = NetworkAddressWithTime.Create(IPAddress.Any, 1,
-                [
-                    new ServerCapability(NodeCapabilityType.TcpServer, 22),
-                    new ServerCapability(NodeCapabilityType.TcpServer, 22)
-                ]);
-            Assert.ThrowsExactly<FormatException>(() => _ = test.ToArray().AsSerializable<NetworkAddressWithTime>());
-        }
+        test = NetworkAddressWithTime.Create(IPAddress.Any, 1,
+            [
+                new ServerCapability(NodeCapabilityType.TcpServer, 22),
+                new ServerCapability(NodeCapabilityType.TcpServer, 22)
+            ]);
+        Assert.ThrowsExactly<FormatException>(() => _ = test.ToArray().AsSerializable<NetworkAddressWithTime>());
     }
 }

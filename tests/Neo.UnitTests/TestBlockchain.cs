@@ -13,59 +13,57 @@ using Akka.Actor;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.Persistence.Providers;
-using System.Collections.Generic;
 
 #nullable enable
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests;
+
+public static class TestBlockchain
 {
-    public static class TestBlockchain
+    private class TestStoreProvider : IStoreProvider
     {
-        private class TestStoreProvider : IStoreProvider
+        public readonly Dictionary<string, MemoryStore> Stores = [];
+
+        public string Name => "TestProvider";
+
+        public IStore GetStore(string? path)
         {
-            public readonly Dictionary<string, MemoryStore> Stores = [];
+            path ??= "";
 
-            public string Name => "TestProvider";
-
-            public IStore GetStore(string? path)
+            lock (Stores)
             {
-                path ??= "";
+                if (Stores.TryGetValue(path, out var store))
+                    return store;
 
-                lock (Stores)
-                {
-                    if (Stores.TryGetValue(path, out var store))
-                        return store;
-
-                    return Stores[path] = new MemoryStore();
-                }
+                return Stores[path] = new MemoryStore();
             }
         }
-
-        public class TestNeoSystem(ProtocolSettings settings) : NeoSystem(settings, new TestStoreProvider())
-        {
-            public void ResetStore()
-            {
-                if (StorageProvider is TestStoreProvider testStore)
-                {
-                    foreach (var store in testStore.Stores)
-                        store.Value.Reset();
-                }
-                Blockchain.Ask(new Blockchain.Initialize()).ConfigureAwait(false).GetAwaiter().GetResult();
-            }
-
-            public StoreCache GetTestSnapshotCache(bool reset = true)
-            {
-                if (reset)
-                    ResetStore();
-                return GetSnapshotCache();
-            }
-        }
-
-        public static readonly UInt160[]? DefaultExtensibleWitnessWhiteList;
-
-        public static TestNeoSystem GetSystem() => new(TestProtocolSettings.Default);
-        public static StoreCache GetTestSnapshotCache() => GetSystem().GetSnapshotCache();
     }
+
+    public class TestNeoSystem(ProtocolSettings settings) : NeoSystem(settings, new TestStoreProvider())
+    {
+        public void ResetStore()
+        {
+            if (StorageProvider is TestStoreProvider testStore)
+            {
+                foreach (var store in testStore.Stores)
+                    store.Value.Reset();
+            }
+            Blockchain.Ask(new Blockchain.Initialize()).ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        public StoreCache GetTestSnapshotCache(bool reset = true)
+        {
+            if (reset)
+                ResetStore();
+            return GetSnapshotCache();
+        }
+    }
+
+    public static readonly UInt160[]? DefaultExtensibleWitnessWhiteList;
+
+    public static TestNeoSystem GetSystem() => new(TestProtocolSettings.Default);
+    public static StoreCache GetTestSnapshotCache() => GetSystem().GetSnapshotCache();
 }
 
 #nullable disable

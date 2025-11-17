@@ -9,24 +9,21 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+namespace Neo.Cryptography;
 
-namespace Neo.Cryptography
+/// <summary>
+/// Represents hash function identifiers supported by ECDSA message signature and verification.
+/// </summary>
+[Obsolete("Use HashAlgorithm instead")]
+public enum Hasher : byte
 {
     /// <summary>
-    /// Represents hash function identifiers supported by ECDSA message signature and verification.
+    /// The SHA256 hash algorithm.
     /// </summary>
-    [Obsolete("Use HashAlgorithm instead")]
-    public enum Hasher : byte
-    {
-        /// <summary>
-        /// The SHA256 hash algorithm.
-        /// </summary>
-        SHA256 = 0x00,
+    SHA256 = 0x00,
 
-        /// <summary>
-        /// The Keccak256 hash algorithm.
-        /// </summary>
-        Keccak256 = 0x01,
-    }
+    /// <summary>
+    /// The Keccak256 hash algorithm.
+    /// </summary>
+    Keccak256 = 0x01,
 }

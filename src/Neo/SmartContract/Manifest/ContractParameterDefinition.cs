@@ -12,107 +12,105 @@
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 using System.Runtime.CompilerServices;
 
-namespace Neo.SmartContract.Manifest
+namespace Neo.SmartContract.Manifest;
+
+/// <summary>
+/// Represents a parameter of an event or method in ABI.
+/// </summary>
+public class ContractParameterDefinition : IInteroperable, IEquatable<ContractParameterDefinition>
 {
     /// <summary>
-    /// Represents a parameter of an event or method in ABI.
+    /// The name of the parameter.
     /// </summary>
-    public class ContractParameterDefinition : IInteroperable, IEquatable<ContractParameterDefinition>
+    public required string Name { get; set; }
+
+    /// <summary>
+    /// The type of the parameter. It can be any value of <see cref="ContractParameterType"/> except <see cref="ContractParameterType.Void"/>.
+    /// </summary>
+    public ContractParameterType Type { get; set; }
+
+    void IInteroperable.FromStackItem(StackItem stackItem)
     {
-        /// <summary>
-        /// The name of the parameter.
-        /// </summary>
-        public required string Name { get; set; }
+        Struct @struct = (Struct)stackItem;
+        Name = @struct[0].GetString()!;
+        Type = (ContractParameterType)(byte)@struct[1].GetInteger();
+    }
 
-        /// <summary>
-        /// The type of the parameter. It can be any value of <see cref="ContractParameterType"/> except <see cref="ContractParameterType.Void"/>.
-        /// </summary>
-        public ContractParameterType Type { get; set; }
+    public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+    {
+        return new Struct(referenceCounter) { Name, (byte)Type };
+    }
 
-        void IInteroperable.FromStackItem(StackItem stackItem)
+    /// <summary>
+    /// Converts the parameter from a JSON object.
+    /// </summary>
+    /// <param name="json">The parameter represented by a JSON object.</param>
+    /// <returns>The converted parameter.</returns>
+    public static ContractParameterDefinition FromJson(JObject json)
+    {
+        ContractParameterDefinition parameter = new()
         {
-            Struct @struct = (Struct)stackItem;
-            Name = @struct[0].GetString()!;
-            Type = (ContractParameterType)(byte)@struct[1].GetInteger();
-        }
+            Name = json["name"]!.GetString(),
+            Type = Enum.Parse<ContractParameterType>(json["type"]!.GetString())
+        };
+        if (string.IsNullOrEmpty(parameter.Name))
+            throw new FormatException("Name in ContractParameterDefinition is empty");
+        if (!Enum.IsDefined(parameter.Type) || parameter.Type == ContractParameterType.Void)
+            throw new FormatException($"Type({parameter.Type}) in ContractParameterDefinition is not valid");
+        return parameter;
+    }
 
-        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+    /// <summary>
+    /// Converts the parameter to a JSON object.
+    /// </summary>
+    /// <returns>The parameter represented by a JSON object.</returns>
+    public JObject ToJson()
+    {
+        return new JObject()
         {
-            return new Struct(referenceCounter) { Name, (byte)Type };
-        }
+            ["name"] = Name,
+            ["type"] = Type.ToString()
+        };
+    }
 
-        /// <summary>
-        /// Converts the parameter from a JSON object.
-        /// </summary>
-        /// <param name="json">The parameter represented by a JSON object.</param>
-        /// <returns>The converted parameter.</returns>
-        public static ContractParameterDefinition FromJson(JObject json)
-        {
-            ContractParameterDefinition parameter = new()
-            {
-                Name = json["name"]!.GetString(),
-                Type = Enum.Parse<ContractParameterType>(json["type"]!.GetString())
-            };
-            if (string.IsNullOrEmpty(parameter.Name))
-                throw new FormatException("Name in ContractParameterDefinition is empty");
-            if (!Enum.IsDefined(typeof(ContractParameterType), parameter.Type) || parameter.Type == ContractParameterType.Void)
-                throw new FormatException($"Type({parameter.Type}) in ContractParameterDefinition is not valid");
-            return parameter;
-        }
+    public bool Equals(ContractParameterDefinition? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
 
-        /// <summary>
-        /// Converts the parameter to a JSON object.
-        /// </summary>
-        /// <returns>The parameter represented by a JSON object.</returns>
-        public JObject ToJson()
-        {
-            return new JObject()
-            {
-                ["name"] = Name,
-                ["type"] = Type.ToString()
-            };
-        }
+        return Name == other.Name && Type == other.Type;
+    }
 
-        public bool Equals(ContractParameterDefinition? other)
-        {
-            if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
+    public override bool Equals(object? other)
+    {
+        if (other is not ContractParameterDefinition parm)
+            return false;
 
-            return Name == other.Name && Type == other.Type;
-        }
+        return Equals(parm);
+    }
 
-        public override bool Equals(object? other)
-        {
-            if (other is not ContractParameterDefinition parm)
-                return false;
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Name, Type);
+    }
 
-            return Equals(parm);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator ==(ContractParameterDefinition left, ContractParameterDefinition right)
+    {
+        if (left is null || right is null)
+            return Equals(left, right);
 
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Name, Type);
-        }
+        return left.Equals(right);
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(ContractParameterDefinition left, ContractParameterDefinition right)
-        {
-            if (left is null || right is null)
-                return Equals(left, right);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator !=(ContractParameterDefinition left, ContractParameterDefinition right)
+    {
+        if (left is null || right is null)
+            return !Equals(left, right);
 
-            return left.Equals(right);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(ContractParameterDefinition left, ContractParameterDefinition right)
-        {
-            if (left is null || right is null)
-                return !Equals(left, right);
-
-            return !left.Equals(right);
-        }
+        return !left.Equals(right);
     }
 }

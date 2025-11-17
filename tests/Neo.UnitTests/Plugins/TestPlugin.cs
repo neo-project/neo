@@ -14,85 +14,84 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
-using System;
-using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
-namespace Neo.UnitTests.Plugins
+namespace Neo.UnitTests.Plugins;
+
+
+internal class TestPluginSettings : IPluginSettings
 {
+    public static TestPluginSettings? Default { get; private set; }
 
-    internal class TestPluginSettings : IPluginSettings
+    public UnhandledExceptionPolicy ExceptionPolicy => UnhandledExceptionPolicy.Ignore;
+
+    [MemberNotNull(nameof(Default))]
+    public static void Load(IConfigurationSection section)
     {
-        public static TestPluginSettings Default { get; private set; }
-
-        public UnhandledExceptionPolicy ExceptionPolicy => UnhandledExceptionPolicy.Ignore;
-
-        public static void Load(IConfigurationSection section)
-        {
-            Default = new TestPluginSettings();
-        }
+        Default = new TestPluginSettings();
     }
-    internal class TestNonPlugin
+}
+internal class TestNonPlugin
+{
+    public TestNonPlugin()
     {
-        public TestNonPlugin()
-        {
-            Blockchain.Committing += OnCommitting;
-            Blockchain.Committed += OnCommitted;
-        }
-
-        private static void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
-        {
-            throw new NotImplementedException("Test exception from OnCommitting");
-        }
-
-        private static void OnCommitted(NeoSystem system, Block block)
-        {
-            throw new NotImplementedException("Test exception from OnCommitted");
-        }
+        Blockchain.Committing += OnCommitting;
+        Blockchain.Committed += OnCommitted;
     }
 
-
-    internal class TestPlugin : Plugin
+    private static void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
     {
-        private readonly UnhandledExceptionPolicy _exceptionPolicy;
-        protected internal override UnhandledExceptionPolicy ExceptionPolicy => _exceptionPolicy;
+        throw new NotImplementedException("Test exception from OnCommitting");
+    }
 
-        public TestPlugin(UnhandledExceptionPolicy exceptionPolicy = UnhandledExceptionPolicy.StopPlugin)
-        {
-            Blockchain.Committing += OnCommitting;
-            Blockchain.Committed += OnCommitted;
-            _exceptionPolicy = exceptionPolicy;
-        }
+    private static void OnCommitted(NeoSystem system, Block block)
+    {
+        throw new NotImplementedException("Test exception from OnCommitted");
+    }
+}
 
-        protected override void Configure()
-        {
-            TestPluginSettings.Load(GetConfiguration());
-        }
 
-        public void LogMessage(string message)
-        {
-            Log(message);
-        }
+internal class TestPlugin : Plugin
+{
+    private readonly UnhandledExceptionPolicy _exceptionPolicy;
+    protected internal override UnhandledExceptionPolicy ExceptionPolicy => _exceptionPolicy;
 
-        public bool TestOnMessage(object message)
-        {
-            return OnMessage(message);
-        }
+    public TestPlugin(UnhandledExceptionPolicy exceptionPolicy = UnhandledExceptionPolicy.StopPlugin)
+    {
+        Blockchain.Committing += OnCommitting;
+        Blockchain.Committed += OnCommitted;
+        _exceptionPolicy = exceptionPolicy;
+    }
 
-        public IConfigurationSection TestGetConfiguration()
-        {
-            return GetConfiguration();
-        }
+    protected override void Configure()
+    {
+        TestPluginSettings.Load(GetConfiguration());
+    }
 
-        protected override bool OnMessage(object message) => true;
+    public void LogMessage(string message)
+    {
+        Log(message);
+    }
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
-        {
-            throw new NotImplementedException();
-        }
+    public bool TestOnMessage(object message)
+    {
+        return OnMessage(message);
+    }
 
-        private void OnCommitted(NeoSystem system, Block block)
-        {
-            throw new NotImplementedException();
-        }
+    public IConfigurationSection TestGetConfiguration()
+    {
+        return GetConfiguration();
+    }
+
+    protected override bool OnMessage(object message) => true;
+
+    private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void OnCommitted(NeoSystem system, Block block)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -9,93 +9,89 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
-using System;
 using System.Runtime.CompilerServices;
 
-namespace Neo.UnitTests.SmartContract
+namespace Neo.UnitTests.SmartContract;
+
+[TestClass]
+public class UT_ContractState
 {
-    [TestClass]
-    public class UT_ContractState
+    ContractState contract = null!;
+    readonly byte[] script = { 0x01 };
+    ContractManifest manifest = null!;
+
+    [TestInitialize]
+    public void TestSetup()
     {
-        ContractState contract;
-        readonly byte[] script = { 0x01 };
-        ContractManifest manifest;
-
-        [TestInitialize]
-        public void TestSetup()
+        manifest = TestUtils.CreateDefaultManifest();
+        contract = new ContractState
         {
-            manifest = TestUtils.CreateDefaultManifest();
-            contract = new ContractState
+            Nef = new NefFile
             {
-                Nef = new NefFile
-                {
-                    Compiler = nameof(ScriptBuilder),
-                    Source = string.Empty,
-                    Tokens = Array.Empty<MethodToken>(),
-                    Script = script
-                },
-                Hash = script.ToScriptHash(),
-                Manifest = manifest
-            };
-            contract.Nef.CheckSum = NefFile.ComputeChecksum(contract.Nef);
-        }
+                Compiler = nameof(ScriptBuilder),
+                Source = string.Empty,
+                Tokens = Array.Empty<MethodToken>(),
+                Script = script
+            },
+            Hash = script.ToScriptHash(),
+            Manifest = manifest
+        };
+        contract.Nef.CheckSum = NefFile.ComputeChecksum(contract.Nef);
+    }
 
-        [TestMethod]
-        public void TestGetScriptHash()
-        {
-            // _scriptHash == null
-            Assert.AreEqual(script.ToScriptHash(), contract.Hash);
-            // _scriptHash != null
-            Assert.AreEqual(script.ToScriptHash(), contract.Hash);
-        }
+    [TestMethod]
+    public void TestGetScriptHash()
+    {
+        // _scriptHash == null
+        Assert.AreEqual(script.ToScriptHash(), contract.Hash);
+        // _scriptHash != null
+        Assert.AreEqual(script.ToScriptHash(), contract.Hash);
+    }
 
-        [TestMethod]
-        public void TestClone()
-        {
-            var clone = ((IInteroperable)contract).Clone() as ContractState;
-            CollectionAssert.AreEqual(
-                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
-                BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
-                );
+    [TestMethod]
+    public void TestClone()
+    {
+        var clone = (ContractState)((IInteroperable)contract).Clone();
+        CollectionAssert.AreEqual(
+            BinarySerializer.Serialize(((IInteroperable)clone).ToStackItem(null), ExecutionEngineLimits.Default),
+            BinarySerializer.Serialize(((IInteroperable)contract).ToStackItem(null), ExecutionEngineLimits.Default));
 
-            clone.Nef.CheckSum++;
-            Assert.AreNotEqual(clone.Nef.CheckSum, contract.Nef.CheckSum);
-            clone.Manifest.Name += "X";
-            Assert.AreNotEqual(clone.Manifest.Name, contract.Manifest.Name);
-            CollectionAssert.AreNotEqual(
-                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
-                BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
-                );
-        }
+        clone.Nef.CheckSum++;
+        Assert.AreNotEqual(clone.Nef.CheckSum, contract.Nef.CheckSum);
+        clone.Manifest.Name += "X";
+        Assert.AreNotEqual(clone.Manifest.Name, contract.Manifest.Name);
+        CollectionAssert.AreNotEqual(
+            BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+            BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+            );
+    }
 
-        [TestMethod]
-        public void TestIInteroperable()
-        {
-            IInteroperable newContract = (ContractState)RuntimeHelpers.GetUninitializedObject(typeof(ContractState));
-            newContract.FromStackItem(contract.ToStackItem(null));
-            Assert.AreEqual(contract.Manifest.ToJson().ToString(), ((ContractState)newContract).Manifest.ToJson().ToString());
-            Assert.IsTrue(((ContractState)newContract).Script.Span.SequenceEqual(contract.Script.Span));
-        }
+    [TestMethod]
+    public void TestIInteroperable()
+    {
+        IInteroperable newContract = (ContractState)RuntimeHelpers.GetUninitializedObject(typeof(ContractState));
+        newContract.FromStackItem(contract.ToStackItem(null));
+        Assert.AreEqual(contract.Manifest.ToJson().ToString(), ((ContractState)newContract).Manifest.ToJson().ToString());
+        Assert.IsTrue(((ContractState)newContract).Script.Span.SequenceEqual(contract.Script.Span));
+    }
 
-        [TestMethod]
-        public void TestCanCall()
-        {
-            var temp = new ContractState() { Hash = UInt160.Zero, Nef = null!, Manifest = TestUtils.CreateDefaultManifest() };
-            Assert.IsTrue(temp.CanCall(new() { Hash = UInt160.Zero, Nef = null!, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
-        }
+    [TestMethod]
+    public void TestCanCall()
+    {
+        var temp = new ContractState() { Hash = UInt160.Zero, Nef = null!, Manifest = TestUtils.CreateDefaultManifest() };
+        Assert.IsTrue(temp.CanCall(new() { Hash = UInt160.Zero, Nef = null!, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
+    }
 
-        [TestMethod]
-        public void TestToJson()
-        {
-            JObject json = contract.ToJson();
-            Assert.AreEqual("0x820944cfdc70976602d71b0091445eedbc661bc5", json["hash"].AsString());
-            Assert.AreEqual("AQ==", json["nef"]["script"].AsString());
-            Assert.AreEqual(manifest.ToJson().AsString(), json["manifest"].AsString());
-        }
+    [TestMethod]
+    public void TestToJson()
+    {
+        JObject json = contract.ToJson();
+        Assert.AreEqual("0x820944cfdc70976602d71b0091445eedbc661bc5", json["hash"]!.AsString());
+        Assert.AreEqual("AQ==", json["nef"]!["script"]!.AsString());
+        Assert.AreEqual(manifest.ToJson().AsString(), json["manifest"]!.AsString());
     }
 }

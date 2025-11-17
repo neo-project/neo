@@ -12,78 +12,75 @@
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 
-namespace Neo.Ledger
+namespace Neo.Ledger;
+
+/// <summary>
+/// The context used to verify the transaction.
+/// </summary>
+public class TransactionVerificationContext
 {
     /// <summary>
-    /// The context used to verify the transaction.
+    /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
     /// </summary>
-    public class TransactionVerificationContext
+    private readonly Dictionary<UInt160, BigInteger> _senderFee = [];
+
+    /// <summary>
+    /// Store oracle responses
+    /// </summary>
+    private readonly Dictionary<ulong, UInt256> _oracleResponses = [];
+
+    /// <summary>
+    /// Adds a verified <see cref="Transaction"/> to the context.
+    /// </summary>
+    /// <param name="tx">The verified <see cref="Transaction"/>.</param>
+    public void AddTransaction(Transaction tx)
     {
-        /// <summary>
-        /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
-        /// </summary>
-        private readonly Dictionary<UInt160, BigInteger> _senderFee = [];
+        var oracle = tx.GetAttribute<OracleResponse>();
+        if (oracle != null) _oracleResponses.Add(oracle.Id, tx.Hash);
 
-        /// <summary>
-        /// Store oracle responses
-        /// </summary>
-        private readonly Dictionary<ulong, UInt256> _oracleResponses = [];
+        if (_senderFee.TryGetValue(tx.Sender, out var value))
+            _senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
+        else
+            _senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
+    }
 
-        /// <summary>
-        /// Adds a verified <see cref="Transaction"/> to the context.
-        /// </summary>
-        /// <param name="tx">The verified <see cref="Transaction"/>.</param>
-        public void AddTransaction(Transaction tx)
-        {
-            var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null) _oracleResponses.Add(oracle.Id, tx.Hash);
+    /// <summary>
+    /// Determine whether the specified <see cref="Transaction"/> conflicts with other transactions.
+    /// </summary>
+    /// <param name="tx">The specified <see cref="Transaction"/>.</param>
+    /// <param name="conflictingTxs">The list of <see cref="Transaction"/> that conflicts with the specified one and are to be removed from the pool.</param>
+    /// <param name="snapshot">The snapshot used to verify the <see cref="Transaction"/>.</param>
+    /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
+    public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot)
+    {
+        var balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
+        _senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
-            if (_senderFee.TryGetValue(tx.Sender, out var value))
-                _senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
-            else
-                _senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
-        }
+        var expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
+        foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
+            expectedFee -= conflictTx.NetworkFee + conflictTx.SystemFee;
+        if (balance < expectedFee) return false;
 
-        /// <summary>
-        /// Determine whether the specified <see cref="Transaction"/> conflicts with other transactions.
-        /// </summary>
-        /// <param name="tx">The specified <see cref="Transaction"/>.</param>
-        /// <param name="conflictingTxs">The list of <see cref="Transaction"/> that conflicts with the specified one and are to be removed from the pool.</param>
-        /// <param name="snapshot">The snapshot used to verify the <see cref="Transaction"/>.</param>
-        /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
-        public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot)
-        {
-            var balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
-            _senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
+        var oracle = tx.GetAttribute<OracleResponse>();
+        if (oracle != null && _oracleResponses.ContainsKey(oracle.Id))
+            return false;
 
-            var expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
-            foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
-                expectedFee -= conflictTx.NetworkFee + conflictTx.SystemFee;
-            if (balance < expectedFee) return false;
+        return true;
+    }
 
-            var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null && _oracleResponses.ContainsKey(oracle.Id))
-                return false;
+    /// <summary>
+    /// Removes a <see cref="Transaction"/> from the context.
+    /// </summary>
+    /// <param name="tx">The <see cref="Transaction"/> to be removed.</param>
+    public void RemoveTransaction(Transaction tx)
+    {
+        if ((_senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0)
+            _senderFee.Remove(tx.Sender);
 
-            return true;
-        }
-
-        /// <summary>
-        /// Removes a <see cref="Transaction"/> from the context.
-        /// </summary>
-        /// <param name="tx">The <see cref="Transaction"/> to be removed.</param>
-        public void RemoveTransaction(Transaction tx)
-        {
-            if ((_senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0)
-                _senderFee.Remove(tx.Sender);
-
-            var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null)
-                _oracleResponses.Remove(oracle.Id);
-        }
+        var oracle = tx.GetAttribute<OracleResponse>();
+        if (oracle != null)
+            _oracleResponses.Remove(oracle.Id);
     }
 }
