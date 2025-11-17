@@ -1,0 +1,25 @@
+name: Auto-label PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  add-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add N4 label to PRs targeting master
+        if: github.event.pull_request.base.ref == 'master'
+        uses: actions-ecosystem/action-add-labels@v1.1.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: |
+            N4
+
+      - name: Add N3 label to PRs targeting master-n3
+        if: github.event.pull_request.base.ref == 'master-n3'
+        uses: actions-ecosystem/action-add-labels@v1.1.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: |
+            N3
