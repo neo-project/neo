@@ -11,80 +11,78 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads.Conditions;
-using System;
 
-namespace Neo.Builders
+namespace Neo.Builders;
+
+public sealed class OrConditionBuilder
 {
-    public sealed class OrConditionBuilder
+    private readonly OrCondition _condition = new() { Expressions = [] };
+
+    private OrConditionBuilder() { }
+
+    public static OrConditionBuilder CreateEmpty()
     {
-        private readonly OrCondition _condition = new() { Expressions = [] };
+        return new OrConditionBuilder();
+    }
 
-        private OrConditionBuilder() { }
+    public OrConditionBuilder And(Action<AndConditionBuilder> config)
+    {
+        var acb = AndConditionBuilder.CreateEmpty();
+        config(acb);
 
-        public static OrConditionBuilder CreateEmpty()
-        {
-            return new OrConditionBuilder();
-        }
+        _condition.Expressions = [.. _condition.Expressions, acb.Build()];
 
-        public OrConditionBuilder And(Action<AndConditionBuilder> config)
-        {
-            var acb = AndConditionBuilder.CreateEmpty();
-            config(acb);
+        return this;
+    }
 
-            _condition.Expressions = [.. _condition.Expressions, acb.Build()];
+    public OrConditionBuilder Or(Action<OrConditionBuilder> config)
+    {
+        var acb = new OrConditionBuilder();
+        config(acb);
 
-            return this;
-        }
+        _condition.Expressions = [.. _condition.Expressions, acb.Build()];
 
-        public OrConditionBuilder Or(Action<OrConditionBuilder> config)
-        {
-            var acb = new OrConditionBuilder();
-            config(acb);
+        return this;
+    }
 
-            _condition.Expressions = [.. _condition.Expressions, acb.Build()];
+    public OrConditionBuilder Boolean(bool expression)
+    {
+        _condition.Expressions = [.. _condition.Expressions, new BooleanCondition { Expression = expression }];
+        return this;
+    }
 
-            return this;
-        }
+    public OrConditionBuilder CalledByContract(UInt160 hash)
+    {
+        _condition.Expressions = [.. _condition.Expressions, new CalledByContractCondition { Hash = hash }];
+        return this;
+    }
 
-        public OrConditionBuilder Boolean(bool expression)
-        {
-            _condition.Expressions = [.. _condition.Expressions, new BooleanCondition { Expression = expression }];
-            return this;
-        }
+    public OrConditionBuilder CalledByEntry()
+    {
+        _condition.Expressions = [.. _condition.Expressions, new CalledByEntryCondition()];
+        return this;
+    }
 
-        public OrConditionBuilder CalledByContract(UInt160 hash)
-        {
-            _condition.Expressions = [.. _condition.Expressions, new CalledByContractCondition { Hash = hash }];
-            return this;
-        }
+    public OrConditionBuilder CalledByGroup(ECPoint publicKey)
+    {
+        _condition.Expressions = [.. _condition.Expressions, new CalledByGroupCondition { Group = publicKey }];
+        return this;
+    }
 
-        public OrConditionBuilder CalledByEntry()
-        {
-            _condition.Expressions = [.. _condition.Expressions, new CalledByEntryCondition()];
-            return this;
-        }
+    public OrConditionBuilder Group(ECPoint publicKey)
+    {
+        _condition.Expressions = [.. _condition.Expressions, new GroupCondition() { Group = publicKey }];
+        return this;
+    }
 
-        public OrConditionBuilder CalledByGroup(ECPoint publicKey)
-        {
-            _condition.Expressions = [.. _condition.Expressions, new CalledByGroupCondition { Group = publicKey }];
-            return this;
-        }
+    public OrConditionBuilder ScriptHash(UInt160 scriptHash)
+    {
+        _condition.Expressions = [.. _condition.Expressions, new ScriptHashCondition() { Hash = scriptHash }];
+        return this;
+    }
 
-        public OrConditionBuilder Group(ECPoint publicKey)
-        {
-            _condition.Expressions = [.. _condition.Expressions, new GroupCondition() { Group = publicKey }];
-            return this;
-        }
-
-        public OrConditionBuilder ScriptHash(UInt160 scriptHash)
-        {
-            _condition.Expressions = [.. _condition.Expressions, new ScriptHashCondition() { Hash = scriptHash }];
-            return this;
-        }
-
-        public OrCondition Build()
-        {
-            return _condition;
-        }
+    public OrCondition Build()
+    {
+        return _condition;
     }
 }

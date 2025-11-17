@@ -9,41 +9,37 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-using System.IO;
+namespace Neo.Tests;
 
-namespace Neo.Tests
+[TestClass]
+public class UT_Log
 {
-    [TestClass]
-    public class UT_Log
+    [TestMethod]
+    public void TestGetLogger()
     {
-        [TestMethod]
-        public void TestGetLogger()
-        {
-            var logger = Logs.GetLogger("test");
-            Assert.IsNotNull(logger);
-            logger.Information("test");
+        var logger = Logs.GetLogger("test");
+        Assert.IsNotNull(logger);
+        logger.Information("test");
 
-            var logDir = Logs.LogDirectory;
-            Assert.IsNull(logDir);
+        var logDir = Logs.LogDirectory;
+        Assert.IsNull(logDir);
 
-            Logs.LogDirectory = Path.Combine(Environment.CurrentDirectory, "Logs");
-            logger = Logs.GetLogger("test");
-            Assert.IsNotNull(logger);
-            logger.Information("test");
+        Logs.LogDirectory = Path.Combine(Environment.CurrentDirectory, "Logs");
+        logger = Logs.GetLogger("test");
+        Assert.IsNotNull(logger);
+        logger.Information("test");
 
-            var fileName = $"log-{DateTime.Now:yyyyMMdd}.txt";
-            Assert.IsTrue(File.Exists(Path.Combine(Logs.LogDirectory, "test", fileName)));
-            Assert.ThrowsExactly<InvalidOperationException>(() => Logs.LogDirectory = "test");
-        }
+        var fileName = $"log-{DateTime.Now:yyyyMMdd}.txt";
+        Assert.IsTrue(File.Exists(Path.Combine(Logs.LogDirectory, "test", fileName)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => Logs.LogDirectory = "test");
+    }
 
-        [TestMethod]
-        public void TestConsoleLogger()
-        {
-            var logger = Logs.ConsoleLogger;
-            Assert.IsNotNull(logger);
+    [TestMethod]
+    public void TestConsoleLogger()
+    {
+        var logger = Logs.ConsoleLogger;
+        Assert.IsNotNull(logger);
 
-            logger.Information("test");
-        }
+        logger.Information("test");
     }
 }

@@ -10,50 +10,47 @@
 // modifications are permitted.
 
 using Neo.IO;
-using System;
-using System.IO;
 
-namespace Neo.Network.P2P.Capabilities
+namespace Neo.Network.P2P.Capabilities;
+
+/// <summary>
+/// Indicates that the node is a server.
+/// </summary>
+public class ServerCapability : NodeCapability
 {
     /// <summary>
-    /// Indicates that the node is a server.
+    /// Indicates the port that the node is listening on.
     /// </summary>
-    public class ServerCapability : NodeCapability
+    public ushort Port;
+
+    public override int Size =>
+        base.Size +     // Type
+        sizeof(ushort); // Port
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ServerCapability"/> class.
+    /// </summary>
+    /// <param name="type">The type of the <see cref="ServerCapability"/>. It must be <see cref="NodeCapabilityType.TcpServer"/> or <see cref="NodeCapabilityType.WsServer"/></param>
+    /// <param name="port">The port that the node is listening on.</param>
+    public ServerCapability(NodeCapabilityType type, ushort port = 0) : base(type)
     {
-        /// <summary>
-        /// Indicates the port that the node is listening on.
-        /// </summary>
-        public ushort Port;
-
-        public override int Size =>
-            base.Size +     // Type
-            sizeof(ushort); // Port
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ServerCapability"/> class.
-        /// </summary>
-        /// <param name="type">The type of the <see cref="ServerCapability"/>. It must be <see cref="NodeCapabilityType.TcpServer"/> or <see cref="NodeCapabilityType.WsServer"/></param>
-        /// <param name="port">The port that the node is listening on.</param>
-        public ServerCapability(NodeCapabilityType type, ushort port = 0) : base(type)
+#pragma warning disable CS0618 // Type or member is obsolete
+        if (type != NodeCapabilityType.TcpServer && type != NodeCapabilityType.WsServer)
+#pragma warning restore CS0618 // Type or member is obsolete
         {
-#pragma warning disable CS0612 // Type or member is obsolete
-            if (type != NodeCapabilityType.TcpServer && type != NodeCapabilityType.WsServer)
-#pragma warning restore CS0612 // Type or member is obsolete
-            {
-                throw new ArgumentException($"Invalid type: {type}", nameof(type));
-            }
-
-            Port = port;
+            throw new ArgumentException($"Invalid type: {type}", nameof(type));
         }
 
-        protected override void DeserializeWithoutType(ref MemoryReader reader)
-        {
-            Port = reader.ReadUInt16();
-        }
+        Port = port;
+    }
 
-        protected override void SerializeWithoutType(BinaryWriter writer)
-        {
-            writer.Write(Port);
-        }
+    protected override void DeserializeWithoutType(ref MemoryReader reader)
+    {
+        Port = reader.ReadUInt16();
+    }
+
+    protected override void SerializeWithoutType(BinaryWriter writer)
+    {
+        writer.Write(Port);
     }
 }

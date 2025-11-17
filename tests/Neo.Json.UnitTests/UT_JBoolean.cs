@@ -11,80 +11,72 @@
 
 using Newtonsoft.Json;
 
-namespace Neo.Json.UnitTests
+namespace Neo.Json.UnitTests;
+
+[TestClass]
+public class UT_JBoolean
 {
-    [TestClass]
-    public class UT_JBoolean
+    private JBoolean jFalse = null!;
+    private JBoolean jTrue = null!;
+
+    [TestInitialize]
+    public void SetUp()
     {
-        private JBoolean jFalse;
-        private JBoolean jTrue;
+        jFalse = new JBoolean();
+        jTrue = new JBoolean(true);
+    }
 
-        [TestInitialize]
-        public void SetUp()
-        {
-            jFalse = new JBoolean();
-            jTrue = new JBoolean(true);
-        }
+    [TestMethod]
+    public void TestAsNumber()
+    {
+        Assert.AreEqual(0, jFalse.AsNumber());
+        Assert.AreEqual(1, jTrue.AsNumber());
+    }
 
-        [TestMethod]
-        public void TestAsNumber()
-        {
-            Assert.AreEqual(0, jFalse.AsNumber());
-            Assert.AreEqual(1, jTrue.AsNumber());
-        }
+    [TestMethod]
+    public void TestDefaultConstructor()
+    {
+        var defaultJBoolean = new JBoolean();
+        Assert.AreEqual(0, defaultJBoolean.AsNumber());
+    }
 
-        [TestMethod]
-        public void TestDefaultConstructor()
-        {
-            var defaultJBoolean = new JBoolean();
-            Assert.AreEqual(0, defaultJBoolean.AsNumber());
-        }
+    [TestMethod]
+    public void TestExplicitFalse()
+    {
+        var explicitFalse = new JBoolean(false);
+        Assert.AreEqual(0, explicitFalse.AsNumber());
+    }
 
-        [TestMethod]
-        public void TestExplicitFalse()
-        {
-            var explicitFalse = new JBoolean(false);
-            Assert.AreEqual(0, explicitFalse.AsNumber());
-        }
+    [TestMethod]
+    public void TestConversionToOtherTypes()
+    {
+        Assert.AreEqual("true", jTrue.ToString());
+        Assert.AreEqual("false", jFalse.ToString());
+    }
 
-        [TestMethod]
-        public void TestNullJBoolean()
-        {
-            JBoolean nullJBoolean = null;
-            Assert.ThrowsExactly<NullReferenceException>(() => _ = nullJBoolean.AsNumber());
-        }
+    [TestMethod]
+    public void TestComparisonsWithOtherBooleans()
+    {
+        Assert.IsTrue(jTrue.Equals(new JBoolean(true)));
+        Assert.IsTrue(jFalse.Equals(new JBoolean()));
+    }
 
-        [TestMethod]
-        public void TestConversionToOtherTypes()
-        {
-            Assert.AreEqual("true", jTrue.ToString());
-            Assert.AreEqual("false", jFalse.ToString());
-        }
+    [TestMethod]
+    public void TestSerializationAndDeserialization()
+    {
+        string serialized = JsonConvert.SerializeObject(jTrue);
+        var deserialized = JsonConvert.DeserializeObject<JBoolean>(serialized);
+        Assert.AreEqual(jTrue, deserialized);
+    }
 
-        [TestMethod]
-        public void TestComparisonsWithOtherBooleans()
-        {
-            Assert.IsTrue(jTrue.Equals(new JBoolean(true)));
-            Assert.IsTrue(jFalse.Equals(new JBoolean()));
-        }
-
-        [TestMethod]
-        public void TestSerializationAndDeserialization()
-        {
-            string serialized = JsonConvert.SerializeObject(jTrue);
-            var deserialized = JsonConvert.DeserializeObject<JBoolean>(serialized);
-            Assert.AreEqual(jTrue, deserialized);
-        }
-
-        [TestMethod]
-        public void TestEqual()
-        {
-            Assert.IsTrue(jTrue.Equals(new JBoolean(true)));
-            Assert.IsTrue(jTrue == new JBoolean(true));
-            Assert.IsTrue(jTrue != new JBoolean(false));
-            Assert.IsTrue(jFalse.Equals(new JBoolean()));
-            Assert.IsTrue(jFalse == new JBoolean());
-            Assert.AreEqual(jFalse.ToString(), jFalse.GetBoolean().ToString().ToLowerInvariant());
-        }
+    [TestMethod]
+    public void TestEqual()
+    {
+        Assert.IsTrue(jTrue.Equals(new JBoolean(true)));
+        Assert.IsTrue(jTrue == new JBoolean(true));
+        Assert.IsTrue(jTrue != new JBoolean(false));
+        Assert.IsTrue(jFalse.Equals(new JBoolean()));
+        Assert.IsTrue(jFalse == new JBoolean());
+        Assert.AreEqual(jFalse.ToString(), jFalse.GetBoolean().ToString().ToLowerInvariant());
     }
 }

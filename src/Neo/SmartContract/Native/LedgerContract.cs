@@ -12,386 +12,383 @@
 #pragma warning disable IDE0051
 
 using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract.Native;
+
+/// <summary>
+/// A native contract for storing all blocks and transactions.
+/// </summary>
+public sealed class LedgerContract : NativeContract
 {
-    /// <summary>
-    /// A native contract for storing all blocks and transactions.
-    /// </summary>
-    public sealed class LedgerContract : NativeContract
+    private const byte Prefix_BlockHash = 9;
+    private const byte Prefix_CurrentBlock = 12;
+    private const byte Prefix_Block = 5;
+    private const byte Prefix_Transaction = 11;
+
+    private readonly StorageKey _currentBlock;
+
+    internal LedgerContract() : base()
     {
-        private const byte Prefix_BlockHash = 9;
-        private const byte Prefix_CurrentBlock = 12;
-        private const byte Prefix_Block = 5;
-        private const byte Prefix_Transaction = 11;
+        _currentBlock = CreateStorageKey(Prefix_CurrentBlock);
+    }
 
-        private readonly StorageKey _currentBlock;
-
-        internal LedgerContract() : base()
+    internal override ContractTask OnPersistAsync(ApplicationEngine engine)
+    {
+        TransactionState[] transactions = engine.PersistingBlock!.Transactions.Select(p => new TransactionState
         {
-            _currentBlock = CreateStorageKey(Prefix_CurrentBlock);
-        }
-
-        internal override ContractTask OnPersistAsync(ApplicationEngine engine)
+            BlockIndex = engine.PersistingBlock.Index,
+            Transaction = p,
+            State = VMState.NONE
+        }).ToArray();
+        engine.SnapshotCache.Add(CreateStorageKey(Prefix_BlockHash, engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
+        engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, engine.PersistingBlock.Hash), new StorageItem(TrimmedBlock.Create(engine.PersistingBlock).ToArray()));
+        foreach (TransactionState tx in transactions)
         {
-            TransactionState[] transactions = engine.PersistingBlock!.Transactions.Select(p => new TransactionState
-            {
-                BlockIndex = engine.PersistingBlock.Index,
-                Transaction = p,
-                State = VMState.NONE
-            }).ToArray();
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_BlockHash, engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, engine.PersistingBlock.Hash), new StorageItem(TrimmedBlock.Create(engine.PersistingBlock).ToArray()));
-            foreach (TransactionState tx in transactions)
-            {
-                // It's possible that there are previously saved malicious conflict records for this transaction.
-                // If so, then remove it and store the relevant transaction itself.
-                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction!.Hash), () => new StorageItem(new TransactionState()))
-                    .FromReplica(new StorageItem(tx));
+            // It's possible that there are previously saved malicious conflict records for this transaction.
+            // If so, then remove it and store the relevant transaction itself.
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction!.Hash), () => new StorageItem(new TransactionState()))
+                .FromReplica(new StorageItem(tx));
 
-                // Store transaction's conflicits.
-                var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
-                foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
+            // Store transaction's conflicits.
+            var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
+            foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
+            {
+                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(new TransactionState()))
+                    .FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                foreach (var signer in conflictingSigners)
                 {
-                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(new TransactionState()))
+                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(new TransactionState()))
                         .FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
-                    foreach (var signer in conflictingSigners)
-                    {
-                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(new TransactionState()))
-                            .FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
-                    }
                 }
             }
-
-            engine.SetState(transactions);
-            return ContractTask.CompletedTask;
         }
 
-        internal override ContractTask PostPersistAsync(ApplicationEngine engine)
-        {
-            var state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState()))
-                // Don't need to seal because the size is fixed and it can't grow
-                .GetInteroperable<HashIndexState>();
-            state.Hash = engine.PersistingBlock!.Hash;
-            state.Index = engine.PersistingBlock.Index;
-            return ContractTask.CompletedTask;
-        }
+        engine.SetState(transactions);
+        return ContractTask.CompletedTask;
+    }
 
-        internal bool Initialized(DataCache snapshot)
-        {
-            ArgumentNullException.ThrowIfNull(snapshot);
+    internal override ContractTask PostPersistAsync(ApplicationEngine engine)
+    {
+        var state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState()))
+            // Don't need to seal because the size is fixed and it can't grow
+            .GetInteroperable<HashIndexState>();
+        state.Hash = engine.PersistingBlock!.Hash;
+        state.Index = engine.PersistingBlock.Index;
+        return ContractTask.CompletedTask;
+    }
 
-            return snapshot.Find(CreateStorageKey(Prefix_Block)).Any();
-        }
+    internal bool Initialized(DataCache snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
 
-        /// <summary>
-        /// Checks whether block with the specified index is reachable from the smart contract
-        /// based on the current state of application engine with respect to MaxTraceableBlocks
-        /// setting stored in native Policy smartcontract starting from HF_Echidna.
-        /// </summary>
-        /// <param name="engine">The execution engine.</param>
-        /// <param name="index">The index of the block.</param>
-        /// <returns>Whether the block is traceable.</returns>
-        private bool IsTraceableBlock(ApplicationEngine engine, uint index)
-        {
-            var mtb = engine.ProtocolSettings.MaxTraceableBlocks;
-            if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
-                mtb = Policy.GetMaxTraceableBlocks(engine.SnapshotCache);
-            return IsTraceableBlock(engine.SnapshotCache, index, mtb);
-        }
+        return snapshot.Find(CreateStorageKey(Prefix_Block)).Any();
+    }
 
-        /// <summary>
-        /// Checks whether block with the specified index is reachable from the smart contract
-        /// based on the current state of snapshot and provided maxTraceableBlocks value. It's
-        /// the caller's duty to provide proper maxTraceableBlocks value with respect to
-        /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
-        /// HF_Echidna.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="index">The index of the block.</param>
-        /// <param name="maxTraceableBlocks">The maximum number of traceable blocks with respect to
-        /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
-        /// HF_Echidna.</param>
-        /// <returns>Whether the block is traceable.</returns>
-        private bool IsTraceableBlock(IReadOnlyStore snapshot, uint index, uint maxTraceableBlocks)
-        {
-            uint currentIndex = CurrentIndex(snapshot);
-            if (index > currentIndex) return false;
-            return index + maxTraceableBlocks > currentIndex;
-        }
+    /// <summary>
+    /// Checks whether block with the specified index is reachable from the smart contract
+    /// based on the current state of application engine with respect to MaxTraceableBlocks
+    /// setting stored in native Policy smartcontract starting from HF_Echidna.
+    /// </summary>
+    /// <param name="engine">The execution engine.</param>
+    /// <param name="index">The index of the block.</param>
+    /// <returns>Whether the block is traceable.</returns>
+    private bool IsTraceableBlock(ApplicationEngine engine, uint index)
+    {
+        var mtb = engine.ProtocolSettings.MaxTraceableBlocks;
+        if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+            mtb = Policy.GetMaxTraceableBlocks(engine.SnapshotCache);
+        return IsTraceableBlock(engine.SnapshotCache, index, mtb);
+    }
 
-        /// <summary>
-        /// Gets the hash of the specified block.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="index">The index of the block.</param>
-        /// <returns>The hash of the block.</returns>
-        public UInt256? GetBlockHash(IReadOnlyStore snapshot, uint index)
-        {
-            ArgumentNullException.ThrowIfNull(snapshot);
+    /// <summary>
+    /// Checks whether block with the specified index is reachable from the smart contract
+    /// based on the current state of snapshot and provided maxTraceableBlocks value. It's
+    /// the caller's duty to provide proper maxTraceableBlocks value with respect to
+    /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
+    /// HF_Echidna.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="index">The index of the block.</param>
+    /// <param name="maxTraceableBlocks">The maximum number of traceable blocks with respect to
+    /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
+    /// HF_Echidna.</param>
+    /// <returns>Whether the block is traceable.</returns>
+    private bool IsTraceableBlock(IReadOnlyStore snapshot, uint index, uint maxTraceableBlocks)
+    {
+        uint currentIndex = CurrentIndex(snapshot);
+        if (index > currentIndex) return false;
+        return index + maxTraceableBlocks > currentIndex;
+    }
 
-            var key = CreateStorageKey(Prefix_BlockHash, index);
-            return snapshot.TryGet(key, out var item) ? new UInt256(item.Value.Span) : null;
-        }
+    /// <summary>
+    /// Gets the hash of the specified block.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="index">The index of the block.</param>
+    /// <returns>The hash of the block.</returns>
+    public UInt256? GetBlockHash(IReadOnlyStore snapshot, uint index)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
 
-        /// <summary>
-        /// Gets the hash of the current block.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>The hash of the current block.</returns>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public UInt256 CurrentHash(IReadOnlyStore snapshot)
-        {
-            ArgumentNullException.ThrowIfNull(snapshot);
+        var key = CreateStorageKey(Prefix_BlockHash, index);
+        return snapshot.TryGet(key, out var item) ? new UInt256(item.Value.Span) : null;
+    }
 
-            return snapshot[_currentBlock].GetInteroperable<HashIndexState>().Hash;
-        }
+    /// <summary>
+    /// Gets the hash of the current block.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <returns>The hash of the current block.</returns>
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    public UInt256 CurrentHash(IReadOnlyStore snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
 
-        /// <summary>
-        /// Gets the index of the current block.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>The index of the current block.</returns>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint CurrentIndex(IReadOnlyStore snapshot)
-        {
-            ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot[_currentBlock].GetInteroperable<HashIndexState>().Hash;
+    }
 
-            return snapshot[_currentBlock].GetInteroperable<HashIndexState>().Index;
-        }
+    /// <summary>
+    /// Gets the index of the current block.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <returns>The index of the current block.</returns>
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    public uint CurrentIndex(IReadOnlyStore snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
 
-        /// <summary>
-        /// Determine whether the specified block is contained in the blockchain.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hash">The hash of the block.</param>
-        /// <returns>
-        /// <see langword="true"/> if the blockchain contains the block; otherwise, <see langword="false"/>.
-        /// </returns>
-        public bool ContainsBlock(IReadOnlyStore snapshot, UInt256 hash)
-        {
-            ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot[_currentBlock].GetInteroperable<HashIndexState>().Index;
+    }
 
-            return snapshot.Contains(CreateStorageKey(Prefix_Block, hash));
-        }
+    /// <summary>
+    /// Determine whether the specified block is contained in the blockchain.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="hash">The hash of the block.</param>
+    /// <returns>
+    /// <see langword="true"/> if the blockchain contains the block; otherwise, <see langword="false"/>.
+    /// </returns>
+    public bool ContainsBlock(IReadOnlyStore snapshot, UInt256 hash)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
 
-        /// <summary>
-        /// Determine whether the specified transaction is contained in the blockchain.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hash">The hash of the transaction.</param>
-        /// <returns>
-        /// <see langword="true"/> if the blockchain contains the transaction; otherwise, <see langword="false"/>.
-        /// </returns>
-        public bool ContainsTransaction(IReadOnlyStore snapshot, UInt256 hash)
-        {
-            var txState = GetTransactionState(snapshot, hash);
-            return txState != null;
-        }
+        return snapshot.Contains(CreateStorageKey(Prefix_Block, hash));
+    }
 
-        /// <summary>
-        /// Determine whether the specified transaction hash is contained in the blockchain
-        /// as the hash of conflicting transaction.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hash">The hash of the conflicting transaction.</param>
-        /// <param name="signers">The list of signer accounts of the conflicting transaction.</param>
-        /// <param name="maxTraceableBlocks">MaxTraceableBlocks protocol setting.</param>
-        /// <returns>
-        /// <see langword="true"/> if the blockchain contains the hash of the conflicting transaction;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        public bool ContainsConflictHash(IReadOnlyStore snapshot, UInt256 hash, IEnumerable<UInt160> signers, uint maxTraceableBlocks)
-        {
-            ArgumentNullException.ThrowIfNull(snapshot);
+    /// <summary>
+    /// Determine whether the specified transaction is contained in the blockchain.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="hash">The hash of the transaction.</param>
+    /// <returns>
+    /// <see langword="true"/> if the blockchain contains the transaction; otherwise, <see langword="false"/>.
+    /// </returns>
+    public bool ContainsTransaction(IReadOnlyStore snapshot, UInt256 hash)
+    {
+        var txState = GetTransactionState(snapshot, hash);
+        return txState != null;
+    }
 
-            ArgumentNullException.ThrowIfNull(signers);
+    /// <summary>
+    /// Determine whether the specified transaction hash is contained in the blockchain
+    /// as the hash of conflicting transaction.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="hash">The hash of the conflicting transaction.</param>
+    /// <param name="signers">The list of signer accounts of the conflicting transaction.</param>
+    /// <param name="maxTraceableBlocks">MaxTraceableBlocks protocol setting.</param>
+    /// <returns>
+    /// <see langword="true"/> if the blockchain contains the hash of the conflicting transaction;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    public bool ContainsConflictHash(IReadOnlyStore snapshot, UInt256 hash, IEnumerable<UInt160> signers, uint maxTraceableBlocks)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
 
-            // Check the dummy stub firstly to define whether there's exist at least one conflict record.
-            var key = CreateStorageKey(Prefix_Transaction, hash);
-            var stub = snapshot.TryGet(key, out var item) ? item.GetInteroperable<TransactionState>() : null;
-            if (stub is null || stub.Transaction is not null || !IsTraceableBlock(snapshot, stub.BlockIndex, maxTraceableBlocks))
-                return false;
+        ArgumentNullException.ThrowIfNull(signers);
 
-            // At least one conflict record is found, then need to check signers intersection.
-            foreach (var signer in signers)
-            {
-                key = CreateStorageKey(Prefix_Transaction, hash, signer);
-                var state = snapshot.TryGet(key, out var tx) ? tx.GetInteroperable<TransactionState>() : null;
-                if (state is not null && IsTraceableBlock(snapshot, state.BlockIndex, maxTraceableBlocks))
-                    return true;
-            }
-
+        // Check the dummy stub firstly to define whether there's exist at least one conflict record.
+        var key = CreateStorageKey(Prefix_Transaction, hash);
+        var stub = snapshot.TryGet(key, out var item) ? item.GetInteroperable<TransactionState>() : null;
+        if (stub is null || stub.Transaction is not null || !IsTraceableBlock(snapshot, stub.BlockIndex, maxTraceableBlocks))
             return false;
-        }
 
-        /// <summary>
-        /// Gets a <see cref="TrimmedBlock"/> with the specified hash.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hash">The hash of the block.</param>
-        /// <returns>The trimmed block.</returns>
-        public TrimmedBlock? GetTrimmedBlock(IReadOnlyStore snapshot, UInt256 hash)
+        // At least one conflict record is found, then need to check signers intersection.
+        foreach (var signer in signers)
         {
-            ArgumentNullException.ThrowIfNull(snapshot);
-
-            var key = CreateStorageKey(Prefix_Block, hash);
-            if (snapshot.TryGet(key, out var item))
-                return item.Value.AsSerializable<TrimmedBlock>();
-            return null;
+            key = CreateStorageKey(Prefix_Transaction, hash, signer);
+            var state = snapshot.TryGet(key, out var tx) ? tx.GetInteroperable<TransactionState>() : null;
+            if (state is not null && IsTraceableBlock(snapshot, state.BlockIndex, maxTraceableBlocks))
+                return true;
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private TrimmedBlock? GetBlock(ApplicationEngine engine, byte[] indexOrHash)
+        return false;
+    }
+
+    /// <summary>
+    /// Gets a <see cref="TrimmedBlock"/> with the specified hash.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="hash">The hash of the block.</param>
+    /// <returns>The trimmed block.</returns>
+    public TrimmedBlock? GetTrimmedBlock(IReadOnlyStore snapshot, UInt256 hash)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        var key = CreateStorageKey(Prefix_Block, hash);
+        if (snapshot.TryGet(key, out var item))
+            return item.Value.AsSerializable<TrimmedBlock>();
+        return null;
+    }
+
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    private TrimmedBlock? GetBlock(ApplicationEngine engine, byte[] indexOrHash)
+    {
+        UInt256? hash;
+        if (indexOrHash.Length < UInt256.Length)
+            hash = GetBlockHash(engine.SnapshotCache, (uint)new BigInteger(indexOrHash));
+        else if (indexOrHash.Length == UInt256.Length)
+            hash = new UInt256(indexOrHash);
+        else
+            throw new ArgumentException($"Invalid indexOrHash length: {indexOrHash.Length}", nameof(indexOrHash));
+        if (hash is null) return null;
+        TrimmedBlock? block = GetTrimmedBlock(engine.SnapshotCache, hash);
+        if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
+        return block;
+    }
+
+    /// <summary>
+    /// Gets a block with the specified hash.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="hash">The hash of the block.</param>
+    /// <returns>The block with the specified hash.</returns>
+    public Block? GetBlock(IReadOnlyStore snapshot, UInt256 hash)
+    {
+        TrimmedBlock? state = GetTrimmedBlock(snapshot, hash);
+        if (state is null) return null;
+        return new Block
         {
-            UInt256? hash;
-            if (indexOrHash.Length < UInt256.Length)
-                hash = GetBlockHash(engine.SnapshotCache, (uint)new BigInteger(indexOrHash));
-            else if (indexOrHash.Length == UInt256.Length)
-                hash = new UInt256(indexOrHash);
-            else
-                throw new ArgumentException($"Invalid indexOrHash length: {indexOrHash.Length}", nameof(indexOrHash));
-            if (hash is null) return null;
-            TrimmedBlock? block = GetTrimmedBlock(engine.SnapshotCache, hash);
-            if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
-            return block;
-        }
+            Header = state.Header,
+            Transactions = state.Hashes.Select(p => GetTransaction(snapshot, p)!).ToArray()
+        };
+    }
 
-        /// <summary>
-        /// Gets a block with the specified hash.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hash">The hash of the block.</param>
-        /// <returns>The block with the specified hash.</returns>
-        public Block? GetBlock(IReadOnlyStore snapshot, UInt256 hash)
-        {
-            TrimmedBlock? state = GetTrimmedBlock(snapshot, hash);
-            if (state is null) return null;
-            return new Block
-            {
-                Header = state.Header,
-                Transactions = state.Hashes.Select(p => GetTransaction(snapshot, p)!).ToArray()
-            };
-        }
+    /// <summary>
+    /// Gets a block with the specified index.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="index">The index of the block.</param>
+    /// <returns>The block with the specified index.</returns>
+    public Block? GetBlock(IReadOnlyStore snapshot, uint index)
+    {
+        UInt256? hash = GetBlockHash(snapshot, index);
+        if (hash is null) return null;
+        return GetBlock(snapshot, hash);
+    }
 
-        /// <summary>
-        /// Gets a block with the specified index.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="index">The index of the block.</param>
-        /// <returns>The block with the specified index.</returns>
-        public Block? GetBlock(IReadOnlyStore snapshot, uint index)
-        {
-            UInt256? hash = GetBlockHash(snapshot, index);
-            if (hash is null) return null;
-            return GetBlock(snapshot, hash);
-        }
+    /// <summary>
+    /// Gets a block header with the specified hash.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="hash">The hash of the block.</param>
+    /// <returns>The block header with the specified hash.</returns>
+    public Header? GetHeader(IReadOnlyStore snapshot, UInt256 hash)
+    {
+        return GetTrimmedBlock(snapshot, hash)?.Header;
+    }
 
-        /// <summary>
-        /// Gets a block header with the specified hash.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hash">The hash of the block.</param>
-        /// <returns>The block header with the specified hash.</returns>
-        public Header? GetHeader(IReadOnlyStore snapshot, UInt256 hash)
-        {
-            return GetTrimmedBlock(snapshot, hash)?.Header;
-        }
+    /// <summary>
+    /// Gets a block header with the specified index.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="index">The index of the block.</param>
+    /// <returns>The block header with the specified index.</returns>
+    public Header? GetHeader(DataCache snapshot, uint index)
+    {
+        UInt256? hash = GetBlockHash(snapshot, index);
+        if (hash is null) return null;
+        return GetHeader(snapshot, hash);
+    }
 
-        /// <summary>
-        /// Gets a block header with the specified index.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="index">The index of the block.</param>
-        /// <returns>The block header with the specified index.</returns>
-        public Header? GetHeader(DataCache snapshot, uint index)
-        {
-            UInt256? hash = GetBlockHash(snapshot, index);
-            if (hash is null) return null;
-            return GetHeader(snapshot, hash);
-        }
+    /// <summary>
+    /// Gets a <see cref="TransactionState"/> with the specified hash.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="hash">The hash of the transaction.</param>
+    /// <returns>The <see cref="TransactionState"/> with the specified hash.</returns>
+    public TransactionState? GetTransactionState(IReadOnlyStore snapshot, UInt256 hash)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
 
-        /// <summary>
-        /// Gets a <see cref="TransactionState"/> with the specified hash.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hash">The hash of the transaction.</param>
-        /// <returns>The <see cref="TransactionState"/> with the specified hash.</returns>
-        public TransactionState? GetTransactionState(IReadOnlyStore snapshot, UInt256 hash)
-        {
-            ArgumentNullException.ThrowIfNull(snapshot);
+        var key = CreateStorageKey(Prefix_Transaction, hash);
+        var state = snapshot.TryGet(key, out var item) ? item.GetInteroperable<TransactionState>() : null;
+        return state?.Transaction is null ? null : state;
+    }
 
-            var key = CreateStorageKey(Prefix_Transaction, hash);
-            var state = snapshot.TryGet(key, out var item) ? item.GetInteroperable<TransactionState>() : null;
-            return state?.Transaction is null ? null : state;
-        }
+    /// <summary>
+    /// Gets a transaction with the specified hash.
+    /// </summary>
+    /// <param name="snapshot">The snapshot used to read data.</param>
+    /// <param name="hash">The hash of the transaction.</param>
+    /// <returns>The transaction with the specified hash.</returns>
+    public Transaction? GetTransaction(IReadOnlyStore snapshot, UInt256 hash)
+    {
+        return GetTransactionState(snapshot, hash)?.Transaction;
+    }
 
-        /// <summary>
-        /// Gets a transaction with the specified hash.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hash">The hash of the transaction.</param>
-        /// <returns>The transaction with the specified hash.</returns>
-        public Transaction? GetTransaction(IReadOnlyStore snapshot, UInt256 hash)
-        {
-            return GetTransactionState(snapshot, hash)?.Transaction;
-        }
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getTransaction")]
+    private Transaction? GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
+    {
+        TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
+        if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
+        return state.Transaction;
+    }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getTransaction")]
-        private Transaction? GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
-        {
-            TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
-            return state.Transaction;
-        }
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    private Signer[]? GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
+    {
+        TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
+        if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
+        return state.Transaction!.Signers;
+    }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private Signer[]? GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
-        {
-            TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
-            return state.Transaction!.Signers;
-        }
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    private VMState GetTransactionVMState(ApplicationEngine engine, UInt256 hash)
+    {
+        TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
+        if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return VMState.NONE;
+        return state.State;
+    }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private VMState GetTransactionVMState(ApplicationEngine engine, UInt256 hash)
-        {
-            TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return VMState.NONE;
-            return state.State;
-        }
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    private int GetTransactionHeight(ApplicationEngine engine, UInt256 hash)
+    {
+        TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
+        if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return -1;
+        return (int)state.BlockIndex;
+    }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private int GetTransactionHeight(ApplicationEngine engine, UInt256 hash)
-        {
-            TransactionState? state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return -1;
-            return (int)state.BlockIndex;
-        }
-
-        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
-        private Transaction? GetTransactionFromBlock(ApplicationEngine engine, byte[] blockIndexOrHash, int txIndex)
-        {
-            UInt256? hash;
-            if (blockIndexOrHash.Length < UInt256.Length)
-                hash = GetBlockHash(engine.SnapshotCache, (uint)new BigInteger(blockIndexOrHash));
-            else if (blockIndexOrHash.Length == UInt256.Length)
-                hash = new UInt256(blockIndexOrHash);
-            else
-                throw new ArgumentException($"Invalid blockIndexOrHash length: {blockIndexOrHash.Length}", nameof(blockIndexOrHash));
-            if (hash is null) return null;
-            TrimmedBlock? block = GetTrimmedBlock(engine.SnapshotCache, hash);
-            if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
-            if (txIndex < 0 || txIndex >= block.Hashes.Length)
-                throw new ArgumentOutOfRangeException(nameof(txIndex));
-            return GetTransaction(engine.SnapshotCache, block.Hashes[txIndex]);
-        }
+    [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
+    private Transaction? GetTransactionFromBlock(ApplicationEngine engine, byte[] blockIndexOrHash, int txIndex)
+    {
+        UInt256? hash;
+        if (blockIndexOrHash.Length < UInt256.Length)
+            hash = GetBlockHash(engine.SnapshotCache, (uint)new BigInteger(blockIndexOrHash));
+        else if (blockIndexOrHash.Length == UInt256.Length)
+            hash = new UInt256(blockIndexOrHash);
+        else
+            throw new ArgumentException($"Invalid blockIndexOrHash length: {blockIndexOrHash.Length}", nameof(blockIndexOrHash));
+        if (hash is null) return null;
+        TrimmedBlock? block = GetTrimmedBlock(engine.SnapshotCache, hash);
+        if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
+        if (txIndex < 0 || txIndex >= block.Hashes.Length)
+            throw new ArgumentOutOfRangeException(nameof(txIndex));
+        return GetTransaction(engine.SnapshotCache, block.Hashes[txIndex]);
     }
 }

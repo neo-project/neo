@@ -11,36 +11,35 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Neo.Json.Benchmarks
+namespace Neo.Json.Benchmarks;
+
+[MemoryDiagnoser]
+[CsvMeasurementsExporter]
+[MarkdownExporter]
+public class Benchmark_JPath
 {
-    [MemoryDiagnoser]
-    [CsvMeasurementsExporter]
-    [MarkdownExporter]
-    public class Benchmark_JPath
+    private JObject _json = new();
+
+    [GlobalSetup]
+    public void Setup()
     {
-        private JObject _json = new();
-
-        [GlobalSetup]
-        public void Setup()
+        _json = new JObject
         {
-            _json = new JObject
+            ["store"] = new JObject
             {
-                ["store"] = new JObject
-                {
-                    ["book"] = new JArray
-                {
-                    new JObject { ["title"] = "Book A", ["price"] = 10.99 },
-                    new JObject { ["title"] = "Book B", ["price"] = 15.50 }
-                }
-                }
-            };
-        }
+                ["book"] = new JArray
+            {
+                new JObject { ["title"] = "Book A", ["price"] = 10.99 },
+                new JObject { ["title"] = "Book B", ["price"] = 15.50 }
+            }
+            }
+        };
+    }
 
-        [Benchmark]
-        public void TestJsonPathQuery()
-        {
-            _json.JsonPath("$.store.book[*].title");
-        }
+    [Benchmark]
+    public void TestJsonPathQuery()
+    {
+        _json.JsonPath("$.store.book[*].title");
     }
 }
 
