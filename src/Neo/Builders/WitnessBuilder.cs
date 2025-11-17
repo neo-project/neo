@@ -11,69 +11,67 @@
 
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
-using System;
 
-namespace Neo.Builders
+namespace Neo.Builders;
+
+public sealed class WitnessBuilder
 {
-    public sealed class WitnessBuilder
+    private byte[] _invocationScript = [];
+    private byte[] _verificationScript = [];
+
+    private WitnessBuilder() { }
+
+    public static WitnessBuilder CreateEmpty()
     {
-        private byte[] _invocationScript = [];
-        private byte[] _verificationScript = [];
+        return new WitnessBuilder();
+    }
 
-        private WitnessBuilder() { }
+    public WitnessBuilder AddInvocation(Action<ScriptBuilder> config)
+    {
+        if (_invocationScript.Length > 0)
+            throw new InvalidOperationException("Invocation script already exists in the witness builder. Only one invocation script can be added per witness.");
 
-        public static WitnessBuilder CreateEmpty()
+        using var sb = new ScriptBuilder();
+        config(sb);
+        _invocationScript = sb.ToArray();
+        return this;
+    }
+
+    public WitnessBuilder AddInvocation(byte[] bytes)
+    {
+        if (_invocationScript.Length > 0)
+            throw new InvalidOperationException("Invocation script already exists in the witness builder. Only one invocation script can be added per witness.");
+
+        _invocationScript = bytes;
+        return this;
+    }
+
+    public WitnessBuilder AddVerification(Action<ScriptBuilder> config)
+    {
+        if (_verificationScript.Length > 0)
+            throw new InvalidOperationException("Verification script already exists in the witness builder. Only one verification script can be added per witness.");
+
+        using var sb = new ScriptBuilder();
+        config(sb);
+        _verificationScript = sb.ToArray();
+        return this;
+    }
+
+    public WitnessBuilder AddVerification(byte[] bytes)
+    {
+        if (_verificationScript.Length > 0)
+            throw new InvalidOperationException("Verification script already exists in the witness builder. Only one verification script can be added per witness.");
+
+        _verificationScript = bytes;
+        return this;
+    }
+
+    public Witness Build()
+    {
+        return new Witness()
         {
-            return new WitnessBuilder();
-        }
-
-        public WitnessBuilder AddInvocation(Action<ScriptBuilder> config)
-        {
-            if (_invocationScript.Length > 0)
-                throw new InvalidOperationException("Invocation script already exists in the witness builder. Only one invocation script can be added per witness.");
-
-            using var sb = new ScriptBuilder();
-            config(sb);
-            _invocationScript = sb.ToArray();
-            return this;
-        }
-
-        public WitnessBuilder AddInvocation(byte[] bytes)
-        {
-            if (_invocationScript.Length > 0)
-                throw new InvalidOperationException("Invocation script already exists in the witness builder. Only one invocation script can be added per witness.");
-
-            _invocationScript = bytes;
-            return this;
-        }
-
-        public WitnessBuilder AddVerification(Action<ScriptBuilder> config)
-        {
-            if (_verificationScript.Length > 0)
-                throw new InvalidOperationException("Verification script already exists in the witness builder. Only one verification script can be added per witness.");
-
-            using var sb = new ScriptBuilder();
-            config(sb);
-            _verificationScript = sb.ToArray();
-            return this;
-        }
-
-        public WitnessBuilder AddVerification(byte[] bytes)
-        {
-            if (_verificationScript.Length > 0)
-                throw new InvalidOperationException("Verification script already exists in the witness builder. Only one verification script can be added per witness.");
-
-            _verificationScript = bytes;
-            return this;
-        }
-
-        public Witness Build()
-        {
-            return new Witness()
-            {
-                InvocationScript = _invocationScript,
-                VerificationScript = _verificationScript,
-            };
-        }
+            InvocationScript = _invocationScript,
+            VerificationScript = _verificationScript,
+        };
     }
 }

@@ -9,42 +9,38 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.Network.P2P.Capabilities;
+using Neo.Extensions.IO;
 using Neo.Network.P2P.Payloads;
-using System;
-using System.Linq;
 using System.Net;
 
-namespace Neo.UnitTests.Network.P2P.Payloads
+namespace Neo.UnitTests.Network.P2P.Payloads;
+
+[TestClass]
+public class UT_AddrPayload
 {
-    [TestClass]
-    public class UT_AddrPayload
+    [TestMethod]
+    public void Size_Get()
     {
-        [TestMethod]
-        public void Size_Get()
+        var test = new AddrPayload() { AddressList = [] };
+        Assert.AreEqual(1, test.Size);
+
+        test = AddrPayload.Create([new NetworkAddressWithTime() { Address = IPAddress.Any, Capabilities = [], Timestamp = 1 }]);
+        Assert.AreEqual(22, test.Size);
+    }
+
+    [TestMethod]
+    public void DeserializeAndSerialize()
+    {
+        var test = AddrPayload.Create([new NetworkAddressWithTime()
         {
-            var test = new AddrPayload() { AddressList = [] };
-            Assert.AreEqual(1, test.Size);
+            Address = IPAddress.Any,
+            Capabilities = [],
+            Timestamp = 1
+        }]);
+        var clone = test.ToArray().AsSerializable<AddrPayload>();
+        CollectionAssert.AreEqual(test.AddressList.Select(u => u.EndPoint).ToArray(), clone.AddressList.Select(u => u.EndPoint).ToArray());
 
-            test = AddrPayload.Create([new NetworkAddressWithTime() { Address = IPAddress.Any, Capabilities = [], Timestamp = 1 }]);
-            Assert.AreEqual(22, test.Size);
-        }
-
-        [TestMethod]
-        public void DeserializeAndSerialize()
-        {
-            var test = AddrPayload.Create([new NetworkAddressWithTime()
-            {
-                Address = IPAddress.Any,
-                Capabilities = [],
-                Timestamp = 1
-            }]);
-            var clone = test.ToArray().AsSerializable<AddrPayload>();
-            CollectionAssert.AreEqual(test.AddressList.Select(u => u.EndPoint).ToArray(), clone.AddressList.Select(u => u.EndPoint).ToArray());
-
-            Assert.ThrowsExactly<FormatException>(() => _ = new AddrPayload() { AddressList = [] }.ToArray().AsSerializable<AddrPayload>());
-        }
+        Assert.ThrowsExactly<FormatException>(() => _ = new AddrPayload() { AddressList = [] }.ToArray().AsSerializable<AddrPayload>());
     }
 }

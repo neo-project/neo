@@ -9,10 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.IO.Actors
+namespace Neo.IO.Actors;
+
+internal sealed class Idle
 {
-    internal sealed class Idle
-    {
-        public static Idle Instance { get; } = new();
-    }
+    public static Idle Instance { get; } = new();
 }

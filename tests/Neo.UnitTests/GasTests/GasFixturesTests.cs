@@ -9,94 +9,89 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
 
-namespace Neo.UnitTests.GasTests
+namespace Neo.UnitTests.GasTests;
+
+[TestClass]
+public class GasFixturesTests
 {
-    [TestClass]
-    public class GasFixturesTests
+    [TestMethod]
+    public void StdLibTest()
     {
-        [TestMethod]
-        public void StdLibTest()
+        TestFixture("./GasTests/Fixtures/StdLib.json");
+    }
+
+    public static void TestFixture(string file)
+    {
+        var pathFile = Path.GetFullPath(file);
+        var json = File.ReadAllText(pathFile);
+
+        var store = TestBlockchain.GetTestSnapshotCache();
+        var fixtures = JsonConvert.DeserializeObject<GasTestFixture[]>(json)!;
+
+        foreach (var fixture in fixtures)
         {
-            TestFixture("./GasTests/Fixtures/StdLib.json");
+            var snapshot = store.CloneCache();
+
+            AssertFixture(fixture, snapshot);
+        }
+    }
+
+    public static void AssertFixture(GasTestFixture fixture, DataCache snapshot)
+    {
+        // Set state
+
+        if (fixture.PreExecution?.Storage != null)
+        {
+            foreach (var preStore in fixture.PreExecution.Storage)
+            {
+                var key = new StorageKey(Convert.FromBase64String(preStore.Key));
+                var value = Convert.FromBase64String(preStore.Value);
+
+                snapshot.Add(key, value);
+            }
         }
 
-        public static void TestFixture(string file)
+        var persistingBlock = new Block
         {
-            var pathFile = Path.GetFullPath(file);
-            var json = File.ReadAllText(pathFile);
-
-            var store = TestBlockchain.GetTestSnapshotCache();
-            var fixtures = JsonConvert.DeserializeObject<GasTestFixture[]>(json);
-
-            foreach (var fixture in fixtures)
+            Header = new Header
             {
-                var snapshot = store.CloneCache();
+                PrevHash = UInt256.Zero,
+                MerkleRoot = null!,
+                Index = 1,
+                NextConsensus = null!,
+                Witness = null!
+            },
+            Transactions = null!
+        };
 
-                AssertFixture(fixture, snapshot);
+        // Signature
+
+        List<UInt160> signatures = [];
+
+        if (fixture.Signature != null)
+        {
+            if (fixture.Signature.SignedByCommittee)
+            {
+                signatures.Add(NativeContract.NEO.GetCommitteeAddress(snapshot));
             }
         }
 
-        public static void AssertFixture(GasTestFixture fixture, DataCache snapshot)
+        foreach (var execute in fixture.Execute)
         {
-            // Set state
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+              new Nep17NativeContractExtensions.ManualWitness([.. signatures]), snapshot,
+              persistingBlock, settings: TestProtocolSettings.Default);
 
-            if (fixture.PreExecution?.Storage != null)
-            {
-                foreach (var preStore in fixture.PreExecution.Storage)
-                {
-                    var key = new StorageKey(Convert.FromBase64String(preStore.Key));
-                    var value = Convert.FromBase64String(preStore.Value);
-
-                    snapshot.Add(key, value);
-                }
-            }
-
-            var persistingBlock = new Block
-            {
-                Header = new Header
-                {
-                    PrevHash = UInt256.Zero,
-                    MerkleRoot = null!,
-                    Index = 1,
-                    NextConsensus = null!,
-                    Witness = null!
-                },
-                Transactions = null!
-            };
-
-            // Signature
-
-            List<UInt160> signatures = [];
-
-            if (fixture.Signature != null)
-            {
-                if (fixture.Signature.SignedByCommittee)
-                {
-                    signatures.Add(NativeContract.NEO.GetCommitteeAddress(snapshot));
-                }
-            }
-
-            foreach (var execute in fixture.Execute)
-            {
-                using var engine = ApplicationEngine.Create(TriggerType.Application,
-                  new Nep17NativeContractExtensions.ManualWitness([.. signatures]), snapshot,
-                  persistingBlock, settings: TestProtocolSettings.Default);
-
-                engine.LoadScript(execute.Script);
-                Assert.AreEqual(execute.State, engine.Execute());
-                Assert.AreEqual(execute.Fee, engine.FeeConsumed);
-            }
+            engine.LoadScript(execute.Script);
+            Assert.AreEqual(execute.State, engine.Execute());
+            Assert.AreEqual(execute.Fee, engine.FeeConsumed);
         }
     }
 }

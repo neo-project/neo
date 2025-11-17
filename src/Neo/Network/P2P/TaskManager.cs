@@ -12,440 +12,436 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
-using Neo.Extensions;
+using Neo.Collections;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace Neo.Network.P2P
+namespace Neo.Network.P2P;
+
+/// <summary>
+/// Actor used to manage the tasks of inventories.
+/// </summary>
+public class TaskManager : UntypedActor
 {
+    internal record Register(VersionPayload Version);
+    internal record Update(uint LastBlockIndex);
+    internal record NewTasks(InvPayload Payload);
+
     /// <summary>
-    /// Actor used to manage the tasks of inventories.
+    /// Sent to <see cref="TaskManager"/> to restart tasks for inventories.
     /// </summary>
-    public class TaskManager : UntypedActor
+    /// <param name="Payload">The inventories that need to restart.</param>
+    public record RestartTasks(InvPayload Payload);
+
+    private record Timer;
+
+    private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
+    private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
+
+    private const int MaxConcurrentTasks = 3;
+
+    private readonly NeoSystem system;
+    /// <summary>
+    /// A set of known hashes, of inventories or payloads, already received.
+    /// </summary>
+    private readonly HashSetCache<UInt256> _knownHashes;
+    private readonly Dictionary<UInt256, int> globalInvTasks = new();
+    private readonly Dictionary<uint, int> globalIndexTasks = new();
+    private readonly Dictionary<IActorRef, TaskSession> sessions = new();
+    private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+        TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
+    private uint lastSeenPersistedIndex = 0;
+
+    private bool HasHeaderTask => globalInvTasks.ContainsKey(HeaderTaskHash);
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TaskManager"/> class.
+    /// </summary>
+    /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="TaskManager"/>.</param>
+    public TaskManager(NeoSystem system)
     {
-        internal record Register(VersionPayload Version);
-        internal record Update(uint LastBlockIndex);
-        internal record NewTasks(InvPayload Payload);
+        this.system = system;
+        // Exactly the same as mempool
+        _knownHashes = new HashSetCache<UInt256>(Math.Max(100, system.MemPool.Capacity));
+        Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
+        Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
+    }
 
-        /// <summary>
-        /// Sent to <see cref="TaskManager"/> to restart tasks for inventories.
-        /// </summary>
-        /// <param name="Payload">The inventories that need to restart.</param>
-        public record RestartTasks(InvPayload Payload);
+    private void OnHeaders(Header[] _)
+    {
+        if (!sessions.TryGetValue(Sender, out var session)) return;
+        if (session.InvTasks.Remove(HeaderTaskHash))
+            DecrementGlobalTask(HeaderTaskHash);
+        RequestTasks(Sender, session);
+    }
 
-        private record Timer;
-
-        private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
-        private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
-        private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
-
-        private const int MaxConcurrentTasks = 3;
-
-        private readonly NeoSystem system;
-        /// <summary>
-        /// A set of known hashes, of inventories or payloads, already received.
-        /// </summary>
-        private readonly HashSetCache<UInt256> _knownHashes;
-        private readonly Dictionary<UInt256, int> globalInvTasks = new();
-        private readonly Dictionary<uint, int> globalIndexTasks = new();
-        private readonly Dictionary<IActorRef, TaskSession> sessions = new();
-        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-            TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
-        private uint lastSeenPersistedIndex = 0;
-
-        private bool HasHeaderTask => globalInvTasks.ContainsKey(HeaderTaskHash);
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TaskManager"/> class.
-        /// </summary>
-        /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="TaskManager"/>.</param>
-        public TaskManager(NeoSystem system)
+    private void OnInvalidBlock(Block invalidBlock)
+    {
+        foreach (var (actor, session) in sessions)
         {
-            this.system = system;
-            // Exactly the same as mempool
-            _knownHashes = new HashSetCache<UInt256>(Math.Max(100, system.MemPool.Capacity));
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
-        }
-
-        private void OnHeaders(Header[] _)
-        {
-            if (!sessions.TryGetValue(Sender, out var session)) return;
-            if (session.InvTasks.Remove(HeaderTaskHash))
-                DecrementGlobalTask(HeaderTaskHash);
-            RequestTasks(Sender, session);
-        }
-
-        private void OnInvalidBlock(Block invalidBlock)
-        {
-            foreach (var (actor, session) in sessions)
+            if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out var block))
             {
-                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out var block))
-                {
-                    if (block.Hash == invalidBlock.Hash)
-                        actor.Tell(Tcp.Abort.Instance);
-                }
-            }
-        }
-
-        private void OnNewTasks(InvPayload payload)
-        {
-            if (!sessions.TryGetValue(Sender, out var session)) return;
-
-            // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
-            uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(system.StoreView), lastSeenPersistedIndex);
-            uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
-            if (currentHeight < headerHeight && (payload.Type == InventoryType.TX || (payload.Type == InventoryType.Block && currentHeight < session.LastBlockIndex - InvPayload.MaxHashesCount)))
-            {
-                RequestTasks(Sender, session);
-                return;
-            }
-
-            HashSet<UInt256> hashes = [.. payload.Hashes];
-            // Remove all previously processed knownHashes from the list that is being requested
-            hashes.Remove(_knownHashes);
-            // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
-            if (payload.Type == InventoryType.Block)
-                session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p)));
-
-            // Remove those that are already in process by other sessions
-            hashes.Remove(globalInvTasks);
-            if (hashes.Count == 0)
-            {
-                RequestTasks(Sender, session);
-                return;
-            }
-
-            // Update globalTasks with the ones that will be requested within this current session
-            foreach (UInt256 hash in hashes)
-            {
-                IncrementGlobalTask(hash);
-                session.InvTasks[hash] = TimeProvider.Current.UtcNow;
-            }
-
-            foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes))
-                Sender.Tell(Message.Create(MessageCommand.GetData, group));
-        }
-
-        private void OnPersistCompleted(Block block)
-        {
-            lastSeenPersistedIndex = block.Index;
-
-            foreach (var (actor, session) in sessions)
-                if (session.ReceivedBlock.Remove(block.Index, out Block? receivedBlock))
-                {
-                    if (block.Hash == receivedBlock.Hash)
-                        RequestTasks(actor, session);
-                    else
-                        actor.Tell(Tcp.Abort.Instance);
-                }
-        }
-
-        protected override void OnReceive(object message)
-        {
-            switch (message)
-            {
-                case Register register:
-                    OnRegister(register.Version);
-                    break;
-                case Update update:
-                    OnUpdate(update);
-                    break;
-                case NewTasks tasks:
-                    OnNewTasks(tasks.Payload);
-                    break;
-                case RestartTasks restart:
-                    OnRestartTasks(restart.Payload);
-                    break;
-                case Header[] headers:
-                    OnHeaders(headers);
-                    break;
-                case IInventory inventory:
-                    OnTaskCompleted(inventory);
-                    break;
-                case Blockchain.PersistCompleted pc:
-                    OnPersistCompleted(pc.Block);
-                    break;
-                case Blockchain.RelayResult rr:
-                    if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
-                        OnInvalidBlock(invalidBlock);
-                    break;
-                case Timer _:
-                    OnTimer();
-                    break;
-                case Terminated terminated:
-                    OnTerminated(terminated.ActorRef);
-                    break;
-            }
-        }
-
-        private void OnRegister(VersionPayload version)
-        {
-            Context.Watch(Sender);
-            TaskSession session = new(version);
-            sessions.Add(Sender, session);
-            RequestTasks(Sender, session);
-        }
-
-        private void OnUpdate(Update update)
-        {
-            if (!sessions.TryGetValue(Sender, out var session)) return;
-            session.LastBlockIndex = update.LastBlockIndex;
-        }
-
-        private void OnRestartTasks(InvPayload payload)
-        {
-            _knownHashes.ExceptWith(payload.Hashes);
-            foreach (var hash in payload.Hashes)
-            {
-                globalInvTasks.Remove(hash);
-            }
-
-            foreach (var group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
-            {
-                system.LocalNode.Tell(Message.Create(MessageCommand.GetData, group));
-            }
-        }
-
-        private void OnTaskCompleted(IInventory inventory)
-        {
-            var block = inventory as Block;
-            _knownHashes.TryAdd(inventory.Hash);
-            globalInvTasks.Remove(inventory.Hash);
-            if (block is not null)
-            {
-                globalIndexTasks.Remove(block.Index);
-            }
-
-            foreach (var ms in sessions.Values)
-            {
-                ms.AvailableTasks.Remove(inventory.Hash);
-            }
-
-            if (sessions.TryGetValue(Sender, out var session))
-            {
-                session.InvTasks.Remove(inventory.Hash);
-                if (block is not null)
-                {
-                    session.IndexTasks.Remove(block.Index);
-                    if (session.ReceivedBlock.TryGetValue(block.Index, out var blockOld))
-                    {
-                        if (block.Hash != blockOld.Hash)
-                        {
-                            Sender.Tell(Tcp.Abort.Instance);
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        session.ReceivedBlock.Add(block.Index, block);
-                    }
-                }
-                else
-                {
-                    RequestTasks(Sender, session);
-                }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DecrementGlobalTask(UInt256 hash)
-        {
-            if (globalInvTasks.TryGetValue(hash, out var value))
-            {
-                if (value == 1)
-                    globalInvTasks.Remove(hash);
-                else
-                    globalInvTasks[hash] = value - 1;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DecrementGlobalTask(uint index)
-        {
-            if (globalIndexTasks.TryGetValue(index, out var value))
-            {
-                if (value == 1)
-                    globalIndexTasks.Remove(index);
-                else
-                    globalIndexTasks[index] = value - 1;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool IncrementGlobalTask(UInt256 hash)
-        {
-            if (!globalInvTasks.TryGetValue(hash, out var value))
-            {
-                globalInvTasks[hash] = 1;
-                return true;
-            }
-
-            if (value >= MaxConcurrentTasks) return false;
-
-            globalInvTasks[hash] = value + 1;
-            return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool IncrementGlobalTask(uint index)
-        {
-            if (!globalIndexTasks.TryGetValue(index, out var value))
-            {
-                globalIndexTasks[index] = 1;
-                return true;
-            }
-
-            if (value >= MaxConcurrentTasks) return false;
-
-            globalIndexTasks[index] = value + 1;
-            return true;
-        }
-
-        private void OnTerminated(IActorRef actor)
-        {
-            if (!sessions.TryGetValue(actor, out var session)) return;
-            foreach (var hash in session.InvTasks.Keys)
-            {
-                DecrementGlobalTask(hash);
-            }
-            foreach (var index in session.IndexTasks.Keys)
-            {
-                DecrementGlobalTask(index);
-            }
-            sessions.Remove(actor);
-        }
-
-        private void OnTimer()
-        {
-            foreach (var session in sessions.Values)
-            {
-                var now = TimeProvider.Current.UtcNow;
-                session.InvTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
-                session.IndexTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
-            }
-
-            foreach (var (actor, session) in sessions)
-            {
-                RequestTasks(actor, session);
-            }
-        }
-
-        protected override void PostStop()
-        {
-            timer.CancelIfNotNull();
-            base.PostStop();
-        }
-
-        /// <summary>
-        /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="TaskManager"/> actor.
-        /// </summary>
-        /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="TaskManager"/>.</param>
-        /// <returns>The <see cref="Akka.Actor.Props"/> object used for creating the <see cref="TaskManager"/> actor.</returns>
-        public static Props Props(NeoSystem system)
-        {
-            return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
-        }
-
-        private void RequestTasks(IActorRef remoteNode, TaskSession session)
-        {
-            if (session.HasTooManyTasks) return;
-
-            var snapshot = system.StoreView;
-
-            // If there are pending tasks of InventoryType.Block we should process them
-            if (session.AvailableTasks.Count > 0)
-            {
-                session.AvailableTasks.Remove(_knownHashes);
-                // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
-                session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
-                HashSet<UInt256> hashes = [.. session.AvailableTasks];
-                if (hashes.Count > 0)
-                {
-                    hashes.RemoveWhere(p => !IncrementGlobalTask(p));
-                    session.AvailableTasks.Remove(hashes);
-
-                    foreach (UInt256 hash in hashes)
-                        session.InvTasks[hash] = DateTime.UtcNow;
-
-                    foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes))
-                        remoteNode.Tell(Message.Create(MessageCommand.GetData, group));
-                    return;
-                }
-            }
-
-            uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
-            uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
-            // When the number of AvailableTasks is no more than 0,
-            // no pending tasks of InventoryType.Block, it should process pending the tasks of headers
-            // If not HeaderTask pending to be processed it should ask for more Blocks
-            if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
-            {
-                session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
-                IncrementGlobalTask(HeaderTaskHash);
-                remoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(headerHeight + 1)));
-            }
-            else if (currentHeight < session.LastBlockIndex)
-            {
-                uint startHeight = currentHeight + 1;
-                while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlock.ContainsKey(startHeight)) { startHeight++; }
-                if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
-                uint endHeight = startHeight;
-                while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight <= currentHeight + InvPayload.MaxHashesCount) { }
-                uint count = Math.Min(endHeight - startHeight, InvPayload.MaxHashesCount);
-                for (uint i = 0; i < count; i++)
-                {
-                    session.IndexTasks[startHeight + i] = TimeProvider.Current.UtcNow;
-                    IncrementGlobalTask(startHeight + i);
-                }
-                remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight, (short)count)));
-            }
-            else if (!session.MempoolSent)
-            {
-                session.MempoolSent = true;
-                remoteNode.Tell(Message.Create(MessageCommand.Mempool));
+                if (block.Hash == invalidBlock.Hash)
+                    actor.Tell(Tcp.Abort.Instance);
             }
         }
     }
 
-    internal class TaskManagerMailbox : PriorityMailbox
+    private void OnNewTasks(InvPayload payload)
     {
-        public TaskManagerMailbox(Settings settings, Config config)
-            : base(settings, config)
+        if (!sessions.TryGetValue(Sender, out var session)) return;
+
+        // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
+        uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(system.StoreView), lastSeenPersistedIndex);
+        uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
+        if (currentHeight < headerHeight && (payload.Type == InventoryType.TX || (payload.Type == InventoryType.Block && currentHeight < session.LastBlockIndex - InvPayload.MaxHashesCount)))
         {
+            RequestTasks(Sender, session);
+            return;
         }
 
-        internal protected override bool IsHighPriority(object message)
+        HashSet<UInt256> hashes = [.. payload.Hashes];
+        // Remove all previously processed knownHashes from the list that is being requested
+        hashes.Remove(_knownHashes);
+        // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
+        if (payload.Type == InventoryType.Block)
+            session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p)));
+
+        // Remove those that are already in process by other sessions
+        hashes.Remove(globalInvTasks);
+        if (hashes.Count == 0)
         {
-            switch (message)
+            RequestTasks(Sender, session);
+            return;
+        }
+
+        // Update globalTasks with the ones that will be requested within this current session
+        foreach (UInt256 hash in hashes)
+        {
+            IncrementGlobalTask(hash);
+            session.InvTasks[hash] = TimeProvider.Current.UtcNow;
+        }
+
+        foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes))
+            Sender.Tell(Message.Create(MessageCommand.GetData, group));
+    }
+
+    private void OnPersistCompleted(Block block)
+    {
+        lastSeenPersistedIndex = block.Index;
+
+        foreach (var (actor, session) in sessions)
+            if (session.ReceivedBlock.Remove(block.Index, out Block? receivedBlock))
             {
-                case TaskManager.Register _:
-                case TaskManager.Update _:
-                case TaskManager.RestartTasks _:
-                    return true;
-                case TaskManager.NewTasks tasks:
-                    if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Extensible)
-                        return true;
-                    return false;
-                default:
-                    return false;
+                if (block.Hash == receivedBlock.Hash)
+                    RequestTasks(actor, session);
+                else
+                    actor.Tell(Tcp.Abort.Instance);
+            }
+    }
+
+    protected override void OnReceive(object message)
+    {
+        switch (message)
+        {
+            case Register register:
+                OnRegister(register.Version);
+                break;
+            case Update update:
+                OnUpdate(update);
+                break;
+            case NewTasks tasks:
+                OnNewTasks(tasks.Payload);
+                break;
+            case RestartTasks restart:
+                OnRestartTasks(restart.Payload);
+                break;
+            case Header[] headers:
+                OnHeaders(headers);
+                break;
+            case IInventory inventory:
+                OnTaskCompleted(inventory);
+                break;
+            case Blockchain.PersistCompleted pc:
+                OnPersistCompleted(pc.Block);
+                break;
+            case Blockchain.RelayResult rr:
+                if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
+                    OnInvalidBlock(invalidBlock);
+                break;
+            case Timer _:
+                OnTimer();
+                break;
+            case Terminated terminated:
+                OnTerminated(terminated.ActorRef);
+                break;
+        }
+    }
+
+    private void OnRegister(VersionPayload version)
+    {
+        Context.Watch(Sender);
+        TaskSession session = new(version);
+        sessions.Add(Sender, session);
+        RequestTasks(Sender, session);
+    }
+
+    private void OnUpdate(Update update)
+    {
+        if (!sessions.TryGetValue(Sender, out var session)) return;
+        session.LastBlockIndex = update.LastBlockIndex;
+    }
+
+    private void OnRestartTasks(InvPayload payload)
+    {
+        _knownHashes.ExceptWith(payload.Hashes);
+        foreach (var hash in payload.Hashes)
+        {
+            globalInvTasks.Remove(hash);
+        }
+
+        foreach (var group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
+        {
+            system.LocalNode.Tell(Message.Create(MessageCommand.GetData, group));
+        }
+    }
+
+    private void OnTaskCompleted(IInventory inventory)
+    {
+        var block = inventory as Block;
+        _knownHashes.TryAdd(inventory.Hash);
+        globalInvTasks.Remove(inventory.Hash);
+        if (block is not null)
+        {
+            globalIndexTasks.Remove(block.Index);
+        }
+
+        foreach (var ms in sessions.Values)
+        {
+            ms.AvailableTasks.Remove(inventory.Hash);
+        }
+
+        if (sessions.TryGetValue(Sender, out var session))
+        {
+            session.InvTasks.Remove(inventory.Hash);
+            if (block is not null)
+            {
+                session.IndexTasks.Remove(block.Index);
+                if (session.ReceivedBlock.TryGetValue(block.Index, out var blockOld))
+                {
+                    if (block.Hash != blockOld.Hash)
+                    {
+                        Sender.Tell(Tcp.Abort.Instance);
+                        return;
+                    }
+                }
+                else
+                {
+                    session.ReceivedBlock.Add(block.Index, block);
+                }
+            }
+            else
+            {
+                RequestTasks(Sender, session);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DecrementGlobalTask(UInt256 hash)
+    {
+        if (globalInvTasks.TryGetValue(hash, out var value))
+        {
+            if (value == 1)
+                globalInvTasks.Remove(hash);
+            else
+                globalInvTasks[hash] = value - 1;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DecrementGlobalTask(uint index)
+    {
+        if (globalIndexTasks.TryGetValue(index, out var value))
+        {
+            if (value == 1)
+                globalIndexTasks.Remove(index);
+            else
+                globalIndexTasks[index] = value - 1;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool IncrementGlobalTask(UInt256 hash)
+    {
+        if (!globalInvTasks.TryGetValue(hash, out var value))
+        {
+            globalInvTasks[hash] = 1;
+            return true;
+        }
+
+        if (value >= MaxConcurrentTasks) return false;
+
+        globalInvTasks[hash] = value + 1;
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool IncrementGlobalTask(uint index)
+    {
+        if (!globalIndexTasks.TryGetValue(index, out var value))
+        {
+            globalIndexTasks[index] = 1;
+            return true;
+        }
+
+        if (value >= MaxConcurrentTasks) return false;
+
+        globalIndexTasks[index] = value + 1;
+        return true;
+    }
+
+    private void OnTerminated(IActorRef actor)
+    {
+        if (!sessions.TryGetValue(actor, out var session)) return;
+        foreach (var hash in session.InvTasks.Keys)
+        {
+            DecrementGlobalTask(hash);
+        }
+        foreach (var index in session.IndexTasks.Keys)
+        {
+            DecrementGlobalTask(index);
+        }
+        sessions.Remove(actor);
+    }
+
+    private void OnTimer()
+    {
+        foreach (var session in sessions.Values)
+        {
+            var now = TimeProvider.Current.UtcNow;
+            session.InvTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
+            session.IndexTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
+        }
+
+        foreach (var (actor, session) in sessions)
+        {
+            RequestTasks(actor, session);
+        }
+    }
+
+    protected override void PostStop()
+    {
+        timer.CancelIfNotNull();
+        base.PostStop();
+    }
+
+    /// <summary>
+    /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="TaskManager"/> actor.
+    /// </summary>
+    /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="TaskManager"/>.</param>
+    /// <returns>The <see cref="Akka.Actor.Props"/> object used for creating the <see cref="TaskManager"/> actor.</returns>
+    public static Props Props(NeoSystem system)
+    {
+        return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
+    }
+
+    private void RequestTasks(IActorRef remoteNode, TaskSession session)
+    {
+        if (session.HasTooManyTasks) return;
+
+        var snapshot = system.StoreView;
+
+        // If there are pending tasks of InventoryType.Block we should process them
+        if (session.AvailableTasks.Count > 0)
+        {
+            session.AvailableTasks.Remove(_knownHashes);
+            // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
+            session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
+            HashSet<UInt256> hashes = [.. session.AvailableTasks];
+            if (hashes.Count > 0)
+            {
+                hashes.RemoveWhere(p => !IncrementGlobalTask(p));
+                session.AvailableTasks.Remove(hashes);
+
+                foreach (UInt256 hash in hashes)
+                    session.InvTasks[hash] = DateTime.UtcNow;
+
+                foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes))
+                    remoteNode.Tell(Message.Create(MessageCommand.GetData, group));
+                return;
             }
         }
 
-        internal protected override bool ShallDrop(object message, IEnumerable queue)
+        uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
+        uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
+        // When the number of AvailableTasks is no more than 0,
+        // no pending tasks of InventoryType.Block, it should process pending the tasks of headers
+        // If not HeaderTask pending to be processed it should ask for more Blocks
+        if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
         {
-            if (message is not TaskManager.NewTasks tasks) return false;
-            // Remove duplicate tasks
-            return queue.OfType<TaskManager.NewTasks>()
-                .Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes));
+            session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
+            IncrementGlobalTask(HeaderTaskHash);
+            remoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(headerHeight + 1)));
         }
+        else if (currentHeight < session.LastBlockIndex)
+        {
+            uint startHeight = currentHeight + 1;
+            while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlock.ContainsKey(startHeight)) { startHeight++; }
+            if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
+            uint endHeight = startHeight;
+            while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight <= currentHeight + InvPayload.MaxHashesCount) { }
+            uint count = Math.Min(endHeight - startHeight, InvPayload.MaxHashesCount);
+            for (uint i = 0; i < count; i++)
+            {
+                session.IndexTasks[startHeight + i] = TimeProvider.Current.UtcNow;
+                IncrementGlobalTask(startHeight + i);
+            }
+            remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight, (short)count)));
+        }
+        else if (!session.MempoolSent)
+        {
+            session.MempoolSent = true;
+            remoteNode.Tell(Message.Create(MessageCommand.Mempool));
+        }
+    }
+}
+
+internal class TaskManagerMailbox : PriorityMailbox
+{
+    public TaskManagerMailbox(Settings settings, Config config)
+        : base(settings, config)
+    {
+    }
+
+    internal protected override bool IsHighPriority(object message)
+    {
+        switch (message)
+        {
+            case TaskManager.Register _:
+            case TaskManager.Update _:
+            case TaskManager.RestartTasks _:
+                return true;
+            case TaskManager.NewTasks tasks:
+                if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Extensible)
+                    return true;
+                return false;
+            default:
+                return false;
+        }
+    }
+
+    internal protected override bool ShallDrop(object message, IEnumerable queue)
+    {
+        if (message is not TaskManager.NewTasks tasks) return false;
+        // Remove duplicate tasks
+        return queue.OfType<TaskManager.NewTasks>()
+            .Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes));
     }
 }

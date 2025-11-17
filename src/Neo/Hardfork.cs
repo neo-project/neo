@@ -9,16 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo
+namespace Neo;
+
+public enum Hardfork : byte
 {
-    public enum Hardfork : byte
-    {
-        HF_Aspidochelone,
-        HF_Basilisk,
-        HF_Cockatrice,
-        HF_Domovoi,
-        HF_Echidna,
-        HF_Faun,
-        HF_Gorgon
-    }
+    HF_Aspidochelone,
+    HF_Basilisk,
+    HF_Cockatrice,
+    HF_Domovoi,
+    HF_Echidna,
+    HF_Faun,
+    HF_Gorgon
 }

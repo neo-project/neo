@@ -9,33 +9,31 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.Network.P2P.Payloads;
-using System;
 
-namespace Neo.UnitTests.Network.P2P.Payloads
+namespace Neo.UnitTests.Network.P2P.Payloads;
+
+[TestClass]
+public class UT_FilterAddPayload
 {
-    [TestClass]
-    public class UT_FilterAddPayload
+    [TestMethod]
+    public void Size_Get()
     {
-        [TestMethod]
-        public void Size_Get()
-        {
-            var test = new FilterAddPayload() { Data = ReadOnlyMemory<byte>.Empty };
-            Assert.AreEqual(1, test.Size);
+        var test = new FilterAddPayload() { Data = ReadOnlyMemory<byte>.Empty };
+        Assert.AreEqual(1, test.Size);
 
-            test = new FilterAddPayload() { Data = new byte[] { 1, 2, 3 } };
-            Assert.AreEqual(4, test.Size);
-        }
+        test = new FilterAddPayload() { Data = new byte[] { 1, 2, 3 } };
+        Assert.AreEqual(4, test.Size);
+    }
 
-        [TestMethod]
-        public void DeserializeAndSerialize()
-        {
-            var test = new FilterAddPayload() { Data = new byte[] { 1, 2, 3 } };
-            var clone = test.ToArray().AsSerializable<FilterAddPayload>();
+    [TestMethod]
+    public void DeserializeAndSerialize()
+    {
+        var test = new FilterAddPayload() { Data = new byte[] { 1, 2, 3 } };
+        var clone = test.ToArray().AsSerializable<FilterAddPayload>();
 
-            Assert.IsTrue(test.Data.Span.SequenceEqual(clone.Data.Span));
-        }
+        Assert.IsTrue(test.Data.Span.SequenceEqual(clone.Data.Span));
     }
 }
