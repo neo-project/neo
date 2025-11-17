@@ -9,36 +9,34 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using System.Net;
 
-namespace Neo.UnitTests.Network.P2P
+namespace Neo.UnitTests.Network.P2P;
+
+[TestClass]
+public class UT_ChannelsConfig
 {
-    [TestClass]
-    public class UT_ChannelsConfig
+    [TestMethod]
+    public void CreateTest()
     {
-        [TestMethod]
-        public void CreateTest()
-        {
-            var config = new ChannelsConfig();
+        var config = new ChannelsConfig();
 
-            Assert.IsNull(config.Tcp);
-            Assert.AreEqual(10, config.MinDesiredConnections);
-            Assert.AreEqual(40, config.MaxConnections);
-            Assert.AreEqual(3, config.MaxConnectionsPerAddress);
+        Assert.IsNull(config.Tcp);
+        Assert.AreEqual(10, config.MinDesiredConnections);
+        Assert.AreEqual(40, config.MaxConnections);
+        Assert.AreEqual(3, config.MaxConnectionsPerAddress);
 
-            config.Tcp = new IPEndPoint(IPAddress.Any, 21);
-            config.MaxConnectionsPerAddress++;
-            config.MaxConnections++;
-            config.MinDesiredConnections++;
+        config.Tcp = new IPEndPoint(IPAddress.Any, 21);
+        config.MaxConnectionsPerAddress++;
+        config.MaxConnections++;
+        config.MinDesiredConnections++;
 
-            Assert.AreSame(config.Tcp, config.Tcp);
-            CollectionAssert.AreEqual(IPAddress.Any.GetAddressBytes(), config.Tcp.Address.GetAddressBytes());
-            Assert.AreEqual(21, config.Tcp.Port);
-            Assert.AreEqual(11, config.MinDesiredConnections);
-            Assert.AreEqual(41, config.MaxConnections);
-            Assert.AreEqual(4, config.MaxConnectionsPerAddress);
-        }
+        Assert.AreSame(config.Tcp, config.Tcp);
+        CollectionAssert.AreEqual(IPAddress.Any.GetAddressBytes(), config.Tcp.Address.GetAddressBytes());
+        Assert.AreEqual(21, config.Tcp.Port);
+        Assert.AreEqual(11, config.MinDesiredConnections);
+        Assert.AreEqual(41, config.MaxConnections);
+        Assert.AreEqual(4, config.MaxConnectionsPerAddress);
     }
 }

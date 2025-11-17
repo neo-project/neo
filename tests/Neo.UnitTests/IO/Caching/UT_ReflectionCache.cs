@@ -9,80 +9,76 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Caching;
-using System;
-using System.IO;
 
-namespace Neo.UnitTests.IO.Caching
+namespace Neo.UnitTests.IO.Caching;
+
+public class TestItem : ISerializable
 {
-    public class TestItem : ISerializable
+    public int Size => 0;
+    public void Deserialize(ref MemoryReader reader) { }
+    public void Serialize(BinaryWriter writer) { }
+}
+
+public class TestItem1 : TestItem { }
+
+public class TestItem2 : TestItem { }
+
+public enum MyTestEnum : byte
+{
+    [ReflectionCache(typeof(TestItem1))]
+    Item1 = 0x00,
+
+    [ReflectionCache(typeof(TestItem2))]
+    Item2 = 0x01,
+}
+
+public enum MyEmptyEnum : byte { }
+
+[TestClass]
+public class UT_ReflectionCache
+{
+    [TestMethod]
+    public void TestCreateFromEmptyEnum()
     {
-        public int Size => 0;
-        public void Deserialize(ref MemoryReader reader) { }
-        public void Serialize(BinaryWriter writer) { }
+        Assert.AreEqual(0, ReflectionCache<MyEmptyEnum>.Count);
     }
 
-    public class TestItem1 : TestItem { }
-
-    public class TestItem2 : TestItem { }
-
-    public enum MyTestEnum : byte
+    [TestMethod]
+    public void TestCreateInstance()
     {
-        [ReflectionCache(typeof(TestItem1))]
-        Item1 = 0x00,
+        object? item1 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item1, null);
+        Assert.IsTrue(item1 is TestItem1);
 
-        [ReflectionCache(typeof(TestItem2))]
-        Item2 = 0x01,
+        object? item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, null);
+        Assert.IsTrue(item2 is TestItem2);
+
+        object? item3 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, null);
+        Assert.IsNull(item3);
     }
 
-    public enum MyEmptyEnum : byte { }
-
-    [TestClass]
-    public class UT_ReflectionCache
+    [TestMethod]
+    public void TestCreateSerializable()
     {
-        [TestMethod]
-        public void TestCreateFromEmptyEnum()
-        {
-            Assert.AreEqual(0, ReflectionCache<MyEmptyEnum>.Count);
-        }
+        object? item1 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item1, ReadOnlyMemory<byte>.Empty);
+        Assert.IsTrue(item1 is TestItem1);
 
-        [TestMethod]
-        public void TestCreateInstance()
-        {
-            object item1 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item1, null);
-            Assert.IsTrue(item1 is TestItem1);
+        object? item2 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item2, ReadOnlyMemory<byte>.Empty);
+        Assert.IsTrue(item2 is TestItem2);
 
-            object item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, null);
-            Assert.IsTrue(item2 is TestItem2);
+        object? item3 = ReflectionCache<MyTestEnum>.CreateSerializable((MyTestEnum)0x02, ReadOnlyMemory<byte>.Empty);
+        Assert.IsNull(item3);
+    }
 
-            object item3 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, null);
-            Assert.IsNull(item3);
-        }
+    [TestMethod]
+    public void TestCreateInstance2()
+    {
+        TestItem defaultItem = new TestItem1();
+        object? item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, defaultItem);
+        Assert.IsTrue(item2 is TestItem2);
 
-        [TestMethod]
-        public void TestCreateSerializable()
-        {
-            object item1 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item1, ReadOnlyMemory<byte>.Empty);
-            Assert.IsTrue(item1 is TestItem1);
-
-            object item2 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item2, ReadOnlyMemory<byte>.Empty);
-            Assert.IsTrue(item2 is TestItem2);
-
-            object item3 = ReflectionCache<MyTestEnum>.CreateSerializable((MyTestEnum)0x02, ReadOnlyMemory<byte>.Empty);
-            Assert.IsNull(item3);
-        }
-
-        [TestMethod]
-        public void TestCreateInstance2()
-        {
-            TestItem defaultItem = new TestItem1();
-            object item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, defaultItem);
-            Assert.IsTrue(item2 is TestItem2);
-
-            object item1 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, new TestItem1());
-            Assert.IsTrue(item1 is TestItem1);
-        }
+        object? item1 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, new TestItem1());
+        Assert.IsTrue(item1 is TestItem1);
     }
 }

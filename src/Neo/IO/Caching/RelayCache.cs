@@ -11,13 +11,12 @@
 
 using Neo.Network.P2P.Payloads;
 
-namespace Neo.IO.Caching
+namespace Neo.IO.Caching;
+
+internal class RelayCache(int maxCapacity) : FIFOCache<UInt256, IInventory>(maxCapacity)
 {
-    internal class RelayCache(int maxCapacity) : FIFOCache<UInt256, IInventory>(maxCapacity)
+    protected override UInt256 GetKeyForItem(IInventory item)
     {
-        protected override UInt256 GetKeyForItem(IInventory item)
-        {
-            return item.Hash;
-        }
+        return item.Hash;
     }
 }
