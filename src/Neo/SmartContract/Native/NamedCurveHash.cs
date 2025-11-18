@@ -9,31 +9,30 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract.Native;
+
+/// <summary>
+/// Represents a pair of the named curve used in ECDSA and a hash algorithm used to hash message.
+/// </summary>
+public enum NamedCurveHash : byte
 {
     /// <summary>
-    /// Represents a pair of the named curve used in ECDSA and a hash algorithm used to hash message.
+    /// The secp256k1 curve and SHA256 hash algorithm.
     /// </summary>
-    public enum NamedCurveHash : byte
-    {
-        /// <summary>
-        /// The secp256k1 curve and SHA256 hash algorithm.
-        /// </summary>
-        secp256k1SHA256 = 22,
+    secp256k1SHA256 = 22,
 
-        /// <summary>
-        /// The secp256r1 curve, which known as prime256v1 or nistP-256, and SHA256 hash algorithm.
-        /// </summary>
-        secp256r1SHA256 = 23,
+    /// <summary>
+    /// The secp256r1 curve, which known as prime256v1 or nistP-256, and SHA256 hash algorithm.
+    /// </summary>
+    secp256r1SHA256 = 23,
 
-        /// <summary>
-        /// The secp256k1 curve and Keccak256 hash algorithm.
-        /// </summary>
-        secp256k1Keccak256 = 122,
+    /// <summary>
+    /// The secp256k1 curve and Keccak256 hash algorithm.
+    /// </summary>
+    secp256k1Keccak256 = 122,
 
-        /// <summary>
-        /// The secp256r1 curve, which known as prime256v1 or nistP-256, and Keccak256 hash algorithm.
-        /// </summary>
-        secp256r1Keccak256 = 123
-    }
+    /// <summary>
+    /// The secp256r1 curve, which known as prime256v1 or nistP-256, and Keccak256 hash algorithm.
+    /// </summary>
+    secp256r1Keccak256 = 123
 }

@@ -9,66 +9,63 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Extensions;
+using Neo.Extensions.VM;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
-using System.Linq;
 
-namespace Neo.UnitTests.SmartContract
+namespace Neo.UnitTests.SmartContract;
+
+public partial class UT_ApplicationEngine
 {
-    public partial class UT_ApplicationEngine
+    private NeoSystem _system = null!;
+    private DataCache _snapshotCache = null!;
+
+    [TestInitialize]
+    public void TestSetup()
     {
-        private NeoSystem _system;
-        private DataCache _snapshotCache;
+        _system = TestBlockchain.GetSystem();
+        _snapshotCache = _system.GetSnapshotCache();
+    }
 
-        [TestInitialize]
-        public void TestSetup()
+    [TestMethod]
+    public void TestCreateStandardAccount()
+    {
+        var snapshot = _snapshotCache.CloneCache();
+        var settings = TestProtocolSettings.Default;
+        using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+
+        using var script = new ScriptBuilder();
+        script.EmitSysCall(ApplicationEngine.System_Contract_CreateStandardAccount, settings.StandbyCommittee[0].EncodePoint(true));
+        engine.LoadScript(script.ToArray());
+
+        Assert.AreEqual(VMState.HALT, engine.Execute());
+
+        var result = engine.ResultStack.Pop();
+        Assert.AreEqual(Contract.CreateSignatureRedeemScript(settings.StandbyCommittee[0]).ToScriptHash(), new UInt160(result.GetSpan()));
+    }
+
+    [TestMethod]
+    public void TestCreateStandardMultisigAccount()
+    {
+        var snapshot = _snapshotCache.CloneCache();
+        var settings = TestProtocolSettings.Default;
+        using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+
+        using var script = new ScriptBuilder();
+        script.EmitSysCall(ApplicationEngine.System_Contract_CreateMultisigAccount, new object[]
         {
-            _system = TestBlockchain.GetSystem();
-            _snapshotCache = _system.GetSnapshotCache();
-        }
+            2,
+            3,
+            settings.StandbyCommittee[0].EncodePoint(true),
+            settings.StandbyCommittee[1].EncodePoint(true),
+            settings.StandbyCommittee[2].EncodePoint(true)
+        });
+        engine.LoadScript(script.ToArray());
 
-        [TestMethod]
-        public void TestCreateStandardAccount()
-        {
-            var snapshot = _snapshotCache.CloneCache();
-            var settings = TestProtocolSettings.Default;
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+        Assert.AreEqual(VMState.HALT, engine.Execute());
 
-            using var script = new ScriptBuilder();
-            script.EmitSysCall(ApplicationEngine.System_Contract_CreateStandardAccount, settings.StandbyCommittee[0].EncodePoint(true));
-            engine.LoadScript(script.ToArray());
-
-            Assert.AreEqual(VMState.HALT, engine.Execute());
-
-            var result = engine.ResultStack.Pop();
-            Assert.AreEqual(Contract.CreateSignatureRedeemScript(settings.StandbyCommittee[0]).ToScriptHash(), new UInt160(result.GetSpan()));
-        }
-
-        [TestMethod]
-        public void TestCreateStandardMultisigAccount()
-        {
-            var snapshot = _snapshotCache.CloneCache();
-            var settings = TestProtocolSettings.Default;
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: 1100_00000000);
-
-            using var script = new ScriptBuilder();
-            script.EmitSysCall(ApplicationEngine.System_Contract_CreateMultisigAccount, new object[]
-            {
-                2,
-                3,
-                settings.StandbyCommittee[0].EncodePoint(true),
-                settings.StandbyCommittee[1].EncodePoint(true),
-                settings.StandbyCommittee[2].EncodePoint(true)
-            });
-            engine.LoadScript(script.ToArray());
-
-            Assert.AreEqual(VMState.HALT, engine.Execute());
-
-            var result = engine.ResultStack.Pop();
-            Assert.AreEqual(Contract.CreateMultiSigRedeemScript(2, settings.StandbyCommittee.Take(3).ToArray()).ToScriptHash(), new UInt160(result.GetSpan()));
-        }
+        var result = engine.ResultStack.Pop();
+        Assert.AreEqual(Contract.CreateMultiSigRedeemScript(2, settings.StandbyCommittee.Take(3).ToArray()).ToScriptHash(), new UInt160(result.GetSpan()));
     }
 }

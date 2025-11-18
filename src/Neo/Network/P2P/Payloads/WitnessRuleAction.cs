@@ -9,21 +9,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads;
+
+/// <summary>
+/// Indicates the action to be taken if the current context meets with the rule.
+/// </summary>
+public enum WitnessRuleAction : byte
 {
     /// <summary>
-    /// Indicates the action to be taken if the current context meets with the rule.
+    /// Deny the witness according to the rule.
     /// </summary>
-    public enum WitnessRuleAction : byte
-    {
-        /// <summary>
-        /// Deny the witness according to the rule.
-        /// </summary>
-        Deny = 0,
+    Deny = 0,
 
-        /// <summary>
-        /// Allow the witness according to the rule.
-        /// </summary>
-        Allow = 1
-    }
+    /// <summary>
+    /// Allow the witness according to the rule.
+    /// </summary>
+    Allow = 1
 }

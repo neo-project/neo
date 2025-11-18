@@ -9,59 +9,57 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using Neo.Extensions.Factories;
+using Neo.Factories;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
 using System.Runtime.CompilerServices;
 
-namespace Neo.UnitTests.SmartContract.Manifest
+namespace Neo.UnitTests.SmartContract.Manifest;
+
+[TestClass]
+public class UT_ContractGroup
 {
-    [TestClass]
-    public class UT_ContractGroup
+    [TestMethod]
+    public void TestClone()
     {
-        [TestMethod]
-        public void TestClone()
+        byte[] privateKey = RandomNumberFactory.NextBytes(32);
+        KeyPair keyPair = new(privateKey);
+        ContractGroup contractGroup = new()
         {
-            byte[] privateKey = RandomNumberFactory.NextBytes(32);
-            KeyPair keyPair = new(privateKey);
-            ContractGroup contractGroup = new()
-            {
-                PubKey = keyPair.PublicKey,
-                Signature = new byte[20]
-            };
+            PubKey = keyPair.PublicKey,
+            Signature = new byte[20]
+        };
 
-            ContractGroup clone = (ContractGroup)RuntimeHelpers.GetUninitializedObject(typeof(ContractGroup));
-            ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
-            Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
-        }
+        ContractGroup clone = (ContractGroup)RuntimeHelpers.GetUninitializedObject(typeof(ContractGroup));
+        ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
+        Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
+    }
 
-        [TestMethod]
-        public void TestIsValid()
+    [TestMethod]
+    public void TestIsValid()
+    {
+        var privateKey = RandomNumberFactory.NextBytes(32);
+        KeyPair keyPair = new(privateKey);
+        ContractGroup contractGroup = new()
         {
-            var privateKey = RandomNumberFactory.NextBytes(32);
-            KeyPair keyPair = new(privateKey);
-            ContractGroup contractGroup = new()
-            {
-                PubKey = keyPair.PublicKey,
-                Signature = new byte[20]
-            };
-            Assert.IsFalse(contractGroup.IsValid(UInt160.Zero));
+            PubKey = keyPair.PublicKey,
+            Signature = new byte[20]
+        };
+        Assert.IsFalse(contractGroup.IsValid(UInt160.Zero));
 
 
-            var message = new byte[] {  0x01,0x01,0x01,0x01,0x01,
-                                           0x01,0x01,0x01,0x01,0x01,
-                                           0x01,0x01,0x01,0x01,0x01,
-                                           0x01,0x01,0x01,0x01,0x01 };
-            var signature = Crypto.Sign(message, keyPair.PrivateKey);
-            contractGroup = new ContractGroup
-            {
-                PubKey = keyPair.PublicKey,
-                Signature = signature
-            };
-            Assert.IsTrue(contractGroup.IsValid(new UInt160(message)));
-        }
+        var message = new byte[] {  0x01,0x01,0x01,0x01,0x01,
+                                       0x01,0x01,0x01,0x01,0x01,
+                                       0x01,0x01,0x01,0x01,0x01,
+                                       0x01,0x01,0x01,0x01,0x01 };
+        var signature = Crypto.Sign(message, keyPair.PrivateKey);
+        contractGroup = new ContractGroup
+        {
+            PubKey = keyPair.PublicKey,
+            Signature = signature
+        };
+        Assert.IsTrue(contractGroup.IsValid(new UInt160(message)));
     }
 }

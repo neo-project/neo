@@ -9,89 +9,85 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
-namespace Neo.Persistence.Providers
+namespace Neo.Persistence.Providers;
+
+/// <summary>
+/// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
+/// </summary>
+internal class MemorySnapshot : IStoreSnapshot
 {
-    /// <summary>
-    /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
-    /// </summary>
-    internal class MemorySnapshot : IStoreSnapshot
+    private readonly ConcurrentDictionary<byte[], byte[]> _innerData;
+    private readonly ImmutableDictionary<byte[], byte[]> _immutableData;
+    private readonly ConcurrentDictionary<byte[], byte[]?> _writeBatch;
+
+    public IStore Store { get; }
+
+    internal int WriteBatchLength => _writeBatch.Count;
+
+    internal MemorySnapshot(MemoryStore store, ConcurrentDictionary<byte[], byte[]> innerData)
     {
-        private readonly ConcurrentDictionary<byte[], byte[]> _innerData;
-        private readonly ImmutableDictionary<byte[], byte[]> _immutableData;
-        private readonly ConcurrentDictionary<byte[], byte[]?> _writeBatch;
+        Store = store;
+        _innerData = innerData;
+        _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
+        _writeBatch = new ConcurrentDictionary<byte[], byte[]?>(ByteArrayEqualityComparer.Default);
+    }
 
-        public IStore Store { get; }
+    public void Commit()
+    {
+        foreach (var pair in _writeBatch)
+            if (pair.Value is null)
+                _innerData.TryRemove(pair.Key, out _);
+            else
+                _innerData[pair.Key] = pair.Value;
 
-        internal int WriteBatchLength => _writeBatch.Count;
+        _writeBatch.Clear();
+    }
 
-        internal MemorySnapshot(MemoryStore store, ConcurrentDictionary<byte[], byte[]> innerData)
-        {
-            Store = store;
-            _innerData = innerData;
-            _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
-            _writeBatch = new ConcurrentDictionary<byte[], byte[]?>(ByteArrayEqualityComparer.Default);
-        }
+    public void Delete(byte[] key)
+    {
+        _writeBatch[key] = null;
+    }
 
-        public void Commit()
-        {
-            foreach (var pair in _writeBatch)
-                if (pair.Value is null)
-                    _innerData.TryRemove(pair.Key, out _);
-                else
-                    _innerData[pair.Key] = pair.Value;
+    public void Dispose() { }
 
-            _writeBatch.Clear();
-        }
+    public void Put(byte[] key, byte[] value)
+    {
+        _writeBatch[key[..]] = value[..];
+    }
 
-        public void Delete(byte[] key)
-        {
-            _writeBatch[key] = null;
-        }
+    /// <inheritdoc/>
+    public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
+    {
+        keyOrPrefix ??= [];
+        if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
 
-        public void Dispose() { }
+        var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+        IEnumerable<KeyValuePair<byte[], byte[]>> records = _immutableData;
+        if (keyOrPrefix.Length > 0)
+            records = records
+                .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
+        records = records.OrderBy(p => p.Key, comparer);
+        foreach (var pair in records)
+            yield return (pair.Key[..], pair.Value[..]);
+    }
 
-        public void Put(byte[] key, byte[] value)
-        {
-            _writeBatch[key[..]] = value[..];
-        }
+    public byte[]? TryGet(byte[] key)
+    {
+        _immutableData.TryGetValue(key, out var value);
+        return value?[..];
+    }
 
-        /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
-        {
-            keyOrPrefix ??= [];
-            if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
+    public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
+    {
+        return _immutableData.TryGetValue(key, out value);
+    }
 
-            var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
-            IEnumerable<KeyValuePair<byte[], byte[]>> records = _immutableData;
-            if (keyOrPrefix.Length > 0)
-                records = records
-                    .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
-            records = records.OrderBy(p => p.Key, comparer);
-            foreach (var pair in records)
-                yield return (pair.Key[..], pair.Value[..]);
-        }
-
-        public byte[]? TryGet(byte[] key)
-        {
-            _immutableData.TryGetValue(key, out var value);
-            return value?[..];
-        }
-
-        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
-        {
-            return _immutableData.TryGetValue(key, out value);
-        }
-
-        public bool Contains(byte[] key)
-        {
-            return _immutableData.ContainsKey(key);
-        }
+    public bool Contains(byte[] key)
+    {
+        return _immutableData.ContainsKey(key);
     }
 }

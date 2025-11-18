@@ -11,116 +11,114 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads.Conditions;
-using System;
 
-namespace Neo.Builders
+namespace Neo.Builders;
+
+public sealed class WitnessConditionBuilder
 {
-    public sealed class WitnessConditionBuilder
+    WitnessCondition? _condition;
+
+    private WitnessConditionBuilder() { }
+
+    public static WitnessConditionBuilder Create()
     {
-        WitnessCondition? _condition;
+        return new WitnessConditionBuilder();
+    }
 
-        private WitnessConditionBuilder() { }
+    public WitnessConditionBuilder And(Action<AndConditionBuilder> config)
+    {
+        var acb = AndConditionBuilder.CreateEmpty();
+        config(acb);
 
-        public static WitnessConditionBuilder Create()
+        _condition = acb.Build();
+
+        return this;
+    }
+
+    public WitnessConditionBuilder Boolean(bool expression)
+    {
+        var condition = new BooleanCondition() { Expression = expression };
+
+        _condition = condition;
+
+        return this;
+    }
+
+    public WitnessConditionBuilder CalledByContract(UInt160 hash)
+    {
+        var condition = new CalledByContractCondition() { Hash = hash };
+
+        _condition = condition;
+
+        return this;
+    }
+
+    public WitnessConditionBuilder CalledByEntry()
+    {
+        var condition = new CalledByEntryCondition();
+
+        _condition = condition;
+
+        return this;
+    }
+
+    public WitnessConditionBuilder CalledByGroup(ECPoint publicKey)
+    {
+        var condition = new CalledByGroupCondition() { Group = publicKey };
+
+        _condition = condition;
+
+        return this;
+    }
+
+    public WitnessConditionBuilder Group(ECPoint publicKey)
+    {
+        var condition = new GroupCondition() { Group = publicKey };
+
+        _condition = condition;
+
+        return this;
+    }
+
+    public WitnessConditionBuilder Not(Action<WitnessConditionBuilder> config)
+    {
+        var wcb = new WitnessConditionBuilder();
+        config(wcb);
+
+        var condition = new NotCondition()
         {
-            return new WitnessConditionBuilder();
-        }
+            Expression = wcb.Build()
+        };
 
-        public WitnessConditionBuilder And(Action<AndConditionBuilder> config)
-        {
-            var acb = AndConditionBuilder.CreateEmpty();
-            config(acb);
+        _condition = condition;
 
-            _condition = acb.Build();
+        return this;
+    }
 
-            return this;
-        }
+    public WitnessConditionBuilder Or(Action<OrConditionBuilder> config)
+    {
+        var ocb = OrConditionBuilder.CreateEmpty();
+        config(ocb);
 
-        public WitnessConditionBuilder Boolean(bool expression)
-        {
-            var condition = new BooleanCondition() { Expression = expression };
+        _condition = ocb.Build();
 
-            _condition = condition;
+        return this;
+    }
 
-            return this;
-        }
+    public WitnessConditionBuilder ScriptHash(UInt160 scriptHash)
+    {
+        var condition = new ScriptHashCondition() { Hash = scriptHash };
 
-        public WitnessConditionBuilder CalledByContract(UInt160 hash)
-        {
-            var condition = new CalledByContractCondition() { Hash = hash };
+        _condition = condition;
 
-            _condition = condition;
+        return this;
+    }
 
-            return this;
-        }
+    public WitnessCondition Build()
+    {
+        if (_condition is null)
+            return new BooleanCondition() { Expression = true };
 
-        public WitnessConditionBuilder CalledByEntry()
-        {
-            var condition = new CalledByEntryCondition();
-
-            _condition = condition;
-
-            return this;
-        }
-
-        public WitnessConditionBuilder CalledByGroup(ECPoint publicKey)
-        {
-            var condition = new CalledByGroupCondition() { Group = publicKey };
-
-            _condition = condition;
-
-            return this;
-        }
-
-        public WitnessConditionBuilder Group(ECPoint publicKey)
-        {
-            var condition = new GroupCondition() { Group = publicKey };
-
-            _condition = condition;
-
-            return this;
-        }
-
-        public WitnessConditionBuilder Not(Action<WitnessConditionBuilder> config)
-        {
-            var wcb = new WitnessConditionBuilder();
-            config(wcb);
-
-            var condition = new NotCondition()
-            {
-                Expression = wcb.Build()
-            };
-
-            _condition = condition;
-
-            return this;
-        }
-
-        public WitnessConditionBuilder Or(Action<OrConditionBuilder> config)
-        {
-            var ocb = OrConditionBuilder.CreateEmpty();
-            config(ocb);
-
-            _condition = ocb.Build();
-
-            return this;
-        }
-
-        public WitnessConditionBuilder ScriptHash(UInt160 scriptHash)
-        {
-            var condition = new ScriptHashCondition() { Hash = scriptHash };
-
-            _condition = condition;
-
-            return this;
-        }
-
-        public WitnessCondition Build()
-        {
-            if (_condition is null)
-                return new BooleanCondition() { Expression = true };
-
-            return _condition;
-        }
+        return _condition;
     }
 }

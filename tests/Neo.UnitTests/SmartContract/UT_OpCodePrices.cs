@@ -9,34 +9,31 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.VM;
-using System;
 
-namespace Neo.UnitTests.SmartContract
+namespace Neo.UnitTests.SmartContract;
+
+[TestClass]
+public class UT_OpCodePrices
 {
-    [TestClass]
-    public class UT_OpCodePrices
+    [TestMethod]
+    public void AllOpcodePriceAreSet()
     {
-        [TestMethod]
-        public void AllOpcodePriceAreSet()
+        foreach (OpCode opcode in Enum.GetValues<OpCode>())
         {
-            foreach (OpCode opcode in Enum.GetValues(typeof(OpCode)))
-            {
 #pragma warning disable CS0618 // Type or member is obsolete
-                Assert.IsTrue(ApplicationEngine.OpCodePrices.ContainsKey(opcode), opcode.ToString(), $"{opcode} without price");
-                Assert.AreEqual(ApplicationEngine.OpCodePrices[opcode], ApplicationEngine.OpCodePriceTable[(byte)opcode], $"{opcode} price mismatch");
+            Assert.IsTrue(ApplicationEngine.OpCodePrices.ContainsKey(opcode), string.Format(opcode.ToString(), $"{opcode} without price"));
+            Assert.AreEqual(ApplicationEngine.OpCodePrices[opcode], ApplicationEngine.OpCodePriceTable[(byte)opcode], $"{opcode} price mismatch");
 #pragma warning restore CS0618 // Type or member is obsolete
 
-                if (opcode == OpCode.RET ||
-                    opcode == OpCode.SYSCALL ||
-                    opcode == OpCode.ABORT ||
-                    opcode == OpCode.ABORTMSG)
-                    continue;
+            if (opcode == OpCode.RET ||
+                opcode == OpCode.SYSCALL ||
+                opcode == OpCode.ABORT ||
+                opcode == OpCode.ABORTMSG)
+                continue;
 
-                Assert.AreNotEqual(0, ApplicationEngine.OpCodePriceTable[(byte)opcode], $"{opcode} without price");
-            }
+            Assert.AreNotEqual(0, ApplicationEngine.OpCodePriceTable[(byte)opcode], $"{opcode} without price");
         }
     }
 }

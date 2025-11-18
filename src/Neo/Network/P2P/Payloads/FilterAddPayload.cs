@@ -11,32 +11,30 @@
 
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.IO;
-using System;
-using System.IO;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads;
+
+/// <summary>
+/// This message is sent to update the items for the <see cref="BloomFilter"/>.
+/// </summary>
+public class FilterAddPayload : ISerializable
 {
     /// <summary>
-    /// This message is sent to update the items for the <see cref="BloomFilter"/>.
+    /// The items to be added.
     /// </summary>
-    public class FilterAddPayload : ISerializable
+    public ReadOnlyMemory<byte> Data;
+
+    public int Size => Data.GetVarSize();
+
+    void ISerializable.Deserialize(ref MemoryReader reader)
     {
-        /// <summary>
-        /// The items to be added.
-        /// </summary>
-        public ReadOnlyMemory<byte> Data;
+        Data = reader.ReadVarMemory(520);
+    }
 
-        public int Size => Data.GetVarSize();
-
-        void ISerializable.Deserialize(ref MemoryReader reader)
-        {
-            Data = reader.ReadVarMemory(520);
-        }
-
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            writer.WriteVarBytes(Data.Span);
-        }
+    void ISerializable.Serialize(BinaryWriter writer)
+    {
+        writer.WriteVarBytes(Data.Span);
     }
 }
