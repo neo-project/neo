@@ -595,9 +595,9 @@ public partial class ApplicationEngine : ExecutionEngine
     /// <returns>The converted <see cref="object"/>.</returns>
     protected internal object? Convert(StackItem item, InteropParameterDescriptor descriptor)
     {
-        descriptor.Validate(item);
         if (item.IsNull && !descriptor.IsNullable && descriptor.Type != typeof(StackItem))
             throw new InvalidOperationException($"The argument `{descriptor.Name}` can't be null.");
+        descriptor.Validate(item);
         if (descriptor.IsArray)
         {
             Array av;
