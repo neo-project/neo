@@ -9,30 +9,27 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+namespace Neo;
 
-namespace Neo.Extensions
+public static class DateTimeExtensions
 {
-    public static class DateTimeExtensions
+    /// <summary>
+    /// Converts a <see cref="DateTime"/> to timestamp.
+    /// </summary>
+    /// <param name="time">The <see cref="DateTime"/> to convert.</param>
+    /// <returns>The converted timestamp.</returns>
+    public static uint ToTimestamp(this DateTime time)
     {
-        /// <summary>
-        /// Converts a <see cref="DateTime"/> to timestamp.
-        /// </summary>
-        /// <param name="time">The <see cref="DateTime"/> to convert.</param>
-        /// <returns>The converted timestamp.</returns>
-        public static uint ToTimestamp(this DateTime time)
-        {
-            return (uint)new DateTimeOffset(time.ToUniversalTime()).ToUnixTimeSeconds();
-        }
+        return (uint)new DateTimeOffset(time.ToUniversalTime()).ToUnixTimeSeconds();
+    }
 
-        /// <summary>
-        /// Converts a <see cref="DateTime"/> to timestamp in milliseconds.
-        /// </summary>
-        /// <param name="time">The <see cref="DateTime"/> to convert.</param>
-        /// <returns>The converted timestamp.</returns>
-        public static ulong ToTimestampMS(this DateTime time)
-        {
-            return (ulong)new DateTimeOffset(time.ToUniversalTime()).ToUnixTimeMilliseconds();
-        }
+    /// <summary>
+    /// Converts a <see cref="DateTime"/> to timestamp in milliseconds.
+    /// </summary>
+    /// <param name="time">The <see cref="DateTime"/> to convert.</param>
+    /// <returns>The converted timestamp.</returns>
+    public static ulong ToTimestampMS(this DateTime time)
+    {
+        return (ulong)new DateTimeOffset(time.ToUniversalTime()).ToUnixTimeMilliseconds();
     }
 }

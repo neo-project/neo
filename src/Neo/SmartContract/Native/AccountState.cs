@@ -13,26 +13,25 @@ using Neo.VM;
 using Neo.VM.Types;
 using System.Numerics;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract.Native;
+
+/// <summary>
+/// The base class of account state for all native tokens.
+/// </summary>
+public class AccountState : IInteroperable
 {
     /// <summary>
-    /// The base class of account state for all native tokens.
+    /// The balance of the account.
     /// </summary>
-    public class AccountState : IInteroperable
+    public BigInteger Balance;
+
+    public virtual void FromStackItem(StackItem stackItem)
     {
-        /// <summary>
-        /// The balance of the account.
-        /// </summary>
-        public BigInteger Balance;
+        Balance = ((Struct)stackItem)[0].GetInteger();
+    }
 
-        public virtual void FromStackItem(StackItem stackItem)
-        {
-            Balance = ((Struct)stackItem)[0].GetInteger();
-        }
-
-        public virtual StackItem ToStackItem(IReferenceCounter? referenceCounter)
-        {
-            return new Struct(referenceCounter) { Balance };
-        }
+    public virtual StackItem ToStackItem(IReferenceCounter? referenceCounter)
+    {
+        return new Struct(referenceCounter) { Balance };
     }
 }

@@ -9,333 +9,332 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Json
+namespace Neo.Json;
+
+sealed class JPathToken
 {
-    sealed class JPathToken
+    public JPathTokenType Type { get; private set; }
+    public string? Content { get; private set; }
+
+    public static IEnumerable<JPathToken> Parse(string expr)
     {
-        public JPathTokenType Type { get; private set; }
-        public string? Content { get; private set; }
-
-        public static IEnumerable<JPathToken> Parse(string expr)
+        for (var i = 0; i < expr.Length; i++)
         {
-            for (var i = 0; i < expr.Length; i++)
+            JPathToken token = new();
+            switch (expr[i])
             {
-                JPathToken token = new();
-                switch (expr[i])
-                {
-                    case '$':
-                        token.Type = JPathTokenType.Root;
-                        break;
-                    case '.':
-                        token.Type = JPathTokenType.Dot;
-                        break;
-                    case '[':
-                        token.Type = JPathTokenType.LeftBracket;
-                        break;
-                    case ']':
-                        token.Type = JPathTokenType.RightBracket;
-                        break;
-                    case '*':
-                        token.Type = JPathTokenType.Asterisk;
-                        break;
-                    case ',':
-                        token.Type = JPathTokenType.Comma;
-                        break;
-                    case ':':
-                        token.Type = JPathTokenType.Colon;
-                        break;
-                    case '\'':
-                        token.Type = JPathTokenType.String;
-                        token.Content = ParseString(expr, i);
-                        i += token.Content.Length - 1;
-                        break;
-                    case '_':
-                    case >= 'a' and <= 'z':
-                    case >= 'A' and <= 'Z':
-                        token.Type = JPathTokenType.Identifier;
-                        token.Content = ParseIdentifier(expr, i);
-                        i += token.Content.Length - 1;
-                        break;
-                    case '-':
-                    case >= '0' and <= '9':
-                        token.Type = JPathTokenType.Number;
-                        token.Content = ParseNumber(expr, i);
-                        i += token.Content.Length - 1;
-                        break;
-                    default:
-                        throw new FormatException($"Invalid character '{expr[i]}' at position {i}");
-                }
-                yield return token;
+                case '$':
+                    token.Type = JPathTokenType.Root;
+                    break;
+                case '.':
+                    token.Type = JPathTokenType.Dot;
+                    break;
+                case '[':
+                    token.Type = JPathTokenType.LeftBracket;
+                    break;
+                case ']':
+                    token.Type = JPathTokenType.RightBracket;
+                    break;
+                case '*':
+                    token.Type = JPathTokenType.Asterisk;
+                    break;
+                case ',':
+                    token.Type = JPathTokenType.Comma;
+                    break;
+                case ':':
+                    token.Type = JPathTokenType.Colon;
+                    break;
+                case '\'':
+                    token.Type = JPathTokenType.String;
+                    token.Content = ParseString(expr, i);
+                    i += token.Content.Length - 1;
+                    break;
+                case '_':
+                case >= 'a' and <= 'z':
+                case >= 'A' and <= 'Z':
+                    token.Type = JPathTokenType.Identifier;
+                    token.Content = ParseIdentifier(expr, i);
+                    i += token.Content.Length - 1;
+                    break;
+                case '-':
+                case >= '0' and <= '9':
+                    token.Type = JPathTokenType.Number;
+                    token.Content = ParseNumber(expr, i);
+                    i += token.Content.Length - 1;
+                    break;
+                default:
+                    throw new FormatException($"Invalid character '{expr[i]}' at position {i}");
             }
+            yield return token;
         }
+    }
 
-        private static string ParseString(string expr, int start)
+    private static string ParseString(string expr, int start)
+    {
+        var end = start + 1;
+        while (end < expr.Length)
         {
-            var end = start + 1;
-            while (end < expr.Length)
-            {
-                var c = expr[end];
+            var c = expr[end];
+            end++;
+            if (c == '\'') return expr[start..end];
+        }
+        throw new FormatException("Unterminated string");
+    }
+
+    public static string ParseIdentifier(string expr, int start)
+    {
+        var end = start + 1;
+        while (end < expr.Length)
+        {
+            var c = expr[end];
+            if (c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9')
                 end++;
-                if (c == '\'') return expr[start..end];
-            }
-            throw new FormatException("Unterminated string");
+            else
+                break;
         }
+        return expr[start..end];
+    }
 
-        public static string ParseIdentifier(string expr, int start)
+    private static string ParseNumber(string expr, int start)
+    {
+        var end = start + 1;
+        while (end < expr.Length)
         {
-            var end = start + 1;
-            while (end < expr.Length)
+            var c = expr[end];
+            if (c >= '0' && c <= '9')
+                end++;
+            else
+                break;
+        }
+        return expr[start..end];
+    }
+
+    private static JPathToken DequeueToken(Queue<JPathToken> tokens)
+    {
+        if (!tokens.TryDequeue(out var token))
+            throw new FormatException("Unexpected end of expression");
+        return token;
+    }
+
+    public static void ProcessJsonPath(ref JToken?[] objects, Queue<JPathToken> tokens)
+    {
+        var maxDepth = 6;
+        var maxObjects = 1024;
+        while (tokens.Count > 0)
+        {
+            var token = DequeueToken(tokens);
+            switch (token.Type)
             {
-                var c = expr[end];
-                if (c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9')
-                    end++;
-                else
+                case JPathTokenType.Dot:
+                    ProcessDot(ref objects, ref maxDepth, maxObjects, tokens);
                     break;
-            }
-            return expr[start..end];
-        }
-
-        private static string ParseNumber(string expr, int start)
-        {
-            var end = start + 1;
-            while (end < expr.Length)
-            {
-                var c = expr[end];
-                if (c >= '0' && c <= '9')
-                    end++;
-                else
+                case JPathTokenType.LeftBracket:
+                    ProcessBracket(ref objects, ref maxDepth, maxObjects, tokens);
                     break;
+                default:
+                    throw new FormatException($"Unexpected token {token.Type}");
             }
-            return expr[start..end];
         }
+    }
 
-        private static JPathToken DequeueToken(Queue<JPathToken> tokens)
+    private static void ProcessDot(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
+    {
+        var token = DequeueToken(tokens);
+        switch (token.Type)
         {
-            if (!tokens.TryDequeue(out var token))
-                throw new FormatException("Unexpected end of expression");
-            return token;
+            case JPathTokenType.Asterisk:
+                Descent(ref objects, ref maxDepth, maxObjects);
+                break;
+            case JPathTokenType.Dot:
+                ProcessRecursiveDescent(ref objects, ref maxDepth, maxObjects, tokens);
+                break;
+            case JPathTokenType.Identifier:
+                Descent(ref objects, ref maxDepth, maxObjects, token.Content!);
+                break;
+            default:
+                throw new FormatException($"Unexpected token {token.Type}");
         }
+    }
 
-        public static void ProcessJsonPath(ref JToken?[] objects, Queue<JPathToken> tokens)
+    private static void ProcessBracket(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
+    {
+        var token = DequeueToken(tokens);
+        switch (token.Type)
         {
-            var maxDepth = 6;
-            var maxObjects = 1024;
-            while (tokens.Count > 0)
-            {
-                var token = DequeueToken(tokens);
-                switch (token.Type)
+            case JPathTokenType.Asterisk:
+                var rightBracket = DequeueToken(tokens);
+                if (rightBracket.Type != JPathTokenType.RightBracket)
+                    throw new FormatException($"Unexpected token {rightBracket.Type}");
+                Descent(ref objects, ref maxDepth, maxObjects);
+                break;
+            case JPathTokenType.Colon:
+                ProcessSlice(ref objects, ref maxDepth, maxObjects, tokens, 0);
+                break;
+            case JPathTokenType.Number:
+                var next = DequeueToken(tokens);
+                switch (next.Type)
                 {
-                    case JPathTokenType.Dot:
-                        ProcessDot(ref objects, ref maxDepth, maxObjects, tokens);
+                    case JPathTokenType.Colon:
+                        ProcessSlice(ref objects, ref maxDepth, maxObjects, tokens, int.Parse(token.Content!));
                         break;
-                    case JPathTokenType.LeftBracket:
-                        ProcessBracket(ref objects, ref maxDepth, maxObjects, tokens);
+                    case JPathTokenType.Comma:
+                        ProcessUnion(ref objects, ref maxDepth, maxObjects, tokens, token);
+                        break;
+                    case JPathTokenType.RightBracket:
+                        Descent(ref objects, ref maxDepth, maxObjects, int.Parse(token.Content!));
                         break;
                     default:
-                        throw new FormatException($"Unexpected token {token.Type}");
-                }
-            }
-        }
-
-        private static void ProcessDot(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
-        {
-            var token = DequeueToken(tokens);
-            switch (token.Type)
-            {
-                case JPathTokenType.Asterisk:
-                    Descent(ref objects, ref maxDepth, maxObjects);
-                    break;
-                case JPathTokenType.Dot:
-                    ProcessRecursiveDescent(ref objects, ref maxDepth, maxObjects, tokens);
-                    break;
-                case JPathTokenType.Identifier:
-                    Descent(ref objects, ref maxDepth, maxObjects, token.Content!);
-                    break;
-                default:
-                    throw new FormatException($"Unexpected token {token.Type}");
-            }
-        }
-
-        private static void ProcessBracket(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
-        {
-            var token = DequeueToken(tokens);
-            switch (token.Type)
-            {
-                case JPathTokenType.Asterisk:
-                    var rightBracket = DequeueToken(tokens);
-                    if (rightBracket.Type != JPathTokenType.RightBracket)
-                        throw new FormatException($"Unexpected token {rightBracket.Type}");
-                    Descent(ref objects, ref maxDepth, maxObjects);
-                    break;
-                case JPathTokenType.Colon:
-                    ProcessSlice(ref objects, ref maxDepth, maxObjects, tokens, 0);
-                    break;
-                case JPathTokenType.Number:
-                    var next = DequeueToken(tokens);
-                    switch (next.Type)
-                    {
-                        case JPathTokenType.Colon:
-                            ProcessSlice(ref objects, ref maxDepth, maxObjects, tokens, int.Parse(token.Content!));
-                            break;
-                        case JPathTokenType.Comma:
-                            ProcessUnion(ref objects, ref maxDepth, maxObjects, tokens, token);
-                            break;
-                        case JPathTokenType.RightBracket:
-                            Descent(ref objects, ref maxDepth, maxObjects, int.Parse(token.Content!));
-                            break;
-                        default:
-                            throw new FormatException($"Unexpected token {next.Type}");
-                    }
-                    break;
-                case JPathTokenType.String:
-                    next = DequeueToken(tokens);
-                    switch (next.Type)
-                    {
-                        case JPathTokenType.Comma:
-                            ProcessUnion(ref objects, ref maxDepth, maxObjects, tokens, token);
-                            break;
-                        case JPathTokenType.RightBracket:
-                            Descent(ref objects, ref maxDepth, maxObjects, JToken.Parse($"\"{token.Content!.Trim('\'')}\"")!.GetString());
-                            break;
-                        default:
-                            throw new FormatException($"Unexpected token {next.Type}");
-                    }
-                    break;
-                default:
-                    throw new FormatException($"Unexpected token {token.Type}");
-            }
-        }
-
-        private static void ProcessRecursiveDescent(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
-        {
-            var results = new List<JToken?>();
-            var token = DequeueToken(tokens);
-            if (token.Type != JPathTokenType.Identifier)
-                throw new FormatException($"Unexpected token {token.Type}");
-
-            while (objects.Length > 0)
-            {
-                results.AddRange(objects.OfType<JObject>().SelectMany(p => p.Properties).Where(p => p.Key == token.Content).Select(p => p.Value));
-                Descent(ref objects, ref maxDepth, maxObjects);
-                if (results.Count > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
-            }
-            objects = [.. results];
-        }
-
-        private static void ProcessSlice(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens, int start)
-        {
-            var token = DequeueToken(tokens);
-            switch (token.Type)
-            {
-                case JPathTokenType.Number:
-                    var next = DequeueToken(tokens);
-                    if (next.Type != JPathTokenType.RightBracket)
                         throw new FormatException($"Unexpected token {next.Type}");
-                    DescentRange(ref objects, ref maxDepth, maxObjects, start, int.Parse(token.Content!));
-                    break;
-                case JPathTokenType.RightBracket:
-                    DescentRange(ref objects, ref maxDepth, maxObjects, start, 0);
-                    break;
-                default:
-                    throw new FormatException($"Unexpected token {token.Type}");
-            }
-        }
-
-        private static void ProcessUnion(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens, JPathToken first)
-        {
-            var items = new List<JPathToken>([first]);
-            while (true)
-            {
-                var token = DequeueToken(tokens);
-                if (token.Type != first.Type)
-                    throw new FormatException($"Unexpected token {token.Type} != {first.Type}");
-                items.Add(token);
-                token = DequeueToken(tokens);
-                if (token.Type == JPathTokenType.RightBracket)
-                    break;
-                if (token.Type != JPathTokenType.Comma)
-                    throw new FormatException($"Unexpected token {token.Type} != {JPathTokenType.Comma}");
-            }
-
-            switch (first.Type)
-            {
-                case JPathTokenType.Number:
-                    Descent(ref objects, ref maxDepth, maxObjects, items.Select(p => int.Parse(p.Content!)).ToArray());
-                    break;
-                case JPathTokenType.String:
-                    Descent(ref objects, ref maxDepth, maxObjects, items.Select(p => JToken.Parse($"\"{p.Content!.Trim('\'')}\"")!.GetString()).ToArray());
-                    break;
-                default:
-                    throw new FormatException($"Unexpected token {first.Type}");
-            }
-        }
-
-        private static void Descent(ref JToken?[] objects, ref int maxDepth, int maxObjects)
-        {
-            if (maxDepth <= 0)
-                throw new InvalidOperationException("Exceeded max depth");
-            --maxDepth;
-
-            objects = [.. objects.OfType<JContainer>().SelectMany(p => p.Children)];
-            if (objects.Length > maxObjects)
-                throw new InvalidOperationException(nameof(maxObjects));
-        }
-
-        private static void Descent(ref JToken?[] objects, ref int maxDepth, int maxObjects, params string[] names)
-        {
-            static IEnumerable<JToken?> GetProperties(JObject obj, string[] names)
-            {
-                foreach (var name in names)
-                    if (obj.ContainsProperty(name))
-                        yield return obj[name];
-            }
-
-            if (maxDepth <= 0)
-                throw new InvalidOperationException("Exceeded max depth");
-            --maxDepth;
-
-            objects = [.. objects.OfType<JObject>().SelectMany(p => GetProperties(p, names))];
-            if (objects.Length > maxObjects)
-                throw new InvalidOperationException(nameof(maxObjects));
-        }
-
-        private static void Descent(ref JToken?[] objects, ref int maxDepth, int maxObjects, params int[] indexes)
-        {
-            static IEnumerable<JToken?> GetElements(JArray array, int[] indexes)
-            {
-                foreach (var index in indexes)
-                {
-                    var i = index >= 0 ? index : index + array.Count;
-                    if (i >= 0 && i < array.Count)
-                        yield return array[i];
                 }
-            }
-
-            if (maxDepth <= 0)
-                throw new InvalidOperationException("Exceeded max depth");
-            --maxDepth;
-
-            objects = [.. objects.OfType<JArray>().SelectMany(p => GetElements(p, indexes))];
-            if (objects.Length > maxObjects)
-                throw new InvalidOperationException(nameof(maxObjects));
+                break;
+            case JPathTokenType.String:
+                next = DequeueToken(tokens);
+                switch (next.Type)
+                {
+                    case JPathTokenType.Comma:
+                        ProcessUnion(ref objects, ref maxDepth, maxObjects, tokens, token);
+                        break;
+                    case JPathTokenType.RightBracket:
+                        Descent(ref objects, ref maxDepth, maxObjects, JToken.Parse($"\"{token.Content!.Trim('\'')}\"")!.GetString());
+                        break;
+                    default:
+                        throw new FormatException($"Unexpected token {next.Type}");
+                }
+                break;
+            default:
+                throw new FormatException($"Unexpected token {token.Type}");
         }
+    }
 
-        private static void DescentRange(ref JToken?[] objects, ref int maxDepth, int maxObjects, int start, int end)
+    private static void ProcessRecursiveDescent(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
+    {
+        var results = new List<JToken?>();
+        var token = DequeueToken(tokens);
+        if (token.Type != JPathTokenType.Identifier)
+            throw new FormatException($"Unexpected token {token.Type}");
+
+        while (objects.Length > 0)
         {
-            if (maxDepth <= 0)
-                throw new InvalidOperationException("Exceeded max depth");
-            --maxDepth;
-
-            objects = [.. objects.OfType<JArray>().SelectMany(p =>
-            {
-                var iStart = start >= 0 ? start : start + p.Count;
-                if (iStart < 0) iStart = 0;
-                var iEnd = end > 0 ? end : end + p.Count;
-                var count = iEnd - iStart;
-                return p.Skip(iStart).Take(count);
-            })];
-
-            if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
+            results.AddRange(objects.OfType<JObject>().SelectMany(p => p.Properties).Where(p => p.Key == token.Content).Select(p => p.Value));
+            Descent(ref objects, ref maxDepth, maxObjects);
+            if (results.Count > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
         }
+        objects = [.. results];
+    }
+
+    private static void ProcessSlice(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens, int start)
+    {
+        var token = DequeueToken(tokens);
+        switch (token.Type)
+        {
+            case JPathTokenType.Number:
+                var next = DequeueToken(tokens);
+                if (next.Type != JPathTokenType.RightBracket)
+                    throw new FormatException($"Unexpected token {next.Type}");
+                DescentRange(ref objects, ref maxDepth, maxObjects, start, int.Parse(token.Content!));
+                break;
+            case JPathTokenType.RightBracket:
+                DescentRange(ref objects, ref maxDepth, maxObjects, start, 0);
+                break;
+            default:
+                throw new FormatException($"Unexpected token {token.Type}");
+        }
+    }
+
+    private static void ProcessUnion(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens, JPathToken first)
+    {
+        var items = new List<JPathToken>([first]);
+        while (true)
+        {
+            var token = DequeueToken(tokens);
+            if (token.Type != first.Type)
+                throw new FormatException($"Unexpected token {token.Type} != {first.Type}");
+            items.Add(token);
+            token = DequeueToken(tokens);
+            if (token.Type == JPathTokenType.RightBracket)
+                break;
+            if (token.Type != JPathTokenType.Comma)
+                throw new FormatException($"Unexpected token {token.Type} != {JPathTokenType.Comma}");
+        }
+
+        switch (first.Type)
+        {
+            case JPathTokenType.Number:
+                Descent(ref objects, ref maxDepth, maxObjects, items.Select(p => int.Parse(p.Content!)).ToArray());
+                break;
+            case JPathTokenType.String:
+                Descent(ref objects, ref maxDepth, maxObjects, items.Select(p => JToken.Parse($"\"{p.Content!.Trim('\'')}\"")!.GetString()).ToArray());
+                break;
+            default:
+                throw new FormatException($"Unexpected token {first.Type}");
+        }
+    }
+
+    private static void Descent(ref JToken?[] objects, ref int maxDepth, int maxObjects)
+    {
+        if (maxDepth <= 0)
+            throw new InvalidOperationException("Exceeded max depth");
+        --maxDepth;
+
+        objects = [.. objects.OfType<JContainer>().SelectMany(p => p.Children)];
+        if (objects.Length > maxObjects)
+            throw new InvalidOperationException(nameof(maxObjects));
+    }
+
+    private static void Descent(ref JToken?[] objects, ref int maxDepth, int maxObjects, params string[] names)
+    {
+        static IEnumerable<JToken?> GetProperties(JObject obj, string[] names)
+        {
+            foreach (var name in names)
+                if (obj.ContainsProperty(name))
+                    yield return obj[name];
+        }
+
+        if (maxDepth <= 0)
+            throw new InvalidOperationException("Exceeded max depth");
+        --maxDepth;
+
+        objects = [.. objects.OfType<JObject>().SelectMany(p => GetProperties(p, names))];
+        if (objects.Length > maxObjects)
+            throw new InvalidOperationException(nameof(maxObjects));
+    }
+
+    private static void Descent(ref JToken?[] objects, ref int maxDepth, int maxObjects, params int[] indexes)
+    {
+        static IEnumerable<JToken?> GetElements(JArray array, int[] indexes)
+        {
+            foreach (var index in indexes)
+            {
+                var i = index >= 0 ? index : index + array.Count;
+                if (i >= 0 && i < array.Count)
+                    yield return array[i];
+            }
+        }
+
+        if (maxDepth <= 0)
+            throw new InvalidOperationException("Exceeded max depth");
+        --maxDepth;
+
+        objects = [.. objects.OfType<JArray>().SelectMany(p => GetElements(p, indexes))];
+        if (objects.Length > maxObjects)
+            throw new InvalidOperationException(nameof(maxObjects));
+    }
+
+    private static void DescentRange(ref JToken?[] objects, ref int maxDepth, int maxObjects, int start, int end)
+    {
+        if (maxDepth <= 0)
+            throw new InvalidOperationException("Exceeded max depth");
+        --maxDepth;
+
+        objects = [.. objects.OfType<JArray>().SelectMany(p =>
+        {
+            var iStart = start >= 0 ? start : start + p.Count;
+            if (iStart < 0) iStart = 0;
+            var iEnd = end > 0 ? end : end + p.Count;
+            var count = iEnd - iStart;
+            return p.Skip(iStart).Take(count);
+        })];
+
+        if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
     }
 }

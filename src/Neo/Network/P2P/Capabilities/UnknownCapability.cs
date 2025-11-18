@@ -10,45 +10,43 @@
 // modifications are permitted.
 
 using Neo.Extensions;
+using Neo.Extensions.IO;
 using Neo.IO;
-using System;
-using System.IO;
 
-namespace Neo.Network.P2P.Capabilities
+namespace Neo.Network.P2P.Capabilities;
+
+/// <summary>
+/// This capability implements a generic extensible format for new
+/// capabilities. This capability has no real type and can not be
+/// serialized. But it allows to ignore any new/unknown types for old nodes
+/// in a safe way.
+/// </summary>
+public class UnknownCapability : NodeCapability
 {
     /// <summary>
-    /// This capability implements a generic extensible format for new
-    /// capabilities. This capability has no real type and can not be
-    /// serialized. But it allows to ignore any new/unknown types for old nodes
-    /// in a safe way.
+    /// Indicates the maximum size of the <see cref="Data"/> field.
     /// </summary>
-    public class UnknownCapability : NodeCapability
+    public const int MaxDataSize = 1024;
+
+    public ReadOnlyMemory<byte> Data;
+
+    public override int Size =>
+        base.Size +    // Type
+        Data.GetVarSize();  // Any kind of data enclosed in a single string.
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UnknownCapability"/> class.
+    /// </summary>
+    /// <param name="type">The type of the <see cref="NodeCapability"/>.</param>
+    public UnknownCapability(NodeCapabilityType type) : base(type) { }
+
+    protected override void DeserializeWithoutType(ref MemoryReader reader)
     {
-        /// <summary>
-        /// Indicates the maximum size of the <see cref="Data"/> field.
-        /// </summary>
-        public const int MaxDataSize = 1024;
+        Data = reader.ReadVarMemory(MaxDataSize);
+    }
 
-        public ReadOnlyMemory<byte> Data;
-
-        public override int Size =>
-            base.Size +    // Type
-            Data.GetVarSize();  // Any kind of data enclosed in a single string.
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UnknownCapability"/> class.
-        /// </summary>
-        /// <param name="type">The type of the <see cref="NodeCapability"/>.</param>
-        public UnknownCapability(NodeCapabilityType type) : base(type) { }
-
-        protected override void DeserializeWithoutType(ref MemoryReader reader)
-        {
-            Data = reader.ReadVarMemory(MaxDataSize);
-        }
-
-        protected override void SerializeWithoutType(BinaryWriter writer)
-        {
-            writer.WriteVarBytes(Data.Span);
-        }
+    protected override void SerializeWithoutType(BinaryWriter writer)
+    {
+        writer.WriteVarBytes(Data.Span);
     }
 }

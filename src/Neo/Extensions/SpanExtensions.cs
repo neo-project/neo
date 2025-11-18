@@ -10,74 +10,72 @@
 // modifications are permitted.
 
 using K4os.Compression.LZ4;
-using System;
 using System.Buffers.Binary;
 
-namespace Neo.Extensions
+namespace Neo.Extensions;
+
+public static class SpanExtensions
 {
-    public static class SpanExtensions
+    /// <summary>
+    /// Compresses the specified data using the LZ4 algorithm.
+    /// </summary>
+    /// <param name="data">The data to be compressed.</param>
+    /// <returns>The compressed data.</returns>
+    public static ReadOnlyMemory<byte> CompressLz4(this ReadOnlySpan<byte> data)
     {
-        /// <summary>
-        /// Compresses the specified data using the LZ4 algorithm.
-        /// </summary>
-        /// <param name="data">The data to be compressed.</param>
-        /// <returns>The compressed data.</returns>
-        public static ReadOnlyMemory<byte> CompressLz4(this ReadOnlySpan<byte> data)
-        {
-            var maxLength = LZ4Codec.MaximumOutputSize(data.Length);
-            var buffer = new byte[sizeof(uint) + maxLength];
-            BinaryPrimitives.WriteInt32LittleEndian(buffer, data.Length);
-            var length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
-            return buffer.AsMemory(0, sizeof(uint) + length);
-        }
+        var maxLength = LZ4Codec.MaximumOutputSize(data.Length);
+        var buffer = new byte[sizeof(uint) + maxLength];
+        BinaryPrimitives.WriteInt32LittleEndian(buffer, data.Length);
+        var length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
+        return buffer.AsMemory(0, sizeof(uint) + length);
+    }
 
-        /// <summary>
-        /// Compresses the specified data using the LZ4 algorithm.
-        /// </summary>
-        /// <param name="data">The data to be compressed.</param>
-        /// <returns>The compressed data.</returns>
-        public static ReadOnlyMemory<byte> CompressLz4(this Span<byte> data)
-        {
-            var maxLength = LZ4Codec.MaximumOutputSize(data.Length);
-            var buffer = new byte[sizeof(uint) + maxLength];
-            BinaryPrimitives.WriteInt32LittleEndian(buffer, data.Length);
-            var length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
-            return buffer.AsMemory(0, sizeof(uint) + length);
-        }
+    /// <summary>
+    /// Compresses the specified data using the LZ4 algorithm.
+    /// </summary>
+    /// <param name="data">The data to be compressed.</param>
+    /// <returns>The compressed data.</returns>
+    public static ReadOnlyMemory<byte> CompressLz4(this Span<byte> data)
+    {
+        var maxLength = LZ4Codec.MaximumOutputSize(data.Length);
+        var buffer = new byte[sizeof(uint) + maxLength];
+        BinaryPrimitives.WriteInt32LittleEndian(buffer, data.Length);
+        var length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
+        return buffer.AsMemory(0, sizeof(uint) + length);
+    }
 
-        /// <summary>
-        /// Decompresses the specified data using the LZ4 algorithm.
-        /// </summary>
-        /// <param name="data">The compressed data.</param>
-        /// <param name="maxOutput">The maximum data size after decompression.</param>
-        /// <returns>The original data.</returns>
-        public static byte[] DecompressLz4(this ReadOnlySpan<byte> data, int maxOutput)
-        {
-            var length = BinaryPrimitives.ReadInt32LittleEndian(data);
-            if (length < 0 || length > maxOutput) throw new FormatException($"`length`({length}) is out of range [0, {maxOutput}]");
-            var result = new byte[length];
+    /// <summary>
+    /// Decompresses the specified data using the LZ4 algorithm.
+    /// </summary>
+    /// <param name="data">The compressed data.</param>
+    /// <param name="maxOutput">The maximum data size after decompression.</param>
+    /// <returns>The original data.</returns>
+    public static byte[] DecompressLz4(this ReadOnlySpan<byte> data, int maxOutput)
+    {
+        var length = BinaryPrimitives.ReadInt32LittleEndian(data);
+        if (length < 0 || length > maxOutput) throw new FormatException($"`length`({length}) is out of range [0, {maxOutput}]");
+        var result = new byte[length];
 
-            var decoded = LZ4Codec.Decode(data[4..], result);
-            if (decoded != length)
-                throw new FormatException($"`length`({length}) does not match the decompressed data length({decoded})");
-            return result;
-        }
+        var decoded = LZ4Codec.Decode(data[4..], result);
+        if (decoded != length)
+            throw new FormatException($"`length`({length}) does not match the decompressed data length({decoded})");
+        return result;
+    }
 
-        /// <summary>
-        /// Decompresses the specified data using the LZ4 algorithm.
-        /// </summary>
-        /// <param name="data">The compressed data.</param>
-        /// <param name="maxOutput">The maximum data size after decompression.</param>
-        /// <returns>The original data.</returns>
-        public static byte[] DecompressLz4(this Span<byte> data, int maxOutput)
-        {
-            var length = BinaryPrimitives.ReadInt32LittleEndian(data);
-            if (length < 0 || length > maxOutput) throw new FormatException($"`length`({length}) is out of range [0, {maxOutput}]");
-            var result = new byte[length];
-            var decoded = LZ4Codec.Decode(data[4..], result);
-            if (decoded != length)
-                throw new FormatException($"`length`({length}) does not match the decompressed data length({decoded})");
-            return result;
-        }
+    /// <summary>
+    /// Decompresses the specified data using the LZ4 algorithm.
+    /// </summary>
+    /// <param name="data">The compressed data.</param>
+    /// <param name="maxOutput">The maximum data size after decompression.</param>
+    /// <returns>The original data.</returns>
+    public static byte[] DecompressLz4(this Span<byte> data, int maxOutput)
+    {
+        var length = BinaryPrimitives.ReadInt32LittleEndian(data);
+        if (length < 0 || length > maxOutput) throw new FormatException($"`length`({length}) is out of range [0, {maxOutput}]");
+        var result = new byte[length];
+        var decoded = LZ4Codec.Decode(data[4..], result);
+        if (decoded != length)
+            throw new FormatException($"`length`({length}) does not match the decompressed data length({decoded})");
+        return result;
     }
 }

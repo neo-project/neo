@@ -12,31 +12,28 @@
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
-using System.IO;
-using System.Linq;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads;
+
+/// <summary>
+/// Indicates that the transaction is of high priority.
+/// </summary>
+public class HighPriorityAttribute : TransactionAttribute
 {
-    /// <summary>
-    /// Indicates that the transaction is of high priority.
-    /// </summary>
-    public class HighPriorityAttribute : TransactionAttribute
+    public override bool AllowMultiple => false;
+    public override TransactionAttributeType Type => TransactionAttributeType.HighPriority;
+
+    protected override void DeserializeWithoutType(ref MemoryReader reader)
     {
-        public override bool AllowMultiple => false;
-        public override TransactionAttributeType Type => TransactionAttributeType.HighPriority;
+    }
 
-        protected override void DeserializeWithoutType(ref MemoryReader reader)
-        {
-        }
+    protected override void SerializeWithoutType(BinaryWriter writer)
+    {
+    }
 
-        protected override void SerializeWithoutType(BinaryWriter writer)
-        {
-        }
-
-        public override bool Verify(DataCache snapshot, Transaction tx)
-        {
-            UInt160 committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
-            return tx.Signers.Any(p => p.Account.Equals(committee));
-        }
+    public override bool Verify(DataCache snapshot, Transaction tx)
+    {
+        UInt160 committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        return tx.Signers.Any(p => p.Account.Equals(committee));
     }
 }
