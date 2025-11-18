@@ -112,7 +112,8 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
-            if (signature.Length != 64) return false;
+            if (signature.Length != 64)
+                throw new FormatException("Signature size should be 64 bytes.");
             var point = pubkey.Curve.BouncyCastleCurve.Curve.CreatePoint(
                 new BigInteger(pubkey.X!.Value.ToString()),
                 new BigInteger(pubkey.Y!.Value.ToString()));
