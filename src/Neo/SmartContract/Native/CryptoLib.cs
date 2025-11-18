@@ -114,7 +114,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
         public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
         {
-            var ch = s_curves[curveHash];
+            if (!s_curves.TryGetValue(curveHash, out var ch))
+                throw new NotSupportedException($"Unsupported curve or hash algorithm: {curveHash}");
             return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
         }
 
