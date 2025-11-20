@@ -20,6 +20,7 @@ namespace Neo.SmartContract.Native
     partial class CryptoLib
     {
         private const int Bls12381MultiExpMaxPairs = 128;
+        private const int Bls12PairingMaxPairs = Bls12381MultiExpMaxPairs;
         private const int Bls12FieldElementLength = 64;
         private const int Bls12ScalarLength = Scalar.Size;
         private const int Bls12G1EncodedLength = Bls12FieldElementLength * 2;
@@ -106,6 +107,10 @@ namespace Neo.SmartContract.Native
             };
         }
 
+        /// <summary>
+        /// Ethereum-style G1 addition using uncompressed big-endian coordinates (x|y, 64-byte limbs).
+        /// Input is two concatenated 128-byte encodings; output is the same encoding.
+        /// </summary>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19, Name = "bls12_g1add")]
         public static byte[] Bls12G1Add(byte[] input)
         {
@@ -119,6 +124,10 @@ namespace Neo.SmartContract.Native
             return EncodeEthereumG1(result);
         }
 
+        /// <summary>
+        /// Ethereum-style G2 addition using uncompressed big-endian coordinates (x0|x1|y0|y1, 64-byte limbs).
+        /// Input is two concatenated 256-byte encodings; output is the same encoding.
+        /// </summary>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19, Name = "bls12_g2add")]
         public static byte[] Bls12G2Add(byte[] input)
         {
@@ -154,6 +163,10 @@ namespace Neo.SmartContract.Native
             };
         }
 
+        /// <summary>
+        /// Ethereum-style G1 scalar multiplication using uncompressed big-endian coordinates and big-endian scalar.
+        /// Input is 128-byte point + 32-byte scalar; output is the same encoding.
+        /// </summary>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21, Name = "bls12_g1mul")]
         public static byte[] Bls12G1Mul(byte[] input)
         {
@@ -167,6 +180,10 @@ namespace Neo.SmartContract.Native
             return EncodeEthereumG1(result);
         }
 
+        /// <summary>
+        /// Ethereum-style G2 scalar multiplication using uncompressed big-endian coordinates and big-endian scalar.
+        /// Input is 256-byte point + 32-byte scalar; output is the same encoding.
+        /// </summary>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 21, Name = "bls12_g2mul")]
         public static byte[] Bls12G2Mul(byte[] input)
         {
@@ -178,6 +195,60 @@ namespace Neo.SmartContract.Native
             var scalar = ParseEthereumScalar(input.AsSpan(Bls12G2EncodedLength, Bls12ScalarLength));
             var result = new G2Projective(point) * scalar;
             return EncodeEthereumG2(result);
+        }
+
+        /// <summary>
+        /// Ethereum-style G1 MSM using uncompressed big-endian point encodings and big-endian scalars.
+        /// Input is k concatenated (128-byte point | 32-byte scalar) pairs; output is the same encoding.
+        /// </summary>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 23, Name = "bls12_g1multiexp")]
+        public static byte[] Bls12G1MultiExp(byte[] input)
+        {
+            ArgumentNullException.ThrowIfNull(input);
+            if (input.Length == 0 || input.Length % (Bls12G1EncodedLength + Bls12ScalarLength) != 0)
+                throw new ArgumentException("Invalid BLS12-381 g1multiexp input length", nameof(input));
+
+            int pairCount = input.Length / (Bls12G1EncodedLength + Bls12ScalarLength);
+            if (pairCount > Bls12381MultiExpMaxPairs)
+                throw new ArgumentOutOfRangeException(nameof(input), $"BLS12-381 g1multiexp supports at most {Bls12381MultiExpMaxPairs} pairs");
+
+            G1Projective accumulator = G1Projective.Identity;
+            for (int offset = 0; offset < input.Length; offset += Bls12G1EncodedLength + Bls12ScalarLength)
+            {
+                var point = ParseEthereumG1Point(input.AsSpan(offset, Bls12G1EncodedLength));
+                var scalar = ParseEthereumScalar(input.AsSpan(offset + Bls12G1EncodedLength, Bls12ScalarLength));
+                if (!scalar.IsZero)
+                    accumulator += new G1Projective(point) * scalar;
+            }
+
+            return EncodeEthereumG1(accumulator);
+        }
+
+        /// <summary>
+        /// Ethereum-style G2 MSM using uncompressed big-endian point encodings and big-endian scalars.
+        /// Input is k concatenated (256-byte point | 32-byte scalar) pairs; output is the same encoding.
+        /// </summary>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 23, Name = "bls12_g2multiexp")]
+        public static byte[] Bls12G2MultiExp(byte[] input)
+        {
+            ArgumentNullException.ThrowIfNull(input);
+            if (input.Length == 0 || input.Length % (Bls12G2EncodedLength + Bls12ScalarLength) != 0)
+                throw new ArgumentException("Invalid BLS12-381 g2multiexp input length", nameof(input));
+
+            int pairCount = input.Length / (Bls12G2EncodedLength + Bls12ScalarLength);
+            if (pairCount > Bls12381MultiExpMaxPairs)
+                throw new ArgumentOutOfRangeException(nameof(input), $"BLS12-381 g2multiexp supports at most {Bls12381MultiExpMaxPairs} pairs");
+
+            G2Projective accumulator = G2Projective.Identity;
+            for (int offset = 0; offset < input.Length; offset += Bls12G2EncodedLength + Bls12ScalarLength)
+            {
+                var point = ParseEthereumG2Point(input.AsSpan(offset, Bls12G2EncodedLength));
+                var scalar = ParseEthereumScalar(input.AsSpan(offset + Bls12G2EncodedLength, Bls12ScalarLength));
+                if (!scalar.IsZero)
+                    accumulator += new G2Projective(point) * scalar;
+            }
+
+            return EncodeEthereumG2(accumulator);
         }
 
         /// <summary>
@@ -283,6 +354,9 @@ namespace Neo.SmartContract.Native
             return new(Bls12.Pairing(in g1a, in g2a));
         }
 
+        /// <summary>
+        /// Ethereum-style pairing check (EIP-2537): accepts k concatenated pairs of uncompressed G1/G2 encodings and returns 32-byte result (LSB set for success).
+        /// </summary>
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 23, Name = "bls12_pairing")]
         public static byte[] Bls12Pairing(byte[] input)
         {
@@ -290,8 +364,11 @@ namespace Neo.SmartContract.Native
             if (input.Length % Bls12PairInputLength != 0)
                 throw new ArgumentException("Invalid BLS12-381 pairing input length", nameof(input));
 
-            if (input.Length == 0)
-                return EncodePairingResult(true);
+            int pairCount = input.Length / Bls12PairInputLength;
+            if (pairCount == 0)
+                throw new ArgumentException("BLS12-381 pairing requires at least one pair", nameof(input));
+            if (pairCount > Bls12PairingMaxPairs)
+                throw new ArgumentOutOfRangeException(nameof(input), $"BLS12-381 pairing supports at most {Bls12PairingMaxPairs} pairs");
 
             Gt accumulator = Gt.Identity;
 
@@ -303,6 +380,37 @@ namespace Neo.SmartContract.Native
             }
 
             return EncodePairingResult(accumulator.IsIdentity);
+        }
+
+        /// <summary>
+        /// Deserialize a G1/G2 point using Ethereum uncompressed big-endian encoding.
+        /// </summary>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19, Name = "bls12_deserialize")]
+        public static InteropInterface Bls12Deserialize(byte[] data)
+        {
+            ArgumentNullException.ThrowIfNull(data);
+            return data.Length switch
+            {
+                Bls12G1EncodedLength => new InteropInterface(ParseEthereumG1Point(data)),
+                Bls12G2EncodedLength => new InteropInterface(ParseEthereumG2Point(data)),
+                _ => throw new ArgumentException("Invalid BLS12-381 point length", nameof(data))
+            };
+        }
+
+        /// <summary>
+        /// Serialize a G1/G2 point using Ethereum uncompressed big-endian encoding.
+        /// </summary>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 19, Name = "bls12_serialize")]
+        public static byte[] Bls12Serialize(InteropInterface g)
+        {
+            return g.GetInterface<object>() switch
+            {
+                G1Affine p => EncodeEthereumG1(new G1Projective(p)),
+                G1Projective p => EncodeEthereumG1(p),
+                G2Affine p => EncodeEthereumG2(new G2Projective(p)),
+                G2Projective p => EncodeEthereumG2(p),
+                _ => throw new ArgumentException("BLS12-381 type mismatch")
+            };
         }
 
         private static void EnsureGroupType(ref bool? current, bool isG2)

@@ -242,6 +242,67 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestBls12G1MultiExpAlias()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            byte[] input = EncodeEthereumG1Point(new G1Projective(g1Point))
+                .Concat(CreateScalarBytes(2))
+                .ToArray();
+
+            byte[] result = CryptoLib.Bls12G1MultiExp(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(g1Point) * CreateScalar(2);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G2MultiExpAlias()
+        {
+            var g2Point = G2Affine.FromCompressed(g2);
+            byte[] input = EncodeEthereumG2Point(new G2Projective(g2Point))
+                .Concat(CreateScalarBytes(5))
+                .ToArray();
+
+            byte[] result = CryptoLib.Bls12G2MultiExp(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(g2Point) * CreateScalar(5);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12MultiExpAliasInvalidLength()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12G1MultiExp(new byte[10]));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12G2MultiExp(new byte[10]));
+        }
+
+        [TestMethod]
+        public void TestBls12SerializeDeserializeG1()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var encoded = CryptoLib.Bls12Serialize(new InteropInterface(g1Point));
+            Assert.AreEqual(Bls12G1EncodedLength, encoded.Length);
+
+            var interop = CryptoLib.Bls12Deserialize(encoded);
+            var roundtrip = interop.GetInterface<G1Affine>().ToCompressed().ToHexString();
+            Assert.AreEqual(g1Point.ToCompressed().ToHexString(), roundtrip);
+        }
+
+        [TestMethod]
+        public void TestBls12SerializeDeserializeG2()
+        {
+            var g2Point = G2Affine.FromCompressed(g2);
+            var encoded = CryptoLib.Bls12Serialize(new InteropInterface(g2Point));
+            Assert.AreEqual(Bls12G2EncodedLength, encoded.Length);
+
+            var interop = CryptoLib.Bls12Deserialize(encoded);
+            var roundtrip = interop.GetInterface<G2Affine>().ToCompressed().ToHexString();
+            Assert.AreEqual(g2Point.ToCompressed().ToHexString(), roundtrip);
+        }
+
+        [TestMethod]
         public void TestBls12PairingAliasSinglePair()
         {
             var g1Point = G1Affine.FromCompressed(g1);
@@ -302,9 +363,29 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBls12PairingAliasEmptyInput()
         {
-            byte[] result = CryptoLib.Bls12Pairing(System.Array.Empty<byte>());
-            Assert.AreEqual(1, result[^1]);
-            Assert.IsTrue(result.Take(result.Length - 1).All(b => b == 0));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12Pairing(System.Array.Empty<byte>()));
+        }
+
+        [TestMethod]
+        public void TestBls12PairingAliasTooManyPairsFails()
+        {
+            byte[] oversized = new byte[Bls12PairInputLength * (Bls12381MultiExpMaxPairs + 1)];
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => CryptoLib.Bls12Pairing(oversized));
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpAllowsG2Identity()
+        {
+            var pair = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(G2Projective.Identity),
+                new ByteString(CreateScalarBytes(7))
+            });
+
+            var pairs = new VMArray(new StackItem[] { pair });
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = new G2Affine(result.GetInterface<G2Projective>()).ToCompressed().ToHexString();
+            Assert.AreEqual(G2Affine.Identity.ToCompressed().ToHexString(), actual);
         }
         [TestMethod]
         public void TestBls12381Mul()
@@ -584,6 +665,175 @@ namespace Neo.UnitTests.SmartContract.Native
             var expectedBytes = EthG2MultiExpSingleExpectedHex.HexToBytes();
             var expected = new G2Affine(ParseEthereumG2Point(expectedBytes)).ToCompressed().ToHexString();
             Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpBoundaryCase1_G1SingleScalarMin()
+        {
+            var point = G1Affine.FromCompressed("97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var pair = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(point),
+                new ByteString(CreateScalarBytes(1))
+            });
+
+            var pairs = new VMArray(new StackItem[] { pair });
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = new G1Affine(result.GetInterface<G1Projective>()).ToCompressed().ToHexString();
+            const string expected = "97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb";
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpBoundaryCase2_G1SingleScalarIntMax()
+        {
+            var point = G1Affine.FromCompressed("97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var pair = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(point),
+                new ByteString(CreateScalarBytes(2147483647U))
+            });
+
+            var pairs = new VMArray(new StackItem[] { pair });
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = new G1Affine(result.GetInterface<G1Projective>()).ToCompressed().ToHexString();
+            const string expected = "a71a80ecd55e1d885ce85467e2e8f7e424fc71e20ec8be42284db33b4fce8fd5e1021008908101cc31aac5a273ed4143";
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpBoundaryCase3_G1NegatedYBit()
+        {
+            var point = G1Affine.FromCompressed("b7f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var pair1 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(point),
+                new ByteString(CreateScalarBytes(123456789U))
+            });
+            var pair2 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(point),
+                new ByteString(CreateScalarBytes(1))
+            });
+
+            var pairs = new VMArray(new StackItem[] { pair1, pair2 });
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = new G1Affine(result.GetInterface<G1Projective>()).ToCompressed().ToHexString();
+            const string expected = "a5c2bc253038f033f7b47dd3c7b5c79d276467e810731ac70cf7fc2fdb37012a341b21c7f3ec3f4cda1b4d5fe57f2f1a";
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpBoundaryCase4_G1PointAtInfinity()
+        {
+            var point = G1Affine.FromCompressed("c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".HexToBytes());
+            var pair = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(point),
+                new ByteString(CreateScalarBytes(987654321U))
+            });
+
+            var pairs = new VMArray(new StackItem[] { pair });
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = new G1Affine(result.GetInterface<G1Projective>()).ToCompressed().ToHexString();
+            const string expected = "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpBoundaryCase5_G2SingleScalarMin()
+        {
+            var point = G2Affine.FromCompressed("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            var pair = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(point),
+                new ByteString(CreateScalarBytes(1))
+            });
+
+            var pairs = new VMArray(new StackItem[] { pair });
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = new G2Affine(result.GetInterface<G2Projective>()).ToCompressed().ToHexString();
+            const string expected = "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8";
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpBoundaryCase6_G2NegatedYBit()
+        {
+            var point = G2Affine.FromCompressed("b3e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            var pair1 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(point),
+                new ByteString(CreateScalarBytes(2147483647U))
+            });
+            var pair2 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(point),
+                new ByteString(CreateScalarBytes(2))
+            });
+
+            var pairs = new VMArray(new StackItem[] { pair1, pair2 });
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = new G2Affine(result.GetInterface<G2Projective>()).ToCompressed().ToHexString();
+            const string expected = "95e4740a671fbf5aa643f3e4daa849e28020a5b6b21351814433880bcddb605c31c0e26d7991b9a70ad156b5d12f83350e8e99e5acbb4e86b07e1358fd532ae8ffa35c9ce52aea273d8830aacab45574bb487c796af725e3c528860a4bc05145";
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpBoundaryCase7_G2PointAtInfinity()
+        {
+            var point = G2Affine.FromCompressed("c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".HexToBytes());
+            var pair = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(point),
+                new ByteString(CreateScalarBytes(1337U))
+            });
+
+            var pairs = new VMArray(new StackItem[] { pair });
+            var result = CryptoLib.Bls12381MultiExp(pairs);
+            var actual = new G2Affine(result.GetInterface<G2Projective>()).ToCompressed().ToHexString();
+            const string expected = "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExpBoundaryCase8_G1G2MixIdentityAndGenerator()
+        {
+            var g1Point = G1Affine.FromCompressed("97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var g1Pair1 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(g1Point),
+                new ByteString(CreateScalarBytes(1))
+            });
+            var g1Pair2 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(g1Point),
+                new ByteString(CreateScalarBytes(2147483647U))
+            });
+            var g1Pairs = new VMArray(new StackItem[] { g1Pair1, g1Pair2 });
+            var g1Result = CryptoLib.Bls12381MultiExp(g1Pairs);
+            var g1Actual = new G1Affine(g1Result.GetInterface<G1Projective>()).ToCompressed().ToHexString();
+            var g1ExpectedPoint = new G1Projective(g1Point) * CreateScalar(2147483648U);
+            var g1Expected = new G1Affine(g1ExpectedPoint).ToCompressed().ToHexString();
+            Assert.AreEqual(g1Expected, g1Actual);
+
+            var g2Point = G2Affine.FromCompressed("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            var g2Pair1 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(g2Point),
+                new ByteString(CreateScalarBytes(2147483647U))
+            });
+            var g2Pair2 = new VMArray(new StackItem[]
+            {
+                StackItem.FromInterface(g2Point),
+                new ByteString(CreateScalarBytes(1))
+            });
+            var g2Pairs = new VMArray(new StackItem[] { g2Pair1, g2Pair2 });
+            var g2Result = CryptoLib.Bls12381MultiExp(g2Pairs);
+            var g2Actual = new G2Affine(g2Result.GetInterface<G2Projective>()).ToCompressed().ToHexString();
+            var g2ExpectedPoint = new G2Projective(g2Point) * CreateScalar(2147483648U);
+            var g2Expected = new G2Affine(g2ExpectedPoint).ToCompressed().ToHexString();
+            Assert.AreEqual(g2Expected, g2Actual);
         }
 
         [TestMethod]
@@ -1595,6 +1845,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return Scalar.FromBytes(littleEndian);
         }
 
+        private const int Bls12381MultiExpMaxPairs = 128;
         private const int Bls12FieldElementLength = 64;
         private const int Bls12G1EncodedLength = Bls12FieldElementLength * 2;
         private const int Bls12G2EncodedLength = Bls12FieldElementLength * 4;

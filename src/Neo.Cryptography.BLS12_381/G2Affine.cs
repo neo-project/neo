@@ -177,6 +177,14 @@ namespace Neo.Cryptography.BLS12_381
 
             if (compressed)
             {
+                if (infinity_flag_set)
+                {
+                    // Infinity encoding: compression flag set, sort flag unset, x == 0.
+                    if (!compression_flag_set || sort_flag_set || !x.IsZero)
+                        throw new FormatException();
+                    return Identity;
+                }
+
                 // Recover a y-coordinate given x by y = sqrt(x^3 + 4)
                 var y = ((x.Square() * x) + B).Sqrt();
                 y = ConditionalSelect(in y, -y, y.LexicographicallyLargest() ^ sort_flag_set);

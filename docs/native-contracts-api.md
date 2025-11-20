@@ -77,14 +77,18 @@ When calling a native contract method by transaction script, there are several t
 | bls12381Deserialize | Deserialize a bls12381 point. | Byte[](*data*) | InteropInterface | 1<<19 | 0 | -- | -- |
 | bls12381Equal | Determines whether the specified points are equal. | InteropInterface(*x*), InteropInterface(*y*) | Boolean | 1<<5 | 0 | -- | -- |
 | bls12381Add | Add operation of two points. | InteropInterface(*x*), InteropInterface(*y*) | InteropInterface | 1<<19 | 0 | -- | -- |
-| bls12_g1add | -- | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Faun |
-| bls12_g2add | -- | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Faun |
+| bls12_g1add | Ethereum-style G1 addition using uncompressed big-endian coordinates (x|y, 64-byte limbs). Input is two concatenated 128-byte encodings; output is the same encoding. | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Faun |
+| bls12_g2add | Ethereum-style G2 addition using uncompressed big-endian coordinates (x0|x1|y0|y1, 64-byte limbs). Input is two concatenated 256-byte encodings; output is the same encoding. | Byte[](*input*) | Byte[] | 1<<19 | 0 | -- | HF_Faun |
 | bls12381Mul | Mul operation of gt point and multiplier | InteropInterface(*x*), Byte[](*mul*), Boolean(*neg*) | InteropInterface | 1<<21 | 0 | -- | -- |
-| bls12_g1mul | -- | Byte[](*input*) | Byte[] | 1<<21 | 0 | -- | HF_Faun |
-| bls12_g2mul | -- | Byte[](*input*) | Byte[] | 1<<21 | 0 | -- | HF_Faun |
+| bls12_g1mul | Ethereum-style G1 scalar multiplication using uncompressed big-endian coordinates and big-endian scalar. Input is 128-byte point + 32-byte scalar; output is the same encoding. | Byte[](*input*) | Byte[] | 1<<21 | 0 | -- | HF_Faun |
+| bls12_g2mul | Ethereum-style G2 scalar multiplication using uncompressed big-endian coordinates and big-endian scalar. Input is 256-byte point + 32-byte scalar; output is the same encoding. | Byte[](*input*) | Byte[] | 1<<21 | 0 | -- | HF_Faun |
+| bls12_g1multiexp | Ethereum-style G1 MSM using uncompressed big-endian point encodings and big-endian scalars. Input is k concatenated (128-byte point | 32-byte scalar) pairs; output is the same encoding. | Byte[](*input*) | Byte[] | 1<<23 | 0 | -- | HF_Faun |
+| bls12_g2multiexp | Ethereum-style G2 MSM using uncompressed big-endian point encodings and big-endian scalars. Input is k concatenated (256-byte point | 32-byte scalar) pairs; output is the same encoding. | Byte[](*input*) | Byte[] | 1<<23 | 0 | -- | HF_Faun |
 | bls12381MultiExp | Multi exponentiation operation for bls12381 points. | Array(*pairs*) | InteropInterface | 1<<23 | 0 | -- | HF_Faun |
 | bls12381Pairing | Pairing operation of g1 and g2 | InteropInterface(*g1*), InteropInterface(*g2*) | InteropInterface | 1<<23 | 0 | -- | -- |
-| bls12_pairing | -- | Byte[](*input*) | Byte[] | 1<<23 | 0 | -- | HF_Faun |
+| bls12_pairing | Ethereum-style pairing check (EIP-2537): accepts k concatenated pairs of uncompressed G1/G2 encodings and returns 32-byte result (LSB set for success). | Byte[](*input*) | Byte[] | 1<<23 | 0 | -- | HF_Faun |
+| bls12_deserialize | Deserialize a G1/G2 point using Ethereum uncompressed big-endian encoding. | Byte[](*data*) | InteropInterface | 1<<19 | 0 | -- | HF_Faun |
+| bls12_serialize | Serialize a G1/G2 point using Ethereum uncompressed big-endian encoding. | InteropInterface(*g*) | Byte[] | 1<<19 | 0 | -- | HF_Faun |
 | recoverSecp256K1 | Recovers the public key from a secp256k1 signature in a single byte array format. | Byte[](*messageHash*), Byte[](*signature*) | Byte[] | 1<<15 | 0 | -- | HF_Echidna |
 | ripemd160 | Computes the hash value for the specified byte array using the ripemd160 algorithm. | Byte[](*data*) | Byte[] | 1<<15 | 0 | -- | -- |
 | sha256 | Computes the hash value for the specified byte array using the sha256 algorithm. | Byte[](*data*) | Byte[] | 1<<15 | 0 | -- | -- |
@@ -93,6 +97,8 @@ When calling a native contract method by transaction script, there are several t
 | verifyWithECDsa | Verifies that a digital signature is appropriate for the provided key and message using the ECDSA algorithm. | Byte[](*message*), Byte[](*pubkey*), Byte[](*signature*), NamedCurveHash(*curveHash*) | Boolean | 1<<15 | 0 | -- | HF_Cockatrice |
 | verifyWithECDsa | -- | Byte[](*message*), Byte[](*pubkey*), Byte[](*signature*), NamedCurveHash(*curve*) | Boolean | 1<<15 | 0 | -- | Deprecated in HF_Cockatrice |
 | verifyWithEd25519 | Verifies that a digital signature is appropriate for the provided key and message using the Ed25519 algorithm. | Byte[](*message*), Byte[](*pubkey*), Byte[](*signature*) | Boolean | 1<<15 | 0 | -- | HF_Echidna |
+
+**Note:** Methods prefixed with `bls12_` follow the EIP-2537 (Ethereum) uncompressed encoding: G1 inputs are `x || y` (128 bytes), G2 inputs are `x0 || x1 || y0 || y1` (256 bytes), scalars are 32-byte big-endian, and the identity is encoded as all-zero bytes. The existing `bls12381*` methods keep Neo's compressed encoding.
 
 
 ## LedgerContract
