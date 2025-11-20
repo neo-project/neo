@@ -303,6 +303,40 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestBls12SerializeIdentity()
+        {
+            var g1Encoded = CryptoLib.Bls12Serialize(new InteropInterface(G1Projective.Identity));
+            Assert.IsTrue(g1Encoded.All(b => b == 0));
+
+            var g2Encoded = CryptoLib.Bls12Serialize(new InteropInterface(G2Projective.Identity));
+            Assert.IsTrue(g2Encoded.All(b => b == 0));
+        }
+
+        [TestMethod]
+        public void TestBls12DeserializeInvalidLength()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12Deserialize(new byte[1]));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12Deserialize(new byte[Bls12G1EncodedLength + 1]));
+        }
+
+        [TestMethod]
+        public void TestBls12DeserializeOverflow()
+        {
+            byte[] invalidG1 = new byte[Bls12G1EncodedLength];
+            invalidG1[0] = 1; // overflow in the high limb
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12Deserialize(invalidG1));
+        }
+
+        [TestMethod]
+        public void TestBls12DeserializeNonOnCurve()
+        {
+            byte[] invalidG1 = new byte[Bls12G1EncodedLength];
+            // set y to non-zero while x remains zero (fails curve check)
+            invalidG1[Bls12FieldElementLength + 5] = 1;
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12Deserialize(invalidG1));
+        }
+
+        [TestMethod]
         public void TestBls12PairingAliasSinglePair()
         {
             var g1Point = G1Affine.FromCompressed(g1);
