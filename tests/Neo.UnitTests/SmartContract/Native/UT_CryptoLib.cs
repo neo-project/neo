@@ -283,7 +283,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var g1Point = G1Affine.FromCompressed(g1);
             var encoded = CryptoLib.Bls12Serialize(new InteropInterface(g1Point));
-            Assert.AreEqual(Bls12G1EncodedLength, encoded.Length);
+            Assert.AreEqual(Bls12G1EncodedLength, encoded.Length, "G1 serialization length must be 128 bytes");
 
             var interop = CryptoLib.Bls12Deserialize(encoded);
             var roundtrip = interop.GetInterface<G1Affine>().ToCompressed().ToHexString();
