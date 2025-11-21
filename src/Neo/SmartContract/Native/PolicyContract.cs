@@ -548,10 +548,19 @@ namespace Neo.SmartContract.Native
 
                 if (balance > 0)
                 {
-                    // TODO: Replace by treasury
+                    // Mock account witness in CheckWitnessInternal
 
+                    var state = engine.CurrentContext!.GetState<ExecutionContextState>();
+                    var bak = state.NativeCallingScriptHash;
+                    state.NativeCallingScriptHash = account;
+
+                    // TODO: Replace by treasury
                     engine.CallContract(contractHash, "transfer", CallFlags.All,
                         new VM.Types.Array(engine.ReferenceCounter, [account.ToArray(), committeeMultiSigAddr.ToArray(), balance, StackItem.Null]));
+
+                    // Reset witnesses
+
+                    state.NativeCallingScriptHash = bak;
                 }
             }
 
