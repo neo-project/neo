@@ -37,7 +37,7 @@ public sealed partial class CryptoLib : NativeContract
     /// <param name="messageHash">The hash of the message that was signed.</param>
     /// <param name="signature">The 65-byte signature in format: r[32] + s[32] + v[1]. 64-bytes for eip-2098, where v must be 27 or 28.</param>
     /// <returns>The recovered public key in compressed format, or null if recovery fails.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, Name = "recoverSecp256K1")]
+    [ContractMethod(CpuFee = 1 << 15, Name = "recoverSecp256K1")]
     public static byte[]? RecoverSecp256K1(byte[] messageHash, byte[] signature)
     {
         // It will be checked in Crypto.ECRecover
@@ -95,7 +95,7 @@ public sealed partial class CryptoLib : NativeContract
     /// </summary>
     /// <param name="data">The input to compute the hash code for.</param>
     /// <returns>Computed hash</returns>
-    [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
+    [ContractMethod(CpuFee = 1 << 15)]
     public static byte[] Keccak256(byte[] data)
     {
         return data.Keccak256();
@@ -109,30 +109,13 @@ public sealed partial class CryptoLib : NativeContract
     /// <param name="signature">The signature to be verified.</param>
     /// <param name="curveHash">A pair of the curve to be used by the ECDSA algorithm and the hasher function to be used to hash message.</param>
     /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-    [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
+    [ContractMethod(CpuFee = 1 << 15)]
     public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
     {
         try
         {
             var ch = s_curves[curveHash];
             return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
-        }
-        catch (ArgumentException)
-        {
-            return false;
-        }
-    }
-
-    // This is for solving the hardfork issue in https://github.com/neo-project/neo/pull/3209
-    [ContractMethod(true, Hardfork.HF_Cockatrice, CpuFee = 1 << 15, Name = "verifyWithECDsa")]
-    public static bool VerifyWithECDsaV0(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curve)
-    {
-        if (curve != NamedCurveHash.secp256k1SHA256 && curve != NamedCurveHash.secp256r1SHA256)
-            throw new ArgumentOutOfRangeException(nameof(curve));
-
-        try
-        {
-            return Crypto.VerifySignature(message, signature, pubkey, s_curves[curve].Curve);
         }
         catch (ArgumentException)
         {
@@ -147,7 +130,7 @@ public sealed partial class CryptoLib : NativeContract
     /// <param name="pubkey">The Ed25519 public key to be used.</param>
     /// <param name="signature">The signature to be verified.</param>
     /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15)]
+    [ContractMethod(CpuFee = 1 << 15)]
     public static bool VerifyWithEd25519(byte[] message, byte[] pubkey, byte[] signature)
     {
         if (signature.Length != Ed25519.SignatureSize)

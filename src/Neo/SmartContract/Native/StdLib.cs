@@ -138,7 +138,7 @@ public sealed class StdLib : NativeContract
     /// </summary>
     /// <param name="data">The base64Url to be encoded.</param>
     /// <returns>The encoded base64Url string.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 5)]
+    [ContractMethod(CpuFee = 1 << 5)]
     public static string Base64UrlEncode([MaxLength(MaxInputLength)] string data)
     {
         return Base64UrlEncoder.Encode(data);
@@ -149,7 +149,7 @@ public sealed class StdLib : NativeContract
     /// </summary>
     /// <param name="s">The base64Url string.</param>
     /// <returns>The decoded base64Url string.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 5)]
+    [ContractMethod(CpuFee = 1 << 5)]
     public static string Base64UrlDecode([MaxLength(MaxInputLength)] string s)
     {
         return Base64UrlEncoder.Decode(s);
@@ -199,13 +199,13 @@ public sealed class StdLib : NativeContract
         return Base58.Base58CheckDecode(s);
     }
 
-    [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5)]
+    [ContractMethod(CpuFee = 1 << 5)]
     private static string HexEncode([MaxLength(MaxInputLength)] byte[] bytes)
     {
         return bytes.ToHexString();
     }
 
-    [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 5)]
+    [ContractMethod(CpuFee = 1 << 5)]
     private static byte[] HexDecode([MaxLength(MaxInputLength)] string str)
     {
         return str.HexToBytes();

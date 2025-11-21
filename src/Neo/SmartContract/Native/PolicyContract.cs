@@ -102,7 +102,7 @@ public sealed class PolicyContract : NativeContract
     /// </summary>
     private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
 
-    [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
+    [ContractEvent(0, name: MillisecondsPerBlockChangedEventName,
         "old", ContractParameterType.Integer,
         "new", ContractParameterType.Integer
     )]
@@ -123,9 +123,6 @@ public sealed class PolicyContract : NativeContract
             engine.SnapshotCache.Add(_feePerByte, new StorageItem(DefaultFeePerByte));
             engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
             engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
-        }
-        if (hardfork == Hardfork.HF_Echidna)
-        {
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
             engine.SnapshotCache.Add(_millisecondsPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
             engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
@@ -172,7 +169,7 @@ public sealed class PolicyContract : NativeContract
     /// </summary>
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <returns>The block generation time in milliseconds.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
     public uint GetMillisecondsPerBlock(IReadOnlyStore snapshot)
     {
         return (uint)(BigInteger)snapshot[_millisecondsPerBlock];
@@ -184,7 +181,7 @@ public sealed class PolicyContract : NativeContract
     /// </summary>
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <returns>MaxValidUntilBlockIncrement value.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
     public uint GetMaxValidUntilBlockIncrement(IReadOnlyStore snapshot)
     {
         return (uint)(BigInteger)snapshot[_maxValidUntilBlockIncrement];
@@ -195,22 +192,10 @@ public sealed class PolicyContract : NativeContract
     /// </summary>
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <returns>MaxTraceableBlocks value.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
     public uint GetMaxTraceableBlocks(IReadOnlyStore snapshot)
     {
         return (uint)(BigInteger)snapshot[_maxTraceableBlocks];
-    }
-
-    /// <summary>
-    /// Gets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported.
-    /// </summary>
-    /// <param name="snapshot">The snapshot used to read data.</param>
-    /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
-    /// <returns>The fee for attribute.</returns>
-    [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
-    public uint GetAttributeFeeV0(IReadOnlyStore snapshot, byte attributeType)
-    {
-        return GetAttributeFee(snapshot, attributeType, false);
     }
 
     /// <summary>
@@ -219,28 +204,11 @@ public sealed class PolicyContract : NativeContract
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <param name="attributeType">Attribute type</param>
     /// <returns>The fee for attribute.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
-    public uint GetAttributeFeeV1(IReadOnlyStore snapshot, byte attributeType)
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    public uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType)
     {
-        return GetAttributeFee(snapshot, attributeType, true);
-    }
-
-    /// <summary>
-    /// Generic handler for GetAttributeFeeV0 and GetAttributeFee that
-    /// gets the fee for attribute.
-    /// </summary>
-    /// <param name="snapshot">The snapshot used to read data.</param>
-    /// <param name="attributeType">Attribute type</param>
-    /// <param name="allowNotaryAssisted">Whether to support <see cref="TransactionAttributeType.NotaryAssisted"/> attribute type.</param>
-    /// <returns>The fee for attribute.</returns>
-    private uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType, bool allowNotaryAssisted)
-    {
-        if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) ||
-            (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
-        {
+        if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType))
             throw new InvalidOperationException($"Attribute type {attributeType} is not supported.");
-        }
-
         var key = CreateStorageKey(Prefix_AttributeFee, attributeType);
         return snapshot.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
     }
@@ -264,7 +232,7 @@ public sealed class PolicyContract : NativeContract
     /// <param name="value">The block generation time in milliseconds. Must be between 1 and MaxBlockGenTime.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided value is outside the allowed range.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     public void SetMillisecondsPerBlock(ApplicationEngine engine, uint value)
     {
         if (value == 0 || value > MaxMillisecondsPerBlock)
@@ -279,47 +247,17 @@ public sealed class PolicyContract : NativeContract
     }
 
     /// <summary>
-    /// Sets the fee for attribute before Echidna hardfork. NotaryAssisted attribute type not supported.
-    /// </summary>
-    /// <param name="engine">The engine used to check committee witness and read data.</param>
-    /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
-    /// <param name="value">Attribute fee value</param>
-    /// <returns>The fee for attribute.</returns>
-    [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
-    private void SetAttributeFeeV0(ApplicationEngine engine, byte attributeType, uint value)
-    {
-        SetAttributeFee(engine, attributeType, value, false);
-    }
-
-    /// <summary>
     /// Sets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported.
     /// </summary>
     /// <param name="engine">The engine used to check committee witness and read data.</param>
     /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
     /// <param name="value">Attribute fee value</param>
     /// <returns>The fee for attribute.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
-    private void SetAttributeFeeV1(ApplicationEngine engine, byte attributeType, uint value)
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+    private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value)
     {
-        SetAttributeFee(engine, attributeType, value, true);
-    }
-
-    /// <summary>
-    /// Generic handler for SetAttributeFeeV0 and SetAttributeFeeV1 that
-    /// gets the fee for attribute.
-    /// </summary>
-    /// <param name="engine">The engine used to check committee witness and read data.</param>
-    /// <param name="attributeType">Attribute type</param>
-    /// <param name="value">Attribute fee value</param>
-    /// <param name="allowNotaryAssisted">Whether to support <see cref="TransactionAttributeType.NotaryAssisted"/> attribute type.</param>
-    /// <returns>The fee for attribute.</returns>
-    private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value, bool allowNotaryAssisted)
-    {
-        if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) ||
-            (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
-        {
+        if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType))
             throw new InvalidOperationException($"Attribute type {attributeType} is not supported.");
-        }
 
         if (value > MaxAttributeFee)
             throw new ArgumentOutOfRangeException(nameof(value), $"AttributeFee must be less than {MaxAttributeFee}");
@@ -359,7 +297,7 @@ public sealed class PolicyContract : NativeContract
         engine.SnapshotCache.GetAndChange(_storagePrice)!.Set(value);
     }
 
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
     private void SetMaxValidUntilBlockIncrement(ApplicationEngine engine, uint value)
     {
         if (value == 0 || value > MaxMaxValidUntilBlockIncrement)
@@ -377,7 +315,7 @@ public sealed class PolicyContract : NativeContract
     /// </summary>
     /// <param name="engine">The engine used to check committee witness and read data.</param>
     /// <param name="value">MaxTraceableBlocks value.</param>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
     private void SetMaxTraceableBlocks(ApplicationEngine engine, uint value)
     {
         if (value == 0 || value > MaxMaxTraceableBlocks)
@@ -428,7 +366,7 @@ public sealed class PolicyContract : NativeContract
         return true;
     }
 
-    [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
     private StorageIterator GetBlockedAccounts(DataCache snapshot)
     {
         const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;

@@ -65,30 +65,10 @@ public class NotifyEventArgs : EventArgs, IInteroperable
     public StackItem ToStackItem(IReferenceCounter? referenceCounter)
     {
         return new Array(referenceCounter)
-            {
-                ScriptHash.ToArray(),
-                EventName,
-                State
-            };
-    }
-
-    public StackItem ToStackItem(IReferenceCounter referenceCounter, ApplicationEngine engine)
-    {
-        if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
         {
-            return new Array(referenceCounter)
-            {
-                ScriptHash.ToArray(),
-                EventName,
-                State.DeepCopy(true)
-            };
-        }
-
-        return new Array(referenceCounter)
-            {
-                ScriptHash.ToArray(),
-                EventName,
-                State
-            };
+            ScriptHash.ToArray(),
+            EventName,
+            State.DeepCopy(true)
+        };
     }
 }
