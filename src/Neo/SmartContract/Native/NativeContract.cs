@@ -439,8 +439,10 @@ namespace Neo.SmartContract.Native
                 if (!engine.IsHardforkEnabled(Hardfork.HF_Faun) ||
                     !Policy.IsWhitelistFeeContract(engine.SnapshotCache, Hash, method.Name, method.Parameters.Length, out var fixedFee))
                 {
-                    // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-                    engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
+                    // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+                    engine.AddFee(
+                        (method.CpuFee * engine.ExecFeePicoFactor) +
+                        (method.StorageFee * engine.StoragePrice * ApplicationEngine.FeeFactor));
                 }
                 List<object?> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
