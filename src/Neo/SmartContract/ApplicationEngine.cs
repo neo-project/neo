@@ -336,10 +336,8 @@ namespace Neo.SmartContract
                 return;
             }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-            FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
-#pragma warning restore CS0618 // Type or member is obsolete
-            if (FeeConsumed > _feeAmount)
+            _feeConsumed = _feeConsumed + picoGas;
+            if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 

@@ -107,7 +107,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
 
-        private const string WhitelistChangedEventName = "WhitelistChanged";
+        private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
             "old", ContractParameterType.Integer,
