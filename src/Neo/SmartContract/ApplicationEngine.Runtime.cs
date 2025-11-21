@@ -418,7 +418,7 @@ partial class ApplicationEngine
     /// </summary>
     /// <param name="hash">The hash of the specified contract. It can be set to <see langword="null"/> to get all notifications.</param>
     /// <returns>The notifications sent during the execution.</returns>
-    protected internal Array GetNotifications(UInt160 hash)
+    protected internal Array GetNotifications(UInt160? hash)
     {
         IEnumerable<NotifyEventArgs> notifications = Notifications;
         if (hash != null) // must filter by scriptHash
