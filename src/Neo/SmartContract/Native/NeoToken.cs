@@ -164,17 +164,17 @@ namespace Neo.SmartContract.Native
             // Compute Neo holder reward
 
             // In the unit of datoshi, 1 GAS = 10^8 datoshi
-            BigInteger sumNeoHold = 0;
+            BigInteger sumGasPerBlock = 0;
             foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end - 1))
             {
                 if (index > start)
                 {
-                    sumNeoHold += gasPerBlock * (end - index);
+                    sumGasPerBlock += gasPerBlock * (end - index);
                     end = index;
                 }
                 else
                 {
-                    sumNeoHold += gasPerBlock * (end - start);
+                    sumGasPerBlock += gasPerBlock * (end - start);
                     break;
                 }
             }
@@ -190,7 +190,7 @@ namespace Neo.SmartContract.Native
                 voteReward = state.Balance * (latestGasPerVote - state.LastGasPerVote) / VoteFactor;
             }
 
-            return (state.Balance * sumNeoHold * NeoHolderRewardRatio / 100 / TotalAmount, voteReward);
+            return (state.Balance * sumGasPerBlock * NeoHolderRewardRatio / 100 / TotalAmount, voteReward);
         }
 
         private void CheckCandidate(DataCache snapshot, ECPoint pubkey, CandidateState candidate)
@@ -272,17 +272,34 @@ namespace Neo.SmartContract.Native
 
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, m))
             {
-                BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100; // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
+                var withFlatRewards = engine.IsHardforkEnabled(Hardfork.HF_Faun);
+                BigInteger voterRewardOfEachCommittee =
+                    withFlatRewards ?
+                    gasPerBlock * VoterRewardRatio * VoteFactor / 100 :                 // Total reward for voters when it's flat rewards
+                    gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100;    // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
+                var votersCount = (BigInteger)engine.SnapshotCache[_votersCount];
+
                 for (index = 0; index < committee.Count; index++)
                 {
                     var (publicKey, votes) = committee[index];
-                    var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
-                    if (votes > 0)
+
+                    if (withFlatRewards)
                     {
-                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
+                        BigInteger voterSumRewardPerNEO = voterRewardOfEachCommittee / votersCount;
                         StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
                         StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
                         lastRewardPerNeo.Add(voterSumRewardPerNEO);
+                    }
+                    else
+                    {
+                        if (votes > 0)
+                        {
+                            var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
+                            BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
+                            StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
+                            StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
+                            lastRewardPerNeo.Add(voterSumRewardPerNEO);
+                        }
                     }
                 }
             }
