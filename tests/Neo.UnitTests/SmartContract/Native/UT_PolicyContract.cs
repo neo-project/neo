@@ -199,7 +199,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                    "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
+                    "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 100500_0000 });
             });
 
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
@@ -208,7 +208,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Proper set
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
+                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50_0000 });
             Assert.IsTrue(ret.IsNull);
 
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
