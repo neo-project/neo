@@ -72,8 +72,8 @@ public class UT_GasToken
         // Transfer
 
         Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock));
-        Assert.ThrowsExactly<ArgumentNullException>(() => _ = NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
-        Assert.ThrowsExactly<ArgumentNullException>(() => _ = NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
         Assert.AreEqual(100000000, NativeContract.NEO.BalanceOf(snapshot, from));
         Assert.AreEqual(0, NativeContract.NEO.BalanceOf(snapshot, to));
 

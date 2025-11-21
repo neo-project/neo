@@ -232,7 +232,6 @@ public sealed class StdLib : NativeContract
     [ContractMethod(CpuFee = 1 << 6)]
     private static int MemorySearch([MaxLength(MaxInputLength)] byte[] mem, byte[] value, int start, bool backward)
     {
-        ArgumentNullException.ThrowIfNull(value);
         if (backward)
         {
             return mem.AsSpan(0, start).LastIndexOf(value);
@@ -248,14 +247,12 @@ public sealed class StdLib : NativeContract
     [ContractMethod(CpuFee = 1 << 8)]
     private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator)
     {
-        ArgumentNullException.ThrowIfNull(separator);
         return str.Split(separator);
     }
 
     [ContractMethod(CpuFee = 1 << 8)]
     private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
     {
-        ArgumentNullException.ThrowIfNull(separator);
         StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
         return str.Split(separator, options);
     }
