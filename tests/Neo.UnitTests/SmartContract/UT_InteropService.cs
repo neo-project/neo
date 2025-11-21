@@ -825,8 +825,7 @@ public partial class UT_InteropService : TestKit
         Assert.IsTrue(result);
         result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
         Assert.IsTrue(result);
-        result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256);
-        Assert.IsFalse(result);
+        Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[64], NamedCurveHash.secp256r1Keccak256));
     }
 

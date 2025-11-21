@@ -1141,7 +1141,7 @@ public class UT_CryptoLib
         byte[] invalidPublicKey = new byte[publicKey.Length];
         Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
         invalidPublicKey[0] ^= 0x01; // Flip one bit
-        Assert.IsFalse(CallVerifyWithEd25519(message, invalidPublicKey, signature));
+        Assert.ThrowsExactly<InvalidOperationException>(() => CallVerifyWithEd25519(message, invalidPublicKey, signature));
     }
 
     private static bool CallVerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
@@ -1161,7 +1161,8 @@ public class UT_CryptoLib
         using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot,
             settings: TestProtocolSettings.Default);
         engine.LoadScript(script.ToArray());
-        Assert.AreEqual(VMState.HALT, engine.Execute());
+        if (engine.Execute() != VMState.HALT)
+            throw new InvalidOperationException(null, engine.FaultException);
         return engine.ResultStack.Pop().GetBoolean();
     }
 }
