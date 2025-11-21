@@ -53,7 +53,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
-        public const uint MaxExecFeeFactor = 100;
+        public const ulong MaxExecFeeFactor = 100;
 
         /// <summary>
         /// The maximum fee for attribute that the committee can set.
@@ -132,6 +132,16 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
                 engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
             }
+
+            // After Faun Hardfork the unit it's pico-gas, before it was datoshi
+
+            if (hardfork == Hardfork.HF_Faun)
+            {
+                // Add decimals to exec fee factor
+                var item = engine.SnapshotCache.TryGet(_execFeeFactor) ??
+                    throw new InvalidOperationException("Policy was not initialized");
+                item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
+            }
             return ContractTask.CompletedTask;
         }
 
@@ -149,12 +159,34 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The execution engine.</param>
         /// <returns>The execution fee factor.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetExecFeeFactor(IReadOnlyStore snapshot)
+        public uint GetExecFeeFactor(ApplicationEngine engine)
         {
-            return (uint)(BigInteger)snapshot[_execFeeFactor];
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                return (uint)((BigInteger)engine.SnapshotCache[_execFeeFactor] / ApplicationEngine.FeeFactor);
+
+            return (uint)(BigInteger)engine.SnapshotCache[_execFeeFactor];
+        }
+
+        public long GetExecFeeFactor(ProtocolSettings settings, IReadOnlyStore snapshot, uint index)
+        {
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, index))
+                return (long)((BigInteger)snapshot[_execFeeFactor] / ApplicationEngine.FeeFactor);
+
+            return (long)(BigInteger)snapshot[_execFeeFactor];
+        }
+
+        /// <summary>
+        /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <returns>The execution fee factor in the unit of pico Gas. 1 picoGAS = 1e-12 GAS</returns>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetExecPicoFeeFactor(ApplicationEngine engine)
+        {
+            return (BigInteger)engine.SnapshotCache[_execFeeFactor];
         }
 
         /// <summary>
@@ -341,12 +373,15 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetExecFeeFactor(ApplicationEngine engine, uint value)
+        private void SetExecFeeFactor(ApplicationEngine engine, ulong value)
         {
-            if (value == 0 || value > MaxExecFeeFactor)
-                throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {MaxExecFeeFactor}], got {value}");
-            AssertCommittee(engine);
+            // After FAUN hardfork, the max exec fee factor is with decimals defined in ApplicationEngine.FeeFactor
+            var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? ApplicationEngine.FeeFactor * MaxExecFeeFactor : MaxExecFeeFactor;
 
+            if (value == 0 || value > maxValue)
+                throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {maxValue}], got {value}");
+
+            AssertCommittee(engine);
             engine.SnapshotCache.GetAndChange(_execFeeFactor)!.Set(value);
         }
 
