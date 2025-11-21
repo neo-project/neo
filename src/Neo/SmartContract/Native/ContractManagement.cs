@@ -310,7 +310,7 @@ public sealed class ContractManagement : NativeContract
     /// <param name="manifest">The manifest of the contract.</param>
     /// <returns>The updated contract.</returns>
     [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+    private ContractTask Update(ApplicationEngine engine, byte[]? nefFile, byte[]? manifest)
     {
         return Update(engine, nefFile, manifest, StackItem.Null);
     }
@@ -324,7 +324,7 @@ public sealed class ContractManagement : NativeContract
     /// <param name="data">The data of the contract.</param>
     /// <returns>The updated contract.</returns>
     [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
+    private ContractTask Update(ApplicationEngine engine, byte[]? nefFile, byte[]? manifest, StackItem data)
     {
         // Require CallFlags.All flag for post-Aspidochelone transactions, ref. #2653, #2673.
         if (engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone))
