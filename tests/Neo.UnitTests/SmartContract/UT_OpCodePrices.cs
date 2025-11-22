@@ -22,17 +22,11 @@ public class UT_OpCodePrices
     {
         foreach (OpCode opcode in Enum.GetValues<OpCode>())
         {
-#pragma warning disable CS0618 // Type or member is obsolete
-            Assert.IsTrue(ApplicationEngine.OpCodePrices.ContainsKey(opcode), string.Format(opcode.ToString(), $"{opcode} without price"));
-            Assert.AreEqual(ApplicationEngine.OpCodePrices[opcode], ApplicationEngine.OpCodePriceTable[(byte)opcode], $"{opcode} price mismatch");
-#pragma warning restore CS0618 // Type or member is obsolete
-
             if (opcode == OpCode.RET ||
                 opcode == OpCode.SYSCALL ||
                 opcode == OpCode.ABORT ||
                 opcode == OpCode.ABORTMSG)
                 continue;
-
             Assert.AreNotEqual(0, ApplicationEngine.OpCodePriceTable[(byte)opcode], $"{opcode} without price");
         }
     }

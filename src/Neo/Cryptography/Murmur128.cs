@@ -35,9 +35,6 @@ public sealed class Murmur128 : NonCryptographicHashAlgorithm
 
     public const int HashSizeInBits = 128;
 
-    [Obsolete("Use HashSizeInBits instead")]
-    public int HashSize => HashSizeInBits;
-
     // The Tail struct is used to store up to 16 bytes of unprocessed data
     // when computing the hash. It leverages the InlineArray attribute for
     // efficient memory usage in .NET 8.0 or greater, avoiding heap allocations

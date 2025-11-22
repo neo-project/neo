@@ -93,9 +93,7 @@ public class UT_MemoryClonedCache
         // Reset the snapshot to make it accessible to the new value.
         _snapshot = (MemorySnapshot)_memoryStore.GetSnapshot();
         _snapshotCache = new StoreCache(_snapshot);
-#pragma warning disable CS0618
-        _dataCache = _snapshotCache.CreateSnapshot();
-#pragma warning restore CS0618
+        _dataCache = _snapshotCache.CloneCache();
 
         Assert.IsTrue(_dataCache.Contains(key1));
         _dataCache.Delete(key1);

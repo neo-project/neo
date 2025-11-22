@@ -104,12 +104,6 @@ public partial class ApplicationEngine : ExecutionEngine
     public IVerifiable? ScriptContainer { get; }
 
     /// <summary>
-    /// The snapshot used to read or write data.
-    /// </summary>
-    [Obsolete("This property is deprecated. Use SnapshotCache instead.")]
-    public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
-
-    /// <summary>
     /// The snapshotcache <see cref="SnapshotCache"/> used to read or write data.
     /// </summary>
     public DataCache SnapshotCache => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
@@ -123,13 +117,6 @@ public partial class ApplicationEngine : ExecutionEngine
     /// The <see cref="Neo.ProtocolSettings"/> used by the engine.
     /// </summary>
     public ProtocolSettings ProtocolSettings { get; }
-
-    /// <summary>
-    /// GAS spent to execute.
-    /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
-    /// </summary>
-    [Obsolete("This property is deprecated. Use FeeConsumed instead.")]
-    public long GasConsumed { get; protected set; } = 0;
 
     /// <summary>
     /// GAS spent to execute.
@@ -290,9 +277,7 @@ public partial class ApplicationEngine : ExecutionEngine
     /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
     protected internal void AddFee(long datoshi)
     {
-#pragma warning disable CS0618 // Type or member is obsolete
-        FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
-#pragma warning restore CS0618 // Type or member is obsolete
+        FeeConsumed = checked(FeeConsumed + datoshi);
         if (FeeConsumed > _feeAmount)
             throw new InvalidOperationException("Insufficient GAS.");
     }

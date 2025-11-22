@@ -28,60 +28,6 @@ namespace Neo.SmartContract;
 public static class JsonSerializer
 {
     /// <summary>
-    /// Serializes a <see cref="StackItem"/> to a <see cref="JToken"/>.
-    /// </summary>
-    /// <param name="item">The <see cref="StackItem"/> to serialize.</param>
-    /// <returns>The serialized object.</returns>
-    [Obsolete("This method will be removed in the future, do not use.")]
-    public static JToken? Serialize(StackItem item)
-    {
-        switch (item)
-        {
-            case Array array:
-                {
-                    return array.Select(p => Serialize(p)).ToArray();
-                }
-            case ByteString _:
-            case Buffer _:
-                {
-                    return item.GetString();
-                }
-            case Integer num:
-                {
-                    var integer = num.GetInteger();
-                    if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
-                        throw new InvalidOperationException();
-                    return (double)integer;
-                }
-            case Boolean boolean:
-                {
-                    return boolean.GetBoolean();
-                }
-            case Map map:
-                {
-                    var ret = new JObject();
-
-                    foreach (var entry in map)
-                    {
-                        if (entry.Key is not ByteString) throw new FormatException("Key is not a ByteString");
-
-                        var key = entry.Key.GetString()!;
-                        var value = Serialize(entry.Value);
-
-                        ret[key] = value;
-                    }
-
-                    return ret;
-                }
-            case Null _:
-                {
-                    return JToken.Null;
-                }
-            default: throw new FormatException($"Invalid StackItemType({item.Type})");
-        }
-    }
-
-    /// <summary>
     /// Serializes a <see cref="StackItem"/> to JSON.
     /// </summary>
     /// <param name="item">The <see cref="StackItem"/> to convert.</param>
