@@ -146,11 +146,11 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
                 engine.SnapshotCache.Add(_millisecondsPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
                 engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
-                engine.SnapshotCache.Add(_maxProofOfNodeHeight, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
+                engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
             }
             if (hardfork == Hardfork.HF_Faun)
             {
-                engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(DefaultMaxProofOfNodeHeight));
+                engine.SnapshotCache.Add(_maxProofOfNodeHeight, new StorageItem(DefaultMaxProofOfNodeHeight));
                 engine.SnapshotCache.Add(_proofOfNodeDifficulty, new StorageItem(DefaultProofOfNodeDifficulty));
             }
             return ContractTask.CompletedTask;
