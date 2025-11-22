@@ -47,7 +47,7 @@ namespace Neo.SmartContract.Native
         /// <param name="from">GAS sender</param>
         /// <param name="amount">The amount of GAS sent</param>
         /// <param name="data">Optional data</param>
-        [ContractMethod(CpuFee = 1 << 5, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None)]
         private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data) { }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Neo.SmartContract.Native
         /// <param name="amount">The amount of GAS sent</param>
         /// <param name="tokenId">Nep11 token Id</param>
         /// <param name="data">Optional data</param>
-        [ContractMethod(CpuFee = 1 << 5, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None)]
         private void OnNEP11Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, byte[] tokenId, StackItem data) { }
     }
 }
