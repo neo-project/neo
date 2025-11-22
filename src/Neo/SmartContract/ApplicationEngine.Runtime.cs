@@ -306,20 +306,8 @@ partial class ApplicationEngine
     /// <returns>The next random number.</returns>
     protected internal BigInteger GetRandom()
     {
-        byte[] buffer;
-        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-        long price;
-        if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
-        {
-            buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++);
-            price = 1 << 13;
-        }
-        else
-        {
-            buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
-            price = 1 << 4;
-        }
-        AddFee(price * ExecFeeFactor);
+        AddFee((1 << 13) * ExecFeeFactor);
+        byte[] buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++);
         return new BigInteger(buffer, isUnsigned: true);
     }
 
@@ -351,11 +339,6 @@ partial class ApplicationEngine
     /// <param name="state">The arguments of the event.</param>
     protected internal void RuntimeNotify(byte[] eventName, Array state)
     {
-        if (!IsHardforkEnabled(Hardfork.HF_Basilisk))
-        {
-            RuntimeNotifyV1(eventName, state);
-            return;
-        }
         if (eventName.Length > MaxEventName)
             throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
 
@@ -378,18 +361,6 @@ partial class ApplicationEngine
         SendNotification(CurrentScriptHash!, name, state);
     }
 
-    protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
-    {
-        if (eventName.Length > MaxEventName)
-            throw new ArgumentException($"Event name size {eventName.Length} exceeds maximum allowed size of {MaxEventName} bytes", nameof(eventName));
-        if (CurrentContext!.GetState<ExecutionContextState>().Contract is null)
-            throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
-        using MemoryStream ms = new(MaxNotificationSize);
-        using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-        BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
-        SendNotification(CurrentScriptHash!, eventName.ToStrictUtf8String(), state);
-    }
-
     /// <summary>
     /// Sends a notification for the specified contract.
     /// </summary>
@@ -402,7 +373,7 @@ partial class ApplicationEngine
         // Restrict the number of notifications for Application executions. Do not check
         // persisting triggers to avoid native persist failure. Do not check verification
         // trigger since verification context is loaded with ReadOnly flag.
-        if (IsHardforkEnabled(Hardfork.HF_Echidna) && Trigger == TriggerType.Application && notifications.Count >= MaxNotificationCount)
+        if (Trigger == TriggerType.Application && notifications.Count >= MaxNotificationCount)
         {
             throw new InvalidOperationException($"Maximum number of notifications `{MaxNotificationCount}` is reached.");
         }
@@ -428,7 +399,7 @@ partial class ApplicationEngine
         Array notifyArray = new(ReferenceCounter);
         foreach (var notify in array)
         {
-            notifyArray.Add(notify.ToStackItem(ReferenceCounter, this));
+            notifyArray.Add(notify.ToStackItem(ReferenceCounter));
         }
         return notifyArray;
     }

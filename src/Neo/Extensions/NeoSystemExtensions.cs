@@ -41,12 +41,6 @@ public static class NeoSystemExtensions
         {
             // Get the persisted block height from the blockchain.
             var index = NativeContract.Ledger.CurrentIndex(snapshot);
-
-            // Use protocol settings configuration if HF_Echidna is not yet enabled.
-            if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
-                return TimeSpan.FromMilliseconds(settings.MillisecondsPerBlock);
-
-            // Retrieve MillisecondsPerBlock value from native Policy if HFEchidna is enabled.
             var milliseconds = NativeContract.Policy.GetMillisecondsPerBlock(snapshot);
             return TimeSpan.FromMilliseconds(milliseconds);
         }
@@ -82,12 +76,6 @@ public static class NeoSystemExtensions
         {
             // Get the current block height from the blockchain.
             var index = NativeContract.Ledger.CurrentIndex(snapshot);
-
-            // Before the Echidna hardfork, use the protocol settings.
-            if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
-                return settings.MaxValidUntilBlockIncrement;
-
-            // After the Echidna hardfork, get the current block time from the Policy contract.
             return NativeContract.Policy.GetMaxValidUntilBlockIncrement(snapshot);
         }
         catch (KeyNotFoundException)
@@ -121,12 +109,6 @@ public static class NeoSystemExtensions
         {
             // Get the persisted block height from the blockchain.
             var index = NativeContract.Ledger.CurrentIndex(snapshot);
-
-            // Use protocol settings configuration if HF_Echidna is not yet enabled.
-            if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
-                return settings.MaxTraceableBlocks;
-
-            // Retrieve MillisecondsPerBlock value from native Policy if HF_Echidna is enabled.
             return NativeContract.Policy.GetMaxTraceableBlocks(snapshot);
         }
         catch (KeyNotFoundException)
