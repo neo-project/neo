@@ -26,7 +26,7 @@ namespace Neo.Cryptography
         /// <returns></returns>
         public static bool VerifyDifficulty(UInt256 proofOfWork, uint difficulty)
         {
-            // Take the first 8 bytes in order to check the proof of work difficulty
+            // Take the first 4 bytes in order to check the proof of work difficulty
 
             var bytes = proofOfWork.ToArray();
             var value = BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(0, 4));
