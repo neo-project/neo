@@ -38,9 +38,6 @@ public sealed class Murmur32 : NonCryptographicHashAlgorithm
 
     public const int HashSizeInBits = 32;
 
-    [Obsolete("Use HashSizeInBits")]
-    public int HashSize => HashSizeInBits;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Murmur32"/> class with the specified seed.
     /// </summary>

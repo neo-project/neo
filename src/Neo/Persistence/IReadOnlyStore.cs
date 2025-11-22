@@ -43,14 +43,6 @@ public interface IReadOnlyStore<TKey, TValue> where TKey : class?
     /// Reads a specified entry from the database.
     /// </summary>
     /// <param name="key">The key of the entry.</param>
-    /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
-    [Obsolete("use TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value) instead.")]
-    TValue? TryGet(TKey key);
-
-    /// <summary>
-    /// Reads a specified entry from the database.
-    /// </summary>
-    /// <param name="key">The key of the entry.</param>
     /// <param name="value">The data of the entry.</param>
     /// <returns><see langword="true"/> if the entry exists; otherwise, <see langword="false"/>.</returns>
     bool TryGet(TKey key, [NotNullWhen(true)] out TValue? value);

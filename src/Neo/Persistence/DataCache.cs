@@ -184,16 +184,6 @@ public abstract class DataCache : IReadOnlyStore
     }
 
     /// <summary>
-    /// Creates a snapshot, which uses this instance as the underlying storage.
-    /// </summary>
-    /// <returns>The snapshot of this instance.</returns>
-    [Obsolete("CreateSnapshot is deprecated, please use CloneCache instead.")]
-    public DataCache CreateSnapshot()
-    {
-        return new ClonedCache(this);
-    }
-
-    /// <summary>
     /// Creates a clone of the snapshot cache, which uses this instance as the underlying storage.
     /// </summary>
     /// <returns>The <see cref="ClonedCache"/> of this <see cref="DataCache"/> instance.</returns>
