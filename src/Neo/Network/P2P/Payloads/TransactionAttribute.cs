@@ -94,5 +94,5 @@ public abstract class TransactionAttribute : ISerializable
     /// <returns><see langword="true"/> if the verification passes; otherwise, <see langword="false"/>.</returns>
     public virtual bool Verify(DataCache snapshot, Transaction tx) => true;
 
-    public virtual long CalculateNetworkFee(DataCache snapshot, Transaction tx) => NativeContract.Policy.GetAttributeFeeV1(snapshot, (byte)Type);
+    public virtual long CalculateNetworkFee(DataCache snapshot, Transaction tx) => NativeContract.Policy.GetAttributeFee(snapshot, (byte)Type);
 }

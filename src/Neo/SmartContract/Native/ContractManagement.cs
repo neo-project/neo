@@ -163,7 +163,7 @@ public sealed class ContractManagement : NativeContract
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <param name="hash">The hash of the deployed contract.</param>
     /// <returns>True if deployed contract exists.</returns>
-    [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 14, RequiredCallFlags = CallFlags.ReadStates)]
+    [ContractMethod(CpuFee = 1 << 14, RequiredCallFlags = CallFlags.ReadStates)]
     public bool IsContract(IReadOnlyStore snapshot, UInt160 hash)
     {
         var key = CreateStorageKey(Prefix_Contract, hash);
@@ -250,16 +250,9 @@ public sealed class ContractManagement : NativeContract
     /// <param name="manifest">The manifest of the contract.</param>
     /// <param name="data">The data of the contract.</param>
     /// <returns>The deployed contract.</returns>
-    [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    [ContractMethod(RequiredCallFlags = CallFlags.All)]
     private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
     {
-        // Require CallFlags.All flag for post-Aspidochelone transactions, ref. #2653, #2673.
-        if (engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone))
-        {
-            var state = engine.CurrentContext!.GetState<ExecutionContextState>();
-            if (!state.CallFlags.HasFlag(CallFlags.All))
-                throw new InvalidOperationException($"Cannot call Deploy with the flag {state.CallFlags}.");
-        }
         if (engine.ScriptContainer is not Transaction tx)
             throw new InvalidOperationException();
         if (nefFile.Length == 0)
@@ -274,7 +267,7 @@ public sealed class ContractManagement : NativeContract
 
         NefFile nef = nefFile.AsSerializable<NefFile>();
         ContractManifest parsedManifest = ContractManifest.Parse(manifest);
-        Helper.Check(new Script(nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), parsedManifest.Abi);
+        Helper.Check(new Script(nef.Script, true), parsedManifest.Abi);
         UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
 
         if (Policy.IsBlocked(engine.SnapshotCache, hash))
@@ -323,16 +316,9 @@ public sealed class ContractManagement : NativeContract
     /// <param name="manifest">The manifest of the contract.</param>
     /// <param name="data">The data of the contract.</param>
     /// <returns>The updated contract.</returns>
-    [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    [ContractMethod(RequiredCallFlags = CallFlags.All)]
     private ContractTask Update(ApplicationEngine engine, byte[]? nefFile, byte[]? manifest, StackItem data)
     {
-        // Require CallFlags.All flag for post-Aspidochelone transactions, ref. #2653, #2673.
-        if (engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone))
-        {
-            var state = engine.CurrentContext!.GetState<ExecutionContextState>();
-            if (!state.CallFlags.HasFlag(CallFlags.All))
-                throw new InvalidOperationException($"Cannot call Update with the flag {state.CallFlags}.");
-        }
         if (nefFile is null && manifest is null)
             throw new ArgumentException("NEF file and manifest cannot both be null.");
 
@@ -367,7 +353,7 @@ public sealed class ContractManagement : NativeContract
                 throw new InvalidOperationException($"Invalid Manifest: {contract.Hash}");
             contract.Manifest = manifestNew;
         }
-        Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
+        Helper.Check(new Script(contract.Nef.Script, true), contract.Manifest.Abi);
         contract.UpdateCounter++; // Increase update counter
         return OnDeployAsync(engine, contract, data, true);
     }
