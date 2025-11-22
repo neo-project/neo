@@ -12,7 +12,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
-using System;
 using System.Buffers.Binary;
 
 namespace Neo.UnitTests.Cryptography
@@ -48,7 +47,7 @@ namespace Neo.UnitTests.Cryptography
         public void ComputeNonce_ShouldReturnNonceMeetingDifficulty()
         {
             var blockHash = new UInt256(new byte[32]);
-            ulong difficulty = 0x00FFFFFFFFFFFFFF; // very low difficulty for quick test
+            uint difficulty = 0x00FFFFFF; // very low difficulty for quick test
 
             var nonce = ProofOfWork.ComputeNonce(blockHash, difficulty);
             var pow = ProofOfWork.Compute(blockHash, nonce);

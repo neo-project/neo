@@ -11,7 +11,6 @@
 
 using Neo.Extensions;
 using Neo.Extensions.Factories;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Buffers.Binary;
 
@@ -25,12 +24,12 @@ namespace Neo.Cryptography
         /// <param name="proofOfWork">Proof of Work</param>
         /// <param name="difficulty">Difficulty</param>
         /// <returns></returns>
-        public static bool VerifyDifficulty(UInt256 proofOfWork, ulong difficulty)
+        public static bool VerifyDifficulty(UInt256 proofOfWork, uint difficulty)
         {
             // Take the first 8 bytes in order to check the proof of work difficulty
 
             var bytes = proofOfWork.ToArray();
-            var value = BinaryPrimitives.ReadUInt64BigEndian(bytes.AsSpan(0, 8));
+            var value = BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(0, 4));
             return value < difficulty;
         }
 
@@ -54,7 +53,7 @@ namespace Neo.Cryptography
         /// <param name="blockHash">Block hash</param>
         /// <param name="difficulty">Difficulty</param>
         /// <returns>Nonce</returns>
-        public static long ComputeNonce(UInt256 blockHash, ulong difficulty)
+        public static long ComputeNonce(UInt256 blockHash, uint difficulty)
         {
             while (true)
             {

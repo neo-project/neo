@@ -58,7 +58,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The default proof of node difficulty.
         /// </summary>
-        public const ulong DefaultProofOfNodeDifficulty = 0x0000FFFFFFFFFFFF;
+        public const uint DefaultProofOfNodeDifficulty = 0x00FFFFFF;
 
         /// <summary>
         /// The maximum execution fee factor that the committee can set.
@@ -264,9 +264,9 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The proof of node height.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ulong GetProofOfLifeDifficulty(IReadOnlyStore snapshot)
+        public uint GetProofOfLifeDifficulty(IReadOnlyStore snapshot)
         {
-            return (ulong)(BigInteger)snapshot[_proofOfNodeDifficulty];
+            return (uint)(BigInteger)snapshot[_proofOfNodeDifficulty];
         }
 
         /// <summary>
@@ -386,7 +386,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetProofOfNodeDifficulty(ApplicationEngine engine, ulong value)
+        private void SetProofOfNodeDifficulty(ApplicationEngine engine, uint value)
         {
             AssertCommittee(engine);
 
