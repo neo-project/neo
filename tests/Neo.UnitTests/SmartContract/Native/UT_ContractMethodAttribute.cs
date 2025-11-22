@@ -23,12 +23,7 @@ public class UT_ContractMethodAttribute
     public void TestConstructorOneArg()
     {
         var arg = new ContractMethodAttribute();
-
         Assert.IsNull(arg.ActiveIn);
-
-        arg = new ContractMethodAttribute(Hardfork.HF_Aspidochelone);
-
-        Assert.AreEqual(Hardfork.HF_Aspidochelone, arg.ActiveIn);
     }
 
     class NeedSnapshot

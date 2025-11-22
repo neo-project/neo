@@ -14,7 +14,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
-using System.Collections.Immutable;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 
@@ -71,39 +70,6 @@ public partial class UT_ApplicationEngine
         Assert.AreEqual(0u, engine.PersistingBlock!.Version);
         Assert.AreEqual(system.GenesisBlock.Hash, engine.PersistingBlock.PrevHash);
         Assert.AreEqual(new UInt256(), engine.PersistingBlock.MerkleRoot);
-    }
-
-    [TestMethod]
-    public void TestCheckingHardfork()
-    {
-        var allHardforks = Enum.GetValues<Hardfork>().Cast<Hardfork>().ToList();
-
-        var builder = ImmutableDictionary.CreateBuilder<Hardfork, uint>();
-        builder.Add(Hardfork.HF_Aspidochelone, 0);
-        builder.Add(Hardfork.HF_Basilisk, 1);
-
-        var setting = builder.ToImmutable();
-
-        // Check for continuity in configured hardforks
-        var sortedHardforks = setting.Keys
-            .OrderBy(h => allHardforks.IndexOf(h))
-            .ToList();
-
-        for (int i = 0; i < sortedHardforks.Count - 1; i++)
-        {
-            int currentIndex = allHardforks.IndexOf(sortedHardforks[i]);
-            int nextIndex = allHardforks.IndexOf(sortedHardforks[i + 1]);
-
-            // If they aren't consecutive, return false.
-            var inc = nextIndex - currentIndex;
-            Assert.AreEqual(1, inc);
-        }
-
-        // Check that block numbers are not higher in earlier hardforks than in later ones
-        for (int i = 0; i < sortedHardforks.Count - 1; i++)
-        {
-            Assert.IsLessThanOrEqualTo(setting[sortedHardforks[i + 1]], setting[sortedHardforks[i]]);
-        }
     }
 
     [TestMethod]

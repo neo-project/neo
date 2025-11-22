@@ -73,25 +73,25 @@ partial class ApplicationEngine
     /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Get.
     /// Gets the entry with the specified key from the storage.
     /// </summary>
-    public static readonly InteropDescriptor System_Storage_Local_Get = Register("System.Storage.Local.Get", nameof(GetLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
+    public static readonly InteropDescriptor System_Storage_Local_Get = Register("System.Storage.Local.Get", nameof(GetLocal), 1 << 15, CallFlags.ReadStates);
 
     /// <summary>
     /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Find.
     /// Finds the entries from the storage.
     /// </summary>
-    public static readonly InteropDescriptor System_Storage_Local_Find = Register("System.Storage.Local.Find", nameof(FindLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
+    public static readonly InteropDescriptor System_Storage_Local_Find = Register("System.Storage.Local.Find", nameof(FindLocal), 1 << 15, CallFlags.ReadStates);
 
     /// <summary>
     /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Put.
     /// Puts a new entry into the storage.
     /// </summary>
-    public static readonly InteropDescriptor System_Storage_Local_Put = Register("System.Storage.Local.Put", nameof(PutLocal), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
+    public static readonly InteropDescriptor System_Storage_Local_Put = Register("System.Storage.Local.Put", nameof(PutLocal), 1 << 15, CallFlags.WriteStates);
 
     /// <summary>
     /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Delete.
     /// Deletes an entry from the storage.
     /// </summary>
-    public static readonly InteropDescriptor System_Storage_Local_Delete = Register("System.Storage.Local.Delete", nameof(DeleteLocal), 1 << 15, CallFlags.WriteStates, Hardfork.HF_Faun);
+    public static readonly InteropDescriptor System_Storage_Local_Delete = Register("System.Storage.Local.Delete", nameof(DeleteLocal), 1 << 15, CallFlags.WriteStates);
 
     /// <summary>
     /// The implementation of System.Storage.GetContext.

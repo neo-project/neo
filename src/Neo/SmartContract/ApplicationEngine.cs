@@ -24,7 +24,6 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Array = System.Array;
-using Buffer = Neo.VM.Types.Buffer;
 using ExecutionContext = Neo.VM.ExecutionContext;
 using VMArray = Neo.VM.Types.Array;
 
@@ -36,7 +35,6 @@ namespace Neo.SmartContract;
 public partial class ApplicationEngine : ExecutionEngine
 {
     protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
-    protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
 
     /// <summary>
     /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -239,13 +237,6 @@ public partial class ApplicationEngine : ExecutionEngine
         return table;
     }
 
-    public static JumpTable ComposeNotEchidnaJumpTable()
-    {
-        var jumpTable = ComposeDefaultJumpTable();
-        jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
-        return jumpTable;
-    }
-
     protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
     {
         if (engine is ApplicationEngine app)
@@ -340,10 +331,7 @@ public partial class ApplicationEngine : ExecutionEngine
         }
         else
         {
-            var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
-            ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
-            : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!);
-            if (executingContract?.CanCall(contract, method.Name) == false)
+            if (state.Contract?.CanCall(contract, method.Name) == false)
                 throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
         }
 
@@ -451,38 +439,11 @@ public partial class ApplicationEngine : ExecutionEngine
         var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
         settings ??= ProtocolSettings.Default;
         // Adjust jump table according persistingBlock
-        var jumpTable = settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
-        var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
-              ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
+        var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, DefaultJumpTable)
+              ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, DefaultJumpTable);
 
         InstanceCreated?.Invoke(engine);
         return engine;
-    }
-
-    /// <summary>
-    /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
-    /// <see cref="OpCode.SUBSTR"/>
-    /// </summary>
-    /// <param name="engine">The execution engine.</param>
-    /// <param name="instruction">The instruction being executed.</param>
-    /// <remarks>Pop 3, Push 1</remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
-    {
-        var count = (int)engine.Pop().GetInteger();
-        if (count < 0)
-            throw new InvalidOperationException($"The count can not be negative for {nameof(OpCode.SUBSTR)}, count: {count}.");
-        var index = (int)engine.Pop().GetInteger();
-        if (index < 0)
-            throw new InvalidOperationException($"The index can not be negative for {nameof(OpCode.SUBSTR)}, index: {index}.");
-        var x = engine.Pop().GetSpan();
-        // Note: here it's the main change
-        if (index + count > x.Length)
-            throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
-
-        Buffer result = new(count, false);
-        x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
-        engine.Push(result);
     }
 
     public override void LoadContext(ExecutionContext context)

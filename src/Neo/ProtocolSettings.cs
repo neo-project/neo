@@ -21,8 +21,6 @@ namespace Neo;
 /// </summary>
 public record ProtocolSettings
 {
-    private static readonly IList<Hardfork> AllHardforks = Enum.GetValues<Hardfork>().Cast<Hardfork>().ToArray();
-
     /// <summary>
     /// The magic number of the NEO network.
     /// </summary>
@@ -233,7 +231,7 @@ public record ProtocolSettings
     /// <returns>Processed hardfork configuration</returns>
     private static Dictionary<Hardfork, uint> EnsureOmmitedHardforks(Dictionary<Hardfork, uint> hardForks)
     {
-        foreach (Hardfork hf in AllHardforks)
+        foreach (Hardfork hf in Enum.GetValues<Hardfork>())
         {
             if (!hardForks.ContainsKey(hf))
             {

@@ -56,65 +56,9 @@ public class UT_NativeContract
     }
 
     [TestMethod]
-    public void TestActiveDeprecatedIn()
-    {
-        string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20");
-        var file = Path.GetTempFileName();
-        File.WriteAllText(file, json);
-        ProtocolSettings settings = ProtocolSettings.Load(file);
-        File.Delete(file);
-
-        Assert.IsFalse(NativeContract.IsActive(new Active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, settings.IsHardforkEnabled, 1));
-        Assert.IsTrue(NativeContract.IsActive(new Active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, settings.IsHardforkEnabled, 20));
-
-        Assert.IsTrue(NativeContract.IsActive(new Active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 1));
-        Assert.IsFalse(NativeContract.IsActive(new Active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 20));
-    }
-
-    [TestMethod]
-    public void TestActiveDeprecatedInRoleManagement()
-    {
-        string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 20");
-        var file = Path.GetTempFileName();
-        File.WriteAllText(file, json);
-        ProtocolSettings settings = ProtocolSettings.Load(file);
-        File.Delete(file);
-
-        var before = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 19);
-        var after = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 20);
-
-        Assert.HasCount(2, before.Manifest.Abi.Events[0].Parameters);
-        Assert.HasCount(1, before.Manifest.Abi.Events);
-        Assert.HasCount(4, after.Manifest.Abi.Events[0].Parameters);
-        Assert.HasCount(1, after.Manifest.Abi.Events);
-    }
-
-    [TestMethod]
     public void TestGetContract()
     {
         Assert.AreEqual(NativeContract.GetContract(NativeContract.NEO.Hash), NativeContract.NEO);
-    }
-
-    [TestMethod]
-    public void TestIsInitializeBlock()
-    {
-        string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20,\n\"HF_Domovoi\": 30,\n\"HF_Echidna\": 40");
-
-        var file = Path.GetTempFileName();
-        File.WriteAllText(file, json);
-        ProtocolSettings settings = ProtocolSettings.Load(file);
-        File.Delete(file);
-
-        Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 0, out var hf));
-        Assert.IsNotNull(hf);
-        Assert.IsEmpty(hf);
-
-        Assert.IsFalse(NativeContract.CryptoLib.IsInitializeBlock(settings, 1, out hf));
-        Assert.IsNull(hf);
-
-        Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 20, out hf));
-        Assert.HasCount(1, hf);
-        Assert.AreEqual(Hardfork.HF_Cockatrice, hf[0]);
     }
 
     [TestMethod]
