@@ -21,7 +21,7 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// A native contract that manages the system policies.
 /// </summary>
-public sealed class PolicyContract : NativeContract
+public sealed partial class PolicyContract : NativeContract
 {
     /// <summary>
     /// The default execution fee factor.
@@ -114,6 +114,8 @@ public sealed class PolicyContract : NativeContract
         _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
         _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
         _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
+        _levelsMsPerBlock = CreateStorageKey(Prefix_DBI_LevelsMsPerBlock);
+        _maxTransactionsPerBlock = CreateStorageKey(Prefix_DBI_MaxTransactionsPerBlock);
     }
 
     internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -127,6 +129,13 @@ public sealed class PolicyContract : NativeContract
             engine.SnapshotCache.Add(_millisecondsPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
             engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
             engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
+        }
+        // TODO: Check what HF
+        // TODO: Read default values from config
+        if (hardfork == Hardfork.HF_Faun)
+        {
+            engine.SnapshotCache.Add(_levelsMsPerBlock, new StorageItem(DefaultMillisecondsPerBlock));
+            engine.SnapshotCache.Add(_maxTransactionsPerBlock, new StorageItem(DefaultMaxTransactionPerBlock));
         }
         return ContractTask.CompletedTask;
     }
