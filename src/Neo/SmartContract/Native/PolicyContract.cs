@@ -455,7 +455,7 @@ namespace Neo.SmartContract.Native
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (snapshot.Contains(key)) return false;
 
-            snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
+            snapshot.Add(key, new StorageItem([]));
             return true;
         }
 
@@ -492,13 +492,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates | CallFlags.AllowNotify)]
         public void RecoverFundsStart(ApplicationEngine engine, UInt160 account)
         {
-            // Signed by 19/21 committee members
-
-            var committees = NativeContract.NEO.GetCommittee(engine.SnapshotCache);
-            var committeeMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(1, committees.Length - 2), committees).ToScriptHash();
-
-            if (!engine.CheckWitnessInternal(committeeMultiSigAddr))
-                throw new InvalidOperationException("The transcation must be signed by committe.");
+            AssertAlmostFullCommittee(engine);
 
             // Must be blocked
 
@@ -513,19 +507,13 @@ namespace Neo.SmartContract.Native
 
             // Notify
 
-            engine.SendNotification(Hash, RecoverFundsStartEventName, [new VM.Types.ByteString(account.ToArray())]);
+            engine.SendNotification(Hash, RecoverFundsStartEventName, [new ByteString(account.ToArray())]);
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates | CallFlags.AllowNotify)]
         public void RecoverFundsFinish(ApplicationEngine engine, UInt160 account, VM.Types.Array extraTokens)
         {
-            // Signed by 19/21 committee members
-
-            var committees = NativeContract.NEO.GetCommittee(engine.SnapshotCache);
-            var committeeMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(1, committees.Length - 2), committees).ToScriptHash();
-
-            if (!engine.CheckWitnessInternal(committeeMultiSigAddr))
-                throw new InvalidOperationException("The transcation must be signed by committe.");
+            var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
 
             // Set request time
 
@@ -554,9 +542,8 @@ namespace Neo.SmartContract.Native
                     var bak = state.NativeCallingScriptHash;
                     state.NativeCallingScriptHash = account;
 
-                    // TODO: Replace by treasury
                     engine.CallContract(contractHash, "transfer", CallFlags.All,
-                        new VM.Types.Array(engine.ReferenceCounter, [account.ToArray(), committeeMultiSigAddr.ToArray(), balance, StackItem.Null]));
+                        new VM.Types.Array(engine.ReferenceCounter, [account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null]));
 
                     // Reset witnesses
 
