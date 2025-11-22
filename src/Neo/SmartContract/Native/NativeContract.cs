@@ -359,6 +359,20 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException("Invalid committee signature. It should be a multisig(len(committee) - (len(committee) - 1) / 2)).");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static UInt160 AssertAlmostFullCommittee(ApplicationEngine engine)
+        {
+            // Signed by 19/21 committee members
+
+            var committees = NativeContract.NEO.GetCommittee(engine.SnapshotCache);
+            var committeeMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(1, committees.Length - 2), committees).ToScriptHash();
+
+            if (!engine.CheckWitnessInternal(committeeMultiSigAddr))
+                throw new InvalidOperationException("Invalid committee signature. It should be a multisig(max(1,len(committee) - 2))).");
+
+            return committeeMultiSigAddr;
+        }
+
         #region Storage keys
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
