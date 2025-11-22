@@ -18,7 +18,7 @@ partial class ApplicationEngine
     /// <summary>
     /// The prices of all the opcodes.
     /// </summary>
-    internal static readonly IReadOnlyDictionary<OpCode, long> OpCodePrices = new Dictionary<OpCode, long>
+    private static readonly IReadOnlyDictionary<OpCode, long> s_prices = new Dictionary<OpCode, long>
     {
         [OpCode.PUSHINT8] = 1 << 0,
         [OpCode.PUSHINT16] = 1 << 0,
@@ -229,9 +229,9 @@ partial class ApplicationEngine
     /// </summary>
     static ApplicationEngine()
     {
-        foreach (var entry in OpCodePrices)
+        foreach (var (opcode, price) in s_prices)
         {
-            OpCodePriceTable[(byte)entry.Key] = entry.Value;
+            OpCodePriceTable[(byte)opcode] = price;
         }
     }
 }
