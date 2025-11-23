@@ -28,6 +28,9 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// A native contract used to manage all deployed smart contracts.
 /// </summary>
+[ContractEvent(0, name: "Deploy", "Hash", ContractParameterType.Hash160)]
+[ContractEvent(1, name: "Update", "Hash", ContractParameterType.Hash160)]
+[ContractEvent(2, name: "Destroy", "Hash", ContractParameterType.Hash160)]
 public sealed class ContractManagement : NativeContract
 {
     private const byte Prefix_MinimumDeploymentFee = 20;
@@ -35,10 +38,7 @@ public sealed class ContractManagement : NativeContract
     private const byte Prefix_Contract = 8;
     private const byte Prefix_ContractHash = 12;
 
-    [ContractEvent(0, name: "Deploy", "Hash", ContractParameterType.Hash160)]
-    [ContractEvent(1, name: "Update", "Hash", ContractParameterType.Hash160)]
-    [ContractEvent(2, name: "Destroy", "Hash", ContractParameterType.Hash160)]
-    internal ContractManagement() : base() { }
+    internal ContractManagement() { }
 
     private int GetNextAvailableId(DataCache snapshot)
     {
