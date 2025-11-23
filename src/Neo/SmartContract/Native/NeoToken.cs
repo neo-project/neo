@@ -28,6 +28,18 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// Represents the NEO token in the NEO system.
 /// </summary>
+[ContractEvent(1, name: "CandidateStateChanged",
+   "pubkey", ContractParameterType.PublicKey,
+   "registered", ContractParameterType.Boolean,
+   "votes", ContractParameterType.Integer)]
+[ContractEvent(2, name: "Vote",
+   "account", ContractParameterType.Hash160,
+   "from", ContractParameterType.PublicKey,
+   "to", ContractParameterType.PublicKey,
+   "amount", ContractParameterType.Integer)]
+[ContractEvent(3, name: "CommitteeChanged",
+   "old", ContractParameterType.Array,
+   "new", ContractParameterType.Array)]
 public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
 {
     public override string Symbol => "NEO";
@@ -58,19 +70,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     private readonly StorageKey _votersCount;
     private readonly StorageKey _registerPrice;
 
-    [ContractEvent(1, name: "CandidateStateChanged",
-       "pubkey", ContractParameterType.PublicKey,
-       "registered", ContractParameterType.Boolean,
-       "votes", ContractParameterType.Integer)]
-    [ContractEvent(2, name: "Vote",
-       "account", ContractParameterType.Hash160,
-       "from", ContractParameterType.PublicKey,
-       "to", ContractParameterType.PublicKey,
-       "amount", ContractParameterType.Integer)]
-    [ContractEvent(3, name: "CommitteeChanged",
-       "old", ContractParameterType.Array,
-       "new", ContractParameterType.Array)]
-    internal NeoToken() : base()
+    internal NeoToken()
     {
         TotalAmount = 100000000 * Factor;
         _votersCount = CreateStorageKey(Prefix_VotersCount);

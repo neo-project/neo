@@ -26,6 +26,14 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// The native Oracle service for NEO system.
 /// </summary>
+[ContractEvent(0, name: "OracleRequest",
+    "Id", ContractParameterType.Integer,
+    "RequestContract", ContractParameterType.Hash160,
+    "Url", ContractParameterType.String,
+    "Filter", ContractParameterType.String)]
+[ContractEvent(1, name: "OracleResponse",
+    "Id", ContractParameterType.Integer,
+    "OriginalTx", ContractParameterType.Hash256)]
 public sealed class OracleContract : NativeContract
 {
     private const int MaxUrlLength = 256;
@@ -38,15 +46,7 @@ public sealed class OracleContract : NativeContract
     private const byte Prefix_Request = 7;
     private const byte Prefix_IdList = 6;
 
-    [ContractEvent(0, name: "OracleRequest",
-        "Id", ContractParameterType.Integer,
-        "RequestContract", ContractParameterType.Hash160,
-        "Url", ContractParameterType.String,
-        "Filter", ContractParameterType.String)]
-    [ContractEvent(1, name: "OracleResponse",
-        "Id", ContractParameterType.Integer,
-        "OriginalTx", ContractParameterType.Hash256)]
-    internal OracleContract() : base() { }
+    internal OracleContract() { }
 
     /// <summary>
     /// Sets the price for an Oracle request. Only committee members can call this method.

@@ -149,13 +149,11 @@ public abstract class NativeContract
         _methodDescriptors = listMethods.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList().AsReadOnly();
 
         // Reflection to get the events
-        _eventsDescriptors =
-            GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)!.
-            GetCustomAttributes<ContractEventAttribute>().
-            // Take into account not only the contract constructor, but also the base type constructor for proper FungibleToken events handling.
-            Concat(GetType().BaseType?.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)!.
-            GetCustomAttributes<ContractEventAttribute>() ?? []).
-            OrderBy(p => p.Order).ToList().AsReadOnly();
+        _eventsDescriptors = GetType()
+            .GetCustomAttributes<ContractEventAttribute>(true)
+            .OrderBy(p => p.Order)
+            .ToList()
+            .AsReadOnly();
 
         // Calculate the initializations forks
         _usedHardforks =

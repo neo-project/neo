@@ -22,6 +22,10 @@ namespace Neo.SmartContract.Native;
 /// The base class of all native tokens that are compatible with NEP-17.
 /// </summary>
 /// <typeparam name="TState">The type of account state.</typeparam>
+[ContractEvent(0, name: "Transfer",
+   "from", ContractParameterType.Hash160,
+   "to", ContractParameterType.Hash160,
+   "amount", ContractParameterType.Integer)]
 public abstract class FungibleToken<TState> : NativeContract
     where TState : AccountState, new()
 {
@@ -55,11 +59,7 @@ public abstract class FungibleToken<TState> : NativeContract
     /// <summary>
     /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.
     /// </summary>
-    [ContractEvent(0, name: "Transfer",
-       "from", ContractParameterType.Hash160,
-       "to", ContractParameterType.Hash160,
-       "amount", ContractParameterType.Integer)]
-    protected FungibleToken() : base()
+    protected FungibleToken()
     {
         Factor = BigInteger.Pow(10, Decimals);
     }

@@ -20,16 +20,15 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// A native contract for managing roles in NEO system.
 /// </summary>
+[ContractEvent(0, name: "Designation",
+    "Role", ContractParameterType.Integer,
+    "BlockIndex", ContractParameterType.Integer,
+    "Old", ContractParameterType.Array,
+    "New", ContractParameterType.Array
+    )]
 public sealed class RoleManagement : NativeContract
 {
-    [ContractEvent(0, name: "Designation",
-        "Role", ContractParameterType.Integer,
-        "BlockIndex", ContractParameterType.Integer,
-        "Old", ContractParameterType.Array,
-        "New", ContractParameterType.Array
-        )]
-
-    internal RoleManagement() : base() { }
+    internal RoleManagement() { }
 
     /// <summary>
     /// Gets the list of nodes for the specified role.
