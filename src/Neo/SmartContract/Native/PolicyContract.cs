@@ -21,6 +21,10 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// A native contract that manages the system policies.
 /// </summary>
+[ContractEvent(0, name: MillisecondsPerBlockChangedEventName,
+    "old", ContractParameterType.Integer,
+    "new", ContractParameterType.Integer
+)]
 public sealed class PolicyContract : NativeContract
 {
     /// <summary>
@@ -102,11 +106,7 @@ public sealed class PolicyContract : NativeContract
     /// </summary>
     private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
 
-    [ContractEvent(0, name: MillisecondsPerBlockChangedEventName,
-        "old", ContractParameterType.Integer,
-        "new", ContractParameterType.Integer
-    )]
-    internal PolicyContract() : base()
+    internal PolicyContract()
     {
         _feePerByte = CreateStorageKey(Prefix_FeePerByte);
         _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
