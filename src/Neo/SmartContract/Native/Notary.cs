@@ -45,8 +45,6 @@ public sealed class Notary : NativeContract
 
     internal Notary() : base() { }
 
-    public override Hardfork? ActiveIn => Hardfork.HF_Echidna;
-
     internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
     {
         if (hardfork == ActiveIn)
@@ -150,7 +148,7 @@ public sealed class Notary : NativeContract
         if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
         if (deposit is null)
         {
-            var feePerKey = Policy.GetAttributeFeeV1(engine.SnapshotCache, (byte)TransactionAttributeType.NotaryAssisted);
+            var feePerKey = Policy.GetAttributeFee(engine.SnapshotCache, (byte)TransactionAttributeType.NotaryAssisted);
             if ((long)amount < 2 * feePerKey) throw new ArgumentOutOfRangeException(string.Format("first deposit can not be less than {0}, got {1}", 2 * feePerKey, amount));
             deposit = new Deposit() { Amount = 0, Till = 0 };
             if (!allowedChangeTill) till = currentHeight + DefaultDepositDeltaTill;
@@ -219,7 +217,7 @@ public sealed class Notary : NativeContract
     /// <param name="to">To Account</param>
     /// <returns>Whether withdrawal was successfull.</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.All)]
-    private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
+    private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160? to)
     {
         if (!engine.CheckWitnessInternal(from)) return false;
         var receive = to is null ? from : to;
@@ -318,7 +316,7 @@ public sealed class Notary : NativeContract
     /// <returns>result</returns>
     private static long CalculateNotaryReward(IReadOnlyStore snapshot, long nFees, int notariesCount)
     {
-        return nFees * Policy.GetAttributeFeeV1(snapshot, (byte)TransactionAttributeType.NotaryAssisted) / notariesCount;
+        return nFees * Policy.GetAttributeFee(snapshot, (byte)TransactionAttributeType.NotaryAssisted) / notariesCount;
     }
 
     public class Deposit : IInteroperable

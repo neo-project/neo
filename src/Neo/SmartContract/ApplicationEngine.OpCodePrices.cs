@@ -18,8 +18,7 @@ partial class ApplicationEngine
     /// <summary>
     /// The prices of all the opcodes.
     /// </summary>
-    [Obsolete("You should use OpCodePriceTable")]
-    public static readonly IReadOnlyDictionary<OpCode, long> OpCodePrices = new Dictionary<OpCode, long>
+    private static readonly IReadOnlyDictionary<OpCode, long> s_prices = new Dictionary<OpCode, long>
     {
         [OpCode.PUSHINT8] = 1 << 0,
         [OpCode.PUSHINT16] = 1 << 0,
@@ -230,11 +229,9 @@ partial class ApplicationEngine
     /// </summary>
     static ApplicationEngine()
     {
-#pragma warning disable CS0618 // Type or member is obsolete
-        foreach (var entry in OpCodePrices)
-#pragma warning restore CS0618 // Type or member is obsolete
+        foreach (var (opcode, price) in s_prices)
         {
-            OpCodePriceTable[(byte)entry.Key] = entry.Value;
+            OpCodePriceTable[(byte)opcode] = price;
         }
     }
 }

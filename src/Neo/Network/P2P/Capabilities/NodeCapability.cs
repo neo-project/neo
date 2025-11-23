@@ -63,6 +63,7 @@ public abstract class NodeCapability : ISerializable
 #pragma warning disable CS0618 // Type or member is obsolete
             NodeCapabilityType.TcpServer or NodeCapabilityType.WsServer => new ServerCapability(type),
 #pragma warning restore CS0618 // Type or member is obsolete
+            NodeCapabilityType.DisableCompression => new DisableCompressionCapability(),
             NodeCapabilityType.FullNode => new FullNodeCapability(),
             NodeCapabilityType.ArchivalNode => new ArchivalNodeCapability(),
             _ => new UnknownCapability(type),

@@ -24,7 +24,6 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Array = System.Array;
-using Buffer = Neo.VM.Types.Buffer;
 using ExecutionContext = Neo.VM.ExecutionContext;
 using VMArray = Neo.VM.Types.Array;
 
@@ -36,7 +35,6 @@ namespace Neo.SmartContract;
 public partial class ApplicationEngine : ExecutionEngine
 {
     protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
-    protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
 
     /// <summary>
     /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -106,12 +104,6 @@ public partial class ApplicationEngine : ExecutionEngine
     public IVerifiable? ScriptContainer { get; }
 
     /// <summary>
-    /// The snapshot used to read or write data.
-    /// </summary>
-    [Obsolete("This property is deprecated. Use SnapshotCache instead.")]
-    public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
-
-    /// <summary>
     /// The snapshotcache <see cref="SnapshotCache"/> used to read or write data.
     /// </summary>
     public DataCache SnapshotCache => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
@@ -125,13 +117,6 @@ public partial class ApplicationEngine : ExecutionEngine
     /// The <see cref="Neo.ProtocolSettings"/> used by the engine.
     /// </summary>
     public ProtocolSettings ProtocolSettings { get; }
-
-    /// <summary>
-    /// GAS spent to execute.
-    /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
-    /// </summary>
-    [Obsolete("This property is deprecated. Use FeeConsumed instead.")]
-    public long GasConsumed { get; protected set; } = 0;
 
     /// <summary>
     /// GAS spent to execute.
@@ -239,13 +224,6 @@ public partial class ApplicationEngine : ExecutionEngine
         return table;
     }
 
-    public static JumpTable ComposeNotEchidnaJumpTable()
-    {
-        var jumpTable = ComposeDefaultJumpTable();
-        jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
-        return jumpTable;
-    }
-
     protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
     {
         if (engine is ApplicationEngine app)
@@ -299,9 +277,7 @@ public partial class ApplicationEngine : ExecutionEngine
     /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
     protected internal void AddFee(long datoshi)
     {
-#pragma warning disable CS0618 // Type or member is obsolete
-        FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
-#pragma warning restore CS0618 // Type or member is obsolete
+        FeeConsumed = checked(FeeConsumed + datoshi);
         if (FeeConsumed > _feeAmount)
             throw new InvalidOperationException("Insufficient GAS.");
     }
@@ -340,10 +316,7 @@ public partial class ApplicationEngine : ExecutionEngine
         }
         else
         {
-            var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
-            ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
-            : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!);
-            if (executingContract?.CanCall(contract, method.Name) == false)
+            if (state.Contract?.CanCall(contract, method.Name) == false)
                 throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
         }
 
@@ -451,38 +424,11 @@ public partial class ApplicationEngine : ExecutionEngine
         var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
         settings ??= ProtocolSettings.Default;
         // Adjust jump table according persistingBlock
-        var jumpTable = settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
-        var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
-              ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
+        var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, DefaultJumpTable)
+              ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, DefaultJumpTable);
 
         InstanceCreated?.Invoke(engine);
         return engine;
-    }
-
-    /// <summary>
-    /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
-    /// <see cref="OpCode.SUBSTR"/>
-    /// </summary>
-    /// <param name="engine">The execution engine.</param>
-    /// <param name="instruction">The instruction being executed.</param>
-    /// <remarks>Pop 3, Push 1</remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
-    {
-        var count = (int)engine.Pop().GetInteger();
-        if (count < 0)
-            throw new InvalidOperationException($"The count can not be negative for {nameof(OpCode.SUBSTR)}, count: {count}.");
-        var index = (int)engine.Pop().GetInteger();
-        if (index < 0)
-            throw new InvalidOperationException($"The index can not be negative for {nameof(OpCode.SUBSTR)}, index: {index}.");
-        var x = engine.Pop().GetSpan();
-        // Note: here it's the main change
-        if (index + count > x.Length)
-            throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
-
-        Buffer result = new(count, false);
-        x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
-        engine.Push(result);
     }
 
     public override void LoadContext(ExecutionContext context)
@@ -595,6 +541,8 @@ public partial class ApplicationEngine : ExecutionEngine
     /// <returns>The converted <see cref="object"/>.</returns>
     protected internal object? Convert(StackItem item, InteropParameterDescriptor descriptor)
     {
+        if (item.IsNull && !descriptor.IsNullable && descriptor.Type != typeof(StackItem))
+            throw new InvalidOperationException($"The argument `{descriptor.Name}` can't be null.");
         descriptor.Validate(item);
         if (descriptor.IsArray)
         {
@@ -603,7 +551,11 @@ public partial class ApplicationEngine : ExecutionEngine
             {
                 av = Array.CreateInstance(descriptor.Type.GetElementType()!, array.Count);
                 for (int i = 0; i < av.Length; i++)
+                {
+                    if (array[i].IsNull && !descriptor.IsElementNullable)
+                        throw new InvalidOperationException($"The element of `{descriptor.Name}` can't be null.");
                     av.SetValue(descriptor.Converter(array[i]), i);
+                }
             }
             else
             {
@@ -611,7 +563,12 @@ public partial class ApplicationEngine : ExecutionEngine
                 if (count > Limits.MaxStackSize) throw new InvalidOperationException();
                 av = Array.CreateInstance(descriptor.Type.GetElementType()!, count);
                 for (int i = 0; i < av.Length; i++)
-                    av.SetValue(descriptor.Converter(Pop()), i);
+                {
+                    StackItem popped = Pop();
+                    if (popped.IsNull && !descriptor.IsElementNullable)
+                        throw new InvalidOperationException($"The element of `{descriptor.Name}` can't be null.");
+                    av.SetValue(descriptor.Converter(popped), i);
+                }
             }
             return av;
         }

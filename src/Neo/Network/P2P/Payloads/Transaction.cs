@@ -331,8 +331,6 @@ public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
         long attributesFee = 0;
         foreach (TransactionAttribute attribute in Attributes)
         {
-            if (attribute.Type == TransactionAttributeType.NotaryAssisted && !settings.IsHardforkEnabled(Hardfork.HF_Echidna, height))
-                return VerifyResult.InvalidAttribute;
             if (!attribute.Verify(snapshot, this))
                 return VerifyResult.InvalidAttribute;
             attributesFee += attribute.CalculateNetworkFee(snapshot, this);
