@@ -182,20 +182,28 @@ namespace Neo.Ledger
         /// <returns><see langword="true"/> if the <see cref="MemoryPool"/> contains a <see cref="Transaction"/> with the specified hash; otherwise, <see langword="false"/>.</returns>
         public bool TryRemove(UInt256 hash, [NotNullWhen(true)] out Transaction? tx)
         {
+            tx = null;
             _txRwLock.EnterWriteLock();
             try
             {
                 if (_unsortedTransactions.Remove(hash, out var item))
                 {
                     tx = item.Tx;
-
-                    _unverifiedTransactions.Remove(hash);
-                    _unsortedTransactions.Remove(hash);
                     _sortedTransactions.Remove(item);
                     _unverifiedSortedTransactions.Remove(item);
-
                     RemoveConflictsOfVerified(item);
-                    VerificationContext.RemoveTransaction(item.Tx);
+                }
+                if (_unverifiedTransactions.Remove(hash, out item))
+                {
+                    tx = item.Tx;
+                    _sortedTransactions.Remove(item);
+                    _unverifiedSortedTransactions.Remove(item);
+                    RemoveConflictsOfVerified(item);
+                }
+
+                if (tx != null)
+                {
+                    VerificationContext.RemoveTransaction(tx);
                     return true;
                 }
             }
@@ -204,7 +212,6 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            tx = null;
             return false;
         }
 
