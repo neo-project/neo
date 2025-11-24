@@ -174,6 +174,40 @@ namespace Neo.Ledger
             }
         }
 
+        /// <summary>
+        /// Remove the <see cref="Transaction"/> associated with the specified hash.
+        /// </summary>
+        /// <param name="hash">The hash of the <see cref="Transaction"/> to get.</param>
+        /// <param name="tx">When this method returns, contains the <see cref="Transaction"/> associated with the specified hash, if the hash is found; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the <see cref="MemoryPool"/> contains a <see cref="Transaction"/> with the specified hash; otherwise, <see langword="false"/>.</returns>
+        public bool TryRemove(UInt256 hash, [NotNullWhen(true)] out Transaction? tx)
+        {
+            _txRwLock.EnterWriteLock();
+            try
+            {
+                if (_unsortedTransactions.Remove(hash, out var item))
+                {
+                    tx = item.Tx;
+
+                    _unverifiedTransactions.Remove(hash);
+                    _unsortedTransactions.Remove(hash);
+                    _sortedTransactions.Remove(item);
+                    _unverifiedSortedTransactions.Remove(item);
+
+                    RemoveConflictsOfVerified(item);
+                    VerificationContext.RemoveTransaction(item.Tx);
+                    return true;
+                }
+            }
+            finally
+            {
+                _txRwLock.ExitWriteLock();
+            }
+
+            tx = null;
+            return false;
+        }
+
         // Note: This isn't used in Fill during consensus, fill uses GetSortedVerifiedTransactions()
         public IEnumerator<Transaction> GetEnumerator()
         {
