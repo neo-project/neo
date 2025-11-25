@@ -177,7 +177,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Remove the <see cref="Transaction"/> associated with the specified hash.
         /// </summary>
-        /// <param name="hash">The hash of the <see cref="Transaction"/> to get.</param>
+        /// <param name="hash">The hash of the <see cref="Transaction"/> to remove.</param>
         /// <param name="tx">When this method returns, contains the <see cref="Transaction"/> associated with the specified hash, if the hash is found; otherwise, <see langword="null"/>.</param>
         /// <returns><see langword="true"/> if the <see cref="MemoryPool"/> contains a <see cref="Transaction"/> with the specified hash; otherwise, <see langword="false"/>.</returns>
         public bool TryRemove(UInt256 hash, [NotNullWhen(true)] out Transaction? tx)
