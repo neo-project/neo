@@ -339,17 +339,19 @@ public sealed class PolicyContract : NativeContract
     {
         AssertCommittee(engine);
 
-        return BlockAccount(engine.SnapshotCache, account);
+        return BlockAccountInternal(engine, account);
     }
 
-    internal bool BlockAccount(DataCache snapshot, UInt160 account)
+    internal bool BlockAccountInternal(ApplicationEngine engine, UInt160 account)
     {
         if (IsNative(account)) throw new InvalidOperationException("Cannot block a native contract.");
 
         var key = CreateStorageKey(Prefix_BlockedAccount, account);
-        if (snapshot.Contains(key)) return false;
+        if (engine.SnapshotCache.Contains(key)) return false;
 
-        snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
+        engine.SnapshotCache.Add(key, new StorageItem(Array.Empty<byte>()));
+
+        NEO.ClearVotesInternal(engine, account);
         return true;
     }
 

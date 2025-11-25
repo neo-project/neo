@@ -492,6 +492,25 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         return true;
     }
 
+    internal void ClearVotesInternal(ApplicationEngine engine, UInt160 account)
+    {
+        NeoAccountState? stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
+        if (stateAccount is null) return;
+        if (stateAccount.Balance == 0) return;
+        if (stateAccount.VoteTo is null) return;
+        engine.SnapshotCache.GetAndChange(_votersCount)!.Add(-stateAccount.Balance);
+        StorageKey keyCandidate = CreateStorageKey(Prefix_Candidate, stateAccount.VoteTo);
+        StorageItem storageValidator = engine.SnapshotCache.GetAndChange(keyCandidate)!;
+        CandidateState stateValidator = storageValidator.GetInteroperable<CandidateState>();
+        stateValidator.Votes -= stateAccount.Balance;
+        CheckCandidate(engine.SnapshotCache, stateAccount.VoteTo, stateValidator);
+        ECPoint from = stateAccount.VoteTo;
+        stateAccount.VoteTo = null;
+        stateAccount.LastGasPerVote = 0;
+        engine.SendNotification(Hash, "Vote",
+            new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from.ToArray(), StackItem.Null, stateAccount.Balance });
+    }
+
     /// <summary>
     /// Gets the first 256 registered candidates.
     /// </summary>

@@ -374,7 +374,7 @@ public sealed class ContractManagement : NativeContract
         foreach (var (key, _) in engine.SnapshotCache.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
             engine.SnapshotCache.Delete(key);
         // lock contract
-        Policy.BlockAccount(engine.SnapshotCache, hash);
+        Policy.BlockAccountInternal(engine, hash);
         // emit event
         engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
     }
