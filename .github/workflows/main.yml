@@ -2,7 +2,7 @@ name: .NET Core Test and Publish
 
 on:
   push:
-    branches: [master]
+    branches: [master-n3]
   pull_request:
 
 env:
@@ -68,7 +68,7 @@ jobs:
         file: ${{ github.workspace }}/TestResults/coverage/coverage.info
 
   PublishMyGet:
-    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    if: github.ref == 'refs/heads/master-n3' && startsWith(github.repository, 'neo-project/')
     needs: [Test]
     runs-on: ubuntu-latest
     steps:
@@ -90,7 +90,7 @@ jobs:
         MYGET_TOKEN: ${{ secrets.MYGET_TOKEN }}
         
   Release:
-    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    if: github.ref == 'refs/heads/master-n3' && startsWith(github.repository, 'neo-project/')
     needs: Test
     runs-on: ubuntu-latest
     steps:
