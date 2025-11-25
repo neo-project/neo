@@ -101,6 +101,7 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
+        private const ulong RequiredTimeForRecoverFunds = 365 * 24 * 60 * 60 * 500UL; // 6 months in milliseconds
 
         /// <summary>
         /// The event name for the block generation time changed.
@@ -523,8 +524,8 @@ namespace Neo.SmartContract.Native
             if (entry == null)
                 throw new InvalidOperationException("Request not found.");
 
-            if ((BigInteger)entry < engine.GetTime() * 365 * 24 * 60 * 60 * 1_000) // 1 year in milliseconds
-                throw new InvalidOperationException("Request must be signed at least one year ago.");
+            if (engine.GetTime() - (BigInteger)entry < RequiredTimeForRecoverFunds)
+                throw new InvalidOperationException("Request must be signed at 6 months ago.");
 
             // Transfer funds, NEO, GAS and extra NEP17 tokens
 
