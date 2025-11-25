@@ -12,7 +12,6 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
-using Neo.Extensions;
 using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -173,14 +172,13 @@ public sealed partial class Blockchain : UntypedActor
         _system.MemPool.InvalidateAllTransactions();
 
         var snapshot = _system.StoreView;
-        var mtb = _system.GetMaxTraceableBlocks();
 
         // Add the transactions to the memory pool
         foreach (var tx in transactions)
         {
             if (NativeContract.Ledger.ContainsTransaction(snapshot, tx.Hash))
                 continue;
-            if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account), mtb))
+            if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account), _system.Settings.MaxTraceableBlocks))
                 continue;
             // First remove the tx if it is unverified in the pool.
             _system.MemPool.TryRemoveUnVerified(tx.Hash, out _);
@@ -255,9 +253,8 @@ public sealed partial class Blockchain : UntypedActor
             }
 
             var blocksPersisted = 0;
-            var timePerBlock = _system.GetTimePerBlock();
-            var extraRelayingBlocks = timePerBlock.TotalMilliseconds < ProtocolSettings.Default.MillisecondsPerBlock
-                ? (ProtocolSettings.Default.MillisecondsPerBlock - (uint)timePerBlock.TotalMilliseconds) / 1000
+            var extraRelayingBlocks = _system.Settings.MillisecondsPerBlock < ProtocolSettings.Default.MillisecondsPerBlock
+                ? (ProtocolSettings.Default.MillisecondsPerBlock - _system.Settings.MillisecondsPerBlock) / 1000
                 : 0;
             foreach (var blockToPersist in blocksToPersistList)
             {

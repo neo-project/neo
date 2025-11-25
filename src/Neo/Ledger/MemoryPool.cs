@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -122,9 +121,8 @@ public class MemoryPool : IReadOnlyCollection<Transaction>
     {
         _system = system;
         Capacity = system.Settings.MemoryPoolMaxTransactions;
-        var timePerBlock = system.GetTimePerBlock().TotalMilliseconds;
-        MaxMillisecondsToReverifyTx = timePerBlock / 3;
-        MaxMillisecondsToReverifyTxPerIdle = timePerBlock / 15;
+        MaxMillisecondsToReverifyTx = system.Settings.MillisecondsPerBlock / 3;
+        MaxMillisecondsToReverifyTxPerIdle = system.Settings.MillisecondsPerBlock / 15;
     }
 
     /// <summary>
@@ -614,7 +612,7 @@ public class MemoryPool : IReadOnlyCollection<Transaction>
             if (Count > RebroadcastMultiplierThreshold)
                 blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
-            var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.GetTimePerBlock().TotalMilliseconds * blocksTillRebroadcast);
+            var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.Settings.MillisecondsPerBlock * blocksTillRebroadcast);
             foreach (PoolItem item in reverifiedItems)
             {
                 if (_unsortedTransactions.ContainsKey(item.Tx.Hash))
