@@ -2,7 +2,7 @@ name: .NET Core Test and Publish
 
 on:
   push:
-    branches: [master]
+    branches: [master-n3]
   pull_request:
 
 env:
@@ -68,7 +68,7 @@ jobs:
         file: ${{ github.workspace }}/TestResults/coverage/coverage.info
 
   PublishMyGet:
-    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    if: github.ref == 'refs/heads/master-n3' && startsWith(github.repository, 'neo-project/')
     needs: [Test]
     runs-on: ubuntu-latest
     steps:
@@ -83,14 +83,14 @@ jobs:
     - name: Set Version
       run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION_SUFFIX={}' >> $GITHUB_ENV
     - name : Pack (Everything)
-      run: dotnet pack src/Neo/Neo.csproj -c Debug -o out --include-source --version-suffix ${{ env.VERSION_SUFFIX }}
+      run: dotnet pack -c Debug -o out --include-source --version-suffix ${{ env.VERSION_SUFFIX }}
     - name: Publish to myGet
       run: dotnet nuget push out/*.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
       env:
         MYGET_TOKEN: ${{ secrets.MYGET_TOKEN }}
         
   Release:
-    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    if: github.ref == 'refs/heads/master-n3' && startsWith(github.repository, 'neo-project/')
     needs: Test
     runs-on: ubuntu-latest
     steps:
@@ -123,7 +123,7 @@ jobs:
     - name: Publish to NuGet
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
-        dotnet pack src/Neo/Neo.csproj -o out -c Release
+        dotnet pack -o out -c Release
         dotnet nuget push out/*.nupkg -s https://api.nuget.org/v3/index.json -k ${NUGET_TOKEN}
       env:
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
