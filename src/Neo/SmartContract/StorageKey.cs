@@ -289,7 +289,7 @@ public sealed record StorageKey
         hash.Serialize(data.AsSpan(PrefixLength..));
         BinaryPrimitives.WriteInt32BigEndian(data.AsSpan(UInt160Length..), bigEndian);
         Array.Copy(methodData, 0, data, HashAndInt, methodData.Length);
-        
+
         return new(id, data);
     }
 
