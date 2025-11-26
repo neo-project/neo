@@ -15,25 +15,13 @@ using System.Diagnostics;
 namespace Neo.SmartContract.Native;
 
 [DebuggerDisplay("{Descriptor.Name}")]
-[AttributeUsage(AttributeTargets.Constructor, AllowMultiple = true)]
-internal class ContractEventAttribute : Attribute, IHardforkActivable
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+class ContractEventAttribute : Attribute, IHardforkActivable
 {
-    public int Order { get; init; }
-    public ContractEventDescriptor Descriptor { get; set; }
-    public Hardfork? ActiveIn { get; init; } = null;
-    public Hardfork? DeprecatedIn { get; init; } = null;
-
-    public ContractEventAttribute(Hardfork activeIn, int order, string name,
-        string arg1Name, ContractParameterType arg1Value) : this(order, name, arg1Name, arg1Value)
-    {
-        ActiveIn = activeIn;
-    }
-
-    public ContractEventAttribute(Hardfork activeIn, int order, string name,
-        string arg1Name, ContractParameterType arg1Value, Hardfork deprecatedIn) : this(activeIn, order, name, arg1Name, arg1Value)
-    {
-        DeprecatedIn = deprecatedIn;
-    }
+    public int Order { get; }
+    public ContractEventDescriptor Descriptor { get; }
+    public Hardfork? ActiveIn { get; init; }
+    public Hardfork? DeprecatedIn { get; init; }
 
     public ContractEventAttribute(int order, string name, string arg1Name, ContractParameterType arg1Value)
     {
@@ -50,26 +38,6 @@ internal class ContractEventAttribute : Attribute, IHardforkActivable
                 }
             ]
         };
-    }
-
-    public ContractEventAttribute(int order, string name, string arg1Name, ContractParameterType arg1Value, Hardfork deprecatedIn)
-        : this(order, name, arg1Name, arg1Value)
-    {
-        DeprecatedIn = deprecatedIn;
-    }
-
-    public ContractEventAttribute(Hardfork activeIn, int order, string name,
-        string arg1Name, ContractParameterType arg1Value,
-        string arg2Name, ContractParameterType arg2Value) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value)
-    {
-        ActiveIn = activeIn;
-    }
-
-    public ContractEventAttribute(Hardfork activeIn, int order, string name,
-        string arg1Name, ContractParameterType arg1Value,
-        string arg2Name, ContractParameterType arg2Value, Hardfork deprecatedIn) : this(activeIn, order, name, arg1Name, arg1Value, arg2Name, arg2Value)
-    {
-        DeprecatedIn = deprecatedIn;
     }
 
     public ContractEventAttribute(int order, string name,
@@ -94,22 +62,6 @@ internal class ContractEventAttribute : Attribute, IHardforkActivable
                 }
             ]
         };
-    }
-
-    public ContractEventAttribute(int order, string name,
-       string arg1Name, ContractParameterType arg1Value,
-       string arg2Name, ContractParameterType arg2Value, Hardfork deprecatedIn) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value)
-    {
-        DeprecatedIn = deprecatedIn;
-    }
-
-
-    public ContractEventAttribute(Hardfork activeIn, int order, string name,
-        string arg1Name, ContractParameterType arg1Value,
-        string arg2Name, ContractParameterType arg2Value,
-        string arg3Name, ContractParameterType arg3Value) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value, arg3Name, arg3Value)
-    {
-        ActiveIn = activeIn;
     }
 
     public ContractEventAttribute(int order, string name,
@@ -141,15 +93,6 @@ internal class ContractEventAttribute : Attribute, IHardforkActivable
                 }
             ]
         };
-    }
-
-    public ContractEventAttribute(Hardfork activeIn, int order, string name,
-        string arg1Name, ContractParameterType arg1Value,
-        string arg2Name, ContractParameterType arg2Value,
-        string arg3Name, ContractParameterType arg3Value,
-        string arg4Name, ContractParameterType arg4Value) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value, arg3Name, arg3Value, arg4Name, arg4Value)
-    {
-        ActiveIn = activeIn;
     }
 
     public ContractEventAttribute(int order, string name,

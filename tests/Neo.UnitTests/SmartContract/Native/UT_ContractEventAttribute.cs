@@ -20,9 +20,9 @@ public class UT_ContractEventAttribute
     [TestMethod]
     public void TestConstructorOneArg()
     {
-        var arg = new ContractEventAttribute(Hardfork.HF_Basilisk, 0, "1", "a1", ContractParameterType.String);
+        var arg = new ContractEventAttribute(0, "1", "a1", ContractParameterType.String);
 
-        Assert.AreEqual(Hardfork.HF_Basilisk, arg.ActiveIn);
+        Assert.IsNull(arg.ActiveIn);
         Assert.AreEqual(0, arg.Order);
         Assert.AreEqual("1", arg.Descriptor.Name);
         Assert.HasCount(1, arg.Descriptor.Parameters);
@@ -42,11 +42,11 @@ public class UT_ContractEventAttribute
     [TestMethod]
     public void TestConstructorTwoArg()
     {
-        var arg = new ContractEventAttribute(Hardfork.HF_Basilisk, 0, "2",
+        var arg = new ContractEventAttribute(0, "2",
             "a1", ContractParameterType.String,
             "a2", ContractParameterType.Integer);
 
-        Assert.AreEqual(Hardfork.HF_Basilisk, arg.ActiveIn);
+        Assert.IsNull(arg.ActiveIn);
         Assert.AreEqual(0, arg.Order);
         Assert.AreEqual("2", arg.Descriptor.Name);
         Assert.HasCount(2, arg.Descriptor.Parameters);
@@ -72,12 +72,12 @@ public class UT_ContractEventAttribute
     [TestMethod]
     public void TestConstructorThreeArg()
     {
-        var arg = new ContractEventAttribute(Hardfork.HF_Basilisk, 0, "3",
+        var arg = new ContractEventAttribute(0, "3",
             "a1", ContractParameterType.String,
             "a2", ContractParameterType.Integer,
             "a3", ContractParameterType.Boolean);
 
-        Assert.AreEqual(Hardfork.HF_Basilisk, arg.ActiveIn);
+        Assert.IsNull(arg.ActiveIn);
         Assert.AreEqual(0, arg.Order);
         Assert.AreEqual("3", arg.Descriptor.Name);
         Assert.HasCount(3, arg.Descriptor.Parameters);
@@ -108,13 +108,13 @@ public class UT_ContractEventAttribute
     [TestMethod]
     public void TestConstructorFourArg()
     {
-        var arg = new ContractEventAttribute(Hardfork.HF_Basilisk, 0, "4",
+        var arg = new ContractEventAttribute(0, "4",
             "a1", ContractParameterType.String,
             "a2", ContractParameterType.Integer,
             "a3", ContractParameterType.Boolean,
             "a4", ContractParameterType.Array);
 
-        Assert.AreEqual(Hardfork.HF_Basilisk, arg.ActiveIn);
+        Assert.IsNull(arg.ActiveIn);
         Assert.AreEqual(0, arg.Order);
         Assert.AreEqual("4", arg.Descriptor.Name);
         Assert.HasCount(4, arg.Descriptor.Parameters);

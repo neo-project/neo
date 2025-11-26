@@ -28,6 +28,18 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// Represents the NEO token in the NEO system.
 /// </summary>
+[ContractEvent(1, name: "CandidateStateChanged",
+   "pubkey", ContractParameterType.PublicKey,
+   "registered", ContractParameterType.Boolean,
+   "votes", ContractParameterType.Integer)]
+[ContractEvent(2, name: "Vote",
+   "account", ContractParameterType.Hash160,
+   "from", ContractParameterType.PublicKey,
+   "to", ContractParameterType.PublicKey,
+   "amount", ContractParameterType.Integer)]
+[ContractEvent(3, name: "CommitteeChanged",
+   "old", ContractParameterType.Array,
+   "new", ContractParameterType.Array)]
 public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
 {
     public override string Symbol => "NEO";
@@ -58,19 +70,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     private readonly StorageKey _votersCount;
     private readonly StorageKey _registerPrice;
 
-    [ContractEvent(1, name: "CandidateStateChanged",
-       "pubkey", ContractParameterType.PublicKey,
-       "registered", ContractParameterType.Boolean,
-       "votes", ContractParameterType.Integer)]
-    [ContractEvent(2, name: "Vote",
-       "account", ContractParameterType.Hash160,
-       "from", ContractParameterType.PublicKey,
-       "to", ContractParameterType.PublicKey,
-       "amount", ContractParameterType.Integer)]
-    [ContractEvent(Hardfork.HF_Cockatrice, 3, name: "CommitteeChanged",
-       "old", ContractParameterType.Array,
-       "new", ContractParameterType.Array)]
-    internal NeoToken() : base()
+    internal NeoToken()
     {
         TotalAmount = 100000000 * Factor;
         _votersCount = CreateStorageKey(Prefix_VotersCount);
@@ -109,14 +109,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
 
     protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
     {
-        if (hfChecker(Hardfork.HF_Echidna, blockHeight))
-        {
-            manifest.SupportedStandards = ["NEP-17", "NEP-27"];
-        }
-        else
-        {
-            manifest.SupportedStandards = ["NEP-17"];
-        }
+        manifest.SupportedStandards = ["NEP-17", "NEP-27"];
     }
 
     private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
@@ -235,19 +228,15 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
             cachedCommittee.Clear();
             cachedCommittee.AddRange(ComputeCommitteeMembers(engine.SnapshotCache, engine.ProtocolSettings));
 
-            // Hardfork check for https://github.com/neo-project/neo/pull/3158
-            // New notification will case 3.7.0 and 3.6.0 have different behavior
-            if (engine.IsHardforkEnabled(Hardfork.HF_Cockatrice))
-            {
-                var newCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
+            var newCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
 
-                if (!newCommittee.SequenceEqual(prevCommittee))
+            if (!newCommittee.SequenceEqual(prevCommittee))
+            {
+                engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter)
                 {
-                    engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter) {
-                        new VM.Types.Array(engine.ReferenceCounter, prevCommittee.Select(u => (ByteString)u.ToArray())) ,
-                        new VM.Types.Array(engine.ReferenceCounter, newCommittee.Select(u => (ByteString)u.ToArray()))
-                    });
-                }
+                    new VM.Types.Array(engine.ReferenceCounter, prevCommittee.Select(u => (ByteString)u.ToArray())) ,
+                    new VM.Types.Array(engine.ReferenceCounter, newCommittee.Select(u => (ByteString)u.ToArray()))
+                });
             }
         }
         return ContractTask.CompletedTask;
@@ -372,7 +361,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// <param name="from">The account that is paying the GAS.</param>
     /// <param name="amount">The amount of GAS being paid.</param>
     /// <param name="data">The data of the payment.</param>
-    [ContractMethod(Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     private async ContractTask OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
     {
         if (engine.CallingScriptHash != GAS.Hash)
@@ -395,15 +384,9 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// <param name="engine">The engine used to check witness and read data.</param>
     /// <param name="pubkey">The public key of the candidate.</param>
     /// <returns><see langword="true"/> if the candidate is registered; otherwise, <see langword="false"/>.</returns>
-    [ContractMethod(true, Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States)]
-    [ContractMethod(Hardfork.HF_Echidna, /* */ RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
     {
-        // This check can be removed post-Echidna if compatible,
-        // RegisterInternal does this anyway.
-        if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna) &&
-            !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
-            return false;
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         engine.AddFee(GetRegisterPrice(engine.SnapshotCache));
         return RegisterInternal(engine, pubkey);
@@ -429,8 +412,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// <param name="engine">The engine used to check witness and read data.</param>
     /// <param name="pubkey">The public key of the candidate.</param>
     /// <returns><see langword="true"/> if the candidate is unregistered; otherwise, <see langword="false"/>.</returns>
-    [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
-    [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
     {
         if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -454,8 +436,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// <param name="account">The account that is voting.</param>
     /// <param name="voteTo">The candidate to vote for.</param>
     /// <returns><see langword="true"/> if the vote is successful; otherwise, <see langword="false"/>.</returns>
-    [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
-    [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint? voteTo)
     {
         if (!engine.CheckWitnessInternal(account)) return false;
@@ -592,7 +573,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// </summary>
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <returns>The address of the committee.</returns>
-    [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
+    [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
     public UInt160 GetCommitteeAddress(IReadOnlyStore snapshot)
     {
         ECPoint[] committees = GetCommittee(snapshot);

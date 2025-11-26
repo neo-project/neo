@@ -20,7 +20,6 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
-using System.Collections.Immutable;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -664,13 +663,7 @@ public class UT_Notary
                 ECPoint.Parse("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", ECCurve.Secp256r1)
             ],
             ValidatorsCount = 7,
-            Hardforks = new Dictionary<Hardfork, uint>{
-                {Hardfork.HF_Aspidochelone, 1},
-                {Hardfork.HF_Basilisk, 2},
-                {Hardfork.HF_Cockatrice, 3},
-                {Hardfork.HF_Domovoi, 4},
-                {Hardfork.HF_Echidna, 5}
-            }.ToImmutableDictionary()
+            Hardforks = []
         };
 
         // Imitate Blockchain's Persist behaviour: OnPersist + transactions processing.

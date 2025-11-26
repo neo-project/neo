@@ -810,7 +810,7 @@ public partial class UT_InteropService : TestKit
     }
 
     [TestMethod]
-    public void TestVerifyWithECDsaV0()
+    public void TestVerifyWithECDsa()
     {
         var privateKey = new byte[32];
         using var rng = RandomNumberGenerator.Create();
@@ -821,12 +821,11 @@ public partial class UT_InteropService : TestKit
         var signatureR1 = Crypto.Sign(hexMessage, privateKey, ECCurve.Secp256r1);
         var signatureK1 = Crypto.Sign(hexMessage, privateKey, ECCurve.Secp256k1);
 
-        var result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyR1, signatureR1, NamedCurveHash.secp256r1SHA256);
+        var result = CryptoLib.VerifyWithECDsa(hexMessage, publicKeyR1, signatureR1, NamedCurveHash.secp256r1SHA256);
         Assert.IsTrue(result);
-        result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
+        result = CryptoLib.VerifyWithECDsa(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
         Assert.IsTrue(result);
-        Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256));
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[64], NamedCurveHash.secp256r1Keccak256));
+        Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256));
     }
 
     [TestMethod]

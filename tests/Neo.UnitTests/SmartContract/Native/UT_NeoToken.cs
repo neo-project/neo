@@ -21,7 +21,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Text;
 using static Neo.SmartContract.Native.NeoToken;
 using Array = System.Array;
 using Boolean = Neo.VM.Types.Boolean;
@@ -57,10 +56,6 @@ public class UT_NeoToken
     [TestMethod]
     public void Test_HF_EchidnaStates()
     {
-        string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 10");
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-        var settings = ProtocolSettings.Load(stream);
-
         var clonedCache = _snapshotCache.CloneCache();
         var persistingBlock = new Block
         {
@@ -70,26 +65,8 @@ public class UT_NeoToken
 
         foreach (var method in new string[] { "vote", "registerCandidate", "unregisterCandidate" })
         {
-            // Test WITHOUT HF_Echidna
-
-            persistingBlock.Header.Index = 9;
-
             using (var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
-            {
-                var methods = NativeContract.NEO.GetContractMethods(engine);
-                var entries = methods.Values.Where(u => u.Name == method).ToArray();
-
-                Assert.HasCount(1, entries);
-                Assert.AreEqual(CallFlags.States, entries[0].RequiredCallFlags);
-            }
-
-            // Test WITH HF_Echidna
-
-            persistingBlock.Header.Index = 10;
-
-            using (var engine = ApplicationEngine.Create(TriggerType.Application,
-                 new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+                 new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock))
             {
                 var methods = NativeContract.NEO.GetContractMethods(engine);
                 var entries = methods.Values.Where(u => u.Name == method).ToArray();

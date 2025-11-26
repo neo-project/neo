@@ -20,21 +20,15 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// A native contract for managing roles in NEO system.
 /// </summary>
+[ContractEvent(0, name: "Designation",
+    "Role", ContractParameterType.Integer,
+    "BlockIndex", ContractParameterType.Integer,
+    "Old", ContractParameterType.Array,
+    "New", ContractParameterType.Array
+    )]
 public sealed class RoleManagement : NativeContract
 {
-    [ContractEvent(0, name: "Designation",
-        "Role", ContractParameterType.Integer,
-        "BlockIndex", ContractParameterType.Integer,
-        Hardfork.HF_Echidna)]
-
-    [ContractEvent(Hardfork.HF_Echidna, 0, name: "Designation",
-        "Role", ContractParameterType.Integer,
-        "BlockIndex", ContractParameterType.Integer,
-        "Old", ContractParameterType.Array,
-        "New", ContractParameterType.Array
-        )]
-
-    internal RoleManagement() : base() { }
+    internal RoleManagement() { }
 
     /// <summary>
     /// Gets the list of nodes for the specified role.
@@ -79,17 +73,9 @@ public sealed class RoleManagement : NativeContract
         list.AddRange(nodes);
         list.Sort();
         engine.SnapshotCache.Add(key, new StorageItem(list));
-        if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
-        {
-            var oldNodes = new VM.Types.Array(engine.ReferenceCounter, GetDesignatedByRole(engine.SnapshotCache, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
-            var newNodes = new VM.Types.Array(engine.ReferenceCounter, nodes.Select(u => (ByteString)u.EncodePoint(true)));
-
-            engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index, oldNodes, newNodes]));
-        }
-        else
-        {
-            engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index]));
-        }
+        var oldNodes = new VM.Types.Array(engine.ReferenceCounter, GetDesignatedByRole(engine.SnapshotCache, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
+        var newNodes = new VM.Types.Array(engine.ReferenceCounter, nodes.Select(u => (ByteString)u.EncodePoint(true)));
+        engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index, oldNodes, newNodes]));
     }
 
     private class NodeList : InteroperableList<ECPoint>
