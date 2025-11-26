@@ -13,6 +13,7 @@ using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Array = Neo.VM.Types.Array;
@@ -34,6 +35,14 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public required ContractParameterDefinition[] Parameters { get; set; }
 
+        public virtual bool HasNEP25
+        {
+            get
+            {
+                return Parameters.Any(x => x.ExtendedType != null);
+            }
+        }
+
         public virtual void FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
@@ -54,13 +63,14 @@ namespace Neo.SmartContract.Manifest
         /// Converts the event from a JSON object.
         /// </summary>
         /// <param name="json">The event represented by a JSON object.</param>
+        /// <param name="knownNamedTypes">Set of named type identifiers declared in the manifest, if any.</param>
         /// <returns>The converted event.</returns>
-        public static ContractEventDescriptor FromJson(JObject json)
+        public static ContractEventDescriptor FromJson(JObject json, ISet<string>? knownNamedTypes = null)
         {
             ContractEventDescriptor descriptor = new()
             {
                 Name = json["name"]!.GetString(),
-                Parameters = ((JArray)json["parameters"]!).Select(u => ContractParameterDefinition.FromJson((JObject)u!)).ToArray(),
+                Parameters = ((JArray)json["parameters"]!).Select(u => ContractParameterDefinition.FromJson((JObject)u!, knownNamedTypes)).ToArray(),
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException("Name in ContractEventDescriptor is empty");
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
