@@ -564,12 +564,14 @@ namespace Neo.SmartContract.Native
             if (IsNative(account)) throw new InvalidOperationException("Cannot block a native contract.");
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
-            if (engine.SnapshotCache.Contains(key)) return false;
 
             if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
             {
+                // Remove vote even if the account is already blocked
                 await NEO.VoteInternal(engine, account, null);
             }
+
+            if (engine.SnapshotCache.Contains(key)) return false;
 
             engine.SnapshotCache.Add(key, new StorageItem([]));
             return true;
