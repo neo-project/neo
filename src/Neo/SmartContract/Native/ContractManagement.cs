@@ -355,6 +355,11 @@ public sealed class ContractManagement : NativeContract
         }
         Helper.Check(new Script(contract.Nef.Script, true), contract.Manifest.Abi);
         contract.UpdateCounter++; // Increase update counter
+
+        // Clean whitelist (emit event if exists)
+
+        Policy.CleanWhitelist(engine, contract.Hash);
+
         return OnDeployAsync(engine, contract, data, true);
     }
 
