@@ -9,13 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualBasic;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using static Akka.IO.Dns;
 
 namespace Neo.SmartContract;
 
