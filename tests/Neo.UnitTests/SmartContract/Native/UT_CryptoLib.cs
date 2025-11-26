@@ -20,7 +20,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Org.BouncyCastle.Utilities.Encoders;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Neo.UnitTests.SmartContract.Native;
@@ -1122,23 +1121,7 @@ public class UT_CryptoLib
         ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256r1SHA256);
         Assert.IsTrue(ok);
 
-        // Different platform, different behavior
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256);
-            Assert.IsFalse(ok);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            Assert.ThrowsExactly<ArgumentException>(
-                () => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            // why is Interop+Crypto+OpenSslCryptographicException ?
-            Assert.Throws<System.Security.Cryptography.CryptographicException>(
-                () => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
-        }
+        Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
 
         // ArithmeticException, but should be ArgumentException
         byte[] invalidPublicKey = [0x03, .. Enumerable.Repeat<byte>(0x03, 32)];
