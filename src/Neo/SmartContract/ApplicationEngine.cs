@@ -328,6 +328,14 @@ namespace Neo.SmartContract
         /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
         protected internal void AddFee(BigInteger picoGas)
         {
+            // Check whitelist
+
+            if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
+            {
+                // The execution is whitelisted
+                return;
+            }
+
             _feeConsumed = _feeConsumed + picoGas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
@@ -368,10 +376,19 @@ namespace Neo.SmartContract
             else
             {
                 var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
-                ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
-                : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!);
+                    ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
+                    : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!);
                 if (executingContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
+            }
+
+            // Check whitelist
+
+            if (IsHardforkEnabled(Hardfork.HF_Faun) &&
+                NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method.Name, method.Parameters.Length, out var fixedFee))
+            {
+                AddFee(fixedFee.Value * ApplicationEngine.FeeFactor);
+                state.WhiteListed = true;
             }
 
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))
