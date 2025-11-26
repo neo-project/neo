@@ -89,7 +89,7 @@ public sealed class StdLib : NativeContract
     /// <param name="value">The <see cref="string"/> to convert.</param>
     /// <returns>The converted integer.</returns>
     [ContractMethod(CpuFee = 1 << 6)]
-    public static BigInteger Atoi([MaxLength(MaxInputLength)] string value)
+    public static BigInteger Atoi([Length(MaxInputLength)] string value)
     {
         return Atoi(value, 10);
     }
@@ -101,7 +101,7 @@ public sealed class StdLib : NativeContract
     /// <param name="base">The base of the integer. Only support 10 and 16.</param>
     /// <returns>The converted integer.</returns>
     [ContractMethod(CpuFee = 1 << 6)]
-    public static BigInteger Atoi([MaxLength(MaxInputLength)] string value, int @base)
+    public static BigInteger Atoi([Length(MaxInputLength)] string value, int @base)
     {
         return @base switch
         {
@@ -117,7 +117,7 @@ public sealed class StdLib : NativeContract
     /// <param name="data">The byte array to be encoded.</param>
     /// <returns>The encoded <see cref="string"/>.</returns>
     [ContractMethod(CpuFee = 1 << 5)]
-    public static string Base64Encode([MaxLength(MaxInputLength)] byte[] data)
+    public static string Base64Encode([Length(MaxInputLength)] byte[] data)
     {
         return Convert.ToBase64String(data);
     }
@@ -128,7 +128,7 @@ public sealed class StdLib : NativeContract
     /// <param name="s">The base64 <see cref="string"/>.</param>
     /// <returns>The decoded byte array.</returns>
     [ContractMethod(CpuFee = 1 << 5)]
-    public static byte[] Base64Decode([MaxLength(MaxInputLength)] string s)
+    public static byte[] Base64Decode([Length(MaxInputLength)] string s)
     {
         return Convert.FromBase64String(s);
     }
@@ -139,7 +139,7 @@ public sealed class StdLib : NativeContract
     /// <param name="data">The base64Url to be encoded.</param>
     /// <returns>The encoded base64Url string.</returns>
     [ContractMethod(CpuFee = 1 << 5)]
-    public static string Base64UrlEncode([MaxLength(MaxInputLength)] string data)
+    public static string Base64UrlEncode([Length(MaxInputLength)] string data)
     {
         return Base64UrlEncoder.Encode(data);
     }
@@ -150,7 +150,7 @@ public sealed class StdLib : NativeContract
     /// <param name="s">The base64Url string.</param>
     /// <returns>The decoded base64Url string.</returns>
     [ContractMethod(CpuFee = 1 << 5)]
-    public static string Base64UrlDecode([MaxLength(MaxInputLength)] string s)
+    public static string Base64UrlDecode([Length(MaxInputLength)] string s)
     {
         return Base64UrlEncoder.Decode(s);
     }
@@ -161,7 +161,7 @@ public sealed class StdLib : NativeContract
     /// <param name="data">The byte array to be encoded.</param>
     /// <returns>The encoded <see cref="string"/>.</returns>
     [ContractMethod(CpuFee = 1 << 13)]
-    public static string Base58Encode([MaxLength(MaxInputLength)] byte[] data)
+    public static string Base58Encode([Length(MaxInputLength)] byte[] data)
     {
         return Base58.Encode(data);
     }
@@ -172,7 +172,7 @@ public sealed class StdLib : NativeContract
     /// <param name="s">The base58 <see cref="string"/>.</param>
     /// <returns>The decoded byte array.</returns>
     [ContractMethod(CpuFee = 1 << 10)]
-    public static byte[] Base58Decode([MaxLength(MaxInputLength)] string s)
+    public static byte[] Base58Decode([Length(MaxInputLength)] string s)
     {
         return Base58.Decode(s);
     }
@@ -183,7 +183,7 @@ public sealed class StdLib : NativeContract
     /// <param name="data">The byte array to be encoded.</param>
     /// <returns>The encoded <see cref="string"/>.</returns>
     [ContractMethod(CpuFee = 1 << 16)]
-    public static string Base58CheckEncode([MaxLength(MaxInputLength)] byte[] data)
+    public static string Base58CheckEncode([Length(MaxInputLength)] byte[] data)
     {
         return Base58.Base58CheckEncode(data);
     }
@@ -194,43 +194,43 @@ public sealed class StdLib : NativeContract
     /// <param name="s">The base58 <see cref="string"/>.</param>
     /// <returns>The decoded byte array.</returns>
     [ContractMethod(CpuFee = 1 << 16)]
-    public static byte[] Base58CheckDecode([MaxLength(MaxInputLength)] string s)
+    public static byte[] Base58CheckDecode([Length(MaxInputLength)] string s)
     {
         return Base58.Base58CheckDecode(s);
     }
 
     [ContractMethod(CpuFee = 1 << 5)]
-    private static string HexEncode([MaxLength(MaxInputLength)] byte[] bytes)
+    private static string HexEncode([Length(MaxInputLength)] byte[] bytes)
     {
         return bytes.ToHexString();
     }
 
     [ContractMethod(CpuFee = 1 << 5)]
-    private static byte[] HexDecode([MaxLength(MaxInputLength)] string str)
+    private static byte[] HexDecode([Length(MaxInputLength)] string str)
     {
         return str.HexToBytes();
     }
 
     [ContractMethod(CpuFee = 1 << 5)]
-    private static int MemoryCompare([MaxLength(MaxInputLength)] byte[] str1, [MaxLength(MaxInputLength)] byte[] str2)
+    private static int MemoryCompare([Length(MaxInputLength)] byte[] str1, [Length(MaxInputLength)] byte[] str2)
     {
         return Math.Sign(str1.AsSpan().SequenceCompareTo(str2));
     }
 
     [ContractMethod(CpuFee = 1 << 6)]
-    private static int MemorySearch([MaxLength(MaxInputLength)] byte[] mem, byte[] value)
+    private static int MemorySearch([Length(MaxInputLength)] byte[] mem, byte[] value)
     {
         return MemorySearch(mem, value, 0, false);
     }
 
     [ContractMethod(CpuFee = 1 << 6)]
-    private static int MemorySearch([MaxLength(MaxInputLength)] byte[] mem, byte[] value, int start)
+    private static int MemorySearch([Length(MaxInputLength)] byte[] mem, byte[] value, int start)
     {
         return MemorySearch(mem, value, start, false);
     }
 
     [ContractMethod(CpuFee = 1 << 6)]
-    private static int MemorySearch([MaxLength(MaxInputLength)] byte[] mem, byte[] value, int start, bool backward)
+    private static int MemorySearch([Length(MaxInputLength)] byte[] mem, byte[] value, int start, bool backward)
     {
         if (backward)
         {
@@ -245,20 +245,20 @@ public sealed class StdLib : NativeContract
     }
 
     [ContractMethod(CpuFee = 1 << 8)]
-    private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator)
+    private static string[] StringSplit([Length(MaxInputLength)] string str, string separator)
     {
         return str.Split(separator);
     }
 
     [ContractMethod(CpuFee = 1 << 8)]
-    private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
+    private static string[] StringSplit([Length(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
     {
         StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
         return str.Split(separator, options);
     }
 
     [ContractMethod(CpuFee = 1 << 8)]
-    private static int StrLen([MaxLength(MaxInputLength)] string str)
+    private static int StrLen([Length(MaxInputLength)] string str)
     {
         // return the length of the string in elements
         // it should return 1 for both  "🦆" and "ã"
