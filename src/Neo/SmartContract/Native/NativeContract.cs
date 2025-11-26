@@ -104,6 +104,11 @@ public abstract class NativeContract
     /// </summary>
     public static Notary Notary { get; } = new();
 
+    /// <summary>
+    /// Gets the instance of the <see cref="Treasury"/> class.
+    /// </summary>
+    public static Treasury Treasury { get; } = new();
+
     #endregion
 
     /// <summary>
