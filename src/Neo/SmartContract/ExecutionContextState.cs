@@ -52,5 +52,5 @@ public class ExecutionContextState
     /// <summary>
     /// True if the execution is whitelisted by committee
     /// </summary>
-    public bool WhiteListed { get; set; } = false;
+    public bool WhiteListed { get; set; }
 }
