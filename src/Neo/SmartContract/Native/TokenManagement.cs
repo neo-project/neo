@@ -23,7 +23,7 @@ public sealed class TokenManagement : NativeContract
     internal TokenManagement() { }
 
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    internal UInt160 Create(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, byte decimals)
+    internal UInt160 Create(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, [Range(0, 18)] byte decimals)
     {
         UInt160 owner = engine.CallingScriptHash!;
         UInt160 tokenid = GetTokenId(owner, name);
