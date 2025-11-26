@@ -22,24 +22,6 @@ internal class ContractMethodAttribute : Attribute, IHardforkActivable
     public CallFlags RequiredCallFlags { get; init; }
     public long CpuFee { get; init; }
     public long StorageFee { get; init; }
-    public Hardfork? ActiveIn { get; init; } = null;
-    public Hardfork? DeprecatedIn { get; init; } = null;
-
-    public ContractMethodAttribute() { }
-
-    public ContractMethodAttribute(Hardfork activeIn)
-    {
-        ActiveIn = activeIn;
-    }
-
-    public ContractMethodAttribute(Hardfork activeIn, Hardfork deprecatedIn) : this(activeIn)
-    {
-        DeprecatedIn = deprecatedIn;
-    }
-
-    public ContractMethodAttribute(bool isDeprecated, Hardfork deprecatedIn)
-    {
-        if (!isDeprecated) throw new ArgumentException("isDeprecated parameter must be true", nameof(isDeprecated));
-        DeprecatedIn = deprecatedIn;
-    }
+    public Hardfork? ActiveIn { get; init; }
+    public Hardfork? DeprecatedIn { get; init; }
 }
