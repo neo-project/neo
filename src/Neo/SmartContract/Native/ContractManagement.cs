@@ -354,12 +354,10 @@ public sealed class ContractManagement : NativeContract
             contract.Manifest = manifestNew;
         }
         Helper.Check(new Script(contract.Nef.Script, true), contract.Manifest.Abi);
-        contract.UpdateCounter++; // Increase update counter
-
+        // Increase update counter
+        contract.UpdateCounter++;
         // Clean whitelist (emit event if exists)
-
         Policy.CleanWhitelist(engine, contract.Hash);
-
         return OnDeployAsync(engine, contract, data, true);
     }
 
@@ -380,6 +378,8 @@ public sealed class ContractManagement : NativeContract
             engine.SnapshotCache.Delete(key);
         // lock contract
         Policy.BlockAccount(engine.SnapshotCache, hash);
+        // Clean whitelist (emit event if exists)
+        Policy.CleanWhitelist(engine, contract.Hash);
         // emit event
         engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
     }

@@ -11,15 +11,12 @@
 
 #pragma warning disable IDE0051
 
-using Akka.Util;
-using Microsoft.VisualBasic;
 using Neo.Extensions.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using static Akka.IO.Dns;
 
 namespace Neo.SmartContract.Native;
 
