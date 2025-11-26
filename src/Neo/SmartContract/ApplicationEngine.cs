@@ -277,6 +277,14 @@ public partial class ApplicationEngine : ExecutionEngine
     /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
     protected internal void AddFee(long datoshi)
     {
+        // Check whitelist
+
+        if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
+        {
+            // The execution is whitelisted
+            return;
+        }
+
         FeeConsumed = checked(FeeConsumed + datoshi);
         if (FeeConsumed > _feeAmount)
             throw new InvalidOperationException("Insufficient GAS.");
@@ -318,6 +326,14 @@ public partial class ApplicationEngine : ExecutionEngine
         {
             if (state.Contract?.CanCall(contract, method.Name) == false)
                 throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
+        }
+
+        // Check whitelist
+
+        if (NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method.Name, method.Parameters.Length, out var fixedFee))
+        {
+            AddFee(fixedFee.Value);
+            state.WhiteListed = true;
         }
 
         if (invocationCounter.TryGetValue(contract.Hash, out var counter))

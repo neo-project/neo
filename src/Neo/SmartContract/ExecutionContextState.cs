@@ -48,4 +48,9 @@ public class ExecutionContextState
     public int NotificationCount { get; set; }
 
     public bool IsDynamicCall { get; set; }
+
+    /// <summary>
+    /// True if the execution is whitelisted by committee
+    /// </summary>
+    public bool WhiteListed { get; set; }
 }
