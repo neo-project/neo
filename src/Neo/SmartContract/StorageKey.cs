@@ -73,6 +73,7 @@ public sealed record StorageKey
     private const int Int64Length = PrefixLength + sizeof(long);
     private const int UInt160Length = PrefixLength + UInt160.Length;
     private const int UInt256Length = PrefixLength + UInt256.Length;
+    private const int UInt160UInt160Length = PrefixLength + UInt160.Length + UInt160.Length;
     private const int UInt256UInt160Length = PrefixLength + UInt256.Length + UInt160.Length;
 
     #region Static methods
@@ -159,6 +160,15 @@ public sealed record StorageKey
     public static StorageKey Create(int id, byte prefix, ECPoint publicKey)
     {
         return Create(id, prefix, publicKey.GetSpan());
+    }
+
+    public static StorageKey Create(int id, byte prefix, UInt160 hash1, UInt160 hash2)
+    {
+        var data = new byte[UInt160UInt160Length];
+        FillHeader(data, id, prefix);
+        hash1.Serialize(data.AsSpan(PrefixLength..));
+        hash2.Serialize(data.AsSpan(UInt160Length..));
+        return new(id, data);
     }
 
     /// <summary>

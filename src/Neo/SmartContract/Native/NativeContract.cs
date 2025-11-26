@@ -394,6 +394,9 @@ public abstract class NativeContract
     private protected StorageKey CreateStorageKey(byte prefix, ECPoint pubKey) => StorageKey.Create(Id, prefix, pubKey);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash1, UInt160 hash2) => StorageKey.Create(Id, prefix, hash1, hash2);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => StorageKey.Create(Id, prefix, hash, signer);
 
     #endregion

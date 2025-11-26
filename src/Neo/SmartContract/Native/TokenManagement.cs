@@ -19,6 +19,9 @@ namespace Neo.SmartContract.Native;
 public sealed class TokenManagement : NativeContract
 {
     const byte Prefix_TokenState = 10;
+    const byte Prefix_AccountState = 12;
+
+    static readonly BigInteger MaxMintAmount = BigInteger.Pow(2, 128);
 
     internal TokenManagement() { }
 
@@ -49,6 +52,48 @@ public sealed class TokenManagement : NativeContract
         owner.Serialize(buffer);
         nameBytes.CopyTo(buffer.AsSpan()[UInt160.Length..]);
         return buffer.ToScriptHash();
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
+    internal void Mint(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
+        StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
+        TokenState token = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<TokenState>()
+            ?? throw new InvalidOperationException("The token id does not exist.");
+        if (token.Owner != engine.CallingScriptHash)
+            throw new InvalidOperationException("Mint can be called by the owner contract only.");
+        token.TotalSupply += amount;
+        AddBalance(engine, tokenid, account, amount);
+    }
+
+    bool AddBalance(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
+    {
+        if (amount.IsZero) return true;
+        StorageKey key = CreateStorageKey(Prefix_AccountState, account, tokenid);
+        AccountState? accountState = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<AccountState>();
+        if (amount > 0)
+        {
+            if (accountState is null)
+            {
+                accountState = new AccountState { Balance = amount };
+                engine.SnapshotCache.Add(key, new(accountState));
+            }
+            else
+            {
+                accountState.Balance += amount;
+            }
+        }
+        else
+        {
+            if (accountState is null) return false;
+            if (accountState.Balance < -amount) return false;
+            accountState.Balance += amount;
+            if (accountState.Balance.IsZero)
+                engine.SnapshotCache.Delete(key);
+        }
+        return true;
     }
 }
 
