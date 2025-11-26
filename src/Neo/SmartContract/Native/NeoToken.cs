@@ -440,6 +440,11 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint? voteTo)
     {
         if (!engine.CheckWitnessInternal(account)) return false;
+        return await VoteInternal(engine, account, voteTo);
+    }
+
+    internal async ContractTask<bool> VoteInternal(ApplicationEngine engine, UInt160 account, ECPoint? voteTo)
+    {
         NeoAccountState? stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
         if (stateAccount is null) return false;
         if (stateAccount.Balance == 0) return false;
