@@ -363,7 +363,7 @@ public sealed class ContractManagement : NativeContract
     /// </summary>
     /// <param name="engine">The engine used to write data.</param>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    private void Destroy(ApplicationEngine engine)
+    private async ContractTask Destroy(ApplicationEngine engine)
     {
         UInt160 hash = engine.CallingScriptHash!;
         StorageKey ckey = CreateStorageKey(Prefix_Contract, hash);
@@ -374,7 +374,7 @@ public sealed class ContractManagement : NativeContract
         foreach (var (key, _) in engine.SnapshotCache.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
             engine.SnapshotCache.Delete(key);
         // lock contract
-        Policy.BlockAccount(engine.SnapshotCache, hash);
+        await Policy.BlockAccountInternal(engine, hash);
         // emit event
         engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
     }
