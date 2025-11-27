@@ -131,7 +131,7 @@ public sealed record StorageKey
     public static implicit operator StorageKey(byte[] value) => new(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator StorageKey(ReadOnlyMemory<byte> value) => new(value.Span);
+    public static implicit operator StorageKey(ReadOnlyMemory<byte> value) => new(value, true);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator StorageKey(ReadOnlySpan<byte> value) => new(value);
