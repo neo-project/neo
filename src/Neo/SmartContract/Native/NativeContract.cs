@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System.Collections.Immutable;
@@ -362,37 +362,22 @@ public abstract class NativeContract
     #region Storage keys
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix) => StorageKey.Create(Id, prefix);
+    private protected StorageKey CreateStorageKey(byte prefix) => new KeyBuilder(Id, prefix);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, byte data) => StorageKey.Create(Id, prefix, data);
+    private protected StorageKey CreateStorageKey(byte prefix, byte data) => new KeyBuilder(Id, prefix) { data };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, int bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+    private protected StorageKey CreateStorageKey<T>(byte prefix, T bigEndianKey) where T : unmanaged => new KeyBuilder(Id, prefix) { bigEndianKey };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, uint bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+    private protected StorageKey CreateStorageKey(byte prefix, ReadOnlySpan<byte> content) => new KeyBuilder(Id, prefix) { content };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, long bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+    private protected StorageKey CreateStorageKey(byte prefix, ISerializableSpan serializable) => new KeyBuilder(Id, prefix) { serializable };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, ulong bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, ReadOnlySpan<byte> content) => StorageKey.Create(Id, prefix, content);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash) => StorageKey.Create(Id, prefix, hash);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash) => StorageKey.Create(Id, prefix, hash);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, ECPoint pubKey) => StorageKey.Create(Id, prefix, pubKey);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => StorageKey.Create(Id, prefix, hash, signer);
+    private protected StorageKey CreateStorageKey(byte prefix, ISerializableSpan serializable1, ISerializableSpan serializable2) => new KeyBuilder(Id, prefix) { serializable1, serializable2 };
 
     #endregion
 

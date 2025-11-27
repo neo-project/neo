@@ -47,7 +47,7 @@ public static partial class TestUtils
 
     public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, uint value)
     {
-        return new KeyBuilder(contract.Id, prefix).AddBigEndian(value);
+        return new KeyBuilder(contract.Id, prefix).Add(value);
     }
 
     public static byte[] GetByteArray(int length, byte firstByte)

@@ -701,7 +701,7 @@ public class UT_NeoToken
             Balance = 100,
             VoteTo = TestProtocolSettings.Default.StandbyCommittee[0]
         }));
-        clonedCache.Add(new KeyBuilder(NativeContract.NEO.Id, 23).Add(TestProtocolSettings.Default.StandbyCommittee[0]).AddBigEndian(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
+        clonedCache.Add(new KeyBuilder(NativeContract.NEO.Id, 23).Add(TestProtocolSettings.Default.StandbyCommittee[0]).Add(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
         Assert.AreEqual(new BigInteger(50 * 100), NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100));
         clonedCache.Delete(key);
     }
@@ -967,7 +967,7 @@ public class UT_NeoToken
         StorageItem storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountA))!;
         Assert.AreEqual(30000000000, (BigInteger)storageItem);
 
-        Assert.IsNull(clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountB).AddBigEndian(uint.MaxValue - 1)));
+        Assert.IsNull(clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountB).Add(uint.MaxValue - 1)));
 
         // Next block
 
