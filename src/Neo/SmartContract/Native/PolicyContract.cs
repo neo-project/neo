@@ -15,7 +15,9 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
+using Neo.VM.Types;
 using System;
+using System.Linq;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -87,6 +89,7 @@ namespace Neo.SmartContract.Native
 
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_WhitelistedFeeContracts = 16;
+        private const byte Prefix_BlockedAccountRequestFunds = 17;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
@@ -101,12 +104,14 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
+        private const ulong RequiredTimeForRecoverFunds = 365 * 24 * 60 * 60 * 500UL; // 6 months in milliseconds
 
         /// <summary>
         /// The event name for the block generation time changed.
         /// </summary>
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
-
+        private const string RecoverFundsStartEventName = "RecoverFundsStarted";
+        private const string RecoverFundsEndsEventName = "RecoverFundsFinished";
         private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
@@ -566,7 +571,7 @@ namespace Neo.SmartContract.Native
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (snapshot.Contains(key)) return false;
 
-            snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
+            snapshot.Add(key, new StorageItem([]));
             return true;
         }
 
@@ -575,11 +580,16 @@ namespace Neo.SmartContract.Native
         {
             AssertCommittee(engine);
 
-
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (!engine.SnapshotCache.Contains(key)) return false;
 
             engine.SnapshotCache.Delete(key);
+
+            // Remove request funds if any
+
+            key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
+            engine.SnapshotCache.Delete(key);
+
             return true;
         }
 
@@ -592,6 +602,88 @@ namespace Neo.SmartContract.Native
                 .GetEnumerator();
             return new StorageIterator(enumerator, 1, options);
         }
+
+        #region Recover Funds
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates | CallFlags.AllowNotify)]
+        public void RecoverFundsStart(ApplicationEngine engine, UInt160 account)
+        {
+            AssertAlmostFullCommittee(engine);
+
+            // Must be blocked
+
+            if (!IsBlocked(engine.SnapshotCache, account))
+                throw new InvalidOperationException("The account is not blocked.");
+
+            // Set request time
+
+            var key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
+            var entry = engine.SnapshotCache.GetAndChange(key, () => new StorageItem())!;
+            entry.Set(engine.GetTime());
+
+            // Notify
+
+            engine.SendNotification(Hash, RecoverFundsStartEventName, [new ByteString(account.ToArray())]);
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates | CallFlags.AllowNotify)]
+        public void RecoverFundsFinish(ApplicationEngine engine, UInt160 account, VM.Types.Array extraTokens)
+        {
+            var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
+
+            // Set request time
+
+            var key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
+            var entry = engine.SnapshotCache.GetAndChange(key, null);
+
+            if (entry == null)
+                throw new InvalidOperationException("Request not found.");
+
+            if (engine.GetTime() - (BigInteger)entry < RequiredTimeForRecoverFunds)
+                throw new InvalidOperationException("Request must be signed at 6 months ago.");
+
+            // Transfer funds, NEO, GAS and extra NEP17 tokens
+
+            foreach (var contractHash in new UInt160[] { NEO.Hash, GAS.Hash }.Concat(extraTokens.Select(u => new UInt160(u.GetSpan()))))
+            {
+                engine.CallContract(contractHash, "balanceOf", CallFlags.ReadOnly, new VM.Types.Array(engine.ReferenceCounter, [account.ToArray()]));
+
+                var balance = engine.Pop<Integer>().GetInteger();
+
+                if (balance > 0)
+                {
+                    // Mock account witness in CheckWitnessInternal
+
+                    var state = engine.CurrentContext!.GetState<ExecutionContextState>();
+                    var bak = state.NativeCallingScriptHash;
+                    state.NativeCallingScriptHash = account;
+
+                    engine.CallContract(contractHash, "transfer", CallFlags.All,
+                        new VM.Types.Array(engine.ReferenceCounter, [account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null]));
+
+                    // Reset witnesses
+
+                    state.NativeCallingScriptHash = bak;
+                }
+            }
+
+            // Remove and notify
+
+            engine.SnapshotCache.Delete(key);
+            engine.SendNotification(Hash, RecoverFundsEndsEventName, [new VM.Types.ByteString(account.ToArray())]);
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private StorageIterator GetRecoverOfFunds(DataCache snapshot)
+        {
+            var enumerator = snapshot
+                .Find(CreateStorageKey(Prefix_BlockedAccountRequestFunds), SeekDirection.Forward)
+                .GetEnumerator();
+
+            return new StorageIterator(enumerator, 1, FindOptions.RemovePrefix);
+        }
+
+        #endregion
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
