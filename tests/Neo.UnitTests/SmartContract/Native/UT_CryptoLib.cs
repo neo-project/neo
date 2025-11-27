@@ -1056,6 +1056,293 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(g2Expected, g2Actual);
         }
 
+        // G1Add Boundary Test Cases
+        [TestMethod]
+        public void TestBls12G1AddBoundaryCase9_Normal()
+        {
+            var point1 = G1Affine.FromCompressed("97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var point2 = G1Affine.FromCompressed("a195fab58325ffd54c08d3b180d2275ca2b45ab91623a5d6b330d88d25f0754b7259e710636296e583c8be33e968860d".HexToBytes());
+            byte[] input = new byte[Bls12G1EncodedLength * 2];
+            EncodeEthereumG1Point(new G1Projective(point1)).CopyTo(input, 0);
+            EncodeEthereumG1Point(new G1Projective(point2)).CopyTo(input, Bls12G1EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G1Add(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(point1) + new G1Projective(point2);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G1AddBoundaryCase10_Infinity()
+        {
+            var point1 = G1Affine.FromCompressed("97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var point2 = G1Affine.FromCompressed("c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".HexToBytes()); // infinity
+            byte[] input = new byte[Bls12G1EncodedLength * 2];
+            EncodeEthereumG1Point(new G1Projective(point1)).CopyTo(input, 0);
+            EncodeEthereumG1Point(new G1Projective(point2)).CopyTo(input, Bls12G1EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G1Add(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(point1) + new G1Projective(point2);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G1AddBoundaryCase11_NegYBit()
+        {
+            var point1 = G1Affine.FromCompressed("b7f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var point2 = G1Affine.FromCompressed("a195fab58325ffd54c08d3b180d2275ca2b45ab91623a5d6b330d88d25f0754b7259e710636296e583c8be33e968860d".HexToBytes());
+            byte[] input = new byte[Bls12G1EncodedLength * 2];
+            EncodeEthereumG1Point(new G1Projective(point1)).CopyTo(input, 0);
+            EncodeEthereumG1Point(new G1Projective(point2)).CopyTo(input, Bls12G1EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G1Add(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(point1) + new G1Projective(point2);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        // G1Mul Boundary Test Cases
+        [TestMethod]
+        public void TestBls12G1MulBoundaryCase12_MinScalar()
+        {
+            var point = G1Affine.FromCompressed("97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            byte[] input = new byte[Bls12G1EncodedLength + Scalar.Size];
+            EncodeEthereumG1Point(new G1Projective(point)).CopyTo(input, 0);
+            CreateScalarBytes(1).CopyTo(input, Bls12G1EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G1Mul(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(point) * CreateScalar(1);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G1MulBoundaryCase13_IntMax()
+        {
+            var point = G1Affine.FromCompressed("97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            byte[] input = new byte[Bls12G1EncodedLength + Scalar.Size];
+            EncodeEthereumG1Point(new G1Projective(point)).CopyTo(input, 0);
+            CreateScalarBytes(2147483647U).CopyTo(input, Bls12G1EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G1Mul(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(point) * CreateScalar(2147483647U);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G1MulBoundaryCase14_Infinity()
+        {
+            var point = G1Affine.FromCompressed("c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".HexToBytes()); // infinity
+            byte[] input = new byte[Bls12G1EncodedLength + Scalar.Size];
+            EncodeEthereumG1Point(new G1Projective(point)).CopyTo(input, 0);
+            CreateScalarBytes(1337U).CopyTo(input, Bls12G1EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G1Mul(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(point) * CreateScalar(1337U);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G1MulBoundaryCase15_NegYBit()
+        {
+            var point = G1Affine.FromCompressed("b7f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            byte[] input = new byte[Bls12G1EncodedLength + Scalar.Size];
+            EncodeEthereumG1Point(new G1Projective(point)).CopyTo(input, 0);
+            CreateScalarBytes(987654321U).CopyTo(input, Bls12G1EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G1Mul(input);
+            var actual = ParseEthereumG1Point(result);
+            var expected = new G1Projective(point) * CreateScalar(987654321U);
+            Assert.AreEqual(new G1Affine(expected).ToCompressed().ToHexString(),
+                new G1Affine(actual).ToCompressed().ToHexString());
+        }
+
+        // G2Add Boundary Test Cases
+        [TestMethod]
+        public void TestBls12G2AddBoundaryCase16_Normal()
+        {
+            var point1 = G2Affine.FromCompressed("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            var point2 = G2Affine.FromCompressed("95d7dc07e5eaf185910d9fad2dd69fabb971b3113540a4a411b1d568f5bb6b1fa1bac6bb97a638b204fe5bbac6be140a10bacf59b3e520f1d9ab073377b8c2718ed556852004eb6cec6e153cbbae4e1891a05f5dbae38cead62004d3b37e5f36".HexToBytes());
+            byte[] input = new byte[Bls12G2EncodedLength * 2];
+            EncodeEthereumG2Point(new G2Projective(point1)).CopyTo(input, 0);
+            EncodeEthereumG2Point(new G2Projective(point2)).CopyTo(input, Bls12G2EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G2Add(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(point1) + new G2Projective(point2);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G2AddBoundaryCase17_Infinity()
+        {
+            var point1 = G2Affine.FromCompressed("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            var point2 = G2Affine.FromCompressed("c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".HexToBytes()); // infinity
+            byte[] input = new byte[Bls12G2EncodedLength * 2];
+            EncodeEthereumG2Point(new G2Projective(point1)).CopyTo(input, 0);
+            EncodeEthereumG2Point(new G2Projective(point2)).CopyTo(input, Bls12G2EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G2Add(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(point1) + new G2Projective(point2);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G2AddBoundaryCase18_NegYBit()
+        {
+            var point1 = G2Affine.FromCompressed("b3e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            var point2 = G2Affine.FromCompressed("95d7dc07e5eaf185910d9fad2dd69fabb971b3113540a4a411b1d568f5bb6b1fa1bac6bb97a638b204fe5bbac6be140a10bacf59b3e520f1d9ab073377b8c2718ed556852004eb6cec6e153cbbae4e1891a05f5dbae38cead62004d3b37e5f36".HexToBytes());
+            byte[] input = new byte[Bls12G2EncodedLength * 2];
+            EncodeEthereumG2Point(new G2Projective(point1)).CopyTo(input, 0);
+            EncodeEthereumG2Point(new G2Projective(point2)).CopyTo(input, Bls12G2EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G2Add(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(point1) + new G2Projective(point2);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        // G2Mul Boundary Test Cases
+        [TestMethod]
+        public void TestBls12G2MulBoundaryCase19_MinScalar()
+        {
+            var point = G2Affine.FromCompressed("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            byte[] input = new byte[Bls12G2EncodedLength + Scalar.Size];
+            EncodeEthereumG2Point(new G2Projective(point)).CopyTo(input, 0);
+            CreateScalarBytes(1).CopyTo(input, Bls12G2EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G2Mul(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(point) * CreateScalar(1);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G2MulBoundaryCase20_IntMax()
+        {
+            var point = G2Affine.FromCompressed("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            byte[] input = new byte[Bls12G2EncodedLength + Scalar.Size];
+            EncodeEthereumG2Point(new G2Projective(point)).CopyTo(input, 0);
+            CreateScalarBytes(2147483647U).CopyTo(input, Bls12G2EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G2Mul(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(point) * CreateScalar(2147483647U);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G2MulBoundaryCase21_Infinity()
+        {
+            var point = G2Affine.FromCompressed("c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".HexToBytes()); // infinity
+            byte[] input = new byte[Bls12G2EncodedLength + Scalar.Size];
+            EncodeEthereumG2Point(new G2Projective(point)).CopyTo(input, 0);
+            CreateScalarBytes(1337U).CopyTo(input, Bls12G2EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G2Mul(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(point) * CreateScalar(1337U);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBls12G2MulBoundaryCase22_NegYBit()
+        {
+            var point = G2Affine.FromCompressed("b3e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            byte[] input = new byte[Bls12G2EncodedLength + Scalar.Size];
+            EncodeEthereumG2Point(new G2Projective(point)).CopyTo(input, 0);
+            CreateScalarBytes(987654321U).CopyTo(input, Bls12G2EncodedLength);
+
+            byte[] result = CryptoLib.Bls12G2Mul(input);
+            var actual = ParseEthereumG2Point(result);
+            var expected = new G2Projective(point) * CreateScalar(987654321U);
+            Assert.AreEqual(new G2Affine(expected).ToCompressed().ToHexString(),
+                new G2Affine(actual).ToCompressed().ToHexString());
+        }
+
+        // Pairing Boundary Test Cases
+        [TestMethod]
+        public void TestBls12PairingBoundaryCase23_Normal()
+        {
+            var g1Point = G1Affine.FromCompressed("97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var g2Point = G2Affine.FromCompressed("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            byte[] input = EncodeEthereumG1Point(new G1Projective(g1Point))
+                .Concat(EncodeEthereumG2Point(new G2Projective(g2Point)))
+                .ToArray();
+
+            byte[] result = CryptoLib.Bls12Pairing(input);
+            // Pairing result is 32 bytes, last byte is 1 if identity, 0 otherwise
+            // For normal points, result is typically non-identity (0)
+            Assert.AreEqual(32, result.Length);
+            // Verify format: first 31 bytes should be zero, last byte is 0 or 1
+            Assert.IsTrue(result.Take(31).All(b => b == 0), "First 31 bytes should be zero");
+            Assert.IsTrue(result[31] == 0 || result[31] == 1, "Last byte should be 0 or 1");
+        }
+
+        [TestMethod]
+        public void TestBls12PairingBoundaryCase24_G1Infinity()
+        {
+            var g1Point = G1Affine.FromCompressed("c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".HexToBytes()); // infinity
+            var g2Point = G2Affine.FromCompressed("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            byte[] input = EncodeEthereumG1Point(new G1Projective(g1Point))
+                .Concat(EncodeEthereumG2Point(new G2Projective(g2Point)))
+                .ToArray();
+
+            byte[] result = CryptoLib.Bls12Pairing(input);
+            // Pairing with infinity should return identity (last byte = 1)
+            Assert.AreEqual(32, result.Length);
+            Assert.IsTrue(result.Take(31).All(b => b == 0), "First 31 bytes should be zero");
+            Assert.AreEqual(1, result[31], "Pairing with G1 infinity should return identity");
+        }
+
+        [TestMethod]
+        public void TestBls12PairingBoundaryCase25_G2Infinity()
+        {
+            var g1Point = G1Affine.FromCompressed("97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var g2Point = G2Affine.FromCompressed("c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".HexToBytes()); // infinity
+            byte[] input = EncodeEthereumG1Point(new G1Projective(g1Point))
+                .Concat(EncodeEthereumG2Point(new G2Projective(g2Point)))
+                .ToArray();
+
+            byte[] result = CryptoLib.Bls12Pairing(input);
+            // Pairing with infinity should return identity (last byte = 1)
+            Assert.AreEqual(32, result.Length);
+            Assert.IsTrue(result.Take(31).All(b => b == 0), "First 31 bytes should be zero");
+            Assert.AreEqual(1, result[31], "Pairing with G2 infinity should return identity");
+        }
+
+        [TestMethod]
+        public void TestBls12PairingBoundaryCase26_NegYBits()
+        {
+            var g1Point = G1Affine.FromCompressed("b7f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb".HexToBytes());
+            var g2Point = G2Affine.FromCompressed("b3e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8".HexToBytes());
+            byte[] input = EncodeEthereumG1Point(new G1Projective(g1Point))
+                .Concat(EncodeEthereumG2Point(new G2Projective(g2Point)))
+                .ToArray();
+
+            byte[] result = CryptoLib.Bls12Pairing(input);
+            // Pairing result is 32 bytes, last byte is 1 if identity, 0 otherwise
+            Assert.AreEqual(32, result.Length);
+            Assert.IsTrue(result.Take(31).All(b => b == 0), "First 31 bytes should be zero");
+            Assert.IsTrue(result[31] == 0 || result[31] == 1, "Last byte should be 0 or 1");
+        }
+
         [TestMethod]
         public void Bls12381Equal()
         {
