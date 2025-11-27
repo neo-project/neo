@@ -18,6 +18,8 @@ using Neo.SmartContract.Iterators;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -86,7 +88,8 @@ namespace Neo.SmartContract.Native
         public const uint MaxMaxTraceableBlocks = 2102400;
 
         private const byte Prefix_BlockedAccount = 15;
-        private const byte Prefix_BlockedAccountRequestFunds = 16;
+        private const byte Prefix_WhitelistedFeeContracts = 16;
+        private const byte Prefix_BlockedAccountRequestFunds = 17;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
@@ -109,12 +112,17 @@ namespace Neo.SmartContract.Native
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
         private const string RecoverFundsStartEventName = "RecoverFundsStarted";
         private const string RecoverFundsEndsEventName = "RecoverFundsFinished";
+        private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
-        [ContractEvent(Hardfork.HF_Faun, 0, name: RecoverFundsStartEventName, "address", ContractParameterType.Hash160)]
-        [ContractEvent(Hardfork.HF_Faun, 0, name: RecoverFundsEndsEventName, "address", ContractParameterType.Hash160)]
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
             "old", ContractParameterType.Integer,
             "new", ContractParameterType.Integer
+        )]
+        [ContractEvent(Hardfork.HF_Faun, 1, name: WhitelistChangedEventName,
+            "contract", ContractParameterType.Hash160,
+            "method", ContractParameterType.String,
+            "argCount", ContractParameterType.Integer,
+            "fee", ContractParameterType.Any
         )]
         internal PolicyContract() : base()
         {
@@ -297,6 +305,113 @@ namespace Neo.SmartContract.Native
         public bool IsBlocked(IReadOnlyStore snapshot, UInt160 account)
         {
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
+        }
+
+        internal bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, string method, int argCount, [NotNullWhen(true)] out long? fixedFee)
+        {
+            // Check contract existence
+
+            var currentContract = ContractManagement.GetContract(snapshot, contractHash);
+
+            if (currentContract != null)
+            {
+                // Check state existence
+
+                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount));
+
+                if (item != null)
+                {
+                    fixedFee = (long)(BigInteger)item;
+                    return true;
+                }
+            }
+
+            fixedFee = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Remove whitelisted Fee contracts
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="contractHash">The contract to set the whitelist</param>
+        /// <param name="method">Method</param>
+        /// <param name="argCount">Argument count</param>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        private void RemoveWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount)
+        {
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
+
+            if (!engine.SnapshotCache.Contains(key)) throw new InvalidOperationException("Whitelist not found");
+
+            engine.SnapshotCache.Delete(key);
+
+            // Emit event
+            engine.SendNotification(Hash, WhitelistChangedEventName,
+                [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
+                new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
+        }
+
+        internal int CleanWhitelist(ApplicationEngine engine, UInt160 contractHash)
+        {
+            var count = 0;
+            var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash);
+
+            foreach ((var key, _) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
+            {
+                engine.SnapshotCache.Delete(key);
+                count++;
+
+                // Emit event recovering the values from the Key
+
+                var keyData = key.ToArray().AsSpan();
+                (var method, var argCount) = StorageKey.ReadMethodAndArgCount(key.ToArray().AsSpan());
+
+                engine.SendNotification(Hash, WhitelistChangedEventName,
+                    [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
+                    new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Set whitelisted Fee contracts
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="contractHash">The contract to set the whitelist</param>
+        /// <param name="method">Method</param>
+        /// <param name="argCount">Argument count</param>
+        /// <param name="fixedFee">Fixed execution fee</param>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        internal void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long fixedFee)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(fixedFee, nameof(fixedFee));
+
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
+
+            // Validate methods
+            var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
+                    ?? throw new InvalidOperationException("Is not a valid contract");
+
+            if (contract.Manifest.Abi.GetMethod(method, argCount) is null)
+                throw new InvalidOperationException($"{method} with {argCount} args is not a valid method of {contractHash}");
+
+            // Set
+            var entry = engine.SnapshotCache
+                    .GetAndChange(key, () => new StorageItem(fixedFee));
+
+            entry.Set(fixedFee);
+
+            // Emit event
+
+            engine.SendNotification(Hash, WhitelistChangedEventName,
+                [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
+                new VM.Types.Integer(argCount), new VM.Types.Integer(fixedFee)]);
         }
 
         /// <summary>
@@ -569,5 +684,16 @@ namespace Neo.SmartContract.Native
         }
 
         #endregion
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
+        {
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+            var enumerator = snapshot
+                .Find(CreateStorageKey(Prefix_WhitelistedFeeContracts), SeekDirection.Forward)
+                .GetEnumerator();
+
+            return new StorageIterator(enumerator, 1, options);
+        }
     }
 }
