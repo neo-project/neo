@@ -99,7 +99,7 @@ public class KeyBuilder : IEnumerable
     public KeyBuilder Add<T>(T key) where T : unmanaged
     {
         Span<byte> data = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref key, 1));
-        if (BitConverter.IsLittleEndian) data.Reverse();
+        if (BitConverter.IsLittleEndian && typeof(T).IsPrimitive) data.Reverse();
         return Add(data);
     }
 
