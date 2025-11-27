@@ -220,7 +220,7 @@ namespace Neo.SmartContract.Native
         /// <param name="to">To Account</param>
         /// <returns>Whether withdrawal was successfull.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.All)]
-        private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
+        private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160? to)
         {
             if (!engine.CheckWitnessInternal(from)) return false;
             var receive = to is null ? from : to;
