@@ -20,7 +20,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Org.BouncyCastle.Utilities.Encoders;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Neo.UnitTests.SmartContract.Native;
@@ -1109,41 +1108,20 @@ public class UT_CryptoLib
         Assert.ThrowsExactly<IndexOutOfRangeException>(() => CryptoLib.VerifyWithECDsa(message, [], sign, NamedCurveHash.secp256r1SHA256));
 
         // KeyNotFoundException, but should be ArgumentException
-        Assert.ThrowsExactly<KeyNotFoundException>(() => CryptoLib.VerifyWithECDsa(message, [], sign, (NamedCurveHash)99));
+        Assert.ThrowsExactly<NotSupportedException>(() => CryptoLib.VerifyWithECDsa(message, [], sign, (NamedCurveHash)99));
 
         // FormatException if the signature is empty
         Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(message, [0x01], sign, NamedCurveHash.secp256r1SHA256));
 
-        var ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), [], NamedCurveHash.secp256r1SHA256);
-        Assert.IsFalse(ok);
+        Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), [], NamedCurveHash.secp256r1SHA256));
 
-        ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), null!, NamedCurveHash.secp256r1SHA256);
-        Assert.IsFalse(ok);
-
-        ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
+        bool ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
         Assert.IsTrue(ok);
 
         ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256r1SHA256);
         Assert.IsTrue(ok);
 
-        // Different platform, different behavior
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256);
-            Assert.IsFalse(ok);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            // Why is PlatformNotSupportedException ?
-            Assert.ThrowsExactly<PlatformNotSupportedException>(
-                () => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            // why is Interop+Crypto+OpenSslCryptographicException ?
-            Assert.Throws<System.Security.Cryptography.CryptographicException>(
-                () => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
-        }
+        Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
 
         // ArithmeticException, but should be ArgumentException
         byte[] invalidPublicKey = [0x03, .. Enumerable.Repeat<byte>(0x03, 32)];
@@ -1206,7 +1184,7 @@ public class UT_CryptoLib
         byte[] invalidPublicKey = new byte[publicKey.Length];
         Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
         invalidPublicKey[0] ^= 0x01; // Flip one bit
-        Assert.IsFalse(CallVerifyWithEd25519(message, invalidPublicKey, signature));
+        Assert.ThrowsExactly<InvalidOperationException>(() => CallVerifyWithEd25519(message, invalidPublicKey, signature));
     }
 
     [TestMethod]
@@ -1217,26 +1195,12 @@ public class UT_CryptoLib
         var publicKey = Ed25519.GetPublicKey(privateKey);
         var sign = Ed25519.Sign(privateKey, message);
 
-        // NullReferenceException, but should be ArgumentNullException
-        Assert.ThrowsExactly<NullReferenceException>(() => CryptoLib.VerifyWithEd25519(message, null!, sign));
+        Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithEd25519(message, [], sign));
 
-        // result is false if the public key is invalid, but VerifyWithECDsa will throw an exception
-        var ok = CryptoLib.VerifyWithEd25519(message, [], sign);
-        Assert.IsFalse(ok);
+        Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithEd25519(message, publicKey, []));
 
-        ok = CryptoLib.VerifyWithEd25519(message, publicKey, []);
-        Assert.IsFalse(ok);
-
-        // NullReferenceException, but should be false
-        Assert.ThrowsExactly<NullReferenceException>(() => CryptoLib.VerifyWithEd25519(message, publicKey, null!));
-
-        ok = CryptoLib.VerifyWithEd25519(message, publicKey, sign);
+        bool ok = CryptoLib.VerifyWithEd25519(message, publicKey, sign);
         Assert.IsTrue(ok);
-
-        // null messsage and signature is valid, result is false even if the signature is valid
-        sign = Crypto.Sign([], privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
-        ok = CryptoLib.VerifyWithEd25519(null!, publicKey, sign);
-        Assert.IsFalse(ok);
     }
 
     private static bool CallVerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
@@ -1256,7 +1220,8 @@ public class UT_CryptoLib
         using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot,
             settings: TestProtocolSettings.Default);
         engine.LoadScript(script.ToArray());
-        Assert.AreEqual(VMState.HALT, engine.Execute());
+        if (engine.Execute() != VMState.HALT)
+            throw new InvalidOperationException(null, engine.FaultException);
         return engine.ResultStack.Pop().GetBoolean();
     }
 }
