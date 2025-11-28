@@ -825,8 +825,7 @@ public partial class UT_InteropService : TestKit
         Assert.IsTrue(result);
         result = CryptoLib.VerifyWithECDsa(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
         Assert.IsTrue(result);
-        result = CryptoLib.VerifyWithECDsa(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256);
-        Assert.IsFalse(result);
+        Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256));
     }
 
     [TestMethod]
