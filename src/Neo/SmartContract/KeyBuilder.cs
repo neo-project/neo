@@ -98,8 +98,10 @@ public class KeyBuilder : IEnumerable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public KeyBuilder Add<T>(T key) where T : unmanaged
     {
+        if (!typeof(T).IsPrimitive)
+            throw new InvalidOperationException("The argument must be a primitive.");
         Span<byte> data = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref key, 1));
-        if (BitConverter.IsLittleEndian && typeof(T).IsPrimitive) data.Reverse();
+        if (BitConverter.IsLittleEndian) data.Reverse();
         return Add(data);
     }
 

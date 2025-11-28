@@ -374,10 +374,13 @@ public abstract class NativeContract
     private protected StorageKey CreateStorageKey(byte prefix, ReadOnlySpan<byte> content) => new KeyBuilder(Id, prefix) { content };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, ISerializableSpan serializable) => new KeyBuilder(Id, prefix) { serializable };
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, ISerializableSpan serializable1, ISerializableSpan serializable2) => new KeyBuilder(Id, prefix) { serializable1, serializable2 };
+    private protected StorageKey CreateStorageKey(byte prefix, params IEnumerable<ISerializableSpan> serializables)
+    {
+        var builder = new KeyBuilder(Id, prefix);
+        foreach (var serializable in serializables)
+            builder.Add(serializable);
+        return builder;
+    }
 
     #endregion
 
