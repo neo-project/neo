@@ -232,11 +232,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
 
             if (!newCommittee.SequenceEqual(prevCommittee))
             {
-                engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter)
-                {
-                    new VM.Types.Array(engine.ReferenceCounter, prevCommittee.Select(u => (ByteString)u.ToArray())) ,
-                    new VM.Types.Array(engine.ReferenceCounter, newCommittee.Select(u => (ByteString)u.ToArray()))
-                });
+                Notify(engine, "CommitteeChanged", prevCommittee, newCommittee);
             }
         }
         return ContractTask.CompletedTask;
@@ -401,8 +397,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         CandidateState state = item.GetInteroperable<CandidateState>();
         if (state.Registered) return true;
         state.Registered = true;
-        engine.SendNotification(Hash, "CandidateStateChanged",
-            new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), true, state.Votes });
+        Notify(engine, "CandidateStateChanged", pubkey, true, state.Votes);
         return true;
     }
 
@@ -424,8 +419,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         if (!state.Registered) return true;
         state.Registered = false;
         CheckCandidate(engine.SnapshotCache, pubkey, state);
-        engine.SendNotification(Hash, "CandidateStateChanged",
-            new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), false, state.Votes });
+        Notify(engine, "CandidateStateChanged", pubkey, false, state.Votes);
         return true;
     }
 
@@ -490,8 +484,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         {
             stateAccount.LastGasPerVote = 0;
         }
-        engine.SendNotification(Hash, "Vote",
-            new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, stateAccount.Balance });
+        Notify(engine, "Vote", account, from, voteTo, stateAccount.Balance);
         if (gasDistribution is not null)
             await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
         return true;

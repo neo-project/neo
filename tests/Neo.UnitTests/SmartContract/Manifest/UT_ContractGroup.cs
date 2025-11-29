@@ -45,7 +45,7 @@ public class UT_ContractGroup
         ContractGroup contractGroup = new()
         {
             PubKey = keyPair.PublicKey,
-            Signature = new byte[20]
+            Signature = new byte[64]
         };
         Assert.IsFalse(contractGroup.IsValid(UInt160.Zero));
 
