@@ -57,33 +57,33 @@ public sealed class TokenManagement : NativeContract
     }
 
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal void Mint(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
+    internal async Task Mint(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
         AddTotalSupply(engine, tokenid, amount);
         AddBalance(engine.SnapshotCache, tokenid, account, amount);
-        Notify(engine, "Transfer", tokenid, null, account, amount);
+        await PostTransferAsync(engine, tokenid, null, account, amount, StackItem.Null, callOnPayment: true);
     }
 
     [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.All)]
-    internal void Burn(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
+    internal async Task Burn(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
         AddTotalSupply(engine, tokenid, -amount);
         if (!AddBalance(engine.SnapshotCache, tokenid, account, -amount))
             throw new InvalidOperationException("Insufficient balance to burn.");
-        Notify(engine, "Transfer", tokenid, account, null, -amount);
+        await PostTransferAsync(engine, tokenid, account, null, amount, StackItem.Null, callOnPayment: false);
     }
 
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal bool Transfer(ApplicationEngine engine, UInt160 tokenid, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+    internal async Task<bool> Transfer(ApplicationEngine engine, UInt160 tokenid, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
         StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
-        if (!engine.SnapshotCache.Contains(key))
-            throw new InvalidOperationException("The token id does not exist.");
+        TokenState token = engine.SnapshotCache.TryGet(key)?.GetInteroperable<TokenState>()
+            ?? throw new InvalidOperationException("The token id does not exist.");
         if (!engine.CheckWitnessInternal(from)) return false;
         if (!amount.IsZero && from != to)
         {
@@ -91,7 +91,8 @@ public sealed class TokenManagement : NativeContract
                 return false;
             AddBalance(engine.SnapshotCache, tokenid, to, amount);
         }
-        Notify(engine, "Transfer", tokenid, from, to, amount);
+        await PostTransferAsync(engine, tokenid, from, to, amount, data, callOnPayment: true);
+        await engine.CallFromNativeContractAsync(Hash, token.Owner, "onTransfer", tokenid, from, to, amount, data);
         return true;
     }
 
@@ -154,6 +155,13 @@ public sealed class TokenManagement : NativeContract
                 snapshot.Delete(key);
         }
         return true;
+    }
+
+    async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160 tokenid, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
+    {
+        Notify(engine, "Transfer", tokenid, from, to, amount);
+        if (!callOnPayment || to is null || !ContractManagement.IsContract(engine.SnapshotCache, to)) return;
+        await engine.CallFromNativeContractAsync(Hash, to, "onPayment", tokenid, from, amount, data);
     }
 }
 
