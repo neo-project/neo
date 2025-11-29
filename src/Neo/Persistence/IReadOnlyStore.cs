@@ -33,9 +33,7 @@ public interface IReadOnlyStore<TKey, TValue> where TKey : class?
     {
         get
         {
-            if (TryGet(key, out var item))
-                return item;
-            throw new KeyNotFoundException();
+            return TryGet(key) ?? throw new KeyNotFoundException();
         }
     }
 
@@ -43,9 +41,20 @@ public interface IReadOnlyStore<TKey, TValue> where TKey : class?
     /// Reads a specified entry from the database.
     /// </summary>
     /// <param name="key">The key of the entry.</param>
+    /// <returns>The data of the entry; <see langword="null"/> if the value is not found in the database.</returns>
+    TValue? TryGet(TKey key);
+
+    /// <summary>
+    /// Reads a specified entry from the database.
+    /// </summary>
+    /// <param name="key">The key of the entry.</param>
     /// <param name="value">The data of the entry.</param>
     /// <returns><see langword="true"/> if the entry exists; otherwise, <see langword="false"/>.</returns>
-    bool TryGet(TKey key, [NotNullWhen(true)] out TValue? value);
+    public bool TryGet(TKey key, [NotNullWhen(true)] out TValue? value)
+    {
+        value = TryGet(key);
+        return value is not null;
+    }
 
     /// <summary>
     /// Determines whether the database contains the specified entry.
