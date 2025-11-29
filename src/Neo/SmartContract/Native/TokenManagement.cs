@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Extensions.IO;
+using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Numerics;
@@ -45,7 +46,60 @@ public sealed class TokenManagement : NativeContract
         return tokenid;
     }
 
-    static UInt160 GetTokenId(UInt160 owner, string name)
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    public TokenState? GetTokenInfo(ApplicationEngine engine, UInt160 tokenid)
+    {
+        StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
+        return engine.SnapshotCache.TryGet(key)?.GetInteroperable<TokenState>();
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
+    internal void Mint(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
+        AddTotalSupply(engine, tokenid, amount);
+        AddBalance(engine.SnapshotCache, tokenid, account, amount);
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.All)]
+    internal void Burn(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
+        AddTotalSupply(engine, tokenid, -amount);
+        if (!AddBalance(engine.SnapshotCache, tokenid, account, -amount))
+            throw new InvalidOperationException("Insufficient balance to burn.");
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
+    internal bool Transfer(ApplicationEngine engine, UInt160 tokenid, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
+        if (!engine.SnapshotCache.Contains(key))
+            throw new InvalidOperationException("The token id does not exist.");
+        if (!engine.CheckWitnessInternal(from)) return false;
+        if (amount.IsZero) return true;
+        if (!AddBalance(engine.SnapshotCache, tokenid, from, -amount))
+            return false;
+        AddBalance(engine.SnapshotCache, tokenid, to, amount);
+        return true;
+    }
+
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    public BigInteger BalanceOf(IReadOnlyStore snapshot, UInt160 tokenid, UInt160 account)
+    {
+        StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
+        if (!snapshot.Contains(key))
+            throw new InvalidOperationException("The token id does not exist.");
+        key = CreateStorageKey(Prefix_AccountState, account, tokenid);
+        AccountState? accountState = snapshot.TryGet(key)?.GetInteroperable<AccountState>();
+        if (accountState is null) return BigInteger.Zero;
+        return accountState.Balance;
+    }
+
+    public static UInt160 GetTokenId(UInt160 owner, string name)
     {
         byte[] nameBytes = name.ToStrictUtf8Bytes();
         byte[] buffer = new byte[UInt160.Length + nameBytes.Length];
@@ -54,31 +108,29 @@ public sealed class TokenManagement : NativeContract
         return buffer.ToScriptHash();
     }
 
-    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal void Mint(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
+    void AddTotalSupply(ApplicationEngine engine, UInt160 tokenid, BigInteger amount)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
         StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
         TokenState token = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<TokenState>()
             ?? throw new InvalidOperationException("The token id does not exist.");
         if (token.Owner != engine.CallingScriptHash)
             throw new InvalidOperationException("Mint can be called by the owner contract only.");
+        if (token.TotalSupply + amount < 0)
+            throw new InvalidOperationException("Insufficient balance to burn.");
         token.TotalSupply += amount;
-        AddBalance(engine, tokenid, account, amount);
     }
 
-    bool AddBalance(ApplicationEngine engine, UInt160 tokenid, UInt160 account, BigInteger amount)
+    bool AddBalance(DataCache snapshot, UInt160 tokenid, UInt160 account, BigInteger amount)
     {
         if (amount.IsZero) return true;
         StorageKey key = CreateStorageKey(Prefix_AccountState, account, tokenid);
-        AccountState? accountState = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<AccountState>();
+        AccountState? accountState = snapshot.GetAndChange(key)?.GetInteroperable<AccountState>();
         if (amount > 0)
         {
             if (accountState is null)
             {
                 accountState = new AccountState { Balance = amount };
-                engine.SnapshotCache.Add(key, new(accountState));
+                snapshot.Add(key, new(accountState));
             }
             else
             {
@@ -91,13 +143,13 @@ public sealed class TokenManagement : NativeContract
             if (accountState.Balance < -amount) return false;
             accountState.Balance += amount;
             if (accountState.Balance.IsZero)
-                engine.SnapshotCache.Delete(key);
+                snapshot.Delete(key);
         }
         return true;
     }
 }
 
-file class TokenState : IInteroperable
+public class TokenState : IInteroperable
 {
     public required UInt160 Owner;
     public required string Name;
