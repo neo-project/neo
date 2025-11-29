@@ -565,13 +565,10 @@ namespace Neo.SmartContract.Native
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
 
-            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
-            {
-                // Remove vote even if the account is already blocked
-                await NEO.VoteInternal(engine, account, null);
-            }
-
             if (engine.SnapshotCache.Contains(key)) return false;
+
+            // Remove vote even if the account is already blocked
+            await NEO.VoteInternal(engine, account, null);
 
             engine.SnapshotCache.Add(key, new StorageItem([]));
             return true;
