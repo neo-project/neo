@@ -24,7 +24,7 @@ public static class GasTokenExtensions
 
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        var kb = StorageKey.Create(gasToken.Id, GasToken.Prefix_Account);
+        StorageKey kb = new KeyBuilder(gasToken.Id, GasToken.Prefix_Account);
         var kbLength = kb.Length;
 
         foreach (var (key, value) in snapshot.Find(kb, SeekDirection.Forward))

@@ -107,7 +107,7 @@ public static class NativeContractExtensions
         var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
         snapshot.Add(key, new StorageItem(state));
         //key: id, value: hash
-        var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(state.Id);
+        var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).Add(state.Id);
         if (!snapshot.Contains(key2)) snapshot.Add(key2, new StorageItem(hash.ToArray()));
     }
 
@@ -120,7 +120,7 @@ public static class NativeContractExtensions
         if (value != null)
         {
             //key: id, value: hash
-            var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(value.Id);
+            var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).Add(value.Id);
             snapshot.Delete(key2);
         }
     }
