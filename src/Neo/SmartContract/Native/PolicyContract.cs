@@ -242,8 +242,7 @@ public sealed class PolicyContract : NativeContract
         var oldTime = GetMillisecondsPerBlock(engine.SnapshotCache);
         engine.SnapshotCache.GetAndChange(_millisecondsPerBlock)!.Set(value);
 
-        engine.SendNotification(Hash, MillisecondsPerBlockChangedEventName,
-            [new VM.Types.Integer(oldTime), new VM.Types.Integer(value)]);
+        Notify(engine, MillisecondsPerBlockChangedEventName, oldTime, value);
     }
 
     /// <summary>
