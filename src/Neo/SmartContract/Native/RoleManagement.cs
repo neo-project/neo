@@ -73,9 +73,8 @@ public sealed class RoleManagement : NativeContract
         list.AddRange(nodes);
         list.Sort();
         engine.SnapshotCache.Add(key, new StorageItem(list));
-        var oldNodes = new VM.Types.Array(engine.ReferenceCounter, GetDesignatedByRole(engine.SnapshotCache, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
-        var newNodes = new VM.Types.Array(engine.ReferenceCounter, nodes.Select(u => (ByteString)u.EncodePoint(true)));
-        engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index, oldNodes, newNodes]));
+        var oldNodes = GetDesignatedByRole(engine.SnapshotCache, role, index - 1);
+        Notify(engine, "Designation", role, engine.PersistingBlock.Index, oldNodes, nodes);
     }
 
     private class NodeList : InteroperableList<ECPoint>
