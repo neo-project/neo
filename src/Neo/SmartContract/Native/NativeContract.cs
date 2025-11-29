@@ -359,6 +359,11 @@ public abstract class NativeContract
             throw new InvalidOperationException("Invalid committee signature. It should be a multisig(len(committee) - (len(committee) - 1) / 2)).");
     }
 
+    protected void Notify(ApplicationEngine engine, string eventName, params object?[] args)
+    {
+        engine.SendNotification(Hash, eventName, new(engine.ReferenceCounter, args.Select(engine.Convert)));
+    }
+
     #region Storage keys
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
