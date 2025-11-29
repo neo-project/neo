@@ -344,9 +344,9 @@ public partial class ApplicationEngine : ExecutionEngine
         return contextNew;
     }
 
-    internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+    internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
-        var contextNew = CallContractInternal(hash, method, CallFlags.All, false, args);
+        var contextNew = CallContractInternal(hash, method, CallFlags.All, false, args.Select(Convert).ToArray());
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
         ContractTask task = new();
@@ -354,9 +354,9 @@ public partial class ApplicationEngine : ExecutionEngine
         return task;
     }
 
-    internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+    internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
-        var contextNew = CallContractInternal(hash, method, CallFlags.All, true, args);
+        var contextNew = CallContractInternal(hash, method, CallFlags.All, true, args.Select(Convert).ToArray());
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
         ContractTask<T> task = new();

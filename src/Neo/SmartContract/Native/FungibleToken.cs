@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
@@ -186,6 +185,6 @@ public abstract class FungibleToken<TState> : NativeContract
 
         // Call onNEP17Payment method
 
-        await engine.CallFromNativeContractAsync(Hash, to, "onNEP17Payment", from?.ToArray() ?? StackItem.Null, amount, data);
+        await engine.CallFromNativeContractAsync(Hash, to, "onNEP17Payment", from, amount, data);
     }
 }
