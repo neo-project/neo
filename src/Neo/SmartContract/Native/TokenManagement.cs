@@ -17,6 +17,8 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native;
 
+[ContractEvent(0, "Created", "id", ContractParameterType.Hash160)]
+[ContractEvent(1, "Transfer", "token", ContractParameterType.Hash160, "from", ContractParameterType.Hash160, "to", ContractParameterType.Hash160, "amount", ContractParameterType.Integer)]
 public sealed class TokenManagement : NativeContract
 {
     const byte Prefix_TokenState = 10;
@@ -43,6 +45,7 @@ public sealed class TokenManagement : NativeContract
             TotalSupply = BigInteger.Zero
         };
         engine.SnapshotCache.Add(key, new(state));
+        Notify(engine, "Created", tokenid);
         return tokenid;
     }
 
@@ -60,6 +63,7 @@ public sealed class TokenManagement : NativeContract
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
         AddTotalSupply(engine, tokenid, amount);
         AddBalance(engine.SnapshotCache, tokenid, account, amount);
+        Notify(engine, "Transfer", tokenid, null, account, amount);
     }
 
     [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.All)]
@@ -70,6 +74,7 @@ public sealed class TokenManagement : NativeContract
         AddTotalSupply(engine, tokenid, -amount);
         if (!AddBalance(engine.SnapshotCache, tokenid, account, -amount))
             throw new InvalidOperationException("Insufficient balance to burn.");
+        Notify(engine, "Transfer", tokenid, account, null, -amount);
     }
 
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
@@ -80,10 +85,13 @@ public sealed class TokenManagement : NativeContract
         if (!engine.SnapshotCache.Contains(key))
             throw new InvalidOperationException("The token id does not exist.");
         if (!engine.CheckWitnessInternal(from)) return false;
-        if (amount.IsZero) return true;
-        if (!AddBalance(engine.SnapshotCache, tokenid, from, -amount))
-            return false;
-        AddBalance(engine.SnapshotCache, tokenid, to, amount);
+        if (!amount.IsZero && from != to)
+        {
+            if (!AddBalance(engine.SnapshotCache, tokenid, from, -amount))
+                return false;
+            AddBalance(engine.SnapshotCache, tokenid, to, amount);
+        }
+        Notify(engine, "Transfer", tokenid, from, to, amount);
         return true;
     }
 
