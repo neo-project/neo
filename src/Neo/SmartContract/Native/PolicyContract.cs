@@ -567,7 +567,6 @@ namespace Neo.SmartContract.Native
 
             if (engine.SnapshotCache.Contains(key)) return false;
 
-            // Remove vote even if the account is already blocked
             await NEO.VoteInternal(engine, account, null);
 
             engine.SnapshotCache.Add(key, new StorageItem([]));
