@@ -88,8 +88,10 @@ namespace Neo.SmartContract.Manifest
             if (pcount >= 0)
             {
                 methodDictionary ??= Methods.ToDictionary(p => (p.Name, p.Parameters.Length));
-                methodDictionary.TryGetValue((name, pcount), out var method);
-                return method;
+                if (methodDictionary.TryGetValue((name, pcount), out var method))
+                    return method;
+
+                return null;
             }
             else
             {

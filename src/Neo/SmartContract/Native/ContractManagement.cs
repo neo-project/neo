@@ -267,10 +267,10 @@ namespace Neo.SmartContract.Native
             if (manifest.Length == 0)
                 throw new ArgumentException($"Manifest length cannot be zero.");
 
-            engine.AddFee(Math.Max(
-                engine.StoragePrice * (nefFile.Length + manifest.Length),
-                GetMinimumDeploymentFee(engine.SnapshotCache)
-                ));
+            // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+            engine.AddFee(BigInteger.Max(engine.StoragePrice * (nefFile.Length + manifest.Length),
+                GetMinimumDeploymentFee(engine.SnapshotCache))
+                * ApplicationEngine.FeeFactor);
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
@@ -336,7 +336,7 @@ namespace Neo.SmartContract.Native
             if (nefFile is null && manifest is null)
                 throw new ArgumentException("NEF file and manifest cannot both be null.");
 
-            engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
+            engine.AddFee(engine.StoragePrice * ApplicationEngine.FeeFactor * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
             var contractState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash!))
                 ?? throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
@@ -368,7 +368,10 @@ namespace Neo.SmartContract.Native
                 contract.Manifest = manifestNew;
             }
             Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
-            contract.UpdateCounter++; // Increase update counter
+            // Increase update counter
+            contract.UpdateCounter++;
+            // Clean whitelist (emit event if exists)
+            Policy.CleanWhitelist(engine, contract.Hash);
             return OnDeployAsync(engine, contract, data, true);
         }
 
@@ -377,7 +380,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="engine">The engine used to write data.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private void Destroy(ApplicationEngine engine)
+        private async ContractTask Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash!;
             StorageKey ckey = CreateStorageKey(Prefix_Contract, hash);
@@ -388,7 +391,9 @@ namespace Neo.SmartContract.Native
             foreach (var (key, _) in engine.SnapshotCache.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
                 engine.SnapshotCache.Delete(key);
             // lock contract
-            Policy.BlockAccount(engine.SnapshotCache, hash);
+            await Policy.BlockAccountInternal(engine, hash);
+            // Clean whitelist (emit event if exists)
+            Policy.CleanWhitelist(engine, contract.Hash);
             // emit event
             engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
         }

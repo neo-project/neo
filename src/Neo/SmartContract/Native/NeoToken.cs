@@ -46,6 +46,7 @@ namespace Neo.SmartContract.Native
         /// Indicates the effective voting turnout in NEO. The voted candidates will only be effective when the voting turnout exceeds this value.
         /// </summary>
         public const decimal EffectiveVoterTurnout = 0.2M;
+        private const long VoteFactor = 100000000L;
 
         private const byte Prefix_VotersCount = 1;
         private const byte Prefix_Candidate = 33;
@@ -114,11 +115,11 @@ namespace Neo.SmartContract.Native
         {
             if (hfChecker(Hardfork.HF_Echidna, blockHeight))
             {
-                manifest.SupportedStandards = new[] { "NEP-17", "NEP-27" };
+                manifest.SupportedStandards = ["NEP-17", "NEP-27"];
             }
             else
             {
-                manifest.SupportedStandards = new[] { "NEP-17" };
+                manifest.SupportedStandards = ["NEP-17"];
             }
         }
 
@@ -153,34 +154,45 @@ namespace Neo.SmartContract.Native
             if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
             if (state.BalanceHeight >= end) return BigInteger.Zero;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, state.Balance, state.BalanceHeight, end);
-            if (state.VoteTo is null) return neoHolderReward;
-
-            var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee, state.VoteTo);
-            var latestGasPerVote = snapshot.TryGet(keyLastest) ?? BigInteger.Zero;
-            var voteReward = state.Balance * (latestGasPerVote - state.LastGasPerVote) / 100000000L;
+            (var neoHolderReward, var voteReward) = CalculateReward(snapshot, state, end);
 
             return neoHolderReward + voteReward;
         }
 
-        private BigInteger CalculateNeoHolderReward(DataCache snapshot, BigInteger value, uint start, uint end)
+        private (BigInteger neoHold, BigInteger voteReward) CalculateReward(DataCache snapshot, NeoAccountState state, uint end)
         {
+            var start = state.BalanceHeight;
+
+            // Compute Neo holder reward
+
             // In the unit of datoshi, 1 GAS = 10^8 datoshi
-            BigInteger sum = 0;
+            BigInteger sumGasPerBlock = 0;
             foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end - 1))
             {
                 if (index > start)
                 {
-                    sum += gasPerBlock * (end - index);
+                    sumGasPerBlock += gasPerBlock * (end - index);
                     end = index;
                 }
                 else
                 {
-                    sum += gasPerBlock * (end - start);
+                    sumGasPerBlock += gasPerBlock * (end - start);
                     break;
                 }
             }
-            return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
+
+            // Compute vote reward
+
+            var voteReward = BigInteger.Zero;
+
+            if (state.VoteTo != null)
+            {
+                var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee, state.VoteTo);
+                var latestGasPerVote = snapshot.TryGet(keyLastest) ?? BigInteger.Zero;
+                voteReward = state.Balance * (latestGasPerVote - state.LastGasPerVote) / VoteFactor;
+            }
+
+            return (state.Balance * sumGasPerBlock * NeoHolderRewardRatio / 100 / TotalAmount, voteReward);
         }
 
         private void CheckCandidate(DataCache snapshot, ECPoint pubkey, CandidateState candidate)
@@ -262,15 +274,15 @@ namespace Neo.SmartContract.Native
 
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, m))
             {
-                BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
+                BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100; // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
                 for (index = 0; index < committee.Count; index++)
                 {
-                    var (PublicKey, Votes) = committee[index];
+                    var (publicKey, votes) = committee[index];
                     var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
-                    if (Votes > 0)
+                    if (votes > 0)
                     {
-                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / Votes;
-                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, PublicKey);
+                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
+                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
                         StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
                         lastRewardPerNeo.Add(voterSumRewardPerNEO);
                     }
@@ -403,8 +415,8 @@ namespace Neo.SmartContract.Native
             if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna) &&
                 !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            engine.AddFee(GetRegisterPrice(engine.SnapshotCache));
+            // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+            engine.AddFee(GetRegisterPrice(engine.SnapshotCache) * ApplicationEngine.FeeFactor);
             return RegisterInternal(engine, pubkey);
         }
 
@@ -491,6 +503,11 @@ namespace Neo.SmartContract.Native
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
+            return await VoteInternal(engine, account, voteTo);
+        }
+
+        internal async ContractTask<bool> VoteInternal(ApplicationEngine engine, UInt160 account, ECPoint? voteTo)
+        {
             NeoAccountState? stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
             if (stateAccount is null) return false;
             if (stateAccount.Balance == 0) return false;

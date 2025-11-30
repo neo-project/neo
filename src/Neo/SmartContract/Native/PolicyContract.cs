@@ -11,10 +11,13 @@
 
 #pragma warning disable IDE0051
 
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using System;
+using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -63,7 +66,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
-        public const uint MaxExecFeeFactor = 100;
+        public const ulong MaxExecFeeFactor = 100;
 
         /// <summary>
         /// The maximum fee for attribute that the committee can set.
@@ -93,6 +96,7 @@ namespace Neo.SmartContract.Native
         public const uint MaxMaxTraceableBlocks = 2102400;
 
         private const byte Prefix_BlockedAccount = 15;
+        private const byte Prefix_WhitelistedFeeContracts = 16;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
@@ -117,9 +121,17 @@ namespace Neo.SmartContract.Native
         /// </summary>
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
 
+        private const string WhitelistChangedEventName = "WhitelistFeeChanged";
+
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
             "old", ContractParameterType.Integer,
             "new", ContractParameterType.Integer
+        )]
+        [ContractEvent(Hardfork.HF_Faun, 1, name: WhitelistChangedEventName,
+            "contract", ContractParameterType.Hash160,
+            "method", ContractParameterType.String,
+            "argCount", ContractParameterType.Integer,
+            "fee", ContractParameterType.Any
         )]
         internal PolicyContract() : base()
         {
@@ -152,6 +164,15 @@ namespace Neo.SmartContract.Native
             {
                 engine.SnapshotCache.Add(_maxProofOfNodeHeight, new StorageItem(DefaultMaxProofOfNodeHeight));
                 engine.SnapshotCache.Add(_proofOfNodeDifficulty, new StorageItem(DefaultProofOfNodeDifficulty));
+
+            // After Faun Hardfork the unit it's pico-gas, before it was datoshi
+
+            if (hardfork == Hardfork.HF_Faun)
+            {
+                // Add decimals to exec fee factor
+                var item = engine.SnapshotCache.TryGet(_execFeeFactor) ??
+                    throw new InvalidOperationException("Policy was not initialized");
+                item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
             }
             return ContractTask.CompletedTask;
         }
@@ -170,12 +191,34 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The execution engine.</param>
         /// <returns>The execution fee factor.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetExecFeeFactor(IReadOnlyStore snapshot)
+        public uint GetExecFeeFactor(ApplicationEngine engine)
         {
-            return (uint)(BigInteger)snapshot[_execFeeFactor];
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                return (uint)((BigInteger)engine.SnapshotCache[_execFeeFactor] / ApplicationEngine.FeeFactor);
+
+            return (uint)(BigInteger)engine.SnapshotCache[_execFeeFactor];
+        }
+
+        public long GetExecFeeFactor(ProtocolSettings settings, IReadOnlyStore snapshot, uint index)
+        {
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, index))
+                return (long)((BigInteger)snapshot[_execFeeFactor] / ApplicationEngine.FeeFactor);
+
+            return (long)(BigInteger)snapshot[_execFeeFactor];
+        }
+
+        /// <summary>
+        /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <returns>The execution fee factor in the unit of pico Gas. 1 picoGAS = 1e-12 GAS</returns>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetExecPicoFeeFactor(ApplicationEngine engine)
+        {
+            return (BigInteger)engine.SnapshotCache[_execFeeFactor];
         }
 
         /// <summary>
@@ -301,6 +344,113 @@ namespace Neo.SmartContract.Native
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
         }
 
+        internal bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, string method, int argCount, [NotNullWhen(true)] out long? fixedFee)
+        {
+            // Check contract existence
+
+            var currentContract = ContractManagement.GetContract(snapshot, contractHash);
+
+            if (currentContract != null)
+            {
+                // Check state existence
+
+                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount));
+
+                if (item != null)
+                {
+                    fixedFee = (long)(BigInteger)item;
+                    return true;
+                }
+            }
+
+            fixedFee = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Remove whitelisted Fee contracts
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="contractHash">The contract to set the whitelist</param>
+        /// <param name="method">Method</param>
+        /// <param name="argCount">Argument count</param>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        private void RemoveWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount)
+        {
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
+
+            if (!engine.SnapshotCache.Contains(key)) throw new InvalidOperationException("Whitelist not found");
+
+            engine.SnapshotCache.Delete(key);
+
+            // Emit event
+            engine.SendNotification(Hash, WhitelistChangedEventName,
+                [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
+                new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
+        }
+
+        internal int CleanWhitelist(ApplicationEngine engine, UInt160 contractHash)
+        {
+            var count = 0;
+            var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash);
+
+            foreach ((var key, _) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
+            {
+                engine.SnapshotCache.Delete(key);
+                count++;
+
+                // Emit event recovering the values from the Key
+
+                var keyData = key.ToArray().AsSpan();
+                (var method, var argCount) = StorageKey.ReadMethodAndArgCount(key.ToArray().AsSpan());
+
+                engine.SendNotification(Hash, WhitelistChangedEventName,
+                    [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
+                    new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Set whitelisted Fee contracts
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="contractHash">The contract to set the whitelist</param>
+        /// <param name="method">Method</param>
+        /// <param name="argCount">Argument count</param>
+        /// <param name="fixedFee">Fixed execution fee</param>
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        internal void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long fixedFee)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(fixedFee, nameof(fixedFee));
+
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
+
+            // Validate methods
+            var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
+                    ?? throw new InvalidOperationException("Is not a valid contract");
+
+            if (contract.Manifest.Abi.GetMethod(method, argCount) is null)
+                throw new InvalidOperationException($"{method} with {argCount} args is not a valid method of {contractHash}");
+
+            // Set
+            var entry = engine.SnapshotCache
+                    .GetAndChange(key, () => new StorageItem(fixedFee));
+
+            entry.Set(fixedFee);
+
+            // Emit event
+
+            engine.SendNotification(Hash, WhitelistChangedEventName,
+                [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
+                new VM.Types.Integer(argCount), new VM.Types.Integer(fixedFee)]);
+        }
+
         /// <summary>
         /// Sets the block generation time in milliseconds.
         /// </summary>
@@ -404,12 +554,15 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetExecFeeFactor(ApplicationEngine engine, uint value)
+        private void SetExecFeeFactor(ApplicationEngine engine, ulong value)
         {
-            if (value == 0 || value > MaxExecFeeFactor)
-                throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {MaxExecFeeFactor}], got {value}");
-            AssertCommittee(engine);
+            // After FAUN hardfork, the max exec fee factor is with decimals defined in ApplicationEngine.FeeFactor
+            var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? ApplicationEngine.FeeFactor * MaxExecFeeFactor : MaxExecFeeFactor;
 
+            if (value == 0 || value > maxValue)
+                throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {maxValue}], got {value}");
+
+            AssertCommittee(engine);
             engine.SnapshotCache.GetAndChange(_execFeeFactor)!.Set(value);
         }
 
@@ -461,21 +614,24 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private bool BlockAccount(ApplicationEngine engine, UInt160 account)
+        private async ContractTask<bool> BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             AssertCommittee(engine);
 
-            return BlockAccount(engine.SnapshotCache, account);
+            return await BlockAccountInternal(engine, account);
         }
 
-        internal bool BlockAccount(DataCache snapshot, UInt160 account)
+        internal async ContractTask<bool> BlockAccountInternal(ApplicationEngine engine, UInt160 account)
         {
             if (IsNative(account)) throw new InvalidOperationException("Cannot block a native contract.");
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
-            if (snapshot.Contains(key)) return false;
 
-            snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
+            if (engine.SnapshotCache.Contains(key)) return false;
+
+            await NEO.VoteInternal(engine, account, null);
+
+            engine.SnapshotCache.Add(key, new StorageItem([]));
             return true;
         }
 
@@ -499,6 +655,17 @@ namespace Neo.SmartContract.Native
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
                 .GetEnumerator();
+            return new StorageIterator(enumerator, 1, options);
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
+        {
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+            var enumerator = snapshot
+                .Find(CreateStorageKey(Prefix_WhitelistedFeeContracts), SeekDirection.Forward)
+                .GetEnumerator();
+
             return new StorageIterator(enumerator, 1, options);
         }
     }
