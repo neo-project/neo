@@ -89,7 +89,7 @@ public sealed class OracleContract : NativeContract
             ?? throw new ArgumentException("Oracle request not found");
         Notify(engine, "OracleResponse", response.Id, request.OriginalTxid);
         StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits, engine.ReferenceCounter);
-        return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
+        return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Code, response.Result);
     }
 
     private UInt256 GetOriginalTxid(ApplicationEngine engine)

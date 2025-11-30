@@ -14,7 +14,6 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.Extensions.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -225,7 +224,7 @@ public sealed class Notary : NativeContract
         if (deposit is null) return false;
         if (Ledger.CurrentIndex(engine.SnapshotCache) < deposit.Till) return false;
         RemoveDepositFor(engine.SnapshotCache, from);
-        if (!await engine.CallFromNativeContractAsync<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, StackItem.Null))
+        if (!await engine.CallFromNativeContractAsync<bool>(Hash, GAS.Hash, "transfer", Hash, receive, deposit.Amount, null))
         {
             throw new InvalidOperationException(string.Format("Transfer to {0} has failed", receive.ToString()));
         }
