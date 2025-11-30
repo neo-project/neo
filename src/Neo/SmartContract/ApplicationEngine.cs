@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
 using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Json;
@@ -647,7 +646,7 @@ public partial class ApplicationEngine : ExecutionEngine
                 Version = 0,
                 PrevHash = hash,
                 MerkleRoot = new UInt256(),
-                Timestamp = currentBlock.Timestamp + (uint)snapshot.GetTimePerBlock(settings).TotalMilliseconds,
+                Timestamp = currentBlock.Timestamp + settings.MillisecondsPerBlock,
                 Index = currentBlock.Index + 1,
                 NextConsensus = currentBlock.NextConsensus,
                 Witness = Witness.Empty,

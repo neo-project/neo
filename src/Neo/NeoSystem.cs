@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -315,6 +314,6 @@ public class NeoSystem : IDisposable
     /// </returns>
     public bool ContainsConflictHash(UInt256 hash, IEnumerable<UInt160> signers)
     {
-        return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers, this.GetMaxTraceableBlocks());
+        return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers, Settings.MaxTraceableBlocks);
     }
 }
