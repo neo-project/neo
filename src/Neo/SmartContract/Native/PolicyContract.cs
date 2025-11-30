@@ -165,10 +165,6 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_maxProofOfNodeHeight, new StorageItem(DefaultMaxProofOfNodeHeight));
                 engine.SnapshotCache.Add(_proofOfNodeDifficulty, new StorageItem(DefaultProofOfNodeDifficulty));
 
-            // After Faun Hardfork the unit it's pico-gas, before it was datoshi
-
-            if (hardfork == Hardfork.HF_Faun)
-            {
                 // Add decimals to exec fee factor
                 var item = engine.SnapshotCache.TryGet(_execFeeFactor) ??
                     throw new InvalidOperationException("Policy was not initialized");
