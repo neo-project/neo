@@ -366,7 +366,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Check GetRegisteredValidators
 
-            var members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
+            var members = NativeContract.NEO.GetCandidatesInternal(clonedCache, false);
             Assert.AreEqual(2, members.Count());
         }
 
@@ -396,7 +396,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.Result);
 
             // Check GetRegisteredValidators
-            var members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
+            var members = NativeContract.NEO.GetCandidatesInternal(clonedCache, false);
             Assert.AreEqual(1, members.Count());
             Assert.AreEqual(point, members.First().PublicKey);
 
@@ -426,7 +426,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.State);
             Assert.IsTrue(ret.Result);
 
-            var members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
+            var members = NativeContract.NEO.GetCandidatesInternal(clonedCache, false);
             Assert.AreEqual(1, members.Count());
             Assert.AreEqual(keyCount + 1, clonedCache.GetChangeSet().Count());
             StorageKey key = CreateStorageKey(33, point);
@@ -438,7 +438,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.AreEqual(keyCount, clonedCache.GetChangeSet().Count());
 
-            members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
+            members = NativeContract.NEO.GetCandidatesInternal(clonedCache, false);
             Assert.AreEqual(0, members.Count());
             Assert.IsNull(clonedCache.TryGet(key));
 
@@ -775,12 +775,12 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestGetCandidates2()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            var result = NativeContract.NEO.GetCandidatesInternal(clonedCache);
+            var result = NativeContract.NEO.GetCandidatesInternal(clonedCache, false);
             Assert.AreEqual(0, result.Count());
 
             StorageKey key = NativeContract.NEO.CreateStorageKey(33, ECCurve.Secp256r1.G);
             clonedCache.Add(key, new StorageItem(new CandidateState() { Registered = true }));
-            Assert.AreEqual(1, NativeContract.NEO.GetCandidatesInternal(clonedCache).Count());
+            Assert.AreEqual(1, NativeContract.NEO.GetCandidatesInternal(clonedCache, false).Count());
         }
 
         [TestMethod]
@@ -869,6 +869,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var clonedCache = _snapshotCache.CloneCache();
             var result = NativeContract.NEO.ComputeNextBlockValidators(clonedCache, TestProtocolSettings.Default);
+
             Assert.AreEqual("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", result[0].ToArray().ToHexString());
             Assert.AreEqual("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", result[1].ToArray().ToHexString());
             Assert.AreEqual("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e", result[2].ToArray().ToHexString());
