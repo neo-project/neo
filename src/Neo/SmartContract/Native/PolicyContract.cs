@@ -552,21 +552,24 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private bool BlockAccount(ApplicationEngine engine, UInt160 account)
+        private async ContractTask<bool> BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             AssertCommittee(engine);
 
-            return BlockAccount(engine.SnapshotCache, account);
+            return await BlockAccountInternal(engine, account);
         }
 
-        internal bool BlockAccount(DataCache snapshot, UInt160 account)
+        internal async ContractTask<bool> BlockAccountInternal(ApplicationEngine engine, UInt160 account)
         {
             if (IsNative(account)) throw new InvalidOperationException("Cannot block a native contract.");
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
-            if (snapshot.Contains(key)) return false;
 
-            snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
+            if (engine.SnapshotCache.Contains(key)) return false;
+
+            await NEO.VoteInternal(engine, account, null);
+
+            engine.SnapshotCache.Add(key, new StorageItem([]));
             return true;
         }
 
