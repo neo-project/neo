@@ -388,7 +388,8 @@ public abstract class NativeContract
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, string methodName, int bigEndianKey) => StorageKey.Create(Id, prefix, hash, methodName, bigEndianKey);
+    private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, string methodName, int bigEndianKey)
+        => new KeyBuilder(Id, prefix) { hash, bigEndianKey, methodName.ToStrictUtf8Bytes() };
 
     #endregion
 

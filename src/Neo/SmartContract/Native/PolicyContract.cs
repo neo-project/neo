@@ -319,6 +319,7 @@ public sealed class PolicyContract : NativeContract
             // Emit event recovering the values from the Key
 
             var keyData = key.ToArray().AsSpan();
+            // TODO: Require a unwrap
             (var method, var argCount) = StorageKey.ReadMethodAndArgCount(key.ToArray().AsSpan());
 
             engine.SendNotification(Hash, WhitelistChangedEventName,

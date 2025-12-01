@@ -65,37 +65,6 @@ public sealed record StorageKey
     private int _hashCode = 0;
 
     /// <summary>
-    /// Create StorageKey
-    /// </summary>
-    /// <param name="id">The id of the contract.</param>
-    /// <param name="prefix">The prefix of the key.</param>
-    /// <param name="hash">Hash</param>
-    /// <param name="methodName">Method Name</param>
-    /// <param name="bigEndian">Big Endian key.</param>
-    /// <returns>The <see cref="StorageKey"/> class</returns>
-    public static StorageKey Create(int id, byte prefix, UInt160 hash, string methodName, int bigEndian)
-    {
-        const int HashAndInt = UInt160Length + sizeof(int);
-
-        var methodData = methodName.ToStrictUtf8Bytes();
-        var data = new byte[HashAndInt + methodData.Length];
-
-        FillHeader(data, id, prefix);
-        hash.Serialize(data.AsSpan(PrefixLength..));
-        BinaryPrimitives.WriteInt32BigEndian(data.AsSpan(UInt160Length..), bigEndian);
-        Array.Copy(methodData, 0, data, HashAndInt, methodData.Length);
-
-        return new(id, data);
-    }
-
-    internal static (string methodName, int bigEndian) ReadMethodAndArgCount(ReadOnlySpan<byte> keyData)
-    {
-        var argCount = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(UInt160Length, 4));
-        var method = keyData[(UInt160Length + 4)..];
-        return (method.ToStrictUtf8String(), argCount);
-    }
-
-    /// <summary>
     /// Creates a search prefix for a contract.
     /// </summary>
     /// <param name="id">The id of the contract.</param>

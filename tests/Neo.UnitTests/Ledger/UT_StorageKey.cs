@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.SmartContract;
-using System.Text;
 
 namespace Neo.UnitTests.Ledger;
 
