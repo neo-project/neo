@@ -23,11 +23,7 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// A native contract that manages the system policies.
 /// </summary>
-[ContractEvent(0, name: MillisecondsPerBlockChangedEventName,
-    "old", ContractParameterType.Integer,
-    "new", ContractParameterType.Integer
-)]
-[ContractEvent(1, name: WhitelistChangedEventName,
+[ContractEvent(0, name: WhitelistChangedEventName,
     "contract", ContractParameterType.Hash160,
     "method", ContractParameterType.String,
     "argCount", ContractParameterType.Integer,
@@ -86,14 +82,9 @@ public sealed class PolicyContract : NativeContract
     private readonly StorageKey _feePerByte;
     private readonly StorageKey _execFeeFactor;
     private readonly StorageKey _storagePrice;
-    private readonly StorageKey _millisecondsPerBlock;
     private readonly StorageKey _maxValidUntilBlockIncrement;
     private readonly StorageKey _maxTraceableBlocks;
 
-    /// <summary>
-    /// The event name for the block generation time changed.
-    /// </summary>
-    private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
     private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
     internal PolicyContract()
