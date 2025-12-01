@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.Extensions;
 using Neo.Extensions.VM;
 using Neo.Factories;
 using Neo.Network.P2P;
@@ -646,7 +645,7 @@ public abstract class Wallet : ISigner
                 Version = 0,
                 Nonce = RandomNumberFactory.NextUInt32(),
                 Script = script,
-                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + snapshot.GetMaxValidUntilBlockIncrement(ProtocolSettings),
+                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + ProtocolSettings.MaxValidUntilBlockIncrement,
                 Signers = GetSigners(account, cosigners),
                 Attributes = attributes,
                 Witnesses = null!
