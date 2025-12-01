@@ -82,8 +82,6 @@ public sealed class PolicyContract : NativeContract
     private readonly StorageKey _feePerByte;
     private readonly StorageKey _execFeeFactor;
     private readonly StorageKey _storagePrice;
-    private readonly StorageKey _maxValidUntilBlockIncrement;
-    private readonly StorageKey _maxTraceableBlocks;
 
     private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
