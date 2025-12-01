@@ -57,8 +57,6 @@ public abstract class NativeContract
     /// </summary>
     public static ContractManagement ContractManagement { get; } = new();
 
-    public static TokenManagement TokenManagement { get; } = new();
-
     /// <summary>
     /// Gets the instance of the <see cref="Native.StdLib"/> class.
     /// </summary>
@@ -108,6 +106,8 @@ public abstract class NativeContract
     /// Gets the instance of the <see cref="Treasury"/> class.
     /// </summary>
     public static Treasury Treasury { get; } = new();
+
+    public static TokenManagement TokenManagement { get; } = new();
 
     #endregion
 
