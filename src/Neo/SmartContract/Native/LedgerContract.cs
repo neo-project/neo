@@ -99,8 +99,7 @@ public sealed class LedgerContract : NativeContract
     /// <returns>Whether the block is traceable.</returns>
     private bool IsTraceableBlock(ApplicationEngine engine, uint index)
     {
-        var mtb = Policy.GetMaxTraceableBlocks(engine.SnapshotCache);
-        return IsTraceableBlock(engine.SnapshotCache, index, mtb);
+        return IsTraceableBlock(engine.SnapshotCache, index, engine.ProtocolSettings.MaxTraceableBlocks);
     }
 
     /// <summary>

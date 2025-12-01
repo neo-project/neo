@@ -19,7 +19,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System.Buffers.Binary;
 using System.Numerics;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native;
 
@@ -88,9 +87,9 @@ public sealed class OracleContract : NativeContract
             ?? throw new ArgumentException("Oracle response not found");
         OracleRequest request = GetRequest(engine.SnapshotCache, response.Id)
             ?? throw new ArgumentException("Oracle request not found");
-        engine.SendNotification(Hash, "OracleResponse", new Array(engine.ReferenceCounter) { response.Id, request.OriginalTxid.ToArray() });
+        Notify(engine, "OracleResponse", response.Id, request.OriginalTxid);
         StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits, engine.ReferenceCounter);
-        return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
+        return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Code, response.Result);
     }
 
     private UInt256 GetOriginalTxid(ApplicationEngine engine)
@@ -261,12 +260,7 @@ public sealed class OracleContract : NativeContract
             list.Add(id);
         }
 
-        engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) {
-            id,
-            engine.CallingScriptHash!.ToArray(),
-            url,
-            filter ?? StackItem.Null
-        });
+        Notify(engine, "OracleRequest", id, engine.CallingScriptHash, url, filter);
     }
 
     [ContractMethod(CpuFee = 1 << 15)]

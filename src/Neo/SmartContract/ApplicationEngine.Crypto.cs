@@ -44,14 +44,7 @@ partial class ApplicationEngine
     /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
     protected internal bool CheckSig(byte[] pubkey, byte[] signature)
     {
-        try
-        {
-            return Crypto.VerifySignature(ScriptContainer!.GetSignData(ProtocolSettings.Network), signature, pubkey, ECCurve.Secp256r1);
-        }
-        catch (ArgumentException)
-        {
-            return false;
-        }
+        return Crypto.VerifySignature(ScriptContainer!.GetSignData(ProtocolSettings.Network), signature, pubkey, ECCurve.Secp256r1);
     }
 
     /// <summary>
@@ -69,20 +62,13 @@ partial class ApplicationEngine
         if (m == 0) throw new ArgumentException("signatures array cannot be empty.");
         if (m > n) throw new ArgumentException($"signatures count ({m}) cannot be greater than pubkeys count ({n}).");
         AddFee(CheckSigPrice * n * ExecFeeFactor);
-        try
+        for (int i = 0, j = 0; i < m && j < n;)
         {
-            for (int i = 0, j = 0; i < m && j < n;)
-            {
-                if (Crypto.VerifySignature(message, signatures[i], pubkeys[j], ECCurve.Secp256r1))
-                    i++;
-                j++;
-                if (m - i > n - j)
-                    return false;
-            }
-        }
-        catch (ArgumentException)
-        {
-            return false;
+            if (Crypto.VerifySignature(message, signatures[i], pubkeys[j], ECCurve.Secp256r1))
+                i++;
+            j++;
+            if (m - i > n - j)
+                return false;
         }
         return true;
     }

@@ -21,7 +21,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System.Buffers.Binary;
 using System.Numerics;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native;
 
@@ -63,7 +62,7 @@ public sealed class ContractManagement : NativeContract
         ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Deploy, ContractBasicMethod.DeployPCount);
         if (md is not null)
             await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
-        engine.SendNotification(Hash, update ? "Update" : "Deploy", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+        Notify(engine, update ? "Update" : "Deploy", contract.Hash);
     }
 
     internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
@@ -110,7 +109,7 @@ public sealed class ContractManagement : NativeContract
                 }
 
                 // Emit native contract notification
-                engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+                Notify(engine, state is null ? "Deploy" : "Update", contract.Hash);
             }
         }
     }
@@ -381,6 +380,6 @@ public sealed class ContractManagement : NativeContract
         // Clean whitelist (emit event if exists)
         Policy.CleanWhitelist(engine, contract.Hash);
         // emit event
-        engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
+        Notify(engine, "Destroy", hash);
     }
 }

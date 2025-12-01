@@ -24,7 +24,7 @@ public static class NeoTokenExtensions
 
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        var kb = StorageKey.Create(neoToken.Id, NeoToken.Prefix_Account);
+        StorageKey kb = new KeyBuilder(neoToken.Id, NeoToken.Prefix_Account);
         var kbLength = kb.Length;
 
         foreach (var (key, value) in snapshot.Find(kb, SeekDirection.Forward))
