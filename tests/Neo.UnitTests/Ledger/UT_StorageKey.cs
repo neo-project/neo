@@ -85,13 +85,6 @@ namespace Neo.UnitTests.Ledger
             CollectionAssert.AreEqual(key.ToArray(), StorageKey.Create(1, 2,
                 UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"), 123).ToArray());
 
-            // Recover method and arg count
-
-            var keyB = new StorageKey(key.ToArray()).ToArray().AsSpan();
-            var methodOffset = StorageKey.ReadInt32SkippingHash(keyB);
-
-            Assert.AreEqual(123, methodOffset);
-
             // ISerializable
             key = new KeyBuilder(1, 2);
             key.Add(ECCurve.Secp256r1.G);

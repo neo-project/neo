@@ -651,16 +651,14 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(2028330, engine.FeeConsumed);
-            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.Hash));
+            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
             Assert.IsEmpty(engine.Notifications);
 
             // Whitelist
 
             engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
 
-            var balanceOfMethod = NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)
-                .Manifest.Abi.Methods.Where(u => u.Name == "balanceOf").Single();
-            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, balanceOfMethod.Offset, 0);
+            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 1, 0);
             engine.SnapshotCache.Commit();
 
             // Whitelisted
@@ -675,7 +673,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.SnapshotCache.Commit();
             engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
 
-            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.Hash));
+            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
             Assert.HasCount(1, engine.Notifications); // Whitelist deleted
         }
 
@@ -711,8 +709,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Invoke SetWhiteListFeeContract with fixedFee negative
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, contractHash, -123, 1L));
-            Assert.Throws<ArgumentOutOfRangeException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, contractHash, 123, -1L));
+            Assert.Throws<ArgumentOutOfRangeException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, contractHash, "foo", 1, -1L));
         }
 
         [TestMethod]
@@ -721,24 +718,24 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshotCache = _snapshotCache.CloneCache();
             var engine = CreateEngineWithCommitteeSigner(snapshotCache);
             var randomHash = new UInt160(Crypto.Hash160([1, 2, 3]).ToArray());
-            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, randomHash, 0, 10));
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, randomHash, "transfer", 3, 10));
         }
 
         [TestMethod]
-        public void TestSetWhiteListFeeContractWhenNoContract()
+        public void TestSetWhiteListFeeContractWhenContractNotInAbi()
         {
             var snapshotCache = _snapshotCache.CloneCache();
             var engine = CreateEngineWithCommitteeSigner(snapshotCache);
-            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, UInt160.Zero, 0, 10));
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "noexists", 0, 10));
         }
 
         [TestMethod]
-        public void TestSetWhiteListFeeContractWithIncorrectOffset()
+        public void TestSetWhiteListFeeContractWhenArgCountMismatch()
         {
             var snapshotCache = _snapshotCache.CloneCache();
             var engine = CreateEngineWithCommitteeSigner(snapshotCache);
-            // Incorrect offset
-            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, 1234, 10));
+            // transfer exists with 4 args
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 0, 10));
         }
 
         [TestMethod]
@@ -759,7 +756,7 @@ namespace Neo.UnitTests.SmartContract.Native
             };
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
-            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, 123, 10));
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 0, 10));
         }
 
         [TestMethod]
@@ -767,9 +764,11 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = _snapshotCache.CloneCache();
             var engine = CreateEngineWithCommitteeSigner(snapshotCache);
-            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, 0, 123_456);
+            var method = NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)
+                .Manifest.Abi.Methods.Where(u => u.Name == "balanceOf").Single();
 
-            Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(engine.SnapshotCache, NativeContract.NEO.Hash, 0, out var fixedFee));
+            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, method.Name, method.Parameters.Length, 123_456);
+            Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(engine.SnapshotCache, NativeContract.NEO.Hash, method, out var fixedFee));
             Assert.AreEqual(123_456, fixedFee);
         }
 

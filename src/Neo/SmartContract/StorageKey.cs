@@ -202,12 +202,6 @@ namespace Neo.SmartContract
             return new(id, data);
         }
 
-        internal static int ReadInt32SkippingHash(ReadOnlySpan<byte> keyData)
-        {
-            var a = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(UInt160Length, sizeof(int)));
-            return a;
-        }
-
         /// <summary>
         /// Create StorageKey
         /// </summary>
