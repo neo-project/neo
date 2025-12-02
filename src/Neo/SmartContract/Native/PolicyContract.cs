@@ -693,12 +693,19 @@ namespace Neo.SmartContract.Native
                     var bak = state.NativeCallingScriptHash;
                     state.NativeCallingScriptHash = account;
 
-                    engine.CallContract(contractHash, "transfer", CallFlags.All,
-                        new VM.Types.Array(engine.ReferenceCounter, [account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null]));
+                    try
+                    {
+                        engine.CallContract(contractHash, "transfer", CallFlags.All,
+                            new VM.Types.Array(engine.ReferenceCounter,
+                            [account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null]));
+                    }
+                    catch { throw; }
+                    finally
+                    {
+                        // Reset witnesses
 
-                    // Reset witnesses
-
-                    state.NativeCallingScriptHash = bak;
+                        state.NativeCallingScriptHash = bak;
+                    }
                 }
             }
 
