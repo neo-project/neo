@@ -385,7 +385,7 @@ namespace Neo.SmartContract
             // Check whitelist
 
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
-                NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method.Name, method.Parameters.Length, out var fixedFee))
+                NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method.Offset, out var fixedFee))
             {
                 AddFee(fixedFee.Value * ApplicationEngine.FeeFactor);
                 state.WhiteListed = true;

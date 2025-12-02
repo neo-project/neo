@@ -187,29 +187,25 @@ namespace Neo.SmartContract
         /// <param name="id">The id of the contract.</param>
         /// <param name="prefix">The prefix of the key.</param>
         /// <param name="hash">Hash</param>
-        /// <param name="methodName">Method Name</param>
         /// <param name="bigEndian">Big Endian key.</param>
         /// <returns>The <see cref="StorageKey"/> class</returns>
-        public static StorageKey Create(int id, byte prefix, UInt160 hash, string methodName, int bigEndian)
+        public static StorageKey Create(int id, byte prefix, UInt160 hash, int bigEndian)
         {
             const int HashAndInt = UInt160Length + sizeof(int);
 
-            var methodData = methodName.ToStrictUtf8Bytes();
-            var data = new byte[HashAndInt + methodData.Length];
+            var data = new byte[HashAndInt];
 
             FillHeader(data, id, prefix);
             hash.Serialize(data.AsSpan(PrefixLength..));
             BinaryPrimitives.WriteInt32BigEndian(data.AsSpan(UInt160Length..), bigEndian);
-            Array.Copy(methodData, 0, data, HashAndInt, methodData.Length);
 
             return new(id, data);
         }
 
-        internal static (string methodName, int bigEndian) ReadMethodAndArgCount(ReadOnlySpan<byte> keyData)
+        internal static int ReadInt32SkippingHash(ReadOnlySpan<byte> keyData)
         {
-            var argCount = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(UInt160Length, 4));
-            var method = keyData[(UInt160Length + 4)..];
-            return (method.ToStrictUtf8String(), argCount);
+            var a = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(UInt160Length, sizeof(int)));
+            return a;
         }
 
         /// <summary>
