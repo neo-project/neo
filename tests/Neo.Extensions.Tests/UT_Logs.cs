@@ -14,7 +14,6 @@ using System.IO;
 
 namespace Neo.Tests
 {
-
     [TestClass]
     public class UT_Logs
     {
