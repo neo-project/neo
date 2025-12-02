@@ -21,6 +21,7 @@ using System.Linq;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Collections.Generic;
 
 namespace Neo.SmartContract.Native
 {
@@ -648,7 +649,7 @@ namespace Neo.SmartContract.Native
             // Transfer funds, NEO, GAS and extra NEP17 tokens
 
             // Validate and collect extra NEP17 tokens
-            var validatedTokens = new List<UInt160>();
+            var validatedTokens = new HashSet<UInt160>();
             foreach (var tokenItem in extraTokens)
             {
                 var span = tokenItem.GetSpan();
@@ -666,15 +667,13 @@ namespace Neo.SmartContract.Native
                 if (!contract.Manifest.SupportedStandards.Contains("NEP-17"))
                     throw new InvalidOperationException($"Contract {contractHash} does not implement NEP-17 standard.");
 
-                // Prevent duplicate tokens
-                if (validatedTokens.Contains(contractHash))
-                    throw new InvalidOperationException($"Duplicate token {contractHash} in extraTokens.");
-
                 // Prevent NEO and GAS from being in extraTokens
                 if (contractHash == NEO.Hash || contractHash == GAS.Hash)
                     throw new InvalidOperationException($"NEO and GAS should not be included in extraTokens. They are automatically processed.");
 
-                validatedTokens.Add(contractHash);
+                // Prevent duplicate tokens
+                if (!validatedTokens.Add(contractHash))
+                    throw new InvalidOperationException($"Duplicate token {contractHash} in extraTokens.");
             }
 
             // Transfer funds, NEO, GAS and extra NEP17 tokens
