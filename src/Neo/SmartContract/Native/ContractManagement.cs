@@ -380,7 +380,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="engine">The engine used to write data.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private void Destroy(ApplicationEngine engine)
+        private async ContractTask Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash!;
             StorageKey ckey = CreateStorageKey(Prefix_Contract, hash);
@@ -391,7 +391,7 @@ namespace Neo.SmartContract.Native
             foreach (var (key, _) in engine.SnapshotCache.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
                 engine.SnapshotCache.Delete(key);
             // lock contract
-            Policy.BlockAccount(engine.SnapshotCache, hash);
+            await Policy.BlockAccountInternal(engine, hash);
             // Clean whitelist (emit event if exists)
             Policy.CleanWhitelist(engine, contract.Hash);
             // emit event
