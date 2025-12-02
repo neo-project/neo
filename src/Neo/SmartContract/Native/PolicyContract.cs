@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
-        private const ulong RequiredTimeForRecoverFunds = 365 * 24 * 60 * 60 * 500UL; // 6 months in milliseconds
+        private const ulong RequiredTimeForRecoverFunds = 365 * 24 * 60 * 60 * 1_000UL; // 1 year in milliseconds
 
         /// <summary>
         /// The event name for the block generation time changed.
