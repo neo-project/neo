@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
 using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Json;
@@ -344,9 +343,9 @@ public partial class ApplicationEngine : ExecutionEngine
         return contextNew;
     }
 
-    internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+    internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
-        var contextNew = CallContractInternal(hash, method, CallFlags.All, false, args);
+        var contextNew = CallContractInternal(hash, method, CallFlags.All, false, args.Select(Convert).ToArray());
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
         ContractTask task = new();
@@ -354,9 +353,9 @@ public partial class ApplicationEngine : ExecutionEngine
         return task;
     }
 
-    internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+    internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
-        var contextNew = CallContractInternal(hash, method, CallFlags.All, true, args);
+        var contextNew = CallContractInternal(hash, method, CallFlags.All, true, args.Select(Convert).ToArray());
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
         ContractTask<T> task = new();
@@ -647,7 +646,7 @@ public partial class ApplicationEngine : ExecutionEngine
                 Version = 0,
                 PrevHash = hash,
                 MerkleRoot = new UInt256(),
-                Timestamp = currentBlock.Timestamp + (uint)snapshot.GetTimePerBlock(settings).TotalMilliseconds,
+                Timestamp = currentBlock.Timestamp + settings.MillisecondsPerBlock,
                 Index = currentBlock.Index + 1,
                 NextConsensus = currentBlock.NextConsensus,
                 Witness = Witness.Empty,

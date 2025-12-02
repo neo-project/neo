@@ -9,12 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System.Numerics;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native;
 
@@ -179,8 +177,7 @@ public abstract class FungibleToken<TState> : NativeContract
     {
         // Send notification
 
-        engine.SendNotification(Hash, "Transfer",
-            new Array(engine.ReferenceCounter) { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, amount });
+        Notify(engine, "Transfer", from, to, amount);
 
         // Check if it's a wallet or smart contract
 
@@ -188,6 +185,6 @@ public abstract class FungibleToken<TState> : NativeContract
 
         // Call onNEP17Payment method
 
-        await engine.CallFromNativeContractAsync(Hash, to, "onNEP17Payment", from?.ToArray() ?? StackItem.Null, amount, data);
+        await engine.CallFromNativeContractAsync(Hash, to, "onNEP17Payment", from, amount, data);
     }
 }

@@ -21,10 +21,6 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// A native contract that manages the system policies.
 /// </summary>
-[ContractEvent(0, name: MillisecondsPerBlockChangedEventName,
-    "old", ContractParameterType.Integer,
-    "new", ContractParameterType.Integer
-)]
 public sealed class PolicyContract : NativeContract
 {
     /// <summary>
@@ -68,52 +64,21 @@ public sealed class PolicyContract : NativeContract
     /// </summary>
     public const uint MaxStoragePrice = 10000000;
 
-    /// <summary>
-    /// The maximum block generation time that the committee can set in milliseconds.
-    /// </summary>
-    public const uint MaxMillisecondsPerBlock = 30_000;
-
-    /// <summary>
-    /// The maximum MaxValidUntilBlockIncrement value that the committee can set.
-    /// It is set to be a day of 1-second blocks.
-    /// </summary>
-    public const uint MaxMaxValidUntilBlockIncrement = 86400;
-
-    /// <summary>
-    /// The maximum MaxTraceableBlocks value that the committee can set.
-    /// It is set to be a year of 15-second blocks.
-    /// </summary>
-    public const uint MaxMaxTraceableBlocks = 2102400;
-
     private const byte Prefix_BlockedAccount = 15;
     private const byte Prefix_FeePerByte = 10;
     private const byte Prefix_ExecFeeFactor = 18;
     private const byte Prefix_StoragePrice = 19;
     private const byte Prefix_AttributeFee = 20;
-    private const byte Prefix_MillisecondsPerBlock = 21;
-    private const byte Prefix_MaxValidUntilBlockIncrement = 22;
-    private const byte Prefix_MaxTraceableBlocks = 23;
 
     private readonly StorageKey _feePerByte;
     private readonly StorageKey _execFeeFactor;
     private readonly StorageKey _storagePrice;
-    private readonly StorageKey _millisecondsPerBlock;
-    private readonly StorageKey _maxValidUntilBlockIncrement;
-    private readonly StorageKey _maxTraceableBlocks;
-
-    /// <summary>
-    /// The event name for the block generation time changed.
-    /// </summary>
-    private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
 
     internal PolicyContract()
     {
         _feePerByte = CreateStorageKey(Prefix_FeePerByte);
         _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
         _storagePrice = CreateStorageKey(Prefix_StoragePrice);
-        _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
-        _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
-        _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
     }
 
     internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -124,9 +89,6 @@ public sealed class PolicyContract : NativeContract
             engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
             engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
-            engine.SnapshotCache.Add(_millisecondsPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
-            engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
-            engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
         }
         return ContractTask.CompletedTask;
     }
@@ -165,40 +127,6 @@ public sealed class PolicyContract : NativeContract
     }
 
     /// <summary>
-    /// Gets the block generation time in milliseconds.
-    /// </summary>
-    /// <param name="snapshot">The snapshot used to read data.</param>
-    /// <returns>The block generation time in milliseconds.</returns>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public uint GetMillisecondsPerBlock(IReadOnlyStore snapshot)
-    {
-        return (uint)(BigInteger)snapshot[_millisecondsPerBlock];
-    }
-
-    /// <summary>
-    /// Gets the upper increment size of blockchain height (in blocks) exceeding
-    /// that a transaction should fail validation.
-    /// </summary>
-    /// <param name="snapshot">The snapshot used to read data.</param>
-    /// <returns>MaxValidUntilBlockIncrement value.</returns>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public uint GetMaxValidUntilBlockIncrement(IReadOnlyStore snapshot)
-    {
-        return (uint)(BigInteger)snapshot[_maxValidUntilBlockIncrement];
-    }
-
-    /// <summary>
-    /// Gets the length of the chain accessible to smart contracts.
-    /// </summary>
-    /// <param name="snapshot">The snapshot used to read data.</param>
-    /// <returns>MaxTraceableBlocks value.</returns>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public uint GetMaxTraceableBlocks(IReadOnlyStore snapshot)
-    {
-        return (uint)(BigInteger)snapshot[_maxTraceableBlocks];
-    }
-
-    /// <summary>
     /// Gets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported.
     /// </summary>
     /// <param name="snapshot">The snapshot used to read data.</param>
@@ -223,27 +151,6 @@ public sealed class PolicyContract : NativeContract
     public bool IsBlocked(IReadOnlyStore snapshot, UInt160 account)
     {
         return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
-    }
-
-    /// <summary>
-    /// Sets the block generation time in milliseconds.
-    /// </summary>
-    /// <param name="engine">The execution engine.</param>
-    /// <param name="value">The block generation time in milliseconds. Must be between 1 and MaxBlockGenTime.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided value is outside the allowed range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    public void SetMillisecondsPerBlock(ApplicationEngine engine, uint value)
-    {
-        if (value == 0 || value > MaxMillisecondsPerBlock)
-            throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock must be between [1, {MaxMillisecondsPerBlock}], got {value}");
-        AssertCommittee(engine);
-
-        var oldTime = GetMillisecondsPerBlock(engine.SnapshotCache);
-        engine.SnapshotCache.GetAndChange(_millisecondsPerBlock)!.Set(value);
-
-        engine.SendNotification(Hash, MillisecondsPerBlockChangedEventName,
-            [new VM.Types.Integer(oldTime), new VM.Types.Integer(value)]);
     }
 
     /// <summary>
@@ -295,43 +202,6 @@ public sealed class PolicyContract : NativeContract
         AssertCommittee(engine);
 
         engine.SnapshotCache.GetAndChange(_storagePrice)!.Set(value);
-    }
-
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-    private void SetMaxValidUntilBlockIncrement(ApplicationEngine engine, uint value)
-    {
-        if (value == 0 || value > MaxMaxValidUntilBlockIncrement)
-            throw new ArgumentOutOfRangeException(nameof(value), $"MaxValidUntilBlockIncrement must be between [1, {MaxMaxValidUntilBlockIncrement}], got {value}");
-        var mtb = GetMaxTraceableBlocks(engine.SnapshotCache);
-        if (value >= mtb)
-            throw new InvalidOperationException($"MaxValidUntilBlockIncrement must be lower than MaxTraceableBlocks ({value} vs {mtb})");
-        AssertCommittee(engine);
-
-        engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement)!.Set(value);
-    }
-
-    /// <summary>
-    /// Sets the length of the chain accessible to smart contracts.
-    /// </summary>
-    /// <param name="engine">The engine used to check committee witness and read data.</param>
-    /// <param name="value">MaxTraceableBlocks value.</param>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-    private void SetMaxTraceableBlocks(ApplicationEngine engine, uint value)
-    {
-        if (value == 0 || value > MaxMaxTraceableBlocks)
-            throw new ArgumentOutOfRangeException(nameof(value), $"MaxTraceableBlocks must be between [1, {MaxMaxTraceableBlocks}], got {value}");
-
-        var oldVal = GetMaxTraceableBlocks(engine.SnapshotCache);
-        if (value > oldVal)
-            throw new InvalidOperationException($"MaxTraceableBlocks can not be increased (old {oldVal}, new {value})");
-
-        var mVUBIncrement = GetMaxValidUntilBlockIncrement(engine.SnapshotCache);
-        if (value <= mVUBIncrement)
-            throw new InvalidOperationException($"MaxTraceableBlocks must be larger than MaxValidUntilBlockIncrement ({value} vs {mVUBIncrement})");
-
-        AssertCommittee(engine);
-
-        engine.SnapshotCache.GetAndChange(_maxTraceableBlocks)!.Set(value);
     }
 
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

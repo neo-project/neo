@@ -89,7 +89,7 @@ public sealed class StoreCache : DataCache, IDisposable
 
     protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
     {
-        return _store.Find(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
+        return _store.Find(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key, false), new StorageItem(p.Value)));
     }
 
     /// <inheritdoc/>
