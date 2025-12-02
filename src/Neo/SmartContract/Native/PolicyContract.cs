@@ -644,7 +644,39 @@ namespace Neo.SmartContract.Native
 
             // Transfer funds, NEO, GAS and extra NEP17 tokens
 
-            foreach (var contractHash in new UInt160[] { NEO.Hash, GAS.Hash }.Concat(extraTokens.Select(u => new UInt160(u.GetSpan()))))
+            // Validate and collect extra NEP17 tokens
+            var validatedTokens = new List<UInt160>();
+            foreach (var tokenItem in extraTokens)
+            {
+                var span = tokenItem.GetSpan();
+                if (span.Length != UInt160.Length)
+                    throw new ArgumentException($"Invalid token hash length: expected {UInt160.Length} bytes, got {span.Length} bytes.");
+
+                var contractHash = new UInt160(span);
+
+                // Validate contract exists
+                var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash);
+                if (contract == null)
+                    throw new InvalidOperationException($"Contract {contractHash} does not exist.");
+
+                // Validate contract implements NEP-17 standard
+                if (!contract.Manifest.SupportedStandards.Contains("NEP-17"))
+                    throw new InvalidOperationException($"Contract {contractHash} does not implement NEP-17 standard.");
+
+                // Prevent duplicate tokens
+                if (validatedTokens.Contains(contractHash))
+                    throw new InvalidOperationException($"Duplicate token {contractHash} in extraTokens.");
+
+                // Prevent NEO and GAS from being in extraTokens
+                if (contractHash == NEO.Hash || contractHash == GAS.Hash)
+                    throw new InvalidOperationException($"NEO and GAS should not be included in extraTokens. They are automatically processed.");
+
+                validatedTokens.Add(contractHash);
+            }
+
+            // Transfer funds, NEO, GAS and extra NEP17 tokens
+
+            foreach (var contractHash in new UInt160[] { NEO.Hash, GAS.Hash }.Concat(validatedTokens))
             {
                 engine.CallContract(contractHash, "balanceOf", CallFlags.ReadOnly, new VM.Types.Array(engine.ReferenceCounter, [account.ToArray()]));
 
