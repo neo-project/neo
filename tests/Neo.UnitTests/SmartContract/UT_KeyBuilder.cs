@@ -11,6 +11,7 @@
 
 using Neo.IO;
 using Neo.SmartContract;
+using System.Reflection;
 
 namespace Neo.UnitTests.SmartContract;
 
@@ -40,6 +41,30 @@ public class UT_KeyBuilder
         key = new KeyBuilder(1, 0);
         key = key.Add(1);
         Assert.AreEqual("010000000000000001", key.ToArray().ToHexString());
+    }
+
+    [TestMethod]
+    public void TestTryParse()
+    {
+        var key = new KeyBuilder(1, 2);
+        Assert.AreEqual("0100000002", key.ToArray().ToHexString());
+
+        // add int
+        key = new KeyBuilder(1, 2);
+        key = key.Add(-1);
+        key = key.Add(2);
+        Assert.AreEqual("0100000002ffffffff00000002", key.ToArray().ToHexString());
+
+        Assert.IsFalse(KeyBuilder.TryParse([], [typeof(int), typeof(int)], out int id, out byte prefix, out var ret));
+        Assert.IsFalse(KeyBuilder.TryParse([0, 1, 2, 3, 4, 5], [typeof(int), typeof(int)], out id, out prefix, out ret));
+        Assert.IsTrue(KeyBuilder.TryParse(key.ToArray(), [typeof(int), typeof(int)], out id, out prefix, out ret));
+
+        Assert.AreEqual(1, id);
+        Assert.AreEqual(2, prefix);
+        Assert.IsNotNull(ret);
+        Assert.HasCount(2, ret);
+        Assert.AreEqual(-1, ret[0]);
+        Assert.AreEqual(2, ret[1]);
     }
 
     [TestMethod]

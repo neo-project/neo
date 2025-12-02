@@ -22,8 +22,6 @@ namespace Neo.SmartContract;
 /// </summary>
 public class KeyBuilder : IEnumerable
 {
-    public const int PrefixLength = sizeof(int) + sizeof(byte);
-
     private readonly byte[] _cacheData;
     private int _keyLength;
 
@@ -103,6 +101,65 @@ public class KeyBuilder : IEnumerable
         Span<byte> data = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref key, 1));
         if (BitConverter.IsLittleEndian) data.Reverse();
         return Add(data);
+    }
+
+    internal static bool TryParse(byte[] data, Type[] types, out int id, out byte prefix, out object[] values)
+    {
+        values = Array.Empty<object>();
+
+        foreach (var t in types)
+        {
+            if (!t.IsValueType || t.IsGenericType)
+            {
+                id = default;
+                prefix = default;
+                return false;
+            }
+        }
+
+        if (data.Length < sizeof(int) + 1)
+        {
+            id = default;
+            prefix = default;
+            return false;
+        }
+
+        id = BinaryPrimitives.ReadInt32LittleEndian(data);
+        prefix = data[sizeof(int)];
+
+        values = new object[types.Length];
+        int offset = sizeof(int) + 1;
+
+        for (int i = 0; i < types.Length; i++)
+        {
+            int size = Marshal.SizeOf(types[i]);
+            if (data.Length < offset + size)
+                return false;
+
+            Span<byte> span = data.AsSpan(offset, size);
+
+            if (BitConverter.IsLittleEndian)
+                span.Reverse();
+
+            values[i] = ReadStruct(span, types[i]);
+            offset += size;
+        }
+
+        return true;
+    }
+
+    static object ReadStruct(Span<byte> span, Type t)
+    {
+        byte[] buffer = span.ToArray();
+        var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+        try
+        {
+            return Marshal.PtrToStructure(handle.AddrOfPinnedObject(), t)!;
+        }
+        finally
+        {
+            handle.Free();
+        }
     }
 
     /// <summary>
