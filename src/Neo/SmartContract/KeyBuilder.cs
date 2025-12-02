@@ -98,11 +98,42 @@ public class KeyBuilder : IEnumerable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public KeyBuilder Add<T>(T key) where T : unmanaged
     {
-        if (!typeof(T).IsPrimitive)
-            throw new InvalidOperationException("The argument must be a primitive.");
-        Span<byte> data = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref key, 1));
-        if (BitConverter.IsLittleEndian) data.Reverse();
-        return Add(data);
+        switch (key)
+        {
+            case byte v:
+                _cacheData[_keyLength++] = v;
+                break;
+            case sbyte v:
+                _cacheData[_keyLength++] = (byte)v;
+                break;
+            case ushort v:
+                BinaryPrimitives.WriteUInt16BigEndian(_cacheData.AsSpan(_keyLength), v);
+                _keyLength += 2;
+                break;
+            case short v:
+                BinaryPrimitives.WriteInt16BigEndian(_cacheData.AsSpan(_keyLength), v);
+                _keyLength += 2;
+                break;
+            case uint v:
+                BinaryPrimitives.WriteUInt32BigEndian(_cacheData.AsSpan(_keyLength), v);
+                _keyLength += 4;
+                break;
+            case int v:
+                BinaryPrimitives.WriteInt32BigEndian(_cacheData.AsSpan(_keyLength), v);
+                _keyLength += 4;
+                break;
+            case ulong v:
+                BinaryPrimitives.WriteUInt64BigEndian(_cacheData.AsSpan(_keyLength), v);
+                _keyLength += 8;
+                break;
+            case long v:
+                BinaryPrimitives.WriteInt64BigEndian(_cacheData.AsSpan(_keyLength), v);
+                _keyLength += 8;
+                break;
+            default: throw new InvalidOperationException("Unsupported primitive type.");
+        }
+
+        return this;
     }
 
     /// <summary>
