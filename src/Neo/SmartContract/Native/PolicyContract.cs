@@ -17,11 +17,10 @@ using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.VM.Types;
 using System;
-using System.Linq;
-using System.Buffers.Binary;
-using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
