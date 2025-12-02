@@ -638,18 +638,19 @@ namespace Neo.SmartContract.Native
             // Set request time
 
             var key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
-            var entry = engine.SnapshotCache.GetAndChange(key, null);
-
-            if (entry == null)
-                throw new InvalidOperationException("Request not found.");
-
+            var entry = engine.SnapshotCache.GetAndChange(key, null)
+                ?? throw new InvalidOperationException("Request not found.");
             if (engine.GetTime() - (BigInteger)entry < RequiredTimeForRecoverFunds)
                 throw new InvalidOperationException("Request must be signed at 6 months ago.");
 
-            // Transfer funds, NEO, GAS and extra NEP17 tokens
-
             // Validate and collect extra NEP17 tokens
-            var validatedTokens = new HashSet<UInt160>();
+
+            var validatedTokens = new HashSet<UInt160>
+            {
+                NEO.Hash,
+                GAS.Hash
+            };
+
             foreach (var tokenItem in extraTokens)
             {
                 var span = tokenItem.GetSpan();
@@ -678,7 +679,7 @@ namespace Neo.SmartContract.Native
 
             // Transfer funds, NEO, GAS and extra NEP17 tokens
 
-            foreach (var contractHash in new UInt160[] { NEO.Hash, GAS.Hash }.Concat(validatedTokens))
+            foreach (var contractHash in validatedTokens)
             {
                 engine.CallContract(contractHash, "balanceOf", CallFlags.ReadOnly, new VM.Types.Array(engine.ReferenceCounter, [account.ToArray()]));
 
