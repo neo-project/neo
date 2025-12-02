@@ -61,7 +61,7 @@ public sealed class TokenManagement : NativeContract
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        AddTotalSupply(engine, tokenid, amount);
+        AddTotalSupply(engine, tokenid, amount, assertOwner: true);
         AddBalance(engine.SnapshotCache, tokenid, account, amount);
         await PostTransferAsync(engine, tokenid, null, account, amount, StackItem.Null, callOnPayment: true);
     }
@@ -71,7 +71,7 @@ public sealed class TokenManagement : NativeContract
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        AddTotalSupply(engine, tokenid, -amount);
+        AddTotalSupply(engine, tokenid, -amount, assertOwner: true);
         if (!AddBalance(engine.SnapshotCache, tokenid, account, -amount))
             throw new InvalidOperationException("Insufficient balance to burn.");
         await PostTransferAsync(engine, tokenid, account, null, amount, StackItem.Null, callOnPayment: false);
@@ -117,13 +117,13 @@ public sealed class TokenManagement : NativeContract
         return buffer.ToScriptHash();
     }
 
-    void AddTotalSupply(ApplicationEngine engine, UInt160 tokenid, BigInteger amount)
+    void AddTotalSupply(ApplicationEngine engine, UInt160 tokenid, BigInteger amount, bool assertOwner)
     {
         StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
         TokenState token = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<TokenState>()
             ?? throw new InvalidOperationException("The token id does not exist.");
-        if (token.Owner != engine.CallingScriptHash)
-            throw new InvalidOperationException("Mint can be called by the owner contract only.");
+        if (assertOwner && token.Owner != engine.CallingScriptHash)
+            throw new InvalidOperationException("This method can be called by the owner contract only.");
         if (token.TotalSupply + amount < 0)
             throw new InvalidOperationException("Insufficient balance to burn.");
         token.TotalSupply += amount;
