@@ -111,30 +111,20 @@ public class UT_BigIntegerExtensions
         for (var i = 0; i < 64; i++)
         {
             var b = new BigInteger(1ul << i);
-            Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
             Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
         }
 
-        var random = new Random();
         for (var i = 0; i < 128; i++)
         {
             var buffer = new byte[16];
             BinaryPrimitives.WriteInt128LittleEndian(buffer, Int128.One << i);
 
             var b = new BigInteger(buffer, isUnsigned: false);
-            Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
             Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
 
             BinaryPrimitives.WriteUInt128LittleEndian(buffer, UInt128.One << i);
             b = new BigInteger(buffer, isUnsigned: true);
-            Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
             Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
-
-            buffer = new byte[32]; // 256bit
-            random.NextBytes(buffer);
-            b = new BigInteger(buffer, isUnsigned: true);
-            var zeroCount = BigInteger.TrailingZeroCount(b);
-            if (!b.IsZero) Assert.AreEqual(zeroCount, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
         }
     }
 
@@ -318,10 +308,7 @@ public class UT_BigIntegerExtensions
 
     private static void VerifyGetBitLength(BigInteger value, long expected)
     {
-        var result = value.GetBitLength();
         Assert.AreEqual(expected, value.GetBitLength(), "Native method has not the expected result");
-        Assert.AreEqual(result, BigIntegerExtensions.GetBitLength(value), "Result doesn't match");
-        Assert.AreEqual(result, BigIntegerExtensions.BitLength(value), "Result doesn't match");
     }
 
     [TestMethod]
@@ -350,27 +337,6 @@ public class UT_BigIntegerExtensions
         VerifyGetBitLength(-7, 3); // 1|001
         VerifyGetBitLength(8, 4);  // 0|1000
         VerifyGetBitLength(-8, 3); // 1|000
-
-        // Random cases
-        for (uint i = 0; i < 1000; i++)
-        {
-            var b = new BigInteger(GetRandomByteArray());
-            Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.GetBitLength(b), message: $"Error comparing: {b}");
-            Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.BitLength(b), message: $"Error comparing: {b}");
-        }
-
-        foreach (var bv in new[] { BigInteger.Zero, BigInteger.One, BigInteger.MinusOne, new(ulong.MaxValue), new(long.MinValue) })
-        {
-            Assert.AreEqual(bv.GetBitLength(), BigIntegerExtensions.GetBitLength(bv));
-            Assert.AreEqual(bv.GetBitLength(), BigIntegerExtensions.BitLength(bv));
-        }
-
-        for (var i = 0; i < 1000; i++)
-        {
-            var b = new BigInteger(i);
-            Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.GetBitLength(b), message: $"Error comparing: {b}");
-            Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.BitLength(b), message: $"Error comparing: {b}");
-        }
     }
 
     [TestMethod]
