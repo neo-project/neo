@@ -77,22 +77,13 @@ namespace Neo.UnitTests.Ledger
                 UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"),
                 UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302")).ToArray());
 
-            // UInt160+String+Int
+            // UInt160+Int
             key = new KeyBuilder(1, 2);
             key.Add(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
-            key.AddBigEndian((int)3); // arg count
-            key.Add(Encoding.UTF8.GetBytes("hello world"));
+            key.AddBigEndian(123); // method Offset
 
             CollectionAssert.AreEqual(key.ToArray(), StorageKey.Create(1, 2,
-                UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"), "hello world", 3).ToArray());
-
-            // Recover method and arg count
-
-            var keyB = new StorageKey(key.ToArray()).ToArray().AsSpan();
-            (var method, var argCount) = StorageKey.ReadMethodAndArgCount(keyB);
-
-            Assert.AreEqual(3, argCount);
-            Assert.AreEqual("hello world", method);
+                UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"), 123).ToArray());
 
             // ISerializable
             key = new KeyBuilder(1, 2);
