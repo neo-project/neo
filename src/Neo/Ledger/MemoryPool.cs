@@ -15,6 +15,7 @@ using Neo.Persistence;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -27,6 +28,7 @@ namespace Neo.Ledger
     /// </summary>
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
+        public event EventHandler<CancelEventArgs>? TransactionNew;
         public event EventHandler<Transaction>? TransactionAdded;
         public event EventHandler<TransactionRemovedEventArgs>? TransactionRemoved;
 
@@ -307,6 +309,13 @@ namespace Neo.Ledger
 
         internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
         {
+            if (TransactionNew != null)
+            {
+                var args = new CancelEventArgs();
+                TransactionNew.Invoke(this, args);
+                if (args.Cancel) return VerifyResult.PolicyFail;
+            }
+
             var poolItem = new PoolItem(tx);
 
             if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;
