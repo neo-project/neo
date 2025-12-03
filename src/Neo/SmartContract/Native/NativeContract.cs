@@ -388,8 +388,8 @@ public abstract class NativeContract
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, string methodName, int bigEndianKey)
-        => new KeyBuilder(Id, prefix) { hash, bigEndianKey, methodName.ToStrictUtf8Bytes() };
+    private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, int bigEndianKey)
+        => new KeyBuilder(Id, prefix) { hash, bigEndianKey };
 
     #endregion
 
@@ -430,7 +430,7 @@ public abstract class NativeContract
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
             // Check native-whitelist
-            if (!Policy.IsWhitelistFeeContract(engine.SnapshotCache, Hash, method.Name, method.Parameters.Length, out var fixedFee))
+            if (!Policy.IsWhitelistFeeContract(engine.SnapshotCache, Hash, method.Descriptor, out var fixedFee))
             {
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                 engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);

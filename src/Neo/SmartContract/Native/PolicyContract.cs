@@ -11,10 +11,11 @@
 
 #pragma warning disable IDE0051
 
-using Neo.Extensions.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
+using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
@@ -248,7 +249,7 @@ public sealed class PolicyContract : NativeContract
         return true;
     }
 
-    internal bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, string method, int argCount, [NotNullWhen(true)] out long? fixedFee)
+    internal bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, ContractMethodDescriptor method, [NotNullWhen(true)] out long? fixedFee)
     {
         // Check contract existence
 
@@ -258,7 +259,7 @@ public sealed class PolicyContract : NativeContract
         {
             // Check state existence
 
-            var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount));
+            var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method.Offset));
 
             if (item != null)
             {
@@ -283,22 +284,27 @@ public sealed class PolicyContract : NativeContract
     {
         if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
-        var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
+        // Validate methods
+        var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
+                ?? throw new InvalidOperationException("Is not a valid contract");
+
+        // If exists multiple instance a exception is throwed
+        var methodDescriptor = contract.Manifest.Abi.Methods.SingleOrDefault(u => u.Name == method && u.Parameters.Length == argCount) ??
+            throw new InvalidOperationException($"Method {method} with {argCount} args was not found in {contractHash}");
+        var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
 
         if (!engine.SnapshotCache.Contains(key)) throw new InvalidOperationException("Whitelist not found");
 
         engine.SnapshotCache.Delete(key);
 
         // Emit event
-        engine.SendNotification(Hash, WhitelistChangedEventName,
-            [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
-                new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
+        Notify(engine, WhitelistChangedEventName, contractHash, method, argCount, null);
     }
 
-    internal int CleanWhitelist(ApplicationEngine engine, UInt160 contractHash)
+    internal int CleanWhitelist(ApplicationEngine engine, ContractState contract)
     {
         var count = 0;
-        var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash);
+        var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contract.Hash);
 
         foreach ((var key, _) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
         {
@@ -308,12 +314,12 @@ public sealed class PolicyContract : NativeContract
             // Emit event recovering the values from the Key
 
             var keyData = key.ToArray().AsSpan();
-            // TODO: Require a unwrap
-            (var method, var argCount) = StorageKey.ReadMethodAndArgCount(key.ToArray().AsSpan());
+            var methodOffset = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(sizeof(int) + sizeof(byte) + UInt160.Length, sizeof(int)));
 
-            engine.SendNotification(Hash, WhitelistChangedEventName,
-                [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
-                    new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
+            // Get method for event
+            var method = contract.Manifest.Abi.Methods.FirstOrDefault(m => m.Offset == methodOffset);
+
+            Notify(engine, WhitelistChangedEventName, contract.Hash, method?.Name, method?.Parameters.Length, null);
         }
 
         return count;
@@ -334,14 +340,17 @@ public sealed class PolicyContract : NativeContract
 
         if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
-        var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
-
         // Validate methods
         var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
                 ?? throw new InvalidOperationException("Is not a valid contract");
 
         if (contract.Manifest.Abi.GetMethod(method, argCount) is null)
             throw new InvalidOperationException($"{method} with {argCount} args is not a valid method of {contractHash}");
+
+        // If exists multiple instance a exception is throwed
+        var methodDescriptor = contract.Manifest.Abi.Methods.SingleOrDefault(u => u.Name == method && u.Parameters.Length == argCount) ??
+            throw new InvalidOperationException($"Method {method} with {argCount} args was not found in {contractHash}");
+        var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
 
         // Set
         var entry = engine.SnapshotCache
@@ -351,9 +360,7 @@ public sealed class PolicyContract : NativeContract
 
         // Emit event
 
-        engine.SendNotification(Hash, WhitelistChangedEventName,
-            [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
-                new VM.Types.Integer(argCount), new VM.Types.Integer(fixedFee)]);
+        Notify(engine, WhitelistChangedEventName, contractHash, method, argCount, fixedFee);
     }
 
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]

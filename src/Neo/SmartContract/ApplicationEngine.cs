@@ -329,7 +329,7 @@ public partial class ApplicationEngine : ExecutionEngine
 
         // Check whitelist
 
-        if (NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method.Name, method.Parameters.Length, out var fixedFee))
+        if (NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
         {
             AddFee(fixedFee.Value);
             state.WhiteListed = true;

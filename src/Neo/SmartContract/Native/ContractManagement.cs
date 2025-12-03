@@ -340,6 +340,8 @@ public sealed class ContractManagement : NativeContract
             // Update nef
             contract.Nef = nefFile.AsSerializable<NefFile>();
         }
+        // Clean whitelist (emit event if exists with the old manifest information)
+        Policy.CleanWhitelist(engine, contract);
         if (manifest != null)
         {
             if (manifest.Length == 0)
@@ -355,8 +357,6 @@ public sealed class ContractManagement : NativeContract
         Helper.Check(new Script(contract.Nef.Script, true), contract.Manifest.Abi);
         // Increase update counter
         contract.UpdateCounter++;
-        // Clean whitelist (emit event if exists)
-        Policy.CleanWhitelist(engine, contract.Hash);
         return OnDeployAsync(engine, contract, data, true);
     }
 
@@ -377,8 +377,8 @@ public sealed class ContractManagement : NativeContract
             engine.SnapshotCache.Delete(key);
         // lock contract
         await Policy.BlockAccountInternal(engine, hash);
-        // Clean whitelist (emit event if exists)
-        Policy.CleanWhitelist(engine, contract.Hash);
+        // Clean whitelist (emit event if exists with the old manifest information)
+        Policy.CleanWhitelist(engine, contract);
         // emit event
         Notify(engine, "Destroy", hash);
     }
