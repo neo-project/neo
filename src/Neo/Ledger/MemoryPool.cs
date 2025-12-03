@@ -28,7 +28,7 @@ namespace Neo.Ledger
     /// </summary>
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
-        public event EventHandler<CancelEventArgs>? TransactionNew;
+        public event CancelEventHandler? TransactionNew;
         public event EventHandler<Transaction>? TransactionAdded;
         public event EventHandler<TransactionRemovedEventArgs>? TransactionRemoved;
 
