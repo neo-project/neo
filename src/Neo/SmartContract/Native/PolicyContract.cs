@@ -406,7 +406,7 @@ namespace Neo.SmartContract.Native
                     ?? throw new InvalidOperationException("Is not a valid contract");
 
             // If exists multiple instance a exception is throwed
-            var methodDescriptor = contract.Manifest.Abi.Methods.Single(u => u.Name == method && u.Parameters.Length == argCount) ??
+            var methodDescriptor = contract.Manifest.Abi.Methods.SingleOrDefault(u => u.Name == method && u.Parameters.Length == argCount) ??
                 throw new InvalidOperationException($"Method {method} with {argCount} args was not found in {contractHash}");
             var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
 
