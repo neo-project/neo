@@ -166,9 +166,23 @@ namespace Neo.Plugins
                 .GetSection("PluginConfiguration");
         }
 
-        private static void LoadPlugin(Assembly assembly)
+        private static void LoadPlugin(Assembly assembly, string? sourcePath = null)
         {
-            foreach (var type in assembly.ExportedTypes)
+            Type[] exportedTypes;
+            var origin = sourcePath ?? assembly.GetName().Name ?? "unknown";
+
+            try
+            {
+                exportedTypes = (Type[])assembly.ExportedTypes;
+            }
+            catch (Exception ex)
+            {
+                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly {origin}");
+                Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                throw;
+            }
+
+            foreach (var type in exportedTypes)
             {
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
@@ -182,6 +196,7 @@ namespace Neo.Plugins
                 }
                 catch (Exception ex)
                 {
+                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} from {origin}");
                     Utility.Log(nameof(Plugin), LogLevel.Error, ex);
                 }
             }
@@ -190,22 +205,27 @@ namespace Neo.Plugins
         internal static void LoadPlugins()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
-            List<Assembly> assemblies = [];
+            List<(Assembly Assembly, string FileName)> assemblies = [];
             foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
             {
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
                 {
                     try
                     {
-                        assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
+                        var assembly = Assembly.Load(File.ReadAllBytes(filename));
+                        assemblies.Add((assembly, filename));
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {filename}");
+                        Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                    }
                 }
             }
 
-            foreach (var assembly in assemblies)
+            foreach (var (assembly, filename) in assemblies)
             {
-                LoadPlugin(assembly);
+                LoadPlugin(assembly, filename);
             }
         }
 
