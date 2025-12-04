@@ -28,7 +28,7 @@ namespace Neo.SmartContract.Native;
     )]
 public sealed class RoleManagement : NativeContract
 {
-    internal RoleManagement() { }
+    internal RoleManagement() : base(-8) { }
 
     /// <summary>
     /// Gets the list of nodes for the specified role.

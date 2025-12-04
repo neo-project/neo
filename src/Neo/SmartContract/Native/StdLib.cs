@@ -27,7 +27,7 @@ public sealed class StdLib : NativeContract
 {
     private const int MaxInputLength = 1024;
 
-    internal StdLib() : base() { }
+    internal StdLib() : base(-2) { }
 
     [ContractMethod(CpuFee = 1 << 12)]
     private static byte[] Serialize(ApplicationEngine engine, StackItem item)

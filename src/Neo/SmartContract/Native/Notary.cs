@@ -42,7 +42,7 @@ public sealed class Notary : NativeContract
     private const byte Prefix_Deposit = 1;
     private const byte Prefix_MaxNotValidBeforeDelta = 10;
 
-    internal Notary() : base() { }
+    internal Notary() : base(-10) { }
 
     internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
     {
