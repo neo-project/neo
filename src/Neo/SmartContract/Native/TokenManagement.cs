@@ -31,6 +31,12 @@ public sealed class TokenManagement : NativeContract
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     internal UInt160 Create(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, [Range(0, 18)] byte decimals)
     {
+        return Create(engine, name, symbol, decimals, BigInteger.MinusOne);
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    internal UInt160 Create(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, [Range(0, 18)] byte decimals, BigInteger maxSupply)
+    {
         UInt160 owner = engine.CallingScriptHash!;
         UInt160 tokenid = GetTokenId(owner, name);
         StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
@@ -42,7 +48,8 @@ public sealed class TokenManagement : NativeContract
             Name = name,
             Symbol = symbol,
             Decimals = decimals,
-            TotalSupply = BigInteger.Zero
+            TotalSupply = BigInteger.Zero,
+            MaxSupply = maxSupply
         };
         engine.SnapshotCache.Add(key, new(state));
         Notify(engine, "Created", tokenid);
@@ -124,9 +131,11 @@ public sealed class TokenManagement : NativeContract
             ?? throw new InvalidOperationException("The token id does not exist.");
         if (assertOwner && token.Owner != engine.CallingScriptHash)
             throw new InvalidOperationException("This method can be called by the owner contract only.");
-        if (token.TotalSupply + amount < 0)
-            throw new InvalidOperationException("Insufficient balance to burn.");
         token.TotalSupply += amount;
+        if (token.TotalSupply < 0)
+            throw new InvalidOperationException("Insufficient balance to burn.");
+        if (token.MaxSupply >= 0 && token.TotalSupply > token.MaxSupply)
+            throw new InvalidOperationException("The total supply exceeds the maximum supply.");
     }
 
     bool AddBalance(DataCache snapshot, UInt160 tokenid, UInt160 account, BigInteger amount)
@@ -172,6 +181,7 @@ public class TokenState : IInteroperable
     public required string Symbol;
     public required byte Decimals;
     public BigInteger TotalSupply;
+    public BigInteger MaxSupply;
 
     public void FromStackItem(StackItem stackItem)
     {
@@ -181,10 +191,11 @@ public class TokenState : IInteroperable
         Symbol = @struct[2].GetString()!;
         Decimals = (byte)@struct[3].GetInteger();
         TotalSupply = @struct[4].GetInteger();
+        MaxSupply = @struct[5].GetInteger();
     }
 
     public StackItem ToStackItem(IReferenceCounter? referenceCounter)
     {
-        return new Struct(referenceCounter) { Owner.ToArray(), Name, Symbol, Decimals, TotalSupply };
+        return new Struct(referenceCounter) { Owner.ToArray(), Name, Symbol, Decimals, TotalSupply, MaxSupply };
     }
 }
