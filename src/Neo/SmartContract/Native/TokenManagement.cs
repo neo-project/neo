@@ -29,7 +29,7 @@ public sealed class TokenManagement : NativeContract
 
     static readonly BigInteger MaxMintAmount = BigInteger.Pow(2, 128);
 
-    internal TokenManagement() { }
+    internal TokenManagement() : base(-12) { }
 
     /// <summary>
     /// Creates a new token with an unlimited maximum supply.
