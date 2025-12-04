@@ -166,10 +166,12 @@ namespace Neo.Plugins
                 .GetSection("PluginConfiguration");
         }
 
-        private static void LoadPlugin(Assembly assembly, string? sourcePath = null)
+        private static void LoadPlugin(Assembly assembly)
         {
             Type[] exportedTypes;
-            var origin = sourcePath ?? assembly.GetName().Name ?? "unknown";
+
+            var assemblyName = assembly.GetName().Name;
+            var location = assembly.Location;
 
             try
             {
@@ -177,7 +179,7 @@ namespace Neo.Plugins
             }
             catch (Exception ex)
             {
-                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly {origin}");
+                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly {assemblyName} from {location}");
                 Utility.Log(nameof(Plugin), LogLevel.Error, ex);
                 throw;
             }
@@ -196,7 +198,7 @@ namespace Neo.Plugins
                 }
                 catch (Exception ex)
                 {
-                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} from {origin}");
+                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} from {location}");
                     Utility.Log(nameof(Plugin), LogLevel.Error, ex);
                 }
             }
@@ -205,15 +207,14 @@ namespace Neo.Plugins
         internal static void LoadPlugins()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
-            List<(Assembly Assembly, string FileName)> assemblies = [];
+            List<Assembly> assemblies = [];
             foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
             {
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
                 {
                     try
                     {
-                        var assembly = Assembly.Load(File.ReadAllBytes(filename));
-                        assemblies.Add((assembly, filename));
+                        assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
                     }
                     catch (Exception ex)
                     {
@@ -223,9 +224,9 @@ namespace Neo.Plugins
                 }
             }
 
-            foreach (var (assembly, filename) in assemblies)
+            foreach (var assembly in assemblies)
             {
-                LoadPlugin(assembly, filename);
+                LoadPlugin(assembly);
             }
         }
 
