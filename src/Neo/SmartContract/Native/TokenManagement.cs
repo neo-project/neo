@@ -37,6 +37,7 @@ public sealed class TokenManagement : NativeContract
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     internal UInt160 Create(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, [Range(0, 18)] byte decimals, BigInteger maxSupply)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxSupply, BigInteger.MinusOne);
         UInt160 owner = engine.CallingScriptHash!;
         UInt160 tokenid = GetTokenId(owner, name);
         StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
