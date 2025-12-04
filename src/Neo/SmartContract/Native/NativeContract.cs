@@ -387,6 +387,10 @@ public abstract class NativeContract
         return builder;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, int bigEndianKey)
+        => new KeyBuilder(Id, prefix) { hash, bigEndianKey };
+
     #endregion
 
     /// <summary>
@@ -425,8 +429,12 @@ public abstract class NativeContract
             var state = context.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
+            // Check native-whitelist
+            if (!Policy.IsWhitelistFeeContract(engine.SnapshotCache, Hash, method.Descriptor, out var fixedFee))
+            {
+                // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+                engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
+            }
             List<object?> parameters = new();
             if (method.NeedApplicationEngine) parameters.Add(engine);
             if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
