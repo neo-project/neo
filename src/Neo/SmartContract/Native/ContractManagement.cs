@@ -37,7 +37,7 @@ public sealed class ContractManagement : NativeContract
     private const byte Prefix_Contract = 8;
     private const byte Prefix_ContractHash = 12;
 
-    internal ContractManagement() { }
+    internal ContractManagement() : base(-1) { }
 
     private int GetNextAvailableId(DataCache snapshot)
     {

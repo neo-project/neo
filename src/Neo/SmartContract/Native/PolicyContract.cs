@@ -86,7 +86,7 @@ public sealed class PolicyContract : NativeContract
 
     private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
-    internal PolicyContract()
+    internal PolicyContract() : base(-7)
     {
         _feePerByte = CreateStorageKey(Prefix_FeePerByte);
         _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);

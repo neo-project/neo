@@ -22,9 +22,7 @@ public sealed class GasToken : FungibleToken<AccountState>
     public override string Symbol => "GAS";
     public override byte Decimals => 8;
 
-    internal GasToken()
-    {
-    }
+    internal GasToken() : base(-6) { }
 
     internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
     {

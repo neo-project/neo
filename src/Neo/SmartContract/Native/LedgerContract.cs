@@ -32,7 +32,7 @@ public sealed class LedgerContract : NativeContract
 
     private readonly StorageKey _currentBlock;
 
-    internal LedgerContract() : base()
+    internal LedgerContract() : base(-4)
     {
         _currentBlock = CreateStorageKey(Prefix_CurrentBlock);
     }
