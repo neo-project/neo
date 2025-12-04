@@ -414,7 +414,7 @@ namespace Neo.SmartContract.Native
         private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => StorageKey.Create(Id, prefix, hash, signer);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, string methodName, int bigEndianKey) => StorageKey.Create(Id, prefix, hash, methodName, bigEndianKey);
+        private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, int bigEndian) => StorageKey.Create(Id, prefix, hash, bigEndian);
 
         #endregion
 
@@ -456,7 +456,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 // Check native-whitelist
                 if (!engine.IsHardforkEnabled(Hardfork.HF_Faun) ||
-                    !Policy.IsWhitelistFeeContract(engine.SnapshotCache, Hash, method.Name, method.Parameters.Length, out var fixedFee))
+                    !Policy.IsWhitelistFeeContract(engine.SnapshotCache, Hash, method.Descriptor, out var fixedFee))
                 {
                     // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
                     engine.AddFee(

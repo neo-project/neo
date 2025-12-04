@@ -16,6 +16,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.VM.Types;
+using Neo.SmartContract.Manifest;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -307,7 +308,7 @@ namespace Neo.SmartContract.Native
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
         }
 
-        internal bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, string method, int argCount, [NotNullWhen(true)] out long? fixedFee)
+        internal bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, ContractMethodDescriptor method, [NotNullWhen(true)] out long? fixedFee)
         {
             // Check contract existence
 
@@ -317,7 +318,7 @@ namespace Neo.SmartContract.Native
             {
                 // Check state existence
 
-                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount));
+                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method.Offset));
 
                 if (item != null)
                 {
@@ -342,7 +343,14 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
-            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
+            // Validate methods
+            var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
+                    ?? throw new InvalidOperationException("Is not a valid contract");
+
+            // If exists multiple instance a exception is throwed
+            var methodDescriptor = contract.Manifest.Abi.Methods.SingleOrDefault(u => u.Name == method && u.Parameters.Length == argCount) ??
+                throw new InvalidOperationException($"Method {method} with {argCount} args was not found in {contractHash}");
+            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
 
             if (!engine.SnapshotCache.Contains(key)) throw new InvalidOperationException("Whitelist not found");
 
@@ -350,14 +358,13 @@ namespace Neo.SmartContract.Native
 
             // Emit event
             engine.SendNotification(Hash, WhitelistChangedEventName,
-                [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
-                new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
+                [new VM.Types.ByteString(contractHash.ToArray()), method, argCount, VM.Types.StackItem.Null]);
         }
 
-        internal int CleanWhitelist(ApplicationEngine engine, UInt160 contractHash)
+        internal int CleanWhitelist(ApplicationEngine engine, ContractState contract)
         {
             var count = 0;
-            var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash);
+            var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contract.Hash);
 
             foreach ((var key, _) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
             {
@@ -365,13 +372,19 @@ namespace Neo.SmartContract.Native
                 count++;
 
                 // Emit event recovering the values from the Key
-
                 var keyData = key.ToArray().AsSpan();
-                (var method, var argCount) = StorageKey.ReadMethodAndArgCount(key.ToArray().AsSpan());
+                var methodOffset = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(StorageKey.PrefixLength + UInt160.Length, sizeof(int)));
+
+                // Get method for event
+                var method = contract.Manifest.Abi.Methods.FirstOrDefault(m => m.Offset == methodOffset);
 
                 engine.SendNotification(Hash, WhitelistChangedEventName,
-                    [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
-                    new VM.Types.Integer(argCount), VM.Types.StackItem.Null]);
+                    [
+                    new VM.Types.ByteString(contract.Hash.ToArray()),
+                    method?.Name ?? VM.Types.StackItem.Null,
+                    method?.Parameters.Length ?? VM.Types.StackItem.Null,
+                    VM.Types.StackItem.Null
+                    ]);
             }
 
             return count;
@@ -392,26 +405,22 @@ namespace Neo.SmartContract.Native
 
             if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
 
-            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method, argCount);
-
             // Validate methods
             var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
                     ?? throw new InvalidOperationException("Is not a valid contract");
 
-            if (contract.Manifest.Abi.GetMethod(method, argCount) is null)
-                throw new InvalidOperationException($"{method} with {argCount} args is not a valid method of {contractHash}");
+            // If exists multiple instance a exception is throwed
+            var methodDescriptor = contract.Manifest.Abi.Methods.SingleOrDefault(u => u.Name == method && u.Parameters.Length == argCount) ??
+                throw new InvalidOperationException($"Method {method} with {argCount} args was not found in {contractHash}");
+            var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
 
             // Set
             var entry = engine.SnapshotCache
                     .GetAndChange(key, () => new StorageItem(fixedFee));
-
             entry.Set(fixedFee);
 
             // Emit event
-
-            engine.SendNotification(Hash, WhitelistChangedEventName,
-                [new VM.Types.ByteString(contractHash.ToArray()), new VM.Types.ByteString(method.ToStrictUtf8Bytes()),
-                new VM.Types.Integer(argCount), new VM.Types.Integer(fixedFee)]);
+            engine.SendNotification(Hash, WhitelistChangedEventName, [new VM.Types.ByteString(contractHash.ToArray()), method, argCount, fixedFee]);
         }
 
         /// <summary>

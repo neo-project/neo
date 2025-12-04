@@ -355,6 +355,8 @@ namespace Neo.SmartContract.Native
                 // Update nef
                 contract.Nef = nefFile.AsSerializable<NefFile>();
             }
+            // Clean whitelist (emit event if exists with the old manifest information)
+            Policy.CleanWhitelist(engine, contract);
             if (manifest != null)
             {
                 if (manifest.Length == 0)
@@ -370,8 +372,6 @@ namespace Neo.SmartContract.Native
             Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
             // Increase update counter
             contract.UpdateCounter++;
-            // Clean whitelist (emit event if exists)
-            Policy.CleanWhitelist(engine, contract.Hash);
             return OnDeployAsync(engine, contract, data, true);
         }
 
@@ -392,8 +392,8 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Delete(key);
             // lock contract
             await Policy.BlockAccountInternal(engine, hash);
-            // Clean whitelist (emit event if exists)
-            Policy.CleanWhitelist(engine, contract.Hash);
+            // Clean whitelist (emit event if exists with the old manifest information)
+            Policy.CleanWhitelist(engine, contract);
             // emit event
             engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
         }
