@@ -571,7 +571,7 @@ public class UT_PolicyContract
         Assert.AreEqual(123_456, fixedFee);
     }
 
-    private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[] script = null)
+    private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[]? script = null)
     {
         // Get committe public keys and calculate m
         var committee = NativeContract.NEO.GetCommittee(snapshotCache);
