@@ -48,7 +48,6 @@ public abstract class NativeContract
     private readonly ImmutableHashSet<Hardfork> _usedHardforks;
     private readonly ReadOnlyCollection<ContractMethodMetadata> _methodDescriptors;
     private readonly ReadOnlyCollection<ContractEventAttribute> _eventsDescriptors;
-    private static int idCounter = 0;
 
     #region Named Native Contracts
 
@@ -132,13 +131,14 @@ public abstract class NativeContract
     /// <summary>
     /// The id of the native contract.
     /// </summary>
-    public int Id { get; } = --idCounter;
+    public int Id { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NativeContract"/> class.
     /// </summary>
-    protected NativeContract()
+    protected NativeContract(int id)
     {
+        Id = id;
         Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
 
         // Reflection to get the methods

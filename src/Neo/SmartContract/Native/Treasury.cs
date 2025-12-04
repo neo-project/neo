@@ -20,6 +20,8 @@ namespace Neo.SmartContract.Native;
 /// </summary>
 public sealed class Treasury : NativeContract
 {
+    internal Treasury() : base(-11) { }
+
     protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
     {
         manifest.SupportedStandards = ["NEP-26", "NEP-27"];

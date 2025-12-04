@@ -29,7 +29,7 @@ public sealed partial class CryptoLib : NativeContract
         [NamedCurveHash.secp256r1Keccak256] = (ECCurve.Secp256r1, HashAlgorithm.Keccak256),
     };
 
-    internal CryptoLib() : base() { }
+    internal CryptoLib() : base(-3) { }
 
     /// <summary>
     /// Recovers the public key from a secp256k1 signature in a single byte array format.

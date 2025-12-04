@@ -106,7 +106,6 @@ public class UT_NativeContract
         Assert.AreEqual(-11, NativeContract.Treasury.Id);
     }
 
-
     class TestSpecialParameter
     {
         [ContractMethod]

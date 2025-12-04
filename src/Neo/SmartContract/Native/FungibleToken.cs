@@ -57,7 +57,8 @@ public abstract class FungibleToken<TState> : NativeContract
     /// <summary>
     /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.
     /// </summary>
-    protected FungibleToken()
+    /// <param name="id">Native contract id</param>
+    protected FungibleToken(int id) : base(id)
     {
         Factor = BigInteger.Pow(10, Decimals);
     }

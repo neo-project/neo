@@ -45,7 +45,7 @@ public sealed class OracleContract : NativeContract
     private const byte Prefix_Request = 7;
     private const byte Prefix_IdList = 6;
 
-    internal OracleContract() { }
+    internal OracleContract() : base(-9) { }
 
     /// <summary>
     /// Sets the price for an Oracle request. Only committee members can call this method.
