@@ -31,6 +31,7 @@ public sealed class TokenManagement : NativeContract
     const byte Prefix_NFTUniqueIdSeed = 15;
     const byte Prefix_NFTState = 8;
     const byte Prefix_NFTOwnerUniqueIdIndex = 21;
+    const byte Prefix_NFTAssetIdUniqueIdIndex = 23;
 
     static readonly BigInteger MaxMintAmount = BigInteger.Pow(2, 128);
 
@@ -195,7 +196,9 @@ public sealed class TokenManagement : NativeContract
         AddTotalSupply(engine, TokenType.NonFungible, assetId, 1, assertOwner: true);
         AddBalance(engine.SnapshotCache, assetId, account, 1);
         UInt160 uniqueId = GetNextNFTUniqueId(engine);
-        StorageKey key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, account, uniqueId);
+        StorageKey key = CreateStorageKey(Prefix_NFTAssetIdUniqueIdIndex, assetId, uniqueId);
+        engine.SnapshotCache.Add(key, new());
+        key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, account, uniqueId);
         engine.SnapshotCache.Add(key, new());
         key = CreateStorageKey(Prefix_NFTState, uniqueId);
         engine.SnapshotCache.Add(key, new(new NFTState
@@ -238,6 +241,8 @@ public sealed class TokenManagement : NativeContract
         AddTotalSupply(engine, TokenType.NonFungible, nft.AssetId, BigInteger.MinusOne, assertOwner: true);
         if (!AddBalance(engine.SnapshotCache, nft.AssetId, nft.Owner, BigInteger.MinusOne))
             throw new InvalidOperationException("Insufficient balance to burn.");
+        engine.SnapshotCache.Delete(key);
+        key = CreateStorageKey(Prefix_NFTAssetIdUniqueIdIndex, nft.AssetId, uniqueId);
         engine.SnapshotCache.Delete(key);
         key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, nft.Owner, uniqueId);
         engine.SnapshotCache.Delete(key);
@@ -332,12 +337,15 @@ public sealed class TokenManagement : NativeContract
     }
 
     [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-    public IIterator GetNFTs(IReadOnlyStore snapshot)
+    public IIterator GetNFTs(IReadOnlyStore snapshot, UInt160 assetId)
     {
+        StorageKey key = CreateStorageKey(Prefix_TokenState, assetId);
+        if (!snapshot.Contains(key))
+            throw new InvalidOperationException("The asset id does not exist.");
         const FindOptions options = FindOptions.KeysOnly | FindOptions.RemovePrefix;
-        var prefixKey = CreateStorageKey(Prefix_NFTState);
+        var prefixKey = CreateStorageKey(Prefix_NFTAssetIdUniqueIdIndex, assetId);
         var enumerator = snapshot.Find(prefixKey).GetEnumerator();
-        return new StorageIterator(enumerator, 1, options);
+        return new StorageIterator(enumerator, 21, options);
     }
 
     [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
