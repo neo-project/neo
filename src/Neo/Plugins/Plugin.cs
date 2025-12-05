@@ -171,7 +171,6 @@ namespace Neo.Plugins
             Type[] exportedTypes;
 
             var assemblyName = assembly.GetName().Name;
-            var location = assembly.Location;
 
             try
             {
@@ -179,8 +178,7 @@ namespace Neo.Plugins
             }
             catch (Exception ex)
             {
-                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly {assemblyName} from {location}");
-                Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly {assemblyName}: {ex}");
                 throw;
             }
 
@@ -198,8 +196,7 @@ namespace Neo.Plugins
                 }
                 catch (Exception ex)
                 {
-                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} from {location}");
-                    Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} of {assemblyName}: {ex}");
                 }
             }
         }
