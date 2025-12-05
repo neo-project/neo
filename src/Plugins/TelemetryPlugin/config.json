@@ -1,0 +1,17 @@
+{
+  "PluginConfiguration": {
+    "Enabled": true,
+    "ExceptionPolicy": "StopPlugin",
+    "PrometheusPort": 9100,
+    "PrometheusHost": "localhost",
+    "PrometheusPath": "/metrics",
+    "SystemMetricsIntervalMs": 5000,
+    "CollectBlockchainMetrics": true,
+    "CollectNetworkMetrics": true,
+    "CollectMempoolMetrics": true,
+    "CollectSystemMetrics": true,
+    "CollectConsensusMetrics": true,
+    "NodeId": "",
+    "NetworkName": "unknown"
+  }
+}

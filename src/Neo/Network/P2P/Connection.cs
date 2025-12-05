@@ -22,7 +22,7 @@ namespace Neo.Network.P2P
     /// </summary>
     public abstract class Connection : UntypedActor
     {
-        internal class Close { public bool Abort; }
+        internal class Close { public bool Abort; public string Reason = "unknown"; }
         internal class Ack : Tcp.Event { public static Ack Instance = new(); }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace Neo.Network.P2P
         private void OnReceived(ByteString data)
         {
             timer.CancelIfNotNull();
-            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimit), Self, new Close { Abort = true }, ActorRefs.NoSender);
+            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimit), Self, new Close { Abort = true, Reason = "timeout" }, ActorRefs.NoSender);
             data.TryCatch<ByteString, Exception>(OnData, (_, _) => Disconnect(true));
         }
 
