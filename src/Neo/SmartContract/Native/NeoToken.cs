@@ -458,7 +458,7 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the vote is successful; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
         [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
+        private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint? voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
             return await VoteInternal(engine, account, voteTo);
