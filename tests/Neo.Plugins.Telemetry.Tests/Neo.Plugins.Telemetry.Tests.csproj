@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Plugins\TelemetryPlugin\TelemetryPlugin.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\Telemetry\Telemetry.csproj" />
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
   </ItemGroup>
 

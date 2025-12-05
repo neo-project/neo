@@ -108,9 +108,15 @@ namespace Neo.Plugins.Telemetry
                 CollectNetworkMetrics = section.GetValue(nameof(CollectNetworkMetrics), true),
                 CollectMempoolMetrics = section.GetValue(nameof(CollectMempoolMetrics), true),
                 CollectSystemMetrics = section.GetValue(nameof(CollectSystemMetrics), true),
-                NodeId = section.GetValue(nameof(NodeId), Environment.MachineName) ?? Environment.MachineName,
-                NetworkName = section.GetValue(nameof(NetworkName), "unknown") ?? "unknown"
+                NodeId = GetNonEmptyValue(section, nameof(NodeId), Environment.MachineName),
+                NetworkName = GetNonEmptyValue(section, nameof(NetworkName), "unknown")
             };
+        }
+
+        private static string GetNonEmptyValue(IConfigurationSection section, string key, string defaultValue)
+        {
+            var value = section.GetValue<string>(key);
+            return string.IsNullOrWhiteSpace(value) ? defaultValue : value;
         }
     }
 }

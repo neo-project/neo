@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// TelemetryPlugin.cs file belongs to the neo project and is free
+// Telemetry.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -21,11 +21,10 @@ namespace Neo.Plugins.Telemetry
     /// Neo N3 Telemetry Plugin - Provides comprehensive metrics collection and Prometheus export
     /// for monitoring Neo full node health, performance, and operational status.
     /// </summary>
-    public class TelemetryPlugin : Plugin
+    public class Telemetry : Plugin
     {
-        public override string Name => "TelemetryPlugin";
+        public override string Name => "Telemetry";
         public override string Description => "Telemetry and metrics collection for Neo N3 full node";
-        protected internal override UnhandledExceptionPolicy ExceptionPolicy => TelemetrySettings.Default.ExceptionPolicy;
 
         private NeoSystem? _system;
         private MetricServer? _metricServer;
@@ -41,9 +40,10 @@ namespace Neo.Plugins.Telemetry
 
         private bool _isRunning;
 
-        public TelemetryPlugin()
+        public Telemetry()
         {
-            Log($"TelemetryPlugin initialized", LogLevel.Info);
+            ExceptionPolicy = TelemetrySettings.Default.ExceptionPolicy;
+            Log($"Telemetry initialized", LogLevel.Info);
         }
 
         protected override void Configure()
@@ -53,7 +53,7 @@ namespace Neo.Plugins.Telemetry
                 $"Port: {TelemetrySettings.Default.PrometheusPort}", LogLevel.Info);
         }
 
-        protected override void OnSystemLoaded(NeoSystem system)
+        protected internal override void OnSystemLoaded(NeoSystem system)
         {
             if (!TelemetrySettings.Default.Enabled)
             {
@@ -84,9 +84,11 @@ namespace Neo.Plugins.Telemetry
                 StartCollectionTimer();
 
                 _isRunning = true;
+                var path = TelemetrySettings.Default.PrometheusPath;
+                var pathSeparator = path.StartsWith("/") ? "" : "/";
                 Log($"Telemetry plugin started successfully. Metrics available at " +
                     $"http://{TelemetrySettings.Default.PrometheusHost}:{TelemetrySettings.Default.PrometheusPort}" +
-                    $"{TelemetrySettings.Default.PrometheusPath}", LogLevel.Info);
+                    $"{pathSeparator}{path}", LogLevel.Info);
             }
             catch (Exception ex)
             {
@@ -99,7 +101,7 @@ namespace Neo.Plugins.Telemetry
                 }
 
                 IsStopped = true;
-                Log("Telemetry plugin will be stopped per ExceptionPolicy", LogLevel.Warning);
+                Log($"Telemetry plugin startup failed, telemetry disabled (ExceptionPolicy: {ExceptionPolicy})", LogLevel.Warning);
             }
         }
 

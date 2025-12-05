@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Neo.Plugins.Telemetry</RootNamespace>
-    <AssemblyName>TelemetryPlugin</AssemblyName>
+    <AssemblyName>Telemetry</AssemblyName>
     <Description>Telemetry and metrics collection plugin for Neo N3 full node</Description>
     <PackageTags>NEO;Blockchain;Telemetry;Metrics;Prometheus;OpenTelemetry</PackageTags>
   </PropertyGroup>

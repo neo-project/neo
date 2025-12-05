@@ -57,7 +57,7 @@ namespace Neo.Plugins.Telemetry.Collectors
 
         public bool RemoteNode_MessageReceived_Handler(NeoSystem system, Message message)
         {
-            if (_disposed) return false;
+            if (_disposed) return true; // Must return true to allow message processing to continue
 
             try
             {
@@ -75,8 +75,9 @@ namespace Neo.Plugins.Telemetry.Collectors
                     $"Error tracking message metrics: {ex.Message}");
             }
 
-            // Return false to allow other handlers to process the message
-            return false;
+            // Return true to allow the message to continue being processed
+            // Returning false would stop message processing and break the P2P protocol!
+            return true;
         }
 
         private void RemoteNode_MessageSent_Handler(NeoSystem system, Message message)

@@ -49,16 +49,34 @@ namespace Neo.Plugins.Telemetry.Collectors
         {
             try
             {
-                var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
-                MetricsDefinitions.BlockHeight.WithLabels(_nodeId, _network).Set(currentHeight);
-                MetricsDefinitions.HeaderHeight.WithLabels(_nodeId, _network).Set(currentHeight);
+                // Initialize with safe defaults - actual values will be set on first block commit
+                // or during periodic collection once the store is ready
+                MetricsDefinitions.BlockHeight.WithLabels(_nodeId, _network).Set(0);
+                MetricsDefinitions.HeaderHeight.WithLabels(_nodeId, _network).Set(0);
                 MetricsDefinitions.SyncStatus.WithLabels(_nodeId, _network).Set(1); // Assume synced initially
                 MetricsDefinitions.BlocksBehind.WithLabels(_nodeId, _network).Set(0);
+
+                // Try to get actual current height if store is ready
+                TryUpdateCurrentHeight();
             }
             catch (Exception ex)
             {
                 Utility.Log(nameof(BlockchainMetricsCollector), LogLevel.Warning,
                     $"Failed to initialize blockchain metrics: {ex.Message}");
+            }
+        }
+
+        private void TryUpdateCurrentHeight()
+        {
+            try
+            {
+                var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
+                MetricsDefinitions.BlockHeight.WithLabels(_nodeId, _network).Set(currentHeight);
+                MetricsDefinitions.HeaderHeight.WithLabels(_nodeId, _network).Set(currentHeight);
+            }
+            catch
+            {
+                // Store not ready yet, will be updated on first block commit or periodic collection
             }
         }
 
