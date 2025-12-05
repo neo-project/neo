@@ -106,6 +106,8 @@ public abstract class NativeContract
     /// </summary>
     public static Treasury Treasury { get; } = new();
 
+    public static TokenManagement TokenManagement { get; } = new();
+
     #endregion
 
     /// <summary>
