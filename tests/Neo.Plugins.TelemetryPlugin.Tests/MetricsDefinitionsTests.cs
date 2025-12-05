@@ -71,16 +71,6 @@ namespace Neo.Plugins.TelemetryPlugin.Tests
         }
 
         [Fact]
-        public void ConsensusMetrics_ShouldBeInitialized()
-        {
-            // Assert
-            Assert.NotNull(MetricsDefinitions.ConsensusViewNumber);
-            Assert.NotNull(MetricsDefinitions.ConsensusPrimary);
-            Assert.NotNull(MetricsDefinitions.ConsensusRoundsTotal);
-            Assert.NotNull(MetricsDefinitions.ConsensusRoundDuration);
-        }
-
-        [Fact]
         public void PluginMetrics_ShouldBeInitialized()
         {
             // Assert

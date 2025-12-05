@@ -80,11 +80,6 @@ namespace Neo.Plugins.Telemetry
         public bool CollectSystemMetrics { get; private set; } = true;
 
         /// <summary>
-        /// Gets whether to collect consensus metrics.
-        /// </summary>
-        public bool CollectConsensusMetrics { get; private set; } = true;
-
-        /// <summary>
         /// Gets the node identifier label for metrics.
         /// </summary>
         public string NodeId { get; private set; } = Environment.MachineName;
@@ -113,7 +108,6 @@ namespace Neo.Plugins.Telemetry
                 CollectNetworkMetrics = section.GetValue(nameof(CollectNetworkMetrics), true),
                 CollectMempoolMetrics = section.GetValue(nameof(CollectMempoolMetrics), true),
                 CollectSystemMetrics = section.GetValue(nameof(CollectSystemMetrics), true),
-                CollectConsensusMetrics = section.GetValue(nameof(CollectConsensusMetrics), true),
                 NodeId = section.GetValue(nameof(NodeId), Environment.MachineName) ?? Environment.MachineName,
                 NetworkName = section.GetValue(nameof(NetworkName), "unknown") ?? "unknown"
             };

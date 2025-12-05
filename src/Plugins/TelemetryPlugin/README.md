@@ -43,7 +43,6 @@ Create or edit `config.json` in the `Plugins/TelemetryPlugin/` directory:
     "CollectNetworkMetrics": true,
     "CollectMempoolMetrics": true,
     "CollectSystemMetrics": true,
-    "CollectConsensusMetrics": true,
     "NodeId": "my-neo-node",
     "NetworkName": "mainnet"
   }
@@ -65,7 +64,6 @@ Create or edit `config.json` in the `Plugins/TelemetryPlugin/` directory:
 | `CollectNetworkMetrics` | bool | `true` | Enable network metrics collection |
 | `CollectMempoolMetrics` | bool | `true` | Enable mempool metrics collection |
 | `CollectSystemMetrics` | bool | `true` | Enable system resource metrics collection |
-| `CollectConsensusMetrics` | bool | `true` | Enable consensus metrics collection |
 | `NodeId` | string | hostname | Unique identifier for this node |
 | `NetworkName` | string | auto-detect | Network name label (mainnet, testnet, etc.) |
 

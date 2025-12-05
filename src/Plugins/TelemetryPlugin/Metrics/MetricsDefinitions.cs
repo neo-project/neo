@@ -282,46 +282,6 @@ namespace Neo.Plugins.Telemetry.Metrics
 
         #endregion
 
-        #region Consensus Metrics
-
-        /// <summary>
-        /// Current consensus view number.
-        /// </summary>
-        public static readonly Gauge ConsensusViewNumber = Prometheus.Metrics.CreateGauge(
-            $"{Prefix}consensus_view_number",
-            "Current consensus view number",
-            new GaugeConfiguration { LabelNames = CommonLabels });
-
-        /// <summary>
-        /// Whether this node is the primary for current consensus.
-        /// </summary>
-        public static readonly Gauge ConsensusPrimary = Prometheus.Metrics.CreateGauge(
-            $"{Prefix}consensus_is_primary",
-            "Whether this node is the primary (1) or not (0)",
-            new GaugeConfiguration { LabelNames = CommonLabels });
-
-        /// <summary>
-        /// Total consensus rounds completed.
-        /// </summary>
-        public static readonly Counter ConsensusRoundsTotal = Prometheus.Metrics.CreateCounter(
-            $"{Prefix}consensus_rounds_total",
-            "Total consensus rounds completed",
-            new CounterConfiguration { LabelNames = [.. CommonLabels, "result"] });
-
-        /// <summary>
-        /// Consensus round duration in milliseconds.
-        /// </summary>
-        public static readonly Histogram ConsensusRoundDuration = Prometheus.Metrics.CreateHistogram(
-            $"{Prefix}consensus_round_duration_milliseconds",
-            "Consensus round duration in milliseconds",
-            new HistogramConfiguration
-            {
-                LabelNames = CommonLabels,
-                Buckets = [100, 500, 1000, 2000, 5000, 10000, 15000, 30000]
-            });
-
-        #endregion
-
         #region Plugin Metrics
 
         /// <summary>
