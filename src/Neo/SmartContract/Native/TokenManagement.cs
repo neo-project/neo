@@ -29,8 +29,8 @@ public sealed class TokenManagement : NativeContract
     const byte Prefix_TokenState = 10;
     const byte Prefix_AccountState = 12;
     const byte Prefix_NFTUniqueIdSeed = 15;
-    const byte Prefix_NFTAccountToUniqueId = 20;
     const byte Prefix_NFTState = 8;
+    const byte Prefix_NFTOwnerUniqueIdIndex = 21;
 
     static readonly BigInteger MaxMintAmount = BigInteger.Pow(2, 128);
 
@@ -195,7 +195,7 @@ public sealed class TokenManagement : NativeContract
         AddTotalSupply(engine, TokenType.NonFungible, assetId, 1, assertOwner: true);
         AddBalance(engine.SnapshotCache, assetId, account, 1);
         UInt160 uniqueId = GetNextNFTUniqueId(engine);
-        StorageKey key = CreateStorageKey(Prefix_NFTAccountToUniqueId, account, uniqueId);
+        StorageKey key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, account, uniqueId);
         engine.SnapshotCache.Add(key, new());
         key = CreateStorageKey(Prefix_NFTState, uniqueId);
         engine.SnapshotCache.Add(key, new(new NFTState
@@ -239,7 +239,7 @@ public sealed class TokenManagement : NativeContract
         if (!AddBalance(engine.SnapshotCache, nft.AssetId, nft.Owner, BigInteger.MinusOne))
             throw new InvalidOperationException("Insufficient balance to burn.");
         engine.SnapshotCache.Delete(key);
-        key = CreateStorageKey(Prefix_NFTAccountToUniqueId, nft.Owner, uniqueId);
+        key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, nft.Owner, uniqueId);
         engine.SnapshotCache.Delete(key);
         await PostNFTTransferAsync(engine, uniqueId, nft.Owner, null, StackItem.Null, callOnPayment: false);
     }
@@ -292,9 +292,9 @@ public sealed class TokenManagement : NativeContract
             if (!AddBalance(engine.SnapshotCache, nft.AssetId, from, BigInteger.MinusOne))
                 return false;
             AddBalance(engine.SnapshotCache, nft.AssetId, to, BigInteger.One);
-            key = CreateStorageKey(Prefix_NFTAccountToUniqueId, from, uniqueId);
+            key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, from, uniqueId);
             engine.SnapshotCache.Delete(key);
-            key = CreateStorageKey(Prefix_NFTAccountToUniqueId, to, uniqueId);
+            key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, to, uniqueId);
             engine.SnapshotCache.Add(key, new());
             nft = engine.SnapshotCache.GetAndChange(key_nft)!.GetInteroperable<NFTState>();
             nft.Owner = to;
@@ -344,7 +344,7 @@ public sealed class TokenManagement : NativeContract
     public IIterator GetNFTsOfOwner(IReadOnlyStore snapshot, UInt160 account)
     {
         const FindOptions options = FindOptions.KeysOnly | FindOptions.RemovePrefix;
-        var prefixKey = CreateStorageKey(Prefix_NFTAccountToUniqueId, account);
+        var prefixKey = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, account);
         var enumerator = snapshot.Find(prefixKey).GetEnumerator();
         return new StorageIterator(enumerator, 21, options);
     }
