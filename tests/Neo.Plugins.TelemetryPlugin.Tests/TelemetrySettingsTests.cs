@@ -49,6 +49,16 @@ namespace Neo.Plugins.TelemetryPlugin.Tests
         }
 
         [Fact]
+        public void Default_HealthPort_ShouldBeNullOrValid()
+        {
+            // Assert
+            if (TelemetrySettings.Default.HealthPort.HasValue)
+            {
+                Assert.InRange(TelemetrySettings.Default.HealthPort.Value, 1, 65535);
+            }
+        }
+
+        [Fact]
         public void Default_ShouldHaveValidSystemMetricsInterval()
         {
             // Assert

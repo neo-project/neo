@@ -50,6 +50,11 @@ namespace Neo.Plugins.Telemetry
         public string PrometheusPath { get; private set; } = "/metrics";
 
         /// <summary>
+        /// Gets the port for the health endpoints. Defaults to Prometheus port when null.
+        /// </summary>
+        public int? HealthPort { get; private set; }
+
+        /// <summary>
         /// Gets the interval in milliseconds for collecting system metrics.
         /// </summary>
         public int SystemMetricsIntervalMs { get; private set; } = 5000;
@@ -102,6 +107,7 @@ namespace Neo.Plugins.Telemetry
                 PrometheusPort = section.GetValue(nameof(PrometheusPort), 9100),
                 PrometheusHost = section.GetValue(nameof(PrometheusHost), "localhost") ?? "localhost",
                 PrometheusPath = section.GetValue(nameof(PrometheusPath), "/metrics") ?? "/metrics",
+                HealthPort = section.GetValue<int?>(nameof(HealthPort)),
                 SystemMetricsIntervalMs = section.GetValue(nameof(SystemMetricsIntervalMs), 5000),
                 CollectBlockchainMetrics = section.GetValue(nameof(CollectBlockchainMetrics), true),
                 CollectNetworkMetrics = section.GetValue(nameof(CollectNetworkMetrics), true),

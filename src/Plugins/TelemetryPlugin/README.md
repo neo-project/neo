@@ -37,6 +37,7 @@ Create or edit `config.json` in the `Plugins/TelemetryPlugin/` directory:
     "PrometheusPort": 9100,
     "PrometheusHost": "localhost",
     "PrometheusPath": "/metrics",
+    "HealthPort": 9100,
     "SystemMetricsIntervalMs": 5000,
     "CollectBlockchainMetrics": true,
     "CollectNetworkMetrics": true,
@@ -58,6 +59,7 @@ Create or edit `config.json` in the `Plugins/TelemetryPlugin/` directory:
 | `PrometheusPort` | int | `9100` | Port for the Prometheus metrics endpoint |
 | `PrometheusHost` | string | `localhost` | Host address for the metrics endpoint |
 | `PrometheusPath` | string | `/metrics` | URL path for the metrics endpoint |
+| `HealthPort` | int | `9100` | Port for `/health`, `/ready`, `/live` endpoints |
 | `SystemMetricsIntervalMs` | int | `5000` | Interval for collecting system metrics (ms) |
 | `CollectBlockchainMetrics` | bool | `true` | Enable blockchain metrics collection |
 | `CollectNetworkMetrics` | bool | `true` | Enable network metrics collection |

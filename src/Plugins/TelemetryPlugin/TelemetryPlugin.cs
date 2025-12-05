@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Plugins.Telemetry.Collectors;
+using Neo.Plugins.Telemetry.Health;
 using Prometheus;
 using System.Timers;
 using Timer = System.Timers.Timer;
@@ -29,6 +30,7 @@ namespace Neo.Plugins.Telemetry
 
         private NeoSystem? _system;
         private MetricServer? _metricServer;
+        private HealthCheckEndpoint? _healthEndpoint;
         private Timer? _collectionTimer;
 
         // Collectors
@@ -75,6 +77,9 @@ namespace Neo.Plugins.Telemetry
 
                 // Start Prometheus metric server
                 StartMetricServer();
+
+                // Start health endpoint
+                StartHealthEndpoint();
 
                 // Start periodic collection timer
                 StartCollectionTimer();
@@ -172,6 +177,24 @@ namespace Neo.Plugins.Telemetry
             Log($"Metrics collection timer started with interval {intervalMs}ms", LogLevel.Debug);
         }
 
+        private void StartHealthEndpoint()
+        {
+            var settings = TelemetrySettings.Default;
+
+            try
+            {
+                var host = settings.PrometheusHost;
+                var port = settings.HealthPort ?? settings.PrometheusPort;
+
+                _healthEndpoint = new HealthCheckEndpoint(_system!, host, port, settings.NodeId, settings.NetworkName);
+                Log($"Health endpoints started at http://{host}:{port}/health", LogLevel.Info);
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to start health endpoint: {ex.Message}", LogLevel.Warning);
+            }
+        }
+
         private void OnCollectionTimerElapsed(object? sender, ElapsedEventArgs e)
         {
             if (!_isRunning) return;
@@ -238,6 +261,8 @@ namespace Neo.Plugins.Telemetry
                 _mempoolCollector = null;
                 _systemCollector = null;
                 _pluginCollector = null;
+                _healthEndpoint?.Dispose();
+                _healthEndpoint = null;
 
                 Log("Telemetry plugin shut down successfully", LogLevel.Info);
             }
