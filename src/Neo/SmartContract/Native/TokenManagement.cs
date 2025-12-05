@@ -11,6 +11,7 @@
 
 using Neo.Extensions.IO;
 using Neo.Persistence;
+using Neo.SmartContract.Iterators;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Numerics;
@@ -20,16 +21,29 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// Provides core functionality for creating, managing, and transferring tokens within a native contract environment.
 /// </summary>
-[ContractEvent(0, "Created", "assetId", ContractParameterType.Hash160)]
+[ContractEvent(0, "Created", "assetId", ContractParameterType.Hash160, "type", ContractParameterType.Integer)]
 [ContractEvent(1, "Transfer", "assetId", ContractParameterType.Hash160, "from", ContractParameterType.Hash160, "to", ContractParameterType.Hash160, "amount", ContractParameterType.Integer)]
+[ContractEvent(1, "NFTTransfer", "uniqueId", ContractParameterType.Hash160, "from", ContractParameterType.Hash160, "to", ContractParameterType.Hash160)]
 public sealed class TokenManagement : NativeContract
 {
     const byte Prefix_TokenState = 10;
     const byte Prefix_AccountState = 12;
+    const byte Prefix_NFTUniqueIdSeed = 15;
+    const byte Prefix_NFTAccountToUniqueId = 20;
+    const byte Prefix_NFTState = 8;
 
     static readonly BigInteger MaxMintAmount = BigInteger.Pow(2, 128);
 
     internal TokenManagement() : base(-12) { }
+
+    internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
+    {
+        if (hardfork == ActiveIn)
+        {
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_NFTUniqueIdSeed), BigInteger.Zero);
+        }
+        return ContractTask.CompletedTask;
+    }
 
     /// <summary>
     /// Creates a new token with an unlimited maximum supply.
@@ -69,6 +83,7 @@ public sealed class TokenManagement : NativeContract
             throw new InvalidOperationException($"{name} already exists.");
         var state = new TokenState
         {
+            Type = TokenType.Fungible,
             Owner = owner,
             Name = name,
             Symbol = symbol,
@@ -77,21 +92,51 @@ public sealed class TokenManagement : NativeContract
             MaxSupply = maxSupply
         };
         engine.SnapshotCache.Add(key, new(state));
-        Notify(engine, "Created", tokenid);
+        Notify(engine, "Created", tokenid, TokenType.Fungible);
+        return tokenid;
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    internal UInt160 CreateNFT(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol)
+    {
+        return CreateNFT(engine, name, symbol, BigInteger.MinusOne);
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    internal UInt160 CreateNFT(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, BigInteger maxSupply)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxSupply, BigInteger.MinusOne);
+        UInt160 owner = engine.CallingScriptHash!;
+        UInt160 tokenid = GetAssetId(owner, name);
+        StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
+        if (engine.SnapshotCache.Contains(key))
+            throw new InvalidOperationException($"{name} already exists.");
+        var state = new TokenState
+        {
+            Type = TokenType.NonFungible,
+            Owner = owner,
+            Name = name,
+            Symbol = symbol,
+            Decimals = 0,
+            TotalSupply = BigInteger.Zero,
+            MaxSupply = maxSupply
+        };
+        engine.SnapshotCache.Add(key, new(state));
+        Notify(engine, "Created", tokenid, TokenType.NonFungible);
         return tokenid;
     }
 
     /// <summary>
     /// Retrieves the token metadata for the given asset id.
     /// </summary>
-    /// <param name="engine">The current <see cref="ApplicationEngine"/> instance.</param>
+    /// <param name="snapshot">A readonly view of the storage.</param>
     /// <param name="assetId">The asset identifier.</param>
     /// <returns>The <see cref="TokenState"/> if found; otherwise <c>null</c>.</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public TokenState? GetTokenInfo(ApplicationEngine engine, UInt160 assetId)
+    public TokenState? GetTokenInfo(IReadOnlyStore snapshot, UInt160 assetId)
     {
         StorageKey key = CreateStorageKey(Prefix_TokenState, assetId);
-        return engine.SnapshotCache.TryGet(key)?.GetInteroperable<TokenState>();
+        return snapshot.TryGet(key)?.GetInteroperable<TokenState>();
     }
 
     /// <summary>
@@ -109,9 +154,58 @@ public sealed class TokenManagement : NativeContract
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        AddTotalSupply(engine, assetId, amount, assertOwner: true);
+        AddTotalSupply(engine, TokenType.Fungible, assetId, amount, assertOwner: true);
         AddBalance(engine.SnapshotCache, assetId, account, amount);
         await PostTransferAsync(engine, assetId, null, account, amount, StackItem.Null, callOnPayment: true);
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
+    internal async Task<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account)
+    {
+        return await MintNFT(engine, assetId, account, new Map(engine.ReferenceCounter));
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 10, RequiredCallFlags = CallFlags.All)]
+    internal async Task<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account, Map properties)
+    {
+        if (properties.Count > 8)
+            throw new ArgumentException("Too many properties.", nameof(properties));
+        foreach (var (k, v) in properties)
+        {
+            if (k is not ByteString)
+                throw new ArgumentException("The key of a property should be a ByteString.", nameof(properties));
+            if (k.Size < 1 || k.Size > 16)
+                throw new ArgumentException("The key length of a property should be between 1 and 16.", nameof(properties));
+            k.GetString(); // Ensure to invoke `ToStrictUtf8String()`
+            switch (v)
+            {
+                case ByteString bs:
+                    if (bs.Size < 1 || bs.Size > 128)
+                        throw new ArgumentException("The value length of a property should be between 1 and 128.", nameof(properties));
+                    break;
+                case VM.Types.Buffer buffer:
+                    if (buffer.Size < 1 || buffer.Size > 128)
+                        throw new ArgumentException("The value length of a property should be between 1 and 128.", nameof(properties));
+                    break;
+                default:
+                    throw new ArgumentException("The value of a property should be a ByteString or Buffer.", nameof(properties));
+            }
+            v.GetString(); // Ensure to invoke `ToStrictUtf8String()`
+        }
+        AddTotalSupply(engine, TokenType.NonFungible, assetId, 1, assertOwner: true);
+        AddBalance(engine.SnapshotCache, assetId, account, 1);
+        UInt160 uniqueId = GetNextNFTUniqueId(engine);
+        StorageKey key = CreateStorageKey(Prefix_NFTAccountToUniqueId, account, uniqueId);
+        engine.SnapshotCache.Add(key, new());
+        key = CreateStorageKey(Prefix_NFTState, uniqueId);
+        engine.SnapshotCache.Add(key, new(new NFTState
+        {
+            AssetId = assetId,
+            Owner = account,
+            Properties = properties
+        }));
+        await PostNFTTransferAsync(engine, uniqueId, null, account, StackItem.Null, callOnPayment: true);
+        return uniqueId;
     }
 
     /// <summary>
@@ -129,10 +223,25 @@ public sealed class TokenManagement : NativeContract
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        AddTotalSupply(engine, assetId, -amount, assertOwner: true);
+        AddTotalSupply(engine, TokenType.Fungible, assetId, -amount, assertOwner: true);
         if (!AddBalance(engine.SnapshotCache, assetId, account, -amount))
             throw new InvalidOperationException("Insufficient balance to burn.");
         await PostTransferAsync(engine, assetId, account, null, amount, StackItem.Null, callOnPayment: false);
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.All)]
+    internal async Task BurnNFT(ApplicationEngine engine, UInt160 uniqueId)
+    {
+        StorageKey key = CreateStorageKey(Prefix_NFTState, uniqueId);
+        NFTState nft = engine.SnapshotCache.TryGet(key)?.GetInteroperable<NFTState>()
+            ?? throw new InvalidOperationException("The unique id does not exist.");
+        AddTotalSupply(engine, TokenType.NonFungible, nft.AssetId, BigInteger.MinusOne, assertOwner: true);
+        if (!AddBalance(engine.SnapshotCache, nft.AssetId, nft.Owner, BigInteger.MinusOne))
+            throw new InvalidOperationException("Insufficient balance to burn.");
+        engine.SnapshotCache.Delete(key);
+        key = CreateStorageKey(Prefix_NFTAccountToUniqueId, nft.Owner, uniqueId);
+        engine.SnapshotCache.Delete(key);
+        await PostNFTTransferAsync(engine, uniqueId, nft.Owner, null, StackItem.Null, callOnPayment: false);
     }
 
     /// <summary>
@@ -154,6 +263,8 @@ public sealed class TokenManagement : NativeContract
         StorageKey key = CreateStorageKey(Prefix_TokenState, assetId);
         TokenState token = engine.SnapshotCache.TryGet(key)?.GetInteroperable<TokenState>()
             ?? throw new InvalidOperationException("The asset id does not exist.");
+        if (token.Type != TokenType.Fungible)
+            throw new InvalidOperationException("The asset id and the token type do not match.");
         if (!engine.CheckWitnessInternal(from)) return false;
         if (!amount.IsZero && from != to)
         {
@@ -163,6 +274,33 @@ public sealed class TokenManagement : NativeContract
         }
         await PostTransferAsync(engine, assetId, from, to, amount, data, callOnPayment: true);
         await engine.CallFromNativeContractAsync(Hash, token.Owner, "onTransfer", assetId, from, to, amount, data);
+        return true;
+    }
+
+    [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
+    internal async Task<bool> TransferNFT(ApplicationEngine engine, UInt160 uniqueId, UInt160 from, UInt160 to, StackItem data)
+    {
+        StorageKey key_nft = CreateStorageKey(Prefix_NFTState, uniqueId);
+        NFTState nft = engine.SnapshotCache.TryGet(key_nft)?.GetInteroperable<NFTState>()
+            ?? throw new InvalidOperationException("The unique id does not exist.");
+        if (nft.Owner != from) return false;
+        if (!engine.CheckWitnessInternal(from)) return false;
+        StorageKey key = CreateStorageKey(Prefix_TokenState, nft.AssetId);
+        TokenState token = engine.SnapshotCache.TryGet(key)!.GetInteroperable<TokenState>();
+        if (from != to)
+        {
+            if (!AddBalance(engine.SnapshotCache, nft.AssetId, from, BigInteger.MinusOne))
+                return false;
+            AddBalance(engine.SnapshotCache, nft.AssetId, to, BigInteger.One);
+            key = CreateStorageKey(Prefix_NFTAccountToUniqueId, from, uniqueId);
+            engine.SnapshotCache.Delete(key);
+            key = CreateStorageKey(Prefix_NFTAccountToUniqueId, to, uniqueId);
+            engine.SnapshotCache.Add(key, new());
+            nft = engine.SnapshotCache.GetAndChange(key_nft)!.GetInteroperable<NFTState>();
+            nft.Owner = to;
+        }
+        await PostNFTTransferAsync(engine, uniqueId, from, to, data, callOnPayment: true);
+        await engine.CallFromNativeContractAsync(Hash, token.Owner, "onNFTTransfer", uniqueId, from, to, data);
         return true;
     }
 
@@ -186,6 +324,31 @@ public sealed class TokenManagement : NativeContract
         return accountState.Balance;
     }
 
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    public NFTState? GetNFTInfo(IReadOnlyStore snapshot, UInt160 uniqueId)
+    {
+        StorageKey key = CreateStorageKey(Prefix_NFTState, uniqueId);
+        return snapshot.TryGet(key)?.GetInteroperable<NFTState>();
+    }
+
+    [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
+    public IIterator GetNFTs(IReadOnlyStore snapshot)
+    {
+        const FindOptions options = FindOptions.KeysOnly | FindOptions.RemovePrefix;
+        var prefixKey = CreateStorageKey(Prefix_NFTState);
+        var enumerator = snapshot.Find(prefixKey).GetEnumerator();
+        return new StorageIterator(enumerator, 1, options);
+    }
+
+    [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
+    public IIterator GetNFTsOfOwner(IReadOnlyStore snapshot, UInt160 account)
+    {
+        const FindOptions options = FindOptions.KeysOnly | FindOptions.RemovePrefix;
+        var prefixKey = CreateStorageKey(Prefix_NFTAccountToUniqueId, account);
+        var enumerator = snapshot.Find(prefixKey).GetEnumerator();
+        return new StorageIterator(enumerator, 21, options);
+    }
+
     /// <summary>
     /// Computes a unique asset id from the token owner's script hash and the token name.
     /// </summary>
@@ -201,11 +364,23 @@ public sealed class TokenManagement : NativeContract
         return buffer.ToScriptHash();
     }
 
-    void AddTotalSupply(ApplicationEngine engine, UInt160 assetId, BigInteger amount, bool assertOwner)
+    UInt160 GetNextNFTUniqueId(ApplicationEngine engine)
+    {
+        StorageKey key = CreateStorageKey(Prefix_NFTUniqueIdSeed);
+        BigInteger seed = engine.SnapshotCache.GetAndChange(key)!.Add(BigInteger.One);
+        using MemoryStream ms = new();
+        ms.Write(engine.PersistingBlock!.Hash.GetSpan());
+        ms.Write(seed.ToByteArrayStandard());
+        return ms.ToArray().ToScriptHash();
+    }
+
+    void AddTotalSupply(ApplicationEngine engine, TokenType type, UInt160 assetId, BigInteger amount, bool assertOwner)
     {
         StorageKey key = CreateStorageKey(Prefix_TokenState, assetId);
         TokenState token = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<TokenState>()
             ?? throw new InvalidOperationException("The asset id does not exist.");
+        if (token.Type != type)
+            throw new InvalidOperationException("The asset id and the token type do not match.");
         if (assertOwner && token.Owner != engine.CallingScriptHash)
             throw new InvalidOperationException("This method can be called by the owner contract only.");
         token.TotalSupply += amount;
@@ -249,6 +424,19 @@ public sealed class TokenManagement : NativeContract
         if (!callOnPayment || to is null || !ContractManagement.IsContract(engine.SnapshotCache, to)) return;
         await engine.CallFromNativeContractAsync(Hash, to, "onPayment", assetId, from, amount, data);
     }
+
+    async ContractTask PostNFTTransferAsync(ApplicationEngine engine, UInt160 uniqueId, UInt160? from, UInt160? to, StackItem data, bool callOnPayment)
+    {
+        Notify(engine, "NFTTransfer", uniqueId, from, to);
+        if (!callOnPayment || to is null || !ContractManagement.IsContract(engine.SnapshotCache, to)) return;
+        await engine.CallFromNativeContractAsync(Hash, to, "onNFTPayment", uniqueId, from, data);
+    }
+}
+
+public enum TokenType : byte
+{
+    Fungible = 1,
+    NonFungible = 2
 }
 
 /// <summary>
@@ -257,6 +445,8 @@ public sealed class TokenManagement : NativeContract
 /// </summary>
 public class TokenState : IInteroperable
 {
+    public required TokenType Type;
+
     /// <summary>
     /// The owner contract script hash that can manage this token (mint/burn, onTransfer callback target).
     /// </summary>
@@ -310,5 +500,25 @@ public class TokenState : IInteroperable
     public StackItem ToStackItem(IReferenceCounter? referenceCounter)
     {
         return new Struct(referenceCounter) { Owner.ToArray(), Name, Symbol, Decimals, TotalSupply, MaxSupply };
+    }
+}
+
+public class NFTState : IInteroperable
+{
+    public required UInt160 AssetId;
+    public required UInt160 Owner;
+    public required Map Properties;
+
+    public void FromStackItem(StackItem stackItem)
+    {
+        Struct @struct = (Struct)stackItem;
+        AssetId = new UInt160(@struct[0].GetSpan());
+        Owner = new UInt160(@struct[1].GetSpan());
+        Properties = (Map)@struct[2];
+    }
+
+    public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+    {
+        return new Struct(referenceCounter) { AssetId.ToArray(), Owner.ToArray(), Properties };
     }
 }
