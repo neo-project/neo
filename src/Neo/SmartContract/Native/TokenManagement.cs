@@ -97,12 +97,29 @@ public sealed class TokenManagement : NativeContract
         return tokenid;
     }
 
+    /// <summary>
+    /// Creates a new NFT collection with an unlimited maximum supply.
+    /// </summary>
+    /// <param name="engine">The current <see cref="ApplicationEngine"/> instance.</param>
+    /// <param name="name">The NFT collection name (1-32 characters).</param>
+    /// <param name="symbol">The NFT collection symbol (2-6 characters).</param>
+    /// <returns>The asset <see cref="UInt160"/> identifier generated for the new NFT collection.</returns>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     internal UInt160 CreateNFT(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol)
     {
         return CreateNFT(engine, name, symbol, BigInteger.MinusOne);
     }
 
+    /// <summary>
+    /// Creates a new NFT collection with a specified maximum supply.
+    /// </summary>
+    /// <param name="engine">The current <see cref="ApplicationEngine"/> instance.</param>
+    /// <param name="name">The NFT collection name (1-32 characters).</param>
+    /// <param name="symbol">The NFT collection symbol (2-6 characters).</param>
+    /// <param name="maxSupply">Maximum total supply for NFTs in this collection, or -1 for unlimited.</param>
+    /// <returns>The asset <see cref="UInt160"/> identifier generated for the new NFT collection.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">If <paramref name="maxSupply"/> is less than -1.</exception>
+    /// <exception cref="InvalidOperationException">If a collection with the same id already exists.</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     internal UInt160 CreateNFT(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, BigInteger maxSupply)
     {
@@ -160,12 +177,28 @@ public sealed class TokenManagement : NativeContract
         await PostTransferAsync(engine, assetId, null, account, amount, StackItem.Null, callOnPayment: true);
     }
 
+    /// <summary>
+    /// Mints a new NFT for the given collection to the specified account using empty properties.
+    /// </summary>
+    /// <param name="engine">The current <see cref="ApplicationEngine"/> instance.</param>
+    /// <param name="assetId">The NFT collection asset identifier.</param>
+    /// <param name="account">The recipient account <see cref="UInt160"/>.</param>
+    /// <returns>The unique id (<see cref="UInt160"/>) of the newly minted NFT.</returns>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
     internal async Task<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account)
     {
         return await MintNFT(engine, assetId, account, new Map(engine.ReferenceCounter));
     }
 
+    /// <summary>
+    /// Mints a new NFT for the given collection to the specified account with provided properties.
+    /// </summary>
+    /// <param name="engine">The current <see cref="ApplicationEngine"/> instance.</param>
+    /// <param name="assetId">The NFT collection asset identifier.</param>
+    /// <param name="account">The recipient account <see cref="UInt160"/>.</param>
+    /// <param name="properties">A <see cref="Map"/> of properties for the NFT (keys: ByteString, values: ByteString or Buffer).</param>
+    /// <returns>The unique id (<see cref="UInt160"/>) of the newly minted NFT.</returns>
+    /// <exception cref="ArgumentException">If properties are invalid (too many, invalid key/value types or lengths).</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 10, RequiredCallFlags = CallFlags.All)]
     internal async Task<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account, Map properties)
     {
@@ -232,6 +265,13 @@ public sealed class TokenManagement : NativeContract
         await PostTransferAsync(engine, assetId, account, null, amount, StackItem.Null, callOnPayment: false);
     }
 
+    /// <summary>
+    /// Burns an NFT identified by <paramref name="uniqueId"/>. Only the owner contract may call this method.
+    /// </summary>
+    /// <param name="engine">The current <see cref="ApplicationEngine"/> instance.</param>
+    /// <param name="uniqueId">The unique id of the NFT to burn.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <exception cref="InvalidOperationException">If the unique id does not exist or owner has insufficient balance or caller is not owner contract.</exception>
     [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.All)]
     internal async Task BurnNFT(ApplicationEngine engine, UInt160 uniqueId)
     {
@@ -282,6 +322,16 @@ public sealed class TokenManagement : NativeContract
         return true;
     }
 
+    /// <summary>
+    /// Transfers an NFT between owners.
+    /// </summary>
+    /// <param name="engine">The current <see cref="ApplicationEngine"/> instance.</param>
+    /// <param name="uniqueId">The unique id of the NFT.</param>
+    /// <param name="from">The current owner account <see cref="UInt160"/>.</param>
+    /// <param name="to">The recipient account <see cref="UInt160"/>.</param>
+    /// <param name="data">Arbitrary data passed to <c>onNFTPayment</c> or <c>onNFTTransfer</c> callbacks.</param>
+    /// <returns><c>true</c> if the transfer succeeded; otherwise <c>false</c>.</returns>
+    /// <exception cref="InvalidOperationException">If the unique id does not exist.</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
     internal async Task<bool> TransferNFT(ApplicationEngine engine, UInt160 uniqueId, UInt160 from, UInt160 to, StackItem data)
     {
@@ -329,6 +379,12 @@ public sealed class TokenManagement : NativeContract
         return accountState.Balance;
     }
 
+    /// <summary>
+    /// Gets NFT metadata for a unique id.
+    /// </summary>
+    /// <param name="snapshot">A readonly view of the storage.</param>
+    /// <param name="uniqueId">The unique id of the NFT.</param>
+    /// <returns>The <see cref="NFTState"/> if found; otherwise <c>null</c>.</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
     public NFTState? GetNFTInfo(IReadOnlyStore snapshot, UInt160 uniqueId)
     {
@@ -336,6 +392,21 @@ public sealed class TokenManagement : NativeContract
         return snapshot.TryGet(key)?.GetInteroperable<NFTState>();
     }
 
+    /// <summary>
+    /// Returns an iterator over the unique ids of NFTs for the specified asset (collection).
+    /// The iterator yields the stored unique id keys (UInt160) indexed under the NFT asset id.
+    /// </summary>
+    /// <param name="snapshot">A readonly view of the storage.</param>
+    /// <param name="assetId">The asset (collection) identifier whose NFTs are requested.</param>
+    /// <returns>
+    /// An <see cref="IIterator"/> that enumerates the NFT unique ids belonging to the given collection.
+    /// The iterator is configured to return keys only and to remove the storage prefix.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">Thrown when the specified asset id does not exist.</exception>
+    /// <remarks>
+    /// The returned iterator is backed by the storage layer and uses the NFT asset-to-unique-id index.
+    /// Consumers should dispose the iterator when finished if they hold unmanaged resources from it.
+    /// </remarks>
     [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
     public IIterator GetNFTs(IReadOnlyStore snapshot, UInt160 assetId)
     {
@@ -348,6 +419,20 @@ public sealed class TokenManagement : NativeContract
         return new StorageIterator(enumerator, 21, options);
     }
 
+    /// <summary>
+    /// Returns an iterator over the unique ids of NFTs owned by the specified account.
+    /// The iterator yields the stored unique id keys (<see cref="UInt160"/>) indexed under the NFT owner index.
+    /// </summary>
+    /// <param name="snapshot">A readonly view of the storage.</param>
+    /// <param name="account">The account whose NFTs are requested.</param>
+    /// <returns>
+    /// An <see cref="IIterator"/> that enumerates the NFT unique ids owned by the given account.
+    /// The iterator is configured to return keys only and to remove the storage prefix.
+    /// </returns>
+    /// <remarks>
+    /// The returned iterator is backed by the storage layer and uses the NFT owner-to-unique-id index.
+    /// Consumers should dispose the iterator when finished if they hold unmanaged resources from it.
+    /// </remarks>
     [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
     public IIterator GetNFTsOfOwner(IReadOnlyStore snapshot, UInt160 account)
     {
@@ -441,9 +526,18 @@ public sealed class TokenManagement : NativeContract
     }
 }
 
+/// <summary>
+/// Specifies the type of token, indicating whether it is fungible or non-fungible.
+/// </summary>
 public enum TokenType : byte
 {
+    /// <summary>
+    /// Fungible token type.
+    /// </summary>
     Fungible = 1,
+    /// <summary>
+    /// Non-fungible token (NFT) type.
+    /// </summary>
     NonFungible = 2
 }
 
@@ -453,6 +547,9 @@ public enum TokenType : byte
 /// </summary>
 public class TokenState : IInteroperable
 {
+    /// <summary>
+    /// Specifies the type of token represented by this instance.
+    /// </summary>
     public required TokenType Type;
 
     /// <summary>
@@ -513,10 +610,25 @@ public class TokenState : IInteroperable
 
 public class NFTState : IInteroperable
 {
+    /// <summary>
+    /// The asset id (collection) this NFT belongs to.
+    /// </summary>
     public required UInt160 AssetId;
+
+    /// <summary>
+    /// The account (owner) that currently owns this NFT.
+    /// </summary>
     public required UInt160 Owner;
+
+    /// <summary>
+    /// Arbitrary properties associated with this NFT. Keys are ByteString and values are ByteString or Buffer.
+    /// </summary>
     public required Map Properties;
 
+    /// <summary>
+    /// Populates this instance from a VM <see cref="StackItem"/> representation.
+    /// </summary>
+    /// <param name="stackItem">A <see cref="StackItem"/> expected to be a <see cref="Struct"/> with fields in the order: AssetId, Owner, Properties.</param>
     public void FromStackItem(StackItem stackItem)
     {
         Struct @struct = (Struct)stackItem;
@@ -525,6 +637,11 @@ public class NFTState : IInteroperable
         Properties = (Map)@struct[2];
     }
 
+    /// <summary>
+    /// Convert current NFTState to a VM <see cref="StackItem"/> (Struct).
+    /// </summary>
+    /// <param name="referenceCounter">Optional reference counter used by the VM.</param>
+    /// <returns>A <see cref="Struct"/> representing the NFTState.</returns>
     public StackItem ToStackItem(IReferenceCounter? referenceCounter)
     {
         return new Struct(referenceCounter) { AssetId.ToArray(), Owner.ToArray(), Properties };
