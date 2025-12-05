@@ -215,8 +215,7 @@ namespace Neo.Plugins
                     }
                     catch (Exception ex)
                     {
-                        Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {filename}");
-                        Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                        Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {filename}: {ex}");
                     }
                 }
             }
