@@ -168,7 +168,21 @@ namespace Neo.Plugins
 
         private static void LoadPlugin(Assembly assembly)
         {
-            foreach (var type in assembly.ExportedTypes)
+            Type[] exportedTypes;
+
+            var assemblyName = assembly.GetName().Name;
+
+            try
+            {
+                exportedTypes = (Type[])assembly.ExportedTypes;
+            }
+            catch (Exception ex)
+            {
+                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly {assemblyName}: {ex}");
+                throw;
+            }
+
+            foreach (var type in exportedTypes)
             {
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
@@ -182,7 +196,7 @@ namespace Neo.Plugins
                 }
                 catch (Exception ex)
                 {
-                    Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} of {assemblyName}: {ex}");
                 }
             }
         }
@@ -199,7 +213,10 @@ namespace Neo.Plugins
                     {
                         assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {filename}: {ex}");
+                    }
                 }
             }
 
