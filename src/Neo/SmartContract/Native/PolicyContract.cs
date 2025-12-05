@@ -56,6 +56,16 @@ namespace Neo.SmartContract.Native
         public const uint DefaultNotaryAssistedAttributeFee = 1000_0000;
 
         /// <summary>
+        /// The default max proof of node height.
+        /// </summary>
+        public const uint DefaultMaxProofOfNodeHeight = 10_000;
+
+        /// <summary>
+        /// The default proof of node difficulty.
+        /// </summary>
+        public const uint DefaultProofOfNodeDifficulty = 0x00FFFFFF;
+
+        /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
         public const ulong MaxExecFeeFactor = 100;
@@ -96,6 +106,8 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MillisecondsPerBlock = 21;
         private const byte Prefix_MaxValidUntilBlockIncrement = 22;
         private const byte Prefix_MaxTraceableBlocks = 23;
+        private const byte Prefix_MaxProofOfNodeHeight = 24;
+        private const byte Prefix_ProofOfNodeDifficulty = 25;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
@@ -103,6 +115,8 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
+        private readonly StorageKey _maxProofOfNodeHeight;
+        private readonly StorageKey _proofOfNodeDifficulty;
 
         /// <summary>
         /// The event name for the block generation time changed.
@@ -129,6 +143,8 @@ namespace Neo.SmartContract.Native
             _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
             _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
             _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
+            _maxProofOfNodeHeight = CreateStorageKey(Prefix_MaxProofOfNodeHeight);
+            _proofOfNodeDifficulty = CreateStorageKey(Prefix_ProofOfNodeDifficulty);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -146,11 +162,11 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
                 engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
             }
-
-            // After Faun Hardfork the unit it's pico-gas, before it was datoshi
-
             if (hardfork == Hardfork.HF_Faun)
             {
+                engine.SnapshotCache.Add(_maxProofOfNodeHeight, new StorageItem(DefaultMaxProofOfNodeHeight));
+                engine.SnapshotCache.Add(_proofOfNodeDifficulty, new StorageItem(DefaultProofOfNodeDifficulty));
+
                 // Add decimals to exec fee factor
                 var item = engine.SnapshotCache.TryGet(_execFeeFactor) ??
                     throw new InvalidOperationException("Policy was not initialized");
@@ -270,6 +286,28 @@ namespace Neo.SmartContract.Native
         public uint GetAttributeFeeV1(IReadOnlyStore snapshot, byte attributeType)
         {
             return GetAttributeFee(snapshot, attributeType, true);
+        }
+
+        /// <summary>
+        /// Gets the max proof of node height.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The proof of node height.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetMaxProofOfNodeHeight(IReadOnlyStore snapshot)
+        {
+            return (uint)(BigInteger)snapshot[_maxProofOfNodeHeight];
+        }
+
+        /// <summary>
+        /// Gets the max proof of node difficulty.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The proof of node height.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetProofOfLifeDifficulty(IReadOnlyStore snapshot)
+        {
+            return (uint)(BigInteger)snapshot[_proofOfNodeDifficulty];
         }
 
         /// <summary>
@@ -489,6 +527,26 @@ namespace Neo.SmartContract.Native
             AssertCommittee(engine);
 
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee, attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetMaxProofOfNodeHeight(ApplicationEngine engine, uint value)
+        {
+            var maxValue = GetMaxTraceableBlocks(engine.SnapshotCache);
+
+            if (value < 100 || value > maxValue)
+                throw new ArgumentOutOfRangeException(nameof(value), $"MaxProofOfNodeHeight must be between [100, {maxValue}], got {value}");
+            AssertCommittee(engine);
+
+            engine.SnapshotCache.GetAndChange(_maxProofOfNodeHeight)!.Set(value);
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetProofOfNodeDifficulty(ApplicationEngine engine, uint value)
+        {
+            AssertCommittee(engine);
+
+            engine.SnapshotCache.GetAndChange(_proofOfNodeDifficulty)!.Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
