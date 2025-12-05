@@ -25,8 +25,7 @@ namespace Neo.Plugins.Telemetry
     {
         public override string Name => "TelemetryPlugin";
         public override string Description => "Telemetry and metrics collection for Neo N3 full node";
-        // Note: ExceptionPolicy is protected internal in base class, accessible only within Neo assembly
-        // We use the default policy from settings loaded during Configure()
+        protected internal override UnhandledExceptionPolicy ExceptionPolicy => TelemetrySettings.Default.ExceptionPolicy;
 
         private NeoSystem? _system;
         private MetricServer? _metricServer;
@@ -94,8 +93,13 @@ namespace Neo.Plugins.Telemetry
                 Log($"Failed to start telemetry plugin: {ex.Message}", LogLevel.Error);
                 StopTelemetry();
 
-                // Re-throw to let the base Plugin class handle according to its ExceptionPolicy
-                throw;
+                if (ExceptionPolicy == UnhandledExceptionPolicy.StopNode)
+                {
+                    throw;
+                }
+
+                IsStopped = true;
+                Log("Telemetry plugin will be stopped per ExceptionPolicy", LogLevel.Warning);
             }
         }
 
