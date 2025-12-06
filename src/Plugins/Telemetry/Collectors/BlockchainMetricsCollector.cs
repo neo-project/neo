@@ -29,7 +29,7 @@ namespace Neo.Plugins.Telemetry.Collectors
         private readonly string _network;
         private readonly Stopwatch _blockPersistStopwatch = new();
         private DateTime _lastBlockTime = DateTime.UtcNow;
-        private bool _disposed;
+        private volatile bool _disposed;
 
         public BlockchainMetricsCollector(NeoSystem system, string nodeId, string network)
         {
