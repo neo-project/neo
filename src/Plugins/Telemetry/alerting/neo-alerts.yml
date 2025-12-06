@@ -1,0 +1,59 @@
+# Neo N3 Node Prometheus Alerting Rules
+groups:
+  - name: neo-node-critical
+    rules:
+      - alert: NeoNodeOutOfSync
+        expr: neo_blockchain_sync_status == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Neo node is out of sync"
+          description: "Node {{ $labels.node_id }} on {{ $labels.network }} is not synced"
+
+      - alert: NeoNodeNoPeers
+        expr: neo_network_peers_connected == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Neo node has no peers"
+          description: "Node {{ $labels.node_id }} has no connected peers"
+
+      - alert: NeoNodeFarBehind
+        expr: neo_blockchain_blocks_behind > 100
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Neo node is far behind"
+          description: "Node {{ $labels.node_id }} is {{ $value }} blocks behind"
+
+  - name: neo-node-performance
+    rules:
+      - alert: NeoNodeHighCPU
+        expr: neo_system_cpu_usage_ratio > 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Neo node high CPU usage"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+
+      - alert: NeoMempoolNearlyFull
+        expr: neo_mempool_utilization_ratio > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Neo mempool is nearly full"
+          description: "Mempool utilization is {{ $value | humanizePercentage }}"
+
+      - alert: NeoNodeLowPeers
+        expr: neo_network_peers_connected < 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Neo node has low peer count"
+          description: "Only {{ $value }} connected peers"

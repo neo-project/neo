@@ -1,0 +1,21 @@
+# Prometheus scrape configuration for Neo N3 nodes
+# Add this to your prometheus.yml scrape_configs section
+
+scrape_configs:
+  - job_name: 'neo-node'
+    static_configs:
+      - targets: ['localhost:9100']
+        labels:
+          instance: 'neo-node-1'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+
+# For multiple nodes:
+# scrape_configs:
+#   - job_name: 'neo-nodes'
+#     static_configs:
+#       - targets:
+#         - 'node1.example.com:9100'
+#         - 'node2.example.com:9100'
+#         - 'node3.example.com:9100'
