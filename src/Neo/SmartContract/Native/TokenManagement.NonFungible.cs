@@ -40,9 +40,9 @@ partial class TokenManagement
     /// <param name="symbol">The NFT collection symbol (2-6 characters).</param>
     /// <returns>The asset <see cref="UInt160"/> identifier generated for the new NFT collection.</returns>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    internal UInt160 CreateNFT(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol)
+    internal UInt160 CreateNonFungible(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol)
     {
-        return CreateNFT(engine, name, symbol, BigInteger.MinusOne);
+        return CreateNonFungible(engine, name, symbol, BigInteger.MinusOne);
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ partial class TokenManagement
     /// <exception cref="ArgumentOutOfRangeException">If <paramref name="maxSupply"/> is less than -1.</exception>
     /// <exception cref="InvalidOperationException">If a collection with the same id already exists.</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    internal UInt160 CreateNFT(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, BigInteger maxSupply)
+    internal UInt160 CreateNonFungible(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, BigInteger maxSupply)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxSupply, BigInteger.MinusOne);
         UInt160 owner = engine.CallingScriptHash!;
