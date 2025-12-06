@@ -64,12 +64,13 @@ public class TokenState : IInteroperable
     public void FromStackItem(StackItem stackItem)
     {
         Struct @struct = (Struct)stackItem;
-        Owner = new UInt160(@struct[0].GetSpan());
-        Name = @struct[1].GetString()!;
-        Symbol = @struct[2].GetString()!;
-        Decimals = (byte)@struct[3].GetInteger();
-        TotalSupply = @struct[4].GetInteger();
-        MaxSupply = @struct[5].GetInteger();
+        Type = (TokenType)(byte)@struct[0].GetInteger();
+        Owner = new UInt160(@struct[1].GetSpan());
+        Name = @struct[2].GetString()!;
+        Symbol = @struct[3].GetString()!;
+        Decimals = (byte)@struct[4].GetInteger();
+        TotalSupply = @struct[5].GetInteger();
+        MaxSupply = @struct[6].GetInteger();
     }
 
     /// <summary>
@@ -79,6 +80,6 @@ public class TokenState : IInteroperable
     /// <returns>A <see cref="Struct"/> containing the token fields in order.</returns>
     public StackItem ToStackItem(IReferenceCounter? referenceCounter)
     {
-        return new Struct(referenceCounter) { Owner.ToArray(), Name, Symbol, Decimals, TotalSupply, MaxSupply };
+        return new Struct(referenceCounter) { (byte)Type, Owner.ToArray(), Name, Symbol, Decimals, TotalSupply, MaxSupply };
     }
 }
