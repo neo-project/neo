@@ -26,7 +26,7 @@ namespace Neo.Plugins.Telemetry.Collectors
         private readonly string _nodeId;
         private readonly string _network;
         private LocalNode? _localNode;
-        private bool _disposed;
+        private volatile bool _disposed;
 
         public NetworkMetricsCollector(NeoSystem system, string nodeId, string network)
         {

@@ -164,7 +164,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Close close:
-                    ConnectionChanged?.Invoke(_system, Remote, _connectionDirection, false, close.Reason);
+                    ConnectionChanged?.Invoke(_system, Remote, _connectionDirection, false, "closed");
                     break;
                 case Timer _:
                     OnTimer();

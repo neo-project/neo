@@ -23,7 +23,7 @@ namespace Neo.Plugins.Telemetry.Collectors
         private readonly NeoSystem _system;
         private readonly string _nodeId;
         private readonly string _network;
-        private bool _disposed;
+        private volatile bool _disposed;
 
         public PluginMetricsCollector(NeoSystem system, string nodeId, string network)
         {

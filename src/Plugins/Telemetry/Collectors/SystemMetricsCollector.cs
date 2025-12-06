@@ -25,7 +25,7 @@ namespace Neo.Plugins.Telemetry.Collectors
         private readonly DateTime _processStartTime;
         private TimeSpan _lastTotalProcessorTime;
         private DateTime _lastCpuCheckTime;
-        private bool _disposed;
+        private volatile bool _disposed;
 
         public SystemMetricsCollector(string nodeId, string network)
         {
