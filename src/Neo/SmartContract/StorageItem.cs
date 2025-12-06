@@ -137,9 +137,9 @@ public class StorageItem : ISerializable
     /// Increases the integer value in the store by the specified value.
     /// </summary>
     /// <param name="integer">The integer to add.</param>
-    public void Add(BigInteger integer)
+    public BigInteger Add(BigInteger integer)
     {
-        Set(this + integer);
+        return Set(this + integer);
     }
 
     /// <summary>
@@ -277,10 +277,11 @@ public class StorageItem : ISerializable
     /// Sets the integer value of the storage.
     /// </summary>
     /// <param name="integer">The integer value to set.</param>
-    public void Set(BigInteger integer)
+    public BigInteger Set(BigInteger integer)
     {
         _cache = integer;
         _value = null;
+        return integer;
     }
 
     public static implicit operator BigInteger(StorageItem item)

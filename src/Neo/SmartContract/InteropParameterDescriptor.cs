@@ -64,6 +64,7 @@ public class InteropParameterDescriptor
         [typeof(StackItem)] = p => p,
         [typeof(Pointer)] = p => p,
         [typeof(Array)] = p => p,
+        [typeof(Map)] = p => p,
         [typeof(InteropInterface)] = p => p,
         [typeof(bool)] = p => p.GetBoolean(),
         [typeof(sbyte)] = p => (sbyte)p.GetInteger(),
