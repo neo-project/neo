@@ -164,10 +164,9 @@ namespace Neo.UnitTests.Ledger
         {
             // Add over the capacity items, verify that the verified count increases each time
 
-            var cancel = new CancelEventHandler((o, c) => { c.Cancel = true; });
-            _unit.TransactionNew += cancel;
+            _unit.PolicyValidator = new Func<Transaction, IReadOnlyStore, bool>((tx, sn) => false);
             AddTransactions(1);
-            _unit.TransactionNew -= cancel;
+            _unit.PolicyValidator = null;
 
             Assert.AreEqual(0, _unit.SortedTxCount);
             Assert.AreEqual(0, _unit.VerifiedCount);

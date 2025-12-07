@@ -15,7 +15,6 @@ using Neo.Persistence;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -28,7 +27,6 @@ namespace Neo.Ledger
     /// </summary>
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
-        public event CancelEventHandler? TransactionNew;
         public event EventHandler<Transaction>? TransactionAdded;
         public event EventHandler<TransactionRemovedEventArgs>? TransactionRemoved;
 
@@ -118,6 +116,13 @@ namespace Neo.Ledger
         /// Total count of unverified transactions in the pool.
         /// </summary>
         public int UnVerifiedCount => _unverifiedTransactions.Count;
+
+        /// <summary>
+        /// Transaction policy validator function.
+        /// This function will be called to validate each transaction before adding it to the pool.
+        /// If the function returns false, the transaction will be rejected.
+        /// </summary>
+        public Func<Transaction, IReadOnlyStore, bool>? PolicyValidator { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryPool"/> class.
@@ -309,11 +314,9 @@ namespace Neo.Ledger
 
         internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
         {
-            if (TransactionNew != null)
+            if (PolicyValidator != null)
             {
-                var args = new CancelEventArgs();
-                TransactionNew.Invoke(this, args);
-                if (args.Cancel) return VerifyResult.PolicyFail;
+                if (!PolicyValidator(tx, snapshot)) return VerifyResult.PolicyFail;
             }
 
             var poolItem = new PoolItem(tx);
