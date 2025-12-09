@@ -118,6 +118,13 @@ namespace Neo.Ledger
         public int UnVerifiedCount => _unverifiedTransactions.Count;
 
         /// <summary>
+        /// Transaction policy validator function.
+        /// This function will be called to validate each transaction before adding it to the pool.
+        /// If the function returns false, the transaction will be rejected.
+        /// </summary>
+        public Func<Transaction, IReadOnlyStore, bool>? PolicyValidator { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="MemoryPool"/> class.
         /// </summary>
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="MemoryPool"/>.</param>
@@ -307,6 +314,11 @@ namespace Neo.Ledger
 
         internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
         {
+            if (PolicyValidator != null)
+            {
+                if (!PolicyValidator(tx, snapshot)) return VerifyResult.PolicyFail;
+            }
+
             var poolItem = new PoolItem(tx);
 
             if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;

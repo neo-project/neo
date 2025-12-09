@@ -23,6 +23,7 @@ using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -156,6 +157,21 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(100, _unit.VerifiedCount);
             Assert.AreEqual(0, _unit.UnVerifiedCount);
             Assert.HasCount(100, _unit);
+        }
+
+        [TestMethod]
+        public void CancelTest()
+        {
+            // Add over the capacity items, verify that the verified count increases each time
+
+            _unit.PolicyValidator = new Func<Transaction, IReadOnlyStore, bool>((tx, sn) => false);
+            AddTransactions(1);
+            _unit.PolicyValidator = null;
+
+            Assert.AreEqual(0, _unit.SortedTxCount);
+            Assert.AreEqual(0, _unit.VerifiedCount);
+            Assert.AreEqual(0, _unit.UnVerifiedCount);
+            Assert.HasCount(0, _unit);
         }
 
         [TestMethod]
