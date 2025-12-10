@@ -83,6 +83,9 @@
   <a href='https://coveralls.io/github/neo-project/neo'>
     <img src='https://coveralls.io/repos/github/neo-project/neo/badge.svg' alt='Coverage Status' />
   </a>
+  <a href="https://deepwiki.com/neo-project/neo">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki.">
+  </a>
   <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License.">
   </a>
