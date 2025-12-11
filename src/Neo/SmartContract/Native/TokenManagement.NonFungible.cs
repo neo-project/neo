@@ -140,7 +140,7 @@ partial class TokenManagement
         {
             AssetId = assetId,
             Owner = account,
-            Properties = properties
+            Properties = (Map)properties.DeepCopy(asImmutable: true)
         }));
         await PostNFTTransferAsync(engine, uniqueId, null, account, StackItem.Null, callOnPayment: true);
         return uniqueId;
