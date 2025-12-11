@@ -650,7 +650,7 @@ namespace Neo.SmartContract.Native
             var entry = engine.SnapshotCache.GetAndChange(key, null)
                 ?? throw new InvalidOperationException("Request not found.");
             if (engine.GetTime() - (BigInteger)entry < RequiredTimeForRecoverFunds)
-                throw new InvalidOperationException("Request must be signed at 6 months ago.");
+                throw new InvalidOperationException("Request must be signed at least 1 year ago.");
 
             // Validate and collect extra NEP17 tokens
 
