@@ -326,8 +326,7 @@ namespace Neo.Network.P2P
                 case Block block:
                     {
                         UpdateLastBlockIndex(block.Index);
-                        var snapshot = _system.StoreView;
-                        if (block.Index > NativeContract.Ledger.CurrentIndex(snapshot) + InvPayload.MaxHashesCount) return;
+                        if (block.Index > NativeContract.Ledger.CurrentIndex(_system.StoreView) + InvPayload.MaxHashesCount) return;
                         _system.Blockchain.Tell(inventory);
                         break;
                     }
@@ -377,8 +376,7 @@ namespace Neo.Network.P2P
         private void OnPingMessageReceived(PingPayload payload)
         {
             UpdateLastBlockIndex(payload.LastBlockIndex);
-            var snapshot = _system.StoreView;
-            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(snapshot), payload.Nonce)));
+            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView), payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
@@ -429,8 +427,7 @@ namespace Neo.Network.P2P
             }
             if (oneMinuteAgo > _lastSent)
             {
-                var snapshot = _system.StoreView;
-                EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(snapshot))));
+                EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_system.StoreView))));
             }
         }
 
