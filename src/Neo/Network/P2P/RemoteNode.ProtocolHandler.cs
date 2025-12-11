@@ -323,12 +323,10 @@ namespace Neo.Network.P2P
                         _system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
                     break;
                 case Block block:
-                    {
-                        UpdateLastBlockIndex(block.Index);
-                        if (block.Index > NativeContract.Ledger.CurrentIndex(_system.StoreView) + InvPayload.MaxHashesCount) return;
-                        _system.Blockchain.Tell(inventory);
-                        break;
-                    }
+                    UpdateLastBlockIndex(block.Index);
+                    if (block.Index > NativeContract.Ledger.CurrentIndex(_system.StoreView) + InvPayload.MaxHashesCount) return;
+                    _system.Blockchain.Tell(inventory);
+                    break;
                 default:
                     _system.Blockchain.Tell(inventory);
                     break;
@@ -375,7 +373,7 @@ namespace Neo.Network.P2P
         private void OnPingMessageReceived(PingPayload payload)
         {
             UpdateLastBlockIndex(payload.LastBlockIndex);
-            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView), payload.Nonce)));
+            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_system.StoreView), payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
@@ -425,9 +423,7 @@ namespace Neo.Network.P2P
                 if (!_pendingKnownHashes.RemoveFirst()) break;
             }
             if (oneMinuteAgo > _lastSent)
-            {
                 EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_system.StoreView))));
-            }
         }
 
         private void UpdateLastBlockIndex(uint lastBlockIndex)
