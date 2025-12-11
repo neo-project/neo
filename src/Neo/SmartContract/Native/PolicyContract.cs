@@ -126,6 +126,8 @@ namespace Neo.SmartContract.Native
             "argCount", ContractParameterType.Integer,
             "fee", ContractParameterType.Any
         )]
+        [ContractEvent(Hardfork.HF_Faun, 2, name: RecoverFundsStartEventName, "account", ContractParameterType.Hash160)]
+        [ContractEvent(Hardfork.HF_Faun, 3, name: RecoverFundsEndsEventName, "account", ContractParameterType.Hash160)]
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
