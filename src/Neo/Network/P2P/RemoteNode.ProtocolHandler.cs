@@ -189,7 +189,7 @@ namespace Neo.Network.P2P
         {
             // The default value of payload.Count is -1
             int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
-            using var snapshot = _system.StoreView;
+            var snapshot = _system.StoreView;
             UInt256? hash = payload.HashStart;
             TrimmedBlock? state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
             if (state == null) return;
@@ -210,7 +210,7 @@ namespace Neo.Network.P2P
 
         private void OnGetBlockByIndexMessageReceived(GetBlockByIndexPayload payload)
         {
-            using var snapshot = _system.StoreView;
+            var snapshot = _system.StoreView;
             uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
             for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
@@ -239,7 +239,7 @@ namespace Neo.Network.P2P
         /// <param name="payload">The payload containing the requested information.</param>
         private void OnGetDataMessageReceived(InvPayload payload)
         {
-            using var snapshot = _system.StoreView;
+            var snapshot = _system.StoreView;
             var notFound = new List<UInt256>();
             foreach (var hash in payload.Hashes.Where(_sentHashes.TryAdd))
             {
@@ -292,7 +292,7 @@ namespace Neo.Network.P2P
         /// <param name="payload">A GetBlockByIndexPayload including start block index and number of blocks' headers requested.</param>
         private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
         {
-            using var snapshot = _system.StoreView;
+            var snapshot = _system.StoreView;
             if (payload.IndexStart > NativeContract.Ledger.CurrentIndex(snapshot)) return;
             var headers = new List<Header>();
             uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
@@ -326,7 +326,7 @@ namespace Neo.Network.P2P
                 case Block block:
                     {
                         UpdateLastBlockIndex(block.Index);
-                        using var snapshot = _system.StoreView;
+                        var snapshot = _system.StoreView;
                         if (block.Index > NativeContract.Ledger.CurrentIndex(snapshot) + InvPayload.MaxHashesCount) return;
                         _system.Blockchain.Tell(inventory);
                         break;
@@ -346,13 +346,13 @@ namespace Neo.Network.P2P
             {
                 case InventoryType.Block:
                     {
-                        using var snapshot = _system.StoreView;
+                        var snapshot = _system.StoreView;
                         hashes = source.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
                         break;
                     }
                 case InventoryType.TX:
                     {
-                        using var snapshot = _system.StoreView;
+                        var snapshot = _system.StoreView;
                         hashes = source.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
                         break;
                     }
@@ -377,7 +377,7 @@ namespace Neo.Network.P2P
         private void OnPingMessageReceived(PingPayload payload)
         {
             UpdateLastBlockIndex(payload.LastBlockIndex);
-            using var snapshot = _system.StoreView;
+            var snapshot = _system.StoreView;
             EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(snapshot), payload.Nonce)));
         }
 
@@ -429,7 +429,7 @@ namespace Neo.Network.P2P
             }
             if (oneMinuteAgo > _lastSent)
             {
-                using var snapshot = _system.StoreView;
+                var snapshot = _system.StoreView;
                 EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(snapshot))));
             }
         }
