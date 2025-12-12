@@ -78,7 +78,7 @@ namespace Neo.Plugins
         /// The plugin will be stopped if an exception is thrown.
         /// But it also depends on <see cref="UnhandledExceptionPolicy"/>.
         /// </summary>
-        internal bool IsStopped { get; set; }
+        protected internal bool IsStopped { get; set; }
 
         static Plugin()
         {
