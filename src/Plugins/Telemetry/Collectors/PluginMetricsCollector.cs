@@ -11,7 +11,6 @@
 
 using Neo.Network.P2P;
 using Neo.Plugins.Telemetry.Metrics;
-using System.Reflection;
 
 namespace Neo.Plugins.Telemetry.Collectors
 {
@@ -32,7 +31,7 @@ namespace Neo.Plugins.Telemetry.Collectors
             _network = network ?? throw new ArgumentNullException(nameof(network));
 
             // Set node info metric
-            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+            var version = _system.GetType().Assembly.GetName().Version?.ToString() ?? "unknown";
             var protocolVersion = LocalNode.ProtocolVersion.ToString();
             MetricsDefinitions.NodeInfo.WithLabels(_nodeId, _network, version, protocolVersion).Set(1);
         }

@@ -50,7 +50,8 @@ namespace Neo.Plugins.Telemetry
         {
             TelemetrySettings.Load(GetConfiguration());
             Log($"Configuration loaded - Enabled: {TelemetrySettings.Default.Enabled}, " +
-                $"Port: {TelemetrySettings.Default.PrometheusPort}", LogLevel.Info);
+                $"Port: {TelemetrySettings.Default.PrometheusPort}, " +
+                $"ExceptionPolicy: {TelemetrySettings.Default.ExceptionPolicy}", LogLevel.Info);
         }
 
         protected internal override void OnSystemLoaded(NeoSystem system)
