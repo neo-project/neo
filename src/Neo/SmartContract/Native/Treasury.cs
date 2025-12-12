@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Native
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
-            manifest.SupportedStandards = ["NEP-26", "NEP-27"];
+            manifest.SupportedStandards = ["NEP-26", "NEP-27", "NEP-30"];
         }
 
         /// <summary>
