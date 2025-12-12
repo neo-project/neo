@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Plugins.Telemetry.Collectors;
+using Neo.Plugins.Telemetry.Health;
 using Prometheus;
 using System.Timers;
 using Timer = System.Timers.Timer;
@@ -27,6 +28,7 @@ namespace Neo.Plugins.Telemetry
 
 	        private NeoSystem? _system;
 	        private MetricServer? _metricServer;
+	        private HealthCheckEndpoint? _healthEndpoint;
 	        private Timer? _collectionTimer;
 
         // Collectors
@@ -73,11 +75,14 @@ namespace Neo.Plugins.Telemetry
                 // Initialize collectors based on configuration
                 InitializeCollectors(system, nodeId, networkName);
 
-	                // Start Prometheus metric server
-	                StartMetricServer();
+		                // Start Prometheus metric server
+		                StartMetricServer();
 
-	                // Start periodic collection timer
-	                StartCollectionTimer();
+		                // Start health endpoint
+		                StartHealthEndpoint();
+
+		                // Start periodic collection timer
+		                StartCollectionTimer();
 
                 _isRunning = true;
                 var path = TelemetrySettings.Default.PrometheusPath;
@@ -167,21 +172,39 @@ namespace Neo.Plugins.Telemetry
             }
         }
 
-	        private void StartCollectionTimer()
-	        {
-	            var intervalMs = TelemetrySettings.Default.SystemMetricsIntervalMs;
+		        private void StartCollectionTimer()
+		        {
+		            var intervalMs = TelemetrySettings.Default.SystemMetricsIntervalMs;
 
             _collectionTimer = new Timer(intervalMs);
             _collectionTimer.Elapsed += OnCollectionTimerElapsed;
             _collectionTimer.AutoReset = true;
             _collectionTimer.Start();
 
-	            Log($"Metrics collection timer started with interval {intervalMs}ms", LogLevel.Debug);
+		            Log($"Metrics collection timer started with interval {intervalMs}ms", LogLevel.Debug);
+		        }
+
+	        private void StartHealthEndpoint()
+	        {
+	            var settings = TelemetrySettings.Default;
+
+	            try
+	            {
+	                var host = settings.PrometheusHost;
+	                var port = settings.HealthPort ?? settings.PrometheusPort;
+
+	                _healthEndpoint = new HealthCheckEndpoint(_system!, host, port, settings.NodeId, settings.NetworkName);
+	                Log($"Health endpoints started at http://{host}:{port}/health", LogLevel.Info);
+	            }
+	            catch (Exception ex)
+	            {
+	                Log($"Failed to start health endpoint: {ex.Message}", LogLevel.Warning);
+	            }
 	        }
 
-	        private void OnCollectionTimerElapsed(object? sender, ElapsedEventArgs e)
-	        {
-	            if (!_isRunning) return;
+		        private void OnCollectionTimerElapsed(object? sender, ElapsedEventArgs e)
+		        {
+		            if (!_isRunning) return;
 
             try
             {
@@ -242,12 +265,14 @@ namespace Neo.Plugins.Telemetry
 
                 _blockchainCollector = null;
                 _networkCollector = null;
-                _mempoolCollector = null;
-	                _systemCollector = null;
-	                _pluginCollector = null;
+		                _mempoolCollector = null;
+		                _systemCollector = null;
+		                _pluginCollector = null;
+		                _healthEndpoint?.Dispose();
+		                _healthEndpoint = null;
 
-	                Log("Telemetry plugin shut down successfully", LogLevel.Info);
-	            }
+		                Log("Telemetry plugin shut down successfully", LogLevel.Info);
+		            }
             catch (Exception ex)
             {
                 Log($"Error during telemetry plugin shutdown: {ex.Message}", LogLevel.Warning);

@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
 using Neo.Json;
+using Neo.Network.P2P;
 using Neo.SmartContract.Native;
 using System.Net;
 using System.Text;
@@ -27,6 +29,7 @@ namespace Neo.Plugins.Telemetry.Health
         private readonly Task _listenerTask;
         private readonly string _nodeId;
         private readonly string _network;
+        private LocalNode? _localNode;
         private bool _disposed;
 
         public HealthCheckEndpoint(NeoSystem system, string host, int port, string nodeId, string network)
@@ -41,6 +44,8 @@ namespace Neo.Plugins.Telemetry.Health
             _listener.Prefixes.Add($"http://{host}:{port}/ready/");
             _listener.Prefixes.Add($"http://{host}:{port}/live/");
 
+            InitializeLocalNode();
+
             try
             {
                 _listener.Start();
@@ -54,6 +59,19 @@ namespace Neo.Plugins.Telemetry.Health
                     $"Failed to start health check endpoint: {ex.Message}");
                 _listener = null!;
                 _listenerTask = Task.CompletedTask;
+            }
+        }
+
+        private async void InitializeLocalNode()
+        {
+            try
+            {
+                _localNode = await _system.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance());
+            }
+            catch (Exception ex)
+            {
+                Utility.Log(nameof(HealthCheckEndpoint), LogLevel.Debug,
+                    $"Failed to get LocalNode instance for health checks: {ex.Message}");
             }
         }
 
@@ -121,15 +139,16 @@ namespace Neo.Plugins.Telemetry.Health
             {
                 var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
                 var headerHeight = _system.HeaderCache.Last?.Index ?? currentHeight;
-                var blocksBehind = headerHeight - currentHeight;
+                var blocksBehind = headerHeight >= currentHeight ? headerHeight - currentHeight : 0;
                 var isSynced = blocksBehind <= 2;
-                var peerCount = 0;
+                int? peerCount = _localNode?.ConnectedCount;
+                var hasPeers = peerCount is null || peerCount > 0;
 
                 var memPool = _system.MemPool;
                 var mempoolCount = memPool.Count;
                 var mempoolCapacity = memPool.Capacity;
 
-                var status = isSynced && peerCount >= 0 ? "healthy" : "degraded";
+                var status = isSynced && hasPeers ? "healthy" : "degraded";
 
                 return new JObject
                 {
@@ -146,6 +165,11 @@ namespace Neo.Plugins.Telemetry.Health
                             ["header_height"] = headerHeight,
                             ["blocks_behind"] = blocksBehind,
                             ["synced"] = isSynced
+                        },
+                        ["network"] = new JObject
+                        {
+                            ["status"] = hasPeers ? "healthy" : "degraded",
+                            ["connected_peers"] = peerCount ?? 0
                         },
                         ["mempool"] = new JObject
                         {
@@ -174,13 +198,19 @@ namespace Neo.Plugins.Telemetry.Health
             {
                 var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
                 var headerHeight = _system.HeaderCache.Last?.Index ?? currentHeight;
-                var isSynced = (headerHeight - currentHeight) <= 2;
+                var blocksBehind = headerHeight >= currentHeight ? headerHeight - currentHeight : 0;
+                var isSynced = blocksBehind <= 2;
+                int? peerCount = _localNode?.ConnectedCount;
+                var hasPeers = peerCount is null || peerCount > 0;
+                var ready = isSynced && hasPeers;
 
                 return new JObject
                 {
-                    ["status"] = isSynced ? "healthy" : "not_ready",
+                    ["status"] = ready ? "healthy" : "not_ready",
                     ["timestamp"] = DateTime.UtcNow.ToString("O"),
                     ["synced"] = isSynced,
+                    ["blocks_behind"] = blocksBehind,
+                    ["connected_peers"] = peerCount ?? 0,
                     ["block_height"] = currentHeight
                 };
             }
