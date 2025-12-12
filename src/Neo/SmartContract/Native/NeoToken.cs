@@ -285,6 +285,11 @@ namespace Neo.SmartContract.Native
 
                     if (withFlatRewards)
                     {
+                        if (votersCount.IsZero)
+                        {
+                            // Skip reward distribution when there are no voters
+                            continue;
+                        }
                         BigInteger voterSumRewardPerNEO = voterRewardOfEachCommittee / votersCount;
                         StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
                         StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
