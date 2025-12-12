@@ -620,7 +620,7 @@ namespace Neo.SmartContract.Native
 
         #region Recover Funds
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates | CallFlags.AllowNotify)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         public void RecoverFundsStart(ApplicationEngine engine, UInt160 account)
         {
             AssertAlmostFullCommittee(engine);
@@ -641,7 +641,7 @@ namespace Neo.SmartContract.Native
             engine.SendNotification(Hash, RecoverFundsStartEventName, [new ByteString(account.ToArray())]);
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates | CallFlags.AllowNotify)]
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         public void RecoverFundsFinish(ApplicationEngine engine, UInt160 account, VM.Types.Array extraTokens)
         {
             var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
@@ -688,6 +688,11 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Duplicate token {contractHash} in extraTokens.");
             }
 
+            // Remove and notify
+
+            engine.SnapshotCache.Delete(key);
+            engine.SendNotification(Hash, RecoverFundsEndsEventName, [new VM.Types.ByteString(account.ToArray())]);
+
             // Transfer funds, NEO, GAS and extra NEP17 tokens
 
             foreach (var contractHash in validatedTokens)
@@ -719,15 +724,10 @@ namespace Neo.SmartContract.Native
                     }
                 }
             }
-
-            // Remove and notify
-
-            engine.SnapshotCache.Delete(key);
-            engine.SendNotification(Hash, RecoverFundsEndsEventName, [new VM.Types.ByteString(account.ToArray())]);
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private StorageIterator GetRecoverOfFunds(DataCache snapshot)
+        private StorageIterator GetFundsRecoverRequests(DataCache snapshot)
         {
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_BlockedAccountRequestFunds), SeekDirection.Forward)
