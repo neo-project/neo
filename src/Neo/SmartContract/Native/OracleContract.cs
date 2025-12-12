@@ -15,11 +15,13 @@ using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -50,6 +52,16 @@ namespace Neo.SmartContract.Native
             "Id", ContractParameterType.Integer,
             "OriginalTx", ContractParameterType.Hash256)]
         internal OracleContract() : base() { }
+
+        public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_Faun]; // supported standards update at Faun.
+
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+        {
+            if (hfChecker(Hardfork.HF_Faun, blockHeight))
+            {
+                manifest.SupportedStandards = ["NEP-30"];
+            }
+        }
 
         /// <summary>
         /// Sets the price for an Oracle request. Only committee members can call this method.
