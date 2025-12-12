@@ -15,19 +15,19 @@ A comprehensive telemetry and metrics collection plugin for Neo N3 full nodes, p
 
 1. Build the plugin:
 ```bash
-dotnet build src/Plugins/TelemetryPlugin/TelemetryPlugin.csproj
+dotnet build src/Plugins/Telemetry/Telemetry.csproj
 ```
 
-2. Copy the output to your Neo node's `Plugins/TelemetryPlugin/` directory:
+2. Copy the output to your Neo node's `Plugins/Telemetry/` directory:
 ```bash
-cp -r bin/Debug/net10.0/* /path/to/neo-node/Plugins/TelemetryPlugin/
+cp -r bin/Debug/net10.0/* /path/to/neo-node/Plugins/Telemetry/
 ```
 
 3. Configure the plugin by editing `config.json` in the plugin directory.
 
 ## Configuration
 
-Create or edit `config.json` in the `Plugins/TelemetryPlugin/` directory:
+Create or edit `config.json` in the `Plugins/Telemetry/` directory:
 
 ```json
 {
@@ -170,7 +170,7 @@ Import the provided Grafana dashboard JSON for a pre-configured monitoring view:
 
 1. Open Grafana
 2. Go to Dashboards → Import
-3. Upload `grafana-dashboard.json` or paste the JSON content
+3. Upload `dashboards/neo-node-dashboard.json` or paste the JSON content
 4. Select your Prometheus data source
 5. Click Import
 
