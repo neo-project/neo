@@ -279,17 +279,18 @@ namespace Neo.SmartContract.Native
                     gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100;    // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
                 var votersCount = (BigInteger)engine.SnapshotCache[_votersCount];
 
+                if (withFlatRewards && votersCount.IsZero)
+                {
+                    // Skip reward distribution when there are no voters
+                    return;
+                }
+
                 for (index = 0; index < committee.Count; index++)
                 {
                     var (publicKey, votes) = committee[index];
 
                     if (withFlatRewards)
                     {
-                        if (votersCount.IsZero)
-                        {
-                            // Skip reward distribution when there are no voters
-                            continue;
-                        }
                         BigInteger voterSumRewardPerNEO = voterRewardOfEachCommittee / votersCount;
                         StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
                         StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
