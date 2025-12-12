@@ -21,6 +21,7 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -47,6 +48,8 @@ namespace Neo.SmartContract.Native
         internal Notary() : base() { }
 
         public override Hardfork? ActiveIn => Hardfork.HF_Echidna;
+
+        public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_Faun]; // supported standards update at Faun.
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
@@ -90,7 +93,14 @@ namespace Neo.SmartContract.Native
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
-            manifest.SupportedStandards = ["NEP-27"];
+            if (hfChecker(Hardfork.HF_Faun, blockHeight))
+            {
+                manifest.SupportedStandards = ["NEP-27", "NEP-30"];
+            }
+            else
+            {
+                manifest.SupportedStandards = ["NEP-27"];
+            }
         }
 
         /// <summary>
