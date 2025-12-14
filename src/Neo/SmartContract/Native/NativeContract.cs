@@ -370,7 +370,8 @@ namespace Neo.SmartContract.Native
             // Signed by 19/21 committee members
 
             var committees = NativeContract.NEO.GetCommittee(engine.SnapshotCache);
-            var committeeMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(1, committees.Length - 2), committees).ToScriptHash();
+            var committeeMultiSigAddr = committees.Length == 1 ? Contract.CreateSignatureRedeemScript(committees[0]).ToScriptHash() :
+                Contract.CreateMultiSigRedeemScript(Math.Max(1, committees.Length - 2), committees).ToScriptHash();
 
             if (!engine.CheckWitnessInternal(committeeMultiSigAddr))
                 throw new InvalidOperationException("Invalid committee signature. It should be a multisig(max(1,len(committee) - 2))).");
