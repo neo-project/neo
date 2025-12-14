@@ -142,7 +142,7 @@ public sealed class Block : IEquatable<Block>, IInventory
         return Hash.GetHashCode();
     }
 
-    UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot) => ((IVerifiable)Header).GetScriptHashesForVerifying(snapshot);
+    UInt160[] IVerifiable.GetScriptHashesForVerifying(IReadOnlyStore? snapshot = null) => ((IVerifiable)Header).GetScriptHashesForVerifying(snapshot);
 
     public void Serialize(BinaryWriter writer)
     {

@@ -103,7 +103,7 @@ public class ExtensiblePayload : IInventory
         Data = reader.ReadVarMemory();
     }
 
-    UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
+    UInt160[] IVerifiable.GetScriptHashesForVerifying(IReadOnlyStore? snapshot = null)
     {
         return new[] { Sender }; // This address should be checked by consumer
     }
