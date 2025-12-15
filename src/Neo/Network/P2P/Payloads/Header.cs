@@ -152,8 +152,7 @@ public sealed class Header : IEquatable<Header>, IVerifiable
     UInt160[] IVerifiable.GetScriptHashesForVerifying(IReadOnlyStore? snapshot)
     {
         if (PrevHash == UInt256.Zero) return [Witness.ScriptHash];
-        if (snapshot == null)
-            throw new InvalidOperationException("Snapshot is required");
+        ArgumentNullException.ThrowIfNull(snapshot);
 
         var prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash)
             ?? throw new InvalidOperationException($"Block {PrevHash} was not found");
