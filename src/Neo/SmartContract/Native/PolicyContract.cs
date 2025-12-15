@@ -699,7 +699,7 @@ namespace Neo.SmartContract.Native
             {
                 engine.CallContract(contractHash, "balanceOf", CallFlags.ReadOnly, new VM.Types.Array(engine.ReferenceCounter, [account.ToArray()]));
 
-                var balance = engine.Pop<Integer>().GetInteger();
+                var balance = engine.Pop().GetInteger();
 
                 if (balance > 0)
                 {
