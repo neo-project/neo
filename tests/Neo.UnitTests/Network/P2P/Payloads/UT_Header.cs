@@ -12,6 +12,8 @@
 using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System.Runtime.CompilerServices;
 
@@ -134,5 +136,78 @@ public class UT_Header
         IVerifiable item = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header));
         item.Witnesses = [new()];
         Assert.HasCount(1, item.Witnesses);
+    }
+
+    [TestMethod]
+    public void TestGetScriptHashesForVerifying_NullSnapshot()
+    {
+        var account1 = UInt160.Parse("0x0100000000000000000000000000000000000000");
+        var account2 = UInt160.Parse("0x0200000000000000000000000000000000000000");
+
+        var tx = new Transaction
+        {
+            Attributes = [],
+            Witnesses = [Witness.Empty],
+            Signers = new[]
+            {
+                new Signer { Account = account1 },
+                new Signer { Account = account2 }
+            }
+        };
+
+        var hashes = tx.GetScriptHashesForVerifying(null);
+        CollectionAssert.AreEqual(new[] { account1, account2 }, hashes);
+    }
+
+    [TestMethod]
+    public void TestGetScriptHashesForVerifying_NullSnapshotGetSender()
+    {
+        var sender = UInt160.Parse("0x0100000000000000000000000000000000000000");
+        var payload = new ExtensiblePayload
+        {
+            Category = "",
+            Witness = new() { },
+            Sender = sender
+        };
+        var hashes = ((IVerifiable)payload).GetScriptHashesForVerifying(null);
+        CollectionAssert.AreEqual(new[] { sender }, hashes);
+    }
+
+    [TestMethod]
+    public void TestGetScriptHashesForVerifying_NullSnapshotGetWitness()
+    {
+        var header = new Header
+        {
+            PrevHash = UInt256.Zero,
+            Witness = new Witness
+            {
+                InvocationScript = Array.Empty<byte>(),
+                VerificationScript = new byte[] { 0x01, 0x02, 0x03 }
+            },
+            MerkleRoot = UInt256.Zero,
+            NextConsensus = null!
+        };
+
+        var hashes = ((IVerifiable)header).GetScriptHashesForVerifying(null);
+
+        CollectionAssert.AreEqual(new[] { header.Witness.ScriptHash }, hashes);
+    }
+
+    [TestMethod]
+    public void TestGetScriptHashesForVerifying_NullSnapshotThrows()
+    {
+        var header = new Header
+        {
+            PrevHash = "0x0100000000000000000000000000000000000000000000000000000000000000",
+            Witness = new Witness
+            {
+                InvocationScript = Array.Empty<byte>(),
+                VerificationScript = new byte[] { 0x01 }
+            },
+            MerkleRoot = UInt256.Zero,
+            NextConsensus = null!
+        };
+
+        Assert.ThrowsExactly<ArgumentNullException>(() => ((IVerifiable)header).GetScriptHashesForVerifying(null));
     }
 }
