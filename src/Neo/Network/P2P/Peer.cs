@@ -12,6 +12,9 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions;
+using Neo.Network.P2P.Capabilities;
+using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P.Transports;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -21,6 +24,9 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.Versioning;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -44,6 +50,14 @@ namespace Neo.Network.P2P
         /// <param name="IsTrusted">Indicates whether the remote node is trusted. A trusted node will always be connected.</param>
         public record Connect(IPEndPoint EndPoint, bool IsTrusted);
 
+        internal record AdvertisedPeers(NetworkAddressWithTime[] AddressList);
+
+        private record QuicListenerReady(QuicTransportListener Listener);
+        private record QuicListenerFailed(Exception Exception);
+        private record QuicInboundConnected(ITransportConnection Connection);
+        private record QuicOutboundConnected(IPEndPoint Target, ITransportConnection Connection);
+        private record QuicOutboundFailed(IPEndPoint Target);
+
         private class Timer { }
 
         private static readonly IActorRef s_tcpManager = Context.System.Tcp();
@@ -55,6 +69,12 @@ namespace Neo.Network.P2P
         private static readonly HashSet<IPAddress> s_localAddresses = new();
 
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new();
+
+        private readonly Dictionary<IPEndPoint, ushort> _quicPortsByTcpEndPoint = new();
+        private readonly Dictionary<IPEndPoint, DateTime> _quicBackoffUntil = new();
+        private QuicTransportListener? _quicListener;
+        private CancellationTokenSource? _quicListenerCts;
+        private Task? _quicAcceptLoop;
 
         /// <summary>
         /// A dictionary that stores the connected nodes.
@@ -82,6 +102,11 @@ namespace Neo.Network.P2P
         /// The port listened by the local Tcp server.
         /// </summary>
         public int ListenerTcpPort { get; private set; }
+
+        /// <summary>
+        /// The port listened by the local QUIC server (UDP).
+        /// </summary>
+        public int ListenerQuicPort { get; private set; }
 
         /// <summary>
         /// Channel configuration.
@@ -149,8 +174,50 @@ namespace Neo.Network.P2P
             ImmutableInterlocked.Update(ref ConnectingPeers, p =>
             {
                 if ((p.Count >= ConnectingMax && !isTrusted) || p.Contains(endPoint)) return p;
-                s_tcpManager.Tell(new Tcp.Connect(endPoint));
+                if (Config.PreferQuic && QuicTransport.IsSupported && TryGetQuicTarget(endPoint, out var quicTarget))
+                {
+                    BeginQuicConnect(endPoint, quicTarget);
+                }
+                else
+                {
+                    s_tcpManager.Tell(new Tcp.Connect(endPoint));
+                }
                 return p.Add(endPoint);
+            });
+        }
+
+        private bool TryGetQuicTarget(IPEndPoint tcpEndPoint, out IPEndPoint quicTarget)
+        {
+            quicTarget = default!;
+
+            if (!_quicPortsByTcpEndPoint.TryGetValue(tcpEndPoint, out var quicPort) || quicPort == 0)
+                return false;
+
+            if (_quicBackoffUntil.TryGetValue(tcpEndPoint, out var until) && until > TimeProvider.Current.UtcNow)
+                return false;
+
+            quicTarget = new IPEndPoint(tcpEndPoint.Address, quicPort);
+            return true;
+        }
+
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macos")]
+        [SupportedOSPlatform("windows")]
+        private void BeginQuicConnect(IPEndPoint tcpEndPoint, IPEndPoint quicTarget)
+        {
+            var self = Self;
+            Task.Run(async () =>
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    var connection = await QuicTransportConnection.ConnectAsync(quicTarget, cts.Token).ConfigureAwait(false);
+                    self.Tell(new QuicOutboundConnected(tcpEndPoint, connection));
+                }
+                catch
+                {
+                    self.Tell(new QuicOutboundFailed(tcpEndPoint));
+                }
             });
         }
 
@@ -196,6 +263,15 @@ namespace Neo.Network.P2P
                         return;
                     }
                     AddPeers(peers.EndPoints);
+                    break;
+
+                case AdvertisedPeers peers:
+                    if (Config is null)
+                    {
+                        Stash.Stash();
+                        return;
+                    }
+                    ProcessAdvertisedPeers(peers.AddressList);
                     break;
 
                 case Connect connect:
@@ -247,12 +323,30 @@ namespace Neo.Network.P2P
                     }
                     OnTerminated(terminated.ActorRef);
                     break;
+
+                case QuicListenerReady ready:
+                    if (QuicTransport.IsSupported)
+                        OnQuicListenerReady(ready.Listener);
+                    break;
+                case QuicListenerFailed _:
+                    // QUIC is optional, ignore and keep TCP behavior.
+                    break;
+                case QuicInboundConnected inbound:
+                    OnQuicConnected(inbound.Connection);
+                    break;
+                case QuicOutboundConnected outbound:
+                    OnQuicOutboundConnected(outbound.Target, outbound.Connection);
+                    break;
+                case QuicOutboundFailed failed:
+                    OnQuicOutboundFailed(failed.Target);
+                    break;
             }
         }
 
         private void OnStart(ChannelsConfig config)
         {
             ListenerTcpPort = config.Tcp?.Port ?? 0;
+            ListenerQuicPort = 0;
             Config = config;
 
             // schedule time to trigger `OnTimer` event every TimerMillisecondsInterval ms
@@ -261,6 +355,143 @@ namespace Neo.Network.P2P
             {
                 s_tcpManager.Tell(new Tcp.Bind(Self, config.Tcp, options: [new Inet.SO.ReuseAddress(true)]));
             }
+
+            if (Config.Quic != null && QuicTransport.IsSupported)
+                StartQuicListener(Config.Quic);
+        }
+
+        private void ProcessAdvertisedPeers(NetworkAddressWithTime[] peers)
+        {
+            var endPoints = new List<IPEndPoint>(peers.Length);
+            foreach (var peer in peers)
+            {
+                var endPoint = peer.EndPoint.UnMap();
+                if (endPoint.Port <= 0) continue;
+
+                endPoints.Add(endPoint);
+
+                if (NeoP2PExtensionsCapability.TryParse(peer.Capabilities, out var extensions) &&
+                    extensions.Extensions.HasFlag(NeoP2PExtensions.Quic) &&
+                    extensions.QuicPort > 0)
+                {
+                    _quicPortsByTcpEndPoint[endPoint] = extensions.QuicPort;
+                    _quicBackoffUntil.Remove(endPoint);
+                }
+            }
+
+            AddPeers(endPoints);
+        }
+
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macos")]
+        [SupportedOSPlatform("windows")]
+        private void StartQuicListener(IPEndPoint listenEndPoint)
+        {
+            _quicListenerCts?.Cancel();
+            _quicListenerCts?.Dispose();
+            _quicListenerCts = new CancellationTokenSource();
+
+            var token = _quicListenerCts.Token;
+            var self = Self;
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var listener = await QuicTransportListener.ListenAsync(listenEndPoint, token).ConfigureAwait(false);
+                    self.Tell(new QuicListenerReady(listener));
+                }
+                catch (Exception ex)
+                {
+                    self.Tell(new QuicListenerFailed(ex));
+                }
+            }, token);
+        }
+
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macos")]
+        [SupportedOSPlatform("windows")]
+        private void OnQuicListenerReady(QuicTransportListener listener)
+        {
+            _quicListener = listener;
+            ListenerQuicPort = listener.ListenEndPoint.Port;
+
+            if (_quicAcceptLoop != null) return;
+
+            var token = _quicListenerCts?.Token ?? CancellationToken.None;
+            var self = Self;
+            _quicAcceptLoop = Task.Run(async () =>
+            {
+                try
+                {
+                    while (!token.IsCancellationRequested)
+                    {
+                        var connection = await listener.AcceptAsync(token).ConfigureAwait(false);
+                        self.Tell(new QuicInboundConnected(connection));
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    self.Tell(new QuicListenerFailed(ex));
+                }
+            }, token);
+        }
+
+        private void OnQuicConnected(ITransportConnection transport)
+        {
+            var remote = transport.RemoteEndPoint.UnMap();
+            var local = transport.LocalEndPoint.UnMap();
+            OnTransportConnected(transport, remote, local, remote);
+        }
+
+        private void OnQuicOutboundConnected(IPEndPoint targetTcpEndPoint, ITransportConnection transport)
+        {
+            ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(targetTcpEndPoint));
+            var remote = transport.RemoteEndPoint.UnMap();
+            var local = transport.LocalEndPoint.UnMap();
+            OnTransportConnected(transport, remote, local, targetTcpEndPoint.UnMap());
+        }
+
+        private void OnQuicOutboundFailed(IPEndPoint targetTcpEndPoint)
+        {
+            _quicBackoffUntil[targetTcpEndPoint.UnMap()] = TimeProvider.Current.UtcNow.AddMinutes(5);
+            s_tcpManager.Tell(new Tcp.Connect(targetTcpEndPoint));
+        }
+
+        private void OnTransportConnected(ITransportConnection transport, IPEndPoint remote, IPEndPoint local, IPEndPoint peerEndPoint)
+        {
+            if (Config is null) // OnStart is not called yet
+            {
+                _ = transport.CloseAsync(abort: true, CancellationToken.None);
+                return;
+            }
+
+            if (Config.MaxConnections != -1 && ConnectedPeers.Count >= Config.MaxConnections && !TrustedIpAddresses.Contains(peerEndPoint.Address))
+            {
+                _ = transport.CloseAsync(abort: true, CancellationToken.None);
+                return;
+            }
+
+            if (ConnectedPeers.Values.Contains(peerEndPoint))
+            {
+                _ = transport.CloseAsync(abort: true, CancellationToken.None);
+                return;
+            }
+
+            ConnectedAddresses.TryGetValue(peerEndPoint.Address, out int count);
+            if (count >= Config.MaxConnectionsPerAddress)
+            {
+                _ = transport.CloseAsync(abort: true, CancellationToken.None);
+                return;
+            }
+
+            ConnectedAddresses[peerEndPoint.Address] = count + 1;
+            var connection = Context.ActorOf(ProtocolProps(transport, remote, local), $"connection_{Guid.NewGuid()}");
+            Context.Watch(connection);
+            ConnectedPeers.TryAdd(connection, peerEndPoint);
+            OnTcpConnected(connection);
         }
 
         /// <summary>
@@ -358,6 +589,15 @@ namespace Neo.Network.P2P
         {
             _timer.CancelIfNotNull();
             _tcpListener?.Tell(Tcp.Unbind.Instance);
+            _quicListenerCts?.Cancel();
+            _quicListenerCts?.Dispose();
+            _quicListenerCts = null;
+            if (_quicListener != null)
+            {
+                IAsyncDisposable disposable = _quicListener;
+                _ = disposable.DisposeAsync().AsTask();
+                _quicListener = null;
+            }
             base.PostStop();
         }
 

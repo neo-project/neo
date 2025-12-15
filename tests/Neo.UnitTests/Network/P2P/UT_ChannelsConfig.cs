@@ -24,11 +24,15 @@ namespace Neo.UnitTests.Network.P2P
             var config = new ChannelsConfig();
 
             Assert.IsNull(config.Tcp);
+            Assert.IsNull(config.Quic);
+            Assert.IsFalse(config.PreferQuic);
             Assert.AreEqual(10, config.MinDesiredConnections);
             Assert.AreEqual(40, config.MaxConnections);
             Assert.AreEqual(3, config.MaxConnectionsPerAddress);
 
             config.Tcp = new IPEndPoint(IPAddress.Any, 21);
+            config.Quic = new IPEndPoint(IPAddress.Any, 42);
+            config.PreferQuic = true;
             config.MaxConnectionsPerAddress++;
             config.MaxConnections++;
             config.MinDesiredConnections++;
@@ -36,6 +40,10 @@ namespace Neo.UnitTests.Network.P2P
             Assert.AreSame(config.Tcp, config.Tcp);
             CollectionAssert.AreEqual(IPAddress.Any.GetAddressBytes(), config.Tcp.Address.GetAddressBytes());
             Assert.AreEqual(21, config.Tcp.Port);
+            Assert.AreSame(config.Quic, config.Quic);
+            CollectionAssert.AreEqual(IPAddress.Any.GetAddressBytes(), config.Quic.Address.GetAddressBytes());
+            Assert.AreEqual(42, config.Quic.Port);
+            Assert.IsTrue(config.PreferQuic);
             Assert.AreEqual(11, config.MinDesiredConnections);
             Assert.AreEqual(41, config.MaxConnections);
             Assert.AreEqual(4, config.MaxConnectionsPerAddress);

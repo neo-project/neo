@@ -12,8 +12,11 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions.Exceptions;
+using Neo.Network.P2P.Transports;
 using System;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -47,6 +50,7 @@ namespace Neo.Network.P2P
 
         private ICancelable timer;
         private readonly IActorRef? tcp;
+        private readonly ITransportConnection? transport;
         private bool disconnected = false;
 
         /// <summary>
@@ -65,7 +69,16 @@ namespace Neo.Network.P2P
                 case IActorRef tcp:
                     this.tcp = tcp;
                     break;
+                case ITransportConnection transport:
+                    this.transport = transport;
+                    break;
             }
+        }
+
+        protected override void PreStart()
+        {
+            transport?.Start(Self);
+            base.PreStart();
         }
 
         /// <summary>
@@ -78,6 +91,10 @@ namespace Neo.Network.P2P
             if (tcp != null)
             {
                 tcp.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
+            }
+            if (transport != null)
+            {
+                _ = transport.CloseAsync(abort, CancellationToken.None);
             }
             Context.Stop(Self);
         }
@@ -111,6 +128,12 @@ namespace Neo.Network.P2P
                 case Tcp.ConnectionClosed _:
                     Context.Stop(Self);
                     break;
+                case TransportMessages.Received received:
+                    OnReceived(received.Data);
+                    break;
+                case TransportMessages.ConnectionClosed _:
+                    Context.Stop(Self);
+                    break;
             }
         }
 
@@ -125,6 +148,8 @@ namespace Neo.Network.P2P
         {
             if (!disconnected)
                 tcp?.Tell(Tcp.Close.Instance);
+            if (!disconnected)
+                _ = transport?.CloseAsync(abort: false, CancellationToken.None);
             timer.CancelIfNotNull();
             base.PostStop();
         }
@@ -138,6 +163,17 @@ namespace Neo.Network.P2P
             if (tcp != null)
             {
                 tcp.Tell(Tcp.Write.Create(data, Ack.Instance));
+            }
+            else if (transport != null)
+            {
+                var self = Self;
+                _ = transport.SendAsync(data.ToArray(), CancellationToken.None).ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                        self.Tell(new Close { Abort = true });
+                    else
+                        self.Tell(Ack.Instance);
+                }, TaskScheduler.Default);
             }
         }
     }

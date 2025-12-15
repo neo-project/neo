@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Running;
+using BenchmarkDotNet.Configs;
 
 // List all benchmarks:
 //  dotnet run -c Release --framework [for example: net9.0] -- --list flat(or tree)
@@ -20,4 +21,5 @@ using BenchmarkDotNet.Running;
 // Run all benchmarks of a class:
 //  dotnet run -c Release --framework [for example: net9.0] -- -f '*Class*'
 // More options: https://benchmarkdotnet.org/articles/guides/console-args.html
-BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+var config = DefaultConfig.Instance.WithOptions(ConfigOptions.DisableOptimizationsValidator);
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);

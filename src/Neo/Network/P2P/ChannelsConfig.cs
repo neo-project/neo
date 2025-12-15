@@ -49,6 +49,16 @@ namespace Neo.Network.P2P
         public IPEndPoint? Tcp { get; set; }
 
         /// <summary>
+        /// Quic configuration (UDP endpoint).
+        /// </summary>
+        public IPEndPoint? Quic { get; set; }
+
+        /// <summary>
+        /// Prefer QUIC when the remote peer supports it.
+        /// </summary>
+        public bool PreferQuic { get; set; } = false;
+
+        /// <summary>
         /// Enable compression.
         /// </summary>
         public bool EnableCompression { get; set; } = DefaultEnableCompression;

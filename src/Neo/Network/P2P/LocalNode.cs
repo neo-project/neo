@@ -271,6 +271,13 @@ namespace Neo.Network.P2P
 
             if (ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)ListenerTcpPort));
 
+            if (ListenerQuicPort is > 0 and <= ushort.MaxValue)
+            {
+                capabilities.Add(NeoP2PExtensionsCapability.Create(new NeoP2PExtensionsData(
+                    NeoP2PExtensions.Quic,
+                    (ushort)ListenerQuicPort)));
+            }
+
             return [.. capabilities];
         }
 

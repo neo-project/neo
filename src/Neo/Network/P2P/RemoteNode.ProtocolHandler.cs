@@ -139,11 +139,7 @@ namespace Neo.Network.P2P
             ref bool sent = ref _sentCommands[(byte)MessageCommand.GetAddr];
             if (!sent) return;
             sent = false;
-            var endPoints = payload.AddressList
-                .Select(p => p.EndPoint)
-                .Where(p => p.Port > 0)
-                .ToArray();
-            _system.LocalNode.Tell(new Peer.Peers(endPoints));
+            _system.LocalNode.Tell(new Peer.AdvertisedPeers(payload.AddressList));
         }
 
         private void OnFilterAddMessageReceived(FilterAddPayload payload)
