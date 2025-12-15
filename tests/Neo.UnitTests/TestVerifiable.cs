@@ -37,7 +37,7 @@ public class TestVerifiable : IVerifiable
         throw new NotImplementedException();
     }
 
-    public UInt160[] GetScriptHashesForVerifying(IReadOnlyStore? snapshot = null)
+    public UInt160[] GetScriptHashesForVerifying(IReadOnlyStore? snapshot)
     {
         throw new NotImplementedException();
     }

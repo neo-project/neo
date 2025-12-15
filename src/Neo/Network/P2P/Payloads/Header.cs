@@ -149,7 +149,7 @@ public sealed class Header : IEquatable<Header>, IVerifiable
         return Hash.GetHashCode();
     }
 
-    UInt160[] IVerifiable.GetScriptHashesForVerifying(IReadOnlyStore? snapshot = null)
+    UInt160[] IVerifiable.GetScriptHashesForVerifying(IReadOnlyStore? snapshot)
     {
         if (PrevHash == UInt256.Zero) return [Witness.ScriptHash];
         if (snapshot == null)
