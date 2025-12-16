@@ -128,6 +128,12 @@ namespace Neo.SmartContract.Native
         public virtual Hardfork? ActiveIn { get; } = null;
 
         /// <summary>
+        /// The set of hardforks that contract should be updated at, except the ActiveIn
+        /// hardfork and a set of method/event activation hardforks.
+        /// </summary>
+        public virtual ImmutableHashSet<Hardfork?> Activations { get; } = [];
+
+        /// <summary>
         /// The hash of the native contract.
         /// </summary>
         public UInt160 Hash { get; }
@@ -172,6 +178,7 @@ namespace Neo.SmartContract.Native
                     .Concat(_eventsDescriptors.Select(u => u.DeprecatedIn))
                     .Concat(_eventsDescriptors.Select(u => u.ActiveIn))
                     .Concat([ActiveIn])
+                    .Concat(Activations)
                     .Where(u => u.HasValue)
                     .Select(u => u!.Value)
                     .OrderBy(u => (byte)u)
