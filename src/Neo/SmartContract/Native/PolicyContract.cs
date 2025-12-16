@@ -561,8 +561,16 @@ namespace Neo.SmartContract.Native
             engine.SnapshotCache.GetAndChange(_maxTraceableBlocks)!.Set(value);
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private async ContractTask<bool> BlockAccount(ApplicationEngine engine, UInt160 account)
+        [ContractMethod(true, Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "blockAccount")]
+        private async ContractTask<bool> BlockAccountV0(ApplicationEngine engine, UInt160 account)
+        {
+            AssertCommittee(engine);
+
+            return await BlockAccountInternal(engine, account);
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "blockAccount")]
+        private async ContractTask<bool> BlockAccountV1(ApplicationEngine engine, UInt160 account)
         {
             AssertCommittee(engine);
 
@@ -577,7 +585,8 @@ namespace Neo.SmartContract.Native
 
             if (engine.SnapshotCache.Contains(key)) return false;
 
-            await NEO.VoteInternal(engine, account, null);
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                await NEO.VoteInternal(engine, account, null);
 
             engine.SnapshotCache.Add(key, new StorageItem([]));
             return true;
