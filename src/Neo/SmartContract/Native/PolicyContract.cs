@@ -698,10 +698,10 @@ namespace Neo.SmartContract.Native
 
             // Transfer funds, NEO, GAS and extra NEP17 tokens
 
+            var debugger = new Debugger(engine);
+
             foreach (var contractHash in validatedTokens)
             {
-                var debugger = new Debugger(engine);
-
                 engine.CallContract(contractHash, "balanceOf", CallFlags.ReadOnly,
                     new VM.Types.Array(engine.ReferenceCounter, [account.ToArray()]));
 
