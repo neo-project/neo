@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System.Collections.Immutable;
@@ -48,7 +48,6 @@ public abstract class NativeContract
     private readonly ImmutableHashSet<Hardfork> _usedHardforks;
     private readonly ReadOnlyCollection<ContractMethodMetadata> _methodDescriptors;
     private readonly ReadOnlyCollection<ContractEventAttribute> _eventsDescriptors;
-    private static int idCounter = 0;
 
     #region Named Native Contracts
 
@@ -102,6 +101,13 @@ public abstract class NativeContract
     /// </summary>
     public static Notary Notary { get; } = new();
 
+    /// <summary>
+    /// Gets the instance of the <see cref="Treasury"/> class.
+    /// </summary>
+    public static Treasury Treasury { get; } = new();
+
+    public static TokenManagement TokenManagement { get; } = new();
+
     #endregion
 
     /// <summary>
@@ -127,13 +133,14 @@ public abstract class NativeContract
     /// <summary>
     /// The id of the native contract.
     /// </summary>
-    public int Id { get; } = --idCounter;
+    public int Id { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NativeContract"/> class.
     /// </summary>
-    protected NativeContract()
+    protected NativeContract(int id)
     {
+        Id = id;
         Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
 
         // Reflection to get the methods
@@ -354,40 +361,37 @@ public abstract class NativeContract
             throw new InvalidOperationException("Invalid committee signature. It should be a multisig(len(committee) - (len(committee) - 1) / 2)).");
     }
 
+    protected void Notify(ApplicationEngine engine, string eventName, params object?[] args)
+    {
+        engine.SendNotification(Hash, eventName, new(engine.ReferenceCounter, args.Select(engine.Convert)));
+    }
+
     #region Storage keys
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix) => StorageKey.Create(Id, prefix);
+    private protected StorageKey CreateStorageKey(byte prefix) => new KeyBuilder(Id, prefix);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, byte data) => StorageKey.Create(Id, prefix, data);
+    private protected StorageKey CreateStorageKey(byte prefix, byte data) => new KeyBuilder(Id, prefix) { data };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, int bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+    private protected StorageKey CreateStorageKey<T>(byte prefix, T bigEndianKey) where T : unmanaged => new KeyBuilder(Id, prefix) { bigEndianKey };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, uint bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+    private protected StorageKey CreateStorageKey(byte prefix, ReadOnlySpan<byte> content) => new KeyBuilder(Id, prefix) { content };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, long bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
+    private protected StorageKey CreateStorageKey(byte prefix, params IEnumerable<ISerializableSpan> serializables)
+    {
+        var builder = new KeyBuilder(Id, prefix);
+        foreach (var serializable in serializables)
+            builder.Add(serializable);
+        return builder;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, ulong bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, ReadOnlySpan<byte> content) => StorageKey.Create(Id, prefix, content);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash) => StorageKey.Create(Id, prefix, hash);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash) => StorageKey.Create(Id, prefix, hash);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, ECPoint pubKey) => StorageKey.Create(Id, prefix, pubKey);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => StorageKey.Create(Id, prefix, hash, signer);
+    private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, int bigEndianKey)
+        => new KeyBuilder(Id, prefix) { hash, bigEndianKey };
 
     #endregion
 
@@ -427,8 +431,12 @@ public abstract class NativeContract
             var state = context.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
+            // Check native-whitelist
+            if (!Policy.IsWhitelistFeeContract(engine.SnapshotCache, Hash, method.Descriptor, out var fixedFee))
+            {
+                // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+                engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
+            }
             List<object?> parameters = new();
             if (method.NeedApplicationEngine) parameters.Add(engine);
             if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);

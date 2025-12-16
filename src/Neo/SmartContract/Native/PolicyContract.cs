@@ -14,6 +14,9 @@
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
+using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native;
@@ -21,9 +24,11 @@ namespace Neo.SmartContract.Native;
 /// <summary>
 /// A native contract that manages the system policies.
 /// </summary>
-[ContractEvent(0, name: MillisecondsPerBlockChangedEventName,
-    "old", ContractParameterType.Integer,
-    "new", ContractParameterType.Integer
+[ContractEvent(0, name: WhitelistChangedEventName,
+    "contract", ContractParameterType.Hash160,
+    "method", ContractParameterType.String,
+    "argCount", ContractParameterType.Integer,
+    "fee", ContractParameterType.Any
 )]
 public sealed class PolicyContract : NativeContract
 {
@@ -68,52 +73,24 @@ public sealed class PolicyContract : NativeContract
     /// </summary>
     public const uint MaxStoragePrice = 10000000;
 
-    /// <summary>
-    /// The maximum block generation time that the committee can set in milliseconds.
-    /// </summary>
-    public const uint MaxMillisecondsPerBlock = 30_000;
-
-    /// <summary>
-    /// The maximum MaxValidUntilBlockIncrement value that the committee can set.
-    /// It is set to be a day of 1-second blocks.
-    /// </summary>
-    public const uint MaxMaxValidUntilBlockIncrement = 86400;
-
-    /// <summary>
-    /// The maximum MaxTraceableBlocks value that the committee can set.
-    /// It is set to be a year of 15-second blocks.
-    /// </summary>
-    public const uint MaxMaxTraceableBlocks = 2102400;
-
-    private const byte Prefix_BlockedAccount = 15;
     private const byte Prefix_FeePerByte = 10;
+    private const byte Prefix_BlockedAccount = 15;
+    private const byte Prefix_WhitelistedFeeContracts = 16;
     private const byte Prefix_ExecFeeFactor = 18;
     private const byte Prefix_StoragePrice = 19;
     private const byte Prefix_AttributeFee = 20;
-    private const byte Prefix_MillisecondsPerBlock = 21;
-    private const byte Prefix_MaxValidUntilBlockIncrement = 22;
-    private const byte Prefix_MaxTraceableBlocks = 23;
 
     private readonly StorageKey _feePerByte;
     private readonly StorageKey _execFeeFactor;
     private readonly StorageKey _storagePrice;
-    private readonly StorageKey _millisecondsPerBlock;
-    private readonly StorageKey _maxValidUntilBlockIncrement;
-    private readonly StorageKey _maxTraceableBlocks;
 
-    /// <summary>
-    /// The event name for the block generation time changed.
-    /// </summary>
-    private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
+    private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
-    internal PolicyContract()
+    internal PolicyContract() : base(-7)
     {
         _feePerByte = CreateStorageKey(Prefix_FeePerByte);
         _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
         _storagePrice = CreateStorageKey(Prefix_StoragePrice);
-        _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
-        _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
-        _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
     }
 
     internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -124,9 +101,6 @@ public sealed class PolicyContract : NativeContract
             engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
             engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
-            engine.SnapshotCache.Add(_millisecondsPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
-            engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
-            engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
         }
         return ContractTask.CompletedTask;
     }
@@ -165,40 +139,6 @@ public sealed class PolicyContract : NativeContract
     }
 
     /// <summary>
-    /// Gets the block generation time in milliseconds.
-    /// </summary>
-    /// <param name="snapshot">The snapshot used to read data.</param>
-    /// <returns>The block generation time in milliseconds.</returns>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public uint GetMillisecondsPerBlock(IReadOnlyStore snapshot)
-    {
-        return (uint)(BigInteger)snapshot[_millisecondsPerBlock];
-    }
-
-    /// <summary>
-    /// Gets the upper increment size of blockchain height (in blocks) exceeding
-    /// that a transaction should fail validation.
-    /// </summary>
-    /// <param name="snapshot">The snapshot used to read data.</param>
-    /// <returns>MaxValidUntilBlockIncrement value.</returns>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public uint GetMaxValidUntilBlockIncrement(IReadOnlyStore snapshot)
-    {
-        return (uint)(BigInteger)snapshot[_maxValidUntilBlockIncrement];
-    }
-
-    /// <summary>
-    /// Gets the length of the chain accessible to smart contracts.
-    /// </summary>
-    /// <param name="snapshot">The snapshot used to read data.</param>
-    /// <returns>MaxTraceableBlocks value.</returns>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public uint GetMaxTraceableBlocks(IReadOnlyStore snapshot)
-    {
-        return (uint)(BigInteger)snapshot[_maxTraceableBlocks];
-    }
-
-    /// <summary>
     /// Gets the fee for attribute after Echidna hardfork. NotaryAssisted attribute type supported.
     /// </summary>
     /// <param name="snapshot">The snapshot used to read data.</param>
@@ -223,27 +163,6 @@ public sealed class PolicyContract : NativeContract
     public bool IsBlocked(IReadOnlyStore snapshot, UInt160 account)
     {
         return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
-    }
-
-    /// <summary>
-    /// Sets the block generation time in milliseconds.
-    /// </summary>
-    /// <param name="engine">The execution engine.</param>
-    /// <param name="value">The block generation time in milliseconds. Must be between 1 and MaxBlockGenTime.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided value is outside the allowed range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    public void SetMillisecondsPerBlock(ApplicationEngine engine, uint value)
-    {
-        if (value == 0 || value > MaxMillisecondsPerBlock)
-            throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock must be between [1, {MaxMillisecondsPerBlock}], got {value}");
-        AssertCommittee(engine);
-
-        var oldTime = GetMillisecondsPerBlock(engine.SnapshotCache);
-        engine.SnapshotCache.GetAndChange(_millisecondsPerBlock)!.Set(value);
-
-        engine.SendNotification(Hash, MillisecondsPerBlockChangedEventName,
-            [new VM.Types.Integer(oldTime), new VM.Types.Integer(value)]);
     }
 
     /// <summary>
@@ -298,58 +217,22 @@ public sealed class PolicyContract : NativeContract
     }
 
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-    private void SetMaxValidUntilBlockIncrement(ApplicationEngine engine, uint value)
-    {
-        if (value == 0 || value > MaxMaxValidUntilBlockIncrement)
-            throw new ArgumentOutOfRangeException(nameof(value), $"MaxValidUntilBlockIncrement must be between [1, {MaxMaxValidUntilBlockIncrement}], got {value}");
-        var mtb = GetMaxTraceableBlocks(engine.SnapshotCache);
-        if (value >= mtb)
-            throw new InvalidOperationException($"MaxValidUntilBlockIncrement must be lower than MaxTraceableBlocks ({value} vs {mtb})");
-        AssertCommittee(engine);
-
-        engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement)!.Set(value);
-    }
-
-    /// <summary>
-    /// Sets the length of the chain accessible to smart contracts.
-    /// </summary>
-    /// <param name="engine">The engine used to check committee witness and read data.</param>
-    /// <param name="value">MaxTraceableBlocks value.</param>
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-    private void SetMaxTraceableBlocks(ApplicationEngine engine, uint value)
-    {
-        if (value == 0 || value > MaxMaxTraceableBlocks)
-            throw new ArgumentOutOfRangeException(nameof(value), $"MaxTraceableBlocks must be between [1, {MaxMaxTraceableBlocks}], got {value}");
-
-        var oldVal = GetMaxTraceableBlocks(engine.SnapshotCache);
-        if (value > oldVal)
-            throw new InvalidOperationException($"MaxTraceableBlocks can not be increased (old {oldVal}, new {value})");
-
-        var mVUBIncrement = GetMaxValidUntilBlockIncrement(engine.SnapshotCache);
-        if (value <= mVUBIncrement)
-            throw new InvalidOperationException($"MaxTraceableBlocks must be larger than MaxValidUntilBlockIncrement ({value} vs {mVUBIncrement})");
-
-        AssertCommittee(engine);
-
-        engine.SnapshotCache.GetAndChange(_maxTraceableBlocks)!.Set(value);
-    }
-
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-    private bool BlockAccount(ApplicationEngine engine, UInt160 account)
+    private async ContractTask<bool> BlockAccount(ApplicationEngine engine, UInt160 account)
     {
         AssertCommittee(engine);
-
-        return BlockAccount(engine.SnapshotCache, account);
+        return await BlockAccountInternal(engine, account);
     }
 
-    internal bool BlockAccount(DataCache snapshot, UInt160 account)
+    internal async ContractTask<bool> BlockAccountInternal(ApplicationEngine engine, UInt160 account)
     {
         if (IsNative(account)) throw new InvalidOperationException("Cannot block a native contract.");
 
         var key = CreateStorageKey(Prefix_BlockedAccount, account);
-        if (snapshot.Contains(key)) return false;
+        if (engine.SnapshotCache.Contains(key)) return false;
 
-        snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
+        await NEO.VoteInternal(engine, account, null);
+
+        engine.SnapshotCache.Add(key, new StorageItem(Array.Empty<byte>()));
         return true;
     }
 
@@ -364,6 +247,131 @@ public sealed class PolicyContract : NativeContract
 
         engine.SnapshotCache.Delete(key);
         return true;
+    }
+
+    internal bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, ContractMethodDescriptor method, [NotNullWhen(true)] out long? fixedFee)
+    {
+        // Check contract existence
+
+        var currentContract = ContractManagement.GetContract(snapshot, contractHash);
+
+        if (currentContract != null)
+        {
+            // Check state existence
+
+            var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method.Offset));
+
+            if (item != null)
+            {
+                fixedFee = (long)(BigInteger)item;
+                return true;
+            }
+        }
+
+        fixedFee = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Remove whitelisted Fee contracts
+    /// </summary>
+    /// <param name="engine">The execution engine.</param>
+    /// <param name="contractHash">The contract to set the whitelist</param>
+    /// <param name="method">Method</param>
+    /// <param name="argCount">Argument count</param>
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    private void RemoveWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount)
+    {
+        if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+        // Validate methods
+        var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
+                ?? throw new InvalidOperationException("Is not a valid contract");
+
+        // If exists multiple instance a exception is throwed
+        var methodDescriptor = contract.Manifest.Abi.Methods.SingleOrDefault(u => u.Name == method && u.Parameters.Length == argCount) ??
+            throw new InvalidOperationException($"Method {method} with {argCount} args was not found in {contractHash}");
+        var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
+
+        if (!engine.SnapshotCache.Contains(key)) throw new InvalidOperationException("Whitelist not found");
+
+        engine.SnapshotCache.Delete(key);
+
+        // Emit event
+        Notify(engine, WhitelistChangedEventName, contractHash, method, argCount, null);
+    }
+
+    internal int CleanWhitelist(ApplicationEngine engine, ContractState contract)
+    {
+        var count = 0;
+        var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contract.Hash);
+
+        foreach ((var key, _) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
+        {
+            engine.SnapshotCache.Delete(key);
+            count++;
+
+            // Emit event recovering the values from the Key
+
+            var keyData = key.ToArray().AsSpan();
+            var methodOffset = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(sizeof(int) + sizeof(byte) + UInt160.Length, sizeof(int)));
+
+            // Get method for event
+            var method = contract.Manifest.Abi.Methods.FirstOrDefault(m => m.Offset == methodOffset);
+
+            Notify(engine, WhitelistChangedEventName, contract.Hash, method?.Name, method?.Parameters.Length, null);
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Set whitelisted Fee contracts
+    /// </summary>
+    /// <param name="engine">The execution engine.</param>
+    /// <param name="contractHash">The contract to set the whitelist</param>
+    /// <param name="method">Method</param>
+    /// <param name="argCount">Argument count</param>
+    /// <param name="fixedFee">Fixed execution fee</param>
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    internal void SetWhitelistFeeContract(ApplicationEngine engine, UInt160 contractHash, string method, int argCount, long fixedFee)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(fixedFee, nameof(fixedFee));
+
+        if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+
+        // Validate methods
+        var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash)
+                ?? throw new InvalidOperationException("Is not a valid contract");
+
+        if (contract.Manifest.Abi.GetMethod(method, argCount) is null)
+            throw new InvalidOperationException($"{method} with {argCount} args is not a valid method of {contractHash}");
+
+        // If exists multiple instance a exception is throwed
+        var methodDescriptor = contract.Manifest.Abi.Methods.SingleOrDefault(u => u.Name == method && u.Parameters.Length == argCount) ??
+            throw new InvalidOperationException($"Method {method} with {argCount} args was not found in {contractHash}");
+        var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
+
+        // Set
+        var entry = engine.SnapshotCache
+                .GetAndChange(key, () => new StorageItem(fixedFee));
+
+        entry.Set(fixedFee);
+
+        // Emit event
+
+        Notify(engine, WhitelistChangedEventName, contractHash, method, argCount, fixedFee);
+    }
+
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+    internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
+    {
+        const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+        var enumerator = snapshot
+            .Find(CreateStorageKey(Prefix_WhitelistedFeeContracts), SeekDirection.Forward)
+            .GetEnumerator();
+
+        return new StorageIterator(enumerator, 1, options);
     }
 
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]

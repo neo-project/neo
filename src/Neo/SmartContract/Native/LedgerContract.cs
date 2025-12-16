@@ -32,7 +32,7 @@ public sealed class LedgerContract : NativeContract
 
     private readonly StorageKey _currentBlock;
 
-    internal LedgerContract() : base()
+    internal LedgerContract() : base(-4)
     {
         _currentBlock = CreateStorageKey(Prefix_CurrentBlock);
     }
@@ -99,8 +99,7 @@ public sealed class LedgerContract : NativeContract
     /// <returns>Whether the block is traceable.</returns>
     private bool IsTraceableBlock(ApplicationEngine engine, uint index)
     {
-        var mtb = Policy.GetMaxTraceableBlocks(engine.SnapshotCache);
-        return IsTraceableBlock(engine.SnapshotCache, index, mtb);
+        return IsTraceableBlock(engine.SnapshotCache, index, engine.ProtocolSettings.MaxTraceableBlocks);
     }
 
     /// <summary>

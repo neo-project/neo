@@ -9,12 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography;
 using Neo.Extensions.IO;
 using Neo.Extensions.VM;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
@@ -266,131 +268,6 @@ public class UT_PolicyContract
     }
 
     [TestMethod]
-    public void Check_SetMaxValidUntilBlockIncrement()
-    {
-        var snapshot = _snapshotCache.CloneCache();
-
-        // Fake blockchain
-        Block block = new()
-        {
-            Header = new Header
-            {
-                PrevHash = UInt256.Zero,
-                MerkleRoot = UInt256.Zero,
-                Index = 1000,
-                NextConsensus = UInt160.Zero,
-                Witness = null!
-            },
-            Transactions = []
-        };
-
-        // Without signature
-        Assert.ThrowsExactly<InvalidOperationException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
-            "setMaxValidUntilBlockIncrement", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
-        });
-
-        var ret = NativeContract.Policy.Call(snapshot, "getMaxValidUntilBlockIncrement");
-        Assert.IsInstanceOfType<Integer>(ret);
-        Assert.AreEqual(5760, ret.GetInteger());
-
-        // With signature, wrong value
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setMaxValidUntilBlockIncrement", new ContractParameter(ContractParameterType.Integer) { Value = 100000000 });
-        });
-
-        ret = NativeContract.Policy.Call(snapshot, "getMaxValidUntilBlockIncrement");
-        Assert.IsInstanceOfType<Integer>(ret);
-        Assert.AreEqual(5760, ret.GetInteger());
-
-        // Proper set
-        ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-            "setMaxValidUntilBlockIncrement", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
-        Assert.IsInstanceOfType<Null>(ret);
-
-        ret = NativeContract.Policy.Call(snapshot, "getMaxValidUntilBlockIncrement");
-        Assert.IsInstanceOfType<Integer>(ret);
-        Assert.AreEqual(123, ret.GetInteger());
-
-        // Update MaxTraceableBlocks value for further test.
-        ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-            "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 6000 });
-        Assert.IsInstanceOfType<Null>(ret);
-
-        // Set MaxValudUntilBlockIncrement to be larger or equal to MaxTraceableBlocks, it should fail.
-        Assert.ThrowsExactly<InvalidOperationException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setMaxValidUntilBlockIncrement", new ContractParameter(ContractParameterType.Integer) { Value = 6000 });
-        });
-    }
-
-    [TestMethod]
-    public void Check_SetMillisecondsPerBlock()
-    {
-        var snapshot = _snapshotCache.CloneCache();
-
-        // Fake blockchain.
-        Block block = new()
-        {
-            Header = new Header
-            {
-                PrevHash = UInt256.Zero,
-                MerkleRoot = UInt256.Zero,
-                Index = 1000,
-                NextConsensus = UInt160.Zero,
-                Witness = null!
-            },
-            Transactions = []
-        };
-
-        // Without signature.
-        Assert.ThrowsExactly<InvalidOperationException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
-            "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
-        });
-
-        var ret = NativeContract.Policy.Call(snapshot, "getMillisecondsPerBlock");
-        Assert.IsInstanceOfType<Integer>(ret);
-        Assert.AreEqual(15_000, ret.GetInteger());
-
-        // With signature, too big value.
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 30_001 });
-        });
-
-        // With signature, too small value.
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
-        });
-
-        // Ensure value is not changed.
-        ret = NativeContract.Policy.Call(snapshot, "getMillisecondsPerBlock");
-        Assert.IsInstanceOfType<Integer>(ret);
-        Assert.AreEqual(15_000, ret.GetInteger());
-
-        // Proper set.
-        ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-            "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 3_000 });
-        Assert.IsInstanceOfType<Null>(ret);
-
-        // Ensure value is updated.
-        ret = NativeContract.Policy.Call(snapshot, "getMillisecondsPerBlock");
-        Assert.IsInstanceOfType<Integer>(ret);
-        Assert.AreEqual(3_000, ret.GetInteger());
-    }
-
-    [TestMethod]
     public void Check_BlockAccount()
     {
         var snapshot = _snapshotCache.CloneCache();
@@ -511,81 +388,6 @@ public class UT_PolicyContract
     }
 
     [TestMethod]
-    public void Check_SetMaxTraceableBlocks()
-    {
-        var snapshot = _snapshotCache.CloneCache();
-
-        // Fake blockchain.
-        Block block = new()
-        {
-            Header = new Header
-            {
-                PrevHash = UInt256.Zero,
-                MerkleRoot = UInt256.Zero,
-                Index = 1000,
-                NextConsensus = UInt160.Zero,
-                Witness = null!
-            },
-            Transactions = []
-        };
-
-        // Without signature.
-        Assert.ThrowsExactly<InvalidOperationException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
-            "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
-        });
-
-        var ret = NativeContract.Policy.Call(snapshot, "getMaxTraceableBlocks");
-        Assert.IsInstanceOfType<Integer>(ret);
-        Assert.AreEqual(2_102_400, ret.GetInteger());
-
-        // With signature, too big value.
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 2_102_401 });
-        });
-
-        // With signature, too small value.
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
-        });
-
-        // With signature, lower or equal to MaxValidUntilBlockIncrement.
-        Assert.ThrowsExactly<InvalidOperationException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 5760 });
-        });
-
-        // Ensure value is not changed.
-        ret = NativeContract.Policy.Call(snapshot, "getMaxTraceableBlocks");
-        Assert.IsInstanceOfType<Integer>(ret);
-        Assert.AreEqual(2102400, ret.GetInteger());
-
-        // Proper set.
-        ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-            "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 5761 });
-        Assert.IsInstanceOfType<Null>(ret);
-
-        // Ensure value is updated.
-        ret = NativeContract.Policy.Call(snapshot, "getMaxTraceableBlocks");
-        Assert.IsInstanceOfType<Integer>(ret);
-        Assert.AreEqual(5761, ret.GetInteger());
-
-        // Larger value should be prohibited.
-        Assert.ThrowsExactly<InvalidOperationException>(() =>
-        {
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 5762 });
-        });
-    }
-
-    [TestMethod]
     public void TestListBlockedAccounts()
     {
         var snapshot = _snapshotCache.CloneCache();
@@ -623,5 +425,176 @@ public class UT_PolicyContract
         var iter = engine.ResultStack[0].GetInterface<StorageIterator>()!;
         Assert.IsTrue(iter.Next());
         Assert.AreEqual(new UInt160(iter.Value(new ReferenceCounter()).GetSpan()), UInt160.Zero);
+    }
+
+    [TestMethod]
+    public void TestWhiteListFee()
+    {
+        // Create script
+
+        var snapshotCache = _snapshotCache.CloneCache();
+
+        byte[] script;
+        using (var sb = new ScriptBuilder())
+        {
+            sb.EmitDynamicCall(NativeContract.NEO.Hash, "balanceOf", NativeContract.NEO.GetCommitteeAddress(_snapshotCache.CloneCache()));
+            script = sb.ToArray();
+        }
+
+        var engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+        // Not whitelisted
+
+        Assert.AreEqual(VMState.HALT, engine.Execute());
+        Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+        Assert.AreEqual(2028330, engine.FeeConsumed);
+        Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+        Assert.IsEmpty(engine.Notifications);
+
+        // Whitelist
+
+        engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+        NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 1, 0);
+        engine.SnapshotCache.Commit();
+
+        // Whitelisted
+
+        Assert.HasCount(1, engine.Notifications); // Whitelist changed
+        Assert.AreEqual(VMState.HALT, engine.Execute());
+        Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+        Assert.AreEqual(1045290, engine.FeeConsumed);
+
+        // Clean white list
+
+        engine.SnapshotCache.Commit();
+        engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+        Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+        Assert.HasCount(1, engine.Notifications); // Whitelist deleted
+    }
+
+    [TestMethod]
+    public void TestSetWhiteListFeeContractNegativeFixedFee()
+    {
+        var snapshotCache = _snapshotCache.CloneCache();
+        var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+
+        // Register a dummy contract
+        UInt160 contractHash;
+        using (var sb = new ScriptBuilder())
+        {
+            sb.Emit(OpCode.RET);
+            var script = sb.ToArray();
+            contractHash = script.ToScriptHash();
+            snapshotCache.DeleteContract(contractHash);
+            var manifest = TestUtils.CreateManifest("dummy", ContractParameterType.Any);
+            manifest.Abi.Methods = [
+                new ContractMethodDescriptor
+                    {
+                        Name = "foo",
+                        Parameters = [],
+                        ReturnType = ContractParameterType.Any,
+                        Offset = 0,
+                        Safe = false
+                    }
+            ];
+
+            var contract = TestUtils.GetContract(script, manifest);
+            snapshotCache.AddContract(contractHash, contract);
+        }
+
+        // Invoke SetWhiteListFeeContract with fixedFee negative
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, contractHash, "foo", 1, -1L));
+    }
+
+    [TestMethod]
+    public void TestSetWhiteListFeeContractWhenContractNotFound()
+    {
+        var snapshotCache = _snapshotCache.CloneCache();
+        var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+        var randomHash = new UInt160(Crypto.Hash160([1, 2, 3]).ToArray());
+        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, randomHash, "transfer", 3, 10));
+    }
+
+    [TestMethod]
+    public void TestSetWhiteListFeeContractWhenContractNotInAbi()
+    {
+        var snapshotCache = _snapshotCache.CloneCache();
+        var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "noexists", 0, 10));
+    }
+
+    [TestMethod]
+    public void TestSetWhiteListFeeContractWhenArgCountMismatch()
+    {
+        var snapshotCache = _snapshotCache.CloneCache();
+        var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+        // transfer exists with 4 args
+        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 0, 10));
+    }
+
+    [TestMethod]
+    public void TestSetWhiteListFeeContractWhenNotCommittee()
+    {
+        var snapshotCache = _snapshotCache.CloneCache();
+        var tx = new Transaction
+        {
+            Version = 0,
+            Nonce = 1,
+            Signers = [new() { Account = UInt160.Zero, Scopes = WitnessScope.Global }],
+            Attributes = [],
+            Witnesses = [new Witness { }],
+            Script = new byte[1],
+            NetworkFee = 0,
+            SystemFee = 0,
+            ValidUntilBlock = 0
+        };
+
+        using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 10));
+    }
+
+    [TestMethod]
+    public void TestSetWhiteListFeeContractSetContract()
+    {
+        var snapshotCache = _snapshotCache.CloneCache();
+        var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+        NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 123_456);
+
+        var method = NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)
+                .Manifest.Abi.Methods.Where(u => u.Name == "balanceOf").Single();
+
+        NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, method.Name, method.Parameters.Length, 123_456);
+        Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(engine.SnapshotCache, NativeContract.NEO.Hash, method, out var fixedFee));
+        Assert.AreEqual(123_456, fixedFee);
+    }
+
+    private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[]? script = null)
+    {
+        // Get committe public keys and calculate m
+        var committee = NativeContract.NEO.GetCommittee(snapshotCache);
+        var m = (committee.Length / 2) + 1;
+        var committeeContract = Contract.CreateMultiSigContract(m, committee);
+
+        // Create Tx needed for CheckWitness / CheckCommittee
+        var tx = new Transaction
+        {
+            Version = 0,
+            Nonce = 1,
+            Signers = [new() { Account = committeeContract.ScriptHash, Scopes = WitnessScope.Global }],
+            Attributes = [],
+            Witnesses = [new Witness { InvocationScript = new byte[1], VerificationScript = committeeContract.Script }],
+            Script = script ?? [(byte)OpCode.NOP],
+            NetworkFee = 0,
+            SystemFee = 0,
+            ValidUntilBlock = 0
+        };
+
+        var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+        engine.LoadScript(tx.Script);
+
+        return engine;
     }
 }

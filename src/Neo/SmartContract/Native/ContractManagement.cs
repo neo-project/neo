@@ -21,7 +21,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System.Buffers.Binary;
 using System.Numerics;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native;
 
@@ -38,7 +37,7 @@ public sealed class ContractManagement : NativeContract
     private const byte Prefix_Contract = 8;
     private const byte Prefix_ContractHash = 12;
 
-    internal ContractManagement() { }
+    internal ContractManagement() : base(-1) { }
 
     private int GetNextAvailableId(DataCache snapshot)
     {
@@ -63,7 +62,7 @@ public sealed class ContractManagement : NativeContract
         ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Deploy, ContractBasicMethod.DeployPCount);
         if (md is not null)
             await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
-        engine.SendNotification(Hash, update ? "Update" : "Deploy", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+        Notify(engine, update ? "Update" : "Deploy", contract.Hash);
     }
 
     internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
@@ -110,7 +109,7 @@ public sealed class ContractManagement : NativeContract
                 }
 
                 // Emit native contract notification
-                engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+                Notify(engine, state is null ? "Deploy" : "Update", contract.Hash);
             }
         }
     }
@@ -341,6 +340,8 @@ public sealed class ContractManagement : NativeContract
             // Update nef
             contract.Nef = nefFile.AsSerializable<NefFile>();
         }
+        // Clean whitelist (emit event if exists with the old manifest information)
+        Policy.CleanWhitelist(engine, contract);
         if (manifest != null)
         {
             if (manifest.Length == 0)
@@ -354,7 +355,8 @@ public sealed class ContractManagement : NativeContract
             contract.Manifest = manifestNew;
         }
         Helper.Check(new Script(contract.Nef.Script, true), contract.Manifest.Abi);
-        contract.UpdateCounter++; // Increase update counter
+        // Increase update counter
+        contract.UpdateCounter++;
         return OnDeployAsync(engine, contract, data, true);
     }
 
@@ -363,7 +365,7 @@ public sealed class ContractManagement : NativeContract
     /// </summary>
     /// <param name="engine">The engine used to write data.</param>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    private void Destroy(ApplicationEngine engine)
+    private async ContractTask Destroy(ApplicationEngine engine)
     {
         UInt160 hash = engine.CallingScriptHash!;
         StorageKey ckey = CreateStorageKey(Prefix_Contract, hash);
@@ -374,8 +376,10 @@ public sealed class ContractManagement : NativeContract
         foreach (var (key, _) in engine.SnapshotCache.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
             engine.SnapshotCache.Delete(key);
         // lock contract
-        Policy.BlockAccount(engine.SnapshotCache, hash);
+        await Policy.BlockAccountInternal(engine, hash);
+        // Clean whitelist (emit event if exists with the old manifest information)
+        Policy.CleanWhitelist(engine, contract);
         // emit event
-        engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
+        Notify(engine, "Destroy", hash);
     }
 }

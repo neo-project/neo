@@ -26,9 +26,9 @@ public class Benchmarks_StorageKey
     public static void KeyBuilder_AddInt()
     {
         var key = new KeyBuilder(1, 0)
-            .AddBigEndian(1)
-            .AddBigEndian(2)
-            .AddBigEndian(3);
+            .Add(1)
+            .Add(2)
+            .Add(3);
 
         var bytes = key.ToArray();
         if (bytes.Length != prefixSize + 3 * sizeof(int))

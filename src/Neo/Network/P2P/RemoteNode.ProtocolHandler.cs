@@ -288,12 +288,17 @@ partial class RemoteNode
     {
         var snapshot = _system.StoreView;
         if (payload.IndexStart > NativeContract.Ledger.CurrentIndex(snapshot)) return;
-        List<Header> headers = new();
+        var headers = new List<Header>();
         uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
         for (uint i = 0; i < count; i++)
         {
-            var header = NativeContract.Ledger.GetHeader(snapshot, payload.IndexStart + i);
-            if (header == null) break;
+            uint index = payload.IndexStart + i;
+            Header? header = _system.HeaderCache[index];
+            if (header == null)
+            {
+                header = NativeContract.Ledger.GetHeader(snapshot, index);
+                if (header == null) break;
+            }
             headers.Add(header);
         }
         if (headers.Count == 0) return;
