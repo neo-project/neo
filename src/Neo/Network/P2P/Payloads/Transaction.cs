@@ -249,7 +249,7 @@ public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
         return Hash.GetHashCode();
     }
 
-    public UInt160[] GetScriptHashesForVerifying(IReadOnlyStore? snapshot)
+    public UInt160[] GetScriptHashesForVerifying(IReadOnlyStore? snapshot = null)
     {
         return Signers.Select(p => p.Account).ToArray();
     }

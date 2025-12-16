@@ -41,7 +41,7 @@ public static class Nep17NativeContractExtensions
 
         public void DeserializeUnsigned(ref MemoryReader reader) { }
 
-        public UInt160[] GetScriptHashesForVerifying(IReadOnlyStore? snapshot) => _hashForVerify;
+        public UInt160[] GetScriptHashesForVerifying(IReadOnlyStore? snapshot = null) => _hashForVerify;
 
         public void Serialize(BinaryWriter writer) { }
 
