@@ -12,15 +12,18 @@
 #pragma warning disable IDE0051
 
 using Neo.Extensions;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 
@@ -697,8 +700,16 @@ namespace Neo.SmartContract.Native
 
             foreach (var contractHash in validatedTokens)
             {
-                engine.CallContract(contractHash, "balanceOf", CallFlags.ReadOnly, new VM.Types.Array(engine.ReferenceCounter, [account.ToArray()]));
+                var debugger = new Debugger(engine);
 
+                engine.CallContract(contractHash, "balanceOf", CallFlags.ReadOnly,
+                    new VM.Types.Array(engine.ReferenceCounter, [account.ToArray()]));
+
+                // Execute balanceOf
+                var context = engine.CurrentContext;
+                while (engine.InvocationStack.Contains(context!)) debugger.StepInto();
+
+                // Check balance
                 var balance = engine.Pop().GetInteger();
 
                 if (balance > 0)
@@ -714,6 +725,15 @@ namespace Neo.SmartContract.Native
                         engine.CallContract(contractHash, "transfer", CallFlags.All,
                             new VM.Types.Array(engine.ReferenceCounter,
                             [account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null]));
+
+                        // Execute transfer
+                        context = engine.CurrentContext;
+                        while (engine.InvocationStack.Contains(context!)) debugger.StepInto();
+
+                        // check result
+                        var result = engine.Pop().GetBoolean();
+                        if (!result)
+                            throw new InvalidOperationException($"Transfer of {balance} from {account} to {committeeMultiSigAddr} failed in contract {contractHash}.");
                     }
                     catch { throw; }
                     finally

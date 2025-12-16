@@ -24,7 +24,6 @@ using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -214,6 +213,37 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(50, ret.GetInteger());
+        }
+
+        [TestMethod]
+        public void Check_RecoverFunds()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            // Fake blockchain
+
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+
+            // Without signature
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                    "recoverFundsFinish",
+                    new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero },
+                    new ContractParameter(ContractParameterType.Array) { Value = System.Array.Empty<ContractParameter>() });
+            });
         }
 
         [TestMethod]
