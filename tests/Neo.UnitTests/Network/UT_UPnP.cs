@@ -11,26 +11,58 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network;
+using Neo.UnitTests.Network;
 using System;
-using System.Net.Sockets;
+using System.Linq;
+using System.Net;
 
-namespace Neo.UnitTests.Network
+namespace Neo.Extensions.Tests.Net
 {
     [TestClass]
     public class UT_UPnP
     {
-        [TestMethod]
-        public void GetTimeOut()
+        public TestContext TestContext { get; set; }
+
+        private TestUPnPMockServer _server;
+        private TestUPnPServerConfig _serverConfig;
+
+        [TestInitialize]
+        public void Setup()
         {
-            Assert.AreEqual(3, UPnP.TimeOut.TotalSeconds);
+            _serverConfig = new();
+            _server = new(_serverConfig);
+            _server.Start();
+            Utility.Logging += TestUpnp_Logging;
+        }
+
+        private void TestUpnp_Logging(string source, LogLevel level, object message)
+        {
+            TestContext.WriteLine("[{0}] {1}: {2}", level, source, message);
+        }
+
+        [TestCleanup]
+        public void Clean()
+        {
+            _server.Dispose();
+            Utility.Logging -= TestUpnp_Logging;
         }
 
         [TestMethod]
-        public void NoService()
+        public void Connect()
         {
-            Assert.ThrowsExactly<InvalidOperationException>(() => UPnP.ForwardPort(1, ProtocolType.Tcp, ""));
-            Assert.ThrowsExactly<InvalidOperationException>(() => UPnP.DeleteForwardingRule(1, ProtocolType.Tcp));
-            Assert.ThrowsExactly<InvalidOperationException>(() => _ = UPnP.GetExternalIP());
+            var expectedServiceControlUri = new Uri("http://127.0.0.1:5431/uuid:0000e068-20a0-00e0-20a0-48a802086048/WANIPConnection:1");
+            var expectedDeviceUri = new Uri("http://127.0.0.1:5431/dyndev/uuid:0000e068-20a0-00e0-20a0-48a8000808e0");
+
+            var actualDevices = UPnP.Search();
+            var (actualDeviceUri, actualDevice) = actualDevices.FirstOrDefault();
+
+            Assert.IsNotNull(actualDeviceUri);
+            Assert.IsNotNull(actualDevice);
+            Assert.AreEqual(expectedDeviceUri, actualDeviceUri);
+            Assert.AreEqual(IPAddress.Loopback, actualDevice.HostEndPoint.Address);
+            Assert.AreEqual(5431, actualDevice.HostEndPoint.Port);
+            Assert.AreEqual(expectedServiceControlUri, actualDevice.ServiceControlUri);
+            Assert.AreEqual("urn:schemas-upnp-org:service:WANIPConnection:1", actualDevice.ServiceType);
         }
     }
 }

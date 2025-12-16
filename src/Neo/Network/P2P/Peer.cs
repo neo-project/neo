@@ -12,15 +12,16 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions;
+using Neo.Network.Messages.Requests;
+using Neo.Network.Messages.Responses;
 using System;
-using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
-using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -168,17 +169,6 @@ namespace Neo.Network.P2P
             });
         }
 
-        private static bool IsIntranetAddress(IPAddress address)
-        {
-            byte[] data = address.MapToIPv4().GetAddressBytes();
-            uint value = BinaryPrimitives.ReadUInt32BigEndian(data);
-            return (value & 0xff000000) == 0x0a000000 ||
-                   (value & 0xff000000) == 0x7f000000 ||
-                   (value & 0xfff00000) == 0xac100000 ||
-                   (value & 0xffff0000) == 0xc0a80000 ||
-                   (value & 0xffff0000) == 0xa9fe0000;
-        }
-
         /// <summary>
         /// Called for asking for more peers.
         /// </summary>
@@ -271,20 +261,35 @@ namespace Neo.Network.P2P
 
             // schedule time to trigger `OnTimer` event every TimerMillisecondsInterval ms
             _timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-            if ((ListenerTcpPort > 0)
-                && s_localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
-                && UPnP.Discover())
-            {
-                try
-                {
-                    s_localAddresses.Add(UPnP.GetExternalIP());
-
-                    if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
-                }
-                catch { }
-            }
             if (ListenerTcpPort > 0)
             {
+                Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        // Opens port on all NAT devices
+                        var natDevices = UPnP.Search();
+
+                        foreach (var (_, device) in natDevices)
+                        {
+                            var soapClient = new SoapClient(device.ServiceControlUri, device.ServiceType);
+                            var externalIpMessage = new GetExternalIPAddressRequestMessage();
+                            var responseData = soapClient.Invoke(RequestMessage.GetExternalIpAddressActionName, externalIpMessage.ToXml());
+
+                            var response = new GetExternalIPAddressResponseMessage(responseData, device.ServiceType);
+                            var publicIp = response.ExternalIPAddress.Equals(IPAddress.None) ? string.Empty : $"{response.ExternalIPAddress}";
+                            var port = $"{ListenerTcpPort}";
+                            var portMessage = new CreatePortMappingRequestMessage(publicIp, port, port, $"{device.LocalAddress}", "NEO Tcp");
+
+                            _ = soapClient.Invoke(RequestMessage.AddPortMappingActionName, portMessage.ToXml());
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Utility.Log(nameof(UPnP), LogLevel.Error, ex.Message);
+                    }
+                });
+
                 s_tcpManager.Tell(new Tcp.Bind(Self, config.Tcp, options: [new Inet.SO.ReuseAddress(true)]));
             }
         }

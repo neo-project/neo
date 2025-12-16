@@ -9,10 +9,18 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions.Exceptions;
+using Neo.Extensions.Xml;
+using Neo.Network.Messages;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Xml;
@@ -22,170 +30,213 @@ namespace Neo.Network
     /// <summary>
     /// Provides methods for interacting with UPnP devices.
     /// </summary>
-    public static class UPnP
+    internal static class UPnP
     {
-        private static string s_serviceUrl;
+        private static readonly IPAddress s_ipv4MulticastAddress = IPAddress.Parse("239.255.255.250");
+        private static readonly IPAddress s_ipv6LinkLocalMulticastAddress = IPAddress.Parse("FF02::C");
+        private static readonly IPAddress s_ipv6LinkSiteMulticastAddress = IPAddress.Parse("FF05::C");
 
-        /// <summary>
-        /// Gets or sets the timeout for discovering the UPnP device.
-        /// </summary>
-        public static TimeSpan TimeOut { get; set; } = TimeSpan.FromSeconds(3);
+        private static readonly Dictionary<Uri, UpnpNatDeviceInfo> s_devices = [];
 
-        /// <summary>
-        /// Sends an Udp broadcast message to discover the UPnP device.
-        /// </summary>
-        /// <returns><see langword="true"/> if the UPnP device is successfully discovered; otherwise, <see langword="false"/>.</returns>
-        public static bool Discover()
+        private static List<UdpClient> s_udpClients = null;
+
+        private static readonly string[] s_serviceTypes = new[]{
+            "WANIPConnection:2",
+            "WANPPPConnection:2",
+            "WANIPConnection:1",
+            "WANPPPConnection:1"
+        };
+
+        private static string EncodeMessage(string serviceType, IPAddress address)
         {
-            using Socket s = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            s.ReceiveTimeout = (int)TimeOut.TotalMilliseconds;
-            s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-            var req = "M-SEARCH * HTTP/1.1\r\n" +
-            "HOST: 239.255.255.250:1900\r\n" +
-            "ST:upnp:rootdevice\r\n" +
-            "MAN:\"ssdp:discover\"\r\n" +
-            "MX:3\r\n\r\n";
-            var data = Encoding.ASCII.GetBytes(req);
-            var ipe = new IPEndPoint(IPAddress.Broadcast, 1900);
-            var start = DateTime.UtcNow;
+            var fmtAddress = string.Format(
+                address.AddressFamily == AddressFamily.InterNetwork ? "{0}" : "[{0}]",
+                address);
+
+            var s = "M-SEARCH * HTTP/1.1\r\n"
+                    + "HOST: " + fmtAddress + ":1900\r\n"
+                    + "MAN: \"ssdp:discover\"\r\n"
+                    + "MX: 3\r\n"
+                    + "ST: urn:schemas-upnp-org:service:{0}\r\n\r\n";
+            //        + "ST:upnp:rootdevice\r\n\r\n";
+            //        + "ST:ssdp:all\r\n\r\n";
+            return string.Format(CultureInfo.InvariantCulture, s, serviceType);
+        }
+
+        private static IEnumerable<IPAddress> UnicastAddresses() =>
+            IpAddresses(i => i.UnicastAddresses.Select(s => s.Address));
+
+        private static IEnumerable<IPAddress> IpAddresses(Func<IPInterfaceProperties, IEnumerable<IPAddress>> ipExtractor) =>
+            NetworkInterface.GetAllNetworkInterfaces()
+            .Where(w => w.OperationalStatus == OperationalStatus.Up || w.OperationalStatus == OperationalStatus.Unknown)
+            .SelectMany(sm => ipExtractor(sm.GetIPProperties()))
+            .Where(w => w.AddressFamily == AddressFamily.InterNetwork || w.AddressFamily == AddressFamily.InterNetworkV6 | w.AddressFamily == AddressFamily.AppleTalk);
+
+        private static List<UdpClient> CreateUdpClients()
+        {
+            var clients = new List<UdpClient>();
 
             try
             {
-                s.SendTo(data, ipe);
-                s.SendTo(data, ipe);
-                s.SendTo(data, ipe);
-            }
-            catch
-            {
-                return false;
-            }
-
-            Span<byte> buffer = stackalloc byte[0x1000];
-
-            do
-            {
-                int length;
-                try
+                var ips = UnicastAddresses();
+                foreach (var ipAddress in ips)
                 {
-                    length = s.Receive(buffer);
-
-                    var resp = Encoding.ASCII.GetString(buffer[..length]).ToLowerInvariant();
-                    if (resp.Contains("upnp:rootdevice"))
+                    try
                     {
-                        resp = resp[(resp.IndexOf("location:") + 9)..];
-                        resp = resp[..resp.IndexOf('\r')].Trim();
-                        if (!string.IsNullOrEmpty(s_serviceUrl = GetServiceUrl(resp)))
-                        {
-                            return true;
-                        }
+                        var ipEndPoint = new IPEndPoint(ipAddress, 0);
+                        var udpClient = new UdpClient(ipEndPoint);
+                        clients.Add(udpClient);
+                    }
+                    catch (Exception ex)
+                    {
+                        var error = string.Format("[{0}] {1}", ipAddress, ex.Message);
+                        Utility.Log(nameof(UPnP), LogLevel.Warning, error);
                     }
                 }
-                catch
-                {
-                    continue;
-                }
             }
-            while (DateTime.UtcNow - start < TimeOut);
-
-            return false;
-        }
-
-        private static string GetServiceUrl(string resp)
-        {
-            try
+            catch (Exception ex)
             {
-                var desc = new XmlDocument() { XmlResolver = null };
-                desc.Load(resp);
-                var nsMgr = new XmlNamespaceManager(desc.NameTable);
-                nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
-                var typen = desc.SelectSingleNode("//tns:device/tns:deviceType/text()", nsMgr);
-                if (!typen.Value.Contains("InternetGatewayDevice"))
-                    return null;
-                var node = desc.SelectSingleNode("//tns:service[contains(tns:serviceType,\"WANIPConnection\")]/tns:controlURL/text()", nsMgr);
-                if (node == null)
-                    return null;
-                var eventnode = desc.SelectSingleNode("//tns:service[contains(tns:serviceType,\"WANIPConnection\")]/tns:eventSubURL/text()", nsMgr);
-                return CombineUrls(resp, node.Value);
+                Utility.Log(nameof(UPnP), LogLevel.Warning, ex.Message);
+                clients.Add(new UdpClient(0));
             }
-            catch { return null; }
+
+            return clients;
         }
 
-        private static string CombineUrls(string resp, string p)
+        private static bool IsValidControllerService(string serviceType) =>
+            s_serviceTypes
+                .Select(s => string.Format("urn:schemas-upnp-org:service:{0}", s))
+                .Where(w => serviceType.Contains(w, StringComparison.OrdinalIgnoreCase))
+                .Any();
+
+        private static XmlDocument ReadXmlResponse(HttpContent response)
         {
-            var n = resp.IndexOf("://");
-            n = resp.IndexOf('/', n + 3);
-            return resp[..n] + p;
+            using var reader = new StreamReader(response.ReadAsStream(), Encoding.UTF8);
+            var servicesXml = reader.ReadToEnd();
+            var xmldoc = new XmlDocument();
+            xmldoc.LoadXml(servicesXml);
+            return xmldoc;
         }
 
-        /// <summary>
-        /// Attempt to create a port forwarding.
-        /// </summary>
-        /// <param name="port">The port to forward.</param>
-        /// <param name="protocol">The <see cref="ProtocolType"/> of the port.</param>
-        /// <param name="description">The description of the forward.</param>
-        public static void ForwardPort(int port, ProtocolType protocol, string description)
+        [return: MaybeNull]
+        private static UpnpNatDeviceInfo BuildUpnpNatDeviceInfo(IPAddress localAddress, Uri location)
         {
-            if (string.IsNullOrEmpty(s_serviceUrl))
-                throw new InvalidOperationException("UPnP service is not available. Please call UPnP.Discover() and ensure a UPnP device is detected on the network before attempting to forward ports.");
-            SOAPRequest(s_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
-                "<NewRemoteHost></NewRemoteHost><NewExternalPort>" + port.ToString() + "</NewExternalPort><NewProtocol>" + protocol.ToString().ToUpper() + "</NewProtocol>" +
-                "<NewInternalPort>" + port.ToString() + "</NewInternalPort><NewInternalClient>" + Dns.GetHostAddresses(Dns.GetHostName()).First(p => p.AddressFamily == AddressFamily.InterNetwork).ToString() +
-                "</NewInternalClient><NewEnabled>1</NewEnabled><NewPortMappingDescription>" + description +
-            "</NewPortMappingDescription><NewLeaseDuration>0</NewLeaseDuration></u:AddPortMapping>", "AddPortMapping");
+            var request = new HttpClient()
+            {
+                DefaultRequestVersion = new(1, 1),
+                Timeout = TimeSpan.FromSeconds(30),
+            };
+
+            request.DefaultRequestHeaders.AcceptLanguage.Add(new("en"));
+
+            using var response = request.GetAsync(location).GetAwaiter().GetResult();
+
+            if (response.IsSuccessStatusCode == false)
+                throw new Exception($"Couldn't get services list: {response.StatusCode}");
+
+            var xmlDoc = ReadXmlResponse(response.Content);
+            var ns = new XmlNamespaceManager(xmlDoc.NameTable);
+            ns.AddNamespace("ns", "urn:schemas-upnp-org:device-1-0");
+
+            var services = xmlDoc.SelectNodes("//ns:service", ns);
+            foreach (XmlNode service in services)
+            {
+                var serviceType = service.GetXmlElementText("serviceType");
+                if (IsValidControllerService(serviceType) == false) continue;
+
+                var serviceControlUrl = service.GetXmlElementText("controlURL");
+                return new(localAddress, location, serviceControlUrl, serviceType);
+            }
+
+            return null;
         }
 
-        /// <summary>
-        /// Attempt to delete a port forwarding.
-        /// </summary>
-        /// <param name="port">The port to forward.</param>
-        /// <param name="protocol">The <see cref="ProtocolType"/> of the port.</param>
-        public static void DeleteForwardingRule(int port, ProtocolType protocol)
+        private static void Discover(UdpClient client)
         {
-            if (string.IsNullOrEmpty(s_serviceUrl))
-                throw new InvalidOperationException("UPnP service is not available. Please call UPnP.Discover() and ensure a UPnP device is detected on the network before attempting to delete port forwarding rules.");
-            SOAPRequest(s_serviceUrl,
-            "<u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
-            "<NewRemoteHost>" +
-            "</NewRemoteHost>" +
-            "<NewExternalPort>" + port + "</NewExternalPort>" +
-            "<NewProtocol>" + protocol.ToString().ToUpper() + "</NewProtocol>" +
-            "</u:DeletePortMapping>", "DeletePortMapping");
+            Discover(client, IPAddress.Loopback);
+            Discover(client, IPAddress.Broadcast);
+            Discover(client, s_ipv4MulticastAddress);
+            if (Socket.OSSupportsIPv6)
+            {
+                Discover(client, s_ipv6LinkLocalMulticastAddress);
+                Discover(client, s_ipv6LinkSiteMulticastAddress);
+            }
         }
 
-        /// <summary>
-        /// Attempt to get the external IP address of the local host.
-        /// </summary>
-        /// <returns>The external IP address of the local host.</returns>
-        public static IPAddress GetExternalIP()
+        private static void Discover(UdpClient client, IPAddress address)
         {
-            if (string.IsNullOrEmpty(s_serviceUrl))
-                throw new InvalidOperationException("UPnP service is not available. Please call UPnP.Discover() and ensure a UPnP device is detected on the network before attempting to retrieve the external IP address.");
-            var xdoc = SOAPRequest(s_serviceUrl, "<u:GetExternalIPAddress xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
-            "</u:GetExternalIPAddress>", "GetExternalIPAddress");
-            var nsMgr = new XmlNamespaceManager(xdoc.NameTable);
-            nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
-            var ip = xdoc.SelectSingleNode("//NewExternalIPAddress/text()", nsMgr).Value;
-            return IPAddress.Parse(ip);
+            var searchEndPoint = new IPEndPoint(address, 1900);
+
+            foreach (var serviceType in s_serviceTypes)
+            {
+                var dataX = EncodeMessage(serviceType, address);
+                var data = Encoding.ASCII.GetBytes(dataX);
+
+                for (var i = 0; i < 3; i++)
+                    client.Send(data, data.Length, searchEndPoint);
+            }
         }
 
-        private static XmlDocument SOAPRequest(string url, string soap, string function)
+        private static void Discover()
         {
-            var req = "<?xml version=\"1.0\"?>" +
-            "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">" +
-            "<s:Body>" +
-            soap +
-            "</s:Body>" +
-            "</s:Envelope>";
-            using var request = new HttpRequestMessage(HttpMethod.Post, url);
-            request.Headers.Add("SOAPACTION", $"\"urn:schemas-upnp-org:service:WANIPConnection:1#{function}\"");
-            request.Headers.Add("Content-Type", "text/xml; charset=\"utf-8\"");
-            request.Content = new StringContent(req);
-            using var http = new HttpClient();
-            using var response = http.SendAsync(request).GetAwaiter().GetResult();
-            using var stream = response.EnsureSuccessStatusCode().Content.ReadAsStreamAsync().GetAwaiter().GetResult();
-            var resp = new XmlDocument() { XmlResolver = null };
-            resp.Load(stream);
-            return resp;
+            s_udpClients = CreateUdpClients();
+
+            foreach (var socket in s_udpClients)
+            {
+                socket.TryCatch<UdpClient, Exception>(
+                    Discover,
+                    (c, e) =>
+                    {
+                        var error = string.Format("[{0}] {1}", (IPEndPoint)c.Client.LocalEndPoint, e.Message);
+                        Utility.Log(nameof(UPnP), LogLevel.Warning, error);
+                    }
+                );
+            }
+        }
+
+        private static void Receive()
+        {
+            foreach (var client in s_udpClients.Where(w => w.Available > 0))
+            {
+                var localHost = ((IPEndPoint)client.Client.LocalEndPoint).Address;
+                var receivedFrom = new IPEndPoint(IPAddress.None, 0);
+                var buffer = client.Receive(ref receivedFrom);
+                _ = AnalyzeReceivedResponse(localHost, buffer, receivedFrom);
+            }
+        }
+
+        private static void CloseUdpClients()
+        {
+            foreach (var udpClient in s_udpClients)
+                udpClient.Close();
+        }
+
+        [return: MaybeNull]
+        private static UpnpNatDeviceInfo AnalyzeReceivedResponse(IPAddress localAddress, byte[] response, IPEndPoint endPoint)
+        {
+            var dataString = Encoding.UTF8.GetString(response);
+            var message = new DiscoveryResponseMessage(dataString);
+            var serviceType = message["ST"];
+
+            if (IsValidControllerService(serviceType) == false)
+                return null;
+
+            var location = message["Location"] ?? message["AL"];
+            var locationUri = new Uri(location);
+            var deviceInfo = BuildUpnpNatDeviceInfo(localAddress, locationUri);
+
+            _ = s_devices.TryAdd(locationUri, deviceInfo);
+
+            return deviceInfo;
+        }
+
+        public static IReadOnlyDictionary<Uri, UpnpNatDeviceInfo> Search()
+        {
+            Discover();
+            Receive();
+            CloseUdpClients();
+
+            return s_devices;
         }
     }
 }
