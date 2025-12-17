@@ -216,37 +216,6 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_RecoverFunds()
-        {
-            var snapshot = _snapshotCache.CloneCache();
-
-            // Fake blockchain
-
-            Block block = new()
-            {
-                Header = new Header
-                {
-                    PrevHash = UInt256.Zero,
-                    MerkleRoot = UInt256.Zero,
-                    Index = 1000,
-                    NextConsensus = UInt160.Zero,
-                    Witness = null!
-                },
-                Transactions = []
-            };
-
-            // Without signature
-
-            Assert.ThrowsExactly<InvalidOperationException>(() =>
-            {
-                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
-                    "recoverFundsFinish",
-                    new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero },
-                    new ContractParameter(ContractParameterType.Array) { Value = System.Array.Empty<ContractParameter>() });
-            });
-        }
-
-        [TestMethod]
         public void Check_RecoverFunds_CompleteFlow()
         {
             var snapshot = _snapshotCache.CloneCache();
@@ -291,6 +260,14 @@ namespace Neo.UnitTests.SmartContract.Native
                 Transactions = []
             };
 
+            // Try Without signature
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                    "recoverFundsFinish",
+                    new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero },
+                    new ContractParameter(ContractParameterType.Array) { Value = System.Array.Empty<ContractParameter>() });
+            });
             // Step 1: Block the account
             var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), blockStart,
                 "blockAccount",
