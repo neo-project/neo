@@ -53,7 +53,7 @@ namespace Neo.SmartContract.Native
             "OriginalTx", ContractParameterType.Hash256)]
         internal OracleContract() : base() { }
 
-        public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_Faun]; // supported standards update at Faun.
+        public override ImmutableHashSet<Hardfork?> Activations => [null, Hardfork.HF_Faun]; // Active from begining, but supported standards update at Faun.
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
