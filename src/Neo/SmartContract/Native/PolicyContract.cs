@@ -112,8 +112,7 @@ namespace Neo.SmartContract.Native
         /// The event name for the block generation time changed.
         /// </summary>
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
-        private const string RecoverFundsStartEventName = "RecoverFundsStarted";
-        private const string RecoverFundsEndsEventName = "RecoverFundsFinished";
+        private const string RecoveredFundsEventName = "RecoveredFunds";
         private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
@@ -126,8 +125,7 @@ namespace Neo.SmartContract.Native
             "argCount", ContractParameterType.Integer,
             "fee", ContractParameterType.Any
         )]
-        [ContractEvent(Hardfork.HF_Faun, 2, name: RecoverFundsStartEventName, "account", ContractParameterType.Hash160)]
-        [ContractEvent(Hardfork.HF_Faun, 3, name: RecoverFundsEndsEventName, "account", ContractParameterType.Hash160)]
+        [ContractEvent(Hardfork.HF_Faun, 3, name: RecoveredFundsEventName, "account", ContractParameterType.Hash160)]
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
@@ -582,11 +580,29 @@ namespace Neo.SmartContract.Native
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
 
-            if (engine.SnapshotCache.Contains(key)) return false;
+            if (engine.SnapshotCache.Contains(key))
+            {
+                // Check if it is stored the recover funds time
+                if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                {
+                    key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
+                    // Don't modify it if already exists
+                    _ = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(engine.GetTime()));
+                }
+
+                return false;
+            }
 
             await NEO.VoteInternal(engine, account, null);
-
             engine.SnapshotCache.Add(key, new StorageItem([]));
+
+            // Set request time for recover funds
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+            {
+                key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
+                var entry = engine.SnapshotCache.GetAndChange(key, () => new StorageItem());
+                entry.Set(engine.GetTime());
+            }
             return true;
         }
 
@@ -604,7 +620,6 @@ namespace Neo.SmartContract.Native
 
             key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
             engine.SnapshotCache.Delete(key);
-
             return true;
         }
 
@@ -619,27 +634,6 @@ namespace Neo.SmartContract.Native
         }
 
         #region Recover Funds
-
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        public void RecoverFundsStart(ApplicationEngine engine, UInt160 account)
-        {
-            AssertAlmostFullCommittee(engine);
-
-            // Must be blocked
-
-            if (!IsBlocked(engine.SnapshotCache, account))
-                throw new InvalidOperationException("The account is not blocked.");
-
-            // Set request time
-
-            var key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
-            var entry = engine.SnapshotCache.GetAndChange(key, () => new StorageItem())!;
-            entry.Set(engine.GetTime());
-
-            // Notify
-
-            engine.SendNotification(Hash, RecoverFundsStartEventName, [new ByteString(account.ToArray())]);
-        }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         internal async ContractTask RecoverFundsFinish(ApplicationEngine engine, UInt160 account, VM.Types.Array extraTokens)
@@ -691,7 +685,7 @@ namespace Neo.SmartContract.Native
             // Remove and notify
 
             engine.SnapshotCache.Delete(key);
-            engine.SendNotification(Hash, RecoverFundsEndsEventName, [new VM.Types.ByteString(account.ToArray())]);
+            engine.SendNotification(Hash, RecoveredFundsEventName, [new ByteString(account.ToArray())]);
 
             // Transfer funds, NEO, GAS and extra NEP17 tokens
 
