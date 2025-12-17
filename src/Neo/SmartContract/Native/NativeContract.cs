@@ -129,7 +129,7 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// The set of hardforks that contract should be updated at, except the ActiveIn
-        /// hardfork and a set of method/event activation hardforks.
+        /// the first entry is the hardfork when the contract will be activated.
         /// </summary>
         public virtual ImmutableHashSet<Hardfork?> Activations { get; } = [];
 
