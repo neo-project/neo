@@ -648,7 +648,18 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestCalculateBonus()
         {
-            var persistingBlock = (Block)RuntimeHelpers.GetUninitializedObject(typeof(Block));
+            var persistingBlock = new Block
+            {
+                Header = new()
+                {
+                    Index = 1,
+                    Witness = Witness.Empty,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero
+                },
+                Transactions = [],
+            };
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero),
                 _snapshotCache.CloneCache(), persistingBlock, settings: TestProtocolSettings.Default);
@@ -710,6 +721,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var item = engine.SnapshotCache.GetAndChange(storageKey).GetInteroperable<HashIndexState>();
             item.Index = 99;
 
+            persistingBlock.Header.Index = 100;
             Assert.AreEqual(new BigInteger(0.5 * 100 * 100), NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 100));
             engine.SnapshotCache.Delete(key);
 
@@ -907,15 +919,15 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestEconomicParameter()
         {
             const byte Prefix_CurrentBlock = 12;
-            using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero),
-                _snapshotCache.CloneCache(), null, settings: TestProtocolSettings.Default);
-
             var persistingBlock = new Block
             {
                 Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
                 Transactions = []
             };
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero),
+                _snapshotCache.CloneCache(), persistingBlock, settings: TestProtocolSettings.Default);
 
             (BigInteger, bool) result = Check_GetGasPerBlock(engine.SnapshotCache, persistingBlock);
             Assert.IsTrue(result.Item2);
