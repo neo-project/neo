@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native
             if (engine.PersistingBlock is null) return null;
 
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            BigInteger datoshi = CalculateBonus(engine.SnapshotCache, state, engine.PersistingBlock.Index);
+            BigInteger datoshi = CalculateBonus(engine, state, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
             if (state.VoteTo is not null)
             {
@@ -143,16 +143,16 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state, uint end)
+        private BigInteger CalculateBonus(ApplicationEngine engine, NeoAccountState state, uint end)
         {
             if (state.Balance.IsZero) return BigInteger.Zero;
             if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance), "cannot be negative");
 
-            var expectEnd = Ledger.CurrentIndex(snapshot) + 1;
+            var expectEnd = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache) + 1;
             if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
             if (state.BalanceHeight >= end) return BigInteger.Zero;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            (var neoHolderReward, var voteReward) = CalculateReward(snapshot, state, end);
+            (var neoHolderReward, var voteReward) = CalculateReward(engine.SnapshotCache, state, end);
 
             return neoHolderReward + voteReward;
         }
@@ -354,17 +354,17 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Get the amount of unclaimed GAS in the specified account.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The engine used to check witness and read data.</param>
         /// <param name="account">The account to check.</param>
         /// <param name="end">The block index used when calculating GAS.</param>
         /// <returns>The amount of unclaimed GAS.</returns>
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
+        public BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
         {
-            StorageItem? storage = snapshot.TryGet(CreateStorageKey(Prefix_Account, account));
+            StorageItem? storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
-            return CalculateBonus(snapshot, state, end);
+            return CalculateBonus(engine, state, end);
         }
 
         /// <summary>
