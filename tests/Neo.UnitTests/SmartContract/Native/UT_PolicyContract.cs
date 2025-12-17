@@ -297,7 +297,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Step 3: Call recoverFundsFinish (after required time has passed)
             // This should transfer all funds to Treasury
             NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr), blockFinish,
-                "recoverFundsFinish",
+                "recoverFunds",
                 new ContractParameter(ContractParameterType.Hash160) { Value = blockedAccount },
                 new ContractParameter(ContractParameterType.Array) { Value = System.Array.Empty<ContractParameter>() });
 

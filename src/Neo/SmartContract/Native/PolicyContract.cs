@@ -633,10 +633,8 @@ namespace Neo.SmartContract.Native
             return new StorageIterator(enumerator, 1, options);
         }
 
-        #region Recover Funds
-
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        internal async ContractTask RecoverFundsFinish(ApplicationEngine engine, UInt160 account, VM.Types.Array extraTokens)
+        internal async ContractTask RecoverFunds(ApplicationEngine engine, UInt160 account, VM.Types.Array extraTokens)
         {
             var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
 
@@ -705,18 +703,6 @@ namespace Neo.SmartContract.Native
                 }
             }
         }
-
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private StorageIterator GetFundsRecoverRequests(DataCache snapshot)
-        {
-            var enumerator = snapshot
-                .Find(CreateStorageKey(Prefix_BlockedAccountRequestFunds), SeekDirection.Forward)
-                .GetEnumerator();
-
-            return new StorageIterator(enumerator, 1, FindOptions.RemovePrefix);
-        }
-
-        #endregion
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
