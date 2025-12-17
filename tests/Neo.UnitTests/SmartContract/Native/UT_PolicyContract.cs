@@ -250,7 +250,11 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_RecoverFunds_CompleteFlow()
         {
             var snapshot = _snapshotCache.CloneCache();
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            // Get almost full committee address
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var committees = NativeContract.NEO.GetCommittee(snapshot);
+            var committeeFullMultiSigAddr = Contract.CreateMultiSigRedeemScript(19, committees).ToScriptHash();
             // Create a blocked account
             UInt160 blockedAccount = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             ulong startTime = 1000000;
@@ -314,13 +318,13 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(gasBalance, NativeContract.GAS.BalanceOf(snapshot, blockedAccount));
 
             // Step 3: Call recoverFundsStart
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), blockStart,
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr), blockStart,
                 "recoverFundsStart",
                 new ContractParameter(ContractParameterType.Hash160) { Value = blockedAccount });
 
             // Step 4: Call recoverFundsFinish (after required time has passed)
             // This should transfer all funds to Treasury
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), blockFinish,
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr), blockFinish,
                 "recoverFundsFinish",
                 new ContractParameter(ContractParameterType.Hash160) { Value = blockedAccount },
                 new ContractParameter(ContractParameterType.Array) { Value = System.Array.Empty<ContractParameter>() });

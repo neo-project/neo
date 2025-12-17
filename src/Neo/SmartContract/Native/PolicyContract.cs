@@ -12,18 +12,15 @@
 #pragma warning disable IDE0051
 
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 
@@ -645,7 +642,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        public void RecoverFundsFinish(ApplicationEngine engine, UInt160 account, VM.Types.Array extraTokens)
+        internal async ContractTask RecoverFundsFinish(ApplicationEngine engine, UInt160 account, VM.Types.Array extraTokens)
         {
             var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
 
@@ -698,50 +695,19 @@ namespace Neo.SmartContract.Native
 
             // Transfer funds, NEO, GAS and extra NEP17 tokens
 
-            var debugger = new Debugger(engine);
-
             foreach (var contractHash in validatedTokens)
             {
-                engine.CallContract(contractHash, "balanceOf", CallFlags.ReadOnly,
-                    new VM.Types.Array(engine.ReferenceCounter, [account.ToArray()]));
-
-                // Execute balanceOf
-                var context = engine.CurrentContext;
-                while (engine.InvocationStack.Contains(context!)) debugger.StepInto();
-
                 // Check balance
-                var balance = engine.Pop().GetInteger();
+                var balance = await engine.CallFromNativeContractAsync<BigInteger>(account, contractHash, "balanceOf", account.ToArray());
 
                 if (balance > 0)
                 {
-                    // Mock account witness in CheckWitnessInternal
+                    // transfer
+                    var result = await engine.CallFromNativeContractAsync<bool>(account, contractHash, "transfer",
+                        account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null);
 
-                    var state = engine.CurrentContext!.GetState<ExecutionContextState>();
-                    var bak = state.NativeCallingScriptHash;
-                    state.NativeCallingScriptHash = account;
-
-                    try
-                    {
-                        engine.CallContract(contractHash, "transfer", CallFlags.All,
-                            new VM.Types.Array(engine.ReferenceCounter,
-                            [account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null]));
-
-                        // Execute transfer
-                        context = engine.CurrentContext;
-                        while (engine.InvocationStack.Contains(context!)) debugger.StepInto();
-
-                        // check result
-                        var result = engine.Pop().GetBoolean();
-                        if (!result)
-                            throw new InvalidOperationException($"Transfer of {balance} from {account} to {committeeMultiSigAddr} failed in contract {contractHash}.");
-                    }
-                    catch { throw; }
-                    finally
-                    {
-                        // Reset witnesses
-
-                        state.NativeCallingScriptHash = bak;
-                    }
+                    if (!result)
+                        throw new InvalidOperationException($"Transfer of {balance} from {account} to {committeeMultiSigAddr} failed in contract {contractHash}.");
                 }
             }
         }
