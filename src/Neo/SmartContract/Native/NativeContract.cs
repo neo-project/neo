@@ -125,11 +125,11 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Since Hardfork has to start having access to the native contract.
         /// </summary>
-        public virtual Hardfork? ActiveIn { get; } = null;
+        public Hardfork? ActiveIn => Activations.FirstOrDefault();
 
         /// <summary>
         /// The set of hardforks that contract should be updated at, except the ActiveIn
-        /// hardfork and a set of method/event activation hardforks.
+        /// the first entry is the hardfork when the contract will be activated.
         /// </summary>
         public virtual ImmutableHashSet<Hardfork?> Activations { get; } = [];
 
@@ -177,7 +177,6 @@ namespace Neo.SmartContract.Native
                     .Concat(_methodDescriptors.Select(u => u.DeprecatedIn))
                     .Concat(_eventsDescriptors.Select(u => u.DeprecatedIn))
                     .Concat(_eventsDescriptors.Select(u => u.ActiveIn))
-                    .Concat([ActiveIn])
                     .Concat(Activations)
                     .Where(u => u.HasValue)
                     .Select(u => u!.Value)

@@ -14,6 +14,7 @@
 
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
+using System.Collections.Immutable;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -25,7 +26,7 @@ namespace Neo.SmartContract.Native
     {
         internal Treasury() : base() { }
 
-        public override Hardfork? ActiveIn => Hardfork.HF_Faun;
+        public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_Faun];
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {

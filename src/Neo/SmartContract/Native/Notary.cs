@@ -47,9 +47,7 @@ namespace Neo.SmartContract.Native
 
         internal Notary() : base() { }
 
-        public override Hardfork? ActiveIn => Hardfork.HF_Echidna;
-
-        public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_Faun]; // supported standards update at Faun.
+        public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_Echidna, Hardfork.HF_Faun]; // supported standards update at Faun.
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
