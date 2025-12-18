@@ -301,6 +301,20 @@ public partial class ApplicationEngine : ExecutionEngine
         OnFault(ex);
     }
 
+    private void CheckProtectedMethods(ContractState contract, ContractMethodDescriptor method)
+    {
+        switch (method.Name)
+        {
+            case "onTransfer":
+            case "onNFTTransfer":
+            case "onPayment":
+            case "onNFTPayment":
+                if (!NativeContract.IsNative(CurrentScriptHash!))
+                    throw new InvalidOperationException($"Cannot call protected method {method.Name} Of contract {contract.Hash}.");
+                break;
+        }
+    }
+
     private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
     {
         ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash)
@@ -314,6 +328,8 @@ public partial class ApplicationEngine : ExecutionEngine
     {
         if (NativeContract.Policy.IsBlocked(SnapshotCache, contract.Hash))
             throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
+
+        CheckProtectedMethods(contract, method);
 
         ExecutionContext currentContext = CurrentContext!;
         ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
