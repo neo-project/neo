@@ -91,7 +91,6 @@ namespace Neo.SmartContract.Native
 
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_WhitelistedFeeContracts = 16;
-        private const byte Prefix_BlockedAccountRequestFunds = 17;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
@@ -588,14 +587,14 @@ namespace Neo.SmartContract.Native
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
 
-            if (engine.SnapshotCache.Contains(key))
+            var blockData = engine.SnapshotCache.TryGet(key);
+            if (blockData != null)
             {
                 // Check if it is stored the recover funds time
-                if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                if (blockData.Value.Length == 0 && engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 {
-                    key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
                     // Don't modify it if already exists
-                    _ = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(engine.GetTime()));
+                    blockData.Set(engine.GetTime());
                 }
 
                 return false;
@@ -603,15 +602,12 @@ namespace Neo.SmartContract.Native
 
             if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 await NEO.VoteInternal(engine, account, null);
-            engine.SnapshotCache.Add(key, new StorageItem([]));
 
-            // Set request time for recover funds
-            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
-            {
-                key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
-                var entry = engine.SnapshotCache.GetAndChange(key, () => new StorageItem());
-                entry.Set(engine.GetTime());
-            }
+            engine.SnapshotCache.Add(key,
+                // Set request time for recover funds
+                engine.IsHardforkEnabled(Hardfork.HF_Faun) ? new StorageItem(engine.GetTime())
+                : new StorageItem([]));
+
             return true;
         }
 
@@ -623,11 +619,6 @@ namespace Neo.SmartContract.Native
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (!engine.SnapshotCache.Contains(key)) return false;
 
-            engine.SnapshotCache.Delete(key);
-
-            // Remove request funds if any
-
-            key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
             engine.SnapshotCache.Delete(key);
             return true;
         }
@@ -649,7 +640,7 @@ namespace Neo.SmartContract.Native
 
             // Set request time
 
-            var key = CreateStorageKey(Prefix_BlockedAccountRequestFunds, account);
+            var key = CreateStorageKey(Prefix_BlockedAccount, account);
             var entry = engine.SnapshotCache.GetAndChange(key, null)
                 ?? throw new InvalidOperationException("Request not found.");
             if (engine.GetTime() - (BigInteger)entry < RequiredTimeForRecoverFunds)
@@ -691,7 +682,6 @@ namespace Neo.SmartContract.Native
 
             // Remove and notify
 
-            engine.SnapshotCache.Delete(key);
             engine.SendNotification(Hash, RecoveredFundsEventName, [new ByteString(account.ToArray())]);
 
             // Transfer funds, NEO, GAS and extra NEP17 tokens
