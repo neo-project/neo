@@ -921,7 +921,14 @@ namespace Neo.UnitTests.SmartContract.Native
             const byte Prefix_CurrentBlock = 12;
             var persistingBlock = new Block
             {
-                Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                Header = new()
+                {
+                    Index = 10,
+                    Witness = Witness.Empty,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero
+                },
                 Transactions = []
             };
 
@@ -933,24 +940,12 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(result.Item2);
             Assert.AreEqual(5 * NativeContract.GAS.Factor, result.Item1);
 
-            persistingBlock = new Block
-            {
-                Header = new Header
-                {
-                    PrevHash = UInt256.Zero,
-                    MerkleRoot = UInt256.Zero,
-                    Index = 10,
-                    NextConsensus = UInt160.Zero,
-                    Witness = null!
-                },
-                Transactions = []
-            };
             (Boolean, bool) result1 = Check_SetGasPerBlock(engine.SnapshotCache, 10 * NativeContract.GAS.Factor, persistingBlock);
             Assert.IsTrue(result1.Item2);
             Assert.IsTrue(result1.Item1.GetBoolean());
 
             var height = engine.SnapshotCache[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
-            height.Index = persistingBlock.Index + 1;
+            height.Index = 11;
             result = Check_GetGasPerBlock(engine.SnapshotCache, persistingBlock);
             Assert.IsTrue(result.Item2);
             Assert.AreEqual(10 * NativeContract.GAS.Factor, result.Item1);
@@ -960,8 +955,9 @@ namespace Neo.UnitTests.SmartContract.Native
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             state.Balance = 1000;
             state.BalanceHeight = 0;
-            height.Index = persistingBlock.Index + 1;
-            Assert.AreEqual(6500, NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, persistingBlock.Index + 2));
+            height.Index = 12;
+            persistingBlock.Header.Index = 12;
+            Assert.AreEqual(6500, NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, persistingBlock.Index));
         }
 
         [TestMethod]
