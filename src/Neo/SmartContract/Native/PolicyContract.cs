@@ -216,7 +216,7 @@ public sealed class PolicyContract : NativeContract
         engine.SnapshotCache.GetAndChange(_storagePrice)!.Set(value);
     }
 
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
     private async ContractTask<bool> BlockAccount(ApplicationEngine engine, UInt160 account)
     {
         AssertCommittee(engine);
