@@ -43,6 +43,10 @@ namespace Neo.SmartContract
         /// </summary>
         public Func<StackItem, object?> Converter { get; }
 
+        public bool IsNullable { get; }
+
+        public bool IsElementNullable { get; }
+
         /// <summary>
         /// Indicates whether the parameter is an enumeration.
         /// </summary>
@@ -85,11 +89,25 @@ namespace Neo.SmartContract
             : this(parameterInfo.ParameterType, parameterInfo.GetCustomAttributes<ValidatorAttribute>(true).ToArray())
         {
             Name = parameterInfo.Name;
+            if (!parameterInfo.ParameterType.IsValueType)
+            {
+                var context = new NullabilityInfoContext();
+                var info = context.Create(parameterInfo);
+                if (info.ReadState == NullabilityState.Nullable)
+                    IsNullable = true;
+                if (info.ElementType?.ReadState == NullabilityState.Nullable)
+                    IsElementNullable = true;
+            }
         }
 
         internal InteropParameterDescriptor(Type type, params ValidatorAttribute[] validators)
         {
             Type = type;
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                type = type.GenericTypeArguments[0];
+                IsNullable = true;
+            }
             _validators = validators;
             if (IsEnum)
             {
