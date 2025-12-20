@@ -137,9 +137,11 @@ public class StorageItem : ISerializable
     /// Increases the integer value in the store by the specified value.
     /// </summary>
     /// <param name="integer">The integer to add.</param>
-    public void Add(BigInteger integer)
+    public BigInteger Add(BigInteger integer)
     {
-        Set(this + integer);
+        BigInteger result = this + integer;
+        Set(result);
+        return result;
     }
 
     /// <summary>
