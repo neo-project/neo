@@ -956,8 +956,23 @@ namespace Neo.UnitTests.SmartContract.Native
             state.Balance = 1000;
             state.BalanceHeight = 0;
             height.Index = 12;
-            persistingBlock.Header.Index = 12;
-            Assert.AreEqual(6500, NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, persistingBlock.Index));
+            // This simulates a real query scenario where we want to check unclaimed gas at block 12
+            var queryBlock = new Block
+            {
+                Header = new()
+                {
+                    Index = 12,
+                    Witness = Witness.Empty,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero
+                },
+                Transactions = []
+            };
+            using var queryEngine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero),
+                engine.SnapshotCache.CloneCache(), queryBlock, settings: TestProtocolSettings.Default);
+            Assert.AreEqual(6500, NativeContract.NEO.UnclaimedGas(queryEngine, UInt160.Zero, 12));
         }
 
         [TestMethod]
