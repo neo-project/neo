@@ -203,7 +203,7 @@ partial class TokenManagement
             nft.Owner = to;
         }
         await PostNFTTransferAsync(engine, uniqueId, from, to, data, callOnPayment: true);
-        await engine.CallFromNativeContractAsync(Hash, token.Owner, "onNFTTransfer", uniqueId, from, to, data);
+        await engine.CallFromNativeContractAsync(Hash, token.Owner, "_onNFTTransfer", uniqueId, from, to, data);
         return true;
     }
 
@@ -284,6 +284,6 @@ partial class TokenManagement
     {
         Notify(engine, "NFTTransfer", uniqueId, from, to);
         if (!callOnPayment || to is null || !ContractManagement.IsContract(engine.SnapshotCache, to)) return;
-        await engine.CallFromNativeContractAsync(Hash, to, "onNFTPayment", uniqueId, from, data);
+        await engine.CallFromNativeContractAsync(Hash, to, "_onNFTPayment", uniqueId, from, data);
     }
 }
