@@ -223,7 +223,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Get almost full committee address
             var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
             var committees = NativeContract.NEO.GetCommittee(snapshot);
-            var committeeFullMultiSigAddr = Contract.CreateMultiSigRedeemScript(19, committees).ToScriptHash();
+            var min = Math.Max(1, committees.Length - (committees.Length - 1) / 2);
+            var committeeFullMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(min, committees.Length - 2), committees).ToScriptHash();
             // Create a blocked account
             UInt160 blockedAccount = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             ulong startTime = 1000000;
