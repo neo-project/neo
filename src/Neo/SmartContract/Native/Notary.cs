@@ -135,7 +135,7 @@ public sealed class Notary : NativeContract
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
     private void _OnPayment(ApplicationEngine engine, UInt160 assetId, UInt160 from, BigInteger amount, StackItem data)
     {
-        if (assetId != Governance.GasTokenId) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash!.ToString()));
+        if (assetId != Governance.GasTokenId) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", assetId));
         if (data is not Array additionalParams || additionalParams.Count != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
         var to = from;
         if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
