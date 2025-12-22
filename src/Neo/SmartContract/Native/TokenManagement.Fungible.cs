@@ -77,11 +77,11 @@ partial class TokenManagement
     /// <param name="assetId">The asset identifier.</param>
     /// <param name="account">The recipient account <see cref="UInt160"/>.</param>
     /// <param name="amount">The amount to mint (must be > 0 and &lt;= <see cref="MaxMintAmount"/>).</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <returns>A <see cref="ContractTask"/> representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentOutOfRangeException">If <paramref name="amount"/> is invalid.</exception>
     /// <exception cref="InvalidOperationException">If the asset id does not exist or caller is not the owner or max supply would be exceeded.</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal async Task Mint(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount)
+    internal async ContractTask Mint(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
@@ -97,11 +97,11 @@ partial class TokenManagement
     /// <param name="assetId">The asset identifier.</param>
     /// <param name="account">The account <see cref="UInt160"/> from which tokens will be burned.</param>
     /// <param name="amount">The amount to burn (must be > 0 and &lt;= <see cref="MaxMintAmount"/>).</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <returns>A <see cref="ContractTask"/> representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentOutOfRangeException">If <paramref name="amount"/> is invalid.</exception>
     /// <exception cref="InvalidOperationException">If the asset id does not exist, caller is not the owner, or account has insufficient balance.</exception>
     [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.All)]
-    internal async Task Burn(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount)
+    internal async ContractTask Burn(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
@@ -124,7 +124,7 @@ partial class TokenManagement
     /// <exception cref="ArgumentOutOfRangeException">If <paramref name="amount"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">If the asset id does not exist.</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal async Task<bool> Transfer(ApplicationEngine engine, UInt160 assetId, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+    internal async ContractTask<bool> Transfer(ApplicationEngine engine, UInt160 assetId, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
         StorageKey key = CreateStorageKey(Prefix_TokenState, assetId);

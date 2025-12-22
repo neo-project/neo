@@ -588,12 +588,12 @@ public abstract class Wallet : ISigner
                         sb.Emit(OpCode.ASSERT);
                     }
                 }
-                if (assetId.Equals(NativeContract.GAS.Hash))
+                if (assetId.Equals(NativeContract.Governance.GasTokenId))
                     balances_gas = balances;
             }
             script = sb.ToArray();
         }
-        balances_gas ??= accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
+        balances_gas ??= accounts.Select(p => (Account: p, Value: NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, p))).Where(p => p.Value.Sign > 0).ToList();
 
         return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), [], balances_gas, persistingBlock: persistingBlock);
     }
@@ -628,7 +628,7 @@ public abstract class Wallet : ISigner
             accounts = new[] { sender };
         }
 
-        var balancesGas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p)))
+        var balancesGas = accounts.Select(p => (Account: p, Value: NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, p)))
             .Where(p => p.Value.Sign > 0)
             .ToList();
         return MakeTransaction(snapshot, script, cosigners ?? [], attributes ?? [], balancesGas, maxGas, persistingBlock: persistingBlock);

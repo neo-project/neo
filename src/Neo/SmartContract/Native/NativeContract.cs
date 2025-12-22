@@ -76,10 +76,7 @@ public abstract class NativeContract
     /// </summary>
     public static NeoToken NEO { get; } = new();
 
-    /// <summary>
-    /// Gets the instance of the <see cref="GasToken"/> class.
-    /// </summary>
-    public static GasToken GAS { get; } = new();
+    public static Governance Governance { get; } = new();
 
     /// <summary>
     /// Gets the instance of the <see cref="PolicyContract"/> class.

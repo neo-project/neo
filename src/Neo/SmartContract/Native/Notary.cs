@@ -81,7 +81,8 @@ public sealed class Notary : NativeContract
         if (nFees == 0) return;
         if (notaries == null) return;
         var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
-        foreach (var notary in notaries) await GAS.Mint(engine, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, false);
+        foreach (var notary in notaries)
+            await engine.CallFromNativeContractAsync(Governance.Hash, TokenManagement.Hash, "mint", Governance.GasTokenId, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward);
     }
 
     protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
@@ -127,13 +128,14 @@ public sealed class Notary : NativeContract
     /// It also sets the deposit's lock height after which deposit can be withdrawn.
     /// </summary>
     /// <param name="engine">ApplicationEngine</param>
+    /// <param name="assetId">Asset being sent (should be GAS)</param>
     /// <param name="from">GAS sender</param>
     /// <param name="amount">The amount of GAS sent</param>
     /// <param name="data">Deposit-related data: optional To value (treated as deposit owner if set) and Till height after which deposit can be withdrawn </param>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-    private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
+    private void _OnPayment(ApplicationEngine engine, UInt160 assetId, UInt160 from, BigInteger amount, StackItem data)
     {
-        if (engine.CallingScriptHash != GAS.Hash) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash!.ToString()));
+        if (assetId != Governance.GasTokenId) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash!.ToString()));
         if (data is not Array additionalParams || additionalParams.Count != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
         var to = from;
         if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
@@ -224,7 +226,7 @@ public sealed class Notary : NativeContract
         if (deposit is null) return false;
         if (Ledger.CurrentIndex(engine.SnapshotCache) < deposit.Till) return false;
         RemoveDepositFor(engine.SnapshotCache, from);
-        if (!await engine.CallFromNativeContractAsync<bool>(Hash, GAS.Hash, "transfer", Hash, receive, deposit.Amount, null))
+        if (!await engine.CallFromNativeContractAsync<bool>(Hash, TokenManagement.Hash, "transfer", Governance.GasTokenId, Hash, receive, deposit.Amount, null))
         {
             throw new InvalidOperationException(string.Format("Transfer to {0} has failed", receive.ToString()));
         }
