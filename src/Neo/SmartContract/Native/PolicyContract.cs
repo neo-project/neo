@@ -634,7 +634,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        internal async ContractTask RecoverFunds(ApplicationEngine engine, UInt160 account, VM.Types.Array extraTokens)
+        internal async ContractTask RecoverFunds(ApplicationEngine engine, UInt160 account, UInt160 token)
         {
             var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
 
@@ -646,60 +646,28 @@ namespace Neo.SmartContract.Native
             if (engine.GetTime() - (BigInteger)entry < RequiredTimeForRecoverFunds)
                 throw new InvalidOperationException("Request must be signed at least 1 year ago.");
 
-            // Validate and collect extra NEP17 tokens
+            // Validate contract exists
+            var contract = ContractManagement.GetContract(engine.SnapshotCache, token)
+                ?? throw new InvalidOperationException($"Contract {token} does not exist.");
 
-            var validatedTokens = new HashSet<UInt160>
-            {
-                NEO.Hash,
-                GAS.Hash
-            };
+            // Validate contract implements NEP-17 standard
+            if (!contract.Manifest.SupportedStandards.Contains("NEP-17"))
+                throw new InvalidOperationException($"Contract {token} does not implement NEP-17 standard.");
 
-            foreach (var tokenItem in extraTokens)
-            {
-                var span = tokenItem.GetSpan();
-                if (span.Length != UInt160.Length)
-                    throw new ArgumentException($"Invalid token hash length: expected {UInt160.Length} bytes, got {span.Length} bytes.");
-
-                var contractHash = new UInt160(span);
-
-                // Validate contract exists
-                var contract = ContractManagement.GetContract(engine.SnapshotCache, contractHash);
-                if (contract == null)
-                    throw new InvalidOperationException($"Contract {contractHash} does not exist.");
-
-                // Validate contract implements NEP-17 standard
-                if (!contract.Manifest.SupportedStandards.Contains("NEP-17"))
-                    throw new InvalidOperationException($"Contract {contractHash} does not implement NEP-17 standard.");
-
-                // Prevent NEO and GAS from being in extraTokens
-                if (contractHash == NEO.Hash || contractHash == GAS.Hash)
-                    throw new InvalidOperationException($"NEO and GAS should not be included in extraTokens. They are automatically processed.");
-
-                // Prevent duplicate tokens
-                if (!validatedTokens.Add(contractHash))
-                    throw new InvalidOperationException($"Duplicate token {contractHash} in extraTokens.");
-            }
-
-            // Remove and notify
-
+            // notify
             engine.SendNotification(Hash, RecoveredFundsEventName, [new ByteString(account.ToArray())]);
 
-            // Transfer funds, NEO, GAS and extra NEP17 tokens
+            // Check balance
+            var balance = await engine.CallFromNativeContractAsync<BigInteger>(account, token, "balanceOf", account.ToArray());
 
-            foreach (var contractHash in validatedTokens)
+            if (balance > 0)
             {
-                // Check balance
-                var balance = await engine.CallFromNativeContractAsync<BigInteger>(account, contractHash, "balanceOf", account.ToArray());
+                // Transfer
+                var result = await engine.CallFromNativeContractAsync<bool>(account, token, "transfer",
+                    account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null);
 
-                if (balance > 0)
-                {
-                    // transfer
-                    var result = await engine.CallFromNativeContractAsync<bool>(account, contractHash, "transfer",
-                        account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null);
-
-                    if (!result)
-                        throw new InvalidOperationException($"Transfer of {balance} from {account} to {committeeMultiSigAddr} failed in contract {contractHash}.");
-                }
+                if (!result)
+                    throw new InvalidOperationException($"Transfer of {balance} from {account} to {committeeMultiSigAddr} failed in contract {token}.");
             }
         }
 

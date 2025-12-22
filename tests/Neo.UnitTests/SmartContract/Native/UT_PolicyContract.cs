@@ -265,9 +265,9 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<InvalidOperationException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), blockStart,
-                    "recoverFundsFinish",
+                    "recoverFurecoverFundsndsFinish",
                     new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero },
-                    new ContractParameter(ContractParameterType.Array) { Value = System.Array.Empty<ContractParameter>() });
+                    new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             });
             // Step 1: Block the account
             var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), blockStart,
@@ -277,14 +277,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.GetBoolean());
             Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, blockedAccount));
 
-            // Step 2: Set account balances (NEO and GAS)
-            BigInteger neoBalance = 100000 * NativeContract.NEO.Factor; // 100000 NEO
-            BigInteger gasBalance = 50000 * NativeContract.GAS.Factor; // 50000 GAS
-
-            // Set NEO balance
-            var neoKey = NativeContract.NEO.CreateStorageKey(20, blockedAccount);
-            var neoEntry = snapshot.GetAndChange(neoKey, () => new StorageItem(new NeoToken.NeoAccountState()));
-            neoEntry.GetInteroperable<NeoToken.NeoAccountState>().Balance = neoBalance;
+            // Step 2: Set account balances (GAS)
+            var gasBalance = 50000 * NativeContract.GAS.Factor; // 50000 GAS
 
             // Set GAS balance
             var gasKey = NativeContract.GAS.CreateStorageKey(20, blockedAccount);
@@ -292,7 +286,6 @@ namespace Neo.UnitTests.SmartContract.Native
             gasEntry.GetInteroperable<AccountState>().Balance = gasBalance;
 
             // Verify balances are set
-            Assert.AreEqual(neoBalance, NativeContract.NEO.BalanceOf(snapshot, blockedAccount));
             Assert.AreEqual(gasBalance, NativeContract.GAS.BalanceOf(snapshot, blockedAccount));
 
             // Step 3: Call recoverFundsFinish (after required time has passed)
@@ -300,17 +293,14 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr), blockFinish,
                 "recoverFunds",
                 new ContractParameter(ContractParameterType.Hash160) { Value = blockedAccount },
-                new ContractParameter(ContractParameterType.Array) { Value = System.Array.Empty<ContractParameter>() });
+                new ContractParameter(ContractParameterType.Hash160) { Value = NativeContract.GAS.Hash });
 
             // Step 5: Verify balances were transferred to Treasury
-            Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.BalanceOf(snapshot, blockedAccount));
             Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, blockedAccount));
 
             // Verify Treasury received the funds
-            var treasuryNeoBalance = NativeContract.NEO.BalanceOf(snapshot, NativeContract.Treasury.Hash);
             var treasuryGasBalance = NativeContract.GAS.BalanceOf(snapshot, NativeContract.Treasury.Hash);
             // Treasury should have received the funds (exact balance depends on initial Treasury balance)
-            Assert.IsTrue(treasuryNeoBalance >= neoBalance, "Treasury should have received NEO");
             Assert.IsTrue(treasuryGasBalance >= gasBalance, "Treasury should have received GAS");
         }
 
