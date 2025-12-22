@@ -367,7 +367,7 @@ namespace Neo.SmartContract.Native
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static UInt160 AssertAlmostFullCommittee(ApplicationEngine engine)
         {
-            // Signed by 19/21 committee members
+            // Signed by maximum of (half committee + 1) and (committee - 2)
 
             UInt160 committeeMultiSigAddr;
             var committees = NativeContract.NEO.GetCommittee(engine.SnapshotCache);
