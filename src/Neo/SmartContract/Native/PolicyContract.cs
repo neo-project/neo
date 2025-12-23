@@ -634,7 +634,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        internal async ContractTask RecoverFunds(ApplicationEngine engine, UInt160 account, UInt160 token)
+        internal async ContractTask<bool> RecoverFunds(ApplicationEngine engine, UInt160 account, UInt160 token)
         {
             var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
 
@@ -654,9 +654,6 @@ namespace Neo.SmartContract.Native
             if (!contract.Manifest.SupportedStandards.Contains("NEP-17"))
                 throw new InvalidOperationException($"Contract {token} does not implement NEP-17 standard.");
 
-            // notify
-            engine.SendNotification(Hash, RecoveredFundsEventName, [new ByteString(account.ToArray())]);
-
             // Check balance
             var balance = await engine.CallFromNativeContractAsync<BigInteger>(account, token, "balanceOf", account.ToArray());
 
@@ -668,7 +665,13 @@ namespace Neo.SmartContract.Native
 
                 if (!result)
                     throw new InvalidOperationException($"Transfer of {balance} from {account} to {committeeMultiSigAddr} failed in contract {token}.");
+
+                // notify
+                engine.SendNotification(Hash, RecoveredFundsEventName, [new ByteString(account.ToArray())]);
+                return true;
             }
+
+            return false;
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
