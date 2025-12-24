@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
 using System.Numerics;
@@ -197,6 +198,43 @@ namespace Neo.UnitTests.SmartContract
                 68, 216, 160, 6, 89, 102, 86, 72, 37, 15, 132, 45, 76, 221, 170, 21, 128, 51, 34, 168, 205, 56, 10, 228, 51, 114, 4, 218, 245, 155, 172, 132
             };
             Assert.ThrowsExactly<ArgumentException>(() => engine.RuntimeLog(msg));
+        }
+
+        [TestMethod]
+        public void TestMintGas()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 100_000_000);
+            engine.LoadScript(new byte[] { 0x01 });
+
+            var scriptHash = engine.CurrentScriptHash!;
+            var feeBefore = engine.FeeConsumed;
+
+            engine.MintGas(50_000_000);
+
+            Assert.AreEqual(feeBefore + 50_000_000, engine.FeeConsumed);
+            Assert.AreEqual(new BigInteger(50_000_000), NativeContract.GAS.BalanceOf(engine.SnapshotCache, scriptHash));
+
+            engine.MintGas(BigInteger.Zero);
+
+            Assert.AreEqual(feeBefore + 50_000_000, engine.FeeConsumed);
+            Assert.AreEqual(new BigInteger(50_000_000), NativeContract.GAS.BalanceOf(engine.SnapshotCache, scriptHash));
+        }
+
+        [TestMethod]
+        public void TestMintGasFaults()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 100_000_000);
+            engine.LoadScript(new byte[] { 0x01 });
+
+            Assert.ThrowsExactly<InvalidOperationException>(() => engine.MintGas(new BigInteger(-1)));
+
+            var limitedSnapshot = _snapshotCache.CloneCache();
+            using var limitedEngine = ApplicationEngine.Create(TriggerType.Application, null, limitedSnapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1);
+            limitedEngine.LoadScript(new byte[] { 0x01 });
+
+            Assert.ThrowsExactly<InvalidOperationException>(() => limitedEngine.MintGas(2));
         }
     }
 }
