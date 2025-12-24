@@ -98,7 +98,7 @@ namespace Neo.UnitTests.Ledger
                     It.IsAny<TransactionVerificationContext>(),
                     It.IsAny<IEnumerable<Transaction>>()))
                 .Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList)
-                    => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+                    => context.CheckTransaction(mock.Object, conflictsList, snapshot, settings) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
 
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;

@@ -41,6 +41,16 @@ namespace Neo.SmartContract.Native
             long totalNetworkFee = 0;
             foreach (Transaction tx in engine.PersistingBlock!.Transactions)
             {
+                if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                {
+                    long fee = tx.SystemFee + tx.NetworkFee;
+                    if (BalanceOf(engine.SnapshotCache, tx.Sender) < fee)
+                    {
+                        var claimed = NEO.ClaimUnclaimedGas(engine, tx.Sender);
+                        if (claimed > 0)
+                            await Mint(engine, tx.Sender, claimed, false);
+                    }
+                }
                 await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
 

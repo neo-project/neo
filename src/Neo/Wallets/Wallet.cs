@@ -547,6 +547,8 @@ namespace Neo.Wallets
             {
                 accounts = new[] { from };
             }
+            var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
+            bool includeUnclaimed = ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Faun, currentIndex);
             Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
             byte[] script;
             List<(UInt160 Account, BigInteger Value)>? balances_gas = null;
@@ -596,10 +598,20 @@ namespace Neo.Wallets
                 }
                 script = sb.ToArray();
             }
-            if (balances_gas is null)
-                balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
+            if (balances_gas is null || includeUnclaimed)
+            {
+                balances_gas = accounts.Select(p =>
+                    {
+                        var balance = NativeContract.GAS.BalanceOf(snapshot, p);
+                        if (includeUnclaimed)
+                            balance += NativeContract.NEO.UnclaimedGas(snapshot, p, currentIndex + 1);
+                        return (Account: p, Value: balance);
+                    })
+                    .Where(p => p.Value.Sign > 0)
+                    .ToList();
+            }
 
-            return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), [], balances_gas, persistingBlock: persistingBlock);
+            return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), [], balances_gas, includeUnclaimed, persistingBlock: persistingBlock);
         }
 
         /// <summary>
@@ -632,14 +644,22 @@ namespace Neo.Wallets
                 accounts = new[] { sender };
             }
 
-            var balancesGas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p)))
+            var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
+            bool includeUnclaimed = ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Faun, currentIndex);
+            var balancesGas = accounts.Select(p =>
+                {
+                    var balance = NativeContract.GAS.BalanceOf(snapshot, p);
+                    if (includeUnclaimed)
+                        balance += NativeContract.NEO.UnclaimedGas(snapshot, p, currentIndex + 1);
+                    return (Account: p, Value: balance);
+                })
                 .Where(p => p.Value.Sign > 0)
                 .ToList();
-            return MakeTransaction(snapshot, script, cosigners ?? [], attributes ?? [], balancesGas, maxGas, persistingBlock: persistingBlock);
+            return MakeTransaction(snapshot, script, cosigners ?? [], attributes ?? [], balancesGas, includeUnclaimed, maxGas, persistingBlock: persistingBlock);
         }
 
         private Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, Signer[] cosigners,
-            TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balancesGas,
+            TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balancesGas, bool includeUnclaimed,
             long maxGas = ApplicationEngine.TestModeGas, Block? persistingBlock = null)
         {
             foreach (var (account, value) in balancesGas)
@@ -669,6 +689,8 @@ namespace Neo.Wallets
                 tx.NetworkFee = tx.CalculateNetworkFee(snapshot, ProtocolSettings, this, maxGas);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
+            if (includeUnclaimed)
+                throw new InvalidOperationException("Insufficient GAS balance (including unclaimed GAS) to cover system and network fees. Please ensure your account has enough GAS to pay for transaction fees.");
             throw new InvalidOperationException("Insufficient GAS balance to cover system and network fees. Please ensure your account has enough GAS to pay for transaction fees.");
         }
 

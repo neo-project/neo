@@ -54,10 +54,16 @@ namespace Neo.Ledger
         /// <param name="tx">The specified <see cref="Transaction"/>.</param>
         /// <param name="conflictingTxs">The list of <see cref="Transaction"/> that conflicts with the specified one and are to be removed from the pool.</param>
         /// <param name="snapshot">The snapshot used to verify the <see cref="Transaction"/>.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the <see cref="Transaction"/>.</param>
         /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
-        public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot)
+        public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot, ProtocolSettings settings)
         {
-            var balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
+            var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, currentIndex))
+            {
+                balance += NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, currentIndex + 1);
+            }
             _senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
             var expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
