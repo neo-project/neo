@@ -24,7 +24,7 @@ public sealed class Governance : NativeContract
 
     public UInt160 GasTokenId => field ??= TokenManagement.GetAssetId(Hash, GasTokenName);
 
-    internal Governance() : base(-6) { }
+    internal Governance() : base(-13) { }
 
     internal override async ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardFork)
     {

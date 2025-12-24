@@ -70,7 +70,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     private readonly StorageKey _votersCount;
     private readonly StorageKey _registerPrice;
 
-    internal NeoToken() : base(-5)
+    internal NeoToken() : base(-14)
     {
         TotalAmount = 100000000 * Factor;
         _votersCount = CreateStorageKey(Prefix_VotersCount);

@@ -72,13 +72,6 @@ public abstract class NativeContract
     public static LedgerContract Ledger { get; } = new();
 
     /// <summary>
-    /// Gets the instance of the <see cref="NeoToken"/> class.
-    /// </summary>
-    public static NeoToken NEO { get; } = new();
-
-    public static Governance Governance { get; } = new();
-
-    /// <summary>
     /// Gets the instance of the <see cref="PolicyContract"/> class.
     /// </summary>
     public static PolicyContract Policy { get; } = new();
@@ -104,6 +97,13 @@ public abstract class NativeContract
     public static Treasury Treasury { get; } = new();
 
     public static TokenManagement TokenManagement { get; } = new();
+
+    public static Governance Governance { get; } = new();
+
+    /// <summary>
+    /// Gets the instance of the <see cref="NeoToken"/> class.
+    /// </summary>
+    public static NeoToken NEO { get; } = new();
 
     #endregion
 
