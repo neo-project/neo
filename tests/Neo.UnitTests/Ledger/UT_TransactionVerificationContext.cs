@@ -18,6 +18,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.UnitTests.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -155,6 +156,50 @@ namespace Neo.UnitTests.Ledger
             tx.Signers = [new Signer { Account = sender }];
 
             Assert.IsTrue(verificationContext.CheckTransaction(tx, Array.Empty<Transaction>(), snapshotCache, TestProtocolSettings.Default));
+        }
+
+        [TestMethod]
+        public void TestTransactionSenderFeeWithUnclaimedGas_ContractSender()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var contract = TestUtils.GetContract();
+            snapshotCache.AddContract(contract.Hash, contract);
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            var currentBlock = snapshotCache.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
+            var currentState = currentBlock.GetInteroperable<HashIndexState>();
+            currentState.Index = persistingBlock.Index - 1;
+            currentState.Hash = UInt256.Zero;
+
+            var neoKey = new KeyBuilder(NativeContract.NEO.Id, 20).Add(contract.Hash.ToArray());
+            snapshotCache.Add(neoKey, new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = new BigInteger(1_000_000),
+                BalanceHeight = 0,
+                VoteTo = null,
+                LastGasPerVote = 0
+            }));
+
+            var unclaimed = NativeContract.NEO.UnclaimedGas(snapshotCache, contract.Hash, persistingBlock.Index);
+            Assert.IsTrue(unclaimed > 0);
+
+            TransactionVerificationContext verificationContext = new();
+            var tx = CreateTransactionWithFee(1, 1);
+            tx.Signers = [new Signer { Account = contract.Hash }];
+
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, Array.Empty<Transaction>(), snapshotCache, TestProtocolSettings.Default));
         }
     }
 }

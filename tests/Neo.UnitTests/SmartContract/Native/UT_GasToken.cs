@@ -14,7 +14,6 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
@@ -210,7 +209,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_OnPersist_AutoClaimDoesNotInvokeOnPayment()
+        public void Check_OnPersist_AutoClaimSkippedForContractSender()
         {
             var snapshot = _snapshotCache.CloneCache();
             var persistingBlock = new Block
@@ -226,24 +225,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Transactions = []
             };
 
-            var manifest = TestUtils.CreateDefaultManifest();
-            manifest.Abi.Methods =
-            [
-                new ContractMethodDescriptor
-                {
-                    Name = "onNEP17Payment",
-                    Parameters =
-                    [
-                        new ContractParameterDefinition { Name = "from", Type = ContractParameterType.Hash160 },
-                        new ContractParameterDefinition { Name = "amount", Type = ContractParameterType.Integer },
-                        new ContractParameterDefinition { Name = "data", Type = ContractParameterType.Any }
-                    ],
-                    ReturnType = ContractParameterType.Void,
-                    Offset = 0,
-                    Safe = false
-                }
-            ];
-            var contract = TestUtils.GetContract(new[] { (byte)OpCode.ABORT }, manifest);
+            var contract = TestUtils.GetContract();
             snapshot.AddContract(contract.Hash, contract);
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
@@ -260,6 +242,9 @@ namespace Neo.UnitTests.SmartContract.Native
                 VoteTo = null,
                 LastGasPerVote = 0
             }));
+
+            var gasKey = new KeyBuilder(NativeContract.GAS.Id, 20).Add(contract.Hash.ToArray());
+            snapshot.Add(gasKey, new StorageItem(new AccountState { Balance = BigInteger.Zero }));
 
             var unclaimed = NativeContract.NEO.UnclaimedGas(snapshot, contract.Hash, persistingBlock.Index);
             Assert.IsTrue(unclaimed > 0);
@@ -282,10 +267,9 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
             using var persistEngine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
             persistEngine.LoadScript(script.ToArray());
-            Assert.AreEqual(VMState.HALT, persistEngine.Execute());
-
-            var expected = unclaimed - (tx.SystemFee + tx.NetworkFee);
-            Assert.AreEqual(expected, NativeContract.GAS.BalanceOf(snapshot, contract.Hash));
+            Assert.AreEqual(VMState.FAULT, persistEngine.Execute());
+            Assert.IsTrue(persistEngine.FaultException is InvalidOperationException);
+            Assert.AreEqual(unclaimed, NativeContract.NEO.UnclaimedGas(snapshot, contract.Hash, persistingBlock.Index));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)

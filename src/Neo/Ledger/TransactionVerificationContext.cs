@@ -61,7 +61,8 @@ namespace Neo.Ledger
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             var nextIndex = currentIndex + 1;
-            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, nextIndex))
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, nextIndex) &&
+                !NativeContract.ContractManagement.IsContract(snapshot, tx.Sender))
             {
                 balance += NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, nextIndex);
             }

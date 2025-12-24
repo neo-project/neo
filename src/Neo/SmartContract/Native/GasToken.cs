@@ -44,7 +44,8 @@ namespace Neo.SmartContract.Native
                 if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 {
                     long fee = tx.SystemFee + tx.NetworkFee;
-                    if (BalanceOf(engine.SnapshotCache, tx.Sender) < fee)
+                    if (BalanceOf(engine.SnapshotCache, tx.Sender) < fee &&
+                        !ContractManagement.IsContract(engine.SnapshotCache, tx.Sender))
                     {
                         var claimed = NEO.ClaimUnclaimedGas(engine, tx.Sender);
                         if (claimed > 0)
