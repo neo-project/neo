@@ -62,7 +62,8 @@ namespace Neo.SmartContract.Manifest
             @struct.Add((byte)ReturnType);
             @struct.Add(Offset);
             @struct.Add(Safe);
-            @struct.Add(Fee?.ToStackItem(referenceCounter) ?? StackItem.Null);
+            if (Fee is not null)
+                @struct.Add(Fee.ToStackItem(referenceCounter));
             return @struct;
         }
 

@@ -26,7 +26,7 @@ namespace Neo.SmartContract
     {
         private const string FeeCalculatorMethodName = "CalculateFee";
         private const CallFlags FeeCalculatorCallFlags = CallFlags.ReadStates | CallFlags.AllowCall;
-        private const long MaxDynamicFeeGas = 100_000; // 0.001 GAS, in datoshi
+        private const long MaxDynamicFeeGasUnits = 100_000; // base gas units before exec fee factor
 
         private void ApplyCustomFee(ContractState contract, ContractMethodDescriptor method, IReadOnlyList<StackItem> args)
         {
@@ -64,14 +64,26 @@ namespace Neo.SmartContract
             if (amount.IsZero)
                 return true;
 
-            UInt160 payer = CallingScriptHash ?? (ScriptContainer as Transaction)?.Sender
-                ?? throw new InvalidOperationException("Fee payer is not available.");
+            UInt160 payer = ResolveFeePayer();
 
             if (!payer.Equals(CallingScriptHash) && !CheckWitnessInternal(payer))
                 throw new InvalidOperationException("Fee payer did not witness the transaction.");
 
             return NativeContract.GAS.TransferInternal(this, payer, beneficiary, amount, StackItem.Null, callOnPayment: false)
                 .GetAwaiter().GetResult();
+        }
+
+        private UInt160 ResolveFeePayer()
+        {
+            var callingContext = CurrentContext?.GetState<ExecutionContextState>().CallingContext;
+            var callingContract = callingContext?.GetState<ExecutionContextState>().Contract;
+            if (callingContract != null)
+                return callingContract.Hash;
+
+            if (ScriptContainer is Transaction tx)
+                return tx.Sender;
+
+            throw new InvalidOperationException("Fee payer is not available.");
         }
 
         private BigInteger QueryDynamicFee(UInt160 calculator, string method, IReadOnlyList<StackItem> args)
@@ -98,7 +110,8 @@ namespace Neo.SmartContract
             using var sb = new ScriptBuilder();
             sb.EmitDynamicCall(calculator, FeeCalculatorMethodName, FeeCalculatorCallFlags, method, argsParameter);
 
-            using var feeEngine = ApplicationEngine.Create(TriggerType.Application, ScriptContainer, SnapshotCache.CloneCache(), PersistingBlock, ProtocolSettings, gas: MaxDynamicFeeGas);
+            long maxGas = checked(MaxDynamicFeeGasUnits * ExecFeeFactor);
+            using var feeEngine = ApplicationEngine.Create(TriggerType.Application, ScriptContainer, SnapshotCache.CloneCache(), PersistingBlock, ProtocolSettings, gas: maxGas);
             feeEngine.SuppressCustomFees = true;
             feeEngine.LoadScript(sb.ToArray());
             var state = feeEngine.Execute();
