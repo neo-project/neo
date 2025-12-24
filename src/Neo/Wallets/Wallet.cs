@@ -548,7 +548,8 @@ namespace Neo.Wallets
                 accounts = new[] { from };
             }
             var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
-            bool includeUnclaimed = ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Faun, currentIndex);
+            var nextIndex = currentIndex + 1;
+            bool includeUnclaimed = ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Faun, nextIndex);
             Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
             byte[] script;
             List<(UInt160 Account, BigInteger Value)>? balances_gas = null;
@@ -604,7 +605,7 @@ namespace Neo.Wallets
                     {
                         var balance = NativeContract.GAS.BalanceOf(snapshot, p);
                         if (includeUnclaimed)
-                            balance += NativeContract.NEO.UnclaimedGas(snapshot, p, currentIndex + 1);
+                            balance += NativeContract.NEO.UnclaimedGas(snapshot, p, nextIndex);
                         return (Account: p, Value: balance);
                     })
                     .Where(p => p.Value.Sign > 0)
@@ -645,12 +646,13 @@ namespace Neo.Wallets
             }
 
             var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
-            bool includeUnclaimed = ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Faun, currentIndex);
+            var nextIndex = currentIndex + 1;
+            bool includeUnclaimed = ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Faun, nextIndex);
             var balancesGas = accounts.Select(p =>
                 {
                     var balance = NativeContract.GAS.BalanceOf(snapshot, p);
                     if (includeUnclaimed)
-                        balance += NativeContract.NEO.UnclaimedGas(snapshot, p, currentIndex + 1);
+                        balance += NativeContract.NEO.UnclaimedGas(snapshot, p, nextIndex);
                     return (Account: p, Value: balance);
                 })
                 .Where(p => p.Value.Sign > 0)

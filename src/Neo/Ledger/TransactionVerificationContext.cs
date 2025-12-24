@@ -60,9 +60,10 @@ namespace Neo.Ledger
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, currentIndex))
+            var nextIndex = currentIndex + 1;
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, nextIndex))
             {
-                balance += NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, currentIndex + 1);
+                balance += NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, nextIndex);
             }
             _senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
