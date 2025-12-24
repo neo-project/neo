@@ -129,7 +129,12 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
-        private protected async ContractTask<bool> Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+        private protected ContractTask<bool> Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+        {
+            return TransferInternal(engine, from, to, amount, data, callOnPayment: true);
+        }
+
+        internal async ContractTask<bool> TransferInternal(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount), "cannot be negative");
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
@@ -168,7 +173,7 @@ namespace Neo.SmartContract.Native
                     stateTo.Balance += amount;
                 }
             }
-            await PostTransferAsync(engine, from, to, amount, data, true);
+            await PostTransferAsync(engine, from, to, amount, data, callOnPayment);
             return true;
         }
 

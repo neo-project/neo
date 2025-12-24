@@ -77,6 +77,7 @@ namespace Neo.SmartContract
         private List<IDisposable>? disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
+        internal bool SuppressCustomFees { get; set; }
         // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
         private readonly BigInteger _execFeeFactor;
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
@@ -390,6 +391,8 @@ namespace Neo.SmartContract
                 AddFee(fixedFee.Value * ApplicationEngine.FeeFactor);
                 state.WhiteListed = true;
             }
+
+            ApplyCustomFee(contract, method, args);
 
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))
             {

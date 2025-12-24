@@ -152,12 +152,6 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_BurnGas = Register("System.Runtime.BurnGas", nameof(BurnGas), 1 << 4, CallFlags.None);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Runtime.MintGas.
-        /// Minting GAS to the calling contract.
-        /// </summary>
-        public static readonly InteropDescriptor System_Runtime_MintGas = Register("System.Runtime.MintGas", nameof(MintGas), 1 << 4, CallFlags.None, Hardfork.HF_Faun);
-
-        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.CurrentSigners.
         /// Get the Signers of the current transaction.
         /// </summary>
@@ -456,24 +450,6 @@ namespace Neo.SmartContract
             if (datoshi <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
             AddFee(datoshi * FeeFactor);
-        }
-
-        /// <summary>
-        /// The implementation of System.Runtime.MintGas.
-        /// Minting GAS to the calling contract.
-        /// </summary>
-        /// <param name="datoshi">The amount of GAS to mint, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
-        protected internal void MintGas(BigInteger datoshi)
-        {
-            if (datoshi.Sign < 0)
-                throw new InvalidOperationException("GAS cannot be negative.");
-            if (datoshi.IsZero)
-                return;
-
-            var scriptHash = CurrentScriptHash ?? throw new InvalidOperationException();
-            AddFee(datoshi * FeeFactor);
-            // Avoid reentrancy by skipping onNEP17Payment during runtime minting.
-            NativeContract.GAS.Mint(this, scriptHash, datoshi, false).GetAwaiter().GetResult();
         }
 
         /// <summary>

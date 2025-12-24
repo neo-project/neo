@@ -39,6 +39,11 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public bool Safe { get; set; }
 
+        /// <summary>
+        /// Optional fee definition for the method.
+        /// </summary>
+        public ContractMethodFeeDescriptor? Fee { get; set; }
+
         public override void FromStackItem(StackItem stackItem)
         {
             base.FromStackItem(stackItem);
@@ -46,6 +51,9 @@ namespace Neo.SmartContract.Manifest
             ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
             Offset = (int)@struct[3].GetInteger();
             Safe = @struct[4].GetBoolean();
+            Fee = @struct.Count > 5 && !@struct[5].IsNull
+                ? @struct[5].ToInteroperable<ContractMethodFeeDescriptor>()
+                : null;
         }
 
         public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
@@ -54,6 +62,7 @@ namespace Neo.SmartContract.Manifest
             @struct.Add((byte)ReturnType);
             @struct.Add(Offset);
             @struct.Add(Safe);
+            @struct.Add(Fee?.ToStackItem(referenceCounter) ?? StackItem.Null);
             return @struct;
         }
 
@@ -70,7 +79,13 @@ namespace Neo.SmartContract.Manifest
                 Parameters = ((JArray)json["parameters"]!).Select(u => ContractParameterDefinition.FromJson((JObject)u!)).ToArray(),
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"]!.GetString()),
                 Offset = json["offset"]!.GetInt32(),
-                Safe = json["safe"]!.GetBoolean()
+                Safe = json["safe"]!.GetBoolean(),
+                Fee = json["fee"] switch
+                {
+                    null => null,
+                    JObject feeJson => ContractMethodFeeDescriptor.FromJson(feeJson),
+                    _ => throw new FormatException("Fee field must be an object.")
+                }
             };
 
             if (string.IsNullOrEmpty(descriptor.Name))
@@ -95,6 +110,8 @@ namespace Neo.SmartContract.Manifest
             json["returntype"] = ReturnType.ToString();
             json["offset"] = Offset;
             json["safe"] = Safe;
+            if (Fee != null)
+                json["fee"] = Fee.ToJson();
             return json;
         }
 
@@ -106,7 +123,8 @@ namespace Neo.SmartContract.Manifest
                 base.Equals(other) && // Already check null
                 ReturnType == other.ReturnType
                 && Offset == other.Offset
-                && Safe == other.Safe;
+                && Safe == other.Safe
+                && Equals(Fee, other.Fee);
         }
 
         public override bool Equals(object? other)
@@ -119,7 +137,7 @@ namespace Neo.SmartContract.Manifest
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(ReturnType, Offset, Safe, base.GetHashCode());
+            return HashCode.Combine(ReturnType, Offset, Safe, Fee, base.GetHashCode());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
