@@ -9,9 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo;
+using Neo.Cryptography;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
+using Neo.Wallets;
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -26,9 +29,6 @@ namespace Neo.SmartContract.Manifest
 
     public sealed class ContractMethodFeeDescriptor : IInteroperable, IEquatable<ContractMethodFeeDescriptor>
     {
-        public const string GasAsset = "GAS";
-
-        public required string Asset { get; set; }
         public BigInteger Amount { get; set; }
         public UInt160? Beneficiary { get; set; }
         public ContractMethodFeeMode Mode { get; set; }
@@ -37,11 +37,10 @@ namespace Neo.SmartContract.Manifest
         public void FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            Asset = @struct[0].GetString()!;
-            Amount = @struct[1].GetInteger();
-            Beneficiary = @struct[2].IsNull ? null : new UInt160(@struct[2].GetSpan());
-            Mode = (ContractMethodFeeMode)(byte)@struct[3].GetInteger();
-            DynamicScriptHash = @struct[4].IsNull ? null : new UInt160(@struct[4].GetSpan());
+            Amount = @struct[0].GetInteger();
+            Beneficiary = @struct[1].IsNull ? null : new UInt160(@struct[1].GetSpan());
+            Mode = (ContractMethodFeeMode)(byte)@struct[2].GetInteger();
+            DynamicScriptHash = @struct[3].IsNull ? null : new UInt160(@struct[3].GetSpan());
             Validate();
         }
 
@@ -49,7 +48,6 @@ namespace Neo.SmartContract.Manifest
         {
             return new Struct(referenceCounter)
             {
-                Asset,
                 Amount,
                 Beneficiary?.ToArray() ?? StackItem.Null,
                 (byte)Mode,
@@ -59,7 +57,6 @@ namespace Neo.SmartContract.Manifest
 
         public static ContractMethodFeeDescriptor FromJson(JObject json)
         {
-            var asset = json["asset"]!.GetString();
             var mode = ParseMode(json["mode"]!.GetString());
             BigInteger amount = BigInteger.Zero;
             if (mode == ContractMethodFeeMode.Fixed)
@@ -75,15 +72,14 @@ namespace Neo.SmartContract.Manifest
 
             UInt160? beneficiary = null;
             if (json["beneficiary"] is JString beneficiaryJson)
-                beneficiary = UInt160.Parse(beneficiaryJson.GetString());
+                beneficiary = ParseUInt160OrAddress(beneficiaryJson.GetString());
 
             UInt160? dynamicScriptHash = null;
             if (json["dynamicScriptHash"] is JString dynamicJson)
-                dynamicScriptHash = UInt160.Parse(dynamicJson.GetString());
+                dynamicScriptHash = ParseUInt160OrAddress(dynamicJson.GetString());
 
             var descriptor = new ContractMethodFeeDescriptor
             {
-                Asset = asset,
                 Amount = amount,
                 Beneficiary = beneficiary,
                 Mode = mode,
@@ -97,14 +93,13 @@ namespace Neo.SmartContract.Manifest
         {
             var json = new JObject
             {
-                ["asset"] = Asset,
                 ["mode"] = Mode == ContractMethodFeeMode.Fixed ? "fixed" : "dynamic"
             };
 
             if (Mode == ContractMethodFeeMode.Fixed || !Amount.IsZero)
                 json["amount"] = Amount.ToString();
             if (Beneficiary != null)
-                json["beneficiary"] = Beneficiary.ToString();
+                json["beneficiary"] = ToAddress(Beneficiary);
             if (Mode == ContractMethodFeeMode.Dynamic && DynamicScriptHash != null)
                 json["dynamicScriptHash"] = DynamicScriptHash.ToString();
 
@@ -115,8 +110,7 @@ namespace Neo.SmartContract.Manifest
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Asset == other.Asset
-                && Amount == other.Amount
+            return Amount == other.Amount
                 && Equals(Beneficiary, other.Beneficiary)
                 && Mode == other.Mode
                 && Equals(DynamicScriptHash, other.DynamicScriptHash);
@@ -129,7 +123,7 @@ namespace Neo.SmartContract.Manifest
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Asset, Amount, Beneficiary, Mode, DynamicScriptHash);
+            return HashCode.Combine(Amount, Beneficiary, Mode, DynamicScriptHash);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -152,10 +146,6 @@ namespace Neo.SmartContract.Manifest
 
         private void Validate()
         {
-            if (string.IsNullOrEmpty(Asset))
-                throw new FormatException("Fee asset cannot be empty.");
-            if (!string.Equals(Asset, GasAsset, StringComparison.OrdinalIgnoreCase))
-                throw new FormatException($"Unsupported fee asset: {Asset}.");
             if (Amount.Sign < 0)
                 throw new FormatException("Fee amount cannot be negative.");
             if (!Enum.IsDefined(typeof(ContractMethodFeeMode), Mode))
@@ -193,6 +183,22 @@ namespace Neo.SmartContract.Manifest
             if (number.Value > JNumber.MAX_SAFE_INTEGER || number.Value < JNumber.MIN_SAFE_INTEGER)
                 throw new FormatException("Fee amount exceeds JSON safe integer range.");
             return new BigInteger(number.Value);
+        }
+
+        private static UInt160 ParseUInt160OrAddress(string value)
+        {
+            if (UInt160.TryParse(value, out var result))
+                return result;
+
+            var data = value.Base58CheckDecode();
+            if (data.Length != 21)
+                throw new FormatException($"Invalid address format: {value}.");
+            return new UInt160(data.AsSpan(1));
+        }
+
+        private static string ToAddress(UInt160 hash)
+        {
+            return hash.ToAddress(ProtocolSettings.Default.AddressVersion);
         }
     }
 }

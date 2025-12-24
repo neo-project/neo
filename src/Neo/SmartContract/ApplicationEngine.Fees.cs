@@ -26,7 +26,7 @@ namespace Neo.SmartContract
     {
         private const string FeeCalculatorMethodName = "CalculateFee";
         private const CallFlags FeeCalculatorCallFlags = CallFlags.ReadStates | CallFlags.AllowCall;
-        private const long MaxDynamicFeeGas = 100_000_000; // 1 GAS, in datoshi
+        private const long MaxDynamicFeeGas = 100_000; // 0.001 GAS, in datoshi
 
         private void ApplyCustomFee(ContractState contract, ContractMethodDescriptor method, IReadOnlyList<StackItem> args)
         {
@@ -41,9 +41,6 @@ namespace Neo.SmartContract
             if (fee is null)
                 return;
 
-            if (!string.Equals(fee.Asset, ContractMethodFeeDescriptor.GasAsset, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException($"Unsupported fee asset: {fee.Asset}.");
-
             BigInteger amount = fee.Mode switch
             {
                 ContractMethodFeeMode.Fixed => fee.Amount,
@@ -54,16 +51,18 @@ namespace Neo.SmartContract
             if (amount.Sign < 0)
                 throw new InvalidOperationException("Fee amount cannot be negative.");
 
-            UInt160 beneficiary = fee.Beneficiary ?? contract.Hash;
-            ChargeFee(beneficiary, amount);
+            UInt160 beneficiary = fee.Beneficiary ?? contract.Manifest.Owner
+                ?? throw new InvalidOperationException("Fee beneficiary is missing.");
+            if (!ChargeFee(amount, beneficiary))
+                throw new InvalidOperationException("Fee transfer failed.");
         }
 
-        private void ChargeFee(UInt160 beneficiary, BigInteger amount)
+        private bool ChargeFee(BigInteger amount, UInt160 beneficiary)
         {
             if (amount.Sign < 0)
                 throw new InvalidOperationException("Fee amount cannot be negative.");
             if (amount.IsZero)
-                return;
+                return true;
 
             UInt160 payer = CallingScriptHash ?? (ScriptContainer as Transaction)?.Sender
                 ?? throw new InvalidOperationException("Fee payer is not available.");
@@ -71,8 +70,8 @@ namespace Neo.SmartContract
             if (!payer.Equals(CallingScriptHash) && !CheckWitnessInternal(payer))
                 throw new InvalidOperationException("Fee payer did not witness the transaction.");
 
-            if (!NativeContract.GAS.TransferInternal(this, payer, beneficiary, amount, StackItem.Null, callOnPayment: false).GetAwaiter().GetResult())
-                throw new InvalidOperationException("Fee transfer failed.");
+            return NativeContract.GAS.TransferInternal(this, payer, beneficiary, amount, StackItem.Null, callOnPayment: false)
+                .GetAwaiter().GetResult();
         }
 
         private BigInteger QueryDynamicFee(UInt160 calculator, string method, IReadOnlyList<StackItem> args)

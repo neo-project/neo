@@ -277,6 +277,10 @@ namespace Neo.SmartContract.Native
             Helper.Check(new Script(nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
 
+            if (parsedManifest.Owner is not null && !parsedManifest.Owner.Equals(tx.Sender))
+                throw new InvalidOperationException("Contract owner must be the deployer.");
+            parsedManifest.Owner = tx.Sender;
+
             if (Policy.IsBlocked(engine.SnapshotCache, hash))
                 throw new InvalidOperationException($"The contract {hash} has been blocked.");
 
@@ -365,6 +369,14 @@ namespace Neo.SmartContract.Native
                 var manifestNew = ContractManifest.Parse(manifest);
                 if (manifestNew.Name != contract.Manifest.Name)
                     throw new InvalidOperationException("The name of the contract can't be changed.");
+                if (manifestNew.Owner is null)
+                {
+                    manifestNew.Owner = contract.Manifest.Owner;
+                }
+                else if (contract.Manifest.Owner is null || !manifestNew.Owner.Equals(contract.Manifest.Owner))
+                {
+                    throw new InvalidOperationException("The contract owner can't be changed.");
+                }
                 if (!manifestNew.IsValid(engine.Limits, contract.Hash))
                     throw new InvalidOperationException($"Invalid Manifest: {contract.Hash}");
                 contract.Manifest = manifestNew;

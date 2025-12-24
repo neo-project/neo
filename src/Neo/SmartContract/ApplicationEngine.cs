@@ -392,8 +392,6 @@ namespace Neo.SmartContract
                 state.WhiteListed = true;
             }
 
-            ApplyCustomFee(contract, method, args);
-
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))
             {
                 invocationCounter[contract.Hash] = counter + 1;
@@ -411,6 +409,8 @@ namespace Neo.SmartContract
             var contextNew = LoadContract(contract, method, flags & callingFlags);
             state = contextNew.GetState<ExecutionContextState>();
             state.CallingContext = currentContext;
+
+            ApplyCustomFee(contract, method, args);
 
             for (int i = args.Count - 1; i >= 0; i--)
                 contextNew.EvaluationStack.Push(args[i]);
