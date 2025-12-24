@@ -57,8 +57,8 @@ public sealed class Governance : NativeContract
         await TokenManagement.MintInternal(engine, GasTokenId, primary, totalNetworkFee, assertOwner: false, callOnPayment: false);
     }
 
-    // A placeholder method to prevent empty contract script.
-    // Should be removed when new methods are added.
-    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.None)]
-    internal static void Placeholder() { }
+    [ContractMethod(CpuFee = 0, RequiredCallFlags = CallFlags.None)]
+    internal static void _OnTransfer()
+    {
+    }
 }
