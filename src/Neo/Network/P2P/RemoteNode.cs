@@ -30,6 +30,25 @@ namespace Neo.Network.P2P
     /// </summary>
     public partial class RemoteNode : Connection
     {
+        public enum ConnectionDirection
+        {
+            Inbound,
+            Outbound
+        }
+
+        public enum ConnectionChangeReason
+        {
+            Connected,
+            Closed,
+            Stopped
+        }
+
+        public delegate void MessageSentHandler(NeoSystem system, Message message);
+        public delegate void ConnectionChangedHandler(NeoSystem system, IPEndPoint remote, ConnectionDirection direction, bool connected, ConnectionChangeReason reason);
+
+        public static event MessageSentHandler? MessageSent;
+        public static event ConnectionChangedHandler? ConnectionChanged;
+
         internal record StartProtocol;
         internal record Relay(IInventory Inventory);
 
@@ -42,6 +61,8 @@ namespace Neo.Network.P2P
         private ByteString _messageBuffer = ByteString.Empty;
         private bool _ack = true;
         private uint _lastHeightSent = 0;
+        private readonly ConnectionDirection _connectionDirection;
+        private bool _disconnectNotified;
 
         /// <summary>
         /// The address of the remote Tcp server.
@@ -85,6 +106,9 @@ namespace Neo.Network.P2P
             _knownHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes));
             _sentHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes));
             localNode.RemoteNodes.TryAdd(Self, this);
+            var listenPort = config.Tcp?.Port;
+            _connectionDirection = listenPort.HasValue && local.Port == listenPort.Value ? ConnectionDirection.Inbound : ConnectionDirection.Outbound;
+            NotifyConnectionChanged(true, ConnectionChangeReason.Connected);
         }
 
         /// <summary>
@@ -153,6 +177,9 @@ namespace Neo.Network.P2P
             base.OnReceive(message);
             switch (message)
             {
+                case Close:
+                    NotifyConnectionChanged(false, ConnectionChangeReason.Closed);
+                    break;
                 case Timer _:
                     OnTimer();
                     break;
@@ -212,6 +239,7 @@ namespace Neo.Network.P2P
             {
                 _knownHashes.Clear();
                 _sentHashes.Clear();
+                NotifyConnectionChanged(false, ConnectionChangeReason.Stopped);
             }
             base.PostStop();
         }
@@ -226,8 +254,31 @@ namespace Neo.Network.P2P
             _ack = false;
             // Here it is possible that we dont have the Version message yet,
             // so we need to send the message uncompressed
+            SafeInvoke(() => MessageSent?.Invoke(_system, message));
             SendData(ByteString.FromBytes(message.ToArray(Version?.AllowCompression ?? false)));
             _sentCommands[(byte)message.Command] = true;
+        }
+
+        private void NotifyConnectionChanged(bool connected, ConnectionChangeReason reason)
+        {
+            if (!connected)
+            {
+                if (_disconnectNotified) return;
+                _disconnectNotified = true;
+            }
+
+            SafeInvoke(() => ConnectionChanged?.Invoke(_system, Remote, _connectionDirection, connected, reason));
+        }
+
+        private static void SafeInvoke(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch
+            {
+            }
         }
 
         private Message? TryParseMessage()
