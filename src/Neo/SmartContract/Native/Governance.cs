@@ -56,4 +56,9 @@ public sealed class Governance : NativeContract
         UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
         await TokenManagement.MintInternal(engine, GasTokenId, primary, totalNetworkFee, assertOwner: false, callOnPayment: false);
     }
+
+    // A placeholder method to prevent empty contract script.
+    // Should be removed when new methods are added.
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.None)]
+    internal static void Placeholder() { }
 }
