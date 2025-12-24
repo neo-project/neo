@@ -104,7 +104,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
         var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
         foreach (var distribution in list)
-            await engine.CallFromNativeContractAsync(Governance.Hash, TokenManagement.Hash, "mint", Governance.GasTokenId, distribution.Account, distribution.Amount);
+            await TokenManagement.MintInternal(engine, Governance.GasTokenId, distribution.Account, distribution.Amount, assertOwner: false, callOnPayment: callOnPayment);
     }
 
     protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
@@ -249,7 +249,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         var committee = GetCommitteeFromCache(engine.SnapshotCache);
         var pubkey = committee[index].PublicKey;
         var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-        await engine.CallFromNativeContractAsync(Governance.Hash, TokenManagement.Hash, "mint", Governance.GasTokenId, account, gasPerBlock * CommitteeRewardRatio / 100);
+        await TokenManagement.MintInternal(engine, Governance.GasTokenId, account, gasPerBlock * CommitteeRewardRatio / 100, assertOwner: false, callOnPayment: false);
 
         // Record the cumulative reward of the voters of committee
 
@@ -372,7 +372,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         if (!RegisterInternal(engine, pubkey))
             throw new InvalidOperationException("Failed to register candidate");
 
-        await engine.CallFromNativeContractAsync(Governance.Hash, TokenManagement.Hash, "burn", Governance.GasTokenId, Hash, amount);
+        await TokenManagement.BurnInternal(engine, Governance.GasTokenId, Hash, amount, assertOwner: false);
     }
 
     /// <summary>
@@ -487,7 +487,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         }
         Notify(engine, "Vote", account, from, voteTo, stateAccount.Balance);
         if (gasDistribution is not null)
-            await engine.CallFromNativeContractAsync(Governance.Hash, TokenManagement.Hash, "mint", Governance.GasTokenId, gasDistribution.Account, gasDistribution.Amount);
+            await TokenManagement.MintInternal(engine, Governance.GasTokenId, gasDistribution.Account, gasDistribution.Amount, assertOwner: false, callOnPayment: true);
         return true;
     }
 

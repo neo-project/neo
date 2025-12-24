@@ -50,7 +50,11 @@ partial class TokenManagement
     internal UInt160 Create(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, [Range(0, 18)] byte decimals, BigInteger maxSupply)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxSupply, BigInteger.MinusOne);
-        UInt160 owner = engine.CallingScriptHash!;
+        return CreateInternal(engine, engine.CallingScriptHash!, name, symbol, decimals, maxSupply);
+    }
+
+    internal UInt160 CreateInternal(ApplicationEngine engine, UInt160 owner, string name, string symbol, byte decimals, BigInteger maxSupply)
+    {
         UInt160 tokenid = GetAssetId(owner, name);
         StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
         if (engine.SnapshotCache.Contains(key))
@@ -85,9 +89,14 @@ partial class TokenManagement
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        AddTotalSupply(engine, TokenType.Fungible, assetId, amount, assertOwner: true);
+        await MintInternal(engine, assetId, account, amount, assertOwner: true, callOnPayment: true);
+    }
+
+    internal async ContractTask MintInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnPayment)
+    {
+        AddTotalSupply(engine, TokenType.Fungible, assetId, amount, assertOwner);
         AddBalance(engine.SnapshotCache, assetId, account, amount);
-        await PostTransferAsync(engine, assetId, null, account, amount, StackItem.Null, callOnPayment: true);
+        await PostTransferAsync(engine, assetId, null, account, amount, StackItem.Null, callOnPayment);
     }
 
     /// <summary>
@@ -105,7 +114,12 @@ partial class TokenManagement
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        AddTotalSupply(engine, TokenType.Fungible, assetId, -amount, assertOwner: true);
+        await BurnInternal(engine, assetId, account, amount, assertOwner: true);
+    }
+
+    internal async ContractTask BurnInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner)
+    {
+        AddTotalSupply(engine, TokenType.Fungible, assetId, -amount, assertOwner);
         if (!AddBalance(engine.SnapshotCache, assetId, account, -amount))
             throw new InvalidOperationException("Insufficient balance to burn.");
         await PostTransferAsync(engine, assetId, account, null, amount, StackItem.Null, callOnPayment: false);

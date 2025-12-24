@@ -30,9 +30,9 @@ public sealed class Governance : NativeContract
     {
         if (hardFork == ActiveIn)
         {
-            UInt160 tokenid = await engine.CallFromNativeContractAsync<UInt160>(Hash, TokenManagement.Hash, "create", GasTokenName, GasTokenSymbol, GasTokenDecimals);
+            UInt160 tokenid = TokenManagement.CreateInternal(engine, Hash, GasTokenName, GasTokenSymbol, GasTokenDecimals, BigInteger.MinusOne);
             UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
-            await engine.CallFromNativeContractAsync(Hash, TokenManagement.Hash, "mint", tokenid, account, engine.ProtocolSettings.InitialGasDistribution);
+            await TokenManagement.MintInternal(engine, tokenid, account, engine.ProtocolSettings.InitialGasDistribution, assertOwner: false, callOnPayment: false);
         }
     }
 
@@ -41,7 +41,7 @@ public sealed class Governance : NativeContract
         long totalNetworkFee = 0;
         foreach (Transaction tx in engine.PersistingBlock!.Transactions)
         {
-            await engine.CallFromNativeContractAsync(Hash, TokenManagement.Hash, "burn", GasTokenId, tx.Sender, tx.SystemFee + tx.NetworkFee);
+            await TokenManagement.BurnInternal(engine, GasTokenId, tx.Sender, tx.SystemFee + tx.NetworkFee, assertOwner: false);
             totalNetworkFee += tx.NetworkFee;
 
             // Reward for NotaryAssisted attribute will be minted to designated notary nodes
@@ -54,6 +54,6 @@ public sealed class Governance : NativeContract
         }
         ECPoint[] validators = NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
         UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
-        await engine.CallFromNativeContractAsync(Hash, TokenManagement.Hash, "mint", GasTokenId, primary, totalNetworkFee);
+        await TokenManagement.MintInternal(engine, GasTokenId, primary, totalNetworkFee, assertOwner: false, callOnPayment: false);
     }
 }
