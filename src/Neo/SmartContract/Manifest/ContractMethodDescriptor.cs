@@ -110,7 +110,7 @@ namespace Neo.SmartContract.Manifest
             json["returntype"] = ReturnType.ToString();
             json["offset"] = Offset;
             json["safe"] = Safe;
-            if (Fee != null)
+            if (Fee is not null)
                 json["fee"] = Fee.ToJson();
             return json;
         }
