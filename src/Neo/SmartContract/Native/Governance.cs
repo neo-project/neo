@@ -11,6 +11,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
+using Neo.VM.Types;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native;
@@ -58,7 +59,7 @@ public sealed class Governance : NativeContract
     }
 
     [ContractMethod(CpuFee = 0, RequiredCallFlags = CallFlags.None)]
-    internal static void _OnTransfer()
+    internal static void _OnTransfer(UInt160 assetId, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
     {
     }
 }
