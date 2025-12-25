@@ -1211,7 +1211,7 @@ public class UT_NeoToken
     {
         var keyScriptHash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
         StorageKey storageKey;
-        
+
         if (passNEO)
         {
             // NEO uses Prefix_Account = 20
