@@ -374,7 +374,7 @@ public class UT_NeoToken
         Assert.AreEqual(point, members.First().PublicKey);
 
         // No GAS should be left on the NEO account.
-        Assert.AreEqual(0, NativeContract.GAS.BalanceOf(clonedCache, NativeContract.NEO.Hash));
+        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.GasTokenId, NativeContract.NEO.Hash));
     }
 
     [TestMethod]
@@ -603,9 +603,9 @@ public class UT_NeoToken
         Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
         var committee = TestProtocolSettings.Default.StandbyCommittee;
-        Assert.AreEqual(50000000, NativeContract.GAS.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[0]).ScriptHash));
-        Assert.AreEqual(50000000, NativeContract.GAS.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[1]).ScriptHash));
-        Assert.AreEqual(0, NativeContract.GAS.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[2]).ScriptHash));
+        Assert.AreEqual(50000000, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.GasTokenId, Contract.CreateSignatureContract(committee[0]).ScriptHash));
+        Assert.AreEqual(50000000, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.GasTokenId, Contract.CreateSignatureContract(committee[1]).ScriptHash));
+        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.GasTokenId, Contract.CreateSignatureContract(committee[2]).ScriptHash));
     }
 
     [TestMethod]
@@ -887,7 +887,7 @@ public class UT_NeoToken
 
         (BigInteger, bool) result = Check_GetGasPerBlock(clonedCache, persistingBlock);
         Assert.IsTrue(result.Item2);
-        Assert.AreEqual(5 * NativeContract.GAS.Factor, result.Item1);
+        Assert.AreEqual(5 * Governance.GasTokenFactor, result.Item1);
 
         persistingBlock = new Block
         {
@@ -901,7 +901,7 @@ public class UT_NeoToken
             },
             Transactions = []
         };
-        (Boolean, bool) result1 = Check_SetGasPerBlock(clonedCache, 10 * NativeContract.GAS.Factor, persistingBlock);
+        (Boolean, bool) result1 = Check_SetGasPerBlock(clonedCache, 10 * Governance.GasTokenFactor, persistingBlock);
         Assert.IsTrue(result1.Item2);
         Assert.IsTrue(result1.Item1.GetBoolean());
 
@@ -909,7 +909,7 @@ public class UT_NeoToken
         height.Index = persistingBlock.Index + 1;
         result = Check_GetGasPerBlock(clonedCache, persistingBlock);
         Assert.IsTrue(result.Item2);
-        Assert.AreEqual(10 * NativeContract.GAS.Factor, result.Item1);
+        Assert.AreEqual(10 * Governance.GasTokenFactor, result.Item1);
 
         // Check calculate bonus
         StorageItem storage = clonedCache.GetOrAdd(CreateStorageKey(20, UInt160.Zero.ToArray()), () => new StorageItem(new NeoAccountState()));
@@ -1210,19 +1210,46 @@ public class UT_NeoToken
     internal static (bool State, bool Result) Check_RegisterValidatorViaNEP27(DataCache clonedCache, ECPoint pubkey, Block persistingBlock, bool passNEO, byte[] data, BigInteger amount)
     {
         var keyScriptHash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-        var contractID = passNEO ? NativeContract.NEO.Id : NativeContract.GAS.Id;
-        var storageKey = new KeyBuilder(contractID, 20).Add(keyScriptHash); // 20 is Prefix_Account
-
+        StorageKey storageKey;
+        
         if (passNEO)
+        {
+            // NEO uses Prefix_Account = 20
+            storageKey = new KeyBuilder(NativeContract.NEO.Id, 20).Add(keyScriptHash);
             clonedCache.Add(storageKey, new StorageItem(new NeoAccountState { Balance = amount }));
+        }
         else
+        {
+            // GasToken uses TokenManagement with Prefix_AccountState = 12
+            // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
+            var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+            if (!clonedCache.Contains(tokenStateKey))
+            {
+                var tokenState = new TokenState
+                {
+                    Type = TokenType.Fungible,
+                    Owner = NativeContract.Governance.Hash,
+                    Name = Governance.GasTokenName,
+                    Symbol = Governance.GasTokenSymbol,
+                    Decimals = Governance.GasTokenDecimals,
+                    TotalSupply = BigInteger.Zero,
+                    MaxSupply = BigInteger.MinusOne
+                };
+                clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
+            }
+            // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
+            storageKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(keyScriptHash).Add(NativeContract.Governance.GasTokenId);
             clonedCache.Add(storageKey, new StorageItem(new AccountState { Balance = amount }));
+        }
 
         using var engine = ApplicationEngine.Create(TriggerType.Application,
             new Nep17NativeContractExtensions.ManualWitness(keyScriptHash), clonedCache, persistingBlock, settings: TestProtocolSettings.Default, gas: 1_0000_0000);
 
         using var script = new ScriptBuilder();
-        script.EmitDynamicCall(passNEO ? NativeContract.NEO.Hash : NativeContract.GAS.Hash, "transfer", keyScriptHash, NativeContract.NEO.Hash, amount, data);
+        if (passNEO)
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "transfer", keyScriptHash, NativeContract.NEO.Hash, amount, data);
+        else
+            script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, keyScriptHash, NativeContract.NEO.Hash, amount, data);
         engine.LoadScript(script.ToArray());
 
         var execRes = engine.Execute();
