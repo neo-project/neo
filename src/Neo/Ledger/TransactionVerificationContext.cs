@@ -66,6 +66,7 @@ namespace Neo.Ledger
                 expectedFee -= conflictTx.NetworkFee + conflictTx.SystemFee;
             if (balance < expectedFee)
             {
+                // Only consider unclaimed GAS when claimed balance is insufficient and HF_Faun is active.
                 if (settings.Hardforks.TryGetValue(Hardfork.HF_Faun, out var faunHeight) &&
                     !NativeContract.ContractManagement.IsContract(snapshot, tx.Sender))
                 {

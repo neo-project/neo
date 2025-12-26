@@ -574,6 +574,7 @@ namespace Neo.Wallets
                     if (sum_balance < sum)
                         throw new InvalidOperationException($"Insufficient balance for transfer: required {sum} units, but only {sum_balance} units are available across all accounts. Please ensure sufficient balance before attempting the transfer.");
                     bool isGasTransfer = assetId.Equals(NativeContract.GAS.Hash);
+                    // Track remaining claimed GAS during GAS transfers so fee selection keeps the spent amount.
                     if (isGasTransfer)
                         gasBalances = balances.ToDictionary(p => p.Account, p => p.Value);
                     foreach (TransferOutput output in group)
@@ -629,7 +630,7 @@ namespace Neo.Wallets
                     BigInteger balance;
                     if (balancesByAccount.TryGetValue(account, out balance))
                     {
-                        // Keep remaining claimed GAS after transfer deductions.
+                        // Keep remaining claimed GAS after transfer deductions, then add unclaimed if allowed.
                     }
                     else if (gasBalances is not null && gasBalances.ContainsKey(account))
                     {
