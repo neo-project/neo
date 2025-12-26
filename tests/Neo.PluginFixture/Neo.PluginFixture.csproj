@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Neo.PluginFixture</AssemblyName>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Remove="MSTest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="Microsoft.VisualStudio.TestTools.UnitTesting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
+    <ProjectReference Include="..\Neo.PluginFixture.Dependency\Neo.PluginFixture.Dependency.csproj" />
+  </ItemGroup>
+
+</Project>
