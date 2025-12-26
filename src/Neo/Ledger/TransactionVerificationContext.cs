@@ -59,19 +59,23 @@ namespace Neo.Ledger
         public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot, ProtocolSettings settings)
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
-            var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
-            var nextIndex = currentIndex + 1;
-            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, nextIndex) &&
-                !NativeContract.ContractManagement.IsContract(snapshot, tx.Sender))
-            {
-                balance += NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, nextIndex);
-            }
             _senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
             var expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
             foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
                 expectedFee -= conflictTx.NetworkFee + conflictTx.SystemFee;
-            if (balance < expectedFee) return false;
+            if (balance < expectedFee)
+            {
+                if (settings.Hardforks.TryGetValue(Hardfork.HF_Faun, out var faunHeight) &&
+                    !NativeContract.ContractManagement.IsContract(snapshot, tx.Sender))
+                {
+                    var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
+                    var nextIndex = currentIndex + 1;
+                    if (faunHeight == 0 || nextIndex >= faunHeight)
+                        balance += NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, nextIndex);
+                }
+                if (balance < expectedFee) return false;
+            }
 
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null && _oracleResponses.ContainsKey(oracle.Id))

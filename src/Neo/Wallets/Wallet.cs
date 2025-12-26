@@ -554,6 +554,7 @@ namespace Neo.Wallets
             Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
             byte[] script;
             List<(UInt160 Account, BigInteger Value)>? balances_gas = null;
+            Dictionary<UInt160, BigInteger>? gasBalances = null;
             using (ScriptBuilder sb = new())
             {
                 foreach (var (assetId, group, sum) in outputs.GroupBy(p => p.AssetId, (k, g) => (k, g, g.Select(p => p.Value.Value).Sum())))
@@ -572,12 +573,17 @@ namespace Neo.Wallets
                     BigInteger sum_balance = balances.Select(p => p.Value).Sum();
                     if (sum_balance < sum)
                         throw new InvalidOperationException($"Insufficient balance for transfer: required {sum} units, but only {sum_balance} units are available across all accounts. Please ensure sufficient balance before attempting the transfer.");
+                    bool isGasTransfer = assetId.Equals(NativeContract.GAS.Hash);
+                    if (isGasTransfer)
+                        gasBalances = balances.ToDictionary(p => p.Account, p => p.Value);
                     foreach (TransferOutput output in group)
                     {
                         balances = balances.OrderBy(p => p.Value).ToList();
                         var balances_used = FindPayingAccounts(balances, output.Value.Value);
                         foreach (var (account, value) in balances_used)
                         {
+                            if (isGasTransfer)
+                                gasBalances![account] -= value;
                             if (cosignerList.TryGetValue(account, out Signer? signer))
                             {
                                 if (signer.Scopes != WitnessScope.Global)
@@ -595,12 +601,15 @@ namespace Neo.Wallets
                             sb.Emit(OpCode.ASSERT);
                         }
                     }
-                    if (assetId.Equals(NativeContract.GAS.Hash))
-                        balances_gas = balances;
+                    if (isGasTransfer)
+                        balances_gas = gasBalances!
+                            .Where(p => p.Value.Sign > 0)
+                            .Select(p => (Account: p.Key, Value: p.Value))
+                            .ToList();
                 }
                 script = sb.ToArray();
             }
-            if (balances_gas is null || useUnclaimed)
+            if (balances_gas is null)
             {
                 balances_gas = accounts.Select(p =>
                     {
@@ -611,6 +620,35 @@ namespace Neo.Wallets
                     })
                     .Where(p => p.Value.Sign > 0)
                     .ToList();
+            }
+            else if (useUnclaimed)
+            {
+                var balancesByAccount = balances_gas.ToDictionary(entry => entry.Account, entry => entry.Value);
+                foreach (var account in accounts)
+                {
+                    BigInteger balance;
+                    if (balancesByAccount.TryGetValue(account, out balance))
+                    {
+                        // Keep remaining claimed GAS after transfer deductions.
+                    }
+                    else if (gasBalances is not null && gasBalances.ContainsKey(account))
+                    {
+                        balance = BigInteger.Zero;
+                    }
+                    else
+                    {
+                        balance = NativeContract.GAS.BalanceOf(snapshot, account);
+                    }
+
+                    if (includeUnclaimed && !NativeContract.ContractManagement.IsContract(snapshot, account))
+                        balance += NativeContract.NEO.UnclaimedGas(snapshot, account, nextIndex);
+
+                    if (balance.Sign > 0)
+                        balancesByAccount[account] = balance;
+                    else
+                        balancesByAccount.Remove(account);
+                }
+                balances_gas = balancesByAccount.Select(p => (p.Key, p.Value)).ToList();
             }
 
             return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), [], balances_gas, useUnclaimed, persistingBlock: persistingBlock);
