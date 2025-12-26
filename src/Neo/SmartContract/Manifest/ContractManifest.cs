@@ -193,6 +193,5 @@ namespace Neo.SmartContract.Manifest
             // Check groups
             return Groups.All(u => u.IsValid(hash));
         }
-
     }
 }
