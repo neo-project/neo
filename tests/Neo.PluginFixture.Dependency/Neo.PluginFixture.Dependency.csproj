@@ -5,12 +5,4 @@
     <OutputType>Library</OutputType>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Remove="MSTest" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Using Remove="Microsoft.VisualStudio.TestTools.UnitTesting" />
-  </ItemGroup>
-
 </Project>
