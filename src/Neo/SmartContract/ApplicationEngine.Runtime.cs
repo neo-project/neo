@@ -467,7 +467,6 @@ namespace Neo.SmartContract
         {
             if (amount.IsZero)
                 return;
-
             if (amount.Sign < 0)
                 throw new InvalidOperationException("GAS must be non-negative.");
             if (Trigger != TriggerType.Application)
