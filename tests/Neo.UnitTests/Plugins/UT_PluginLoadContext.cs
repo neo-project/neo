@@ -28,18 +28,19 @@ public class UT_PluginLoadContext
         {
             try
             {
-                var pluginRoot = PrepareFixturePluginDirectory();
+                var pluginRoot = PrepareFixturePluginDirectory(out var pluginAssemblyPath);
                 Plugin.Plugins.Clear();
 
                 Plugin.LoadPlugins();
 
-                var plugin = Plugin.Plugins.SingleOrDefault(p => p.GetType().Assembly.GetName().Name == FixtureAssemblyName);
+                var plugin = Plugin.Plugins.SingleOrDefault(p =>
+                    string.Equals(p.GetType().Assembly.Location, pluginAssemblyPath, StringComparison.OrdinalIgnoreCase));
                 Assert.IsNotNull(plugin);
 
                 var loadContext = AssemblyLoadContext.GetLoadContext(plugin.GetType().Assembly);
                 Assert.IsNotNull(loadContext);
                 Assert.AreNotSame(AssemblyLoadContext.Default, loadContext);
-                Assert.AreEqual(Path.Combine(pluginRoot, $"{FixtureAssemblyName}.dll"), plugin.GetType().Assembly.Location);
+                Assert.AreEqual(pluginAssemblyPath, plugin.GetType().Assembly.Location);
             }
             finally
             {
@@ -55,12 +56,13 @@ public class UT_PluginLoadContext
         {
             try
             {
-                var pluginRoot = PrepareFixturePluginDirectory();
+                var pluginRoot = PrepareFixturePluginDirectory(out _);
                 Plugin.Plugins.Clear();
 
                 Plugin.LoadPlugins();
 
-                var plugin = Plugin.Plugins.SingleOrDefault(p => p.GetType().Assembly.GetName().Name == FixtureAssemblyName);
+                var plugin = Plugin.Plugins.SingleOrDefault(p =>
+                    p.GetType().Assembly.Location.StartsWith(pluginRoot, StringComparison.OrdinalIgnoreCase));
                 Assert.IsNotNull(plugin);
 
                 var method = plugin.GetType().GetMethod("GetDependencyAssemblyLocation");
@@ -77,11 +79,12 @@ public class UT_PluginLoadContext
         }
     }
 
-    private static string PrepareFixturePluginDirectory()
+    private static string PrepareFixturePluginDirectory(out string pluginAssemblyPath)
     {
         var pluginsDir = Plugin.PluginsDirectory;
         Directory.CreateDirectory(pluginsDir);
-        var pluginRoot = Path.Combine(pluginsDir, FixtureAssemblyName);
+        var pluginDirectoryName = $"{FixtureAssemblyName}.{Guid.NewGuid():N}";
+        var pluginRoot = Path.Combine(pluginsDir, pluginDirectoryName);
         Directory.CreateDirectory(pluginRoot);
 
         var sourcePluginPath = Path.Combine(AppContext.BaseDirectory, $"{FixtureAssemblyName}.dll");
@@ -90,7 +93,8 @@ public class UT_PluginLoadContext
         Assert.IsTrue(File.Exists(sourcePluginPath), $"Missing fixture plugin assembly: {sourcePluginPath}");
         Assert.IsTrue(File.Exists(sourceDependencyPath), $"Missing fixture dependency assembly: {sourceDependencyPath}");
 
-        File.Copy(sourcePluginPath, Path.Combine(pluginRoot, $"{FixtureAssemblyName}.dll"), true);
+        pluginAssemblyPath = Path.Combine(pluginRoot, $"{pluginDirectoryName}.dll");
+        File.Copy(sourcePluginPath, pluginAssemblyPath, true);
         File.Copy(sourceDependencyPath, Path.Combine(pluginRoot, $"{DependencyAssemblyName}.dll"), true);
 
         return pluginRoot;
