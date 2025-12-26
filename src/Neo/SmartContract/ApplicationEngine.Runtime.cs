@@ -465,6 +465,9 @@ namespace Neo.SmartContract
         /// <param name="amount">The amount of GAS to mint, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
         protected internal void MintGas(BigInteger amount)
         {
+            if (amount.IsZero)
+                return;
+
             if (amount.Sign < 0)
                 throw new InvalidOperationException("GAS must be non-negative.");
             if (Trigger != TriggerType.Application)
@@ -472,9 +475,6 @@ namespace Neo.SmartContract
 
             ContractState contract = CurrentContext?.GetState<ExecutionContextState>().Contract
                 ?? throw new InvalidOperationException("MintGas can only be called by a contract.");
-
-            if (amount.IsZero)
-                return;
 
             var state = CurrentContext!.GetState<ExecutionContextState>();
             var wasWhitelisted = state.WhiteListed;
