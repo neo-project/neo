@@ -328,13 +328,13 @@ namespace Neo.SmartContract
         /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
         protected internal void AddFee(BigInteger picoGas)
         {
-            AddFeeInternal(picoGas, ignoreWhitelist: false);
-        }
+            // Check whitelist
 
-        private void AddFeeInternal(BigInteger picoGas, bool ignoreWhitelist)
-        {
-            if (!ignoreWhitelist && CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
+            if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
+            {
+                // The execution is whitelisted
                 return;
+            }
 
             _feeConsumed = _feeConsumed + picoGas;
             if (_feeConsumed > _feeAmount)

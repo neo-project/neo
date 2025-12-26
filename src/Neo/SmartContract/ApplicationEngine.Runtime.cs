@@ -476,7 +476,17 @@ namespace Neo.SmartContract
             if (amount.IsZero)
                 return;
 
-            AddFeeInternal(amount * FeeFactor, ignoreWhitelist: true);
+            var state = CurrentContext!.GetState<ExecutionContextState>();
+            var wasWhitelisted = state.WhiteListed;
+            state.WhiteListed = false;
+            try
+            {
+                AddFee(amount * FeeFactor);
+            }
+            finally
+            {
+                state.WhiteListed = wasWhitelisted;
+            }
             NativeContract.GAS.Mint(this, contract.Hash, amount, false).GetAwaiter().GetResult();
         }
 
