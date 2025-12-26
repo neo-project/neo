@@ -9,13 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo;
-using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
-using Neo.Wallets;
 using System;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
@@ -71,11 +68,6 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public JObject? Extra { get; set; }
 
-        /// <summary>
-        /// The contract owner (deployer) script hash.
-        /// </summary>
-        public UInt160? Owner { get; set; }
-
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
@@ -95,12 +87,11 @@ namespace Neo.SmartContract.Manifest
                 _ => throw new ArgumentException("Trusts field must be null or array", nameof(stackItem))
             };
             Extra = (JObject?)JToken.Parse(@struct[7].GetSpan());
-            Owner = @struct.Count > 8 && !@struct[8].IsNull ? new UInt160(@struct[8].GetSpan()) : null;
         }
 
         public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
-            var @struct = new Struct(referenceCounter)
+            return new Struct(referenceCounter)
             {
                 Name,
                 new Array(referenceCounter, Groups.Select(p => p.ToStackItem(referenceCounter))),
@@ -111,9 +102,6 @@ namespace Neo.SmartContract.Manifest
                 Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p => p.ToArray()?? StackItem.Null)),
                 Extra is null ? "null" : Extra.ToByteArray(false)
             };
-            if (Owner != null)
-                @struct.Add(Owner.ToArray());
-            return @struct;
         }
 
         /// <summary>
@@ -131,8 +119,7 @@ namespace Neo.SmartContract.Manifest
                 Abi = ContractAbi.FromJson((JObject)json["abi"]!),
                 Permissions = ((JArray?)json["permissions"])?.Select(u => ContractPermission.FromJson((JObject)u!)).ToArray() ?? [],
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"]!, u => ContractPermissionDescriptor.FromJson((JString)u)),
-                Extra = (JObject?)json["extra"],
-                Owner = json["owner"] is JString ownerJson ? ParseUInt160OrAddress(ownerJson.GetString()) : null
+                Extra = (JObject?)json["extra"]
             };
 
             if (string.IsNullOrEmpty(manifest.Name))
@@ -173,7 +160,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The manifest represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            var json = new JObject
+            return new JObject
             {
                 ["name"] = Name,
                 ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
@@ -184,9 +171,6 @@ namespace Neo.SmartContract.Manifest
                 ["trusts"] = Trusts.ToJson(p => p.ToJson()),
                 ["extra"] = Extra
             };
-            if (Owner != null)
-                json["owner"] = Owner.ToAddress(ProtocolSettings.Default.AddressVersion);
-            return json;
         }
 
         /// <summary>
@@ -210,15 +194,5 @@ namespace Neo.SmartContract.Manifest
             return Groups.All(u => u.IsValid(hash));
         }
 
-        private static UInt160 ParseUInt160OrAddress(string value)
-        {
-            if (UInt160.TryParse(value, out var result))
-                return result;
-
-            var data = value.Base58CheckDecode();
-            if (data.Length != 21)
-                throw new FormatException($"Invalid address format: {value}.");
-            return new UInt160(data.AsSpan(1));
-        }
     }
 }

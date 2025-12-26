@@ -77,7 +77,6 @@ namespace Neo.SmartContract
         private List<IDisposable>? disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
-        internal bool SuppressCustomFees { get; set; }
         // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
         private readonly BigInteger _execFeeFactor;
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
@@ -329,13 +328,13 @@ namespace Neo.SmartContract
         /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
         protected internal void AddFee(BigInteger picoGas)
         {
-            // Check whitelist
+            AddFeeInternal(picoGas, ignoreWhitelist: false);
+        }
 
-            if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
-            {
-                // The execution is whitelisted
+        private void AddFeeInternal(BigInteger picoGas, bool ignoreWhitelist)
+        {
+            if (!ignoreWhitelist && CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
                 return;
-            }
 
             _feeConsumed = _feeConsumed + picoGas;
             if (_feeConsumed > _feeAmount)
@@ -409,8 +408,6 @@ namespace Neo.SmartContract
             var contextNew = LoadContract(contract, method, flags & callingFlags);
             state = contextNew.GetState<ExecutionContextState>();
             state.CallingContext = currentContext;
-
-            ApplyCustomFee(contract, method, args);
 
             for (int i = args.Count - 1; i >= 0; i--)
                 contextNew.EvaluationStack.Push(args[i]);

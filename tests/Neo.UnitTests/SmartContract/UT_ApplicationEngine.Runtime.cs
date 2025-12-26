@@ -204,136 +204,110 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestContractFeeFixed()
+        public void TestMintGasMintsAndAddsFee()
         {
-            var snapshot = _snapshotCache.CloneCache();
+            var snapshotBase = _snapshotCache.CloneCache();
             var payer = UInt160.Parse("0x0102030405060708090a0b0c0d0e0f1011121314");
-            var owner = UInt160.Parse("0x1112131415161718191a1b1c1d1e1f2021222324");
+            const long mintAmount = 5;
 
-            using var feeScript = new ScriptBuilder();
-            feeScript.Emit(OpCode.RET);
+            using var mintScript = new ScriptBuilder();
+            mintScript.EmitSysCall(ApplicationEngine.System_Runtime_MintGas.Hash, mintAmount);
+            mintScript.Emit(OpCode.RET);
 
-            var manifest = TestUtils.CreateManifest("paid", ContractParameterType.Void);
-            manifest.Abi.Methods[0].Offset = 0;
-            manifest.Abi.Methods[0].Safe = true;
-            manifest.Abi.Methods[0].Fee = new ContractMethodFeeDescriptor
-            {
-                Amount = 5,
-                Mode = ContractMethodFeeMode.Fixed
-            };
-            manifest.Owner = owner;
+            var mintManifest = TestUtils.CreateManifest("charge", ContractParameterType.Void);
+            mintManifest.Abi.Methods[0].Offset = 0;
 
-            var contract = TestUtils.GetContract(feeScript.ToArray(), manifest);
-            snapshot.AddContract(contract.Hash, contract);
+            var mintContract = TestUtils.GetContract(mintScript.ToArray(), mintManifest);
+            mintContract.Id = 1;
 
-            using (var mintEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default))
-            {
-                _ = NativeContract.GAS.Mint(mintEngine, payer, 10, false);
-            }
+            using var noopScript = new ScriptBuilder();
+            noopScript.Emit(OpCode.RET);
+
+            var noopManifest = TestUtils.CreateManifest("noop", ContractParameterType.Void);
+            noopManifest.Abi.Methods[0].Offset = 0;
+
+            var noopContract = TestUtils.GetContract(noopScript.ToArray(), noopManifest);
+            noopContract.Id = 2;
+
+            snapshotBase.AddContract(mintContract.Hash, mintContract);
+            snapshotBase.AddContract(noopContract.Hash, noopContract);
 
             var tx = TestUtils.GetTransaction(payer);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default);
-            using var callScript = new ScriptBuilder();
-            callScript.EmitDynamicCall(contract.Hash, "paid");
-            engine.LoadScript(callScript.ToArray());
 
-            Assert.AreEqual(VMState.HALT, engine.Execute());
+            var snapshotNoop = snapshotBase.CloneCache();
+            using var engineNoop = ApplicationEngine.Create(TriggerType.Application, tx, snapshotNoop, _system.GenesisBlock, settings: TestProtocolSettings.Default);
+            using (var callScript = new ScriptBuilder())
+            {
+                callScript.EmitDynamicCall(noopContract.Hash, "noop");
+                engineNoop.LoadScript(callScript.ToArray());
+            }
+            Assert.AreEqual(VMState.HALT, engineNoop.Execute());
+            var feeNoop = engineNoop.FeeConsumed;
 
-            Assert.AreEqual(new BigInteger(5), NativeContract.GAS.BalanceOf(snapshot, owner));
-            Assert.AreEqual(new BigInteger(5), NativeContract.GAS.BalanceOf(snapshot, payer));
+            var snapshotMint = snapshotBase.CloneCache();
+            using var engineMint = ApplicationEngine.Create(TriggerType.Application, tx, snapshotMint, _system.GenesisBlock, settings: TestProtocolSettings.Default);
+            using (var callScript = new ScriptBuilder())
+            {
+                callScript.EmitDynamicCall(mintContract.Hash, "charge");
+                engineMint.LoadScript(callScript.ToArray());
+            }
+            Assert.AreEqual(VMState.HALT, engineMint.Execute());
+            var feeMint = engineMint.FeeConsumed;
+
+            Assert.AreEqual(new BigInteger(mintAmount), NativeContract.GAS.BalanceOf(snapshotMint, mintContract.Hash));
+            Assert.IsTrue(feeMint >= feeNoop + mintAmount);
         }
 
         [TestMethod]
-        public void TestContractFeeRefundOnFault()
+        public void TestMintGasRejectsNegative()
         {
             var snapshot = _snapshotCache.CloneCache();
             var payer = UInt160.Parse("0x1112131415161718191a1b1c1d1e1f2021222324");
-            var owner = UInt160.Parse("0x2122232425262728292a2b2c2d2e2f3031323334");
 
-            using var feeScript = new ScriptBuilder();
-            feeScript.Emit(OpCode.ABORT);
+            using var mintScript = new ScriptBuilder();
+            mintScript.EmitSysCall(ApplicationEngine.System_Runtime_MintGas.Hash, -1);
+            mintScript.Emit(OpCode.RET);
 
-            var manifest = TestUtils.CreateManifest("paid", ContractParameterType.Void);
+            var manifest = TestUtils.CreateManifest("charge", ContractParameterType.Void);
             manifest.Abi.Methods[0].Offset = 0;
-            manifest.Abi.Methods[0].Safe = true;
-            manifest.Abi.Methods[0].Fee = new ContractMethodFeeDescriptor
-            {
-                Amount = 3,
-                Mode = ContractMethodFeeMode.Fixed
-            };
-            manifest.Owner = owner;
 
-            var contract = TestUtils.GetContract(feeScript.ToArray(), manifest);
+            var contract = TestUtils.GetContract(mintScript.ToArray(), manifest);
+            contract.Id = 3;
             snapshot.AddContract(contract.Hash, contract);
-
-            using (var mintEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default))
-            {
-                _ = NativeContract.GAS.Mint(mintEngine, payer, 10, false);
-            }
 
             var tx = TestUtils.GetTransaction(payer);
             using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default);
             using var callScript = new ScriptBuilder();
-            callScript.EmitDynamicCall(contract.Hash, "paid");
+            callScript.EmitDynamicCall(contract.Hash, "charge");
             engine.LoadScript(callScript.ToArray());
 
             Assert.AreEqual(VMState.FAULT, engine.Execute());
-
-            Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, owner));
-            Assert.AreEqual(new BigInteger(10), NativeContract.GAS.BalanceOf(snapshot, payer));
         }
 
         [TestMethod]
-        public void TestContractFeeDynamic()
+        public void TestMintGasRequiresWriteStates()
         {
             var snapshot = _snapshotCache.CloneCache();
             var payer = UInt160.Parse("0x2122232425262728292a2b2c2d2e2f3031323334");
-            var owner = UInt160.Parse("0x3132333435363738393a3b3c3d3e3f4041424344");
 
-            using var calculatorScript = new ScriptBuilder();
-            calculatorScript.Emit(OpCode.DROP);
-            calculatorScript.Emit(OpCode.DROP);
-            calculatorScript.EmitPush(7);
-            calculatorScript.Emit(OpCode.RET);
+            using var mintScript = new ScriptBuilder();
+            mintScript.EmitSysCall(ApplicationEngine.System_Runtime_MintGas.Hash, 1);
+            mintScript.Emit(OpCode.RET);
 
-            var calculatorManifest = TestUtils.CreateManifest("CalculateFee", ContractParameterType.Integer, ContractParameterType.String, ContractParameterType.Array);
-            calculatorManifest.Abi.Methods[0].Offset = 0;
-            calculatorManifest.Abi.Methods[0].Safe = true;
-
-            var calculator = TestUtils.GetContract(calculatorScript.ToArray(), calculatorManifest);
-            snapshot.AddContract(calculator.Hash, calculator);
-
-            using var feeScript = new ScriptBuilder();
-            feeScript.Emit(OpCode.RET);
-
-            var manifest = TestUtils.CreateManifest("paid", ContractParameterType.Void);
+            var manifest = TestUtils.CreateManifest("charge", ContractParameterType.Void);
             manifest.Abi.Methods[0].Offset = 0;
-            manifest.Abi.Methods[0].Safe = true;
-            manifest.Abi.Methods[0].Fee = new ContractMethodFeeDescriptor
-            {
-                Mode = ContractMethodFeeMode.Dynamic,
-                DynamicScriptHash = calculator.Hash
-            };
-            manifest.Owner = owner;
 
-            var contract = TestUtils.GetContract(feeScript.ToArray(), manifest);
+            var contract = TestUtils.GetContract(mintScript.ToArray(), manifest);
+            contract.Id = 4;
             snapshot.AddContract(contract.Hash, contract);
-
-            using (var mintEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default))
-            {
-                _ = NativeContract.GAS.Mint(mintEngine, payer, 20, false);
-            }
 
             var tx = TestUtils.GetTransaction(payer);
             using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default);
             using var callScript = new ScriptBuilder();
-            callScript.EmitDynamicCall(contract.Hash, "paid");
+            callScript.EmitDynamicCall(contract.Hash, "charge", CallFlags.ReadOnly);
             engine.LoadScript(callScript.ToArray());
 
-            Assert.AreEqual(VMState.HALT, engine.Execute());
-
-            Assert.AreEqual(new BigInteger(7), NativeContract.GAS.BalanceOf(snapshot, owner));
-            Assert.AreEqual(new BigInteger(13), NativeContract.GAS.BalanceOf(snapshot, payer));
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
         }
     }
 }
