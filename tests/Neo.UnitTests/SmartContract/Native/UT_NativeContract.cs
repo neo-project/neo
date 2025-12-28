@@ -195,14 +195,7 @@ public class UT_NativeContract
         foreach (var ctr in NativeContract.Contracts)
         {
             var state = Call_GetContract(snapshot, ctr.Hash, persistingBlock);
-            var actualJson = state.ToJson().ToString();
-            if (ctr.Name == "Notary" && !_nativeStates[ctr.Name].Equals(actualJson))
-            {
-                // Output actual JSON for debugging - write to console
-                Console.WriteLine($"Notary actual JSON: {actualJson}");
-                Console.WriteLine($"Notary expected JSON: {_nativeStates[ctr.Name]}");
-            }
-            Assert.AreEqual(_nativeStates[ctr.Name], actualJson, message: $"{ctr.Name} is wrong");
+            Assert.AreEqual(_nativeStates[ctr.Name], state.ToJson().ToString(), message: $"{ctr.Name} is wrong");
         }
     }
 
