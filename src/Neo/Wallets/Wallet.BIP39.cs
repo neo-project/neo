@@ -19,6 +19,7 @@ namespace Neo.Wallets;
 partial class Wallet
 {
     static readonly Dictionary<string, string[]> wordlists = new();
+    static readonly Dictionary<string, int> wordlists_reverse_index = new();
 
     static Wallet()
     {
@@ -30,6 +31,8 @@ partial class Wallet
             string value = (string)res.Value!;
             string[] wordlist = value.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
             wordlists.Add(key[7..], wordlist);
+            for (int i = 0; i < wordlist.Length; i++)
+                wordlists_reverse_index[wordlist[i]] = i;
         }
     }
 
@@ -91,6 +94,53 @@ partial class Wallet
             mnemonic[i] = wordlist[index];
         }
         return mnemonic;
+    }
+
+    public static byte[] MnemonicToEntropy(string[] mnemonic)
+    {
+        int wordCount = mnemonic.Length;
+        if (wordCount < 12 || wordCount > 24 || wordCount % 3 != 0)
+            throw new ArgumentException("The number of words should be 12, 15, 18, 21 or 24.", nameof(mnemonic));
+        int totalBits = wordCount * 11;
+        int bits_entropy = totalBits * 32 / 33;
+        int bits_checksum = totalBits - bits_entropy;
+        int entropyBytes = bits_entropy / 8;
+        byte[] entropy = new byte[entropyBytes];
+        Span<byte> checksum = stackalloc byte[(bits_checksum + 7) / 8];
+        for (int i = 0; i < wordCount; i++)
+        {
+            if (!wordlists_reverse_index.TryGetValue(mnemonic[i], out int index))
+                throw new ArgumentException($"The word '{mnemonic[i]}' is not in the BIP-39 wordlist.", nameof(mnemonic));
+            for (int j = 0; j < 11; j++)
+            {
+                int bitPos = i * 11 + j;
+                bool bit = (index & (1 << (10 - j))) != 0;
+                if (bitPos < bits_entropy)
+                {
+                    int byteIndex = bitPos / 8;
+                    int bitInByte = 7 - (bitPos % 8);
+                    if (bit) entropy[byteIndex] |= (byte)(1 << bitInByte);
+                }
+                else
+                {
+                    int csBitPos = bitPos - bits_entropy;
+                    int byteIndex = csBitPos / 8;
+                    int bitInByte = 7 - (csBitPos % 8);
+                    if (bit) checksum[byteIndex] |= (byte)(1 << bitInByte);
+                }
+            }
+        }
+        byte[] hash = entropy.Sha256();
+        for (int i = 0; i < bits_checksum; i++)
+        {
+            int byteIndex = i / 8;
+            int bitInByte = 7 - (i % 8);
+            bool bitFromHash = (hash[byteIndex] & (1 << bitInByte)) != 0;
+            bool bitFromChecksum = (checksum[byteIndex] & (1 << bitInByte)) != 0;
+            if (bitFromHash != bitFromChecksum)
+                throw new ArgumentException("Invalid mnemonic: checksum does not match.", nameof(mnemonic));
+        }
+        return entropy;
     }
 
     static bool GetBitMSB(ReadOnlySpan<byte> data, int bitIndex)
