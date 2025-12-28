@@ -134,7 +134,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         };
     }
 
-    private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state, uint end)
+    private BigInteger CalculateBonus(IReadOnlyStore snapshot, NeoAccountState state, uint end)
     {
         if (state.Balance.IsZero) return BigInteger.Zero;
         if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state), "Balance cannot be negative");
@@ -148,7 +148,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         return neoHolderReward + voteReward;
     }
 
-    private (BigInteger neoHold, BigInteger voteReward) CalculateReward(DataCache snapshot, NeoAccountState state, uint end)
+    private (BigInteger neoHold, BigInteger voteReward) CalculateReward(IReadOnlyStore snapshot, NeoAccountState state, uint end)
     {
         var start = state.BalanceHeight;
 
@@ -294,7 +294,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <returns>The amount of GAS generated.</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public BigInteger GetGasPerBlock(DataCache snapshot)
+    public BigInteger GetGasPerBlock(IReadOnlyStore snapshot)
     {
         return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
     }
@@ -326,7 +326,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         return (long)(BigInteger)snapshot[_registerPrice];
     }
 
-    private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(DataCache snapshot, uint end)
+    private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(IReadOnlyStore snapshot, uint end)
     {
         var key = CreateStorageKey(Prefix_GasPerBlock, end).ToArray();
         var boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();
@@ -342,7 +342,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// <param name="end">The block index used when calculating GAS.</param>
     /// <returns>The amount of unclaimed GAS.</returns>
     [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
-    public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
+    public BigInteger UnclaimedGas(IReadOnlyStore snapshot, UInt160 account, uint end)
     {
         StorageItem? storage = snapshot.TryGet(CreateStorageKey(Prefix_Account, account));
         if (storage is null) return BigInteger.Zero;
@@ -497,7 +497,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <returns>All the registered candidates.</returns>
     [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-    internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
+    internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(IReadOnlyStore snapshot)
     {
         return GetCandidatesInternal(snapshot)
             .Select(p => (p.PublicKey, p.State.Votes))
@@ -590,12 +590,12 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <param name="settings">The <see cref="ProtocolSettings"/> used during computing.</param>
     /// <returns>The public keys of the validators.</returns>
-    public ECPoint[] ComputeNextBlockValidators(DataCache snapshot, ProtocolSettings settings)
+    public ECPoint[] ComputeNextBlockValidators(IReadOnlyStore snapshot, ProtocolSettings settings)
     {
         return ComputeCommitteeMembers(snapshot, settings).Select(p => p.PublicKey).Take(settings.ValidatorsCount).OrderBy(p => p).ToArray();
     }
 
-    private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(DataCache snapshot, ProtocolSettings settings)
+    private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(IReadOnlyStore snapshot, ProtocolSettings settings)
     {
         decimal votersCount = (decimal)(BigInteger)snapshot[_votersCount];
         decimal voterTurnout = votersCount / (decimal)TotalAmount;

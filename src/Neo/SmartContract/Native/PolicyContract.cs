@@ -249,7 +249,7 @@ public sealed class PolicyContract : NativeContract
         return true;
     }
 
-    internal bool IsWhitelistFeeContract(DataCache snapshot, UInt160 contractHash, ContractMethodDescriptor method, [NotNullWhen(true)] out long? fixedFee)
+    internal bool IsWhitelistFeeContract(IReadOnlyStore snapshot, UInt160 contractHash, ContractMethodDescriptor method, [NotNullWhen(true)] out long? fixedFee)
     {
         // Check contract existence
 
@@ -364,7 +364,7 @@ public sealed class PolicyContract : NativeContract
     }
 
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
+    internal StorageIterator GetWhitelistFeeContracts(IReadOnlyStore snapshot)
     {
         const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
         var enumerator = snapshot
@@ -375,7 +375,7 @@ public sealed class PolicyContract : NativeContract
     }
 
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    private StorageIterator GetBlockedAccounts(DataCache snapshot)
+    private StorageIterator GetBlockedAccounts(IReadOnlyStore snapshot)
     {
         const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
         var enumerator = snapshot

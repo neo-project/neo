@@ -184,11 +184,11 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// ExpirationOf returns deposit lock height for specified address.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to query the deposit lock height for specified address.</param>
     /// <param name="account">Account</param>
     /// <returns>Deposit lock height of the specified address.</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public uint ExpirationOf(DataCache snapshot, UInt160 account)
+    public uint ExpirationOf(IReadOnlyStore snapshot, UInt160 account)
     {
         var deposit = GetDepositFor(snapshot, account);
         if (deposit is null) return 0;
@@ -198,11 +198,11 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// BalanceOf returns deposited GAS amount for specified address.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to query the deposited GAS amount for specified address.</param>
     /// <param name="account">Account</param>
     /// <returns>Deposit balance of the specified account.</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public BigInteger BalanceOf(DataCache snapshot, UInt160 account)
+    public BigInteger BalanceOf(IReadOnlyStore snapshot, UInt160 account)
     {
         var deposit = GetDepositFor(snapshot, account);
         if (deposit is null) return 0;
@@ -236,7 +236,7 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// GetMaxNotValidBeforeDelta is Notary contract method and returns the maximum NotValidBefore delta.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to query the maximum NotValidBefore delta.</param>
     /// <returns>NotValidBefore</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
     public uint GetMaxNotValidBeforeDelta(IReadOnlyStore snapshot)
@@ -266,9 +266,9 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// GetNotaryNodes returns public keys of notary nodes.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to query role assignments.</param>
     /// <returns>Public keys of notary nodes.</returns>
-    private static ECPoint[] GetNotaryNodes(DataCache snapshot)
+    private static ECPoint[] GetNotaryNodes(IReadOnlyStore snapshot)
     {
         return RoleManagement.GetDesignatedByRole(snapshot, Role.P2PNotary, Ledger.CurrentIndex(snapshot) + 1);
     }
@@ -280,7 +280,7 @@ public sealed class Notary : NativeContract
     /// <param name="snapshot"></param>
     /// <param name="acc"></param>
     /// <returns>Deposit for the specified account.</returns>
-    private Deposit? GetDepositFor(DataCache snapshot, UInt160 acc)
+    private Deposit? GetDepositFor(IReadOnlyStore snapshot, UInt160 acc)
     {
         return snapshot.TryGet(CreateStorageKey(Prefix_Deposit, acc))?.GetInteroperable<Deposit>();
     }
@@ -311,7 +311,7 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// CalculateNotaryReward calculates the reward for a single notary node based on FEE's count and Notary nodes count.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to calculate the reward.</param>
     /// <param name="nFees"></param>
     /// <param name="notariesCount"></param>
     /// <returns>result</returns>
