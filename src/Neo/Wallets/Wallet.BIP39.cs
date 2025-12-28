@@ -11,12 +11,28 @@
 
 using Neo.Cryptography;
 using Neo.Properties;
+using System.Collections;
 using System.Globalization;
 
 namespace Neo.Wallets;
 
 partial class Wallet
 {
+    static readonly Dictionary<string, string[]> wordlists = new();
+
+    static Wallet()
+    {
+        var resourceSet = Resources.ResourceManager.GetResourceSet(CultureInfo.InvariantCulture, true, false)!;
+        foreach (var res in resourceSet.Cast<DictionaryEntry>())
+        {
+            string key = (string)res.Key;
+            if (!key.StartsWith("BIP-39.")) continue;
+            string value = (string)res.Value!;
+            string[] wordlist = value.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+            wordlists.Add(key[7..], wordlist);
+        }
+    }
+
     /// <summary>
     /// Generates a BIP-39 mnemonic code from the specified entropy using the current culture's wordlist.
     /// </summary>
@@ -44,11 +60,8 @@ partial class Wallet
     {
         if (culture.Equals(CultureInfo.InvariantCulture))
             return GetMnemonicCode(entropy, new CultureInfo("en"));
-        string resName = $"BIP-39.{culture.Name}";
-        string? txt = Resources.ResourceManager.GetString(resName);
-        if (txt is null)
+        if (!wordlists.TryGetValue(culture.Name, out string[]? wordlist))
             return GetMnemonicCode(entropy, culture.Parent);
-        string[] wordlist = txt.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
         return GetMnemonicCode(entropy, wordlist);
     }
 
