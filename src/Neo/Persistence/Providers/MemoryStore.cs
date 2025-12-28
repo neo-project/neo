@@ -63,6 +63,15 @@ public sealed class MemoryStore : IStore
             yield return (pair.Key[..], pair.Value[..]);
     }
 
+    public IEnumerable<(byte[] Key, byte[] Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
+    {
+        var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+        return _innerData
+            .Where(p => comparer.Compare(p.Key, start) >= 0 && comparer.Compare(p.Key, end) < 0)
+            .OrderBy(p => p.Key, comparer)
+            .Select(p => (p.Key[..], p.Value[..]));
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte[]? TryGet(byte[] key)
     {
