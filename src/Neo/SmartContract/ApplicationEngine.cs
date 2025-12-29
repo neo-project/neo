@@ -286,7 +286,6 @@ namespace Neo.SmartContract
             return table;
         }
 
-
         private static JumpTable Patch543(JumpTable table)
         {
             // Before https://github.com/neo-project/neo-vm/pull/543
