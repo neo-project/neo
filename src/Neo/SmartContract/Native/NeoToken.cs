@@ -70,7 +70,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     private readonly StorageKey _votersCount;
     private readonly StorageKey _registerPrice;
 
-    internal NeoToken() : base(-5)
+    internal NeoToken() : base(-14)
     {
         TotalAmount = 100000000 * Factor;
         _votersCount = CreateStorageKey(Prefix_VotersCount);
@@ -104,7 +104,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
         var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
         foreach (var distribution in list)
-            await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
+            await TokenManagement.MintInternal(engine, Governance.GasTokenId, distribution.Account, distribution.Amount, assertOwner: false, callOnPayment: callOnPayment);
     }
 
     protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
@@ -208,8 +208,8 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
             var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
             engine.SnapshotCache.Add(_votersCount, new StorageItem(Array.Empty<byte>()));
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock, 0u), new StorageItem(5 * GAS.Factor));
-            engine.SnapshotCache.Add(_registerPrice, new StorageItem(1000 * GAS.Factor));
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock, 0u), new StorageItem(5 * Governance.GasTokenFactor));
+            engine.SnapshotCache.Add(_registerPrice, new StorageItem(1000 * Governance.GasTokenFactor));
             return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
         }
         return ContractTask.CompletedTask;
@@ -249,7 +249,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         var committee = GetCommitteeFromCache(engine.SnapshotCache);
         var pubkey = committee[index].PublicKey;
         var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-        await GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
+        await TokenManagement.MintInternal(engine, Governance.GasTokenId, account, gasPerBlock * CommitteeRewardRatio / 100, assertOwner: false, callOnPayment: false);
 
         // Record the cumulative reward of the voters of committee
 
@@ -279,8 +279,8 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
     private void SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
     {
-        if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
-            throw new ArgumentOutOfRangeException(nameof(gasPerBlock), $"GasPerBlock must be between [0, {10 * GAS.Factor}]");
+        if (gasPerBlock < 0 || gasPerBlock > 10 * Governance.GasTokenFactor)
+            throw new ArgumentOutOfRangeException(nameof(gasPerBlock), $"GasPerBlock must be between [0, {10 * Governance.GasTokenFactor}]");
         AssertCommittee(engine);
 
         var index = engine.PersistingBlock!.Index + 1;
@@ -354,14 +354,15 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     /// Handles the payment of GAS.
     /// </summary>
     /// <param name="engine">The engine used to check witness and read data.</param>
+    /// <param name="assetId">The asset being paid.</param>
     /// <param name="from">The account that is paying the GAS.</param>
     /// <param name="amount">The amount of GAS being paid.</param>
     /// <param name="data">The data of the payment.</param>
     [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-    private async ContractTask OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
+    private async ContractTask _OnPayment(ApplicationEngine engine, UInt160 assetId, UInt160 from, BigInteger amount, StackItem data)
     {
-        if (engine.CallingScriptHash != GAS.Hash)
-            throw new InvalidOperationException("Only GAS contract can call this method");
+        if (assetId != Governance.GasTokenId)
+            throw new InvalidOperationException("Only GAS is acceptable.");
 
         if ((long)amount != GetRegisterPrice(engine.SnapshotCache))
             throw new ArgumentException($"Incorrect GAS amount. Expected {GetRegisterPrice(engine.SnapshotCache)} GAS, but received {amount} GAS.");
@@ -371,7 +372,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         if (!RegisterInternal(engine, pubkey))
             throw new InvalidOperationException("Failed to register candidate");
 
-        await GAS.Burn(engine, Hash, amount);
+        await TokenManagement.BurnInternal(engine, Governance.GasTokenId, Hash, amount, assertOwner: false);
     }
 
     /// <summary>
@@ -486,7 +487,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         }
         Notify(engine, "Vote", account, from, voteTo, stateAccount.Balance);
         if (gasDistribution is not null)
-            await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
+            await TokenManagement.MintInternal(engine, Governance.GasTokenId, gasDistribution.Account, gasDistribution.Amount, assertOwner: false, callOnPayment: true);
         return true;
     }
 

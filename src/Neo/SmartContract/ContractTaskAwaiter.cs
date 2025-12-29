@@ -52,10 +52,10 @@ internal class ContractTaskAwaiter<T> : ContractTaskAwaiter
 {
     private T? _result;
 
-    public new T? GetResult()
+    public new T GetResult()
     {
         base.GetResult();
-        return _result;
+        return _result!;
     }
 
     public void SetResult(T result)
