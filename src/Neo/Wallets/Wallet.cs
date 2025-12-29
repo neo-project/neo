@@ -36,7 +36,7 @@ namespace Neo.Wallets;
 /// <summary>
 /// The base class of wallets.
 /// </summary>
-public abstract class Wallet : ISigner
+public abstract partial class Wallet : ISigner
 {
     private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance };
 
