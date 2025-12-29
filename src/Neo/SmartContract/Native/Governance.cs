@@ -33,7 +33,7 @@ public sealed class Governance : NativeContract
         {
             UInt160 tokenid = TokenManagement.CreateInternal(engine, Hash, GasTokenName, GasTokenSymbol, GasTokenDecimals, BigInteger.MinusOne);
             UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
-            await TokenManagement.MintInternal(engine, tokenid, account, engine.ProtocolSettings.InitialGasDistribution, assertOwner: false, callOnPayment: false);
+            await TokenManagement.MintInternal(engine, tokenid, account, engine.ProtocolSettings.InitialGasDistribution, assertOwner: false, callOnPayment: false, callOnTransfer: false);
         }
     }
 
@@ -42,7 +42,7 @@ public sealed class Governance : NativeContract
         long totalNetworkFee = 0;
         foreach (Transaction tx in engine.PersistingBlock!.Transactions)
         {
-            await TokenManagement.BurnInternal(engine, GasTokenId, tx.Sender, tx.SystemFee + tx.NetworkFee, assertOwner: false);
+            await TokenManagement.BurnInternal(engine, GasTokenId, tx.Sender, tx.SystemFee + tx.NetworkFee, assertOwner: false, callOnTransfer: false);
             totalNetworkFee += tx.NetworkFee;
 
             // Reward for NotaryAssisted attribute will be minted to designated notary nodes
@@ -55,7 +55,7 @@ public sealed class Governance : NativeContract
         }
         ECPoint[] validators = NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
         UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
-        await TokenManagement.MintInternal(engine, GasTokenId, primary, totalNetworkFee, assertOwner: false, callOnPayment: false);
+        await TokenManagement.MintInternal(engine, GasTokenId, primary, totalNetworkFee, assertOwner: false, callOnPayment: false, callOnTransfer: false);
     }
 
     [ContractMethod(CpuFee = 0, RequiredCallFlags = CallFlags.None)]
