@@ -643,8 +643,20 @@ namespace Neo.SmartContract.Native
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             var entry = engine.SnapshotCache.GetAndChange(key, null)
                 ?? throw new InvalidOperationException("Request not found.");
-            if (engine.GetTime() - (BigInteger)entry < RequiredTimeForRecoverFunds)
-                throw new InvalidOperationException("Request must be signed at least 1 year ago.");
+            var elapsedTime = engine.GetTime() - (BigInteger)entry;
+            if (elapsedTime < RequiredTimeForRecoverFunds)
+            {
+                var remaining = (BigInteger)RequiredTimeForRecoverFunds - elapsedTime;
+                var days = remaining / 86_400_000;
+                var hours = (remaining % 86_400_000) / 3_600_000;
+                var minutes = (remaining % 3_600_000) / 60_000;
+                var seconds = (remaining % 60_000) / 1_000;
+                var timeMsg = days > 0 ? $"{days}d {hours}h {minutes}m"
+                    : hours > 0 ? $"{hours}h {minutes}m {seconds}s"
+                    : minutes > 0 ? $"{minutes}m {seconds}s"
+                    : $"{seconds}s";
+                throw new InvalidOperationException($"Request must be signed at least 1 year ago. Remaining time: {timeMsg}.");
+            }
 
             // Validate contract exists
             var contract = ContractManagement.GetContract(engine.SnapshotCache, token)
