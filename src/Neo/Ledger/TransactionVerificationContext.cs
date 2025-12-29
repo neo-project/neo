@@ -55,7 +55,7 @@ public class TransactionVerificationContext
     /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
     public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot)
     {
-        var balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
+        var balance = NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, tx.Sender);
         _senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
         var expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
