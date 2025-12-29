@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// GasToken.cs file belongs to the neo project and is free
+// Governance.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,27 +11,30 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
+using Neo.VM.Types;
+using System.Numerics;
 
 namespace Neo.SmartContract.Native;
 
-/// <summary>
-/// Represents the GAS token in the NEO system.
-/// </summary>
-public sealed class GasToken : FungibleToken<AccountState>
+public sealed class Governance : NativeContract
 {
-    public override string Symbol => "GAS";
-    public override byte Decimals => 8;
+    public const string GasTokenName = "GasToken";
+    public const string GasTokenSymbol = "GAS";
+    public const byte GasTokenDecimals = 8;
+    public static readonly BigInteger GasTokenFactor = BigInteger.Pow(10, GasTokenDecimals);
 
-    internal GasToken() : base(-6) { }
+    public UInt160 GasTokenId => field ??= TokenManagement.GetAssetId(Hash, GasTokenName);
 
-    internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
+    internal Governance() : base(-13) { }
+
+    internal override async ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardFork)
     {
-        if (hardfork == ActiveIn)
+        if (hardFork == ActiveIn)
         {
+            UInt160 tokenid = TokenManagement.CreateInternal(engine, Hash, GasTokenName, GasTokenSymbol, GasTokenDecimals, BigInteger.MinusOne);
             UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
-            return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
+            await TokenManagement.MintInternal(engine, tokenid, account, engine.ProtocolSettings.InitialGasDistribution, assertOwner: false, callOnPayment: false);
         }
-        return ContractTask.CompletedTask;
     }
 
     internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
@@ -39,7 +42,7 @@ public sealed class GasToken : FungibleToken<AccountState>
         long totalNetworkFee = 0;
         foreach (Transaction tx in engine.PersistingBlock!.Transactions)
         {
-            await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+            await TokenManagement.BurnInternal(engine, GasTokenId, tx.Sender, tx.SystemFee + tx.NetworkFee, assertOwner: false);
             totalNetworkFee += tx.NetworkFee;
 
             // Reward for NotaryAssisted attribute will be minted to designated notary nodes
@@ -52,6 +55,11 @@ public sealed class GasToken : FungibleToken<AccountState>
         }
         ECPoint[] validators = NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
         UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
-        await Mint(engine, primary, totalNetworkFee, false);
+        await TokenManagement.MintInternal(engine, GasTokenId, primary, totalNetworkFee, assertOwner: false, callOnPayment: false);
+    }
+
+    [ContractMethod(CpuFee = 0, RequiredCallFlags = CallFlags.None)]
+    internal static void _OnTransfer(UInt160 assetId, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+    {
     }
 }

@@ -87,7 +87,7 @@ partial class TokenManagement
     /// <param name="account">The recipient account <see cref="UInt160"/>.</param>
     /// <returns>The unique id (<see cref="UInt160"/>) of the newly minted NFT.</returns>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal async Task<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account)
+    internal async ContractTask<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account)
     {
         return await MintNFT(engine, assetId, account, new Map(engine.ReferenceCounter));
     }
@@ -102,7 +102,7 @@ partial class TokenManagement
     /// <returns>The unique id (<see cref="UInt160"/>) of the newly minted NFT.</returns>
     /// <exception cref="ArgumentException">If properties are invalid (too many, invalid key/value types or lengths).</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 10, RequiredCallFlags = CallFlags.All)]
-    internal async Task<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account, Map properties)
+    internal async ContractTask<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account, Map properties)
     {
         if (properties.Count > 8)
             throw new ArgumentException("Too many properties.", nameof(properties));
@@ -151,10 +151,10 @@ partial class TokenManagement
     /// </summary>
     /// <param name="engine">The current <see cref="ApplicationEngine"/> instance.</param>
     /// <param name="uniqueId">The unique id of the NFT to burn.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <returns>A <see cref="ContractTask"/> representing the asynchronous operation.</returns>
     /// <exception cref="InvalidOperationException">If the unique id does not exist or owner has insufficient balance or caller is not owner contract.</exception>
     [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.All)]
-    internal async Task BurnNFT(ApplicationEngine engine, UInt160 uniqueId)
+    internal async ContractTask BurnNFT(ApplicationEngine engine, UInt160 uniqueId)
     {
         StorageKey key = CreateStorageKey(Prefix_NFTState, uniqueId);
         NFTState nft = engine.SnapshotCache.TryGet(key)?.GetInteroperable<NFTState>()
@@ -181,7 +181,7 @@ partial class TokenManagement
     /// <returns><c>true</c> if the transfer succeeded; otherwise <c>false</c>.</returns>
     /// <exception cref="InvalidOperationException">If the unique id does not exist.</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal async Task<bool> TransferNFT(ApplicationEngine engine, UInt160 uniqueId, UInt160 from, UInt160 to, StackItem data)
+    internal async ContractTask<bool> TransferNFT(ApplicationEngine engine, UInt160 uniqueId, UInt160 from, UInt160 to, StackItem data)
     {
         StorageKey key_nft = CreateStorageKey(Prefix_NFTState, uniqueId);
         NFTState nft = engine.SnapshotCache.TryGet(key_nft)?.GetInteroperable<NFTState>()

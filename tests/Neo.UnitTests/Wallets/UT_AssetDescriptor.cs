@@ -28,10 +28,10 @@ public class UT_AssetDescriptor
     public void Check_GAS()
     {
         var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-        var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.GAS.Hash);
-        Assert.AreEqual(NativeContract.GAS.Hash, descriptor.AssetId);
-        Assert.AreEqual(nameof(GasToken), descriptor.AssetName);
-        Assert.AreEqual(nameof(GasToken), descriptor.ToString());
+        var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.Governance.GasTokenId);
+        Assert.AreEqual(NativeContract.Governance.GasTokenId, descriptor.AssetId);
+        Assert.AreEqual(Governance.GasTokenName, descriptor.AssetName);
+        Assert.AreEqual(Governance.GasTokenName, descriptor.ToString());
         Assert.AreEqual("GAS", descriptor.Symbol);
         Assert.AreEqual(8, descriptor.Decimals);
     }
