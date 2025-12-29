@@ -105,13 +105,13 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
-        private const ulong RequiredTimeForRecoverFunds = 365 * 24 * 60 * 60 * 1_000UL; // 1 year in milliseconds
+        private const ulong RequiredTimeForRecoverFund = 365 * 24 * 60 * 60 * 1_000UL; // 1 year in milliseconds
 
         /// <summary>
         /// The event name for the block generation time changed.
         /// </summary>
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
-        private const string RecoveredFundsEventName = "RecoveredFund";
+        private const string RecoveredFundEventName = "RecoveredFund";
         private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
@@ -124,7 +124,7 @@ namespace Neo.SmartContract.Native
             "argCount", ContractParameterType.Integer,
             "fee", ContractParameterType.Any
         )]
-        [ContractEvent(Hardfork.HF_Faun, 2, name: RecoveredFundsEventName, "account", ContractParameterType.Hash160)]
+        [ContractEvent(Hardfork.HF_Faun, 2, name: RecoveredFundEventName, "account", ContractParameterType.Hash160)]
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
@@ -644,9 +644,9 @@ namespace Neo.SmartContract.Native
             var entry = engine.SnapshotCache.GetAndChange(key, null)
                 ?? throw new InvalidOperationException("Request not found.");
             var elapsedTime = engine.GetTime() - (BigInteger)entry;
-            if (elapsedTime < RequiredTimeForRecoverFunds)
+            if (elapsedTime < RequiredTimeForRecoverFund)
             {
-                var remaining = (BigInteger)RequiredTimeForRecoverFunds - elapsedTime;
+                var remaining = (BigInteger)RequiredTimeForRecoverFund - elapsedTime;
                 var days = remaining / 86_400_000;
                 var hours = (remaining % 86_400_000) / 3_600_000;
                 var minutes = (remaining % 3_600_000) / 60_000;
@@ -679,7 +679,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Transfer of {balance} from {account} to {committeeMultiSigAddr} failed in contract {token}.");
 
                 // notify
-                engine.SendNotification(Hash, RecoveredFundsEventName, [new ByteString(account.ToArray())]);
+                engine.SendNotification(Hash, RecoveredFundEventName, [new ByteString(account.ToArray())]);
                 return true;
             }
 
