@@ -111,7 +111,7 @@ namespace Neo.SmartContract.Native
         /// The event name for the block generation time changed.
         /// </summary>
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
-        private const string RecoveredFundsEventName = "RecoveredFunds";
+        private const string RecoveredFundsEventName = "RecoveredFund";
         private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
