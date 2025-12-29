@@ -351,7 +351,6 @@ namespace Neo.SmartContract
                         if (b < sbyte.MinValue || b > byte.MaxValue)
                             throw new InvalidOperationException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
                         buffer.InnerBuffer.Span[index] = (byte)b;
-                        buffer.InvalidateHashCode();
                         break;
                     }
                 default:
