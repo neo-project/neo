@@ -265,7 +265,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<InvalidOperationException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), blockStart,
-                    "recoverFurecoverFundsndsFinish",
+                    "recoverFund",
                     new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero },
                     new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             });
@@ -291,7 +291,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Step 3: Call recoverFundsFinish (after required time has passed)
             // This should transfer all funds to Treasury
             NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr), blockFinish,
-                "recoverFunds",
+                "recoverFund",
                 new ContractParameter(ContractParameterType.Hash160) { Value = blockedAccount },
                 new ContractParameter(ContractParameterType.Hash160) { Value = NativeContract.GAS.Hash });
 

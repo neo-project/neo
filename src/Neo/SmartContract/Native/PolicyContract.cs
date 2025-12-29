@@ -634,7 +634,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        internal async ContractTask<bool> RecoverFunds(ApplicationEngine engine, UInt160 account, UInt160 token)
+        internal async ContractTask<bool> RecoverFund(ApplicationEngine engine, UInt160 account, UInt160 token)
         {
             var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
 
