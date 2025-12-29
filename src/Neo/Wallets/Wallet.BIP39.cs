@@ -74,9 +74,9 @@ partial class Wallet
             throw new ArgumentException("The length of entropy should be between 128 and 256 bits.", nameof(entropy));
         if (entropy.Length % 4 != 0)
             throw new ArgumentException("The length of entropy should be a multiple of 32 bits.", nameof(entropy));
-        int bits_entropy = entropy.Length * 8;
-        int bits_checksum = bits_entropy / 32;
-        int totalBits = bits_entropy + bits_checksum;
+        int entropyBits = entropy.Length * 8;
+        int checksumBits = entropyBits / 32;
+        int totalBits = entropyBits + checksumBits;
         byte[] checksum = entropy.Sha256();
         int wordCount = totalBits / 11;
         string[] mnemonic = new string[wordCount];
@@ -86,9 +86,9 @@ partial class Wallet
             for (int j = 0; j < 11; j++)
             {
                 int bitPos = i * 11 + j;
-                bool bit = bitPos < bits_entropy
+                bool bit = bitPos < entropyBits
                     ? GetBitMSB(entropy, bitPos)
-                    : GetBitMSB(checksum, bitPos - bits_entropy);
+                    : GetBitMSB(checksum, bitPos - entropyBits);
                 if (bit) index |= 1 << (10 - j);
             }
             mnemonic[i] = wordlist[index];
@@ -102,11 +102,11 @@ partial class Wallet
         if (wordCount < 12 || wordCount > 24 || wordCount % 3 != 0)
             throw new ArgumentException("The number of words should be 12, 15, 18, 21 or 24.", nameof(mnemonic));
         int totalBits = wordCount * 11;
-        int bits_entropy = totalBits * 32 / 33;
-        int bits_checksum = totalBits - bits_entropy;
-        int entropyBytes = bits_entropy / 8;
+        int entropyBits = totalBits * 32 / 33;
+        int checksumBits = totalBits - entropyBits;
+        int entropyBytes = entropyBits / 8;
         byte[] entropy = new byte[entropyBytes];
-        Span<byte> checksum = stackalloc byte[(bits_checksum + 7) / 8];
+        Span<byte> checksum = stackalloc byte[(checksumBits + 7) / 8];
         for (int i = 0; i < wordCount; i++)
         {
             if (!wordlists_reverse_index.TryGetValue(mnemonic[i], out int index))
@@ -115,7 +115,7 @@ partial class Wallet
             {
                 int bitPos = i * 11 + j;
                 bool bit = (index & (1 << (10 - j))) != 0;
-                if (bitPos < bits_entropy)
+                if (bitPos < entropyBits)
                 {
                     int byteIndex = bitPos / 8;
                     int bitInByte = 7 - (bitPos % 8);
@@ -123,7 +123,7 @@ partial class Wallet
                 }
                 else
                 {
-                    int csBitPos = bitPos - bits_entropy;
+                    int csBitPos = bitPos - entropyBits;
                     int byteIndex = csBitPos / 8;
                     int bitInByte = 7 - (csBitPos % 8);
                     if (bit) checksum[byteIndex] |= (byte)(1 << bitInByte);
@@ -131,7 +131,7 @@ partial class Wallet
             }
         }
         byte[] hash = entropy.Sha256();
-        for (int i = 0; i < bits_checksum; i++)
+        for (int i = 0; i < checksumBits; i++)
         {
             int byteIndex = i / 8;
             int bitInByte = 7 - (i % 8);
