@@ -154,7 +154,7 @@ partial class TokenManagement
             AddBalance(engine.SnapshotCache, assetId, to, amount);
         }
         await PostTransferAsync(engine, assetId, from, to, amount, data, callOnPayment: true);
-        await engine.CallFromNativeContractAsync(Hash, token.Owner, "_onTransfer", assetId, from, to, amount, data);
+        await engine.CallFromNativeContractIfExistsAsync(Hash, token.Owner, "_onTransfer", assetId, from, to, amount, data);
         return true;
     }
 
