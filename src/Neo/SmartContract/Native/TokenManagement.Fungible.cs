@@ -89,14 +89,14 @@ partial class TokenManagement
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        await MintInternal(engine, assetId, account, amount, assertOwner: true, callOnPayment: true);
+        await MintInternal(engine, assetId, account, amount, assertOwner: true, callOnPayment: true, callOnTransfer: true);
     }
 
-    internal async ContractTask MintInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnPayment)
+    internal async ContractTask MintInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnPayment, bool callOnTransfer)
     {
-        AddTotalSupply(engine, TokenType.Fungible, assetId, amount, assertOwner);
+        TokenState token = AddTotalSupply(engine, TokenType.Fungible, assetId, amount, assertOwner);
         AddBalance(engine.SnapshotCache, assetId, account, amount);
-        await PostTransferAsync(engine, assetId, null, account, amount, StackItem.Null, callOnPayment);
+        await PostTransferAsync(engine, assetId, token, null, account, amount, StackItem.Null, callOnPayment, callOnTransfer);
     }
 
     /// <summary>
@@ -114,15 +114,15 @@ partial class TokenManagement
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        await BurnInternal(engine, assetId, account, amount, assertOwner: true);
+        await BurnInternal(engine, assetId, account, amount, assertOwner: true, callOnTransfer: true);
     }
 
-    internal async ContractTask BurnInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner)
+    internal async ContractTask BurnInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnTransfer)
     {
-        AddTotalSupply(engine, TokenType.Fungible, assetId, -amount, assertOwner);
+        TokenState token = AddTotalSupply(engine, TokenType.Fungible, assetId, -amount, assertOwner);
         if (!AddBalance(engine.SnapshotCache, assetId, account, -amount))
             throw new InvalidOperationException("Insufficient balance to burn.");
-        await PostTransferAsync(engine, assetId, account, null, amount, StackItem.Null, callOnPayment: false);
+        await PostTransferAsync(engine, assetId, token, account, null, amount, StackItem.Null, callOnPayment: false, callOnTransfer);
     }
 
     /// <summary>
@@ -153,15 +153,16 @@ partial class TokenManagement
                 return false;
             AddBalance(engine.SnapshotCache, assetId, to, amount);
         }
-        await PostTransferAsync(engine, assetId, from, to, amount, data, callOnPayment: true);
-        await engine.CallFromNativeContractIfExistsAsync(Hash, token.Owner, "_onTransfer", assetId, from, to, amount, data);
+        await PostTransferAsync(engine, assetId, token, from, to, amount, data, callOnPayment: true, callOnTransfer: true);
         return true;
     }
 
-    async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160 assetId, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
+    async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160 assetId, TokenState token, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment, bool callOnTransfer)
     {
         Notify(engine, "Transfer", assetId, from, to, amount);
-        if (!callOnPayment || to is null || !ContractManagement.IsContract(engine.SnapshotCache, to)) return;
-        await engine.CallFromNativeContractAsync(Hash, to, "_onPayment", assetId, from, amount, data);
+        if (callOnPayment && to is not null && ContractManagement.IsContract(engine.SnapshotCache, to))
+            await engine.CallFromNativeContractAsync(Hash, to, "_onPayment", assetId, from, amount, data);
+        if (callOnTransfer)
+            await engine.CallFromNativeContractIfExistsAsync(Hash, token.Owner, "_onTransfer", assetId, from, to, amount, data);
     }
 }

@@ -82,7 +82,7 @@ public sealed class Notary : NativeContract
         if (notaries == null) return;
         var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
         foreach (var notary in notaries)
-            await TokenManagement.MintInternal(engine, Governance.GasTokenId, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, assertOwner: false, callOnPayment: false);
+            await TokenManagement.MintInternal(engine, Governance.GasTokenId, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, assertOwner: false, callOnPayment: false, callOnTransfer: false);
     }
 
     protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
