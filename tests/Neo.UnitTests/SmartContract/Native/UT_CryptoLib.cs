@@ -705,7 +705,7 @@ public class UT_CryptoLib
         ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
             settings: TestProtocolSettings.Default, gas: long.MaxValue);
         engine.LoadScript(Array.Empty<byte>());
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, acc, 5_0000_0000, assertOwner: false, callOnPayment: false);
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, acc, 5_0000_0000, assertOwner: false, callOnPayment: false, callOnTransfer: false);
         snapshotCache.Commit();
 
         Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(TestProtocolSettings.Default, engine.SnapshotCache, new(), []));
@@ -978,7 +978,7 @@ public class UT_CryptoLib
         var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
             settings: TestProtocolSettings.Default, gas: long.MaxValue);
         engine.LoadScript(Array.Empty<byte>());
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, acc, 5_0000_0000, assertOwner: false, callOnPayment: false);
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, acc, 5_0000_0000, assertOwner: false, callOnPayment: false, callOnTransfer: false);
 
         // We should not use commit here cause once its committed, the value we get from the snapshot can be different
         // from the underline storage. Thought there isn't any issue triggered here, its wrong to use it this way.
