@@ -83,7 +83,7 @@ public sealed partial class TokenManagement : NativeContract
         return buffer.ToScriptHash();
     }
 
-    void AddTotalSupply(ApplicationEngine engine, TokenType type, UInt160 assetId, BigInteger amount, bool assertOwner)
+    TokenState AddTotalSupply(ApplicationEngine engine, TokenType type, UInt160 assetId, BigInteger amount, bool assertOwner)
     {
         StorageKey key = CreateStorageKey(Prefix_TokenState, assetId);
         TokenState token = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<TokenState>()
@@ -97,6 +97,7 @@ public sealed partial class TokenManagement : NativeContract
             throw new InvalidOperationException("Insufficient balance to burn.");
         if (token.MaxSupply >= 0 && token.TotalSupply > token.MaxSupply)
             throw new InvalidOperationException("The total supply exceeds the maximum supply.");
+        return token;
     }
 
     bool AddBalance(DataCache snapshot, UInt160 assetId, UInt160 account, BigInteger amount)
