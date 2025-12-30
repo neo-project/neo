@@ -53,9 +53,10 @@ namespace Neo.SmartContract.Native
             ParameterInfo[] parameterInfos = Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {
-                NeedApplicationEngine = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(ApplicationEngine));
-                // snapshot is a DataCache instance, and DataCache implements IReadOnlyStoreView
-                NeedSnapshot = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(DataCache));
+                NeedApplicationEngine = typeof(ApplicationEngine).IsAssignableFrom(parameterInfos[0].ParameterType);
+                // snapshot is a DataCache instance, and DataCache implements IReadOnlyStore
+                NeedSnapshot = typeof(DataCache).IsAssignableFrom(parameterInfos[0].ParameterType) ||
+                               typeof(IReadOnlyStore).IsAssignableFrom(parameterInfos[0].ParameterType);
             }
             if (NeedApplicationEngine || NeedSnapshot)
                 Parameters = parameterInfos.Skip(1).Select(p => new InteropParameterDescriptor(p)).ToArray();
