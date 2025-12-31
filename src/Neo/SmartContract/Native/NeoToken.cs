@@ -11,8 +11,10 @@
 
 #pragma warning disable IDE0051
 
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
@@ -286,6 +288,13 @@ namespace Neo.SmartContract.Native
                     }
                 }
             }
+
+            // Set primary as alive
+
+            var key = CreateStorageKey(Prefix_Candidate, pubkey);
+            var item = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(new CandidateState()));
+            var state = item.GetInteroperable<CandidateState>();
+            state.LastProofOfLife = engine.PersistingBlock.Index;
         }
 
         /// <summary>
@@ -411,6 +420,39 @@ namespace Neo.SmartContract.Native
             return RegisterInternal(engine, pubkey);
         }
 
+        /// <summary>
+        /// Proof of life of a candidate.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="pubkey">The public key of the candidate.</param>
+        /// <param name="proofOfWork">Proof of Work</param>
+        /// <param name="blockIndex">Block Index</param>
+        [ContractMethod(Hardfork.HF_Faun, RequiredCallFlags = CallFlags.States)]
+        private void ProofOfLife(ApplicationEngine engine, ECPoint pubkey, UInt256 proofOfWork, uint blockIndex)
+        {
+            if (engine.PersistingBlock == null || blockIndex >= engine.PersistingBlock.Index)
+                throw new Exception("Invalid proof of work");
+
+            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+                throw new Exception("Invalid witness");
+
+            var key = CreateStorageKey(Prefix_Candidate, pubkey);
+            var item = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(new CandidateState()));
+            var state = item.GetInteroperable<CandidateState>();
+            if (!state.Registered)
+                throw new Exception("Only registered candidates are availables");
+
+            if (!ProofOfWork.VerifyDifficulty(proofOfWork, Policy.GetProofOfLifeDifficulty(engine.SnapshotCache)))
+                throw new Exception("Proof of work is too easy");
+
+            var blockHash = Ledger.GetBlockHash(engine.SnapshotCache, blockIndex);
+
+            if (blockHash == null || ProofOfWork.Compute(blockHash, (engine.ScriptContainer as Transaction)?.Nonce ?? 0) != proofOfWork)
+                throw new Exception("Invalid proof of work");
+
+            state.LastProofOfLife = blockIndex;
+        }
+
         private bool RegisterInternal(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -521,12 +563,12 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the first 256 registered candidates.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The ApplicationEngine used.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
+        internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(ApplicationEngine engine)
         {
-            return GetCandidatesInternal(snapshot)
+            return GetCandidatesInternal(engine.SnapshotCache, engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 .Select(p => (p.PublicKey, p.State.Votes))
                 .Take(256)
                 .ToArray();
@@ -535,24 +577,26 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the registered candidates iterator.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The ApplicationEngine used.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetAllCandidates(IReadOnlyStore snapshot)
+        private IIterator GetAllCandidates(ApplicationEngine engine)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
-            var enumerator = GetCandidatesInternal(snapshot)
+            var enumerator = GetCandidatesInternal(engine.SnapshotCache, engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 .Select(p => (p.Key, p.Value))
                 .GetEnumerator();
             return new StorageIterator(enumerator, 1, options);
         }
 
-        internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(IReadOnlyStore snapshot)
+        internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(IReadOnlyStore snapshot, bool withProofOfLife)
         {
             var prefixKey = CreateStorageKey(Prefix_Candidate);
+            var requiredProofOfLife = Ledger.CurrentIndex(snapshot) - Policy.GetMaxProofOfNodeHeight(snapshot);
+
             return snapshot.Find(prefixKey)
                 .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key[1..].AsSerializable<ECPoint>(), State: p.Value.GetInteroperable<CandidateState>()))
-                .Where(p => p.State.Registered)
+                .Where(p => p.State.Registered && (!withProofOfLife || (p.State.LastProofOfLife != null && p.State.LastProofOfLife >= requiredProofOfLife)))
                 .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()));
         }
 
@@ -624,11 +668,20 @@ namespace Neo.SmartContract.Native
 
         private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(DataCache snapshot, ProtocolSettings settings)
         {
-            decimal votersCount = (decimal)(BigInteger)snapshot[_votersCount];
-            decimal voterTurnout = votersCount / (decimal)TotalAmount;
-            var candidates = GetCandidatesInternal(snapshot)
+            var votersCount = (decimal)(BigInteger)snapshot[_votersCount];
+            var voterTurnout = votersCount / (decimal)TotalAmount;
+            var candidates = GetCandidatesInternal(snapshot, settings.IsHardforkEnabled(Hardfork.HF_Faun, Ledger.CurrentIndex(snapshot)))
                 .Select(p => (p.PublicKey, p.State.Votes))
                 .ToArray();
+
+            if (candidates.Length < settings.CommitteeMembersCount)
+            {
+                // If there are not enough candidates, include those without proof of life
+                candidates = GetCandidatesInternal(snapshot, false)
+                    .Select(p => (p.PublicKey, p.State.Votes))
+                    .ToArray();
+            }
+
             if (voterTurnout < EffectiveVoterTurnout || candidates.Length < settings.CommitteeMembersCount)
                 return settings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
             return candidates
@@ -703,16 +756,27 @@ namespace Neo.SmartContract.Native
         {
             public bool Registered;
             public BigInteger Votes;
+            public uint? LastProofOfLife;
 
             public void FromStackItem(StackItem stackItem)
             {
-                Struct @struct = (Struct)stackItem;
+                var @struct = (Struct)stackItem;
                 Registered = @struct[0].GetBoolean();
                 Votes = @struct[1].GetInteger();
+
+                if (@struct.Count > 2)
+                {
+                    LastProofOfLife = (uint)@struct[2].GetInteger();
+                }
             }
 
             public StackItem ToStackItem(IReferenceCounter? referenceCounter)
             {
+                if (LastProofOfLife.HasValue)
+                {
+                    return new Struct(referenceCounter) { Registered, Votes, LastProofOfLife.Value };
+                }
+
                 return new Struct(referenceCounter) { Registered, Votes };
             }
         }
