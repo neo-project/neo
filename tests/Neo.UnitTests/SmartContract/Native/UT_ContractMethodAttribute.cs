@@ -96,7 +96,8 @@ namespace Neo.UnitTests.SmartContract.Native
             public void MethodWithDataCacheOnly(DataCache snapshot) { }
         }
 
-        // Custom class to test bug detection: implements IReadOnlyStore but is not DataCache
+        // Custom class to test parameter type restriction: implements IReadOnlyStore but is not DataCache
+        // This should NOT be accepted as a parameter type - only IReadOnlyStore interface itself or DataCache are allowed
         class CustomReadOnlyStore : IReadOnlyStore
         {
             public Neo.SmartContract.StorageItem this[Neo.SmartContract.StorageKey key] => throw new System.NotImplementedException();
@@ -171,29 +172,27 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBugDetectionWithCustomReadOnlyStore()
         {
-            // This test specifically detects the bug where IsAssignableFrom direction is wrong.
-            // With fixed code: typeof(DataCache).IsAssignableFrom(parameterInfos[0].ParameterType) ||
-            //                  typeof(IReadOnlyStore).IsAssignableFrom(parameterInfos[0].ParameterType)
-            //   typeof(IReadOnlyStore).IsAssignableFrom(typeof(CustomReadOnlyStore)) returns TRUE
-            //   So NeedSnapshot would be TRUE (correct!)
+            // This test verifies that CustomReadOnlyStore (a custom implementation of IReadOnlyStore)
+            // is NOT accepted as a parameter type. Only IReadOnlyStore interface itself or DataCache
+            // (and its subclasses) are allowed.
             var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
             var testType = typeof(TestBugDetection);
 
             var method = testType.GetMethod(nameof(TestBugDetection.MethodWithCustomReadOnlyStore), flags);
             var metadata = new ContractMethodMetadata(method!, new ContractMethodAttribute());
 
-            // With the bug, this would fail because:
-            // CustomReadOnlyStore.IsAssignableFrom(typeof(DataCache)) = false
-            // So NeedSnapshot would be false, but it should be true
-            Assert.IsTrue(metadata.NeedSnapshot,
-                "CustomReadOnlyStore (implements IReadOnlyStore) should set NeedSnapshot to true. " +
-                "This test will fail with bug code where IsAssignableFrom direction is wrong.");
+            // CustomReadOnlyStore should NOT be accepted, even though it implements IReadOnlyStore
+            // Only IReadOnlyStore interface itself or DataCache are allowed
+            Assert.IsFalse(metadata.NeedSnapshot,
+                "CustomReadOnlyStore (implements IReadOnlyStore) should NOT set NeedSnapshot to true. " +
+                "Only IReadOnlyStore interface itself or DataCache are allowed as parameter types.");
             Assert.IsFalse(metadata.NeedApplicationEngine,
                 "CustomReadOnlyStore should not set NeedApplicationEngine to true");
-            Assert.AreEqual(1, metadata.Parameters.Length,
-                "CustomReadOnlyStore parameter should be skipped, leaving only UInt160");
-            Assert.AreEqual(typeof(UInt160), metadata.Parameters[0].Type,
-                "Remaining parameter should be UInt160");
+            // Since NeedSnapshot is false, the parameter should not be skipped
+            Assert.AreEqual(2, metadata.Parameters.Length,
+                "CustomReadOnlyStore parameter should not be skipped, leaving both CustomReadOnlyStore and UInt160");
+            Assert.AreEqual(typeof(UInt160), metadata.Parameters[1].Type,
+                "Second parameter should be UInt160");
         }
     }
 }
