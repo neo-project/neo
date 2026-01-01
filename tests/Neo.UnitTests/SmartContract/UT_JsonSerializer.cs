@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_JsonSerializer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -18,7 +18,6 @@ using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
