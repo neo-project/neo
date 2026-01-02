@@ -413,7 +413,7 @@ namespace Neo.SmartContract
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
-                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode.{instruction.OpCode}.");
+                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
                         engine.Push(index < array.Count);
                         break;
                     }
@@ -429,7 +429,7 @@ namespace Neo.SmartContract
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
-                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode.{instruction.OpCode}.");
+                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
                         engine.Push(index < buffer.Size);
                         break;
                     }
@@ -439,7 +439,7 @@ namespace Neo.SmartContract
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
-                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode.{instruction.OpCode}.");
+                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
                         engine.Push(index < array.Size);
                         break;
                     }
