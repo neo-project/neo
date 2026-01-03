@@ -675,7 +675,7 @@ namespace Neo.SmartContract.Native
                     account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null);
 
                 if (!result)
-                    throw new InvalidOperationException($"Transfer of {balance} from {account} to {committeeMultiSigAddr} failed in contract {token}.");
+                    throw new InvalidOperationException($"Transfer of {balance} from {account} to {NativeContract.Treasury.Hash} failed in contract {token}.");
 
                 // notify
                 engine.SendNotification(Hash, RecoveredFundEventName, [new ByteString(account.ToArray())]);
