@@ -16,6 +16,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
+using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
@@ -103,12 +104,13 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
+        private const ulong RequiredTimeForRecoverFund = 365 * 24 * 60 * 60 * 1_000UL; // 1 year in milliseconds
 
         /// <summary>
         /// The event name for the block generation time changed.
         /// </summary>
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
-
+        private const string RecoveredFundEventName = "RecoveredFund";
         private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
@@ -121,6 +123,7 @@ namespace Neo.SmartContract.Native
             "argCount", ContractParameterType.Integer,
             "fee", ContractParameterType.Any
         )]
+        [ContractEvent(Hardfork.HF_Faun, 2, name: RecoveredFundEventName, "account", ContractParameterType.Hash160)]
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
@@ -583,12 +586,27 @@ namespace Neo.SmartContract.Native
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
 
-            if (engine.SnapshotCache.Contains(key)) return false;
+            var blockData = engine.SnapshotCache.TryGet(key);
+            if (blockData != null)
+            {
+                // Check if it is stored the recover funds time
+                if (blockData.Value.Length == 0 && engine.IsHardforkEnabled(Hardfork.HF_Faun))
+                {
+                    // Don't modify it if already exists
+                    blockData.Set(engine.GetTime());
+                }
+
+                return false;
+            }
 
             if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 await NEO.VoteInternal(engine, account, null);
 
-            engine.SnapshotCache.Add(key, new StorageItem([]));
+            engine.SnapshotCache.Add(key,
+                // Set request time for recover funds
+                engine.IsHardforkEnabled(Hardfork.HF_Faun) ? new StorageItem(engine.GetTime())
+                : new StorageItem([]));
+
             return true;
         }
 
@@ -596,7 +614,6 @@ namespace Neo.SmartContract.Native
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
             AssertCommittee(engine);
-
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (!engine.SnapshotCache.Contains(key)) return false;
@@ -613,6 +630,59 @@ namespace Neo.SmartContract.Native
                 .Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward)
                 .GetEnumerator();
             return new StorageIterator(enumerator, 1, options);
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        internal async ContractTask<bool> RecoverFund(ApplicationEngine engine, UInt160 account, UInt160 token)
+        {
+            var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
+
+            // Set request time
+
+            var key = CreateStorageKey(Prefix_BlockedAccount, account);
+            var entry = engine.SnapshotCache.GetAndChange(key, null)
+                ?? throw new InvalidOperationException("Request not found.");
+            var elapsedTime = engine.GetTime() - (BigInteger)entry;
+            if (elapsedTime < RequiredTimeForRecoverFund)
+            {
+                var remaining = (BigInteger)RequiredTimeForRecoverFund - elapsedTime;
+                var days = remaining / 86_400_000;
+                var hours = (remaining % 86_400_000) / 3_600_000;
+                var minutes = (remaining % 3_600_000) / 60_000;
+                var seconds = (remaining % 60_000) / 1_000;
+                var timeMsg = days > 0 ? $"{days}d {hours}h {minutes}m"
+                    : hours > 0 ? $"{hours}h {minutes}m {seconds}s"
+                    : minutes > 0 ? $"{minutes}m {seconds}s"
+                    : $"{seconds}s";
+                throw new InvalidOperationException($"Request must be signed at least 1 year ago. Remaining time: {timeMsg}.");
+            }
+
+            // Validate contract exists
+            var contract = ContractManagement.GetContract(engine.SnapshotCache, token)
+                ?? throw new InvalidOperationException($"Contract {token} does not exist.");
+
+            // Validate contract implements NEP-17 standard
+            if (!contract.Manifest.SupportedStandards.Contains("NEP-17"))
+                throw new InvalidOperationException($"Contract {token} does not implement NEP-17 standard.");
+
+            // Check balance
+            var balance = await engine.CallFromNativeContractAsync<BigInteger>(account, token, "balanceOf", account.ToArray());
+
+            if (balance > 0)
+            {
+                // Transfer
+                var result = await engine.CallFromNativeContractAsync<bool>(account, token, "transfer",
+                    account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null);
+
+                if (!result)
+                    throw new InvalidOperationException($"Transfer of {balance} from {account} to {NativeContract.Treasury.Hash} failed in contract {token}.");
+
+                // notify
+                engine.SendNotification(Hash, RecoveredFundEventName, [new ByteString(account.ToArray())]);
+                return true;
+            }
+
+            return false;
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
