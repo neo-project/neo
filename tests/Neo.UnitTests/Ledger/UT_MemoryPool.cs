@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_MemoryPool.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -23,7 +23,6 @@ using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
