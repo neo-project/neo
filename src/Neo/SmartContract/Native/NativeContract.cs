@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // NativeContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -368,6 +368,24 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine))
                 throw new InvalidOperationException("Invalid committee signature. It should be a multisig(len(committee) - (len(committee) - 1) / 2)).");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static UInt160 AssertAlmostFullCommittee(ApplicationEngine engine)
+        {
+            // Signed by maximum of (half committee + 1) and (committee - 2)
+
+            UInt160 committeeMultiSigAddr;
+            var committees = NativeContract.NEO.GetCommittee(engine.SnapshotCache);
+
+            // Min must be almost the committee address
+            var min = Math.Max(1, committees.Length - (committees.Length - 1) / 2);
+            committeeMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(min, committees.Length - 2), committees).ToScriptHash();
+
+            if (!engine.CheckWitnessInternal(committeeMultiSigAddr))
+                throw new InvalidOperationException("Invalid committee signature. It should be a multisig(max(1,len(committee) - 2))).");
+
+            return committeeMultiSigAddr;
         }
 
         #region Storage keys
