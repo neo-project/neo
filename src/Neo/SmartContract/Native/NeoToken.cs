@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native
             if (engine.PersistingBlock is null) return null;
 
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            BigInteger datoshi = CalculateBonus(engine, state, engine.PersistingBlock.Index);
+            BigInteger datoshi = CalculateBonus(engine.SnapshotCache, state, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
             if (state.VoteTo is not null)
             {
@@ -143,17 +143,12 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        private BigInteger CalculateBonus(ApplicationEngine engine, NeoAccountState state, uint end)
+        private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state, uint end)
         {
             if (state.Balance.IsZero) return BigInteger.Zero;
             if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance), "cannot be negative");
-
-            var expectEnd = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache) + 1;
-            if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
             if (state.BalanceHeight >= end) return BigInteger.Zero;
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            (var neoHolderReward, var voteReward) = CalculateReward(engine.SnapshotCache, state, end);
-
+            (var neoHolderReward, var voteReward) = CalculateReward(snapshot, state, end);
             return neoHolderReward + voteReward;
         }
 
@@ -361,10 +356,12 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
         {
+            var expectEnd = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache) + 1;
+            ArgumentOutOfRangeException.ThrowIfNotEqual(end, expectEnd);
             StorageItem? storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
-            return CalculateBonus(engine, state, end);
+            return CalculateBonus(engine.SnapshotCache, state, end);
         }
 
         /// <summary>
