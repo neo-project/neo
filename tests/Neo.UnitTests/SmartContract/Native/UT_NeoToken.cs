@@ -1089,9 +1089,21 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestUnclaimedGas()
         {
+            var persistingBlock = new Block
+            {
+                Header = new()
+                {
+                    Index = 10,
+                    Witness = Witness.Empty,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero
+                },
+                Transactions = [],
+            };
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero),
-                _snapshotCache.CloneCache(), null, settings: TestProtocolSettings.Default);
+                _snapshotCache.CloneCache(), persistingBlock, settings: TestProtocolSettings.Default);
 
             Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.UnclaimedGas(engine, UInt160.Zero, 10));
             engine.SnapshotCache.Add(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem(new NeoAccountState()));
