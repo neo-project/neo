@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
+using System.Runtime.Loader;
 using static System.IO.Path;
 
 namespace Neo.Plugins;
@@ -33,6 +34,7 @@ public abstract class Plugin : IDisposable
         Combine(GetDirectoryName(AppContext.BaseDirectory)!, "Plugins");
 
     private static readonly FileSystemWatcher? s_configWatcher;
+    private static readonly List<PluginLoadContext> s_pluginLoadContexts = [];
 
     /// <summary>
     /// Indicates the root path of the plugin.
@@ -90,7 +92,6 @@ public abstract class Plugin : IDisposable
         s_configWatcher.Created += ConfigWatcher_Changed;
         s_configWatcher.Renamed += ConfigWatcher_Changed;
         s_configWatcher.Deleted += ConfigWatcher_Changed;
-        AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
     }
 
     /// <summary>
@@ -125,33 +126,71 @@ public abstract class Plugin : IDisposable
         }
     }
 
-    private static Assembly? CurrentDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
+    private sealed class PluginLoadContext : AssemblyLoadContext
     {
-        if (args.Name.Contains(".resources"))
-            return null;
+        private readonly AssemblyDependencyResolver _resolver;
+        private readonly string _pluginDirectory;
+        private readonly HashSet<string> _sharedAssemblies;
 
-        AssemblyName an = new(args.Name);
-
-        var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
-                       AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
-        if (assembly != null) return assembly;
-
-        var filename = an.Name + ".dll";
-        var path = filename;
-        if (!File.Exists(path)) path = Combine(GetDirectoryName(AppContext.BaseDirectory)!, filename);
-        if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
-        if (!File.Exists(path) && !string.IsNullOrEmpty(args.RequestingAssembly?.GetName().Name))
-            path = Combine(PluginsDirectory, args.RequestingAssembly!.GetName().Name!, filename);
-        if (!File.Exists(path)) return null;
-
-        try
+        public PluginLoadContext(string mainAssemblyPath)
+            : base(isCollectible: false)
         {
-            return Assembly.Load(File.ReadAllBytes(path));
+            _resolver = new AssemblyDependencyResolver(mainAssemblyPath);
+            _pluginDirectory = GetDirectoryName(mainAssemblyPath)!;
+            _sharedAssemblies = new(StringComparer.OrdinalIgnoreCase)
+            {
+                typeof(Plugin).Assembly.GetName().Name!
+            };
         }
-        catch (Exception ex)
+
+        protected override Assembly? Load(AssemblyName assemblyName)
         {
-            Utility.Log(nameof(Plugin), LogLevel.Error, ex);
-            return null;
+            if (_sharedAssemblies.Contains(assemblyName.Name!))
+                return Default.LoadFromAssemblyName(assemblyName);
+
+            var path = _resolver.ResolveAssemblyToPath(assemblyName);
+            if (path != null)
+                return LoadFromAssemblyPath(path);
+
+            if (assemblyName.Name is null)
+                return null;
+
+            var localPath = Combine(_pluginDirectory, $"{assemblyName.Name}.dll");
+            return File.Exists(localPath) ? LoadFromAssemblyPath(localPath) : null;
+        }
+
+        protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
+        {
+            var path = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
+            if (path != null)
+                return LoadUnmanagedDllFromPath(path);
+
+            var localPath = Combine(_pluginDirectory, unmanagedDllName);
+            if (File.Exists(localPath))
+                return LoadUnmanagedDllFromPath(localPath);
+
+            if (OperatingSystem.IsWindows())
+            {
+                localPath = Combine(_pluginDirectory, $"{unmanagedDllName}.dll");
+                if (File.Exists(localPath))
+                    return LoadUnmanagedDllFromPath(localPath);
+            }
+
+            if (OperatingSystem.IsLinux())
+            {
+                localPath = Combine(_pluginDirectory, $"lib{unmanagedDllName}.so");
+                if (File.Exists(localPath))
+                    return LoadUnmanagedDllFromPath(localPath);
+            }
+
+            if (OperatingSystem.IsMacOS())
+            {
+                localPath = Combine(_pluginDirectory, $"lib{unmanagedDllName}.dylib");
+                if (File.Exists(localPath))
+                    return LoadUnmanagedDllFromPath(localPath);
+            }
+
+            return IntPtr.Zero;
         }
     }
 
@@ -173,7 +212,7 @@ public abstract class Plugin : IDisposable
             .GetSection("PluginConfiguration");
     }
 
-    private static void LoadPlugin(Assembly assembly)
+    private static int LoadPlugin(Assembly assembly)
     {
         Type[] exportedTypes;
 
@@ -189,6 +228,7 @@ public abstract class Plugin : IDisposable
             throw;
         }
 
+        var loaded = 0;
         foreach (var type in exportedTypes)
         {
             if (!type.IsSubclassOf(typeof(Plugin))) continue;
@@ -200,36 +240,60 @@ public abstract class Plugin : IDisposable
             try
             {
                 constructor.Invoke(null);
+                loaded++;
             }
             catch (Exception ex)
             {
                 Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} of {assemblyName}: {ex}");
             }
         }
+
+        return loaded;
     }
 
     internal static void LoadPlugins()
     {
         if (!Directory.Exists(PluginsDirectory)) return;
-        List<Assembly> assemblies = [];
         foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
         {
-            foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
+            var pluginName = new DirectoryInfo(rootPath).Name;
+            var mainAssemblyPath = Combine(rootPath, $"{pluginName}.dll");
+            if (!File.Exists(mainAssemblyPath))
             {
-                try
+                Utility.Log(nameof(Plugin), LogLevel.Warning, $"Plugin assembly not found: {mainAssemblyPath}");
+                continue;
+            }
+
+            try
+            {
+                var loadContext = new PluginLoadContext(mainAssemblyPath);
+                s_pluginLoadContexts.Add(loadContext);
+                var assembly = loadContext.LoadFromAssemblyPath(mainAssemblyPath);
+                var loaded = LoadPlugin(assembly);
+                if (loaded > 0)
+                    continue;
+
+                foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
                 {
-                    assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
-                }
-                catch (Exception ex)
-                {
-                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {filename}: {ex}");
+                    if (string.Equals(filename, mainAssemblyPath, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    try
+                    {
+                        assembly = loadContext.LoadFromAssemblyPath(filename);
+                        if (LoadPlugin(assembly) > 0)
+                            break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {filename}: {ex}");
+                    }
                 }
             }
-        }
-
-        foreach (var assembly in assemblies)
-        {
-            LoadPlugin(assembly);
+            catch (Exception ex)
+            {
+                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {mainAssemblyPath}: {ex}");
+            }
         }
     }
 
