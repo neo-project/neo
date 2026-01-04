@@ -367,6 +367,25 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
+        internal BigInteger ClaimUnclaimedGas(ApplicationEngine engine, UInt160 account)
+        {
+            if (engine.PersistingBlock is null) return BigInteger.Zero;
+            StorageItem? storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account));
+            if (storage is null) return BigInteger.Zero;
+
+            NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
+            BigInteger datoshi = CalculateBonus(engine.SnapshotCache, state, engine.PersistingBlock.Index);
+            state.BalanceHeight = engine.PersistingBlock.Index;
+            if (state.VoteTo is not null)
+            {
+                var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee, state.VoteTo);
+                var latestGasPerVote = engine.SnapshotCache.TryGet(keyLastest) ?? BigInteger.Zero;
+                state.LastGasPerVote = latestGasPerVote;
+            }
+
+            return datoshi;
+        }
+
         /// <summary>
         /// Handles the payment of GAS.
         /// </summary>
