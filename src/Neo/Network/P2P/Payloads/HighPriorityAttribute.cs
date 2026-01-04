@@ -33,7 +33,7 @@ public class HighPriorityAttribute : TransactionAttribute
 
     public override bool Verify(DataCache snapshot, Transaction tx)
     {
-        UInt160 committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        UInt160 committee = NativeContract.Governance.GetCommitteeAddress(snapshot);
         return tx.Signers.Any(p => p.Account.Equals(committee));
     }
 }
