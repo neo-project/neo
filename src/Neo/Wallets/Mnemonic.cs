@@ -14,6 +14,7 @@ using Neo.Properties;
 using System.Collections;
 using System.Globalization;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace Neo.Wallets;
 
@@ -194,6 +195,22 @@ public class Mnemonic
             if (words.All(p => wordlist.Contains(p)))
                 return new(words, wordlist);
         throw new ArgumentException("The mnemonic contains words that are not in the wordlist.", nameof(mnemonic));
+    }
+
+    /// <summary>
+    /// Derives a cryptographic seed from the mnemonic using the specified passphrase according to BIP-0039 standards.
+    /// </summary>
+    /// <remarks>The seed is generated using PBKDF2 with HMAC-SHA512, 2048 iterations, and a salt composed of
+    /// the string "mnemonic" concatenated with the passphrase. This method is compatible with BIP-0039 wallet
+    /// implementations.</remarks>
+    /// <param name="passphrase">An optional passphrase to strengthen the seed derivation. If not specified, an empty string is used.</param>
+    /// <returns>A 64-byte array containing the derived seed suitable for use in hierarchical deterministic wallets and other
+    /// cryptographic applications.</returns>
+    public byte[] DeriveSeed(string passphrase = "")
+    {
+        string mnemonic = ToString();
+        byte[] salt = Encoding.UTF8.GetBytes("mnemonic" + passphrase);
+        return Rfc2898DeriveBytes.Pbkdf2(mnemonic, salt, 2048, HashAlgorithmName.SHA512, 64);
     }
 
     /// <summary>
