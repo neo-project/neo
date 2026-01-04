@@ -29,8 +29,8 @@ namespace Neo.Wallets;
 /// </remarks>
 public class Mnemonic
 {
-    static readonly Dictionary<string, string[]> wordlists = new();
-    static readonly Dictionary<string, int> wordlists_reverse_index = new();
+    static readonly Dictionary<string, string[]> s_wordlists = new();
+    static readonly Dictionary<string, int> s_wordlistsReverseIndex = new();
     readonly string[] words;
 
     static Mnemonic()
@@ -42,9 +42,9 @@ public class Mnemonic
             if (!key.StartsWith("BIP-39.")) continue;
             string value = (string)res.Value!;
             string[] wordlist = value.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
-            wordlists.Add(key[7..], wordlist);
+            s_wordlists.Add(key[7..], wordlist);
             for (int i = 0; i < wordlist.Length; i++)
-                wordlists_reverse_index[wordlist[i]] = i;
+                s_wordlistsReverseIndex[wordlist[i]] = i;
         }
     }
 
@@ -88,7 +88,7 @@ public class Mnemonic
         Span<byte> checksum = stackalloc byte[(checksumBits + 7) / 8];
         for (int i = 0; i < wordCount; i++)
         {
-            if (!wordlists_reverse_index.TryGetValue(words[i], out int index))
+            if (!s_wordlistsReverseIndex.TryGetValue(words[i], out int index))
                 throw new ArgumentException($"The word '{words[i]}' is not in the BIP-0039 wordlist.", nameof(words));
             for (int j = 0; j < 11; j++)
             {
@@ -168,7 +168,7 @@ public class Mnemonic
     {
         if (culture.Equals(CultureInfo.InvariantCulture))
             return Create(entropy, new CultureInfo("en"));
-        if (!wordlists.TryGetValue(culture.Name, out string[]? wordlist))
+        if (!s_wordlists.TryGetValue(culture.Name, out string[]? wordlist))
             return Create(entropy, culture.Parent);
         return new(entropy, wordlist);
     }
@@ -191,7 +191,7 @@ public class Mnemonic
             throw new ArgumentException("Mnemonic word count should be between 12 and 24.", nameof(mnemonic));
         if (words.Length % 3 != 0)
             throw new ArgumentException("Mnemonic word count should be a multiple of 3.", nameof(mnemonic));
-        foreach (var (_, wordlist) in wordlists)
+        foreach (var (_, wordlist) in s_wordlists)
             if (words.All(p => wordlist.Contains(p)))
                 return new(words, wordlist);
         throw new ArgumentException("The mnemonic contains words that are not in the wordlist.", nameof(mnemonic));
