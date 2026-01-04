@@ -209,7 +209,7 @@ public class Mnemonic
     public byte[] DeriveSeed(string passphrase = "")
     {
         string mnemonic = ToString();
-        byte[] salt = Encoding.UTF8.GetBytes("mnemonic" + passphrase);
+        byte[] salt = Encoding.UTF8.GetBytes("mnemonic" + passphrase.Normalize(NormalizationForm.FormKD));
         return Rfc2898DeriveBytes.Pbkdf2(mnemonic, salt, 2048, HashAlgorithmName.SHA512, 64);
     }
 
