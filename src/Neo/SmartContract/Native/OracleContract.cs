@@ -197,7 +197,7 @@ public sealed class OracleContract : NativeContract
             foreach (var (account, gas) in nodes)
             {
                 if (gas.Sign > 0)
-                    await TokenManagement.MintInternal(engine, Governance.GasTokenId, account, gas, assertOwner: false, callOnPayment: false, callOnTransfer: false);
+                    await TokenManagement.MintInternal(engine, Governance.GasTokenId, account, gas, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
             }
         }
     }
@@ -228,7 +228,7 @@ public sealed class OracleContract : NativeContract
 
         //Mint gas for the response
         engine.AddFee(gasForResponse);
-        await TokenManagement.MintInternal(engine, Governance.GasTokenId, Hash, gasForResponse, assertOwner: false, callOnPayment: false, callOnTransfer: false);
+        await TokenManagement.MintInternal(engine, Governance.GasTokenId, Hash, gasForResponse, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
 
         //Increase the request id
         var itemId = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId))!;
