@@ -152,6 +152,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_BurnGas = Register("System.Runtime.BurnGas", nameof(BurnGas), 1 << 4, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.MintGas.
+        /// Minting GAS to benefit the current contract.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_MintGas = Register("System.Runtime.MintGas", nameof(MintGas), 1 << 4, CallFlags.WriteStates, Hardfork.HF_Faun);
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.CurrentSigners.
         /// Get the Signers of the current transaction.
         /// </summary>
@@ -450,6 +456,37 @@ namespace Neo.SmartContract
             if (datoshi <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
             AddFee(datoshi * FeeFactor);
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.MintGas.
+        /// Minting GAS to benefit the current contract.
+        /// </summary>
+        /// <param name="amount">The amount of GAS to mint, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
+        protected internal void MintGas(BigInteger amount)
+        {
+            if (amount.IsZero)
+                return;
+            if (amount.Sign < 0)
+                throw new InvalidOperationException("GAS must be non-negative.");
+            if (Trigger != TriggerType.Application)
+                throw new InvalidOperationException("MintGas can only be called with Application trigger.");
+
+            ContractState contract = CurrentContext?.GetState<ExecutionContextState>().Contract
+                ?? throw new InvalidOperationException("MintGas can only be called by a contract.");
+
+            var state = CurrentContext!.GetState<ExecutionContextState>();
+            var wasWhitelisted = state.WhiteListed;
+            state.WhiteListed = false;
+            try
+            {
+                AddFee(amount * FeeFactor);
+            }
+            finally
+            {
+                state.WhiteListed = wasWhitelisted;
+            }
+            NativeContract.GAS.Mint(this, contract.Hash, amount, false).GetAwaiter().GetResult();
         }
 
         /// <summary>
