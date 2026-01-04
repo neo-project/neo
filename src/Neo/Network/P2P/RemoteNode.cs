@@ -144,8 +144,17 @@ namespace Neo.Network.P2P
         {
             _messageBuffer = _messageBuffer.Concat(data);
 
-            for (var message = TryParseMessage(); message != null; message = TryParseMessage())
+            for (var message = TryParseMessage(out var length); message != null; message = TryParseMessage(out length))
+            {
+                // Rate limiting
+                if (_system.RateLimitter?.AllowRequest(Remote.Address, "P2P", length) == false)
+                {
+                    Disconnect(true);
+                    return;
+                }
+
                 OnMessage(message);
+            }
         }
 
         protected override void OnReceive(object message)
@@ -223,16 +232,25 @@ namespace Neo.Network.P2P
 
         private void SendMessage(Message message)
         {
+            var data = ByteString.FromBytes(message.ToArray(Version?.AllowCompression ?? false));
+
+            // Rate limiting
+            if (_system.RateLimitter?.AllowResponse(Remote.Address, "P2P", data.Count) == false)
+            {
+                Disconnect(true);
+                return;
+            }
+
             _ack = false;
             // Here it is possible that we dont have the Version message yet,
             // so we need to send the message uncompressed
-            SendData(ByteString.FromBytes(message.ToArray(Version?.AllowCompression ?? false)));
+            SendData(data);
             _sentCommands[(byte)message.Command] = true;
         }
 
-        private Message? TryParseMessage()
+        private Message? TryParseMessage(out int length)
         {
-            var length = Message.TryDeserialize(_messageBuffer, out var msg);
+            length = Message.TryDeserialize(_messageBuffer, out var msg);
             if (length <= 0) return null;
 
             _messageBuffer = _messageBuffer.Slice(length).Compact();
