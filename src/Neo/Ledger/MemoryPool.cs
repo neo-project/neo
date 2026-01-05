@@ -29,6 +29,11 @@ namespace Neo.Ledger
     {
         public event EventHandler<Transaction>? TransactionAdded;
         public event EventHandler<TransactionRemovedEventArgs>? TransactionRemoved;
+        /// <summary>
+        /// Transaction policy validator event.
+        /// This function will be called to validate each transaction before adding it to the pool.
+        /// </summary>
+        public event EventHandler<NewTransactionEventArgs>? NewTransaction;
 
         // Allow a reverified transaction to be rebroadcast if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcast = 10;
@@ -116,13 +121,6 @@ namespace Neo.Ledger
         /// Total count of unverified transactions in the pool.
         /// </summary>
         public int UnVerifiedCount => _unverifiedTransactions.Count;
-
-        /// <summary>
-        /// Transaction policy validator function.
-        /// This function will be called to validate each transaction before adding it to the pool.
-        /// If the function returns false, the transaction will be rejected.
-        /// </summary>
-        public Func<Transaction, IReadOnlyStore, bool>? PolicyValidator { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryPool"/> class.
@@ -314,9 +312,11 @@ namespace Neo.Ledger
 
         internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
         {
-            if (PolicyValidator != null)
+            if (NewTransaction != null)
             {
-                if (!PolicyValidator(tx, snapshot)) return VerifyResult.PolicyFail;
+                var args = new NewTransactionEventArgs { Transaction = tx, Snapshot = snapshot };
+                NewTransaction(this, args);
+                if (args.Cancel) return VerifyResult.PolicyFail;
             }
 
             var poolItem = new PoolItem(tx);
