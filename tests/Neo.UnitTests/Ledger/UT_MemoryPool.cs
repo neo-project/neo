@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_MemoryPool.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -208,8 +208,8 @@ public class UT_MemoryPool : TestKit
         BigInteger balance = NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, senderAccount);
         ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: long.MaxValue);
         engine.LoadScript(Array.Empty<byte>());
-        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 70, assertOwner: false, callOnPayment: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 70, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
         long txFee = 1;
         AddTransactionsWithBalanceVerify(70, txFee, engine.SnapshotCache);
 
@@ -232,8 +232,8 @@ public class UT_MemoryPool : TestKit
 
         ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestProtocolSettings.Default, gas: (long)balance);
         applicationEngine.LoadScript(Array.Empty<byte>());
-        await NativeContract.TokenManagement.BurnInternal(applicationEngine, NativeContract.Governance.GasTokenId, sender, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, sender), assertOwner: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.MintInternal(applicationEngine, NativeContract.Governance.GasTokenId, sender, txFee * 30, assertOwner: false, callOnPayment: false, callOnTransfer: false); // Set the balance to meet 30 txs only
+        await NativeContract.TokenManagement.BurnInternal(applicationEngine, NativeContract.Governance.GasTokenId, sender, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, sender), assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.MintInternal(applicationEngine, NativeContract.Governance.GasTokenId, sender, txFee * 30, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false); // Set the balance to meet 30 txs only
 
         // Persist block and reverify all the txs in mempool, but half of the txs will be discarded
         _unit.UpdatePoolForBlockPersisted(block, applicationEngine.SnapshotCache);
@@ -241,8 +241,8 @@ public class UT_MemoryPool : TestKit
         Assert.AreEqual(0, _unit.UnverifiedSortedTxCount);
 
         // Revert the balance
-        await NativeContract.TokenManagement.BurnInternal(applicationEngine, NativeContract.Governance.GasTokenId, sender, txFee * 30, assertOwner: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.MintInternal(applicationEngine, NativeContract.Governance.GasTokenId, sender, balance, assertOwner: false, callOnPayment: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.BurnInternal(applicationEngine, NativeContract.Governance.GasTokenId, sender, txFee * 30, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.MintInternal(applicationEngine, NativeContract.Governance.GasTokenId, sender, balance, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
     }
 
     [TestMethod]
@@ -254,8 +254,8 @@ public class UT_MemoryPool : TestKit
         BigInteger balance = NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, senderAccount);
         ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: long.MaxValue);
         engine.LoadScript(Array.Empty<byte>());
-        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 7, assertOwner: false, callOnPayment: false, callOnTransfer: false); // balance enough for 7 mempooled txs
+        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 7, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false); // balance enough for 7 mempooled txs
 
         var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone
         Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(mp1, engine.SnapshotCache));
@@ -313,8 +313,8 @@ public class UT_MemoryPool : TestKit
         Assert.AreEqual(0, _unit.UnverifiedSortedTxCount);
 
         // Cleanup: revert the balance.
-        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, txFee * 7, assertOwner: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnPayment: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, txFee * 7, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
     }
 
     [TestMethod]
@@ -327,9 +327,9 @@ public class UT_MemoryPool : TestKit
         BigInteger balance = NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, senderAccount);
         ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: long.MaxValue);
         engine.LoadScript(Array.Empty<byte>());
-        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 100, assertOwner: false, callOnPayment: false, callOnTransfer: false); // balance enough for all mempooled txs
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, maliciousSender, 100, assertOwner: false, callOnPayment: false, callOnTransfer: false); // balance enough for all mempooled txs
+        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 100, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false); // balance enough for all mempooled txs
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, maliciousSender, 100, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false); // balance enough for all mempooled txs
 
         var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
 
@@ -412,10 +412,10 @@ public class UT_MemoryPool : TestKit
         CollectionAssert.IsSubsetOf(new List<Transaction>() { mp1, mp6, mp4, mp7 }, _unit.GetVerifiedTransactions().ToList());
 
         // Cleanup: revert the balance.
-        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 100, assertOwner: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnPayment: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, maliciousSender, 100, assertOwner: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, maliciousSender, balance, assertOwner: false, callOnPayment: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 100, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, maliciousSender, 100, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, maliciousSender, balance, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
     }
 
     [TestMethod]
@@ -427,8 +427,8 @@ public class UT_MemoryPool : TestKit
         BigInteger balance = NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, senderAccount);
         ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: long.MaxValue);
         engine.LoadScript(Array.Empty<byte>());
-        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnTransfer: false);
-        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 100, assertOwner: false, callOnPayment: false, callOnTransfer: false); // balance enough for all mempooled txs
+        await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, balance, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, UInt160.Zero, 100, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false); // balance enough for all mempooled txs
 
         var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
 

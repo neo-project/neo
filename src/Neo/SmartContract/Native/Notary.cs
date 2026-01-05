@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // Notary.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -82,7 +82,7 @@ public sealed class Notary : NativeContract
         if (notaries == null) return;
         var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
         foreach (var notary in notaries)
-            await TokenManagement.MintInternal(engine, Governance.GasTokenId, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, assertOwner: false, callOnPayment: false, callOnTransfer: false);
+            await TokenManagement.MintInternal(engine, Governance.GasTokenId, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
     }
 
     protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
