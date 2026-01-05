@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // TokenManagement.NonFungible.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -128,8 +128,8 @@ partial class TokenManagement
             }
             v.GetString(); // Ensure to invoke `ToStrictUtf8String()`
         }
-        TokenState token = AddTotalSupply(engine, TokenType.NonFungible, assetId, 1, assertOwner: true);
-        AddBalance(engine.SnapshotCache, assetId, account, 1);
+        TokenState token = AddTotalSupply(engine, TokenType.NonFungible, assetId, BigInteger.One, assertOwner: true);
+        await AddBalance(engine, assetId, token, account, BigInteger.One, callOnBalanceChanged: true);
         UInt160 uniqueId = GetNextNFTUniqueId(engine);
         StorageKey key = CreateStorageKey(Prefix_NFTAssetIdUniqueIdIndex, assetId, uniqueId);
         engine.SnapshotCache.Add(key, new());
@@ -160,7 +160,7 @@ partial class TokenManagement
         NFTState nft = engine.SnapshotCache.TryGet(key)?.GetInteroperable<NFTState>()
             ?? throw new InvalidOperationException("The unique id does not exist.");
         TokenState token = AddTotalSupply(engine, TokenType.NonFungible, nft.AssetId, BigInteger.MinusOne, assertOwner: true);
-        if (!AddBalance(engine.SnapshotCache, nft.AssetId, nft.Owner, BigInteger.MinusOne))
+        if (!await AddBalance(engine, nft.AssetId, token, nft.Owner, BigInteger.MinusOne, callOnBalanceChanged: true))
             throw new InvalidOperationException("Insufficient balance to burn.");
         engine.SnapshotCache.Delete(key);
         key = CreateStorageKey(Prefix_NFTAssetIdUniqueIdIndex, nft.AssetId, uniqueId);
@@ -192,9 +192,9 @@ partial class TokenManagement
         TokenState token = engine.SnapshotCache.TryGet(key)!.GetInteroperable<TokenState>();
         if (from != to)
         {
-            if (!AddBalance(engine.SnapshotCache, nft.AssetId, from, BigInteger.MinusOne))
+            if (!await AddBalance(engine, nft.AssetId, token, from, BigInteger.MinusOne, callOnBalanceChanged: true))
                 return false;
-            AddBalance(engine.SnapshotCache, nft.AssetId, to, BigInteger.One);
+            await AddBalance(engine, nft.AssetId, token, to, BigInteger.One, callOnBalanceChanged: true);
             key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, from, uniqueId);
             engine.SnapshotCache.Delete(key);
             key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, to, uniqueId);

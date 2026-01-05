@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // NeoToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -104,7 +104,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
         var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
         foreach (var distribution in list)
-            await TokenManagement.MintInternal(engine, Governance.GasTokenId, distribution.Account, distribution.Amount, assertOwner: false, callOnPayment, callOnTransfer: false);
+            await TokenManagement.MintInternal(engine, Governance.GasTokenId, distribution.Account, distribution.Amount, assertOwner: false, callOnBalanceChanged: false, callOnPayment, callOnTransfer: false);
     }
 
     protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
@@ -249,7 +249,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         var committee = GetCommitteeFromCache(engine.SnapshotCache);
         var pubkey = committee[index].PublicKey;
         var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-        await TokenManagement.MintInternal(engine, Governance.GasTokenId, account, gasPerBlock * CommitteeRewardRatio / 100, assertOwner: false, callOnPayment: false, callOnTransfer: false);
+        await TokenManagement.MintInternal(engine, Governance.GasTokenId, account, gasPerBlock * CommitteeRewardRatio / 100, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
 
         // Record the cumulative reward of the voters of committee
 
@@ -372,7 +372,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         if (!RegisterInternal(engine, pubkey))
             throw new InvalidOperationException("Failed to register candidate");
 
-        await TokenManagement.BurnInternal(engine, Governance.GasTokenId, Hash, amount, assertOwner: false, callOnTransfer: false);
+        await TokenManagement.BurnInternal(engine, Governance.GasTokenId, Hash, amount, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
     }
 
     /// <summary>
@@ -487,7 +487,7 @@ public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
         }
         Notify(engine, "Vote", account, from, voteTo, stateAccount.Balance);
         if (gasDistribution is not null)
-            await TokenManagement.MintInternal(engine, Governance.GasTokenId, gasDistribution.Account, gasDistribution.Amount, assertOwner: false, callOnPayment: true, callOnTransfer: false);
+            await TokenManagement.MintInternal(engine, Governance.GasTokenId, gasDistribution.Account, gasDistribution.Amount, assertOwner: false, callOnBalanceChanged: false, callOnPayment: true, callOnTransfer: false);
         return true;
     }
 

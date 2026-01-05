@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // TokenManagement.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -100,17 +100,18 @@ public sealed partial class TokenManagement : NativeContract
         return token;
     }
 
-    bool AddBalance(DataCache snapshot, UInt160 assetId, UInt160 account, BigInteger amount)
+    async ContractTask<bool> AddBalance(ApplicationEngine engine, UInt160 assetId, TokenState token, UInt160 account, BigInteger amount, bool callOnBalanceChanged)
     {
         if (amount.IsZero) return true;
         StorageKey key = CreateStorageKey(Prefix_AccountState, account, assetId);
-        AccountState? accountState = snapshot.GetAndChange(key)?.GetInteroperable<AccountState>();
+        AccountState? accountState = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<AccountState>();
+        BigInteger balanceOld = accountState?.Balance ?? BigInteger.Zero;
         if (amount > 0)
         {
             if (accountState is null)
             {
                 accountState = new AccountState { Balance = amount };
-                snapshot.Add(key, new(accountState));
+                engine.SnapshotCache.Add(key, new(accountState));
             }
             else
             {
@@ -123,8 +124,10 @@ public sealed partial class TokenManagement : NativeContract
             if (accountState.Balance < -amount) return false;
             accountState.Balance += amount;
             if (accountState.Balance.IsZero)
-                snapshot.Delete(key);
+                engine.SnapshotCache.Delete(key);
         }
+        if (callOnBalanceChanged)
+            await engine.CallFromNativeContractIfExistsAsync(Hash, token.Owner, "_onBalanceChanged", assetId, account, amount, balanceOld, balanceOld + amount);
         return true;
     }
 }

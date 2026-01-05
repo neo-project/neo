@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // TokenManagement.Fungible.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -89,13 +89,13 @@ partial class TokenManagement
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        await MintInternal(engine, assetId, account, amount, assertOwner: true, callOnPayment: true, callOnTransfer: true);
+        await MintInternal(engine, assetId, account, amount, assertOwner: true, callOnBalanceChanged: true, callOnPayment: true, callOnTransfer: true);
     }
 
-    internal async ContractTask MintInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnPayment, bool callOnTransfer)
+    internal async ContractTask MintInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnBalanceChanged, bool callOnPayment, bool callOnTransfer)
     {
         TokenState token = AddTotalSupply(engine, TokenType.Fungible, assetId, amount, assertOwner);
-        AddBalance(engine.SnapshotCache, assetId, account, amount);
+        await AddBalance(engine, assetId, token, account, amount, callOnBalanceChanged);
         await PostTransferAsync(engine, assetId, token, null, account, amount, StackItem.Null, callOnPayment, callOnTransfer);
     }
 
@@ -114,13 +114,13 @@ partial class TokenManagement
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        await BurnInternal(engine, assetId, account, amount, assertOwner: true, callOnTransfer: true);
+        await BurnInternal(engine, assetId, account, amount, assertOwner: true, callOnBalanceChanged: true, callOnTransfer: true);
     }
 
-    internal async ContractTask BurnInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnTransfer)
+    internal async ContractTask BurnInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnBalanceChanged, bool callOnTransfer)
     {
         TokenState token = AddTotalSupply(engine, TokenType.Fungible, assetId, -amount, assertOwner);
-        if (!AddBalance(engine.SnapshotCache, assetId, account, -amount))
+        if (!await AddBalance(engine, assetId, token, account, -amount, callOnBalanceChanged))
             throw new InvalidOperationException("Insufficient balance to burn.");
         await PostTransferAsync(engine, assetId, token, account, null, amount, StackItem.Null, callOnPayment: false, callOnTransfer);
     }
@@ -149,9 +149,9 @@ partial class TokenManagement
         if (!engine.CheckWitnessInternal(from)) return false;
         if (!amount.IsZero && from != to)
         {
-            if (!AddBalance(engine.SnapshotCache, assetId, from, -amount))
+            if (!await AddBalance(engine, assetId, token, from, -amount, callOnBalanceChanged: true))
                 return false;
-            AddBalance(engine.SnapshotCache, assetId, to, amount);
+            await AddBalance(engine, assetId, token, to, amount, callOnBalanceChanged: true);
         }
         await PostTransferAsync(engine, assetId, token, from, to, amount, data, callOnPayment: true, callOnTransfer: true);
         return true;
