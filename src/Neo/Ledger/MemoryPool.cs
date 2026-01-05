@@ -13,6 +13,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -113,12 +114,13 @@ public class MemoryPool : IReadOnlyCollection<Transaction>
     /// </summary>
     public int UnVerifiedCount => _unverifiedTransactions.Count;
 
+    public delegate void TransactionPolicyValidator(Transaction tx, IReadOnlyStore snapshot, CancelEventArgs cancel);
+
     /// <summary>
-    /// Transaction policy validator function.
+    /// Transaction policy validator event.
     /// This function will be called to validate each transaction before adding it to the pool.
-    /// If the function returns false, the transaction will be rejected.
     /// </summary>
-    public Func<Transaction, IReadOnlyStore, bool>? PolicyValidator { get; set; }
+    public event TransactionPolicyValidator? OnNewTransaction;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MemoryPool"/> class.
@@ -309,9 +311,11 @@ public class MemoryPool : IReadOnlyCollection<Transaction>
 
     internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
     {
-        if (PolicyValidator != null)
+        if (OnNewTransaction != null)
         {
-            if (!PolicyValidator(tx, snapshot)) return VerifyResult.PolicyFail;
+            var cancel = new CancelEventArgs();
+            OnNewTransaction(tx, snapshot, cancel);
+            if (cancel.Cancel) return VerifyResult.PolicyFail;
         }
 
         var poolItem = new PoolItem(tx);
