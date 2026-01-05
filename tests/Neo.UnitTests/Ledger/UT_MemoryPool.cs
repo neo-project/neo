@@ -66,9 +66,14 @@ public class UT_MemoryPool : TestKit
     {
         // Add over the capacity items, verify that the verified count increases each time
 
-        _unit.PolicyValidator = new Func<Transaction, IReadOnlyStore, bool>((tx, sn) => false);
+        var ev = new MemoryPool.TransactionPolicyValidator((tx, sn, c) =>
+        {
+            c.Cancel = true;
+        });
+
+        _unit.OnNewTransaction += ev;
         AddTransactions(1);
-        _unit.PolicyValidator = null;
+        _unit.OnNewTransaction -= ev;
 
         Assert.AreEqual(0, _unit.SortedTxCount);
         Assert.AreEqual(0, _unit.VerifiedCount);
