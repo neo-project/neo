@@ -13,7 +13,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System.Collections;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -24,6 +23,11 @@ namespace Neo.Ledger;
 /// </summary>
 public class MemoryPool : IReadOnlyCollection<Transaction>
 {
+    /// <summary>
+    /// Transaction policy validator event.
+    /// This function will be called to validate each transaction before adding it to the pool.
+    /// </summary>
+    public event EventHandler<NewTransactionEventArgs>? NewTransaction;
     public event EventHandler<Transaction>? TransactionAdded;
     public event EventHandler<TransactionRemovedEventArgs>? TransactionRemoved;
 
@@ -113,14 +117,6 @@ public class MemoryPool : IReadOnlyCollection<Transaction>
     /// Total count of unverified transactions in the pool.
     /// </summary>
     public int UnVerifiedCount => _unverifiedTransactions.Count;
-
-    public delegate void TransactionPolicyValidator(Transaction tx, IReadOnlyStore snapshot, CancelEventArgs cancel);
-
-    /// <summary>
-    /// Transaction policy validator event.
-    /// This function will be called to validate each transaction before adding it to the pool.
-    /// </summary>
-    public event TransactionPolicyValidator? OnNewTransaction;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MemoryPool"/> class.
@@ -311,11 +307,11 @@ public class MemoryPool : IReadOnlyCollection<Transaction>
 
     internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
     {
-        if (OnNewTransaction != null)
+        if (NewTransaction != null)
         {
-            var cancel = new CancelEventArgs();
-            OnNewTransaction(tx, snapshot, cancel);
-            if (cancel.Cancel) return VerifyResult.PolicyFail;
+            var args = new NewTransactionEventArgs { Transaction = tx, Snapshot = snapshot };
+            NewTransaction(this, args);
+            if (args.Cancel) return VerifyResult.PolicyFail;
         }
 
         var poolItem = new PoolItem(tx);
