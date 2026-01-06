@@ -163,8 +163,8 @@ We welcome contributions to the Neo project! To ensure a smooth collaboration pr
 
 1. **Fork the repository** and create your feature branch from `master` or/and `master-n3`:
    ```bash
-   git checkout master
-   git pull origin master
+   git checkout master-n3 # or git checkout master
+   git pull origin master-n3 # or git pull origin master
    git checkout -b feature/your-feature-name # or bugfix/your-bugfix-name
    ```
 
@@ -190,12 +190,12 @@ We welcome contributions to the Neo project! To ensure a smooth collaboration pr
 ### Development Workflow
 
 ```
-feature, bugfix, etc. → master or/and master-n3 → release
-hotfix → release
+feature, bugfix, etc. → master or/and master-n3 → release-vX.Y
+hotfix → release-vX.Y
 ```
 
-- Feature branches are merged into `master` or `master-n3`.
-- Create a release branch from `master` or `master-n3` periodically.
+- Feature branches are merged into `master` or/and `master-n3`.
+- Create a release branch from `master` or/and `master-n3` periodically.
 - Only hotfix branches are merged into release branches.
 
 For more detailed contribution guidelines, please check our documentation or reach out to the maintainers.
