@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // NativeContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -72,16 +72,6 @@ public abstract class NativeContract
     public static LedgerContract Ledger { get; } = new();
 
     /// <summary>
-    /// Gets the instance of the <see cref="NeoToken"/> class.
-    /// </summary>
-    public static NeoToken NEO { get; } = new();
-
-    /// <summary>
-    /// Gets the instance of the <see cref="GasToken"/> class.
-    /// </summary>
-    public static GasToken GAS { get; } = new();
-
-    /// <summary>
     /// Gets the instance of the <see cref="PolicyContract"/> class.
     /// </summary>
     public static PolicyContract Policy { get; } = new();
@@ -107,6 +97,13 @@ public abstract class NativeContract
     public static Treasury Treasury { get; } = new();
 
     public static TokenManagement TokenManagement { get; } = new();
+
+    public static Governance Governance { get; } = new();
+
+    /// <summary>
+    /// Gets the instance of the <see cref="NeoToken"/> class.
+    /// </summary>
+    public static NeoToken NEO { get; } = new();
 
     #endregion
 

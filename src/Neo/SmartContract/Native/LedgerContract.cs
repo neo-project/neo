@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // LedgerContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -82,10 +82,8 @@ public sealed class LedgerContract : NativeContract
         return ContractTask.CompletedTask;
     }
 
-    internal bool Initialized(DataCache snapshot)
+    internal bool Initialized(IReadOnlyStore snapshot)
     {
-        ArgumentNullException.ThrowIfNull(snapshot);
-
         return snapshot.Find(CreateStorageKey(Prefix_Block)).Any();
     }
 
@@ -306,7 +304,7 @@ public sealed class LedgerContract : NativeContract
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <param name="index">The index of the block.</param>
     /// <returns>The block header with the specified index.</returns>
-    public Header? GetHeader(DataCache snapshot, uint index)
+    public Header? GetHeader(IReadOnlyStore snapshot, uint index)
     {
         UInt256? hash = GetBlockHash(snapshot, index);
         if (hash is null) return null;

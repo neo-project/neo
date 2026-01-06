@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_CryptoLib.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -20,6 +20,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.Numerics;
 using System.Text;
 
 namespace Neo.UnitTests.SmartContract.Native;
@@ -616,7 +617,7 @@ public class UT_CryptoLib
     // The proposed witness verification script has 110 bytes length, verification costs 2154270  * 10e-8GAS including Invocation script execution.
     // The user has to sign the keccak256([4-bytes-network-magic-LE, txHash-bytes-BE]).
     [TestMethod]
-    public void TestVerifyWithECDsa_CustomTxWitness_SingleSig()
+    public async Task TestVerifyWithECDsa_CustomTxWitness_SingleSig()
     {
         byte[] privkey = "7177f0d04c79fa0b8c91fe90c1cf1d44772d1fba6e5eb9b281a22cd3aafb51fe".HexToBytes();
         var pubHex = "04" + "fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5" +
@@ -683,13 +684,31 @@ public class UT_CryptoLib
 
         var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
+        // Setup TokenState for GasToken (required by TokenManagement.MintInternal)
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        if (!snapshotCache.Contains(tokenStateKey))
+        {
+            var tokenState = new TokenState
+            {
+                Type = TokenType.Fungible,
+                Owner = NativeContract.Governance.Hash,
+                Name = Governance.GasTokenName,
+                Symbol = Governance.GasTokenSymbol,
+                Decimals = Governance.GasTokenDecimals,
+                TotalSupply = BigInteger.Zero,
+                MaxSupply = BigInteger.MinusOne
+            };
+            snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
+        }
+
         // Create fake balance to pay the fees.
         ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
             settings: TestProtocolSettings.Default, gas: long.MaxValue);
-        _ = NativeContract.GAS.Mint(engine, acc, 5_0000_0000, false);
+        engine.LoadScript(Array.Empty<byte>());
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, acc, 5_0000_0000, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
         snapshotCache.Commit();
 
-        Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, new(), []));
+        Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(TestProtocolSettings.Default, engine.SnapshotCache, new(), []));
 
         // The resulting witness verification cost is 2154270   * 10e-8GAS.
         // The resulting witness Invocation script (66 bytes length):
@@ -737,7 +756,7 @@ public class UT_CryptoLib
     // The proposed witness verification script has 264 bytes length, verification costs 8390070  * 10e-8GAS including Invocation script execution.
     // The users have to sign the keccak256([4-bytes-network-magic-LE, txHash-bytes-BE]).
     [TestMethod]
-    public void TestVerifyWithECDsa_CustomTxWitness_MultiSig()
+    public async Task TestVerifyWithECDsa_CustomTxWitness_MultiSig()
     {
         var privkey1 = "b2dde592bfce654ef03f1ceea452d2b0112e90f9f52099bcd86697a2bd0a2b60".HexToBytes();
         var pubKey1 = ECPoint.Parse("04" +
@@ -938,10 +957,28 @@ public class UT_CryptoLib
 
         var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
+        // Setup TokenState for GasToken (required by TokenManagement.MintInternal)
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        if (!snapshotCache.Contains(tokenStateKey))
+        {
+            var tokenState = new TokenState
+            {
+                Type = TokenType.Fungible,
+                Owner = NativeContract.Governance.Hash,
+                Name = Governance.GasTokenName,
+                Symbol = Governance.GasTokenSymbol,
+                Decimals = Governance.GasTokenDecimals,
+                TotalSupply = BigInteger.Zero,
+                MaxSupply = BigInteger.MinusOne
+            };
+            snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
+        }
+
         // Create fake balance to pay the fees.
         var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
             settings: TestProtocolSettings.Default, gas: long.MaxValue);
-        _ = NativeContract.GAS.Mint(engine, acc, 5_0000_0000, false);
+        engine.LoadScript(Array.Empty<byte>());
+        await NativeContract.TokenManagement.MintInternal(engine, NativeContract.Governance.GasTokenId, acc, 5_0000_0000, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
 
         // We should not use commit here cause once its committed, the value we get from the snapshot can be different
         // from the underline storage. Thought there isn't any issue triggered here, its wrong to use it this way.
@@ -951,7 +988,7 @@ public class UT_CryptoLib
         // Check that witness verification passes.
         var txVrfContext = new TransactionVerificationContext();
         var conflicts = new List<Transaction>();
-        Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, txVrfContext, conflicts));
+        Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(TestProtocolSettings.Default, engine.SnapshotCache, txVrfContext, conflicts));
 
         // The resulting witness verification cost for 3/4 multisig is 8389470  * 10e-8GAS. Cost depends on M/N.
         // The resulting witness Invocation script (198 bytes for 3 signatures):

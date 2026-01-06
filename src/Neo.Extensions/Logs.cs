@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // Logs.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,9 +11,7 @@
 
 using Serilog;
 using Serilog.Events;
-using System;
 using System.Collections.Concurrent;
-using System.IO;
 
 namespace Neo;
 

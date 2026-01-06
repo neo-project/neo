@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // MemorySnapshot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -73,6 +73,15 @@ internal class MemorySnapshot : IStoreSnapshot
         records = records.OrderBy(p => p.Key, comparer);
         foreach (var pair in records)
             yield return (pair.Key[..], pair.Value[..]);
+    }
+
+    public IEnumerable<(byte[] Key, byte[] Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
+    {
+        var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+        return _immutableData
+            .Where(p => comparer.Compare(p.Key, start) >= 0 && comparer.Compare(p.Key, end) < 0)
+            .OrderBy(p => p.Key, comparer)
+            .Select(p => (p.Key[..], p.Value[..]));
     }
 
     public byte[]? TryGet(byte[] key)

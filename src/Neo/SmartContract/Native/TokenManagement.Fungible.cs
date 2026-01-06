@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // TokenManagement.Fungible.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -50,7 +50,11 @@ partial class TokenManagement
     internal UInt160 Create(ApplicationEngine engine, [Length(1, 32)] string name, [Length(2, 6)] string symbol, [Range(0, 18)] byte decimals, BigInteger maxSupply)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxSupply, BigInteger.MinusOne);
-        UInt160 owner = engine.CallingScriptHash!;
+        return CreateInternal(engine, engine.CallingScriptHash!, name, symbol, decimals, maxSupply);
+    }
+
+    internal UInt160 CreateInternal(ApplicationEngine engine, UInt160 owner, string name, string symbol, byte decimals, BigInteger maxSupply)
+    {
         UInt160 tokenid = GetAssetId(owner, name);
         StorageKey key = CreateStorageKey(Prefix_TokenState, tokenid);
         if (engine.SnapshotCache.Contains(key))
@@ -77,17 +81,22 @@ partial class TokenManagement
     /// <param name="assetId">The asset identifier.</param>
     /// <param name="account">The recipient account <see cref="UInt160"/>.</param>
     /// <param name="amount">The amount to mint (must be > 0 and &lt;= <see cref="MaxMintAmount"/>).</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <returns>A <see cref="ContractTask"/> representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentOutOfRangeException">If <paramref name="amount"/> is invalid.</exception>
     /// <exception cref="InvalidOperationException">If the asset id does not exist or caller is not the owner or max supply would be exceeded.</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal async Task Mint(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount)
+    internal async ContractTask Mint(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        AddTotalSupply(engine, TokenType.Fungible, assetId, amount, assertOwner: true);
-        AddBalance(engine.SnapshotCache, assetId, account, amount);
-        await PostTransferAsync(engine, assetId, null, account, amount, StackItem.Null, callOnPayment: true);
+        await MintInternal(engine, assetId, account, amount, assertOwner: true, callOnBalanceChanged: true, callOnPayment: true, callOnTransfer: true);
+    }
+
+    internal async ContractTask MintInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnBalanceChanged, bool callOnPayment, bool callOnTransfer)
+    {
+        TokenState token = AddTotalSupply(engine, TokenType.Fungible, assetId, amount, assertOwner);
+        await AddBalance(engine, assetId, token, account, amount, callOnBalanceChanged);
+        await PostTransferAsync(engine, assetId, token, null, account, amount, StackItem.Null, callOnPayment, callOnTransfer);
     }
 
     /// <summary>
@@ -97,18 +106,23 @@ partial class TokenManagement
     /// <param name="assetId">The asset identifier.</param>
     /// <param name="account">The account <see cref="UInt160"/> from which tokens will be burned.</param>
     /// <param name="amount">The amount to burn (must be > 0 and &lt;= <see cref="MaxMintAmount"/>).</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <returns>A <see cref="ContractTask"/> representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentOutOfRangeException">If <paramref name="amount"/> is invalid.</exception>
     /// <exception cref="InvalidOperationException">If the asset id does not exist, caller is not the owner, or account has insufficient balance.</exception>
     [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.All)]
-    internal async Task Burn(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount)
+    internal async ContractTask Burn(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, MaxMintAmount);
-        AddTotalSupply(engine, TokenType.Fungible, assetId, -amount, assertOwner: true);
-        if (!AddBalance(engine.SnapshotCache, assetId, account, -amount))
+        await BurnInternal(engine, assetId, account, amount, assertOwner: true, callOnBalanceChanged: true, callOnTransfer: true);
+    }
+
+    internal async ContractTask BurnInternal(ApplicationEngine engine, UInt160 assetId, UInt160 account, BigInteger amount, bool assertOwner, bool callOnBalanceChanged, bool callOnTransfer)
+    {
+        TokenState token = AddTotalSupply(engine, TokenType.Fungible, assetId, -amount, assertOwner);
+        if (!await AddBalance(engine, assetId, token, account, -amount, callOnBalanceChanged))
             throw new InvalidOperationException("Insufficient balance to burn.");
-        await PostTransferAsync(engine, assetId, account, null, amount, StackItem.Null, callOnPayment: false);
+        await PostTransferAsync(engine, assetId, token, account, null, amount, StackItem.Null, callOnPayment: false, callOnTransfer);
     }
 
     /// <summary>
@@ -124,7 +138,7 @@ partial class TokenManagement
     /// <exception cref="ArgumentOutOfRangeException">If <paramref name="amount"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">If the asset id does not exist.</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal async Task<bool> Transfer(ApplicationEngine engine, UInt160 assetId, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+    internal async ContractTask<bool> Transfer(ApplicationEngine engine, UInt160 assetId, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
         StorageKey key = CreateStorageKey(Prefix_TokenState, assetId);
@@ -135,19 +149,20 @@ partial class TokenManagement
         if (!engine.CheckWitnessInternal(from)) return false;
         if (!amount.IsZero && from != to)
         {
-            if (!AddBalance(engine.SnapshotCache, assetId, from, -amount))
+            if (!await AddBalance(engine, assetId, token, from, -amount, callOnBalanceChanged: true))
                 return false;
-            AddBalance(engine.SnapshotCache, assetId, to, amount);
+            await AddBalance(engine, assetId, token, to, amount, callOnBalanceChanged: true);
         }
-        await PostTransferAsync(engine, assetId, from, to, amount, data, callOnPayment: true);
-        await engine.CallFromNativeContractAsync(Hash, token.Owner, "_onTransfer", assetId, from, to, amount, data);
+        await PostTransferAsync(engine, assetId, token, from, to, amount, data, callOnPayment: true, callOnTransfer: true);
         return true;
     }
 
-    async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160 assetId, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
+    async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160 assetId, TokenState token, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment, bool callOnTransfer)
     {
         Notify(engine, "Transfer", assetId, from, to, amount);
-        if (!callOnPayment || to is null || !ContractManagement.IsContract(engine.SnapshotCache, to)) return;
-        await engine.CallFromNativeContractAsync(Hash, to, "_onPayment", assetId, from, amount, data);
+        if (callOnPayment && to is not null && ContractManagement.IsContract(engine.SnapshotCache, to))
+            await engine.CallFromNativeContractAsync(Hash, to, "_onPayment", assetId, from, amount, data);
+        if (callOnTransfer)
+            await engine.CallFromNativeContractIfExistsAsync(Hash, token.Owner, "_onTransfer", assetId, from, to, amount, data);
     }
 }

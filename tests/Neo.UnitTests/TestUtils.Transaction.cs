@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // TestUtils.Transaction.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -36,7 +36,7 @@ public partial class TestUtils
         var tx = wallet.MakeTransaction(snapshot, [
                 new TransferOutput
                 {
-                    AssetId = NativeContract.GAS.Hash,
+                    AssetId = NativeContract.Governance.GasTokenId,
                     ScriptHash = account,
                     Value = new BigDecimal(BigInteger.One, 8)
                 }
@@ -60,7 +60,7 @@ public partial class TestUtils
         var tx = wallet.MakeTransaction(snapshot, [
                 new TransferOutput
                 {
-                    AssetId = NativeContract.GAS.Hash,
+                    AssetId = NativeContract.Governance.GasTokenId,
                     ScriptHash = account,
                     Value = new BigDecimal(BigInteger.One, 8)
                 }

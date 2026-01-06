@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ContractTaskAwaiter.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -52,10 +52,10 @@ internal class ContractTaskAwaiter<T> : ContractTaskAwaiter
 {
     private T? _result;
 
-    public new T? GetResult()
+    public new T GetResult()
     {
         base.GetResult();
-        return _result;
+        return _result!;
     }
 
     public void SetResult(T result)

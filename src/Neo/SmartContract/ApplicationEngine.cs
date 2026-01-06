@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ApplicationEngine.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -377,6 +377,15 @@ public partial class ApplicationEngine : ExecutionEngine
         ContractTask<T> task = new();
         contractTasks.Add(contextNew, task.GetAwaiter());
         return task;
+    }
+
+    internal async ContractTask CallFromNativeContractIfExistsAsync(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
+    {
+        ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, hash)
+            ?? throw new InvalidOperationException($"Called contract does not exist: {hash}");
+        ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Length);
+        if (md is null) return;
+        await CallFromNativeContractAsync(callingScriptHash, hash, method, args);
     }
 
     protected override void ContextUnloaded(ExecutionContext context)

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // IReadOnlyStore.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -70,4 +70,17 @@ public interface IReadOnlyStore<TKey, TValue> where TKey : class?
     /// <param name="direction">The search direction.</param>
     /// <returns>The entries found with the desired prefix.</returns>
     public IEnumerable<(TKey Key, TValue Value)> Find(TKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward);
+
+    /// <summary>
+    /// Returns an enumerable collection of key/value pairs within the specified key range, ordered according to the
+    /// specified seek direction.
+    /// </summary>
+    /// <param name="start">The inclusive lower bound of the key range to search, represented as a byte array. Cannot be null.</param>
+    /// <param name="end">The exclusive upper bound of the key range to search, represented as a byte array. Cannot be null.</param>
+    /// <param name="direction">The direction in which to enumerate the results. Use SeekDirection.Forward to enumerate in ascending key order,
+    /// or SeekDirection.Backward for descending order. The default is SeekDirection.Forward.</param>
+    /// <returns>An enumerable collection of key/value pairs whose keys are greater than or equal to <paramref name="start"/> and
+    /// less than <paramref name="end"/>, ordered according to <paramref name="direction"/>. The collection is empty if
+    /// no keys are found in the specified range.</returns>
+    public IEnumerable<(TKey Key, TValue Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward);
 }

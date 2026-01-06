@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // OracleContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -197,7 +197,7 @@ public sealed class OracleContract : NativeContract
             foreach (var (account, gas) in nodes)
             {
                 if (gas.Sign > 0)
-                    await GAS.Mint(engine, account, gas, false);
+                    await TokenManagement.MintInternal(engine, Governance.GasTokenId, account, gas, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
             }
         }
     }
@@ -228,7 +228,7 @@ public sealed class OracleContract : NativeContract
 
         //Mint gas for the response
         engine.AddFee(gasForResponse);
-        await GAS.Mint(engine, Hash, gasForResponse, false);
+        await TokenManagement.MintInternal(engine, Governance.GasTokenId, Hash, gasForResponse, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
 
         //Increase the request id
         var itemId = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId))!;

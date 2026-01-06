@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // RoleManagement.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -38,7 +38,7 @@ public sealed class RoleManagement : NativeContract
     /// <param name="index">The index of the block to be queried.</param>
     /// <returns>The public keys of the nodes.</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public ECPoint[] GetDesignatedByRole(DataCache snapshot, Role role, uint index)
+    public ECPoint[] GetDesignatedByRole(IReadOnlyStore snapshot, Role role, uint index)
     {
         if (!Enum.IsDefined(role))
             throw new ArgumentOutOfRangeException(nameof(role), $"Role {role} is not valid");

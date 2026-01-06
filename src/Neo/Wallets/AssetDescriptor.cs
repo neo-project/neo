@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // AssetDescriptor.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -50,23 +50,35 @@ public class AssetDescriptor
     /// <param name="assetId">The id of the asset.</param>
     public AssetDescriptor(DataCache snapshot, ProtocolSettings settings, UInt160 assetId)
     {
-        var contract = NativeContract.ContractManagement.GetContract(snapshot, assetId)
-            ?? throw new ArgumentException($"No asset contract found for assetId {assetId}. Please ensure the assetId is correct and the asset is deployed on the blockchain.", nameof(assetId));
-
-        byte[] script;
-        using (ScriptBuilder sb = new())
+        // GasToken is managed by TokenManagement, not a contract itself
+        if (assetId.Equals(NativeContract.Governance.GasTokenId))
         {
-            sb.EmitDynamicCall(assetId, "decimals", CallFlags.ReadOnly);
-            sb.EmitDynamicCall(assetId, "symbol", CallFlags.ReadOnly);
-            script = sb.ToArray();
+            TokenState token = NativeContract.TokenManagement.GetTokenInfo(snapshot, assetId)!;
+            AssetId = assetId;
+            AssetName = Governance.GasTokenName;
+            Symbol = token.Symbol;
+            Decimals = token.Decimals;
         }
+        else
+        {
+            var contract = NativeContract.ContractManagement.GetContract(snapshot, assetId)
+                ?? throw new ArgumentException($"No asset contract found for assetId {assetId}. Please ensure the assetId is correct and the asset is deployed on the blockchain.", nameof(assetId));
 
-        using var engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_30000000L);
-        if (engine.State != VMState.HALT) throw new ArgumentException($"Failed to execute 'decimals' or 'symbol' method for asset {assetId}. The contract execution did not complete successfully (VM state: {engine.State}).", nameof(assetId));
-        AssetId = assetId;
-        AssetName = contract.Manifest.Name;
-        Symbol = engine.ResultStack.Pop().GetString()!;
-        Decimals = (byte)engine.ResultStack.Pop().GetInteger();
+            byte[] script;
+            using (ScriptBuilder sb = new())
+            {
+                sb.EmitDynamicCall(assetId, "decimals", CallFlags.ReadOnly);
+                sb.EmitDynamicCall(assetId, "symbol", CallFlags.ReadOnly);
+                script = sb.ToArray();
+            }
+
+            using var engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_30000000L);
+            if (engine.State != VMState.HALT) throw new ArgumentException($"Failed to execute 'decimals' or 'symbol' method for asset {assetId}. The contract execution did not complete successfully (VM state: {engine.State}).", nameof(assetId));
+            AssetId = assetId;
+            AssetName = contract.Manifest.Name;
+            Symbol = engine.ResultStack.Pop().GetString()!;
+            Decimals = (byte)engine.ResultStack.Pop().GetInteger();
+        }
     }
 
     public override string ToString()

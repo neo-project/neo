@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -204,10 +204,9 @@ public class UT_Helper
     [TestMethod]
     public void TestMakeScript()
     {
-        byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
-
-        Assert.AreEqual("0c14000000000000000000000000000000000000000011c01f0c0962616c616e63654f660c14cf76e28bd0062c4a478ee35561011319f3cfa4d241627d5b52",
-                        testScript.ToHexString());
+        byte[] testScript = NativeContract.TokenManagement.Hash.MakeScript("balanceOf", NativeContract.Governance.GasTokenId, UInt160.Zero);
+        Assert.AreEqual("0c1400000000000000000000000000000000000000000c1428ee6a1db43c446df56cfe333234fecabdfd84f612c01f0c0962616c616e63654f660c149f040ea4a8448f015af645659b0fb2ae7dc500ae41627d5b52",
+                                testScript.ToHexString());
     }
 
     [TestMethod]

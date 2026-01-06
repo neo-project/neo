@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // Notary.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -81,7 +81,8 @@ public sealed class Notary : NativeContract
         if (nFees == 0) return;
         if (notaries == null) return;
         var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
-        foreach (var notary in notaries) await GAS.Mint(engine, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, false);
+        foreach (var notary in notaries)
+            await TokenManagement.MintInternal(engine, Governance.GasTokenId, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
     }
 
     protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
@@ -127,13 +128,14 @@ public sealed class Notary : NativeContract
     /// It also sets the deposit's lock height after which deposit can be withdrawn.
     /// </summary>
     /// <param name="engine">ApplicationEngine</param>
+    /// <param name="assetId">Asset being sent (should be GAS)</param>
     /// <param name="from">GAS sender</param>
     /// <param name="amount">The amount of GAS sent</param>
     /// <param name="data">Deposit-related data: optional To value (treated as deposit owner if set) and Till height after which deposit can be withdrawn </param>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-    private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
+    private void _OnPayment(ApplicationEngine engine, UInt160 assetId, UInt160 from, BigInteger amount, StackItem data)
     {
-        if (engine.CallingScriptHash != GAS.Hash) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash!.ToString()));
+        if (assetId != Governance.GasTokenId) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", assetId));
         if (data is not Array additionalParams || additionalParams.Count != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
         var to = from;
         if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
@@ -182,11 +184,11 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// ExpirationOf returns deposit lock height for specified address.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to query the deposit lock height for specified address.</param>
     /// <param name="account">Account</param>
     /// <returns>Deposit lock height of the specified address.</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public uint ExpirationOf(DataCache snapshot, UInt160 account)
+    public uint ExpirationOf(IReadOnlyStore snapshot, UInt160 account)
     {
         var deposit = GetDepositFor(snapshot, account);
         if (deposit is null) return 0;
@@ -196,11 +198,11 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// BalanceOf returns deposited GAS amount for specified address.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to query the deposited GAS amount for specified address.</param>
     /// <param name="account">Account</param>
     /// <returns>Deposit balance of the specified account.</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-    public BigInteger BalanceOf(DataCache snapshot, UInt160 account)
+    public BigInteger BalanceOf(IReadOnlyStore snapshot, UInt160 account)
     {
         var deposit = GetDepositFor(snapshot, account);
         if (deposit is null) return 0;
@@ -224,7 +226,7 @@ public sealed class Notary : NativeContract
         if (deposit is null) return false;
         if (Ledger.CurrentIndex(engine.SnapshotCache) < deposit.Till) return false;
         RemoveDepositFor(engine.SnapshotCache, from);
-        if (!await engine.CallFromNativeContractAsync<bool>(Hash, GAS.Hash, "transfer", Hash, receive, deposit.Amount, null))
+        if (!await engine.CallFromNativeContractAsync<bool>(Hash, TokenManagement.Hash, "transfer", Governance.GasTokenId, Hash, receive, deposit.Amount, null))
         {
             throw new InvalidOperationException(string.Format("Transfer to {0} has failed", receive.ToString()));
         }
@@ -234,7 +236,7 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// GetMaxNotValidBeforeDelta is Notary contract method and returns the maximum NotValidBefore delta.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to query the maximum NotValidBefore delta.</param>
     /// <returns>NotValidBefore</returns>
     [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
     public uint GetMaxNotValidBeforeDelta(IReadOnlyStore snapshot)
@@ -264,9 +266,9 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// GetNotaryNodes returns public keys of notary nodes.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to query role assignments.</param>
     /// <returns>Public keys of notary nodes.</returns>
-    private static ECPoint[] GetNotaryNodes(DataCache snapshot)
+    private static ECPoint[] GetNotaryNodes(IReadOnlyStore snapshot)
     {
         return RoleManagement.GetDesignatedByRole(snapshot, Role.P2PNotary, Ledger.CurrentIndex(snapshot) + 1);
     }
@@ -278,7 +280,7 @@ public sealed class Notary : NativeContract
     /// <param name="snapshot"></param>
     /// <param name="acc"></param>
     /// <returns>Deposit for the specified account.</returns>
-    private Deposit? GetDepositFor(DataCache snapshot, UInt160 acc)
+    private Deposit? GetDepositFor(IReadOnlyStore snapshot, UInt160 acc)
     {
         return snapshot.TryGet(CreateStorageKey(Prefix_Deposit, acc))?.GetInteroperable<Deposit>();
     }
@@ -309,7 +311,7 @@ public sealed class Notary : NativeContract
     /// <summary>
     /// CalculateNotaryReward calculates the reward for a single notary node based on FEE's count and Notary nodes count.
     /// </summary>
-    /// <param name="snapshot">DataCache</param>
+    /// <param name="snapshot">The read-only state view used to calculate the reward.</param>
     /// <param name="nFees"></param>
     /// <param name="notariesCount"></param>
     /// <returns>result</returns>

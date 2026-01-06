@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // TokenManagement.NonFungible.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -87,7 +87,7 @@ partial class TokenManagement
     /// <param name="account">The recipient account <see cref="UInt160"/>.</param>
     /// <returns>The unique id (<see cref="UInt160"/>) of the newly minted NFT.</returns>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal async Task<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account)
+    internal async ContractTask<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account)
     {
         return await MintNFT(engine, assetId, account, new Map(engine.ReferenceCounter));
     }
@@ -102,7 +102,7 @@ partial class TokenManagement
     /// <returns>The unique id (<see cref="UInt160"/>) of the newly minted NFT.</returns>
     /// <exception cref="ArgumentException">If properties are invalid (too many, invalid key/value types or lengths).</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 10, RequiredCallFlags = CallFlags.All)]
-    internal async Task<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account, Map properties)
+    internal async ContractTask<UInt160> MintNFT(ApplicationEngine engine, UInt160 assetId, UInt160 account, Map properties)
     {
         if (properties.Count > 8)
             throw new ArgumentException("Too many properties.", nameof(properties));
@@ -128,8 +128,8 @@ partial class TokenManagement
             }
             v.GetString(); // Ensure to invoke `ToStrictUtf8String()`
         }
-        AddTotalSupply(engine, TokenType.NonFungible, assetId, 1, assertOwner: true);
-        AddBalance(engine.SnapshotCache, assetId, account, 1);
+        TokenState token = AddTotalSupply(engine, TokenType.NonFungible, assetId, BigInteger.One, assertOwner: true);
+        await AddBalance(engine, assetId, token, account, BigInteger.One, callOnBalanceChanged: true);
         UInt160 uniqueId = GetNextNFTUniqueId(engine);
         StorageKey key = CreateStorageKey(Prefix_NFTAssetIdUniqueIdIndex, assetId, uniqueId);
         engine.SnapshotCache.Add(key, new());
@@ -142,7 +142,7 @@ partial class TokenManagement
             Owner = account,
             Properties = (Map)properties.DeepCopy(asImmutable: true)
         }));
-        await PostNFTTransferAsync(engine, uniqueId, null, account, StackItem.Null, callOnPayment: true);
+        await PostNFTTransferAsync(engine, uniqueId, token, null, account, StackItem.Null, callOnPayment: true, callOnTransfer: true);
         return uniqueId;
     }
 
@@ -151,23 +151,23 @@ partial class TokenManagement
     /// </summary>
     /// <param name="engine">The current <see cref="ApplicationEngine"/> instance.</param>
     /// <param name="uniqueId">The unique id of the NFT to burn.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <returns>A <see cref="ContractTask"/> representing the asynchronous operation.</returns>
     /// <exception cref="InvalidOperationException">If the unique id does not exist or owner has insufficient balance or caller is not owner contract.</exception>
     [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.All)]
-    internal async Task BurnNFT(ApplicationEngine engine, UInt160 uniqueId)
+    internal async ContractTask BurnNFT(ApplicationEngine engine, UInt160 uniqueId)
     {
         StorageKey key = CreateStorageKey(Prefix_NFTState, uniqueId);
         NFTState nft = engine.SnapshotCache.TryGet(key)?.GetInteroperable<NFTState>()
             ?? throw new InvalidOperationException("The unique id does not exist.");
-        AddTotalSupply(engine, TokenType.NonFungible, nft.AssetId, BigInteger.MinusOne, assertOwner: true);
-        if (!AddBalance(engine.SnapshotCache, nft.AssetId, nft.Owner, BigInteger.MinusOne))
+        TokenState token = AddTotalSupply(engine, TokenType.NonFungible, nft.AssetId, BigInteger.MinusOne, assertOwner: true);
+        if (!await AddBalance(engine, nft.AssetId, token, nft.Owner, BigInteger.MinusOne, callOnBalanceChanged: true))
             throw new InvalidOperationException("Insufficient balance to burn.");
         engine.SnapshotCache.Delete(key);
         key = CreateStorageKey(Prefix_NFTAssetIdUniqueIdIndex, nft.AssetId, uniqueId);
         engine.SnapshotCache.Delete(key);
         key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, nft.Owner, uniqueId);
         engine.SnapshotCache.Delete(key);
-        await PostNFTTransferAsync(engine, uniqueId, nft.Owner, null, StackItem.Null, callOnPayment: false);
+        await PostNFTTransferAsync(engine, uniqueId, token, nft.Owner, null, StackItem.Null, callOnPayment: false, callOnTransfer: true);
     }
 
     /// <summary>
@@ -181,7 +181,7 @@ partial class TokenManagement
     /// <returns><c>true</c> if the transfer succeeded; otherwise <c>false</c>.</returns>
     /// <exception cref="InvalidOperationException">If the unique id does not exist.</exception>
     [ContractMethod(CpuFee = 1 << 17, StorageFee = 1 << 7, RequiredCallFlags = CallFlags.All)]
-    internal async Task<bool> TransferNFT(ApplicationEngine engine, UInt160 uniqueId, UInt160 from, UInt160 to, StackItem data)
+    internal async ContractTask<bool> TransferNFT(ApplicationEngine engine, UInt160 uniqueId, UInt160 from, UInt160 to, StackItem data)
     {
         StorageKey key_nft = CreateStorageKey(Prefix_NFTState, uniqueId);
         NFTState nft = engine.SnapshotCache.TryGet(key_nft)?.GetInteroperable<NFTState>()
@@ -192,9 +192,9 @@ partial class TokenManagement
         TokenState token = engine.SnapshotCache.TryGet(key)!.GetInteroperable<TokenState>();
         if (from != to)
         {
-            if (!AddBalance(engine.SnapshotCache, nft.AssetId, from, BigInteger.MinusOne))
+            if (!await AddBalance(engine, nft.AssetId, token, from, BigInteger.MinusOne, callOnBalanceChanged: true))
                 return false;
-            AddBalance(engine.SnapshotCache, nft.AssetId, to, BigInteger.One);
+            await AddBalance(engine, nft.AssetId, token, to, BigInteger.One, callOnBalanceChanged: true);
             key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, from, uniqueId);
             engine.SnapshotCache.Delete(key);
             key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, to, uniqueId);
@@ -202,8 +202,7 @@ partial class TokenManagement
             nft = engine.SnapshotCache.GetAndChange(key_nft)!.GetInteroperable<NFTState>();
             nft.Owner = to;
         }
-        await PostNFTTransferAsync(engine, uniqueId, from, to, data, callOnPayment: true);
-        await engine.CallFromNativeContractAsync(Hash, token.Owner, "_onNFTTransfer", uniqueId, from, to, data);
+        await PostNFTTransferAsync(engine, uniqueId, token, from, to, data, callOnPayment: true, callOnTransfer: true);
         return true;
     }
 
@@ -280,10 +279,12 @@ partial class TokenManagement
         return ms.ToArray().ToScriptHash();
     }
 
-    async ContractTask PostNFTTransferAsync(ApplicationEngine engine, UInt160 uniqueId, UInt160? from, UInt160? to, StackItem data, bool callOnPayment)
+    async ContractTask PostNFTTransferAsync(ApplicationEngine engine, UInt160 uniqueId, TokenState token, UInt160? from, UInt160? to, StackItem data, bool callOnPayment, bool callOnTransfer)
     {
         Notify(engine, "NFTTransfer", uniqueId, from, to);
-        if (!callOnPayment || to is null || !ContractManagement.IsContract(engine.SnapshotCache, to)) return;
-        await engine.CallFromNativeContractAsync(Hash, to, "_onNFTPayment", uniqueId, from, data);
+        if (callOnPayment && to is not null && ContractManagement.IsContract(engine.SnapshotCache, to))
+            await engine.CallFromNativeContractAsync(Hash, to, "_onNFTPayment", uniqueId, from, data);
+        if (callOnTransfer)
+            await engine.CallFromNativeContractIfExistsAsync(Hash, token.Owner, "_onNFTTransfer", uniqueId, from, to, data);
     }
 }

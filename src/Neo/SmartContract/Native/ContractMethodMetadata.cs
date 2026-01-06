@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ContractMethodMetadata.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -40,8 +40,12 @@ internal class ContractMethodMetadata : IHardforkActivable
 
     public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
     {
-        Name = attribute.Name ?? member.Name;
-        Name = Name.ToLowerInvariant()[0] + Name[1..];
+        Name = attribute.Name ?? member.Name switch
+        {
+            "_" => "_",
+            ['_', ..] => "_" + member.Name.ToLowerInvariant()[1] + member.Name[2..],
+            _ => member.Name.ToLowerInvariant()[0] + member.Name[1..]
+        };
         Handler = member switch
         {
             MethodInfo m => m,

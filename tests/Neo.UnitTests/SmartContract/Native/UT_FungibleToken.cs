@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_FungibleToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -21,6 +21,7 @@ public class UT_FungibleToken : TestKit
     public void TestTotalSupply()
     {
         var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-        Assert.AreEqual(5200000050000000, NativeContract.GAS.TotalSupply(snapshotCache));
+        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(snapshotCache, NativeContract.Governance.GasTokenId);
+        Assert.AreEqual(5200000050000000, tokenInfo!.TotalSupply);
     }
 }
