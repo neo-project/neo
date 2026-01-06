@@ -61,6 +61,26 @@ public class UT_MemoryPool : TestKit
         Assert.IsEmpty(_unit);
     }
 
+    [TestMethod]
+    public void CancelTest()
+    {
+        // Add over the capacity items, verify that the verified count increases each time
+
+        var ev = new EventHandler<NewTransactionEventArgs>((_, args) =>
+        {
+            args.Cancel = true;
+        });
+
+        _unit.NewTransaction += ev;
+        AddTransactions(1);
+        _unit.NewTransaction -= ev;
+
+        Assert.AreEqual(0, _unit.SortedTxCount);
+        Assert.AreEqual(0, _unit.VerifiedCount);
+        Assert.AreEqual(0, _unit.UnVerifiedCount);
+        Assert.HasCount(0, _unit);
+    }
+
     private Transaction CreateTransactionWithFee(long fee)
     {
         var randomBytes = RandomNumberFactory.NextBytes(16);
