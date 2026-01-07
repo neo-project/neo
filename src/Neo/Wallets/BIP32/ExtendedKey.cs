@@ -64,10 +64,6 @@ namespace Neo.Wallets.BIP32
             byte[] I = HMACSHA512.HashData(ChainCode, data);
             ReadOnlySpan<byte> IL = I.AsSpan(..32);
             byte[] IR = I[32..];
-            // Check if parse256(IL) >= n (BIP32 requirement)
-            BigInteger ilInt = new(IL, isUnsigned: true, isBigEndian: true);
-            if (ilInt >= PublicKey.Curve.N)
-                throw new InvalidOperationException("Derived child private key is invalid.");
             byte[] childKey = AddModN(IL, PrivateKey, PublicKey.Curve.N);
             return new ExtendedKey(childKey, IR, PublicKey.Curve);
         }
@@ -75,8 +71,16 @@ namespace Neo.Wallets.BIP32
         static byte[] AddModN(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b, BigInteger n)
         {
             BigInteger aInt = new(a, isUnsigned: true, isBigEndian: true);
+            // Check if parse256(IL) >= n (BIP32 requirement)
+            if (aInt >= n)
+                throw new InvalidOperationException("Derived child private key is invalid.");
+
             BigInteger bInt = new(b, isUnsigned: true, isBigEndian: true);
             BigInteger r = (aInt + bInt) % n;
+
+            if (r.IsZero)
+                throw new InvalidOperationException("Derived child private key is invalid.");
+
             byte[] result = new byte[32];
             Span<byte> tmp = stackalloc byte[32];
             r.TryWriteBytes(tmp, out int bytesWritten, isUnsigned: true, isBigEndian: true);
