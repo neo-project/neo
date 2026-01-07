@@ -17,7 +17,6 @@ using System.Text.RegularExpressions;
 
 namespace Neo.Wallets.BIP32
 {
-
     internal partial class KeyPath
     {
         [GeneratedRegex(@"^\s*m(?:\s*/\s*(?<index>\d+)\s*(?<hardened>'?)\s*)*\s*$")]
