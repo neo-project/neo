@@ -21,14 +21,14 @@ public class UT_AssetDescriptor
     public void TestConstructorWithNonexistAssetId()
     {
         var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-        Assert.ThrowsExactly<ArgumentException>(() => new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4")));
+        Assert.ThrowsExactly<ArgumentException>(() => new AssetDescriptor(snapshotCache, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4")));
     }
 
     [TestMethod]
     public void Check_GAS()
     {
         var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-        var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.Governance.GasTokenId);
+        var descriptor = new AssetDescriptor(snapshotCache, NativeContract.Governance.GasTokenId);
         Assert.AreEqual(NativeContract.Governance.GasTokenId, descriptor.AssetId);
         Assert.AreEqual(Governance.GasTokenName, descriptor.AssetName);
         Assert.AreEqual(Governance.GasTokenName, descriptor.ToString());
@@ -40,11 +40,11 @@ public class UT_AssetDescriptor
     public void Check_NEO()
     {
         var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-        var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.NEO.Hash);
-        Assert.AreEqual(NativeContract.NEO.Hash, descriptor.AssetId);
-        Assert.AreEqual(nameof(NeoToken), descriptor.AssetName);
-        Assert.AreEqual(nameof(NeoToken), descriptor.ToString());
-        Assert.AreEqual("NEO", descriptor.Symbol);
-        Assert.AreEqual(0, descriptor.Decimals);
+        var descriptor = new AssetDescriptor(snapshotCache, NativeContract.Governance.NeoTokenId);
+        Assert.AreEqual(NativeContract.Governance.NeoTokenId, descriptor.AssetId);
+        Assert.AreEqual(Governance.NeoTokenName, descriptor.AssetName);
+        Assert.AreEqual(Governance.NeoTokenName, descriptor.ToString());
+        Assert.AreEqual(Governance.NeoTokenSymbol, descriptor.Symbol);
+        Assert.AreEqual(Governance.NeoTokenDecimals, descriptor.Decimals);
     }
 }

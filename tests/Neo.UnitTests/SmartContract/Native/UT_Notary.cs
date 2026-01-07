@@ -68,7 +68,7 @@ public class UT_Notary
 
         // Non-GAS transfer should fail.
         Exception? ex = Assert.Throws<Exception>(
-            () => NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock));
+            () => UT_NeoToken.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock));
         while (ex is System.Reflection.TargetInvocationException tie && tie.InnerException != null)
             ex = tie.InnerException;
         Assert.IsInstanceOfType<InvalidOperationException>(ex);
@@ -374,7 +374,7 @@ public class UT_Notary
         var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
         rng.GetBytes(privateKey1);
         var key1 = new KeyPair(privateKey1);
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        UInt160 committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
         var ret = NativeContract.RoleManagement.Call(
             snapshot,
             new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
@@ -589,7 +589,7 @@ public class UT_Notary
             },
             Transactions = []
         };
-        var committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        var committeeAddress = NativeContract.Governance.GetCommitteeAddress(snapshot);
 
         using var engine = ApplicationEngine.Create(TriggerType.Application,
             new Nep17NativeContractExtensions.ManualWitness(committeeAddress),
@@ -644,7 +644,7 @@ public class UT_Notary
         rng.GetBytes(privateKey1);
 
         var key1 = new KeyPair(privateKey1);
-        var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        var committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
         var ret = NativeContract.RoleManagement.Call(
             snapshot,
             new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
@@ -708,7 +708,7 @@ public class UT_Notary
 
         // Ensure that Notary reward is distributed based on the old value of NotaryAssisted price
         // and no underflow happens during GAS distribution.
-        var validators = NativeContract.NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
+        var validators = NativeContract.Governance.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
         var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock!.PrimaryIndex]).ToScriptHash();
         Assert.AreEqual(netFee - expectedNotaryReward, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, primary));
 
@@ -765,7 +765,7 @@ public class UT_Notary
         rng.GetBytes(privateKey2);
 
         var key2 = new KeyPair(privateKey2);
-        var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        var committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
         var ret = NativeContract.RoleManagement.Call(
             snapshot,
             new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
@@ -791,7 +791,7 @@ public class UT_Notary
         var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
         // Check that block's Primary balance is 0.
-        var validators = NativeContract.NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
+        var validators = NativeContract.Governance.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
         var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock!.PrimaryIndex]).ToScriptHash();
         Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, NativeContract.Governance.GasTokenId, primary));
 

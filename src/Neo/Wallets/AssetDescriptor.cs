@@ -9,11 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions.VM;
 using Neo.Persistence;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 
 namespace Neo.Wallets;
 
@@ -46,39 +43,15 @@ public class AssetDescriptor
     /// Initializes a new instance of the <see cref="AssetDescriptor"/> class.
     /// </summary>
     /// <param name="snapshot">The snapshot used to read data.</param>
-    /// <param name="settings">The <see cref="ProtocolSettings"/> used by the <see cref="ApplicationEngine"/>.</param>
     /// <param name="assetId">The id of the asset.</param>
-    public AssetDescriptor(DataCache snapshot, ProtocolSettings settings, UInt160 assetId)
+    public AssetDescriptor(DataCache snapshot, UInt160 assetId)
     {
-        // GasToken is managed by TokenManagement, not a contract itself
-        if (assetId.Equals(NativeContract.Governance.GasTokenId))
-        {
-            TokenState token = NativeContract.TokenManagement.GetTokenInfo(snapshot, assetId)!;
-            AssetId = assetId;
-            AssetName = Governance.GasTokenName;
-            Symbol = token.Symbol;
-            Decimals = token.Decimals;
-        }
-        else
-        {
-            var contract = NativeContract.ContractManagement.GetContract(snapshot, assetId)
-                ?? throw new ArgumentException($"No asset contract found for assetId {assetId}. Please ensure the assetId is correct and the asset is deployed on the blockchain.", nameof(assetId));
-
-            byte[] script;
-            using (ScriptBuilder sb = new())
-            {
-                sb.EmitDynamicCall(assetId, "decimals", CallFlags.ReadOnly);
-                sb.EmitDynamicCall(assetId, "symbol", CallFlags.ReadOnly);
-                script = sb.ToArray();
-            }
-
-            using var engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_30000000L);
-            if (engine.State != VMState.HALT) throw new ArgumentException($"Failed to execute 'decimals' or 'symbol' method for asset {assetId}. The contract execution did not complete successfully (VM state: {engine.State}).", nameof(assetId));
-            AssetId = assetId;
-            AssetName = contract.Manifest.Name;
-            Symbol = engine.ResultStack.Pop().GetString()!;
-            Decimals = (byte)engine.ResultStack.Pop().GetInteger();
-        }
+        TokenState token = NativeContract.TokenManagement.GetTokenInfo(snapshot, assetId)
+            ?? throw new ArgumentException($"No token found for assetId {assetId}. Please ensure the assetId is correct and the asset is deployed on the blockchain.", nameof(assetId));
+        AssetId = assetId;
+        AssetName = token.Name;
+        Symbol = token.Symbol;
+        Decimals = token.Decimals;
     }
 
     public override string ToString()

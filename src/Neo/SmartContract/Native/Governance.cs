@@ -460,9 +460,58 @@ public sealed class Governance : NativeContract
     async ContractTask _OnTransfer(ApplicationEngine engine, UInt160 assetId, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
     {
         if (assetId != NeoTokenId) return;
-        var list = engine.CurrentContext!.GetState<ExecutionContextState>().CallingContext!.GetState<List<GasDistribution>>();
-        foreach (var distribution in list)
-            await TokenManagement.MintInternal(engine, GasTokenId, distribution.Account, distribution.Amount, assertOwner: false, callOnBalanceChanged: false, callOnPayment: true, callOnTransfer: false);
+        if (amount.IsZero || from == to)
+        {
+            // Handle unclaimed gas distribution when transferring zero amount
+            // This allows claiming unclaimed gas by transferring 0 NEO
+            StorageKey key = CreateStorageKey(Prefix_NeoAccount, from);
+            var accountState = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<NeoAccountState>();
+            if (accountState is null) return;
+            BigInteger balance = NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, NeoTokenId, from);
+            GasDistribution? distribution = DistributeGas(engine, from, accountState, balance);
+            if (distribution is not null)
+                await TokenManagement.MintInternal(engine, GasTokenId, distribution.Account, distribution.Amount, assertOwner: false, callOnBalanceChanged: false, callOnPayment: true, callOnTransfer: false);
+        }
+        else
+        {
+            var list = engine.CurrentContext!.GetState<ExecutionContextState>().CallingContext!.GetState<List<GasDistribution>>();
+            foreach (var distribution in list)
+                await TokenManagement.MintInternal(engine, GasTokenId, distribution.Account, distribution.Amount, assertOwner: false, callOnBalanceChanged: false, callOnPayment: true, callOnTransfer: false);
+        }
+    }
+
+    /// <summary>
+    /// Handles payment callback for validator registration.
+    /// </summary>
+    /// <param name="engine">The engine used to process the payment.</param>
+    /// <param name="assetId">The asset identifier.</param>
+    /// <param name="from">The sender account.</param>
+    /// <param name="amount">The amount of tokens sent.</param>
+    /// <param name="data">Optional data containing the public key for registration.</param>
+    [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    private async ContractTask _OnPayment(ApplicationEngine engine, UInt160 assetId, UInt160 from, BigInteger amount, StackItem data)
+    {
+        // Only accept GAS for validator registration, not NEO
+        if (assetId != GasTokenId)
+            throw new InvalidOperationException($"Only GAS can be accepted for validator registration, got {assetId}");
+
+        // Check if the amount matches the registration price
+        long registerPrice = GetRegisterPrice(engine.SnapshotCache);
+        if ((long)amount != registerPrice)
+            throw new ArgumentOutOfRangeException(nameof(amount), $"Amount must equal the registration price {registerPrice}, got {amount}");
+
+        // Extract public key from data
+        if (data is not ByteString dataBytes || dataBytes.GetSpan().Length == 0)
+            throw new FormatException("Data parameter must contain the public key for registration");
+
+        ECPoint pubkey = ECPoint.DecodePoint(dataBytes.GetSpan(), ECCurve.Secp256r1);
+
+        // Register the candidate
+        if (!RegisterInternal(engine, pubkey))
+            throw new InvalidOperationException("Failed to register candidate. The witness does not match the public key.");
+
+        // Burn the registration fee (the GAS sent to this contract)
+        await TokenManagement.BurnInternal(engine, GasTokenId, Hash, amount, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
     }
 
     GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger balance)
