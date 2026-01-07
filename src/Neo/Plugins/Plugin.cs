@@ -211,7 +211,7 @@ public abstract class Plugin : IDisposable
     internal static void LoadPlugins()
     {
         if (!Directory.Exists(PluginsDirectory)) return;
-        List<Assembly> assemblies = [];
+        List<Assembly> assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
         foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
         {
             foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
