@@ -199,7 +199,7 @@ public partial class RemoteNode : Connection
 
     private void OnStartProtocol()
     {
-        SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(_system.Settings, _localNode.NodeKey.PublicKey, LocalNode.UserAgent, _localNode.GetNodeCapabilities())));
+        SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(_system.Settings, _localNode.NodeKey, LocalNode.UserAgent, _localNode.GetNodeCapabilities())));
     }
 
     protected override void PostStop()

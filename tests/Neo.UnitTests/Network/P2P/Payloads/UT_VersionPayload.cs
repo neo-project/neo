@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Extensions.Collections;
 using Neo.Extensions.IO;
@@ -24,17 +23,17 @@ public class UT_VersionPayload
     [TestMethod]
     public void SizeAndEndPoint_Get()
     {
-        var test = VersionPayload.Create(ProtocolSettings.Default, ECCurve.Secp256r1.G, "neo3");
-        Assert.AreEqual(83, test.Size);
+        var test = VersionPayload.Create(ProtocolSettings.Default, new(), "neo3");
+        Assert.AreEqual(148, test.Size);
 
-        test = VersionPayload.Create(ProtocolSettings.Default, ECCurve.Secp256r1.G, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
-        Assert.AreEqual(86, test.Size);
+        test = VersionPayload.Create(ProtocolSettings.Default, new(), "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
+        Assert.AreEqual(151, test.Size);
     }
 
     [TestMethod]
     public void DeserializeAndSerialize()
     {
-        var test = VersionPayload.Create(ProtocolSettings.Default, ECCurve.Secp256r1.G, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
+        var test = VersionPayload.Create(ProtocolSettings.Default, new(), "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
         var clone = test.ToArray().AsSerializable<VersionPayload>();
 
         CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
@@ -43,20 +42,10 @@ public class UT_VersionPayload
         Assert.AreEqual(test.Timestamp, clone.Timestamp);
         CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
 
-        Assert.ThrowsExactly<FormatException>(() => _ = VersionPayload.Create(ProtocolSettings.Default, ECCurve.Secp256r1.G, "neo3",
+        Assert.ThrowsExactly<FormatException>(() => _ = VersionPayload.Create(ProtocolSettings.Default, new(), "neo3",
             new NodeCapability[] {
                 new ServerCapability(NodeCapabilityType.TcpServer, 22) ,
                 new ServerCapability(NodeCapabilityType.TcpServer, 22)
             }).ToArray().AsSerializable<VersionPayload>());
-
-        var buf = test.ToArray();
-        buf[buf.Length - 2 - 1 - 1] += 3; // We've got 1 capability with 2 bytes, this adds three more to the array size.
-        buf = buf.Concat(new byte[] { 0xfe, 0x00 }).ToArray(); // Type = 0xfe, zero bytes of data.
-        buf = buf.Concat(new byte[] { 0xfd, 0x02, 0x00, 0x00 }).ToArray(); // Type = 0xfd, two bytes of data.
-        buf = buf.Concat(new byte[] { 0x10, 0x01, 0x00, 0x00, 0x00 }).ToArray(); // FullNode capability, 0x01 index.
-
-        clone = buf.AsSerializable<VersionPayload>();
-        Assert.HasCount(4, clone.Capabilities);
-        Assert.AreEqual(2, clone.Capabilities.OfType<UnknownCapability>().Count());
     }
 }

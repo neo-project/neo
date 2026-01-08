@@ -11,7 +11,6 @@
 
 using Akka.IO;
 using Akka.TestKit.MsTest;
-using Neo.Cryptography.ECC;
 using Neo.Extensions.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
@@ -42,19 +41,7 @@ public class UT_RemoteNode : TestKit
         var connectionTestProbe = CreateTestProbe();
         var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(_system, new LocalNode(_system, new()), connectionTestProbe, null!, null!, new ChannelsConfig()));
 
-        var msg = Message.Create(MessageCommand.Version, new VersionPayload
-        {
-            UserAgent = "".PadLeft(1024, '0'),
-            NodeKey = ECCurve.Secp256r1.G,
-            NodeId = ECCurve.Secp256r1.G.GetNodeId(_system.Settings),
-            Network = 2,
-            Timestamp = 5,
-            Version = 6,
-            Capabilities =
-            [
-                new ServerCapability(NodeCapabilityType.TcpServer, 25)
-            ]
-        });
+        var msg = Message.Create(MessageCommand.Version, VersionPayload.Create(ProtocolSettings.Default with { Network = 2 }, new(), "".PadLeft(1024, '0'), new ServerCapability(NodeCapabilityType.TcpServer, 25)));
 
         var testProbe = CreateTestProbe();
         testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
@@ -72,7 +59,7 @@ public class UT_RemoteNode : TestKit
                 connectionTestProbe,
                 new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080), new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080), new ChannelsConfig()));
 
-        var msg = Message.Create(MessageCommand.Version, VersionPayload.Create(TestProtocolSettings.Default, ECCurve.Secp256r1.G, "Unit Test".PadLeft(1024, '0'), new ServerCapability(NodeCapabilityType.TcpServer, 25)));
+        var msg = Message.Create(MessageCommand.Version, VersionPayload.Create(TestProtocolSettings.Default, new(), "Unit Test".PadLeft(1024, '0'), new ServerCapability(NodeCapabilityType.TcpServer, 25)));
 
         var testProbe = CreateTestProbe();
         testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));

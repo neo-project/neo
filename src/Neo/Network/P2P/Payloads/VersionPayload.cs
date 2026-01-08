@@ -10,12 +10,14 @@
 // modifications are permitted.
 
 using Neo;
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Extensions.Collections;
 using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
+using Neo.Wallets;
 
 namespace Neo.Network.P2P.Payloads;
 
@@ -69,6 +71,11 @@ public class VersionPayload : ISerializable
     /// </summary>
     public required NodeCapability[] Capabilities;
 
+    /// <summary>
+    /// The digital signature of the payload.
+    /// </summary>
+    public required byte[] Signature;
+
     public int Size =>
         sizeof(uint) +              // Network
         sizeof(uint) +              // Version
@@ -76,7 +83,8 @@ public class VersionPayload : ISerializable
         NodeKey.Size +              // NodeKey
         UInt256.Length +            // NodeId
         UserAgent.GetVarSize() +    // UserAgent
-        Capabilities.GetVarSize();  // Capabilities
+        Capabilities.GetVarSize() + // Capabilities
+        Signature.GetVarSize();     // Signature
 
     /// <summary>
     /// Creates a new instance of the <see cref="VersionPayload"/> class.
@@ -86,17 +94,32 @@ public class VersionPayload : ISerializable
     /// <param name="userAgent">The <see cref="string"/> used to identify the client software of the node.</param>
     /// <param name="capabilities">The capabilities of the node.</param>
     /// <returns></returns>
-    public static VersionPayload Create(ProtocolSettings protocol, ECPoint nodeKey, string userAgent, params NodeCapability[] capabilities)
+    public static VersionPayload Create(ProtocolSettings protocol, KeyPair nodeKey, string userAgent, params NodeCapability[] capabilities)
     {
+        uint timestamp = DateTime.UtcNow.ToTimestamp();
+        UInt256 nodeId = nodeKey.PublicKey.GetNodeId(protocol);
+
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        writer.Write(protocol.Network);
+        writer.Write(LocalNode.ProtocolVersion);
+        writer.Write(timestamp);
+        writer.Write(nodeKey.PublicKey);
+        writer.Write(nodeId);
+        writer.WriteVarString(userAgent);
+        writer.Write(capabilities);
+        byte[] signature = Crypto.Sign(ms.ToArray(), nodeKey.PrivateKey);
+
         var ret = new VersionPayload
         {
             Network = protocol.Network,
             Version = LocalNode.ProtocolVersion,
-            Timestamp = DateTime.UtcNow.ToTimestamp(),
-            NodeKey = nodeKey,
-            NodeId = nodeKey.GetNodeId(protocol),
+            Timestamp = timestamp,
+            NodeKey = nodeKey.PublicKey,
+            NodeId = nodeId,
             UserAgent = userAgent,
             Capabilities = capabilities,
+            Signature = signature,
             // Computed
             AllowCompression = !capabilities.Any(u => u is DisableCompressionCapability)
         };
@@ -121,6 +144,7 @@ public class VersionPayload : ISerializable
         if (capabilities.Select(p => p.Type).Distinct().Count() != capabilities.Count())
             throw new FormatException("Duplicating capabilities are included");
 
+        Signature = reader.ReadVarMemory().ToArray();
         AllowCompression = !capabilities.Any(u => u is DisableCompressionCapability);
     }
 
@@ -133,5 +157,21 @@ public class VersionPayload : ISerializable
         writer.Write(NodeId);
         writer.WriteVarString(UserAgent);
         writer.Write(Capabilities);
+        writer.WriteVarBytes(Signature);
+    }
+
+    public bool Verify(ProtocolSettings protocol)
+    {
+        if (NodeId != NodeKey.GetNodeId(protocol)) return false;
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        writer.Write(Network);
+        writer.Write(Version);
+        writer.Write(Timestamp);
+        writer.Write(NodeKey);
+        writer.Write(NodeId);
+        writer.WriteVarString(UserAgent);
+        writer.Write(Capabilities);
+        return Crypto.VerifySignature(ms.ToArray(), Signature, NodeKey);
     }
 }
