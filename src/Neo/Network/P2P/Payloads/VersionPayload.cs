@@ -99,17 +99,6 @@ public class VersionPayload : ISerializable
         uint timestamp = DateTime.UtcNow.ToTimestamp();
         UInt256 nodeId = nodeKey.PublicKey.GetNodeId(protocol);
 
-        using var ms = new MemoryStream();
-        using var writer = new BinaryWriter(ms);
-        writer.Write(protocol.Network);
-        writer.Write(LocalNode.ProtocolVersion);
-        writer.Write(timestamp);
-        writer.Write(nodeKey.PublicKey);
-        writer.Write(nodeId);
-        writer.WriteVarString(userAgent);
-        writer.Write(capabilities);
-        byte[] signature = Crypto.Sign(ms.ToArray(), nodeKey.PrivateKey);
-
         var ret = new VersionPayload
         {
             Network = protocol.Network,
@@ -119,10 +108,16 @@ public class VersionPayload : ISerializable
             NodeId = nodeId,
             UserAgent = userAgent,
             Capabilities = capabilities,
-            Signature = signature,
+            Signature = [],
             // Computed
             AllowCompression = !capabilities.Any(u => u is DisableCompressionCapability)
         };
+
+        // Generate signature
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        ret.Serialize(writer, false);
+        ret.Signature = Crypto.Sign(ms.ToArray(), nodeKey.PrivateKey);
 
         return ret;
     }
@@ -150,6 +145,11 @@ public class VersionPayload : ISerializable
 
     void ISerializable.Serialize(BinaryWriter writer)
     {
+        Serialize(writer, true);
+    }
+
+    private void Serialize(BinaryWriter writer, bool withSignature)
+    {
         writer.Write(Network);
         writer.Write(Version);
         writer.Write(Timestamp);
@@ -157,7 +157,7 @@ public class VersionPayload : ISerializable
         writer.Write(NodeId);
         writer.WriteVarString(UserAgent);
         writer.Write(Capabilities);
-        writer.WriteVarBytes(Signature);
+        if (withSignature) writer.WriteVarBytes(Signature);
     }
 
     public bool Verify(ProtocolSettings protocol)
@@ -165,13 +165,7 @@ public class VersionPayload : ISerializable
         if (NodeId != NodeKey.GetNodeId(protocol)) return false;
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
-        writer.Write(Network);
-        writer.Write(Version);
-        writer.Write(Timestamp);
-        writer.Write(NodeKey);
-        writer.Write(NodeId);
-        writer.WriteVarString(UserAgent);
-        writer.Write(Capabilities);
+        Serialize(writer, false);
         return Crypto.VerifySignature(ms.ToArray(), Signature, NodeKey);
     }
 }
