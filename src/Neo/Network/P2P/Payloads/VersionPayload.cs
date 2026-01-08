@@ -96,16 +96,13 @@ public class VersionPayload : ISerializable
     /// <returns></returns>
     public static VersionPayload Create(ProtocolSettings protocol, KeyPair nodeKey, string userAgent, params NodeCapability[] capabilities)
     {
-        uint timestamp = DateTime.UtcNow.ToTimestamp();
-        UInt256 nodeId = nodeKey.PublicKey.GetNodeId(protocol);
-
         var ret = new VersionPayload
         {
             Network = protocol.Network,
             Version = LocalNode.ProtocolVersion,
-            Timestamp = timestamp,
+            Timestamp = DateTime.UtcNow.ToTimestamp(),
             NodeKey = nodeKey.PublicKey,
-            NodeId = nodeId,
+            NodeId = nodeKey.PublicKey.GetNodeId(protocol),
             UserAgent = userAgent,
             Capabilities = capabilities,
             Signature = [],
@@ -148,7 +145,7 @@ public class VersionPayload : ISerializable
         Serialize(writer, true);
     }
 
-    private void Serialize(BinaryWriter writer, bool withSignature)
+    void Serialize(BinaryWriter writer, bool withSignature)
     {
         writer.Write(Network);
         writer.Write(Version);
