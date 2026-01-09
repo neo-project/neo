@@ -42,6 +42,16 @@ public class KeyPair : IEquatable<KeyPair>
     public UInt160 PublicKeyHash => PublicKey.EncodePoint(true).ToScriptHash();
 
     /// <summary>
+    /// Initializes a new instance of the KeyPair class using a randomly generated 32-byte private key.
+    /// </summary>
+    /// <remarks>This constructor generates a cryptographically secure random private key for the key pair.
+    /// Use this overload when you want to create a new key pair with a unique, unpredictable private key suitable for
+    /// cryptographic operations.</remarks>
+    public KeyPair() : this(RandomNumberGenerator.GetBytes(32))
+    {
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="KeyPair"/> class.
     /// </summary>
     /// <param name="privateKey">The private key in the <see cref="KeyPair"/>.</param>
