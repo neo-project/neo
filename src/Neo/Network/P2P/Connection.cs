@@ -75,6 +75,7 @@ public abstract class Connection : UntypedActor
     {
         disconnected = true;
         tcp?.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
+        OnDisconnect(abort);
         Context.Stop(Self);
     }
 
@@ -82,6 +83,16 @@ public abstract class Connection : UntypedActor
     /// Called when a TCP ACK message is received.
     /// </summary>
     protected virtual void OnAck()
+    {
+    }
+
+    /// <summary>
+    /// Invoked when a disconnect operation occurs, allowing derived classes to handle cleanup or custom logic.
+    /// </summary>
+    /// <remarks>Override this method in a derived class to implement custom behavior when a disconnect
+    /// occurs. This method is called regardless of whether the disconnect is graceful or due to an abort.</remarks>
+    /// <param name="abort">true to indicate the disconnect is due to an abort operation; otherwise, false.</param>
+    protected virtual void OnDisconnect(bool abort)
     {
     }
 

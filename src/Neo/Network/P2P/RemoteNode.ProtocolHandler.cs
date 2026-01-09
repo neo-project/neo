@@ -385,6 +385,15 @@ partial class RemoteNode
     {
         _verack = true;
         _system.TaskManager.Tell(new TaskManager.Register(Version!));
+
+        // DHT: a verack means the handshake is complete and the remote identity (NodeId) has been verified.
+        // Feed the remote contact into the local RoutingTable.
+        var nodeId = Version!.NodeId;
+        // Prefer the advertised TCP server endpoint (Listener) when available, otherwise fall back to the connected Remote endpoint.
+        var ep = ListenerTcpPort > 0 ? Listener : Remote;
+        _localNode.RoutingTable.Update(nodeId, ep);
+        _localNode.RoutingTable.MarkSuccess(nodeId);
+
         CheckMessageQueue();
     }
 
