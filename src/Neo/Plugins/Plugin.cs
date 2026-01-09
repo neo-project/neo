@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using static System.IO.Path;
 
 namespace Neo.Plugins
@@ -204,7 +205,9 @@ namespace Neo.Plugins
         internal static void LoadPlugins()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
-            List<Assembly> assemblies = [];
+            List<Assembly> assemblies = AssemblyLoadContext.Default.Assemblies
+                        .Where(p => p.FullName?.StartsWith("Neo", StringComparison.InvariantCultureIgnoreCase) == true)
+                        .ToList();
             foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
             {
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
