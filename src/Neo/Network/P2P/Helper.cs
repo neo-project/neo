@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
+using Neo.Extensions.IO;
 using Neo.Network.P2P.Payloads;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
@@ -91,5 +93,25 @@ public static class Helper
         messageHash.Serialize(buffer.AsSpan(sizeof(uint)));
 
         return buffer;
+    }
+
+    /// <summary>
+    /// Computes a unique node identifier based on the specified public key and protocol settings.
+    /// </summary>
+    /// <remarks>The returned node identifier is deterministic for a given public key and protocol settings.
+    /// This method is typically used to generate consistent node IDs for distributed hash table (DHT) operations in the
+    /// NEO network.</remarks>
+    /// <param name="pubkey">The public key of the node for which to generate the identifier.</param>
+    /// <param name="protocol">The protocol settings that provide network-specific information used in the identifier calculation.</param>
+    /// <returns>A 256-bit hash value that uniquely identifies the node within the specified network.</returns>
+    public static UInt256 GetNodeId(this ECPoint pubkey, ProtocolSettings protocol)
+    {
+        const string prefix = "NEO_DHT_NODEID";
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        writer.WriteFixedString(prefix, prefix.Length);
+        writer.Write(protocol.Network);
+        writer.Write(pubkey);
+        return Crypto.Hash256(ms.ToArray());
     }
 }
