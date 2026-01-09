@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
+using System.Runtime.Loader;
 using static System.IO.Path;
 
 namespace Neo.Plugins;
@@ -211,7 +212,9 @@ public abstract class Plugin : IDisposable
     internal static void LoadPlugins()
     {
         if (!Directory.Exists(PluginsDirectory)) return;
-        List<Assembly> assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
+        List<Assembly> assemblies = AssemblyLoadContext.Default.Assemblies
+            .Where(p => p.FullName?.StartsWith("Neo") == true)
+            .ToList();
         foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
         {
             foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
