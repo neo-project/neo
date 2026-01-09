@@ -213,7 +213,7 @@ public abstract class Plugin : IDisposable
     {
         if (!Directory.Exists(PluginsDirectory)) return;
         List<Assembly> assemblies = AssemblyLoadContext.Default.Assemblies
-            .Where(p => p.FullName?.StartsWith("Neo") == true)
+            .Where(p => p.FullName?.StartsWith("Neo", StringComparison.InvariantCultureIgnoreCase) == true)
             .ToList();
         foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
         {
