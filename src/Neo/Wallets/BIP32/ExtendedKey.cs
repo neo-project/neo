@@ -70,8 +70,15 @@ public class ExtendedKey
     static byte[] AddModN(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b, BigInteger n)
     {
         BigInteger aInt = new(a, isUnsigned: true, isBigEndian: true);
+        // Check if parse256(IL) >= n (BIP32 requirement)
+        if (aInt >= n)
+            throw new InvalidOperationException("Derived child private key is invalid.");
+
         BigInteger bInt = new(b, isUnsigned: true, isBigEndian: true);
         BigInteger r = (aInt + bInt) % n;
+        if (r.IsZero)
+            throw new InvalidOperationException("Derived child private key is invalid.");
+
         byte[] result = new byte[32];
         Span<byte> tmp = stackalloc byte[32];
         r.TryWriteBytes(tmp, out int bytesWritten, isUnsigned: true, isBigEndian: true);

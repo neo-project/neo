@@ -390,6 +390,7 @@ partial class RemoteNode
 
     private void OnVersionMessageReceived(VersionPayload payload)
     {
+        if (!payload.Verify(_system.Settings)) throw new ProtocolViolationException();
         Version = payload;
         foreach (NodeCapability capability in payload.Capabilities)
         {

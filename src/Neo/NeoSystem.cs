@@ -20,6 +20,7 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.Wallets;
 using System.Collections.Immutable;
 
 namespace Neo;
@@ -119,9 +120,9 @@ public class NeoSystem : IDisposable
     /// The path of the storage.
     /// If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.
     /// </param>
-    public NeoSystem(ProtocolSettings settings, string? storageProvider = null, string? storagePath = null) :
-        this(settings, StoreFactory.GetStoreProvider(storageProvider ?? nameof(MemoryStore))
-            ?? throw new ArgumentException($"Can't find the storage provider {storageProvider}", nameof(storageProvider)), storagePath)
+    /// <param name="nodeKey">The <see cref="KeyPair"/> of the node.</param>
+    public NeoSystem(ProtocolSettings settings, string? storageProvider = null, string? storagePath = null, KeyPair? nodeKey = null)
+        : this(settings, StoreFactory.GetStoreProvider(storageProvider ?? nameof(MemoryStore)) ?? throw new ArgumentException($"Can't find the storage provider {storageProvider}", nameof(storageProvider)), storagePath, nodeKey)
     {
     }
 
@@ -134,7 +135,8 @@ public class NeoSystem : IDisposable
     /// The path of the storage.
     /// If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.
     /// </param>
-    public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string? storagePath = null)
+    /// <param name="nodeKey">The <see cref="KeyPair"/> of the node.</param>
+    public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string? storagePath = null, KeyPair? nodeKey = null)
     {
         Settings = settings;
         GenesisBlock = CreateGenesisBlock(settings);
@@ -142,7 +144,7 @@ public class NeoSystem : IDisposable
         _store = storageProvider.GetStore(storagePath);
         MemPool = new MemoryPool(this);
         Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
-        LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
+        LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this, nodeKey ?? new()));
         TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
         TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
         foreach (var plugin in Plugin.Plugins)
