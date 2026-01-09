@@ -16,6 +16,7 @@ using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
+using Neo.Wallets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -69,9 +70,14 @@ namespace Neo.Network.P2P
         public int UnconnectedCount => UnconnectedPeers.Count;
 
         /// <summary>
-        /// The random number used to identify the local node.
+        /// Gets the cryptographic key pair associated with this node.
         /// </summary>
-        public static readonly uint Nonce;
+        public KeyPair NodeKey { get; }
+
+        /// <summary>
+        /// Gets the unique identifier for the node.
+        /// </summary>
+        public UInt256 NodeId { get; }
 
         /// <summary>
         /// The identifier of the client software of the local node.
@@ -80,7 +86,6 @@ namespace Neo.Network.P2P
 
         static LocalNode()
         {
-            Nonce = RandomNumberFactory.NextUInt32();
             UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)}/";
         }
 
@@ -88,9 +93,12 @@ namespace Neo.Network.P2P
         /// Initializes a new instance of the <see cref="LocalNode"/> class.
         /// </summary>
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="LocalNode"/>.</param>
-        public LocalNode(NeoSystem system)
+        /// <param name="nodeKey">The <see cref="KeyPair"/> used to identify the local node.</param>
+        public LocalNode(NeoSystem system, KeyPair nodeKey)
         {
             this.system = system;
+            NodeKey = nodeKey;
+            NodeId = nodeKey.PublicKey.GetNodeId(system.Settings);
             SeedList = new IPEndPoint[system.Settings.SeedList.Length];
 
             // Start dns resolution in parallel
@@ -160,11 +168,11 @@ namespace Neo.Network.P2P
         public bool AllowNewConnection(IActorRef actor, RemoteNode node)
         {
             if (node.Version!.Network != system.Settings.Network) return false;
-            if (node.Version.Nonce == Nonce) return false;
+            if (node.Version.NodeId == NodeId) return false;
 
             // filter duplicate connections
             foreach (var other in RemoteNodes.Values)
-                if (other != node && other.Remote.Address.Equals(node.Remote.Address) && other.Version?.Nonce == node.Version.Nonce)
+                if (other != node && other.Remote.Address.Equals(node.Remote.Address) && other.Version?.NodeId == node.Version.NodeId)
                     return false;
 
             if (node.Remote.Port != node.ListenerTcpPort && node.ListenerTcpPort != 0)
@@ -285,10 +293,11 @@ namespace Neo.Network.P2P
         /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="LocalNode"/> actor.
         /// </summary>
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="LocalNode"/>.</param>
+        /// <param name="nodeKey">The <see cref="KeyPair"/> used to identify the local node.</param>
         /// <returns>The <see cref="Akka.Actor.Props"/> object used for creating the <see cref="LocalNode"/> actor.</returns>
-        public static Props Props(NeoSystem system)
+        public static Props Props(NeoSystem system, KeyPair nodeKey)
         {
-            return Akka.Actor.Props.Create(() => new LocalNode(system));
+            return Akka.Actor.Props.Create(() => new LocalNode(system, nodeKey));
         }
 
         protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)

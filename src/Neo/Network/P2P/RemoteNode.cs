@@ -202,7 +202,7 @@ namespace Neo.Network.P2P
 
         private void OnStartProtocol()
         {
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(_system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, _localNode.GetNodeCapabilities())));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(_system.Settings, _localNode.NodeKey, LocalNode.UserAgent, _localNode.GetNodeCapabilities())));
         }
 
         protected override void PostStop()

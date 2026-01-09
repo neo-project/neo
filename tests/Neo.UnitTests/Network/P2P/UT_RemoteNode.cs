@@ -41,20 +41,10 @@ namespace Neo.UnitTests.Network.P2P
         public void RemoteNode_Test_Abort_DifferentNetwork()
         {
             var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(_system, new LocalNode(_system), connectionTestProbe, null, null, new ChannelsConfig()));
+            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(_system, new LocalNode(_system, new()), connectionTestProbe, null, null, new ChannelsConfig()));
 
-            var msg = Message.Create(MessageCommand.Version, new VersionPayload
-            {
-                UserAgent = "".PadLeft(1024, '0'),
-                Nonce = 1,
-                Network = 2,
-                Timestamp = 5,
-                Version = 6,
-                Capabilities =
-                [
-                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
-                ]
-            });
+            var msg = Message.Create(MessageCommand.Version,
+                VersionPayload.Create(ProtocolSettings.Default with { Network = 2 }, new(), "".PadLeft(1024, '0'), new ServerCapability(NodeCapabilityType.TcpServer, 25)));
 
             var testProbe = CreateTestProbe();
             testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
@@ -68,22 +58,12 @@ namespace Neo.UnitTests.Network.P2P
             var connectionTestProbe = CreateTestProbe();
             var remoteNodeActor = ActorOfAsTestActorRef(() =>
                 new RemoteNode(_system,
-                    new LocalNode(_system),
+                    new LocalNode(_system, new()),
                     connectionTestProbe,
                     new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080), new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080), new ChannelsConfig()));
 
-            var msg = Message.Create(MessageCommand.Version, new VersionPayload()
-            {
-                UserAgent = "Unit Test".PadLeft(1024, '0'),
-                Nonce = 1,
-                Network = TestProtocolSettings.Default.Network,
-                Timestamp = 5,
-                Version = 6,
-                Capabilities =
-                [
-                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
-                ]
-            });
+            var msg = Message.Create(MessageCommand.Version,
+                VersionPayload.Create(TestProtocolSettings.Default, new(), "Unit Test".PadLeft(1024, '0'), new ServerCapability(NodeCapabilityType.TcpServer, 25)));
 
             var testProbe = CreateTestProbe();
             testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
