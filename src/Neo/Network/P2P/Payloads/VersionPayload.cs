@@ -10,11 +10,14 @@
 // modifications are permitted.
 
 using Neo;
+using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Extensions.Collections;
 using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
+using Neo.Wallets;
 
 namespace Neo.Network.P2P.Payloads;
 
@@ -44,9 +47,14 @@ public class VersionPayload : ISerializable
     public uint Timestamp;
 
     /// <summary>
-    /// A random number used to identify the node.
+    /// Represents the public key associated with this node as an elliptic curve point.
     /// </summary>
-    public uint Nonce;
+    public required ECPoint NodeKey;
+
+    /// <summary>
+    /// Represents the unique identifier for the node as a 256-bit unsigned integer.
+    /// </summary>
+    public required UInt256 NodeId;
 
     /// <summary>
     /// A <see cref="string"/> used to identify the client software of the node.
@@ -63,35 +71,50 @@ public class VersionPayload : ISerializable
     /// </summary>
     public required NodeCapability[] Capabilities;
 
+    /// <summary>
+    /// The digital signature of the payload.
+    /// </summary>
+    public required byte[] Signature;
+
     public int Size =>
         sizeof(uint) +              // Network
         sizeof(uint) +              // Version
         sizeof(uint) +              // Timestamp
-        sizeof(uint) +              // Nonce
+        NodeKey.Size +              // NodeKey
+        UInt256.Length +            // NodeId
         UserAgent.GetVarSize() +    // UserAgent
-        Capabilities.GetVarSize();  // Capabilities
+        Capabilities.GetVarSize() + // Capabilities
+        Signature.GetVarSize();     // Signature
 
     /// <summary>
     /// Creates a new instance of the <see cref="VersionPayload"/> class.
     /// </summary>
-    /// <param name="network">The magic number of the network.</param>
-    /// <param name="nonce">The random number used to identify the node.</param>
+    /// <param name="protocol">The <see cref="ProtocolSettings"/> of the network.</param>
+    /// <param name="nodeKey">The <see cref="ECPoint"/> used to identify the node.</param>
     /// <param name="userAgent">The <see cref="string"/> used to identify the client software of the node.</param>
     /// <param name="capabilities">The capabilities of the node.</param>
     /// <returns></returns>
-    public static VersionPayload Create(uint network, uint nonce, string userAgent, params NodeCapability[] capabilities)
+    public static VersionPayload Create(ProtocolSettings protocol, KeyPair nodeKey, string userAgent, params NodeCapability[] capabilities)
     {
         var ret = new VersionPayload
         {
-            Network = network,
+            Network = protocol.Network,
             Version = LocalNode.ProtocolVersion,
             Timestamp = DateTime.UtcNow.ToTimestamp(),
-            Nonce = nonce,
+            NodeKey = nodeKey.PublicKey,
+            NodeId = nodeKey.PublicKey.GetNodeId(protocol),
             UserAgent = userAgent,
             Capabilities = capabilities,
+            Signature = [],
             // Computed
             AllowCompression = !capabilities.Any(u => u is DisableCompressionCapability)
         };
+
+        // Generate signature
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        ret.Serialize(writer, false);
+        ret.Signature = Crypto.Sign(ms.ToArray(), nodeKey.PrivateKey);
 
         return ret;
     }
@@ -101,7 +124,8 @@ public class VersionPayload : ISerializable
         Network = reader.ReadUInt32();
         Version = reader.ReadUInt32();
         Timestamp = reader.ReadUInt32();
-        Nonce = reader.ReadUInt32();
+        NodeKey = reader.ReadSerializable<ECPoint>();
+        NodeId = reader.ReadSerializable<UInt256>();
         UserAgent = reader.ReadVarString(1024);
 
         // Capabilities
@@ -112,16 +136,33 @@ public class VersionPayload : ISerializable
         if (capabilities.Select(p => p.Type).Distinct().Count() != capabilities.Count())
             throw new FormatException("Duplicating capabilities are included");
 
+        Signature = reader.ReadVarMemory().ToArray();
         AllowCompression = !capabilities.Any(u => u is DisableCompressionCapability);
     }
 
     void ISerializable.Serialize(BinaryWriter writer)
     {
+        Serialize(writer, true);
+    }
+
+    void Serialize(BinaryWriter writer, bool withSignature)
+    {
         writer.Write(Network);
         writer.Write(Version);
         writer.Write(Timestamp);
-        writer.Write(Nonce);
+        writer.Write(NodeKey);
+        writer.Write(NodeId);
         writer.WriteVarString(UserAgent);
         writer.Write(Capabilities);
+        if (withSignature) writer.WriteVarBytes(Signature);
+    }
+
+    public bool Verify(ProtocolSettings protocol)
+    {
+        if (NodeId != NodeKey.GetNodeId(protocol)) return false;
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        Serialize(writer, false);
+        return Crypto.VerifySignature(ms.ToArray(), Signature, NodeKey);
     }
 }
