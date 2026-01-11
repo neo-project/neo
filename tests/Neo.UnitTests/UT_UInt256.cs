@@ -208,4 +208,57 @@ public class UT_UInt256
         Assert.ThrowsExactly<ArgumentException>(() => value.Serialize(shortBuffer.AsSpan()));
         Assert.ThrowsExactly<ArgumentException>(() => value.SafeSerialize(shortBuffer.AsSpan()));
     }
+
+    [TestMethod]
+    public void TestXorWithZeroIsIdentity()
+    {
+        var a = CreateSequential(0x10);
+        Assert.AreEqual(a, a ^ UInt256.Zero);
+        Assert.AreEqual(a, UInt256.Zero ^ a);
+    }
+
+    [TestMethod]
+    public void TestXorWithSelfIsZero()
+    {
+        var a = CreateSequential(0x42);
+        Assert.AreEqual(UInt256.Zero, a ^ a);
+    }
+
+    [TestMethod]
+    public void TestXorAssociative()
+    {
+        var a = CreateSequential(0x10);
+        var b = CreateSequential(0x20);
+        var c = CreateSequential(0x30);
+        var left = (a ^ b) ^ c;
+        var right = a ^ (b ^ c);
+
+        Assert.AreEqual(left, right);
+    }
+
+    [TestMethod]
+    public void TestXorCommutativeAndMatchesManual()
+    {
+        var a = CreateSequential(0x00);
+        var b = CreateSequential(0xF0);
+
+        var ab = a.ToArray();
+        var bb = b.ToArray();
+
+        var rb = new byte[UInt256.Length];
+        for (int i = 0; i < rb.Length; i++)
+            rb[i] = (byte)(ab[i] ^ bb[i]);
+
+        var expectedValue = new UInt256(rb);
+        Assert.AreEqual(expectedValue, a ^ b);
+        Assert.AreEqual(expectedValue, b ^ a);
+    }
+
+    private static UInt256 CreateSequential(byte start)
+    {
+        var bytes = new byte[UInt256.Length];
+        for (var i = 0; i < bytes.Length; i++)
+            bytes[i] = unchecked((byte)(start + i));
+        return new UInt256(bytes);
+    }
 }
