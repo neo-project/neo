@@ -1222,7 +1222,7 @@ public class UT_NeoToken
         {
             // GasToken uses TokenManagement with Prefix_AccountState = 12
             // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-            var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+            var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
             if (!clonedCache.Contains(tokenStateKey))
             {
                 var tokenState = new TokenState
@@ -1238,7 +1238,7 @@ public class UT_NeoToken
                 clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
             }
             // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-            storageKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(keyScriptHash).Add(NativeContract.Governance.GasTokenId);
+            storageKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(keyScriptHash);
             clonedCache.Add(storageKey, new StorageItem(new AccountState { Balance = amount }));
         }
 
