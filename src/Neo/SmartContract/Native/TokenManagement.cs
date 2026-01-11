@@ -20,10 +20,11 @@ namespace Neo.SmartContract.Native;
 [ContractEvent(0, "Created", "assetId", ContractParameterType.Hash160, "type", ContractParameterType.Integer)]
 public sealed partial class TokenManagement : NativeContract
 {
-    const byte Prefix_TokenState = 10;
-    const byte Prefix_AccountState = 12;
+    internal const byte Prefix_TokenState = 10;
+    internal const byte Prefix_AccountState = 12;
+    internal const int TokenId = -12;
 
-    internal TokenManagement() : base(-12) { }
+    internal TokenManagement() : base(TokenId) { }
 
     partial void Initialize_Fungible(ApplicationEngine engine, Hardfork? hardfork);
     partial void Initialize_NonFungible(ApplicationEngine engine, Hardfork? hardfork);
@@ -62,7 +63,7 @@ public sealed partial class TokenManagement : NativeContract
         StorageKey key = CreateStorageKey(Prefix_TokenState, assetId);
         if (!snapshot.Contains(key))
             throw new InvalidOperationException("The asset id does not exist.");
-        key = CreateStorageKey(Prefix_AccountState, account, assetId);
+        key = CreateStorageKey(Prefix_AccountState, assetId, account);
         AccountState? accountState = snapshot.TryGet(key)?.GetInteroperable<AccountState>();
         if (accountState is null) return BigInteger.Zero;
         return accountState.Balance;
@@ -103,7 +104,7 @@ public sealed partial class TokenManagement : NativeContract
     async ContractTask<bool> AddBalance(ApplicationEngine engine, UInt160 assetId, TokenState token, UInt160 account, BigInteger amount, bool callOnBalanceChanged)
     {
         if (amount.IsZero) return true;
-        StorageKey key = CreateStorageKey(Prefix_AccountState, account, assetId);
+        StorageKey key = CreateStorageKey(Prefix_AccountState, assetId, account);
         AccountState? accountState = engine.SnapshotCache.GetAndChange(key)?.GetInteroperable<AccountState>();
         BigInteger balanceOld = accountState?.Balance ?? BigInteger.Zero;
         if (amount > 0)
