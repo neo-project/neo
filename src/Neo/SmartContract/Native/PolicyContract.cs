@@ -370,13 +370,12 @@ namespace Neo.SmartContract.Native
                 count++;
 
                 var data = value.GetInteroperable<WhitelistedContract>();
-                var method = contract.Manifest.Abi.Methods.First(m => m.Name == data.Method && m.Parameters.Length == data.ArgCount);
 
                 engine.SendNotification(Hash, WhitelistChangedEventName,
                     [
                     new ByteString(contract.Hash.ToArray()),
-                    method.Name,
-                    method.Parameters.Length,
+                    data.Method,
+                    data.ArgCount,
                     StackItem.Null
                     ]);
             }
