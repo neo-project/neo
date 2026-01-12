@@ -18,7 +18,6 @@ using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
-using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
@@ -317,11 +316,11 @@ namespace Neo.SmartContract.Native
             {
                 // Check state existence
 
-                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method.Offset));
+                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method.Offset))?.GetInteroperable<WhitelistedContract>();
 
                 if (item != null)
                 {
-                    fixedFee = (long)(BigInteger)item;
+                    fixedFee = item.FixedFee;
                     return true;
                 }
             }
@@ -357,7 +356,7 @@ namespace Neo.SmartContract.Native
 
             // Emit event
             engine.SendNotification(Hash, WhitelistChangedEventName,
-                [new VM.Types.ByteString(contractHash.ToArray()), method, argCount, VM.Types.StackItem.Null]);
+                [new ByteString(contractHash.ToArray()), method, argCount, StackItem.Null]);
         }
 
         internal int CleanWhitelist(ApplicationEngine engine, ContractState contract)
@@ -365,24 +364,19 @@ namespace Neo.SmartContract.Native
             var count = 0;
             var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contract.Hash);
 
-            foreach ((var key, _) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
+            foreach (var (key, value) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
             {
                 engine.SnapshotCache.Delete(key);
                 count++;
 
-                // Emit event recovering the values from the Key
-                var keyData = key.ToArray().AsSpan();
-                var methodOffset = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(StorageKey.PrefixLength + UInt160.Length, sizeof(int)));
-
-                // Get method for event
-                var method = contract.Manifest.Abi.Methods.FirstOrDefault(m => m.Offset == methodOffset);
+                var data = value.GetInteroperable<WhitelistedContract>();
 
                 engine.SendNotification(Hash, WhitelistChangedEventName,
                     [
-                    new VM.Types.ByteString(contract.Hash.ToArray()),
-                    method?.Name ?? VM.Types.StackItem.Null,
-                    method?.Parameters.Length ?? VM.Types.StackItem.Null,
-                    VM.Types.StackItem.Null
+                    new ByteString(contract.Hash.ToArray()),
+                    data.Method,
+                    data.ArgCount,
+                    StackItem.Null
                     ]);
             }
 
@@ -414,9 +408,15 @@ namespace Neo.SmartContract.Native
             var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
 
             // Set
-            var entry = engine.SnapshotCache
-                    .GetAndChange(key, () => new StorageItem(fixedFee));
-            entry.Set(fixedFee);
+            var entry = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(new WhitelistedContract()
+            {
+                ContractHash = contractHash,
+                Method = method,
+                ArgCount = argCount,
+                FixedFee = fixedFee
+            }));
+            entry.GetInteroperable<WhitelistedContract>().FixedFee = fixedFee;
+            entry.Seal();
 
             // Emit event
             engine.SendNotification(Hash, WhitelistChangedEventName, [new VM.Types.ByteString(contractHash.ToArray()), method, argCount, fixedFee]);
@@ -688,7 +688,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
         {
-            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.ValuesOnly | FindOptions.DeserializeValues;
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_WhitelistedFeeContracts), SeekDirection.Forward)
                 .GetEnumerator();
