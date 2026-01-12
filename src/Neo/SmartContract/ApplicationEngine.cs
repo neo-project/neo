@@ -683,14 +683,17 @@ namespace Neo.SmartContract
 
         protected override void Dispose(bool disposing)
         {
-            Diagnostic?.Disposed();
-            if (disposing && disposables != null)
+            if (disposing)
             {
-                foreach (var disposable in disposables)
-                    disposable.Dispose();
-                disposables = null;
+                Diagnostic?.Disposed();
+                if (disposables != null)
+                {
+                    foreach (var disposable in disposables)
+                        disposable.Dispose();
+                    disposables = null;
+                }
             }
-            base.Dispose();
+            base.Dispose(disposing);
         }
 
         /// <summary>
