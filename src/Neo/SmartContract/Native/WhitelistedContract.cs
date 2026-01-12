@@ -17,24 +17,24 @@ namespace Neo.SmartContract.Native
 {
     public class WhitelistedContract : IInteroperable
     {
-        public UInt160 ContractHash { get; set; } = UInt160.Zero;
-        public string? Method { get; set; }
-        public int ArgCount { get; set; }
-        public long FixedFee { get; set; }
+        public required UInt160 ContractHash { get; set; }
+        public required string Method { get; set; }
+        public required int ArgCount { get; set; }
+        public required long FixedFee { get; set; }
 
         public virtual void FromStackItem(StackItem stackItem)
         {
             var data = (Struct)stackItem;
 
             ContractHash = new UInt160(data[0].GetSpan());
-            Method = data[1].GetString();
+            Method = data[1].GetString()!;
             ArgCount = (int)data[2].GetInteger();
             FixedFee = (long)data[3].GetInteger();
         }
 
         public virtual StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
-            return new Struct(referenceCounter) { ContractHash.ToArray(), Method ?? StackItem.Null, ArgCount, FixedFee };
+            return new Struct(referenceCounter) { ContractHash.ToArray(), Method, ArgCount, FixedFee };
         }
     }
 }
