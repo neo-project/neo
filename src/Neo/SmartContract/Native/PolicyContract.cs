@@ -317,11 +317,11 @@ namespace Neo.SmartContract.Native
             {
                 // Check state existence
 
-                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method.Offset));
+                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method.Offset))?.GetInteroperable<WhitelistedContract>();
 
                 if (item != null)
                 {
-                    fixedFee = (long)(BigInteger)item;
+                    fixedFee = item.FixedFee;
                     return true;
                 }
             }
@@ -357,7 +357,7 @@ namespace Neo.SmartContract.Native
 
             // Emit event
             engine.SendNotification(Hash, WhitelistChangedEventName,
-                [new VM.Types.ByteString(contractHash.ToArray()), method, argCount, VM.Types.StackItem.Null]);
+                [new ByteString(contractHash.ToArray()), method, argCount, StackItem.Null]);
         }
 
         internal int CleanWhitelist(ApplicationEngine engine, ContractState contract)
@@ -379,10 +379,10 @@ namespace Neo.SmartContract.Native
 
                 engine.SendNotification(Hash, WhitelistChangedEventName,
                     [
-                    new VM.Types.ByteString(contract.Hash.ToArray()),
-                    method?.Name ?? VM.Types.StackItem.Null,
-                    method?.Parameters.Length ?? VM.Types.StackItem.Null,
-                    VM.Types.StackItem.Null
+                    new ByteString(contract.Hash.ToArray()),
+                    method?.Name ?? StackItem.Null,
+                    method?.Parameters.Length ?? StackItem.Null,
+                    StackItem.Null
                     ]);
             }
 
@@ -414,8 +414,13 @@ namespace Neo.SmartContract.Native
             var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
 
             // Set
-            var entry = engine.SnapshotCache
-                    .GetAndChange(key, () => new StorageItem(fixedFee));
+            var entry = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(new WhitelistedContract()
+            {
+                ContractHash = contractHash,
+                Method = method,
+                ArgCount = argCount,
+                FixedFee = fixedFee
+            }));
             entry.Set(fixedFee);
 
             // Emit event
@@ -688,7 +693,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
         {
-            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly | FindOptions.DeserializeValues;
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_WhitelistedFeeContracts), SeekDirection.Forward)
                 .GetEnumerator();
