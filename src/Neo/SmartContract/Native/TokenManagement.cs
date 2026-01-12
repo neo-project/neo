@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Persistence;
+using Neo.SmartContract.Iterators;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native;
@@ -66,6 +67,25 @@ public sealed partial class TokenManagement : NativeContract
         AccountState? accountState = snapshot.TryGet(key)?.GetInteroperable<AccountState>();
         if (accountState is null) return BigInteger.Zero;
         return accountState.Balance;
+    }
+
+    /// <summary>
+    /// Retrieves an iterator that enumerates all assets owned by the specified account from the provided data store
+    /// snapshot.
+    /// </summary>
+    /// <remarks>The returned iterator provides read-only access to asset data as of the given snapshot.
+    /// Iteration order is not guaranteed. This method does not modify the store.</remarks>
+    /// <param name="snapshot">The read-only store snapshot to query for asset ownership data.</param>
+    /// <param name="account">The account identifier for which to retrieve owned assets. Must be a valid 160-bit address.</param>
+    /// <returns>An iterator over the assets associated with the specified account. The iterator will be empty if the account
+    /// owns no assets.</returns>
+    [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
+    public IIterator GetAssetsOfOwner(IReadOnlyStore snapshot, UInt160 account)
+    {
+        const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues;
+        var prefixKey = CreateStorageKey(Prefix_AccountState, account);
+        var enumerator = snapshot.Find(prefixKey).GetEnumerator();
+        return new StorageIterator(enumerator, 21, options);
     }
 
     /// <summary>
