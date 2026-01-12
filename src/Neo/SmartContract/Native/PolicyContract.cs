@@ -421,7 +421,8 @@ namespace Neo.SmartContract.Native
                 ArgCount = argCount,
                 FixedFee = fixedFee
             }));
-            entry.Set(fixedFee);
+            entry.GetInteroperable<WhitelistedContract>().FixedFee = fixedFee;
+            entry.Seal();
 
             // Emit event
             engine.SendNotification(Hash, WhitelistChangedEventName, [new VM.Types.ByteString(contractHash.ToArray()), method, argCount, fixedFee]);
