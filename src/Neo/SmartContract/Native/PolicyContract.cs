@@ -18,7 +18,6 @@ using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
-using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
@@ -365,23 +364,19 @@ namespace Neo.SmartContract.Native
             var count = 0;
             var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contract.Hash);
 
-            foreach ((var key, _) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
+            foreach (var (key, value) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
             {
                 engine.SnapshotCache.Delete(key);
                 count++;
 
-                // Emit event recovering the values from the Key
-                var keyData = key.ToArray().AsSpan();
-                var methodOffset = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(StorageKey.PrefixLength + UInt160.Length, sizeof(int)));
-
-                // Get method for event
-                var method = contract.Manifest.Abi.Methods.FirstOrDefault(m => m.Offset == methodOffset);
+                var data = value.GetInteroperable<WhitelistedContract>();
+                var method = contract.Manifest.Abi.Methods.First(m => m.Name == data.Method && m.Parameters.Length == data.ArgCount);
 
                 engine.SendNotification(Hash, WhitelistChangedEventName,
                     [
                     new ByteString(contract.Hash.ToArray()),
-                    method?.Name ?? StackItem.Null,
-                    method?.Parameters.Length ?? StackItem.Null,
+                    method.Name,
+                    method.Parameters.Length,
                     StackItem.Null
                     ]);
             }
