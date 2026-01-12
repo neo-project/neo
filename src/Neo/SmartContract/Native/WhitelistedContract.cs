@@ -15,7 +15,7 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native
 {
-    public class WhitelistedContract : IInteroperable
+    class WhitelistedContract : IInteroperable
     {
         public required UInt160 ContractHash { get; set; }
         public required string Method { get; set; }
