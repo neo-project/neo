@@ -70,7 +70,7 @@ namespace Neo.Cryptography
         public static string Base58CheckEncode(this ReadOnlySpan<byte> data)
         {
             byte[] checksum = data.Sha256().Sha256();
-            Span<byte> buffer = data.Length < 1024 ? stackalloc byte[data.Length + 4] : new byte[data.Length + 4];
+            Span<byte> buffer = data.Length <= 1024 ? stackalloc byte[data.Length + 4] : new byte[data.Length + 4];
             data.CopyTo(buffer);
             checksum.AsSpan(..4).CopyTo(buffer[data.Length..]);
             var ret = Encode(buffer);
