@@ -70,7 +70,7 @@ namespace Neo.Cryptography
         public static string Base58CheckEncode(this ReadOnlySpan<byte> data)
         {
             byte[] checksum = data.Sha256().Sha256();
-            Span<byte> buffer = stackalloc byte[data.Length + 4];
+            Span<byte> buffer = data.Length < 1024 ? stackalloc byte[data.Length + 4] : new byte[data.Length + 4];
             data.CopyTo(buffer);
             checksum.AsSpan(..4).CopyTo(buffer[data.Length..]);
             var ret = Encode(buffer);
@@ -108,7 +108,6 @@ namespace Neo.Cryptography
             }
 
             var result = new byte[leadingZeroCount + bi.GetByteCount(true)];
-
             _ = bi.TryWriteBytes(result.AsSpan(leadingZeroCount), out _, true, true);
             return result;
         }
@@ -121,11 +120,10 @@ namespace Neo.Cryptography
         public static string Encode(ReadOnlySpan<byte> input)
         {
             // Decode byte[] to BigInteger
-            BigInteger value = new(input, isUnsigned: true, isBigEndian: true);
+            var value = new BigInteger(input, isUnsigned: true, isBigEndian: true);
 
             // Encode BigInteger to Base58 string
             var sb = new StringBuilder(input.Length * 138 / 100 + 5);
-
             while (value > 0)
             {
                 value = BigInteger.DivRem(value, s_alphabetLength, out var remainder);
@@ -138,21 +136,18 @@ namespace Neo.Cryptography
                 sb.Append(ZeroChar);
             }
 
-            Span<char> copy = stackalloc char[sb.Length];
-            sb.CopyTo(0, copy, sb.Length);
-            copy.Reverse();
-
-            return copy.ToString();
+            return string.Create(sb.Length, sb, (span, builder) =>
+            {
+                builder.CopyTo(0, span, builder.Length);
+                span.Reverse();
+            });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int LeadingBase58Zeros(string collection)
         {
-            var i = 0;
-            var len = collection.Length;
-            for (; i < len && collection[i] == ZeroChar; i++) { }
-
-            return i;
+            var index = collection.AsSpan().IndexOfAnyExcept(ZeroChar);
+            return index < 0 ? collection.Length : index;
         }
     }
 }
