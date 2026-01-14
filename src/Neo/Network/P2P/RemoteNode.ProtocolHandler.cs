@@ -373,12 +373,19 @@ partial class RemoteNode
     private void OnPingMessageReceived(PingPayload payload)
     {
         UpdateLastBlockIndex(payload.LastBlockIndex);
+
+        // Refresh routing table liveness on inbound Ping.
+        _localNode.RoutingTable.MarkSuccess(Version!.NodeId);
+
         EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_system.StoreView), payload.Nonce)));
     }
 
     private void OnPongMessageReceived(PingPayload payload)
     {
         UpdateLastBlockIndex(payload.LastBlockIndex);
+
+        // DHT: Pong means our probe succeeded, strongly refresh liveness.
+        _localNode.RoutingTable.MarkSuccess(Version!.NodeId);
     }
 
     private void OnVerackMessageReceived()
