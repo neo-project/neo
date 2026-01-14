@@ -382,15 +382,6 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
 
-            // Check whitelist
-
-            if (IsHardforkEnabled(Hardfork.HF_Faun) &&
-                NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
-            {
-                AddFee(fixedFee.Value * ApplicationEngine.FeeFactor);
-                state.WhiteListed = true;
-            }
-
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))
             {
                 invocationCounter[contract.Hash] = counter + 1;
@@ -408,6 +399,13 @@ namespace Neo.SmartContract
             var contextNew = LoadContract(contract, method, flags & callingFlags);
             state = contextNew.GetState<ExecutionContextState>();
             state.CallingContext = currentContext;
+            // Check whitelist
+            if (IsHardforkEnabled(Hardfork.HF_Faun) &&
+                NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
+            {
+                AddFee(fixedFee.Value * FeeFactor);
+                state.WhiteListed = true;
+            }
 
             for (int i = args.Count - 1; i >= 0; i--)
                 contextNew.EvaluationStack.Push(args[i]);
