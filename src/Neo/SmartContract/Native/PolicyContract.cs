@@ -154,7 +154,7 @@ namespace Neo.SmartContract.Native
             if (hardfork == Hardfork.HF_Faun)
             {
                 // Add decimals to exec fee factor
-                var item = engine.SnapshotCache.TryGet(_execFeeFactor) ??
+                var item = engine.SnapshotCache.GetAndChange(_execFeeFactor) ??
                     throw new InvalidOperationException("Policy was not initialized");
                 item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
             }
