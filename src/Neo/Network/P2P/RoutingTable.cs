@@ -58,10 +58,10 @@ public sealed class RoutingTable
     /// Adds or refreshes a contact in the routing table.
     /// </summary>
     /// <param name="nodeId">The unique identifier of the node whose contact information is to be updated.</param>
-    /// <param name="endpoint">The network endpoint associated with the node. Must not be null.</param>
+    /// <param name="endpoint">The overlay endpoint associated with the node. Must not be null.</param>
     /// <param name="features">An optional set of feature flags describing the node's capabilities. The default is 0, indicating no features.</param>
     /// <returns>true if the node contact information was updated successfully; otherwise, false.</returns>
-    public bool Update(UInt256 nodeId, IPEndPoint endpoint, ulong features = 0)
+    public bool Update(UInt256 nodeId, OverlayEndpoint endpoint, ulong features = 0)
     {
         return Update(new(nodeId, [endpoint], features));
     }

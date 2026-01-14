@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System.Net;
-
 namespace Neo.Network.P2P;
 
 /// <summary>
@@ -24,9 +22,9 @@ public sealed class NodeContact
     public UInt256 NodeId { get; }
 
     /// <summary>
-    /// Known endpoints for contacting the node. The first item is the preferred endpoint.
+    /// Known overlay endpoints for contacting the node. The first item is the preferred endpoint.
     /// </summary>
-    public List<IPEndPoint> Endpoints { get; } = new();
+    public List<OverlayEndpoint> Endpoints { get; } = new();
 
     /// <summary>
     /// Last time we successfully communicated with this node (handshake or DHT message).
@@ -48,10 +46,9 @@ public sealed class NodeContact
     /// feature flags.
     /// </summary>
     /// <param name="nodeId">The unique identifier for the node. This value is used to distinguish the node within the network.</param>
-    /// <param name="endpoints">A collection of network endpoints associated with the node. If not specified, the contact will have no initial
-    /// endpoints.</param>
+    /// <param name="endpoints">A collection of overlay endpoints associated with the node. If not specified, the contact will have no initial endpoints.</param>
     /// <param name="features">A bit field representing the features supported by the node. The default is 0, indicating no features.</param>
-    public NodeContact(UInt256 nodeId, IEnumerable<IPEndPoint>? endpoints = null, ulong features = 0)
+    public NodeContact(UInt256 nodeId, IEnumerable<OverlayEndpoint>? endpoints = null, ulong features = 0)
     {
         NodeId = nodeId;
         if (endpoints is not null)
@@ -61,13 +58,25 @@ public sealed class NodeContact
         Features = features;
     }
 
-    internal void AddOrPromoteEndpoint(IPEndPoint endpoint)
+    internal void AddOrPromoteEndpoint(OverlayEndpoint endpoint)
     {
-        // Keep unique endpoints; promote to the front when we learn it's good.
+        // Keep unique endpoints by (Transport, IP, Port); merge kinds when we learn new semantics.
         int index = Endpoints.IndexOf(endpoint);
-        if (index == 0) return;
-        if (index > 0) Endpoints.RemoveAt(index);
-        Endpoints.Insert(0, endpoint);
+        if (index >= 0)
+        {
+            var merged = Endpoints[index].WithKind(Endpoints[index].Kind | endpoint.Kind);
+            if (index == 0)
+            {
+                Endpoints[0] = merged;
+                return;
+            }
+            Endpoints.RemoveAt(index);
+            Endpoints.Insert(0, merged);
+        }
+        else
+        {
+            Endpoints.Insert(0, endpoint);
+        }
     }
 
     public override string ToString()

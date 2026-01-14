@@ -169,10 +169,8 @@ sealed class KBucket
 
     static void Merge(NodeContact dst, NodeContact src)
     {
-        // Merge endpoints (promote the first src endpoint if present).
-        if (src.Endpoints.Count > 0)
-            dst.AddOrPromoteEndpoint(src.Endpoints[0]);
-        for (int i = 1; i < src.Endpoints.Count; i++)
+        // Merge overlay endpoints (preserve transport; merge endpoint kinds).
+        for (int i = 0; i < src.Endpoints.Count; i++)
             dst.AddOrPromoteEndpoint(src.Endpoints[i]);
 
         // Prefer latest seen & features.

@@ -389,9 +389,14 @@ partial class RemoteNode
         // DHT: a verack means the handshake is complete and the remote identity (NodeId) has been verified.
         // Feed the remote contact into the local RoutingTable.
         var nodeId = Version!.NodeId;
-        // Prefer the advertised TCP server endpoint (Listener) when available, otherwise fall back to the connected Remote endpoint.
-        var ep = ListenerTcpPort > 0 ? Listener : Remote;
-        _localNode.RoutingTable.Update(nodeId, ep);
+
+        // Record both:
+        //  - Observed endpoint: what we actually connected to (may be NAT-mapped; not necessarily dialable)
+        //  - Advertised endpoint: what the peer claims to be listening on (dialable candidate)
+        _localNode.RoutingTable.Update(nodeId, new OverlayEndpoint(TransportProtocol.Tcp, Remote, EndpointKind.Observed));
+        if (ListenerTcpPort > 0)
+            _localNode.RoutingTable.Update(nodeId, new OverlayEndpoint(TransportProtocol.Tcp, Listener, EndpointKind.Advertised));
+
         _localNode.RoutingTable.MarkSuccess(nodeId);
 
         CheckMessageQueue();
