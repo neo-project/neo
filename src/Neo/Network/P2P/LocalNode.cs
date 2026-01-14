@@ -166,20 +166,33 @@ public class LocalNode : Peer
     /// </summary>
     /// <param name="actor">Remote node actor.</param>
     /// <param name="node">Remote node object.</param>
+    /// <param name="reason">The reason for disconnection, if any.</param>
     /// <returns><see langword="true"/> if the new connection is allowed; otherwise, <see langword="false"/>.</returns>
-    public bool AllowNewConnection(IActorRef actor, RemoteNode node)
+    public bool AllowNewConnection(IActorRef actor, RemoteNode node, out DisconnectReason reason)
     {
-        if (node.Version!.Network != system.Settings.Network) return false;
-        if (node.Version.NodeId == NodeId) return false;
+        if (node.Version!.Network != system.Settings.Network)
+        {
+            reason = DisconnectReason.ProtocolViolation;
+            return false;
+        }
+        if (node.Version.NodeId == NodeId)
+        {
+            reason = DisconnectReason.Close;
+            return false;
+        }
 
         // filter duplicate connections
         foreach (var other in RemoteNodes.Values)
             if (other != node && other.Remote.Address.Equals(node.Remote.Address) && other.Version?.NodeId == node.Version.NodeId)
+            {
+                reason = DisconnectReason.Close;
                 return false;
+            }
 
         if (node.Remote.Port != node.ListenerTcpPort && node.ListenerTcpPort != 0)
             ConnectedPeers.TryUpdate(actor, node.Listener, node.Remote);
 
+        reason = DisconnectReason.None;
         return true;
     }
 

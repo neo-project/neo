@@ -427,9 +427,9 @@ partial class RemoteNode
                     break;
             }
         }
-        if (!_localNode.AllowNewConnection(Self, this))
+        if (!_localNode.AllowNewConnection(Self, this, out DisconnectReason reason))
         {
-            Disconnect(true);
+            Disconnect(reason);
             return;
         }
         SendMessage(Message.Create(MessageCommand.Verack));

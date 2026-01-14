@@ -137,9 +137,9 @@ public partial class RemoteNode : Connection
         CheckMessageQueue();
     }
 
-    protected override void OnDisconnect(bool abort)
+    protected override void OnDisconnect(DisconnectReason reason)
     {
-        if (abort)
+        if (reason != DisconnectReason.Close)
         {
             // DHT: connection dropped. Penalize the contact (do not immediately delete; allow churn).
             if (Version != null)

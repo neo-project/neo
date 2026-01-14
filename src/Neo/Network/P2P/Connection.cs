@@ -21,7 +21,7 @@ namespace Neo.Network.P2P;
 /// </summary>
 public abstract class Connection : UntypedActor
 {
-    internal class Close { public bool Abort; }
+    internal class Close { public DisconnectReason Reason; }
     internal class Ack : Tcp.Event { public static Ack Instance = new(); }
 
     /// <summary>
@@ -58,7 +58,7 @@ public abstract class Connection : UntypedActor
     {
         Remote = remote;
         Local = local;
-        timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimitStart), Self, new Close { Abort = true }, ActorRefs.NoSender);
+        timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimitStart), Self, new Close { Reason = DisconnectReason.Timeout }, ActorRefs.NoSender);
         switch (connection)
         {
             case IActorRef tcp:
@@ -70,12 +70,12 @@ public abstract class Connection : UntypedActor
     /// <summary>
     /// Disconnect from the remote node.
     /// </summary>
-    /// <param name="abort">Indicates whether the TCP ABORT command should be sent.</param>
-    public void Disconnect(bool abort = false)
+    /// <param name="reason">The reason for the disconnection.</param>
+    public void Disconnect(DisconnectReason reason = DisconnectReason.Close)
     {
         disconnected = true;
-        tcp?.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
-        OnDisconnect(abort);
+        tcp?.Tell(reason == DisconnectReason.Close ? Tcp.Close.Instance : Tcp.Abort.Instance);
+        OnDisconnect(reason);
         Context.Stop(Self);
     }
 
@@ -91,8 +91,8 @@ public abstract class Connection : UntypedActor
     /// </summary>
     /// <remarks>Override this method in a derived class to implement custom behavior when a disconnect
     /// occurs. This method is called regardless of whether the disconnect is graceful or due to an abort.</remarks>
-    /// <param name="abort">true to indicate the disconnect is due to an abort operation; otherwise, false.</param>
-    protected virtual void OnDisconnect(bool abort)
+    /// <param name="reason">The reason for the disconnection.</param>
+    protected virtual void OnDisconnect(DisconnectReason reason)
     {
     }
 
@@ -107,7 +107,7 @@ public abstract class Connection : UntypedActor
         switch (message)
         {
             case Close close:
-                Disconnect(close.Abort);
+                Disconnect(close.Reason);
                 break;
             case Ack _:
                 OnAck();
@@ -124,8 +124,8 @@ public abstract class Connection : UntypedActor
     private void OnReceived(ByteString data)
     {
         timer.CancelIfNotNull();
-        timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimit), Self, new Close { Abort = true }, ActorRefs.NoSender);
-        data.TryCatch<ByteString, Exception>(OnData, (_, _) => Disconnect(true));
+        timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimit), Self, new Close { Reason = DisconnectReason.Timeout }, ActorRefs.NoSender);
+        data.TryCatch<ByteString, Exception>(OnData, (_, _) => Disconnect(DisconnectReason.ProtocolViolation));
     }
 
     protected override void PostStop()
