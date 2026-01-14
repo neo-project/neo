@@ -384,11 +384,13 @@ namespace Neo.SmartContract
 
             // Check whitelist
 
+            var isWhiteListed = false;
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
                 NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
             {
                 AddFee(fixedFee.Value * ApplicationEngine.FeeFactor);
                 state.WhiteListed = true;
+                isWhiteListed = true;
             }
 
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))
@@ -408,6 +410,7 @@ namespace Neo.SmartContract
             var contextNew = LoadContract(contract, method, flags & callingFlags);
             state = contextNew.GetState<ExecutionContextState>();
             state.CallingContext = currentContext;
+            state.WhiteListed = isWhiteListed;
 
             for (int i = args.Count - 1; i >= 0; i--)
                 contextNew.EvaluationStack.Push(args[i]);
