@@ -267,17 +267,40 @@ namespace Neo.SmartContract.Native
 
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, m))
             {
-                BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100; // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
+                var withFlatRewards = engine.IsHardforkEnabled(Hardfork.HF_Faun);
+                BigInteger voterRewardOfEachCommittee =
+                    withFlatRewards ?
+                    gasPerBlock * VoterRewardRatio * VoteFactor / 100 :                 // Total reward for voters when it's flat rewards
+                    gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100;    // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
+                var votersCount = (BigInteger)engine.SnapshotCache[_votersCount];
+
+                if (withFlatRewards && votersCount.IsZero)
+                {
+                    // Skip reward distribution when there are no voters
+                    return;
+                }
+
                 for (index = 0; index < committee.Count; index++)
                 {
                     var (publicKey, votes) = committee[index];
-                    var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
-                    if (votes > 0)
+
+                    if (withFlatRewards)
                     {
-                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
+                        BigInteger voterSumRewardPerNEO = voterRewardOfEachCommittee / votersCount;
                         StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
                         StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
                         lastRewardPerNeo.Add(voterSumRewardPerNEO);
+                    }
+                    else
+                    {
+                        if (votes > 0)
+                        {
+                            var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
+                            BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
+                            StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
+                            StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
+                            lastRewardPerNeo.Add(voterSumRewardPerNEO);
+                        }
                     }
                 }
             }
