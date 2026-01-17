@@ -607,16 +607,19 @@ public partial class ApplicationEngine : ExecutionEngine
         }
     }
 
-    public override void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        Diagnostic?.Disposed();
-        if (disposables != null)
+        if (disposing)
         {
-            foreach (var disposable in disposables)
-                disposable.Dispose();
-            disposables = null;
+            Diagnostic?.Disposed();
+            if (disposables != null)
+            {
+                foreach (var disposable in disposables)
+                    disposable.Dispose();
+                disposables = null;
+            }
         }
-        base.Dispose();
+        base.Dispose(disposing);
     }
 
     /// <summary>
