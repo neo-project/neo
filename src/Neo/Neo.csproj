@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
-    <PackageReference Include="Neo.Cryptography.BLS12_381" Version="3.9.0-CI00010" />
+    <PackageReference Include="Neo.Cryptography.BLS12_381" Version="3.9.0" />
     <PackageReference Include="Neo.VM" Version="3.9.0" />
   </ItemGroup>
 
