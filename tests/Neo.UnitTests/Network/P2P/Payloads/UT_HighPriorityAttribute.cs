@@ -77,6 +77,6 @@ public class UT_HighPriorityAttribute
 
         Assert.IsFalse(test.Verify(snapshotCache, new Transaction() { Signers = Array.Empty<Signer>(), Attributes = [test], Witnesses = null! }));
         Assert.IsFalse(test.Verify(snapshotCache, new Transaction() { Signers = new Signer[] { new() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") } }, Attributes = [test], Witnesses = null! }));
-        Assert.IsTrue(test.Verify(snapshotCache, new Transaction() { Signers = new Signer[] { new() { Account = NativeContract.NEO.GetCommitteeAddress(snapshotCache) } }, Attributes = [test], Witnesses = null! }));
+        Assert.IsTrue(test.Verify(snapshotCache, new Transaction() { Signers = new Signer[] { new() { Account = NativeContract.Governance.GetCommitteeAddress(snapshotCache) } }, Attributes = [test], Witnesses = null! }));
     }
 }

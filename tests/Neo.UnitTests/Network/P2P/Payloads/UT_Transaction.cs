@@ -677,7 +677,7 @@ public class UT_Transaction
             {
                 Account = acc.ScriptHash,
                 Scopes = WitnessScope.CustomContracts,
-                AllowedContracts = [NativeContract.NEO.Hash]
+                AllowedContracts = [NativeContract.Governance.NeoTokenId]
             } };
 
         // using this...
@@ -738,7 +738,7 @@ public class UT_Transaction
             {
                 Account = acc.ScriptHash,
                 Scopes = WitnessScope.CustomContracts,
-                AllowedContracts = [NativeContract.NEO.Hash, NativeContract.TokenManagement.Hash]
+                AllowedContracts = [NativeContract.Governance.NeoTokenId, NativeContract.TokenManagement.Hash]
             } };
 
         // using this...
@@ -838,7 +838,7 @@ public class UT_Transaction
             {
                 Account = acc.ScriptHash,
                 Scopes = WitnessScope.CustomContracts,
-                AllowedContracts = [NativeContract.NEO.Hash, NativeContract.Governance.GasTokenId]
+                AllowedContracts = [NativeContract.Governance.NeoTokenId, NativeContract.Governance.GasTokenId]
             } };
 
         // using this...

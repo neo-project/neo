@@ -546,8 +546,8 @@ public sealed partial class Blockchain : UntypedActor
     {
         var currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
         var builder = ImmutableHashSet.CreateBuilder<UInt160>();
-        builder.Add(NativeContract.NEO.GetCommitteeAddress(snapshot));
-        var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, settings.ValidatorsCount);
+        builder.Add(NativeContract.Governance.GetCommitteeAddress(snapshot));
+        var validators = NativeContract.Governance.GetNextBlockValidators(snapshot, settings.ValidatorsCount);
         builder.Add(Contract.GetBFTAddress(validators));
         builder.UnionWith(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
         var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.StateValidator, currentHeight);

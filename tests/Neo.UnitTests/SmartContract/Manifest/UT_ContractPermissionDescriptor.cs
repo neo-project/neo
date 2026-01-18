@@ -64,11 +64,11 @@ public class UT_ContractPermissionDescriptor
     public void TestEquals()
     {
         var descriptor1 = ContractPermissionDescriptor.CreateWildcard();
-        var descriptor2 = ContractPermissionDescriptor.Create(NativeContract.NEO.Hash);
+        var descriptor2 = ContractPermissionDescriptor.Create(NativeContract.Governance.NeoTokenId);
 
         Assert.AreNotEqual(descriptor1, descriptor2);
 
-        var descriptor3 = ContractPermissionDescriptor.Create(NativeContract.NEO.Hash);
+        var descriptor3 = ContractPermissionDescriptor.Create(NativeContract.Governance.NeoTokenId);
 
         Assert.AreEqual(descriptor2, descriptor3);
     }

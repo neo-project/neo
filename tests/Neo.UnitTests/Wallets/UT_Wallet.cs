@@ -20,6 +20,8 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System.Numerics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Helper = Neo.SmartContract.Helper;
 
 namespace Neo.UnitTests.Wallets;
@@ -398,10 +400,30 @@ public class UT_Wallet
         var gasKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account.ScriptHash).Add(NativeContract.Governance.GasTokenId);
         var entry1 = snapshotCache.GetAndChange(gasKey, () => new StorageItem(new AccountState()));
         entry1.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
+        entry1.Seal(); // Ensure changes are serialized
 
-        var neoKey = NativeContract.NEO.CreateStorageKey(20, account.ScriptHash);
-        var entry2 = snapshotCache.GetAndChange(neoKey, () => new StorageItem(new NeoToken.NeoAccountState()));
-        entry2.GetInteroperable<NeoToken.NeoAccountState>().Balance = 10000 * NativeContract.NEO.Factor;
+        // NEO token balance is stored in TokenManagement, similar to GAS token
+        // First, create TokenState for NEO token (required by TokenManagement.BalanceOf)
+        var neoTokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        if (!snapshotCache.Contains(neoTokenStateKey))
+        {
+            var neoTokenState = new TokenState
+            {
+                Type = TokenType.Fungible,
+                Owner = NativeContract.Governance.Hash,
+                Name = Governance.NeoTokenName,
+                Symbol = Governance.NeoTokenSymbol,
+                Decimals = Governance.NeoTokenDecimals,
+                TotalSupply = BigInteger.Zero,
+                MaxSupply = BigInteger.MinusOne
+            };
+            snapshotCache.Add(neoTokenStateKey, new StorageItem(neoTokenState));
+        }
+        // Then set account balance
+        var neoKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account.ScriptHash).Add(NativeContract.Governance.NeoTokenId);
+        var entry2 = snapshotCache.GetAndChange(neoKey, () => new StorageItem(new AccountState()));
+        entry2.GetInteroperable<AccountState>().Balance = 10000 * Governance.NeoTokenFactor;
+        entry2.Seal(); // Ensure changes are serialized
 
         var tx = wallet.MakeTransaction(snapshotCache, [
             new()
@@ -416,7 +438,7 @@ public class UT_Wallet
         tx = wallet.MakeTransaction(snapshotCache, [
             new()
             {
-                 AssetId = NativeContract.NEO.Hash,
+                 AssetId = NativeContract.Governance.NeoTokenId,
                  ScriptHash = account.ScriptHash,
                  Value = new BigDecimal(BigInteger.One,8),
                  Data = "Dec 12th"
@@ -426,8 +448,8 @@ public class UT_Wallet
 
         entry1 = snapshotCache.GetAndChange(gasKey, () => new StorageItem(new AccountState()));
         entry1.GetInteroperable<AccountState>().Balance = 0;
-        entry2 = snapshotCache.GetAndChange(neoKey, () => new StorageItem(new NeoToken.NeoAccountState()));
-        entry2.GetInteroperable<NeoToken.NeoAccountState>().Balance = 0;
+        entry2 = snapshotCache.GetAndChange(neoKey, () => new StorageItem(new AccountState()));
+        entry2.GetInteroperable<AccountState>().Balance = 0;
     }
 
     [TestMethod]

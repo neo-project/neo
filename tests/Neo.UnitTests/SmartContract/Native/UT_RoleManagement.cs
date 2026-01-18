@@ -55,7 +55,7 @@ public class UT_RoleManagement
             var system = new TestBlockchain.TestNeoSystem(TestProtocolSettings.Default);
 
             var snapshot1 = system.GetTestSnapshotCache(false);
-            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
+            var committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot1);
             List<NotifyEventArgs> notifications = [];
             void Ev(ApplicationEngine o, NotifyEventArgs e) => notifications.Add(e);
 
