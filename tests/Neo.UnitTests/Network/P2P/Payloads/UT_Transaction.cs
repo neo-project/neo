@@ -151,7 +151,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -167,7 +167,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
         snapshotCache.Commit();
@@ -231,7 +231,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -247,7 +247,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
         snapshotCache.Commit();
@@ -348,7 +348,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -364,7 +364,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
         snapshotCache.Commit();
@@ -442,7 +442,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -458,7 +458,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
 
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
@@ -539,7 +539,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -555,7 +555,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
         snapshotCache.Commit();
@@ -637,7 +637,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -653,7 +653,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
 
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
@@ -697,7 +697,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -713,7 +713,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
         snapshotCache.Commit();
@@ -797,7 +797,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -813,7 +813,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
 
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
@@ -858,7 +858,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -874,7 +874,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
         snapshotCache.Commit();
@@ -1122,7 +1122,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -1138,7 +1138,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
         snapshotCache.Commit();
@@ -1304,7 +1304,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -1320,7 +1320,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         entry.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
         snapshotCache.Commit();
@@ -1383,7 +1383,7 @@ public class UT_Transaction
 
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -1399,7 +1399,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance
-        var key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(tx.Sender).Add(NativeContract.Governance.GasTokenId);
+        var key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(tx.Sender);
         var balance = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         balance.GetInteroperable<AccountState>().Balance = tx.NetworkFee;
         var conflicts = new List<Transaction>();
@@ -1427,7 +1427,7 @@ public class UT_Transaction
         // Fake balance - GAS token uses TokenManagement with Prefix_AccountState = 12
         // First, create TokenState for GAS token (required by TokenManagement.BalanceOf)
         snapshotCache = TestBlockchain.GetTestSnapshotCache();
-        var tokenStateKey2 = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+        var tokenStateKey2 = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_TokenState).Add(NativeContract.Governance.GasTokenId);
         if (!snapshotCache.Contains(tokenStateKey2))
         {
             var tokenState = new TokenState
@@ -1443,7 +1443,7 @@ public class UT_Transaction
             snapshotCache.Add(tokenStateKey2, new StorageItem(tokenState));
         }
         // Then set account balance
-        key = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(acc.ScriptHash).Add(NativeContract.Governance.GasTokenId);
+        key = new KeyBuilder(TokenManagement.TokenId, TokenManagement.Prefix_AccountState).Add(NativeContract.Governance.GasTokenId).Add(acc.ScriptHash);
         balance = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
         balance.GetInteroperable<AccountState>().Balance = 10000 * Governance.GasTokenFactor;
 
