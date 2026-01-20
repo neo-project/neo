@@ -149,14 +149,20 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
             }
 
-            // After Faun Hardfork the unit it's pico-gas, before it was datoshi
-
             if (hardfork == Hardfork.HF_Faun)
             {
-                // Add decimals to exec fee factor
+                // Add decimals to exec fee factor: after Faun Hardfork the unit is pico-gas, before it was datoshi.
                 var item = engine.SnapshotCache.GetAndChange(_execFeeFactor) ??
                     throw new InvalidOperationException("Policy was not initialized");
                 item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
+
+                // Add timestamp of the current block to blocked acconuts.
+                var time = engine.GetTime();
+                foreach (var (key, _) in engine.SnapshotCache.Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward))
+                {
+                    var blockedAcc = engine.SnapshotCache.GetAndChange(key)!;
+                    blockedAcc.Set(time);
+                }
             }
             return ContractTask.CompletedTask;
         }
@@ -586,19 +592,7 @@ namespace Neo.SmartContract.Native
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
 
-            var blockData = engine.SnapshotCache.TryGet(key);
-            if (blockData != null)
-            {
-                // Check if it is stored the recover funds time
-                if (blockData.Value.Length == 0 && engine.IsHardforkEnabled(Hardfork.HF_Faun))
-                {
-                    // Don't modify it if already exists
-                    blockData = engine.SnapshotCache.GetAndChange(key)!;
-                    blockData.Set(engine.GetTime());
-                }
-
-                return false;
-            }
+            if (engine.SnapshotCache.Contains(key)) return false;
 
             if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 await NEO.VoteInternal(engine, account, null);
