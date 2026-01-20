@@ -635,7 +635,7 @@ namespace Neo.SmartContract.Native
             // Set request time
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
-            var entry = engine.SnapshotCache.GetAndChange(key, null)
+            var entry = engine.SnapshotCache.TryGet(key)
                 ?? throw new InvalidOperationException("Request not found.");
             var elapsedTime = engine.GetTime() - (BigInteger)entry;
             if (elapsedTime < RequiredTimeForRecoverFund)
