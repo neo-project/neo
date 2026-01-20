@@ -593,6 +593,7 @@ namespace Neo.SmartContract.Native
                 if (blockData.Value.Length == 0 && engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 {
                     // Don't modify it if already exists
+                    blockData = engine.SnapshotCache.GetAndChange(key)!;
                     blockData.Set(engine.GetTime());
                 }
 
