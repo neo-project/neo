@@ -22,7 +22,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Company>The Neo Project</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>3.9.0</Version>
+    <Version>3.9.1</Version>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
