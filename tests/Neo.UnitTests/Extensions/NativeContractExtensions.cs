@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // NativeContractExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -80,10 +80,26 @@ namespace Neo.UnitTests.Extensions
 
         public static void DestroyContract(this DataCache snapshot, UInt160 callingScriptHash)
         {
+            var persistingBlock = new Block()
+            {
+                Header = new Header()
+                {
+                    Index = 0,
+                    MerkleRoot = UInt256.Zero,
+                    Timestamp = 0,
+                    Witness = Witness.Empty,
+                    NextConsensus = UInt160.Zero,
+                    Nonce = 0,
+                    PrevHash = UInt256.Zero,
+                },
+                Transactions = []
+            };
+
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "destroy");
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot,
+                persistingBlock: persistingBlock, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             // Fake calling script hash
