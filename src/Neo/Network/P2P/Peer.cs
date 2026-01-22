@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // Peer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -20,7 +20,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
-using System.Net.Sockets;
 
 namespace Neo.Network.P2P
 {

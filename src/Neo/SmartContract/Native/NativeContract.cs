@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // NativeContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -125,7 +125,13 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Since Hardfork has to start having access to the native contract.
         /// </summary>
-        public virtual Hardfork? ActiveIn { get; } = null;
+        public Hardfork? ActiveIn => Activations.FirstOrDefault();
+
+        /// <summary>
+        /// The set of hardforks that contract should be updated at, except the ActiveIn
+        /// the first entry is the hardfork when the contract will be activated.
+        /// </summary>
+        public virtual ImmutableHashSet<Hardfork?> Activations { get; } = [];
 
         /// <summary>
         /// The hash of the native contract.
@@ -171,7 +177,7 @@ namespace Neo.SmartContract.Native
                     .Concat(_methodDescriptors.Select(u => u.DeprecatedIn))
                     .Concat(_eventsDescriptors.Select(u => u.DeprecatedIn))
                     .Concat(_eventsDescriptors.Select(u => u.ActiveIn))
-                    .Concat([ActiveIn])
+                    .Concat(Activations)
                     .Where(u => u.HasValue)
                     .Select(u => u!.Value)
                     .OrderBy(u => (byte)u)
@@ -362,6 +368,24 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine))
                 throw new InvalidOperationException("Invalid committee signature. It should be a multisig(len(committee) - (len(committee) - 1) / 2)).");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static UInt160 AssertAlmostFullCommittee(ApplicationEngine engine)
+        {
+            // Signed by maximum of (half committee + 1) and (committee - 2)
+
+            UInt160 committeeMultiSigAddr;
+            var committees = NativeContract.NEO.GetCommittee(engine.SnapshotCache);
+
+            // Min must be almost the committee address
+            var min = Math.Max(1, committees.Length - (committees.Length - 1) / 2);
+            committeeMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(min, committees.Length - 2), committees).ToScriptHash();
+
+            if (!engine.CheckWitnessInternal(committeeMultiSigAddr))
+                throw new InvalidOperationException("Invalid committee signature. It should be a multisig(max(1,len(committee) - 2))).");
+
+            return committeeMultiSigAddr;
         }
 
         #region Storage keys
