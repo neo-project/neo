@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neo.Extensions\Neo.Extensions.csproj" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.15.5" />
   </ItemGroup>
 
 </Project>
