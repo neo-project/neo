@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_PolicyContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,11 +10,13 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
@@ -196,7 +198,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                    "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
+                    "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 100500_0000 });
             });
 
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
@@ -205,12 +207,101 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Proper set
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
+                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50_0000 });
             Assert.IsTrue(ret.IsNull);
 
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(50, ret.GetInteger());
+        }
+
+        [TestMethod]
+        public void Check_RecoverFunds_CompleteFlow()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            // Get almost full committee address
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var committees = NativeContract.NEO.GetCommittee(snapshot);
+            var min = Math.Max(1, committees.Length - (committees.Length - 1) / 2);
+            var committeeFullMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(min, committees.Length - 2), committees).ToScriptHash();
+            // Create a blocked account
+            UInt160 blockedAccount = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
+            ulong startTime = 1000000;
+            ulong requiredTime = 365UL * 24 * 60 * 60 * 1_000; // Actual value from code
+            ulong finishTime = startTime + requiredTime + 1000; // More than required time
+
+            // Block 1: For recoverFundsStart
+            Block blockStart = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    Timestamp = startTime,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+
+            // Block 2: For recoverFundsFinish (more than 1 year later)
+            Block blockFinish = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 2000,
+                    Timestamp = finishTime,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+
+            // Try Without signature
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), blockStart,
+                    "recoverFund",
+                    new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero },
+                    new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
+            });
+            // Step 1: Block the account
+            var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), blockStart,
+                "blockAccount",
+                new ContractParameter(ContractParameterType.Hash160) { Value = blockedAccount });
+            Assert.IsInstanceOfType(ret, typeof(Boolean));
+            Assert.IsTrue(ret.GetBoolean());
+            Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, blockedAccount));
+
+            // Step 2: Set account balances (GAS)
+            var gasBalance = 50000 * NativeContract.GAS.Factor; // 50000 GAS
+
+            // Set GAS balance
+            var gasKey = NativeContract.GAS.CreateStorageKey(20, blockedAccount);
+            var gasEntry = snapshot.GetAndChange(gasKey, () => new StorageItem(new AccountState()));
+            gasEntry.GetInteroperable<AccountState>().Balance = gasBalance;
+
+            // Verify balances are set
+            Assert.AreEqual(gasBalance, NativeContract.GAS.BalanceOf(snapshot, blockedAccount));
+
+            // Step 3: Call recoverFundsFinish (after required time has passed)
+            // This should transfer all funds to Treasury
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr), blockFinish,
+                "recoverFund",
+                new ContractParameter(ContractParameterType.Hash160) { Value = blockedAccount },
+                new ContractParameter(ContractParameterType.Hash160) { Value = NativeContract.GAS.Hash });
+
+            // Step 5: Verify balances were transferred to Treasury
+            Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, blockedAccount));
+
+            // Verify Treasury received the funds
+            var treasuryGasBalance = NativeContract.GAS.BalanceOf(snapshot, NativeContract.Treasury.Hash);
+            // Treasury should have received the funds (exact balance depends on initial Treasury balance)
+            Assert.IsTrue(treasuryGasBalance >= gasBalance, "Treasury should have received GAS");
         }
 
         [TestMethod]
@@ -625,6 +716,175 @@ namespace Neo.UnitTests.SmartContract.Native
             var iter = engine.ResultStack[0].GetInterface<object>() as StorageIterator;
             Assert.IsTrue(iter.Next());
             Assert.AreEqual(new UInt160(iter.Value(new ReferenceCounter()).GetSpan()), UInt160.Zero);
+        }
+
+        [TestMethod]
+        public void TestWhiteListFee()
+        {
+            // Create script
+
+            var snapshotCache = _snapshotCache.CloneCache();
+
+            byte[] script;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.EmitDynamicCall(NativeContract.NEO.Hash, "balanceOf", NativeContract.NEO.GetCommitteeAddress(_snapshotCache.CloneCache()));
+                script = sb.ToArray();
+            }
+
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+            // Not whitelisted
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(2028330, engine.FeeConsumed);
+            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+            Assert.IsEmpty(engine.Notifications);
+
+            // Whitelist
+
+            engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 1, 0);
+            engine.SnapshotCache.Commit();
+
+            // Whitelisted
+
+            Assert.HasCount(1, engine.Notifications); // Whitelist changed
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1045260, engine.FeeConsumed);
+
+            // Clean white list
+
+            engine.SnapshotCache.Commit();
+            engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
+
+            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+            Assert.HasCount(1, engine.Notifications); // Whitelist deleted
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractNegativeFixedFee()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+
+            // Register a dummy contract
+            UInt160 contractHash;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.Emit(OpCode.RET);
+                var script = sb.ToArray();
+                contractHash = script.ToScriptHash();
+                snapshotCache.DeleteContract(contractHash);
+                var manifest = TestUtils.CreateManifest("dummy", ContractParameterType.Any);
+                manifest.Abi.Methods = [
+                    new ContractMethodDescriptor
+                    {
+                        Name = "foo",
+                        Parameters = [],
+                        ReturnType = ContractParameterType.Any,
+                        Offset = 0,
+                        Safe = false
+                    }
+                ];
+
+                var contract = TestUtils.GetContract(script, manifest);
+                snapshotCache.AddContract(contractHash, contract);
+            }
+
+            // Invoke SetWhiteListFeeContract with fixedFee negative
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, contractHash, "foo", 1, -1L));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenContractNotFound()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+            var randomHash = new UInt160(Crypto.Hash160([1, 2, 3]).ToArray());
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, randomHash, "transfer", 3, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenContractNotInAbi()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "noexists", 0, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenArgCountMismatch()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+            // transfer exists with 4 args
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 0, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractWhenNotCommittee()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                Signers = [new() { Account = UInt160.Zero, Scopes = WitnessScope.Global }],
+                Attributes = [],
+                Witnesses = [new Witness { }],
+                Script = new byte[1],
+                NetworkFee = 0,
+                SystemFee = 0,
+                ValidUntilBlock = 0
+            };
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+            Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 10));
+        }
+
+        [TestMethod]
+        public void TestSetWhiteListFeeContractSetContract()
+        {
+            var snapshotCache = _snapshotCache.CloneCache();
+            var engine = CreateEngineWithCommitteeSigner(snapshotCache);
+            var method = NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)
+                .Manifest.Abi.Methods.Where(u => u.Name == "balanceOf").Single();
+
+            NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, method.Name, method.Parameters.Length, 123_456);
+            Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(engine.SnapshotCache, NativeContract.NEO.Hash, method, out var fixedFee));
+            Assert.AreEqual(123_456, fixedFee);
+        }
+
+        private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[] script = null)
+        {
+            // Get committe public keys and calculate m
+            var committee = NativeContract.NEO.GetCommittee(snapshotCache);
+            var m = (committee.Length / 2) + 1;
+            var committeeContract = Contract.CreateMultiSigContract(m, committee);
+
+            // Create Tx needed for CheckWitness / CheckCommittee
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                Signers = [new() { Account = committeeContract.ScriptHash, Scopes = WitnessScope.Global }],
+                Attributes = [],
+                Witnesses = [new Witness { InvocationScript = new byte[1], VerificationScript = committeeContract.Script }],
+                Script = script ?? [(byte)OpCode.NOP],
+                NetworkFee = 0,
+                SystemFee = 0,
+                ValidUntilBlock = 0
+            };
+
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+            engine.LoadScript(tx.Script);
+
+            return engine;
         }
     }
 }

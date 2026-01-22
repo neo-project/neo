@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // NativeContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -105,6 +105,11 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public static Notary Notary { get; } = new();
 
+        /// <summary>
+        /// Gets the instance of the <see cref="Treasury"/> class.
+        /// </summary>
+        public static Treasury Treasury { get; } = new();
+
         #endregion
 
         /// <summary>
@@ -120,7 +125,13 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Since Hardfork has to start having access to the native contract.
         /// </summary>
-        public virtual Hardfork? ActiveIn { get; } = null;
+        public Hardfork? ActiveIn => Activations.FirstOrDefault();
+
+        /// <summary>
+        /// The set of hardforks that contract should be updated at, except the ActiveIn
+        /// the first entry is the hardfork when the contract will be activated.
+        /// </summary>
+        public virtual ImmutableHashSet<Hardfork?> Activations { get; } = [];
 
         /// <summary>
         /// The hash of the native contract.
@@ -166,7 +177,7 @@ namespace Neo.SmartContract.Native
                     .Concat(_methodDescriptors.Select(u => u.DeprecatedIn))
                     .Concat(_eventsDescriptors.Select(u => u.DeprecatedIn))
                     .Concat(_eventsDescriptors.Select(u => u.ActiveIn))
-                    .Concat([ActiveIn])
+                    .Concat(Activations)
                     .Where(u => u.HasValue)
                     .Select(u => u!.Value)
                     .OrderBy(u => (byte)u)
@@ -359,6 +370,24 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException("Invalid committee signature. It should be a multisig(len(committee) - (len(committee) - 1) / 2)).");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static UInt160 AssertAlmostFullCommittee(ApplicationEngine engine)
+        {
+            // Signed by maximum of (half committee + 1) and (committee - 2)
+
+            UInt160 committeeMultiSigAddr;
+            var committees = NativeContract.NEO.GetCommittee(engine.SnapshotCache);
+
+            // Min must be almost the committee address
+            var min = Math.Max(1, committees.Length - (committees.Length - 1) / 2);
+            committeeMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(min, committees.Length - 2), committees).ToScriptHash();
+
+            if (!engine.CheckWitnessInternal(committeeMultiSigAddr))
+                throw new InvalidOperationException("Invalid committee signature. It should be a multisig(max(1,len(committee) - 2))).");
+
+            return committeeMultiSigAddr;
+        }
+
         #region Storage keys
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -393,6 +422,9 @@ namespace Neo.SmartContract.Native
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => StorageKey.Create(Id, prefix, hash, signer);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash, int bigEndian) => StorageKey.Create(Id, prefix, hash, bigEndian);
 
         #endregion
 
@@ -432,8 +464,15 @@ namespace Neo.SmartContract.Native
                 var state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
-                // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-                engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
+                // Check native-whitelist
+                if (!engine.IsHardforkEnabled(Hardfork.HF_Faun) ||
+                    !Policy.IsWhitelistFeeContract(engine.SnapshotCache, Hash, method.Descriptor, out var fixedFee))
+                {
+                    // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+                    engine.AddFee(
+                        (method.CpuFee * engine.ExecFeePicoFactor) +
+                        (method.StorageFee * engine.StoragePrice * ApplicationEngine.FeeFactor));
+                }
                 List<object?> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);

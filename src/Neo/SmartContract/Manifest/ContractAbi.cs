@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ContractAbi.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -88,8 +88,10 @@ namespace Neo.SmartContract.Manifest
             if (pcount >= 0)
             {
                 methodDictionary ??= Methods.ToDictionary(p => (p.Name, p.Parameters.Length));
-                methodDictionary.TryGetValue((name, pcount), out var method);
-                return method;
+                if (methodDictionary.TryGetValue((name, pcount), out var method))
+                    return method;
+
+                return null;
             }
             else
             {

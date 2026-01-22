@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // Notary.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -21,6 +21,7 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -46,7 +47,7 @@ namespace Neo.SmartContract.Native
 
         internal Notary() : base() { }
 
-        public override Hardfork? ActiveIn => Hardfork.HF_Echidna;
+        public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_Echidna, Hardfork.HF_Faun]; // supported standards update at Faun.
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
@@ -90,7 +91,14 @@ namespace Neo.SmartContract.Native
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
-            manifest.SupportedStandards = ["NEP-27"];
+            if (hfChecker(Hardfork.HF_Faun, blockHeight))
+            {
+                manifest.SupportedStandards = ["NEP-27", "NEP-30"];
+            }
+            else
+            {
+                manifest.SupportedStandards = ["NEP-27"];
+            }
         }
 
         /// <summary>
@@ -220,7 +228,7 @@ namespace Neo.SmartContract.Native
         /// <param name="to">To Account</param>
         /// <returns>Whether withdrawal was successfull.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.All)]
-        private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
+        private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160? to)
         {
             if (!engine.CheckWitnessInternal(from)) return false;
             var receive = to is null ? from : to;

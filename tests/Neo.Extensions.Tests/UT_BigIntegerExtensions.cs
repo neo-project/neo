@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_BigIntegerExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions.Factories;
 using Neo.Json;
 using System;
 using System.Buffers.Binary;
@@ -113,30 +112,20 @@ namespace Neo.Extensions.Tests
             for (var i = 0; i < 64; i++)
             {
                 var b = new BigInteger(1ul << i);
-                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
                 Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
             }
 
-            var random = new Random();
             for (var i = 0; i < 128; i++)
             {
                 var buffer = new byte[16];
                 BinaryPrimitives.WriteInt128LittleEndian(buffer, Int128.One << i);
 
                 var b = new BigInteger(buffer, isUnsigned: false);
-                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
                 Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
 
                 BinaryPrimitives.WriteUInt128LittleEndian(buffer, UInt128.One << i);
                 b = new BigInteger(buffer, isUnsigned: true);
-                Assert.AreEqual(i, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
                 Assert.AreEqual(i, BigInteger.TrailingZeroCount(b));
-
-                buffer = new byte[32]; // 256bit
-                random.NextBytes(buffer);
-                b = new BigInteger(buffer, isUnsigned: true);
-                var zeroCount = BigInteger.TrailingZeroCount(b);
-                if (!b.IsZero) Assert.AreEqual(zeroCount, BigIntegerExtensions.TrailingZeroCount(b.ToByteArray()));
             }
         }
 
@@ -312,18 +301,9 @@ namespace Neo.Extensions.Tests
             Assert.AreEqual(new BigInteger(9), new BigInteger(81).Sqrt());
         }
 
-        private static byte[] GetRandomByteArray()
-        {
-            var byteValue = RandomNumberFactory.NextInt32(0, 32);
-            return RandomNumberFactory.NextBytes(byteValue);
-        }
-
         private void VerifyGetBitLength(BigInteger value, long expected)
         {
-            var result = value.GetBitLength();
             Assert.AreEqual(expected, value.GetBitLength(), "Native method has not the expected result");
-            Assert.AreEqual(result, BigIntegerExtensions.GetBitLength(value), "Result doesn't match");
-            Assert.AreEqual(result, BigIntegerExtensions.BitLength(value), "Result doesn't match");
         }
 
         [TestMethod]
@@ -352,27 +332,6 @@ namespace Neo.Extensions.Tests
             VerifyGetBitLength(-7, 3); // 1|001
             VerifyGetBitLength(8, 4);  // 0|1000
             VerifyGetBitLength(-8, 3); // 1|000
-
-            // Random cases
-            for (uint i = 0; i < 1000; i++)
-            {
-                var b = new BigInteger(GetRandomByteArray());
-                Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.GetBitLength(b), message: $"Error comparing: {b}");
-                Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.BitLength(b), message: $"Error comparing: {b}");
-            }
-
-            foreach (var bv in new[] { BigInteger.Zero, BigInteger.One, BigInteger.MinusOne, new(ulong.MaxValue), new(long.MinValue) })
-            {
-                Assert.AreEqual(bv.GetBitLength(), BigIntegerExtensions.GetBitLength(bv));
-                Assert.AreEqual(bv.GetBitLength(), BigIntegerExtensions.BitLength(bv));
-            }
-
-            for (var i = 0; i < 1000; i++)
-            {
-                var b = new BigInteger(i);
-                Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.GetBitLength(b), message: $"Error comparing: {b}");
-                Assert.AreEqual(b.GetBitLength(), BigIntegerExtensions.BitLength(b), message: $"Error comparing: {b}");
-            }
         }
 
         [TestMethod]

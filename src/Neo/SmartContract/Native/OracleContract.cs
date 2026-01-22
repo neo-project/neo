@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // OracleContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -15,11 +15,13 @@ using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -50,6 +52,16 @@ namespace Neo.SmartContract.Native
             "Id", ContractParameterType.Integer,
             "OriginalTx", ContractParameterType.Hash256)]
         internal OracleContract() : base() { }
+
+        public override ImmutableHashSet<Hardfork?> Activations => [null, Hardfork.HF_Faun]; // Active from begining, but supported standards update at Faun.
+
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+        {
+            if (hfChecker(Hardfork.HF_Faun, blockHeight))
+            {
+                manifest.SupportedStandards = ["NEP-30"];
+            }
+        }
 
         /// <summary>
         /// Sets the price for an Oracle request. Only committee members can call this method.
@@ -228,10 +240,10 @@ namespace Neo.SmartContract.Native
             if (gasForResponse < 0_10000000)
                 throw new ArgumentException($"gasForResponse {gasForResponse} must be at least 0.1 datoshi.");
 
-            engine.AddFee(GetPrice(engine.SnapshotCache));
+            engine.AddFee(GetPrice(engine.SnapshotCache) * ApplicationEngine.FeeFactor);
 
             //Mint gas for the response
-            engine.AddFee(gasForResponse);
+            engine.AddFee(gasForResponse * ApplicationEngine.FeeFactor);
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id

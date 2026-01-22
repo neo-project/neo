@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // RemoteNode.ProtocolHandler.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -209,10 +209,11 @@ namespace Neo.Network.P2P
 
         private void OnGetBlockByIndexMessageReceived(GetBlockByIndexPayload payload)
         {
+            var snapshot = _system.StoreView;
             uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
             for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
-                Block? block = NativeContract.Ledger.GetBlock(_system.StoreView, i);
+                Block? block = NativeContract.Ledger.GetBlock(snapshot, i);
                 if (block == null)
                     break;
 
@@ -222,7 +223,7 @@ namespace Neo.Network.P2P
                 }
                 else
                 {
-                    BitArray flags = new(block.Transactions.Select(p => _bloomFilter.Test(p)).ToArray());
+                    BitArray flags = new(block.Transactions.Select(_bloomFilter.Test).ToArray());
                     EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                 }
             }
@@ -237,6 +238,7 @@ namespace Neo.Network.P2P
         /// <param name="payload">The payload containing the requested information.</param>
         private void OnGetDataMessageReceived(InvPayload payload)
         {
+            var snapshot = _system.StoreView;
             var notFound = new List<UInt256>();
             foreach (var hash in payload.Hashes.Where(_sentHashes.TryAdd))
             {
@@ -249,7 +251,7 @@ namespace Neo.Network.P2P
                             notFound.Add(hash);
                         break;
                     case InventoryType.Block:
-                        Block? block = NativeContract.Ledger.GetBlock(_system.StoreView, hash);
+                        Block? block = NativeContract.Ledger.GetBlock(snapshot, hash);
                         if (block != null)
                         {
                             if (_bloomFilter == null)
@@ -291,12 +293,17 @@ namespace Neo.Network.P2P
         {
             var snapshot = _system.StoreView;
             if (payload.IndexStart > NativeContract.Ledger.CurrentIndex(snapshot)) return;
-            List<Header> headers = new();
+            var headers = new List<Header>();
             uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
             for (uint i = 0; i < count; i++)
             {
-                var header = NativeContract.Ledger.GetHeader(snapshot, payload.IndexStart + i);
-                if (header == null) break;
+                uint index = payload.IndexStart + i;
+                Header? header = _system.HeaderCache[index];
+                if (header == null)
+                {
+                    header = NativeContract.Ledger.GetHeader(snapshot, index);
+                    if (header == null) break;
+                }
                 headers.Add(header);
             }
             if (headers.Count == 0) return;

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ExecutionContextState.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -53,5 +53,10 @@ namespace Neo.SmartContract
         public int NotificationCount { get; set; }
 
         public bool IsDynamicCall { get; set; }
+
+        /// <summary>
+        /// True if the execution is whitelisted by committee
+        /// </summary>
+        public bool WhiteListed { get; set; } = false;
     }
 }

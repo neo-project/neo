@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ApplicationEngine.Contract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -124,7 +124,7 @@ namespace Neo.SmartContract
             long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
                 : 1 << 8;
-            AddFee(fee * ExecFeeFactor);
+            AddFee(fee * _execFeeFactor);
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
@@ -141,7 +141,7 @@ namespace Neo.SmartContract
             long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice * pubKeys.Length
                 : 1 << 8;
-            AddFee(fee * ExecFeeFactor);
+            AddFee(fee * _execFeeFactor);
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 

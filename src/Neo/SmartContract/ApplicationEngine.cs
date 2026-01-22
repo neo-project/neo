@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ApplicationEngine.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -66,15 +66,19 @@ namespace Neo.SmartContract
 
         private static Dictionary<uint, InteropDescriptor>? services;
         // Total amount of GAS spent to execute.
-        // In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
-        private readonly long _feeAmount;
+        // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+        private readonly BigInteger _feeAmount;
+        private BigInteger _feeConsumed;
+        // Decimals for fee calculation
+        public const uint FeeFactor = 10000;
         private Dictionary<Type, object>? states;
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs>? notifications;
         private List<IDisposable>? disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
-        internal readonly uint ExecFeeFactor;
+        // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+        private readonly BigInteger _execFeeFactor;
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
@@ -132,19 +136,29 @@ namespace Neo.SmartContract
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
         [Obsolete("This property is deprecated. Use FeeConsumed instead.")]
-        public long GasConsumed { get; protected set; } = 0;
+        public long GasConsumed => FeeConsumed;
+
+        /// <summary>
+        /// Exec Fee Factor. In the unit of datoshi, 1 datoshi = 1e-8 GAS
+        /// </summary>
+        internal long ExecFeeFactor => (long)_execFeeFactor.DivideCeiling(FeeFactor);
 
         /// <summary>
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed { get; protected set; } = 0;
+        public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor);
+
+        /// <summary>
+        /// Exec Fee Factor. In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+        /// </summary>
+        internal BigInteger ExecFeePicoFactor => _execFeeFactor;
 
         /// <summary>
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => _feeAmount - FeeConsumed;
+        public long GasLeft => (long)((_feeAmount - _feeConsumed) / FeeFactor);
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
@@ -206,17 +220,31 @@ namespace Neo.SmartContract
             originalSnapshotCache = snapshotCache;
             PersistingBlock = persistingBlock;
             ProtocolSettings = settings;
-            _feeAmount = gas;
+            _feeAmount = gas * FeeFactor; // PicoGAS
             Diagnostic = diagnostic;
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
-                ExecFeeFactor = PolicyContract.DefaultExecFeeFactor;
+                _execFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
                 StoragePrice = PolicyContract.DefaultStoragePrice;
             }
             else
             {
-                ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
+                var persistingIndex = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshotCache);
+
+                if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingIndex))
+                {
+                    // The values doesn't have the decimals stored
+                    _execFeeFactor = NativeContract.Policy.GetExecFeeFactor(this) * FeeFactor;
+                }
+                else
+                {
+                    // The values have the decimals stored starting from OnPersist of Faun's block.
+                    _execFeeFactor = NativeContract.Policy.GetExecPicoFeeFactor(this);
+                    if (trigger == TriggerType.OnPersist && persistingIndex > 0 && !settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingIndex - 1))
+                        _execFeeFactor *= FeeFactor;
+                }
+
                 StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
             }
 
@@ -297,13 +325,19 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
-        protected internal void AddFee(long datoshi)
+        /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
+        protected internal void AddFee(BigInteger picoGas)
         {
-#pragma warning disable CS0618 // Type or member is obsolete
-            FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
-#pragma warning restore CS0618 // Type or member is obsolete
-            if (FeeConsumed > _feeAmount)
+            // Check whitelist
+
+            if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
+            {
+                // The execution is whitelisted
+                return;
+            }
+
+            _feeConsumed = _feeConsumed + picoGas;
+            if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
@@ -342,8 +376,8 @@ namespace Neo.SmartContract
             else
             {
                 var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
-                ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
-                : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!);
+                    ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
+                    : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!);
                 if (executingContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
@@ -365,6 +399,13 @@ namespace Neo.SmartContract
             var contextNew = LoadContract(contract, method, flags & callingFlags);
             state = contextNew.GetState<ExecutionContextState>();
             state.CallingContext = currentContext;
+            // Check whitelist
+            if (IsHardforkEnabled(Hardfork.HF_Faun) &&
+                NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
+            {
+                AddFee(fixedFee.Value * FeeFactor);
+                state.WhiteListed = true;
+            }
 
             for (int i = args.Count - 1; i >= 0; i--)
                 contextNew.EvaluationStack.Push(args[i]);
@@ -596,6 +637,8 @@ namespace Neo.SmartContract
         /// <returns>The converted <see cref="object"/>.</returns>
         protected internal object? Convert(StackItem item, InteropParameterDescriptor descriptor)
         {
+            if (item.IsNull && !descriptor.IsNullable && descriptor.Type != typeof(StackItem))
+                throw new InvalidOperationException($"The argument `{descriptor.Name}` can't be null.");
             descriptor.Validate(item);
             if (descriptor.IsArray)
             {
@@ -604,7 +647,11 @@ namespace Neo.SmartContract
                 {
                     av = Array.CreateInstance(descriptor.Type.GetElementType()!, array.Count);
                     for (int i = 0; i < av.Length; i++)
+                    {
+                        if (array[i].IsNull && !descriptor.IsElementNullable)
+                            throw new InvalidOperationException($"The element of `{descriptor.Name}` can't be null.");
                         av.SetValue(descriptor.Converter(array[i]), i);
+                    }
                 }
                 else
                 {
@@ -612,7 +659,12 @@ namespace Neo.SmartContract
                     if (count > Limits.MaxStackSize) throw new InvalidOperationException();
                     av = Array.CreateInstance(descriptor.Type.GetElementType()!, count);
                     for (int i = 0; i < av.Length; i++)
-                        av.SetValue(descriptor.Converter(Pop()), i);
+                    {
+                        StackItem popped = Pop();
+                        if (popped.IsNull && !descriptor.IsElementNullable)
+                            throw new InvalidOperationException($"The element of `{descriptor.Name}` can't be null.");
+                        av.SetValue(descriptor.Converter(popped), i);
+                    }
                 }
                 return av;
             }
@@ -627,16 +679,19 @@ namespace Neo.SmartContract
             }
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Diagnostic?.Disposed();
-            if (disposables != null)
+            if (disposing)
             {
-                foreach (var disposable in disposables)
-                    disposable.Dispose();
-                disposables = null;
+                Diagnostic?.Disposed();
+                if (disposables != null)
+                {
+                    foreach (var disposable in disposables)
+                        disposable.Dispose();
+                    disposables = null;
+                }
             }
-            base.Dispose();
+            base.Dispose(disposing);
         }
 
         /// <summary>
@@ -657,7 +712,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * ExecFeeFactor);
+            AddFee(descriptor.FixedPrice * _execFeeFactor);
 
             object?[] parameters = new object?[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -671,7 +726,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(ExecFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)

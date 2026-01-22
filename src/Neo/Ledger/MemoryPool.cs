@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // MemoryPool.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -29,6 +29,11 @@ namespace Neo.Ledger
     {
         public event EventHandler<Transaction>? TransactionAdded;
         public event EventHandler<TransactionRemovedEventArgs>? TransactionRemoved;
+        /// <summary>
+        /// Transaction policy validator event.
+        /// This function will be called to validate each transaction before adding it to the pool.
+        /// </summary>
+        public event EventHandler<NewTransactionEventArgs>? NewTransaction;
 
         // Allow a reverified transaction to be rebroadcast if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcast = 10;
@@ -307,6 +312,13 @@ namespace Neo.Ledger
 
         internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
         {
+            if (NewTransaction != null)
+            {
+                var args = new NewTransactionEventArgs { Transaction = tx, Snapshot = snapshot };
+                NewTransaction(this, args);
+                if (args.Cancel) return VerifyResult.PolicyFail;
+            }
+
             var poolItem = new PoolItem(tx);
 
             if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;

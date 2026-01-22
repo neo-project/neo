@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_GasToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -80,8 +80,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Transfer
 
             Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock));
-            Assert.ThrowsExactly<ArgumentNullException>(() => _ = NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
-            Assert.ThrowsExactly<ArgumentNullException>(() => _ = NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
             Assert.AreEqual(100000000, NativeContract.NEO.BalanceOf(snapshot, from));
             Assert.AreEqual(0, NativeContract.NEO.BalanceOf(snapshot, to));
 

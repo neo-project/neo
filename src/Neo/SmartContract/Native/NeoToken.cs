@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // NeoToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -147,13 +147,8 @@ namespace Neo.SmartContract.Native
         {
             if (state.Balance.IsZero) return BigInteger.Zero;
             if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance), "cannot be negative");
-
-            var expectEnd = Ledger.CurrentIndex(snapshot) + 1;
-            if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
             if (state.BalanceHeight >= end) return BigInteger.Zero;
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             (var neoHolderReward, var voteReward) = CalculateReward(snapshot, state, end);
-
             return neoHolderReward + voteReward;
         }
 
@@ -377,17 +372,19 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Get the amount of unclaimed GAS in the specified account.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The engine used to check witness and read data.</param>
         /// <param name="account">The account to check.</param>
         /// <param name="end">The block index used when calculating GAS.</param>
         /// <returns>The amount of unclaimed GAS.</returns>
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
+        public BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
         {
-            StorageItem? storage = snapshot.TryGet(CreateStorageKey(Prefix_Account, account));
+            var expectEnd = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache) + 1;
+            ArgumentOutOfRangeException.ThrowIfNotEqual(end, expectEnd);
+            StorageItem? storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
-            return CalculateBonus(snapshot, state, end);
+            return CalculateBonus(engine.SnapshotCache, state, end);
         }
 
         /// <summary>
@@ -429,8 +426,8 @@ namespace Neo.SmartContract.Native
             if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna) &&
                 !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            engine.AddFee(GetRegisterPrice(engine.SnapshotCache));
+            // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+            engine.AddFee(GetRegisterPrice(engine.SnapshotCache) * ApplicationEngine.FeeFactor);
             return RegisterInternal(engine, pubkey);
         }
 
@@ -481,9 +478,14 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the vote is successful; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
         [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
+        private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint? voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
+            return await VoteInternal(engine, account, voteTo);
+        }
+
+        internal async ContractTask<bool> VoteInternal(ApplicationEngine engine, UInt160 account, ECPoint? voteTo)
+        {
             NeoAccountState? stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
             if (stateAccount is null) return false;
             if (stateAccount.Balance == 0) return false;

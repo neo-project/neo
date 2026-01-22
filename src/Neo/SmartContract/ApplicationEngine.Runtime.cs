@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ApplicationEngine.Runtime.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -324,7 +324,7 @@ namespace Neo.SmartContract
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
-            AddFee(price * ExecFeeFactor);
+            AddFee(price * _execFeeFactor);
             return new BigInteger(buffer, isUnsigned: true);
         }
 
@@ -425,7 +425,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hash">The hash of the specified contract. It can be set to <see langword="null"/> to get all notifications.</param>
         /// <returns>The notifications sent during the execution.</returns>
-        protected internal Array GetNotifications(UInt160 hash)
+        protected internal Array GetNotifications(UInt160? hash)
         {
             IEnumerable<NotifyEventArgs> notifications = Notifications;
             if (hash != null) // must filter by scriptHash
@@ -449,7 +449,7 @@ namespace Neo.SmartContract
         {
             if (datoshi <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
-            AddFee(datoshi);
+            AddFee(datoshi * FeeFactor);
         }
 
         /// <summary>

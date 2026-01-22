@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // Plugin.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using static System.IO.Path;
 
 namespace Neo.Plugins
@@ -168,7 +169,21 @@ namespace Neo.Plugins
 
         private static void LoadPlugin(Assembly assembly)
         {
-            foreach (var type in assembly.ExportedTypes)
+            Type[] exportedTypes;
+
+            var assemblyName = assembly.GetName().Name;
+
+            try
+            {
+                exportedTypes = (Type[])assembly.ExportedTypes;
+            }
+            catch (Exception ex)
+            {
+                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly {assemblyName}: {ex}");
+                throw;
+            }
+
+            foreach (var type in exportedTypes)
             {
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
@@ -182,7 +197,7 @@ namespace Neo.Plugins
                 }
                 catch (Exception ex)
                 {
-                    Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} of {assemblyName}: {ex}");
                 }
             }
         }
@@ -190,7 +205,9 @@ namespace Neo.Plugins
         internal static void LoadPlugins()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
-            List<Assembly> assemblies = [];
+            List<Assembly> assemblies = AssemblyLoadContext.Default.Assemblies
+                        .Where(p => p.FullName?.StartsWith("Neo", StringComparison.InvariantCultureIgnoreCase) == true)
+                        .ToList();
             foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
             {
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
@@ -199,7 +216,10 @@ namespace Neo.Plugins
                     {
                         assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {filename}: {ex}");
+                    }
                 }
             }
 

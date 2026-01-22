@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // StorageKey.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -178,6 +178,27 @@ namespace Neo.SmartContract
             FillHeader(data, id, prefix);
             hash.Serialize(data.AsSpan(PrefixLength..));
             signer.Serialize(data.AsSpan(UInt256Length..));
+            return new(id, data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="hash">Hash</param>
+        /// <param name="bigEndian">Big Endian key.</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix, UInt160 hash, int bigEndian)
+        {
+            const int HashAndInt = UInt160Length + sizeof(int);
+
+            var data = new byte[HashAndInt];
+
+            FillHeader(data, id, prefix);
+            hash.Serialize(data.AsSpan(PrefixLength..));
+            BinaryPrimitives.WriteInt32BigEndian(data.AsSpan(UInt160Length..), bigEndian);
+
             return new(id, data);
         }
 

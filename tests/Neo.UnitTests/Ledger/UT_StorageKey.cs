@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_StorageKey.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -75,6 +75,14 @@ namespace Neo.UnitTests.Ledger
             CollectionAssert.AreEqual(key.ToArray(), StorageKey.Create(1, 2,
                 UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"),
                 UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302")).ToArray());
+
+            // UInt160+Int
+            key = new KeyBuilder(1, 2);
+            key.Add(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
+            key.AddBigEndian(123); // method Offset
+
+            CollectionAssert.AreEqual(key.ToArray(), StorageKey.Create(1, 2,
+                UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"), 123).ToArray());
 
             // ISerializable
             key = new KeyBuilder(1, 2);

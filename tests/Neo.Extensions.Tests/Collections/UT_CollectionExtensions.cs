@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_CollectionExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -7,7 +7,7 @@
 // for more details.
 //
 // Redistribution and use in source and binary forms with or without
-// modifications are permitted. 
+// modifications are permitted.
 
 using System;
 using System.Collections.Generic;

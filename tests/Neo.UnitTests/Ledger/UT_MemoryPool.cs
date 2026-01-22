@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_MemoryPool.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -156,6 +156,26 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(100, _unit.VerifiedCount);
             Assert.AreEqual(0, _unit.UnVerifiedCount);
             Assert.HasCount(100, _unit);
+        }
+
+        [TestMethod]
+        public void CancelTest()
+        {
+            // Add over the capacity items, verify that the verified count increases each time
+
+            var ev = new EventHandler<NewTransactionEventArgs>((_, args) =>
+            {
+                args.Cancel = true;
+            });
+
+            _unit.NewTransaction += ev;
+            AddTransactions(1);
+            _unit.NewTransaction -= ev;
+
+            Assert.AreEqual(0, _unit.SortedTxCount);
+            Assert.AreEqual(0, _unit.VerifiedCount);
+            Assert.AreEqual(0, _unit.UnVerifiedCount);
+            Assert.HasCount(0, _unit);
         }
 
         [TestMethod]

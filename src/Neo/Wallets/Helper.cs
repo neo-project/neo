@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -19,6 +19,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Numerics;
 using static Neo.SmartContract.Helper;
 using Array = System.Array;
 
@@ -116,8 +117,8 @@ namespace Neo.Wallets
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize()
                 + tx.Script.GetVarSize() + hashes.Length.GetVarSize();
             int index = -1;
-            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
-            long networkFee = 0;
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(settings, snapshot, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
+            BigInteger networkFee = 0;
             foreach (var hash in hashes)
             {
                 index++;
@@ -226,7 +227,7 @@ namespace Neo.Wallets
             {
                 networkFee += attr.CalculateNetworkFee(snapshot, tx);
             }
-            return networkFee;
+            return (long)networkFee;
         }
     }
 }

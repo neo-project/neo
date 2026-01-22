@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // GenerateGasFixturesTests.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -23,8 +23,9 @@ namespace Neo.UnitTests.GasTests
         [TestMethod]
         public void StdLibTest()
         {
-            var fixture = new GasTestFixture()
+            var fixtureA = new GasTestFixture()
             {
+                Name = "Test Stdlib with default execution fee",
                 Execute =
                 [
                     new ()
@@ -42,7 +43,36 @@ namespace Neo.UnitTests.GasTests
                 ]
             };
 
-            var json = JsonConvert.SerializeObject(fixture);
+            // With half execution fee
+
+            var fixtureB = new GasTestFixture()
+            {
+                Name = "Test Stdlib with half default execution fee",
+                Environment = new GasTestFixture.EnvironmentState()
+                {
+                    Policy = new GasTestFixture.PolicyValues()
+                    {
+                        ExecutionFee = 15_0000
+                    }
+                },
+                Execute =
+                [
+                    new ()
+                    {
+                        // itoa
+                        Script = new ScriptBuilder().EmitDynamicCall(NativeContract.StdLib.Hash, "itoa", [1]).ToArray(),
+                        Fee = 583980
+                    },
+                    new ()
+                    {
+                        // atoi
+                        Script = new ScriptBuilder().EmitDynamicCall(NativeContract.StdLib.Hash, "atoi", ["1"]).ToArray(),
+                        Fee = 523605
+                    }
+                ]
+            };
+
+            var json = JsonConvert.SerializeObject(new GasTestFixture[] { fixtureA, fixtureB });
             Assert.IsNotNull(json);
         }
     }

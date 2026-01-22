@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ApplicationEngine.Crypto.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -69,7 +69,7 @@ namespace Neo.SmartContract
             if (n == 0) throw new ArgumentException("pubkeys array cannot be empty.");
             if (m == 0) throw new ArgumentException("signatures array cannot be empty.");
             if (m > n) throw new ArgumentException($"signatures count ({m}) cannot be greater than pubkeys count ({n}).");
-            AddFee(CheckSigPrice * n * ExecFeeFactor);
+            AddFee(CheckSigPrice * n * _execFeeFactor);
             try
             {
                 for (int i = 0, j = 0; i < m && j < n;)

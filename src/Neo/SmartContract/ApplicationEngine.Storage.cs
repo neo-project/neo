@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // ApplicationEngine.Storage.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -256,7 +256,7 @@ namespace Neo.SmartContract
                 else
                     newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
             }
-            AddFee(newDataSize * StoragePrice);
+            AddFee(newDataSize * StoragePrice * FeeFactor);
 
             item.Value = value;
         }
