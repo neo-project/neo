@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // Wallet.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -39,7 +39,7 @@ namespace Neo.Wallets
     /// <summary>
     /// The base class of wallets.
     /// </summary>
-    public abstract class Wallet : ISigner
+    public abstract partial class Wallet : ISigner
     {
         private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance };
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // PolicyContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,8 +16,8 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
+using Neo.VM.Types;
 using System;
-using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
@@ -103,12 +103,13 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
+        private const ulong RequiredTimeForRecoverFund = 365 * 24 * 60 * 60 * 1_000UL; // 1 year in milliseconds
 
         /// <summary>
         /// The event name for the block generation time changed.
         /// </summary>
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
-
+        private const string RecoveredFundEventName = "RecoveredFund";
         private const string WhitelistChangedEventName = "WhitelistFeeChanged";
 
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
@@ -121,6 +122,7 @@ namespace Neo.SmartContract.Native
             "argCount", ContractParameterType.Integer,
             "fee", ContractParameterType.Any
         )]
+        [ContractEvent(Hardfork.HF_Faun, 2, name: RecoveredFundEventName, "account", ContractParameterType.Hash160)]
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
@@ -147,14 +149,20 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
             }
 
-            // After Faun Hardfork the unit it's pico-gas, before it was datoshi
-
             if (hardfork == Hardfork.HF_Faun)
             {
-                // Add decimals to exec fee factor
-                var item = engine.SnapshotCache.TryGet(_execFeeFactor) ??
+                // Add decimals to exec fee factor: after Faun Hardfork the unit is pico-gas, before it was datoshi.
+                var item = engine.SnapshotCache.GetAndChange(_execFeeFactor) ??
                     throw new InvalidOperationException("Policy was not initialized");
                 item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
+
+                // Add timestamp of the current block to blocked acconuts.
+                var time = engine.GetTime();
+                foreach (var (key, _) in engine.SnapshotCache.Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward))
+                {
+                    var blockedAcc = engine.SnapshotCache.GetAndChange(key)!;
+                    blockedAcc.Set(time);
+                }
             }
             return ContractTask.CompletedTask;
         }
@@ -314,11 +322,11 @@ namespace Neo.SmartContract.Native
             {
                 // Check state existence
 
-                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method.Offset));
+                var item = snapshot.TryGet(CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, method.Offset))?.GetInteroperable<WhitelistedContract>();
 
                 if (item != null)
                 {
-                    fixedFee = (long)(BigInteger)item;
+                    fixedFee = item.FixedFee;
                     return true;
                 }
             }
@@ -354,7 +362,7 @@ namespace Neo.SmartContract.Native
 
             // Emit event
             engine.SendNotification(Hash, WhitelistChangedEventName,
-                [new VM.Types.ByteString(contractHash.ToArray()), method, argCount, VM.Types.StackItem.Null]);
+                [new ByteString(contractHash.ToArray()), method, argCount, StackItem.Null]);
         }
 
         internal int CleanWhitelist(ApplicationEngine engine, ContractState contract)
@@ -362,24 +370,19 @@ namespace Neo.SmartContract.Native
             var count = 0;
             var searchKey = CreateStorageKey(Prefix_WhitelistedFeeContracts, contract.Hash);
 
-            foreach ((var key, _) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
+            foreach (var (key, value) in engine.SnapshotCache.Find(searchKey, SeekDirection.Forward))
             {
                 engine.SnapshotCache.Delete(key);
                 count++;
 
-                // Emit event recovering the values from the Key
-                var keyData = key.ToArray().AsSpan();
-                var methodOffset = BinaryPrimitives.ReadInt32BigEndian(keyData.Slice(StorageKey.PrefixLength + UInt160.Length, sizeof(int)));
-
-                // Get method for event
-                var method = contract.Manifest.Abi.Methods.FirstOrDefault(m => m.Offset == methodOffset);
+                var data = value.GetInteroperable<WhitelistedContract>();
 
                 engine.SendNotification(Hash, WhitelistChangedEventName,
                     [
-                    new VM.Types.ByteString(contract.Hash.ToArray()),
-                    method?.Name ?? VM.Types.StackItem.Null,
-                    method?.Parameters.Length ?? VM.Types.StackItem.Null,
-                    VM.Types.StackItem.Null
+                    new ByteString(contract.Hash.ToArray()),
+                    data.Method,
+                    data.ArgCount,
+                    StackItem.Null
                     ]);
             }
 
@@ -411,9 +414,15 @@ namespace Neo.SmartContract.Native
             var key = CreateStorageKey(Prefix_WhitelistedFeeContracts, contractHash, methodDescriptor.Offset);
 
             // Set
-            var entry = engine.SnapshotCache
-                    .GetAndChange(key, () => new StorageItem(fixedFee));
-            entry.Set(fixedFee);
+            var entry = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(new WhitelistedContract()
+            {
+                ContractHash = contractHash,
+                Method = method,
+                ArgCount = argCount,
+                FixedFee = fixedFee
+            }));
+            entry.GetInteroperable<WhitelistedContract>().FixedFee = fixedFee;
+            entry.Seal();
 
             // Emit event
             engine.SendNotification(Hash, WhitelistChangedEventName, [new VM.Types.ByteString(contractHash.ToArray()), method, argCount, fixedFee]);
@@ -588,7 +597,11 @@ namespace Neo.SmartContract.Native
             if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 await NEO.VoteInternal(engine, account, null);
 
-            engine.SnapshotCache.Add(key, new StorageItem([]));
+            engine.SnapshotCache.Add(key,
+                // Set request time for recover funds
+                engine.IsHardforkEnabled(Hardfork.HF_Faun) ? new StorageItem(engine.GetTime())
+                : new StorageItem([]));
+
             return true;
         }
 
@@ -596,7 +609,6 @@ namespace Neo.SmartContract.Native
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
             AssertCommittee(engine);
-
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (!engine.SnapshotCache.Contains(key)) return false;
@@ -615,10 +627,63 @@ namespace Neo.SmartContract.Native
             return new StorageIterator(enumerator, 1, options);
         }
 
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.All)]
+        internal async ContractTask<bool> RecoverFund(ApplicationEngine engine, UInt160 account, UInt160 token)
+        {
+            var committeeMultiSigAddr = AssertAlmostFullCommittee(engine);
+
+            // Set request time
+
+            var key = CreateStorageKey(Prefix_BlockedAccount, account);
+            var entry = engine.SnapshotCache.TryGet(key)
+                ?? throw new InvalidOperationException("Request not found.");
+            var elapsedTime = engine.GetTime() - (BigInteger)entry;
+            if (elapsedTime < RequiredTimeForRecoverFund)
+            {
+                var remaining = (BigInteger)RequiredTimeForRecoverFund - elapsedTime;
+                var days = remaining / 86_400_000;
+                var hours = (remaining % 86_400_000) / 3_600_000;
+                var minutes = (remaining % 3_600_000) / 60_000;
+                var seconds = (remaining % 60_000) / 1_000;
+                var timeMsg = days > 0 ? $"{days}d {hours}h {minutes}m"
+                    : hours > 0 ? $"{hours}h {minutes}m {seconds}s"
+                    : minutes > 0 ? $"{minutes}m {seconds}s"
+                    : $"{seconds}s";
+                throw new InvalidOperationException($"Request must be signed at least 1 year ago. Remaining time: {timeMsg}.");
+            }
+
+            // Validate contract exists
+            var contract = ContractManagement.GetContract(engine.SnapshotCache, token)
+                ?? throw new InvalidOperationException($"Contract {token} does not exist.");
+
+            // Validate contract implements NEP-17 standard
+            if (!contract.Manifest.SupportedStandards.Contains("NEP-17"))
+                throw new InvalidOperationException($"Contract {token} does not implement NEP-17 standard.");
+
+            // Check balance
+            var balance = await engine.CallFromNativeContractAsync<BigInteger>(account, token, "balanceOf", account.ToArray());
+
+            if (balance > 0)
+            {
+                // Transfer
+                var result = await engine.CallFromNativeContractAsync<bool>(account, token, "transfer",
+                    account.ToArray(), NativeContract.Treasury.Hash.ToArray(), balance, StackItem.Null);
+
+                if (!result)
+                    throw new InvalidOperationException($"Transfer of {balance} from {account} to {NativeContract.Treasury.Hash} failed in contract {token}.");
+
+                // notify
+                engine.SendNotification(Hash, RecoveredFundEventName, [new ByteString(account.ToArray())]);
+                return true;
+            }
+
+            return false;
+        }
+
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         internal StorageIterator GetWhitelistFeeContracts(DataCache snapshot)
         {
-            const FindOptions options = FindOptions.RemovePrefix | FindOptions.KeysOnly;
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.ValuesOnly | FindOptions.DeserializeValues;
             var enumerator = snapshot
                 .Find(CreateStorageKey(Prefix_WhitelistedFeeContracts), SeekDirection.Forward)
                 .GetEnumerator();
