@@ -131,7 +131,9 @@ An overview of the project folders can be seen below.
 ## Related projects
 Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler.
 
-* [neo:](https://github.com/neo-project/neo/) Included libraries are Neo, Neo-CLI, Neo-GUI, Neo-VM, test and plugin modules.
+* [neo:](https://github.com/neo-project/neo/) The core libraries for NEO.
+* [neo-node:](https://github.com/neo-project/neo-node/) The `node-cli` implementation to start a NEO node, and Plugins(including DBFT, RpcServer, Oracle, ApplicationLogs, etc.).
+* [neo-vm:](https://github.com/neo-project/neo-vm/) The Neo Virtual Machine implementation.
 * [neo-express:](https://github.com/neo-project/neo-express/) A private net optimized for development scenarios.
 * [neo-devpack-dotnet:](https://github.com/neo-project/neo-devpack-dotnet/) These are the official tools used to convert a C# smart-contract into a *neo executable file*.
 * [neo-proposals:](https://github.com/neo-project/proposals) NEO Enhancement Proposals (NEPs) describe standards for the NEO platform, including core protocol specifications, client APIs, and contract standards.
@@ -152,18 +154,18 @@ We welcome contributions to the Neo project! To ensure a smooth collaboration pr
 
 ### Branch Rules
 
-- **`master`** - Contains the latest stable release version. This branch reflects the current production state.
-- **`dev`** - The main development branch where all new features and improvements are integrated.
+- **`master`** - The NEO-4 development branch.
+- **`master-n3`** - The NEO-3 development branch.
 
 ### Pull Request Guidelines
 
-**Important**: All pull requests must be based on the `dev` branch, not `master`.
+**Important**: All pull requests must be based on the `master` or/and `master-n3` branch.
 
-1. **Fork the repository** and create your feature branch from `dev`:
+1. **Fork the repository** and create your feature branch from `master` or/and `master-n3`:
    ```bash
-   git checkout dev
-   git pull origin dev
-   git checkout -b feature/your-feature-name
+   git checkout master-n3 # or git checkout master
+   git pull origin master-n3 # or git pull origin master
+   git checkout -b feature/your-feature-name # or bugfix/your-bugfix-name
    ```
 
 2. **Make your changes** following the project's coding standards and conventions.
@@ -172,15 +174,15 @@ We welcome contributions to the Neo project! To ensure a smooth collaboration pr
 
 4. **Commit your changes** with clear, descriptive commit messages:
    ```bash
-   git commit -m "feat: add new feature description"
+   git commit -m "feature: add new feature description" # or bugfix: fix bug description
    ```
 
-5. **Push to your fork** and create a pull request against the `dev` branch:
+5. **Push to your fork** and create a pull request against the `master` or/and `master-n3` branch:
    ```bash
-   git push origin feature/your-feature-name
+   git push origin feature/your-feature-name # or bugfix/your-bugfix-name
    ```
 
-6. **Create a Pull Request** targeting the `dev` branch with:
+6. **Create a Pull Request** targeting the `master` or/and `master-n3` branch with:
    - Clear title and description
    - Reference to any related issues
    - Summary of changes made
@@ -188,12 +190,13 @@ We welcome contributions to the Neo project! To ensure a smooth collaboration pr
 ### Development Workflow
 
 ```
-feature/bug-fix → dev → master (via release)
+feature, bugfix, etc. → master or/and master-n3 → release-vX.Y
+hotfix → release-vX.Y
 ```
 
-- Feature branches are merged into `dev`
-- `dev` is periodically merged into `master` for releases
-- Never create PRs directly against `master`
+- Feature branches are merged into `master` or/and `master-n3`.
+- Create a release branch from `master` or/and `master-n3` periodically.
+- Only hotfix branches are merged into release branches.
 
 For more detailed contribution guidelines, please check our documentation or reach out to the maintainers.
 

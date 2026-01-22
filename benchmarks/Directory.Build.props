@@ -8,5 +8,9 @@
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
-  
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+  </ItemGroup>
+
 </Project>

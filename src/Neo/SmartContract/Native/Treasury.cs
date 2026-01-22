@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // Treasury.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -14,6 +14,7 @@
 
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
+using System.Collections.Immutable;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -25,11 +26,11 @@ namespace Neo.SmartContract.Native
     {
         internal Treasury() : base() { }
 
-        public override Hardfork? ActiveIn => Hardfork.HF_Faun;
+        public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_Faun];
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
-            manifest.SupportedStandards = ["NEP-26", "NEP-27"];
+            manifest.SupportedStandards = ["NEP-26", "NEP-27", "NEP-30"];
         }
 
         /// <summary>
