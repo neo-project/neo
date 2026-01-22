@@ -72,9 +72,9 @@ public sealed class Governance : NativeContract
             await TokenManagement.MintInternal(engine, gasTokenId, initialAccount, engine.ProtocolSettings.InitialGasDistribution, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
 
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_Committee), new(new CachedCommittee(engine.ProtocolSettings.StandbyCommittee)));
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_VotersCount), new());
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock, 0u), new(5 * GasTokenFactor));
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_RegisterPrice), new(1000 * GasTokenFactor));
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_VotersCount), BigInteger.Zero);
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock, 0u), 5 * GasTokenFactor);
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_RegisterPrice), 1000 * GasTokenFactor);
         }
     }
 
