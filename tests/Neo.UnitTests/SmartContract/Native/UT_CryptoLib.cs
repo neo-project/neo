@@ -1095,7 +1095,45 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(Crypto.VerifySignature(message, signature, pubK1, HashAlgorithm.Keccak256));
             Assert.IsTrue(CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1Keccak256));
         }
+        [TestMethod]
+        public void TestVerifyWithECDsaInvalidParameters()
+        {
+            var message = "hello world"u8.ToArray();
+            var privateKey = "6e63fda41e9e3aba9bb5696d58a75731f044a9bdc48fe546da571543b2fa460e".HexToBytes();
+            var publicKey = ECPoint.Parse("04" +
+                "cae768e1cf58d50260cab808da8d6d83d5d3ab91eac41cdce577ce5862d73641" +
+                "3643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
 
+            var sign = Crypto.Sign(message, privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
+
+            // IndexOutOfRangeException, but should be FormatException
+            Assert.ThrowsExactly<IndexOutOfRangeException>(() => CryptoLib.VerifyWithECDsa(message, null!, sign, NamedCurveHash.secp256r1SHA256));
+
+            // IndexOutOfRangeException, but should be FormatException
+            Assert.ThrowsExactly<IndexOutOfRangeException>(() => CryptoLib.VerifyWithECDsa(message, [], sign, NamedCurveHash.secp256r1SHA256));
+
+            // KeyNotFoundException, but should be ArgumentException
+            Assert.ThrowsExactly<NotSupportedException>(() => CryptoLib.VerifyWithECDsa(message, [], sign, (NamedCurveHash)99));
+
+            // FormatException if the signature is empty
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(message, [0x01], sign, NamedCurveHash.secp256r1SHA256));
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), [], NamedCurveHash.secp256r1SHA256));
+            bool ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
+            Assert.IsTrue(ok);
+
+            ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256r1SHA256);
+            Assert.IsTrue(ok);
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
+            // ArithmeticException, but should be ArgumentException
+            byte[] invalidPublicKey = [0x03, .. Enumerable.Repeat<byte>(0x03, 32)];
+            Assert.ThrowsExactly<ArithmeticException>(() => CryptoLib.VerifyWithECDsa(message, invalidPublicKey, sign, NamedCurveHash.secp256k1SHA256));
+
+            // null messsage and signature is valid, result is true
+            sign = Crypto.Sign([], privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
+            ok = CryptoLib.VerifyWithECDsa(null!, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
+            Assert.IsTrue(ok);
+        }
         private bool CallVerifyWithECDsa(byte[] message, ECPoint pub, byte[] signature, NamedCurveHash curveHash)
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
@@ -1149,9 +1187,19 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] invalidPublicKey = new byte[publicKey.Length];
             Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
             invalidPublicKey[0] ^= 0x01; // Flip one bit
-            Assert.IsFalse(CallVerifyWithEd25519(message, invalidPublicKey, signature));
+            Assert.ThrowsExactly<InvalidOperationException>(() => CallVerifyWithEd25519(message, invalidPublicKey, signature));
         }
-
+        [TestMethod]
+        public void TestVerifyWithEd25519InvalidParameters()
+        {
+            var message = "hello world"u8.ToArray();
+            var privateKey = Ed25519.GenerateKeyPair();
+            var publicKey = Ed25519.GetPublicKey(privateKey);
+            var sign = Ed25519.Sign(privateKey, message);
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithEd25519(message, [], sign));
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithEd25519(message, publicKey, []));
+            bool ok = CryptoLib.VerifyWithEd25519(message, publicKey, sign);
+        }
         private bool CallVerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
@@ -1170,7 +1218,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot,
                     settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
-                Assert.AreEqual(VMState.HALT, engine.Execute());
+                if (engine.Execute() != VMState.HALT)
+                    throw new InvalidOperationException(null, engine.FaultException);
                 return engine.ResultStack.Pop().GetBoolean();
             }
         }
