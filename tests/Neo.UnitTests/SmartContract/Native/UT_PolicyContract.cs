@@ -754,7 +754,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.HasCount(1, engine.Notifications); // Whitelist changed
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
-            Assert.AreEqual(1045290, engine.FeeConsumed);
+            Assert.AreEqual(1045260, engine.FeeConsumed);
 
             // Clean white list
 
