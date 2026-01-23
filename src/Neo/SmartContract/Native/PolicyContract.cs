@@ -156,7 +156,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException("Policy was not initialized");
                 item.Set((uint)(BigInteger)item * ApplicationEngine.FeeFactor);
 
-                // Add timestamp of the current block to blocked acconuts.
+                // Add timestamp of the current block to blocked accounts.
                 var time = engine.GetTime();
                 foreach (var (key, _) in engine.SnapshotCache.Find(CreateStorageKey(Prefix_BlockedAccount), SeekDirection.Forward))
                 {
