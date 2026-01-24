@@ -552,8 +552,26 @@ public partial class UT_InteropService : TestKit
     public void TestBlockchain_HasMethod()
     {
         var engine = GetEngine(true, true);
-        Assert.IsTrue(NativeContract.ContractManagement.HasMethod(engine.SnapshotCache, NativeContract.NEO.Hash, "symbol", 0));
-        Assert.IsTrue(NativeContract.ContractManagement.HasMethod(engine.SnapshotCache, NativeContract.NEO.Hash, "transfer", 4));
+        var state = TestUtils.GetContract("symbol", 0);
+        var methods = state.Manifest.Abi.Methods.ToList();
+        methods.Add(new ContractMethodDescriptor
+        {
+            Name = "transfer",
+            Parameters = new ContractParameterDefinition[]
+            {
+                new() { Name = "from", Type = ContractParameterType.Hash160 },
+                new() { Name = "to", Type = ContractParameterType.Hash160 },
+                new() { Name = "amount", Type = ContractParameterType.Integer },
+                new() { Name = "data", Type = ContractParameterType.Any }
+            },
+            ReturnType = ContractParameterType.Boolean
+        });
+        state.Manifest.Abi.Methods = methods.ToArray();
+        engine.SnapshotCache.AddContract(state.Hash, state);
+        engine = ApplicationEngine.Create(TriggerType.Application, null, engine.SnapshotCache);
+        engine.LoadScript(new byte[] { 0x01 });
+        Assert.IsTrue(NativeContract.ContractManagement.HasMethod(engine.SnapshotCache, state.Hash, "symbol", 0));
+        Assert.IsTrue(NativeContract.ContractManagement.HasMethod(engine.SnapshotCache, state.Hash, "transfer", 4));
     }
 
     [TestMethod]
@@ -872,7 +890,7 @@ public partial class UT_InteropService : TestKit
     public void TestGetCandidateVote()
     {
         var snapshotCache = GetEngine(true, true).SnapshotCache;
-        var vote = NativeContract.NEO.GetCandidateVote(snapshotCache, new ECPoint());
+        var vote = NativeContract.Governance.GetCandidateVote(snapshotCache, new ECPoint());
         Assert.AreEqual(-1, vote);
     }
 
@@ -882,7 +900,7 @@ public partial class UT_InteropService : TestKit
         var descriptor1 = ContractPermissionDescriptor.CreateWildcard();
         Assert.IsFalse(descriptor1.Equals(null));
         Assert.IsFalse(descriptor1.Equals(null as object));
-        var descriptor2 = ContractPermissionDescriptor.Create(NativeContract.NEO.Hash);
+        var descriptor2 = ContractPermissionDescriptor.Create(NativeContract.Governance.NeoTokenId);
         var descriptor3 = ContractPermissionDescriptor.Create(hash: null!);
         Assert.IsTrue(descriptor1.Equals(descriptor3));
         Assert.IsTrue(descriptor1.Equals(descriptor3 as object));

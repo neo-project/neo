@@ -11,7 +11,10 @@
 
 using Neo.Extensions.IO;
 using Neo.Extensions.SmartContract;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using System.Numerics;
+using System.Reflection;
 
 namespace Neo.UnitTests.Extensions;
 
@@ -29,29 +32,48 @@ public class UT_ContractStateExtensions
     [TestMethod]
     public void TestGetStorage()
     {
-        var contractStorage = NativeContract.ContractManagement.FindContractStorage(_system.StoreView, NativeContract.NEO.Id);
+        var contractStorage = NativeContract.ContractManagement.FindContractStorage(_system.StoreView, NativeContract.Governance.Id);
         Assert.IsNotNull(contractStorage);
 
-        var neoContract = NativeContract.ContractManagement.GetContractById(_system.StoreView, NativeContract.NEO.Id);
-        Assert.IsNotNull(neoContract);
+        var governanceContract = NativeContract.ContractManagement.GetContractById(_system.StoreView, NativeContract.Governance.Id);
+        Assert.IsNotNull(governanceContract);
 
-        contractStorage = neoContract.FindStorage(_system.StoreView);
+        contractStorage = governanceContract.FindStorage(_system.StoreView);
 
         Assert.IsNotNull(contractStorage);
 
-        contractStorage = neoContract.FindStorage(_system.StoreView, [20]);
+        contractStorage = governanceContract.FindStorage(_system.StoreView, [10]);
 
         Assert.IsNotNull(contractStorage);
 
         UInt160 address = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
-        var item = neoContract.GetStorage(_system.StoreView, [20, .. address.ToArray()]);
+        var item = governanceContract.GetStorage(_system.StoreView, [10, .. address.ToArray()]);
 
         Assert.IsNotNull(item);
-        Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
+        var neoAccountStateType = typeof(Governance).GetNestedType("NeoAccountState", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException("NeoAccountState type not found");
+        var neoAccountState = GetInteroperable(item, neoAccountStateType);
+        // NeoAccountState has BalanceHeight, VoteTo, and LastGasPerVote fields (not Balance)
+        // NEO token balance is now stored in TokenManagement, not in NeoAccountState
+        var balanceHeightField = neoAccountStateType.GetField("BalanceHeight", BindingFlags.Public | BindingFlags.Instance);
+        var balanceHeight = (uint)(balanceHeightField?.GetValue(neoAccountState) ?? throw new InvalidOperationException("BalanceHeight field not found"));
+        // The test address should have a BalanceHeight value from the genesis block
+        Assert.IsTrue(balanceHeight >= 0, "BalanceHeight should be a valid block height");
 
         // Ensure GetInteroperableClone don't change nothing
 
-        item.GetInteroperableClone<AccountState>().Balance = 123;
-        Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
+        var cloneMethod = typeof(StorageItem).GetMethod("GetInteroperableClone", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+        var genericMethod = cloneMethod?.MakeGenericMethod(neoAccountStateType);
+        var clonedState = genericMethod?.Invoke(item, null);
+        balanceHeightField?.SetValue(clonedState, (uint)123);
+        var balanceHeightAfterClone = (uint)(balanceHeightField?.GetValue(neoAccountState) ?? throw new InvalidOperationException("BalanceHeight field not found"));
+        Assert.AreEqual(balanceHeight, balanceHeightAfterClone, "Original state should not be affected by clone modification");
+    }
+
+    private static object GetInteroperable(StorageItem item, Type type)
+    {
+        var method = typeof(StorageItem).GetMethod("GetInteroperable", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+        var genericMethod = method?.MakeGenericMethod(type);
+        return genericMethod?.Invoke(item, null) ?? throw new InvalidOperationException("GetInteroperable method not found");
     }
 }

@@ -100,11 +100,6 @@ public abstract class NativeContract
 
     public static Governance Governance { get; } = new();
 
-    /// <summary>
-    /// Gets the instance of the <see cref="NeoToken"/> class.
-    /// </summary>
-    public static NeoToken NEO { get; } = new();
-
     #endregion
 
     /// <summary>
@@ -347,7 +342,7 @@ public abstract class NativeContract
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected static bool CheckCommittee(ApplicationEngine engine)
     {
-        var committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.SnapshotCache);
+        var committeeMultiSigAddr = Governance.GetCommitteeAddress(engine.SnapshotCache);
         return engine.CheckWitnessInternal(committeeMultiSigAddr);
     }
 
