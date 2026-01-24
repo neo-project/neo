@@ -811,7 +811,15 @@ public abstract class Wallet : ISigner
         return GetFactory(path)?.CreateWallet(name, path, password, settings);
     }
 
-    public static Wallet? Open(string path, string password, ProtocolSettings settings)
+    /// <summary>
+    /// Opens an existing wallet from the specified file path using the provided password and protocol settings.
+    /// </summary>
+    /// <param name="path">The file system path to the wallet to open. This must refer to an existing wallet file.</param>
+    /// <param name="password">The password used to decrypt the wallet. The wallet is opened in read-only mode if <see langword="null"/>.</param>
+    /// <param name="settings">The protocol settings to use when accessing the wallet.</param>
+    /// <returns>A <see cref="Wallet"/> instance representing the opened wallet, or <see langword="null"/> if the wallet could
+    /// not be opened.</returns>
+    public static Wallet? Open(string path, string? password, ProtocolSettings settings)
     {
         return GetFactory(path)?.OpenWallet(path, password, settings);
     }

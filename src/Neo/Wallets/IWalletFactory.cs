@@ -35,7 +35,7 @@ public interface IWalletFactory
     /// Opens a wallet.
     /// </summary>
     /// <param name="path">The path of the wallet file.</param>
-    /// <param name="password">The password of the wallet.</param>
+    /// <param name="password">The password of the wallet. The wallet is opened in read-only mode if the password is <see langword="null"/>.</param>
     /// <param name="settings">The settings of the wallet.</param>
-    public Wallet OpenWallet(string path, string password, ProtocolSettings settings);
+    public Wallet OpenWallet(string path, string? password, ProtocolSettings settings);
 }
