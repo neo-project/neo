@@ -21,5 +21,4 @@ public static class AssemblyExtensions
 
         return assembly.GetName().Version!.ToString(3);
     }
-    
 }
