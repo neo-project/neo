@@ -32,7 +32,7 @@ namespace Neo.Wallets.NEP6
             return wallet;
         }
 
-        public Wallet OpenWallet(string path, string password, ProtocolSettings settings)
+        public Wallet OpenWallet(string path, string? password, ProtocolSettings settings)
         {
             return new NEP6Wallet(path, password, settings);
         }

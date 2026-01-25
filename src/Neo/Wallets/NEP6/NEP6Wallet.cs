@@ -31,7 +31,7 @@ namespace Neo.Wallets.NEP6
     /// <remarks>https://github.com/neo-project/proposals/blob/master/nep-6.mediawiki</remarks>
     public class NEP6Wallet : Wallet
     {
-        private SecureString password;
+        private SecureString? password;
         private string? name;
         private Version version;
         private readonly Dictionary<UInt160, NEP6Account> accounts;
@@ -58,12 +58,12 @@ namespace Neo.Wallets.NEP6
         /// Loads or creates a wallet at the specified path.
         /// </summary>
         /// <param name="path">The path of the wallet file.</param>
-        /// <param name="password">The password of the wallet.</param>
+        /// <param name="password">The password of the wallet. The wallet is opened in read-only mode if the password is null.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <param name="name">The name of the wallet. If the wallet is loaded from an existing file, this parameter is ignored.</param>
-        public NEP6Wallet(string path, string password, ProtocolSettings settings, string? name = null) : base(path, settings)
+        public NEP6Wallet(string path, string? password, ProtocolSettings settings, string? name = null) : base(path, settings)
         {
-            this.password = password.ToSecureString();
+            this.password = password?.ToSecureString();
             if (File.Exists(path))
             {
                 var wallet = (JObject)JToken.Parse(File.ReadAllBytes(path))!;
@@ -83,12 +83,12 @@ namespace Neo.Wallets.NEP6
         /// Loads the wallet with the specified JSON string.
         /// </summary>
         /// <param name="path">The path of the wallet.</param>
-        /// <param name="password">The password of the wallet.</param>
+        /// <param name="password">The password of the wallet. The wallet is opened in read-only mode if the password is null.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <param name="json">The JSON object representing the wallet.</param>
-        public NEP6Wallet(string path, string password, ProtocolSettings settings, JObject json) : base(path, settings)
+        public NEP6Wallet(string path, string? password, ProtocolSettings settings, JObject json) : base(path, settings)
         {
-            this.password = password.ToSecureString();
+            this.password = password?.ToSecureString();
             LoadFromJson(json, out Scrypt, out accounts, out extra);
         }
 
@@ -100,8 +100,9 @@ namespace Neo.Wallets.NEP6
             scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]!);
             accounts = ((JArray)wallet["accounts"]!).Select(p => NEP6Account.FromJson((JObject)p!, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
-            if (!VerifyPasswordInternal(password.GetClearText()))
-                throw new InvalidOperationException("Incorrect password provided for NEP6 wallet. Please verify the password and try again.");
+            if (password != null)
+                if (!VerifyPasswordInternal(password.GetClearText()))
+                    throw new InvalidOperationException("Incorrect password provided for NEP6 wallet. Please verify the password and try again.");
         }
 
         private void AddAccount(NEP6Account account)
@@ -143,7 +144,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
-            ArgumentNullException.ThrowIfNull(privateKey);
+            if (password == null) throw new InvalidOperationException("Cannot create account: wallet password is not set.");
             KeyPair key = new(privateKey);
             if (key.PublicKey.IsInfinity) throw new ArgumentException("Invalid private key provided. The private key does not correspond to a valid public key on the elliptic curve.", nameof(privateKey));
             NEP6Contract contract = new()
@@ -163,6 +164,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount CreateAccount(Contract contract, KeyPair? key = null)
         {
+            if (password == null) throw new InvalidOperationException("Cannot create account: wallet password is not set.");
             if (contract is not NEP6Contract nep6contract)
             {
                 nep6contract = new NEP6Contract
@@ -197,6 +199,7 @@ namespace Neo.Wallets.NEP6
         /// <returns>The decrypted private key.</returns>
         internal KeyPair DecryptKey(string nep2key)
         {
+            if (password == null) throw new InvalidOperationException("Cannot decrypt key: wallet password is not set.");
             return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password.GetClearText(), ProtocolSettings.AddressVersion, Scrypt.N, Scrypt.R, Scrypt.P));
         }
 
@@ -233,6 +236,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount Import(X509Certificate2 cert)
         {
+            if (password == null) throw new InvalidOperationException("Cannot import account: wallet password is not set.");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 throw new PlatformNotSupportedException("Importing certificates is not supported on macOS.");
@@ -259,6 +263,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount Import(string wif)
         {
+            if (password == null) throw new InvalidOperationException("Cannot import account: wallet password is not set.");
             KeyPair key = new(GetPrivateKeyFromWIF(wif));
             NEP6Contract contract = new()
             {
@@ -323,7 +328,16 @@ namespace Neo.Wallets.NEP6
 
         public override bool VerifyPassword(string password)
         {
-            return this.password.GetClearText() == password;
+            if (this.password == null)
+            {
+                if (!VerifyPasswordInternal(password)) return false;
+                this.password = password.ToSecureString();
+                return true;
+            }
+            else
+            {
+                return this.password.GetClearText() == password;
+            }
         }
 
         private bool VerifyPasswordInternal(string password)
