@@ -114,15 +114,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
         public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
         {
-            try
-            {
-                var ch = s_curves[curveHash];
-                return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
+            if (!s_curves.TryGetValue(curveHash, out var ch))
+                throw new NotSupportedException($"Unsupported curve or hash algorithm: {curveHash}");
+            return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
         }
 
         // This is for solving the hardfork issue in https://github.com/neo-project/neo/pull/3209
@@ -153,22 +147,15 @@ namespace Neo.SmartContract.Native
         public static bool VerifyWithEd25519(byte[] message, byte[] pubkey, byte[] signature)
         {
             if (signature.Length != Ed25519.SignatureSize)
-                return false;
+                throw new FormatException($"Signature size should be {Ed25519.SignatureSize}");
 
             if (pubkey.Length != Ed25519.PublicKeySize)
-                return false;
+                throw new FormatException($"Public key size should be {Ed25519.PublicKeySize}");
 
-            try
-            {
-                var verifier = new Ed25519Signer();
-                verifier.Init(false, new Ed25519PublicKeyParameters(pubkey, 0));
-                verifier.BlockUpdate(message, 0, message.Length);
-                return verifier.VerifySignature(signature);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            var verifier = new Ed25519Signer();
+            verifier.Init(false, new Ed25519PublicKeyParameters(pubkey, 0));
+            verifier.BlockUpdate(message, 0, message.Length);
+            return verifier.VerifySignature(signature);
         }
     }
 }
