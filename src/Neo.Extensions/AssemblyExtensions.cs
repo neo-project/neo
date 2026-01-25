@@ -17,6 +17,9 @@ public static class AssemblyExtensions
 {
     public static string GetVersion(this Assembly assembly)
     {
+        ArgumentNullException.ThrowIfNull(assembly);
+
         return assembly.GetName().Version!.ToString(3);
     }
+    
 }
