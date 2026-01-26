@@ -390,6 +390,33 @@ namespace Neo.UnitTests.Wallets
         }
 
         [TestMethod]
+        public void TestMakeTransaction_GasTransferDoesNotIgnoreSpentGasWhenIncludingUnclaimed()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var wallet = new MyWallet();
+            var contract = Contract.Create([ContractParameterType.Boolean], [1]);
+            var account = wallet.CreateAccount(contract, glkey.PrivateKey);
+            account.Lock = false;
+
+            var gasKey = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
+            var entry = snapshotCache.GetAndChange(gasKey, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = NativeContract.GAS.Factor;
+
+            var receiver = new UInt160(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
+
+            Action action = () => wallet.MakeTransaction(snapshotCache, [
+                new()
+                {
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = receiver,
+                    Value = new BigDecimal(NativeContract.GAS.Factor, 8)
+                }
+            ], account.ScriptHash);
+
+            Assert.ThrowsExactly<InvalidOperationException>(action);
+        }
+
+        [TestMethod]
         public void TestMakeTransaction2()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
