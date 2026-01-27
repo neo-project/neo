@@ -310,7 +310,8 @@ namespace Neo.Network.P2P
 
         /// <summary>
         /// Will be triggered when a Tcp.CommandFailed message is received.
-        /// If it's a Tcp.Connect command, remove the related endpoint from ConnectingPeers.
+        /// If it's a Tcp.Connect command, remove the related endpoint from ConnectingPeers
+        /// and restore it to UnconnectedPeers for future retry.
         /// </summary>
         /// <param name="cmd">Tcp.Command message/event.</param>
         private void OnTcpCommandFailed(Tcp.Command cmd)
@@ -318,7 +319,11 @@ namespace Neo.Network.P2P
             switch (cmd)
             {
                 case Tcp.Connect connect:
-                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(((IPEndPoint)connect.RemoteAddress).UnMap()));
+                    var endpoint = ((IPEndPoint)connect.RemoteAddress).UnMap();
+                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(endpoint));
+                    // Restore the failed endpoint back to UnconnectedPeers for future retry.
+                    // This prevents peer-draining where peers are permanently lost after a single failure.
+                    ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Add(endpoint));
                     break;
             }
         }
