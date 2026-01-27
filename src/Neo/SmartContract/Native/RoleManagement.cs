@@ -68,6 +68,9 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentException($"Nodes count {nodes.Length} must be between 1 and 32", nameof(nodes));
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role), $"Role {role} is not valid");
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Gorgon) && role.Equals(Role.Board))
+                throw new InvalidOperationException($"Role {role} not available");
+
             AssertCommittee(engine);
 
             if (engine.PersistingBlock is null)

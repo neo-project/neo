@@ -34,6 +34,11 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// P2P Notary nodes used to process P2P notary requests.
         /// </summary>
-        P2PNotary = 32
+        P2PNotary = 32,
+
+        /// <summary>
+        /// Board
+        /// </summary>
+        Board = 64
     }
 }
