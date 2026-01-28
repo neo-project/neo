@@ -16,6 +16,8 @@ namespace Neo.Network.P2P;
 /// </summary>
 public sealed class NodeContact
 {
+    const int MaxEndpoints = 4;
+
     /// <summary>
     /// The verified DHT node identifier.
     /// </summary>
@@ -76,11 +78,40 @@ public sealed class NodeContact
         else
         {
             Endpoints.Insert(0, endpoint);
+            TrimEndpoints();
         }
     }
 
     public override string ToString()
     {
         return $"{NodeId} ({(Endpoints.Count > 0 ? Endpoints[0].ToString() : "no-endpoint")})";
+    }
+
+    void TrimEndpoints()
+    {
+        while (Endpoints.Count > MaxEndpoints)
+        {
+            int removeIndex = Endpoints.Count - 1;
+            int worstPriority = GetKindPriority(Endpoints[removeIndex].Kind);
+            for (int i = Endpoints.Count - 2; i >= 0; i--)
+            {
+                int priority = GetKindPriority(Endpoints[i].Kind);
+                if (priority < worstPriority)
+                {
+                    worstPriority = priority;
+                    removeIndex = i;
+                    if (worstPriority == 0) break;
+                }
+            }
+            Endpoints.RemoveAt(removeIndex);
+        }
+    }
+
+    static int GetKindPriority(EndpointKind kind)
+    {
+        if (kind.HasFlag(EndpointKind.Advertised)) return 3;
+        if (kind.HasFlag(EndpointKind.Observed)) return 2;
+        if (kind.HasFlag(EndpointKind.Derived)) return 1;
+        return 0;
     }
 }
