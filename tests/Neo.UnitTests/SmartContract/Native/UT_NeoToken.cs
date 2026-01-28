@@ -435,7 +435,6 @@ public class UT_NeoToken
         Assert.IsTrue(ret.State);
         accountState = GetInteroperable(clonedCache.TryGet(CreateStorageKey(10, from_Account))!, GetNeoAccountStateType());
         Assert.AreEqual(ECCurve.Secp256r1.G, GetProperty<ECPoint?>(accountState, "VoteTo"));
-        Assert.AreEqual(100500, GetProperty<BigInteger>(accountState, "LastGasPerVote"));
 
         //from vote to null account G votes becomes 0
         var G_stateValidator = GetInteroperable(clonedCache.GetAndChange(NativeContract.Governance.CreateStorageKey(33, ECCurve.Secp256r1.G))!, GetCandidateStateType());
@@ -455,7 +454,6 @@ public class UT_NeoToken
         Assert.AreEqual(0, GetProperty<BigInteger>(G_stateValidator, "Votes"));
         accountState = GetInteroperable(clonedCache.TryGet(CreateStorageKey(10, from_Account))!, GetNeoAccountStateType());
         Assert.IsNull(GetProperty<ECPoint?>(accountState, "VoteTo"));
-        Assert.AreEqual(0, GetProperty<BigInteger>(accountState, "LastGasPerVote"));
     }
 
     [TestMethod]
@@ -481,7 +479,7 @@ public class UT_NeoToken
         byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
         var unclaim = Check_UnclaimedGas(clonedCache, from, persistingBlock);
-        Assert.AreEqual(new BigInteger(0.5 * 1000 * 100000000L), unclaim.Value);
+        Assert.AreEqual(new BigInteger(4.5 * 1000 * 100000000L), unclaim.Value);
         Assert.IsTrue(unclaim.State);
 
         unclaim = Check_UnclaimedGas(clonedCache, new byte[19], persistingBlock);
@@ -717,7 +715,7 @@ public class UT_NeoToken
         // Check unclaim
 
         var unclaim = Check_UnclaimedGas(clonedCache, from, persistingBlock);
-        Assert.AreEqual(new BigInteger(0.5 * 1000 * 100000000L), unclaim.Value);
+        Assert.AreEqual(new BigInteger(4.5 * 1000 * 100000000L), unclaim.Value);
         Assert.IsTrue(unclaim.State);
 
         // Transfer
@@ -844,50 +842,24 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
 
-        // Fault: balance < 0 (no balance set, so balance is zero)
+        // no balance set, so balance is zero
 
         clonedCache.Add(key, new StorageItem(CreateNeoAccountState()));
-        try
-        {
-            var ledgerKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
-            clonedCache.GetAndChange(ledgerKey, () => new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = 9 }));
-            using var engine1 = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, settings: TestProtocolSettings.Default);
-            NativeContract.Governance.UnclaimedGas(engine1, account, 10);
-            Assert.Fail("Should have thrown ArgumentOutOfRangeException");
-        }
-        catch (ArgumentOutOfRangeException) { }
+        var ledgerKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+        clonedCache.GetAndChange(ledgerKey, () => new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = 9 }));
+        using var engine1 = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, settings: TestProtocolSettings.Default);
+        Assert.AreEqual(BigInteger.Zero, NativeContract.Governance.UnclaimedGas(engine1, account, 10));
         clonedCache.Delete(key);
 
-        // Fault range: start >= end
+        // start >= end
 
         var neoAccountState3 = CreateNeoAccountState();
         SetProperty(neoAccountState3, "BalanceHeight", 100u);
         clonedCache.GetAndChange(key, () => new StorageItem(neoAccountState3));
-        try
-        {
-            var ledgerKey2 = new KeyBuilder(NativeContract.Ledger.Id, 12);
-            clonedCache.GetAndChange(ledgerKey2, () => new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = 9 }));
-            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, settings: TestProtocolSettings.Default);
-            NativeContract.Governance.UnclaimedGas(engine2, account, 10);
-            Assert.Fail("Should have thrown ArgumentOutOfRangeException");
-        }
-        catch (ArgumentOutOfRangeException) { }
-        clonedCache.Delete(key);
-
-        // Fault range: start >= end
-
-        var neoAccountState4 = CreateNeoAccountState();
-        SetProperty(neoAccountState4, "BalanceHeight", 100u);
-        clonedCache.GetAndChange(key, () => new StorageItem(neoAccountState4));
-        try
-        {
-            var ledgerKey3 = new KeyBuilder(NativeContract.Ledger.Id, 12);
-            clonedCache.GetAndChange(ledgerKey3, () => new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = 9 }));
-            using var engine3 = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, settings: TestProtocolSettings.Default);
-            NativeContract.Governance.UnclaimedGas(engine3, account, 10);
-            Assert.Fail("Should have thrown ArgumentOutOfRangeException");
-        }
-        catch (ArgumentOutOfRangeException) { }
+        var ledgerKey2 = new KeyBuilder(NativeContract.Ledger.Id, 12);
+        clonedCache.GetAndChange(ledgerKey2, () => new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = 9 }));
+        using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, settings: TestProtocolSettings.Default);
+        Assert.AreEqual(BigInteger.Zero, NativeContract.Governance.UnclaimedGas(engine2, account, 10));
         clonedCache.Delete(key);
 
         // Normal 1) votee is non exist
@@ -903,7 +875,7 @@ public class UT_NeoToken
         item.Index = 99;
 
         using var engine4 = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, settings: TestProtocolSettings.Default);
-        Assert.AreEqual(new BigInteger(0.5 * 100 * 100), NativeContract.Governance.UnclaimedGas(engine4, account, 100));
+        Assert.AreEqual(new BigInteger(4.5 * 100 * 100), NativeContract.Governance.UnclaimedGas(engine4, account, 100));
         clonedCache.Delete(key);
         clonedCache.Delete(balanceKey);
 
@@ -922,7 +894,7 @@ public class UT_NeoToken
         item.Index = 99;
 
         using var engine5 = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, settings: TestProtocolSettings.Default);
-        Assert.AreEqual(new BigInteger(0.5 * 100 * 100), NativeContract.Governance.UnclaimedGas(engine5, account, 100));
+        Assert.AreEqual(new BigInteger(4.5 * 100 * 100), NativeContract.Governance.UnclaimedGas(engine5, account, 100));
         clonedCache.Delete(key);
         clonedCache.Delete(balanceKey);
 
@@ -943,7 +915,7 @@ public class UT_NeoToken
         item.Index = 99;
 
         using var engine = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, settings: TestProtocolSettings.Default);
-        Assert.AreEqual(new BigInteger(50 * 100), NativeContract.Governance.UnclaimedGas(engine, account, 100));
+        Assert.AreEqual(new BigInteger(450 * 100), NativeContract.Governance.UnclaimedGas(engine, account, 100));
         clonedCache.Delete(key);
         clonedCache.Delete(balanceKey);
     }
@@ -1007,19 +979,12 @@ public class UT_NeoToken
         var committee = NativeContract.Governance.GetCommittee(cloneCache);
         var point = committee[0].EncodePoint(true);
 
-        // Prepare Prefix_VoterRewardPerCommittee
-        var storageKey = new KeyBuilder(NativeContract.Governance.Id, 23).Add(committee[0]);
-        cloneCache.Add(storageKey, new StorageItem(new BigInteger(1000)));
-
         // Prepare Candidate
-        storageKey = new KeyBuilder(NativeContract.Governance.Id, 33).Add(committee[0]);
+        var storageKey = new KeyBuilder(NativeContract.Governance.Id, 33).Add(committee[0]);
         var candidateState = CreateCandidateState();
         SetProperty(candidateState, "Registered", true);
         SetProperty(candidateState, "Votes", BigInteger.One);
         cloneCache.Add(storageKey, new StorageItem(candidateState));
-
-        storageKey = new KeyBuilder(NativeContract.Governance.Id, 23).Add(committee[0]);
-        Assert.HasCount(1, cloneCache.Find(storageKey).ToArray());
 
         // Pre-persist
         var persistingBlock = new Block
@@ -1046,14 +1011,8 @@ public class UT_NeoToken
         Assert.IsTrue(state);
         Assert.IsTrue(result);
 
-        storageKey = new KeyBuilder(NativeContract.Governance.Id, 23).Add(committee[0]);
-        Assert.IsEmpty(cloneCache.Find(storageKey).ToArray());
-
         // Post-persist
         Assert.IsTrue(Check_PostPersist(cloneCache, persistingBlock));
-
-        storageKey = new KeyBuilder(NativeContract.Governance.Id, 23).Add(committee[0]);
-        Assert.HasCount(1, cloneCache.Find(storageKey).ToArray());
     }
 
     [TestMethod]
@@ -1198,7 +1157,7 @@ public class UT_NeoToken
 
         height.Index = persistingBlock.Index + 1;
         using var engine = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, persistingBlock, settings: TestProtocolSettings.Default);
-        Assert.AreEqual(6500, NativeContract.Governance.UnclaimedGas(engine, account, persistingBlock.Index + 2));
+        Assert.AreEqual(58500, NativeContract.Governance.UnclaimedGas(engine, account, persistingBlock.Index + 2));
     }
 
     [TestMethod]
@@ -1246,11 +1205,6 @@ public class UT_NeoToken
         var accountB = committee[TestProtocolSettings.Default.CommitteeMembersCount - 1];
         Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, Contract.CreateSignatureContract(accountA).ScriptHash));
 
-        StorageItem storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.Governance.Id, 23).Add(accountA))!;
-        Assert.AreEqual(30000000000, (BigInteger)storageItem);
-
-        Assert.IsNull(clonedCache.TryGet(new KeyBuilder(NativeContract.Governance.Id, 23).Add(accountB).Add(uint.MaxValue - 1)));
-
         // Next block
 
         persistingBlock = new Block
@@ -1268,9 +1222,6 @@ public class UT_NeoToken
         Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
         Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, Contract.CreateSignatureContract(committee[1]).ScriptHash));
-
-        storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.Governance.Id, 23).Add(committee[1]))!;
-        Assert.AreEqual(30000000000, (BigInteger)storageItem);
 
         // Next block
 
@@ -1291,9 +1242,6 @@ public class UT_NeoToken
         accountA = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray()[2];
         Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, Contract.CreateSignatureContract(committee[2]).ScriptHash));
 
-        storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.Governance.Id, 23).Add(committee[2]))!;
-        Assert.AreEqual(30000000000 * 2, (BigInteger)storageItem);
-
         // Claim GAS
 
         var account = Contract.CreateSignatureContract(committee[2]).ScriptHash;
@@ -1302,7 +1250,6 @@ public class UT_NeoToken
         var neoAccountState21 = CreateNeoAccountState();
         SetProperty(neoAccountState21, "BalanceHeight", 3u);
         SetProperty(neoAccountState21, "VoteTo", committee[2]);
-        SetProperty(neoAccountState21, "LastGasPerVote", new BigInteger(30000000000));
         clonedCache.Add(NativeContract.Governance.CreateStorageKey(10, account), new StorageItem(neoAccountState21));
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
@@ -1343,7 +1290,7 @@ public class UT_NeoToken
         };
         using var engine = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, persistingBlock2, settings: TestProtocolSettings.Default);
         BigInteger value = NativeContract.Governance.UnclaimedGas(engine, account, 29 + 3);
-        Assert.AreEqual(1999800 * 30000000000 / 100000000L + (1999800L * 10 * 5 * 29 / 100), value);
+        Assert.AreEqual(1999800L * 90 * 5 * 29 / 100, value);
     }
 
     [TestMethod]
