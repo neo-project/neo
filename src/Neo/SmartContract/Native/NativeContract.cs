@@ -15,6 +15,7 @@ using Neo.VM;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -37,6 +38,7 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Thread-safe cache for compiled method delegates to avoid reflection overhead.
+        /// Stores fast invoker delegates that take (target, args) and return the result.
         /// </summary>
         private static readonly ConcurrentDictionary<MethodCacheKey, Func<object, object?[]?, object?>> s_methodDelegateCache = new();
 
@@ -458,6 +460,57 @@ namespace Neo.SmartContract.Native
             return currentAllowedMethods.Methods;
         }
 
+        /// <summary>
+        /// Creates a fast invoker delegate for the specified method using compiled expression trees.
+        /// This compiles the method invocation into IL for significantly better performance than reflection.
+        /// Handles both instance and static methods.
+        /// </summary>
+        private static Func<object, object?[]?, object?> CreateFastInvoker(MethodInfo method)
+        {
+            // Create expression parameters: (object target, object?[]? args)
+            var targetParam = Expression.Parameter(typeof(object), "target");
+            var argsParam = Expression.Parameter(typeof(object?[]), "args");
+
+            // Build arguments array access
+            var parameters = method.GetParameters();
+            var argExpressions = new Expression[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                // args[i]
+                var argAccess = Expression.ArrayIndex(argsParam, Expression.Constant(i));
+                // Convert to parameter type
+                argExpressions[i] = Expression.Convert(argAccess, parameters[i].ParameterType);
+            }
+
+            MethodCallExpression methodCall;
+            if (method.IsStatic)
+            {
+                // Static method: Method(args[0], args[1], ...)
+                methodCall = Expression.Call(method, argExpressions);
+            }
+            else
+            {
+                // Instance method: ((TTarget)target).Method(args[0], args[1], ...)
+                var typedTarget = Expression.Convert(targetParam, method.DeclaringType!);
+                methodCall = Expression.Call(typedTarget, method, argExpressions);
+            }
+
+            // Handle return type
+            Expression body;
+            if (method.ReturnType == typeof(void))
+            {
+                body = Expression.Block(methodCall, Expression.Constant(null, typeof(object)));
+            }
+            else
+            {
+                body = Expression.Convert(methodCall, typeof(object));
+            }
+
+            // Compile to delegate: (target, args) => result
+            var lambda = Expression.Lambda<Func<object, object?[]?, object?>>(body, targetParam, argsParam);
+            return lambda.Compile();
+        }
+
         internal async void Invoke(ApplicationEngine engine, byte version)
         {
             try
@@ -495,15 +548,16 @@ namespace Neo.SmartContract.Native
 
                 // Use cached delegate for fast method dispatch, or create and cache one if not exists
                 var cacheKey = new MethodCacheKey(Id, context.InstructionPointer);
-                if (!s_methodDelegateCache.TryGetValue(cacheKey, out var cachedDelegate))
+                if (!s_methodDelegateCache.TryGetValue(cacheKey, out var cachedInvoker))
                 {
-                    // Create delegate for fast invocation - compile once, use many times
-                    cachedDelegate = method.Handler.CreateDelegate<Func<object, object?[]?, object?>>(this);
-                    s_methodDelegateCache[cacheKey] = cachedDelegate;
+                    // Create a compiled delegate for fast invocation
+                    // This avoids repeated reflection overhead by compiling the call once
+                    cachedInvoker = CreateFastInvoker(method.Handler);
+                    s_methodDelegateCache[cacheKey] = cachedInvoker;
                 }
 
                 // Fast delegate invocation instead of reflection
-                object? returnValue = cachedDelegate(this, parameters.ToArray());
+                object? returnValue = cachedInvoker(this, parameters.ToArray());
 
                 if (returnValue is ContractTask task)
                 {
