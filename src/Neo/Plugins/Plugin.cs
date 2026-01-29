@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Text.Json;
 using static System.IO.Path;
 
 namespace Neo.Plugins
@@ -302,6 +303,63 @@ namespace Neo.Plugins
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Finds a file by searching upward from the specified directory.
+        /// Returns the full path if found, null otherwise.
+        /// </summary>
+        private static string? FindFile(string fileName, string startDirectory)
+        {
+            var currentDir = new DirectoryInfo(startDirectory);
+            while (currentDir != null)
+            {
+                var filePath = Combine(currentDir.FullName, fileName);
+                if (File.Exists(filePath))
+                {
+                    return filePath;
+                }
+                currentDir = currentDir.Parent;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets unified storage base path from config.json when configured as a base directory.
+        /// Base path is defined as a non-empty Path WITHOUT "{0}" placeholder.
+        /// Returns null if config.json is not found, invalid, or not configured as base path.
+        /// </summary>
+        private static string? TryGetUnifiedStorageBasePath()
+        {
+            try
+            {
+                var configFile = FindFile("config.json", Environment.CurrentDirectory);
+                if (configFile is null) return null;
+
+                using var doc = JsonDocument.Parse(File.ReadAllText(configFile));
+                if (!doc.RootElement.TryGetProperty("ApplicationConfiguration", out var appCfg)) return null;
+                if (!appCfg.TryGetProperty("Storage", out var storageCfg)) return null;
+                if (!storageCfg.TryGetProperty("Path", out var pathEl)) return null;
+
+                var path = pathEl.GetString();
+                return string.IsNullOrEmpty(path) || path.Contains("{0}") ? null : path;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Combines plugin path under unified base path (if configured).
+        /// If base path is not configured, returns pluginPath as-is.
+        /// </summary>
+        /// <param name="pluginPath">The plugin-specific storage path.</param>
+        /// <returns>The combined path if base path is configured, otherwise the original pluginPath.</returns>
+        public static string ApplyUnifiedStoragePath(string pluginPath)
+        {
+            var basePath = TryGetUnifiedStorageBasePath();
+            return basePath is null ? pluginPath : Combine(basePath, pluginPath);
         }
     }
 }
