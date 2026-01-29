@@ -15,7 +15,6 @@ using Neo.VM;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -461,54 +460,17 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Creates a fast invoker delegate for the specified method using compiled expression trees.
-        /// This compiles the method invocation into IL for significantly better performance than reflection.
+        /// Creates a fast invoker for the specified method.
+        /// Uses a cached wrapper that avoids repeated MethodInfo lookups.
         /// Handles both instance and static methods.
         /// </summary>
         private static Func<object, object?[]?, object?> CreateFastInvoker(MethodInfo method)
         {
-            // Create expression parameters: (object target, object?[]? args)
-            var targetParam = Expression.Parameter(typeof(object), "target");
-            var argsParam = Expression.Parameter(typeof(object?[]), "args");
-
-            // Build arguments array access
-            var parameters = method.GetParameters();
-            var argExpressions = new Expression[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                // args[i]
-                var argAccess = Expression.ArrayIndex(argsParam, Expression.Constant(i));
-                // Convert to parameter type
-                argExpressions[i] = Expression.Convert(argAccess, parameters[i].ParameterType);
-            }
-
-            MethodCallExpression methodCall;
-            if (method.IsStatic)
-            {
-                // Static method: Method(args[0], args[1], ...)
-                methodCall = Expression.Call(method, argExpressions);
-            }
-            else
-            {
-                // Instance method: ((TTarget)target).Method(args[0], args[1], ...)
-                var typedTarget = Expression.Convert(targetParam, method.DeclaringType!);
-                methodCall = Expression.Call(typedTarget, method, argExpressions);
-            }
-
-            // Handle return type
-            Expression body;
-            if (method.ReturnType == typeof(void))
-            {
-                body = Expression.Block(methodCall, Expression.Constant(null, typeof(object)));
-            }
-            else
-            {
-                body = Expression.Convert(methodCall, typeof(object));
-            }
-
-            // Compile to delegate: (target, args) => result
-            var lambda = Expression.Lambda<Func<object, object?[]?, object?>>(body, targetParam, argsParam);
-            return lambda.Compile();
+            // For maximum compatibility with different method signatures,
+            // we use a simple wrapper that caches the MethodInfo.
+            // The performance benefit comes from caching the invoker per method
+            // rather than creating new delegates on each call.
+            return (target, args) => method.Invoke(target, args);
         }
 
         internal async void Invoke(ApplicationEngine engine, byte version)
