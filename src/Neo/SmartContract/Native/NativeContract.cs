@@ -478,6 +478,23 @@ namespace Neo.SmartContract.Native
                 if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
                 for (int i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
+
+                // RECOMMENDATION: Method dispatch cache
+                // Consider implementing a delegate cache here to avoid reflection overhead:
+                //
+                // private static readonly ConcurrentDictionary<(int ContractId, int MethodOffset), Delegate> _methodCache = new();
+                //
+                // var key = (Id, context.InstructionPointer);
+                // if (!_methodCache.TryGetValue(key, out var cachedDelegate))
+                // {
+                //     cachedDelegate = CreateDelegate(method); // Compile once
+                //     _methodCache[key] = cachedDelegate;
+                // }
+                // object? returnValue = cachedDelegate.DynamicInvoke(parameters.ToArray()); // Fast dispatch
+                //
+                // Note: CreateDelegate should handle different method signatures properly.
+                // The current implementation uses reflection for simplicity.
+
                 object? returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
