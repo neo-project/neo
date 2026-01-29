@@ -36,8 +36,10 @@ namespace Neo.SmartContract.Native
         private readonly record struct MethodCacheKey(int ContractId, int InstructionPointer);
 
         /// <summary>
-        /// Thread-safe cache for compiled method delegates to avoid reflection overhead.
-        /// Stores fast invoker delegates that take (target, args) and return the result.
+        /// Thread-safe cache for method invokers.
+        /// Caches the invoker per method to avoid repeated MethodInfo lookups.
+        /// Note: Full performance optimization would require per-signature strongly-typed delegates
+        /// to eliminate object[] boxing overhead, but this requires runtime code generation.
         /// </summary>
         private static readonly ConcurrentDictionary<MethodCacheKey, Func<object, object?[]?, object?>> s_methodDelegateCache = new();
 
@@ -460,16 +462,17 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Creates a fast invoker for the specified method.
-        /// Uses a cached wrapper that avoids repeated MethodInfo lookups.
-        /// Handles both instance and static methods.
+        /// Creates a method invoker for the specified method.
+        /// Uses a simple wrapper that caches the MethodInfo to avoid repeated lookups.
+        /// 
+        /// Note: Benchmarks show that expression trees with object[] boxing are not faster
+        /// than MethodInfo.Invoke due to parameter array allocation overhead.
+        /// True performance gains would require per-signature strongly-typed delegates
+        /// (e.g., Func&lt;Contract, DataCache, byte&gt; instead of Func&lt;object, object[], object&gt;)
+        /// which would eliminate boxing but requires runtime code generation per signature.
         /// </summary>
         private static Func<object, object?[]?, object?> CreateFastInvoker(MethodInfo method)
         {
-            // For maximum compatibility with different method signatures,
-            // we use a simple wrapper that caches the MethodInfo.
-            // The performance benefit comes from caching the invoker per method
-            // rather than creating new delegates on each call.
             return (target, args) => method.Invoke(target, args);
         }
 
@@ -508,17 +511,16 @@ namespace Neo.SmartContract.Native
                 for (int i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
 
-                // Use cached delegate for fast method dispatch, or create and cache one if not exists
+                // Use cached invoker for fast method dispatch
                 var cacheKey = new MethodCacheKey(Id, context.InstructionPointer);
                 if (!s_methodDelegateCache.TryGetValue(cacheKey, out var cachedInvoker))
                 {
-                    // Create a compiled delegate for fast invocation
-                    // This avoids repeated reflection overhead by compiling the call once
+                    // Create cached invoker to avoid repeated MethodInfo lookups
                     cachedInvoker = CreateFastInvoker(method.Handler);
                     s_methodDelegateCache[cacheKey] = cachedInvoker;
                 }
 
-                // Fast delegate invocation instead of reflection
+                // Invoke cached delegate
                 object? returnValue = cachedInvoker(this, parameters.ToArray());
 
                 if (returnValue is ContractTask task)
