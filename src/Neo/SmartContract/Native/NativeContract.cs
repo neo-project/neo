@@ -13,6 +13,7 @@ using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
@@ -28,6 +29,17 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public abstract class NativeContract
     {
+        /// <summary>
+        /// Cache key for method dispatch caching.
+        /// Combines contract instance reference and instruction pointer for fast lookup.
+        /// </summary>
+        private readonly record struct MethodCacheKey(int ContractId, int InstructionPointer);
+
+        /// <summary>
+        /// Thread-safe cache for compiled method delegates to avoid reflection overhead.
+        /// </summary>
+        private static readonly ConcurrentDictionary<MethodCacheKey, Func<object, object?[]?, object?>> s_methodDelegateCache = new();
+
         private class NativeContractsCache
         {
             public record CacheEntry(Dictionary<int, ContractMethodMetadata> Methods, byte[] Script);
@@ -473,12 +485,26 @@ namespace Neo.SmartContract.Native
                         (method.CpuFee * engine.ExecFeePicoFactor) +
                         (method.StorageFee * engine.StoragePrice * ApplicationEngine.FeeFactor));
                 }
+
+                // Build parameters
                 List<object?> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
                 for (int i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
-                object? returnValue = method.Handler.Invoke(this, parameters.ToArray());
+
+                // Use cached delegate for fast method dispatch, or create and cache one if not exists
+                var cacheKey = new MethodCacheKey(Id, context.InstructionPointer);
+                if (!s_methodDelegateCache.TryGetValue(cacheKey, out var cachedDelegate))
+                {
+                    // Create delegate for fast invocation - compile once, use many times
+                    cachedDelegate = method.Handler.CreateDelegate<Func<object, object?[]?, object?>>(this);
+                    s_methodDelegateCache[cacheKey] = cachedDelegate;
+                }
+
+                // Fast delegate invocation instead of reflection
+                object? returnValue = cachedDelegate(this, parameters.ToArray());
+
                 if (returnValue is ContractTask task)
                 {
                     await task;
