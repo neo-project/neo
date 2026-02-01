@@ -106,17 +106,37 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Verifies that a digital signature is appropriate for the provided key and message using the ECDSA algorithm.
         /// </summary>
+        /// <param name="engine">The execution engine.</param>
         /// <param name="message">The signed message.</param>
         /// <param name="pubkey">The public key to be used.</param>
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="curveHash">A pair of the curve to be used by the ECDSA algorithm and the hasher function to be used to hash message.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
-        public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
+        [ContractMethod(CpuFee = 1 << 15)]
+        public static bool VerifyWithECDsa(ApplicationEngine engine, byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
         {
-            if (!s_curves.TryGetValue(curveHash, out var ch))
-                throw new NotSupportedException($"Unsupported curve or hash algorithm: {curveHash}");
-            return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
+            if (engine.IsHardforkEnabled(Hardfork.HF_Gorgon))
+            {
+                if (!s_curves.TryGetValue(curveHash, out var ch))
+                    throw new NotSupportedException($"Unsupported curve or hash algorithm: {curveHash}");
+                return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
+            }
+            else if (engine.IsHardforkEnabled(Hardfork.HF_Cockatrice))
+            {
+                try
+                {
+                    var ch = s_curves[curveHash];
+                    return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return VerifyWithECDsaV0(message, pubkey, signature, curveHash);
+            }
         }
 
         // This is for solving the hardfork issue in https://github.com/neo-project/neo/pull/3209

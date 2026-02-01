@@ -815,6 +815,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestVerifyWithECDsa()
         {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             var privateKey = new byte[32];
             using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(privateKey);
@@ -824,11 +826,11 @@ namespace Neo.UnitTests.SmartContract
             var signatureR1 = Crypto.Sign(hexMessage, privateKey, ECCurve.Secp256r1);
             var signatureK1 = Crypto.Sign(hexMessage, privateKey, ECCurve.Secp256k1);
 
-            var result = CryptoLib.VerifyWithECDsa(hexMessage, publicKeyR1, signatureR1, NamedCurveHash.secp256r1SHA256);
+            var result = CryptoLib.VerifyWithECDsa(engine, hexMessage, publicKeyR1, signatureR1, NamedCurveHash.secp256r1SHA256);
             Assert.IsTrue(result);
-            result = CryptoLib.VerifyWithECDsa(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
+            result = CryptoLib.VerifyWithECDsa(engine, hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
             Assert.IsTrue(result);
-            Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256));
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(engine, hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256));
         }
 
         [TestMethod]
