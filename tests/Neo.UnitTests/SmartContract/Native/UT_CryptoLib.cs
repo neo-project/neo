@@ -1198,13 +1198,15 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestVerifyWithEd25519InvalidParameters()
         {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             var message = "hello world"u8.ToArray();
             var privateKey = Ed25519.GenerateKeyPair();
             var publicKey = Ed25519.GetPublicKey(privateKey);
             var sign = Ed25519.Sign(privateKey, message);
-            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(message, [], sign));
-            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(message, publicKey, []));
-            bool ok = Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(message, publicKey, sign);
+            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(engine, message, [], sign));
+            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(engine, message, publicKey, []));
+            bool ok = Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(engine, message, publicKey, sign);
         }
         private bool CallVerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
         {

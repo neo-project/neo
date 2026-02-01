@@ -159,23 +159,44 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Verifies that a digital signature is appropriate for the provided key and message using the Ed25519 algorithm.
         /// </summary>
+        /// <param name="engine">The execution engine.</param>
         /// <param name="message">The signed message.</param>
         /// <param name="pubkey">The Ed25519 public key to be used.</param>
         /// <param name="signature">The signature to be verified.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15)]
-        public static bool VerifyWithEd25519(byte[] message, byte[] pubkey, byte[] signature)
+        public static bool VerifyWithEd25519(ApplicationEngine engine, byte[] message, byte[] pubkey, byte[] signature)
         {
-            if (signature.Length != Ed25519.SignatureSize)
-                throw new FormatException($"Signature size should be {Ed25519.SignatureSize}");
+            if (engine.IsHardforkEnabled(Hardfork.HF_Gorgon))
+            {
+                if (signature.Length != Ed25519.SignatureSize)
+                    throw new FormatException($"Signature size should be {Ed25519.SignatureSize}");
 
-            if (pubkey.Length != Ed25519.PublicKeySize)
-                throw new FormatException($"Public key size should be {Ed25519.PublicKeySize}");
+                if (pubkey.Length != Ed25519.PublicKeySize)
+                    throw new FormatException($"Public key size should be {Ed25519.PublicKeySize}");
 
-            var verifier = new Ed25519Signer();
-            verifier.Init(false, new Ed25519PublicKeyParameters(pubkey, 0));
-            verifier.BlockUpdate(message, 0, message.Length);
-            return verifier.VerifySignature(signature);
+                var verifier = new Ed25519Signer();
+                verifier.Init(false, new Ed25519PublicKeyParameters(pubkey, 0));
+                verifier.BlockUpdate(message, 0, message.Length);
+                return verifier.VerifySignature(signature);
+            }
+            else
+            {
+                if (signature.Length != Ed25519.SignatureSize || pubkey.Length != Ed25519.PublicKeySize)
+                    return false;
+
+                try
+                {
+                    var verifier = new Ed25519Signer();
+                    verifier.Init(false, new Ed25519PublicKeyParameters(pubkey, 0));
+                    verifier.BlockUpdate(message, 0, message.Length);
+                    return verifier.VerifySignature(signature);
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
         }
     }
 }
