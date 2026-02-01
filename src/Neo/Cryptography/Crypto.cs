@@ -17,8 +17,6 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Cryptography
