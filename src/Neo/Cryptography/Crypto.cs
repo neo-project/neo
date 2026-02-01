@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.SmartContract.Native;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
@@ -16,6 +17,8 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Cryptography
@@ -110,7 +113,7 @@ namespace Neo.Cryptography
         /// <param name="pubkey">The public key to be used.</param>
         /// <param name="hashAlgorithm">The hash algorithm to be used to hash the message, the default is SHA256.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+        internal static bool VerifySignatureInternal(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             if (signature.Length != 64)
                 throw new FormatException("Signature size should be 64 bytes.");
@@ -126,6 +129,21 @@ namespace Neo.Cryptography
             return signer.VerifySignature(messageHash, r, s);
         }
 
+        [ContractMethod(true, Hardfork.HF_Gorgon, Name = "VerifySignature")]
+        public static bool VerifySignatureV0(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+        {
+            if (signature.Length != 64)
+                return false;
+            return VerifySignatureInternal(message, signature, pubkey, hashAlgorithm);
+        }
+
+        [ContractMethod(Hardfork.HF_Gorgon, Name = "VerifySignature")]
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+        {
+            if (signature.Length != 64)
+                throw new FormatException("Signature size should be 64 bytes.");
+            return VerifySignatureInternal(message, signature, pubkey, hashAlgorithm);
+        }
         /// <summary>
         /// Verifies that a digital signature is appropriate for the provided key, curve, message and hasher.
         /// </summary>
