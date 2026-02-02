@@ -127,7 +127,7 @@ namespace Neo.Cryptography
             return signer.VerifySignature(messageHash, r, s);
         }
 
-        [ContractMethod(true, Hardfork.HF_Gorgon, Name = "VerifySignature")]
+        [ContractMethod(true, Hardfork.HF_Gorgon, Name = "verifySignature")]
         public static bool VerifySignatureV0(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             if (signature.Length != 64)
@@ -135,7 +135,7 @@ namespace Neo.Cryptography
             return VerifySignatureInternal(message, signature, pubkey, hashAlgorithm);
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, Name = "VerifySignature")]
+        [ContractMethod(Hardfork.HF_Gorgon, Name = "verifySignature")]
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             if (signature.Length != 64)
