@@ -1195,6 +1195,7 @@ namespace Neo.UnitTests.SmartContract.Native
             invalidPublicKey[0] ^= 0x01; // Flip one bit
             Assert.ThrowsExactly<InvalidOperationException>(() => CallVerifyWithEd25519(message, invalidPublicKey, signature));
         }
+
         [TestMethod]
         public void TestVerifyWithEd25519InvalidParameters()
         {
