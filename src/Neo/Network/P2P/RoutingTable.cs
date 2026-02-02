@@ -166,8 +166,11 @@ public sealed class RoutingTable
         {
             foreach (var c in EnumerateAllContacts())
             {
-                if (list.Count >= count) break;
-                if (!list.Contains(c)) list.Add(c);
+                if (!list.Contains(c))
+                {
+                    list.Add(c);
+                    if (list.Count >= count) break;
+                }
             }
         }
         return list;
