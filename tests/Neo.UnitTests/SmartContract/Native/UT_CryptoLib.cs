@@ -1101,6 +1101,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(Crypto.VerifySignature(message, signature, pubK1, HashAlgorithm.Keccak256));
             Assert.IsTrue(CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1Keccak256));
         }
+
         [TestMethod]
         public void TestVerifyWithECDsaInvalidParameters()
         {
@@ -1141,6 +1142,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ok = Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, null!, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
             Assert.IsTrue(ok);
         }
+
         private bool CallVerifyWithECDsa(byte[] message, ECPoint pub, byte[] signature, NamedCurveHash curveHash)
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
@@ -1195,6 +1197,7 @@ namespace Neo.UnitTests.SmartContract.Native
             invalidPublicKey[0] ^= 0x01; // Flip one bit
             Assert.ThrowsExactly<InvalidOperationException>(() => CallVerifyWithEd25519(message, invalidPublicKey, signature));
         }
+
         [TestMethod]
         public void TestVerifyWithEd25519InvalidParameters()
         {
@@ -1208,6 +1211,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(engine, message, publicKey, []));
             bool ok = Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(engine, message, publicKey, sign);
         }
+
         private bool CallVerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();

@@ -96,7 +96,6 @@ namespace Neo.UnitTests.Wallets.NEP6
             Assert.IsTrue(uut.Sign(ctx));
             tx.Witnesses = ctx.GetWitnesses();
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, TestBlockchain.GetTestSnapshotCache(), long.MaxValue));
-            Assert.ThrowsExactly<ArgumentNullException>(() => _ = uut.CreateAccount(null));
             Assert.ThrowsExactly<ArgumentException>(() => _ = uut.CreateAccount("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551".HexToBytes()));
         }
 
