@@ -1209,6 +1209,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(engine, message, publicKey, []));
             bool ok = Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519(engine, message, publicKey, sign);
         }
+
         private bool CallVerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
