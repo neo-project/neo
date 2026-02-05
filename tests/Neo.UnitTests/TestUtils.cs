@@ -22,20 +22,19 @@ namespace Neo.UnitTests;
 
 public static partial class TestUtils
 {
-    [ThreadStatic]
-    public static readonly Random TestRandom = new(1337); // use fixed seed for guaranteed determinism
+    private static readonly ThreadLocal<Random> TestRandom = new(() => new Random(1337));// use fixed seed for guaranteed determinism
 
     public static UInt256 RandomUInt256()
     {
         var data = new byte[32];
-        TestRandom.NextBytes(data);
+        TestRandom.Value!.NextBytes(data);
         return new UInt256(data);
     }
 
     public static UInt160 RandomUInt160()
     {
         var data = new byte[20];
-        TestRandom.NextBytes(data);
+        TestRandom.Value!.NextBytes(data);
         return new UInt160(data);
     }
 
