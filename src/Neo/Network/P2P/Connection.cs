@@ -22,7 +22,7 @@ namespace Neo.Network.P2P
     /// </summary>
     public abstract class Connection : UntypedActor
     {
-        internal class Close { public bool Abort; }
+        internal class Close { public DisconnectReason Reason; }
         internal class Ack : Tcp.Event { public static Ack Instance = new(); }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Neo.Network.P2P
         {
             Remote = remote;
             Local = local;
-            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimitStart), Self, new Close { Abort = true }, ActorRefs.NoSender);
+            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimitStart), Self, new Close { Reason = DisconnectReason.Timeout }, ActorRefs.NoSender);
             switch (connection)
             {
                 case IActorRef tcp:
@@ -71,14 +71,12 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Disconnect from the remote node.
         /// </summary>
-        /// <param name="abort">Indicates whether the TCP ABORT command should be sent.</param>
-        public void Disconnect(bool abort = false)
+        /// <param name="reason">The reason for the disconnection.</param>
+        public void Disconnect(DisconnectReason reason = DisconnectReason.Close)
         {
             disconnected = true;
-            if (tcp != null)
-            {
-                tcp.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
-            }
+            tcp?.Tell(reason == DisconnectReason.Close ? Tcp.Close.Instance : Tcp.Abort.Instance);
+            OnDisconnect(reason);
             Context.Stop(Self);
         }
 
@@ -86,6 +84,16 @@ namespace Neo.Network.P2P
         /// Called when a TCP ACK message is received.
         /// </summary>
         protected virtual void OnAck()
+        {
+        }
+
+        /// <summary>
+        /// Invoked when a disconnect operation occurs, allowing derived classes to handle cleanup or custom logic.
+        /// </summary>
+        /// <remarks>Override this method in a derived class to implement custom behavior when a disconnect
+        /// occurs. This method is called regardless of whether the disconnect is graceful or due to an abort.</remarks>
+        /// <param name="reason">The reason for the disconnection.</param>
+        protected virtual void OnDisconnect(DisconnectReason reason)
         {
         }
 
@@ -100,7 +108,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Close close:
-                    Disconnect(close.Abort);
+                    Disconnect(close.Reason);
                     break;
                 case Ack _:
                     OnAck();
@@ -117,8 +125,8 @@ namespace Neo.Network.P2P
         private void OnReceived(ByteString data)
         {
             timer.CancelIfNotNull();
-            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimit), Self, new Close { Abort = true }, ActorRefs.NoSender);
-            data.TryCatch<ByteString, Exception>(OnData, (_, _) => Disconnect(true));
+            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimit), Self, new Close { Reason = DisconnectReason.Timeout }, ActorRefs.NoSender);
+            data.TryCatch<ByteString, Exception>(OnData, (_, _) => Disconnect(DisconnectReason.ProtocolViolation));
         }
 
         protected override void PostStop()
@@ -135,10 +143,7 @@ namespace Neo.Network.P2P
         /// <param name="data"></param>
         protected void SendData(ByteString data)
         {
-            if (tcp != null)
-            {
-                tcp.Tell(Tcp.Write.Create(data, Ack.Instance));
-            }
+            tcp?.Tell(Tcp.Write.Create(data, Ack.Instance));
         }
     }
 }

@@ -140,6 +140,12 @@ namespace Neo.Network.P2P
             CheckMessageQueue();
         }
 
+        protected override void OnDisconnect(DisconnectReason reason)
+        {
+            if (reason != DisconnectReason.Close && Version != null)
+                _localNode.RoutingTable.MarkFailure(Version.NodeId);
+        }
+
         protected override void OnData(ByteString data)
         {
             _messageBuffer = _messageBuffer.Concat(data);
