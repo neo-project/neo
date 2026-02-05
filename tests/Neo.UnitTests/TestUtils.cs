@@ -24,6 +24,7 @@ namespace Neo.UnitTests
 {
     public static partial class TestUtils
     {
+        [ThreadStatic]
         public static readonly Random TestRandom = new(1337); // use fixed seed for guaranteed determinism
 
         public static UInt256 RandomUInt256()
