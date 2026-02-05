@@ -373,18 +373,39 @@ partial class RemoteNode
     private void OnPingMessageReceived(PingPayload payload)
     {
         UpdateLastBlockIndex(payload.LastBlockIndex);
+
+        // Refresh routing table liveness on inbound Ping.
+        _localNode.RoutingTable.MarkSuccess(Version!.NodeId);
+
         EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_system.StoreView), payload.Nonce)));
     }
 
     private void OnPongMessageReceived(PingPayload payload)
     {
         UpdateLastBlockIndex(payload.LastBlockIndex);
+
+        // DHT: Pong means our probe succeeded, strongly refresh liveness.
+        _localNode.RoutingTable.MarkSuccess(Version!.NodeId);
     }
 
     private void OnVerackMessageReceived()
     {
         _verack = true;
         _system.TaskManager.Tell(new TaskManager.Register(Version!));
+
+        // DHT: a verack means the handshake is complete and the remote identity (NodeId) has been verified.
+        // Feed the remote contact into the local RoutingTable.
+        var nodeId = Version!.NodeId;
+
+        // Record both:
+        //  - Observed endpoint: what we actually connected to (may be NAT-mapped; not necessarily dialable)
+        //  - Advertised endpoint: what the peer claims to be listening on (dialable candidate)
+        _localNode.RoutingTable.Update(nodeId, new OverlayEndpoint(TransportProtocol.Tcp, Remote, EndpointKind.Observed));
+        if (ListenerTcpPort > 0)
+            _localNode.RoutingTable.Update(nodeId, new OverlayEndpoint(TransportProtocol.Tcp, Listener, EndpointKind.Advertised));
+
+        _localNode.RoutingTable.MarkSuccess(nodeId);
+
         CheckMessageQueue();
     }
 
@@ -406,9 +427,9 @@ partial class RemoteNode
                     break;
             }
         }
-        if (!_localNode.AllowNewConnection(Self, this))
+        if (!_localNode.AllowNewConnection(Self, this, out DisconnectReason reason))
         {
-            Disconnect(true);
+            Disconnect(reason);
             return;
         }
         SendMessage(Message.Create(MessageCommand.Verack));
