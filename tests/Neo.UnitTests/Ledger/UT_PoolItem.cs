@@ -18,6 +18,7 @@ namespace Neo.UnitTests.Ledger;
 [TestClass]
 public class UT_PoolItem
 {
+    [ThreadStatic]
     private static readonly Random TestRandom = new(1337); // use fixed seed for guaranteed determinism
 
     [TestInitialize]
