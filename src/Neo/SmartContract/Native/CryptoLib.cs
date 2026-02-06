@@ -106,22 +106,36 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Verifies that a digital signature is appropriate for the provided key and message using the ECDSA algorithm.
         /// </summary>
+        /// <param name="engine">The execution engine.</param>
         /// <param name="message">The signed message.</param>
         /// <param name="pubkey">The public key to be used.</param>
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="curveHash">A pair of the curve to be used by the ECDSA algorithm and the hasher function to be used to hash message.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
-        public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
+        [ContractMethod(CpuFee = 1 << 15)]
+        public static bool VerifyWithECDsa(ApplicationEngine engine, byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
         {
-            try
+            if (engine.IsHardforkEnabled(Hardfork.HF_Gorgon))
             {
-                var ch = s_curves[curveHash];
+                if (!s_curves.TryGetValue(curveHash, out var ch))
+                    throw new NotSupportedException($"Unsupported curve or hash algorithm: {curveHash}");
                 return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
             }
-            catch (ArgumentException)
+            else if (engine.IsHardforkEnabled(Hardfork.HF_Cockatrice))
             {
-                return false;
+                try
+                {
+                    var ch = s_curves[curveHash];
+                    return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return VerifyWithECDsaV0(message, pubkey, signature, curveHash);
             }
         }
 
@@ -145,29 +159,43 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Verifies that a digital signature is appropriate for the provided key and message using the Ed25519 algorithm.
         /// </summary>
+        /// <param name="engine">The execution engine.</param>
         /// <param name="message">The signed message.</param>
         /// <param name="pubkey">The Ed25519 public key to be used.</param>
         /// <param name="signature">The signature to be verified.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15)]
-        public static bool VerifyWithEd25519(byte[] message, byte[] pubkey, byte[] signature)
+        public static bool VerifyWithEd25519(ApplicationEngine engine, byte[] message, byte[] pubkey, byte[] signature)
         {
-            if (signature.Length != Ed25519.SignatureSize)
-                return false;
-
-            if (pubkey.Length != Ed25519.PublicKeySize)
-                return false;
-
-            try
+            if (engine.IsHardforkEnabled(Hardfork.HF_Gorgon))
             {
+                if (signature.Length != Ed25519.SignatureSize)
+                    throw new FormatException($"Signature size should be {Ed25519.SignatureSize}");
+
+                if (pubkey.Length != Ed25519.PublicKeySize)
+                    throw new FormatException($"Public key size should be {Ed25519.PublicKeySize}");
+
                 var verifier = new Ed25519Signer();
                 verifier.Init(false, new Ed25519PublicKeyParameters(pubkey, 0));
                 verifier.BlockUpdate(message, 0, message.Length);
                 return verifier.VerifySignature(signature);
             }
-            catch (Exception)
+            else
             {
-                return false;
+                if (signature.Length != Ed25519.SignatureSize || pubkey.Length != Ed25519.PublicKeySize)
+                    return false;
+
+                try
+                {
+                    var verifier = new Ed25519Signer();
+                    verifier.Init(false, new Ed25519PublicKeyParameters(pubkey, 0));
+                    verifier.BlockUpdate(message, 0, message.Length);
+                    return verifier.VerifySignature(signature);
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
             }
         }
     }
