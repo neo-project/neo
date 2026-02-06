@@ -84,8 +84,90 @@ jobs:
       run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION_SUFFIX={}' >> $GITHUB_ENV
     - name : Pack (Everything)
       run: dotnet pack -c Debug -o out --include-source --version-suffix ${{ env.VERSION_SUFFIX }}
+    - name: Delete old MyGet CI packages
+      run: |
+        set -euo pipefail
+
+        MYGET_API_URL="https://www.myget.org/F/neo/api/v2/package"
+        MYGET_FLAT_CONTAINER_URL="https://www.myget.org/F/neo/api/v3/flatcontainer"
+
+        declare -A keep_versions=()
+        for package_file in out/*.nupkg; do
+          [[ "$package_file" == *.symbols.nupkg ]] && continue
+
+          nuspec_path=$(unzip -Z1 "$package_file" | grep -E '\.nuspec$' | head -n 1 || true)
+          [[ -z "$nuspec_path" ]] && continue
+
+          nuspec_content=$(unzip -p "$package_file" "$nuspec_path" | tr -d '\r')
+          package_id=$(echo "$nuspec_content" | sed -n 's:.*<id>\([^<]*\)</id>.*:\1:p' | head -n 1)
+          package_version=$(echo "$nuspec_content" | sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p' | head -n 1)
+
+          [[ -z "$package_id" || -z "$package_version" ]] && continue
+          keep_versions["$package_id"]="$package_version"
+        done
+
+        for package_id in "${!keep_versions[@]}"; do
+          current_version="${keep_versions[$package_id]}"
+          package_id_lower=$(echo "$package_id" | tr '[:upper:]' '[:lower:]')
+          index_url="${MYGET_FLAT_CONTAINER_URL}/${package_id_lower}/index.json"
+
+          if ! versions_json=$(curl -fsSL "$index_url"); then
+            echo "No existing versions for ${package_id}; skipping cleanup."
+            continue
+          fi
+
+          mapfile -t ci_versions < <(echo "$versions_json" | jq -r '.versions[]? | select(test("-CI[0-9]+$"))')
+
+          if [[ ${#ci_versions[@]} -eq 0 ]]; then
+            echo "No CI versions found for ${package_id}; skipping cleanup."
+            continue
+          fi
+
+          keep_v3=$(echo "$versions_json" | jq -r '[.versions[]? | select(test("^3\\..*-CI[0-9]+$"))] | last // empty')
+          keep_v4=$(echo "$versions_json" | jq -r '[.versions[]? | select(test("^4\\..*-CI[0-9]+$"))] | last // empty')
+
+          declare -A keep_ci_versions=()
+          [[ -n "$keep_v3" ]] && keep_ci_versions["$keep_v3"]=1
+          [[ -n "$keep_v4" ]] && keep_ci_versions["$keep_v4"]=1
+
+          if [[ "$current_version" =~ ^(3|4)\..*-CI[0-9]+$ ]]; then
+            keep_ci_versions["$current_version"]=1
+          fi
+
+          if [[ ${#keep_ci_versions[@]} -eq 0 ]]; then
+            echo "No 3.x/4.x CI versions found for ${package_id}; skipping cleanup."
+            continue
+          fi
+
+          echo "Keeping ${package_id} 3.x=${keep_v3:-none}, 4.x=${keep_v4:-none}. Removing other CI versions."
+
+          for ci_version in "${ci_versions[@]}"; do
+            if [[ -n "${keep_ci_versions[$ci_version]:-}" ]]; then
+              continue
+            fi
+
+            delete_url="${MYGET_API_URL}/${package_id}/${ci_version}"
+            status_code=$(curl -sS -o /tmp/myget-delete-response.txt -w '%{http_code}' -X DELETE "$delete_url" -H "X-NuGet-ApiKey: ${MYGET_TOKEN}")
+
+            case "$status_code" in
+              2*)
+                echo "Deleted ${package_id} ${ci_version}"
+                ;;
+              404)
+                echo "${package_id} ${ci_version} was already deleted"
+                ;;
+              *)
+                echo "Failed deleting ${package_id} ${ci_version} (HTTP ${status_code})"
+                cat /tmp/myget-delete-response.txt
+                exit 1
+                ;;
+            esac
+          done
+        done
+      env:
+        MYGET_TOKEN: ${{ secrets.MYGET_TOKEN }}
     - name: Publish to myGet
-      run: dotnet nuget push out/*.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
+      run: dotnet nuget push out/*.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} --skip-duplicate -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
       env:
         MYGET_TOKEN: ${{ secrets.MYGET_TOKEN }}
         
