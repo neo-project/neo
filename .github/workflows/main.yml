@@ -126,13 +126,17 @@ jobs:
           keep_v3=$(echo "$versions_json" | jq -r '[.versions[]? | select(test("^3\\..*-CI[0-9]+$"))] | last // empty')
           keep_v4=$(echo "$versions_json" | jq -r '[.versions[]? | select(test("^4\\..*-CI[0-9]+$"))] | last // empty')
 
+          if [[ "$current_version" =~ ^3\..*-CI[0-9]+$ ]]; then
+            keep_v3="$current_version"
+          fi
+
+          if [[ "$current_version" =~ ^4\..*-CI[0-9]+$ ]]; then
+            keep_v4="$current_version"
+          fi
+
           declare -A keep_ci_versions=()
           [[ -n "$keep_v3" ]] && keep_ci_versions["$keep_v3"]=1
           [[ -n "$keep_v4" ]] && keep_ci_versions["$keep_v4"]=1
-
-          if [[ "$current_version" =~ ^(3|4)\..*-CI[0-9]+$ ]]; then
-            keep_ci_versions["$current_version"]=1
-          fi
 
           if [[ ${#keep_ci_versions[@]} -eq 0 ]]; then
             echo "No 3.x/4.x CI versions found for ${package_id}; skipping cleanup."
