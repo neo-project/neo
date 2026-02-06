@@ -54,16 +54,29 @@ namespace Neo.Ledger
         /// <param name="tx">The specified <see cref="Transaction"/>.</param>
         /// <param name="conflictingTxs">The list of <see cref="Transaction"/> that conflicts with the specified one and are to be removed from the pool.</param>
         /// <param name="snapshot">The snapshot used to verify the <see cref="Transaction"/>.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the <see cref="Transaction"/>.</param>
         /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
-        public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot)
+        public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot, ProtocolSettings settings)
         {
-            var balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             _senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
             var expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
             foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
                 expectedFee -= conflictTx.NetworkFee + conflictTx.SystemFee;
-            if (balance < expectedFee) return false;
+            if (balance < expectedFee)
+            {
+                // Only consider unclaimed GAS when claimed balance is insufficient and HF_Faun is active.
+                if (settings.Hardforks.TryGetValue(Hardfork.HF_Faun, out var faunHeight) &&
+                    !NativeContract.ContractManagement.IsContract(snapshot, tx.Sender))
+                {
+                    var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
+                    var nextIndex = currentIndex + 1;
+                    if (faunHeight == 0 || nextIndex >= faunHeight)
+                        balance += NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, nextIndex);
+                }
+                if (balance < expectedFee) return false;
+            }
 
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null && _oracleResponses.ContainsKey(oracle.Id))

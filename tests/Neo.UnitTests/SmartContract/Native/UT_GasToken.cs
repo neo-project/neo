@@ -10,12 +10,14 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -145,6 +147,259 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = NativeContract.GAS.Transfer(engine.SnapshotCache, from, to, BigInteger.MinusOne, true, persistingBlock));
             Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.GAS.Transfer(engine.SnapshotCache, new byte[19], to, BigInteger.One, false, persistingBlock));
             Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.GAS.Transfer(engine.SnapshotCache, from, new byte[19], BigInteger.One, false, persistingBlock));
+        }
+
+        [TestMethod]
+        public void Check_OnPersist_AutoClaimUnclaimedGasForFees()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var sender = new UInt160(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            var currentBlock = snapshot.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
+            var currentState = currentBlock.GetInteroperable<HashIndexState>();
+            currentState.Index = persistingBlock.Index - 1;
+            currentState.Hash = UInt256.Zero;
+
+            var neoKey = new KeyBuilder(NativeContract.NEO.Id, 20).Add(sender.ToArray());
+            snapshot.Add(neoKey, new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = new BigInteger(1_000_000),
+                BalanceHeight = 0,
+                VoteTo = null,
+                LastGasPerVote = 0
+            }));
+
+            var unclaimed = NativeContract.NEO.UnclaimedGas(snapshot, sender, persistingBlock.Index);
+            Assert.IsTrue(unclaimed > 0);
+
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                SystemFee = 1_00000000,
+                NetworkFee = 1_00000000,
+                ValidUntilBlock = persistingBlock.Index + 1,
+                Signers = [new Signer { Account = sender, Scopes = WitnessScope.None }],
+                Attributes = [],
+                Script = new byte[] { (byte)OpCode.RET },
+                Witnesses = [Witness.Empty]
+            };
+            persistingBlock.Transactions = [tx];
+
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            using var persistEngine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
+            persistEngine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, persistEngine.Execute());
+
+            var expected = unclaimed - (tx.SystemFee + tx.NetworkFee);
+            Assert.AreEqual(expected, NativeContract.GAS.BalanceOf(snapshot, sender));
+        }
+
+        [TestMethod]
+        public void Check_OnPersist_NoAutoClaimWhenEnoughGas()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var sender = new UInt160(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            var currentBlock = snapshot.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
+            var currentState = currentBlock.GetInteroperable<HashIndexState>();
+            currentState.Index = persistingBlock.Index - 1;
+            currentState.Hash = UInt256.Zero;
+
+            var neoKey = new KeyBuilder(NativeContract.NEO.Id, 20).Add(sender.ToArray());
+            snapshot.Add(neoKey, new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = new BigInteger(1_000_000),
+                BalanceHeight = 0,
+                VoteTo = null,
+                LastGasPerVote = 0
+            }));
+
+            var unclaimedBefore = NativeContract.NEO.UnclaimedGas(snapshot, sender, persistingBlock.Index);
+            Assert.IsTrue(unclaimedBefore > 0);
+
+            var gasKey = new KeyBuilder(NativeContract.GAS.Id, 20).Add(sender.ToArray());
+            snapshot.Add(gasKey, new StorageItem(new AccountState { Balance = 2_00000000 }));
+
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                SystemFee = 1_00000000,
+                NetworkFee = 1_00000000,
+                ValidUntilBlock = persistingBlock.Index + 1,
+                Signers = [new Signer { Account = sender, Scopes = WitnessScope.None }],
+                Attributes = [],
+                Script = new byte[] { (byte)OpCode.RET },
+                Witnesses = [Witness.Empty]
+            };
+            persistingBlock.Transactions = [tx];
+
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            using var persistEngine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
+            persistEngine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, persistEngine.Execute());
+
+            Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, sender));
+            Assert.AreEqual(unclaimedBefore, NativeContract.NEO.UnclaimedGas(snapshot, sender, persistingBlock.Index));
+        }
+
+        [TestMethod]
+        public void Check_OnPersist_AutoClaimDisabledBeforeFaun()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var sender = new UInt160(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            var currentBlock = snapshot.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
+            var currentState = currentBlock.GetInteroperable<HashIndexState>();
+            currentState.Index = persistingBlock.Index - 1;
+            currentState.Hash = UInt256.Zero;
+
+            var neoKey = new KeyBuilder(NativeContract.NEO.Id, 20).Add(sender.ToArray());
+            snapshot.Add(neoKey, new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = new BigInteger(1_000_000),
+                BalanceHeight = 0,
+                VoteTo = null,
+                LastGasPerVote = 0
+            }));
+
+            var gasKey = new KeyBuilder(NativeContract.GAS.Id, 20).Add(sender.ToArray());
+            snapshot.Add(gasKey, new StorageItem(new AccountState { Balance = BigInteger.Zero }));
+
+            var unclaimedBefore = NativeContract.NEO.UnclaimedGas(snapshot, sender, persistingBlock.Index);
+            Assert.IsTrue(unclaimedBefore > 0);
+
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                SystemFee = 1_00000000,
+                NetworkFee = 1_00000000,
+                ValidUntilBlock = persistingBlock.Index + 1,
+                Signers = [new Signer { Account = sender, Scopes = WitnessScope.None }],
+                Attributes = [],
+                Script = new byte[] { (byte)OpCode.RET },
+                Witnesses = [Witness.Empty]
+            };
+            persistingBlock.Transactions = [tx];
+
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Faun, persistingBlock.Index + 1)
+            };
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            using var persistEngine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: settings);
+            persistEngine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.FAULT, persistEngine.Execute());
+            Assert.IsTrue(persistEngine.FaultException is InvalidOperationException);
+            Assert.AreEqual(unclaimedBefore, NativeContract.NEO.UnclaimedGas(snapshot, sender, persistingBlock.Index));
+        }
+
+        [TestMethod]
+        public void Check_OnPersist_AutoClaimSkippedForContractSender()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            var contract = TestUtils.GetContract();
+            snapshot.AddContract(contract.Hash, contract);
+
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            var currentBlock = snapshot.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
+            var currentState = currentBlock.GetInteroperable<HashIndexState>();
+            currentState.Index = persistingBlock.Index - 1;
+            currentState.Hash = UInt256.Zero;
+
+            var neoKey = new KeyBuilder(NativeContract.NEO.Id, 20).Add(contract.Hash.ToArray());
+            snapshot.Add(neoKey, new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = new BigInteger(1_000_000),
+                BalanceHeight = 0,
+                VoteTo = null,
+                LastGasPerVote = 0
+            }));
+
+            var gasKey = new KeyBuilder(NativeContract.GAS.Id, 20).Add(contract.Hash.ToArray());
+            snapshot.Add(gasKey, new StorageItem(new AccountState { Balance = BigInteger.Zero }));
+
+            var unclaimed = NativeContract.NEO.UnclaimedGas(snapshot, contract.Hash, persistingBlock.Index);
+            Assert.IsTrue(unclaimed > 0);
+
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                SystemFee = 1_00000000,
+                NetworkFee = 1_00000000,
+                ValidUntilBlock = persistingBlock.Index + 1,
+                Signers = [new Signer { Account = contract.Hash, Scopes = WitnessScope.None }],
+                Attributes = [],
+                Script = new byte[] { (byte)OpCode.RET },
+                Witnesses = [Witness.Empty]
+            };
+            persistingBlock.Transactions = [tx];
+
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            using var persistEngine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
+            persistEngine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.FAULT, persistEngine.Execute());
+            Assert.IsTrue(persistEngine.FaultException is InvalidOperationException);
+            Assert.AreEqual(unclaimed, NativeContract.NEO.UnclaimedGas(snapshot, contract.Hash, persistingBlock.Index));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)

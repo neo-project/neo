@@ -11,12 +11,14 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neo.Extensions;
 using Neo.Extensions.Factories;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.UnitTests.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -58,12 +60,12 @@ namespace Neo.UnitTests.Ledger
             var tx = CreateTransactionWithFee(1, 2);
             tx.Attributes = [new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() }];
             var conflicts = new List<Transaction>();
-            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
             verificationContext.AddTransaction(tx);
 
             tx = CreateTransactionWithFee(2, 1);
             tx.Attributes = [new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() }];
-            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
         }
 
         [TestMethod]
@@ -78,15 +80,15 @@ namespace Neo.UnitTests.Ledger
             TransactionVerificationContext verificationContext = new();
             var tx = CreateTransactionWithFee(1, 2);
             var conflicts = new List<Transaction>();
-            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
             verificationContext.AddTransaction(tx);
-            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
             verificationContext.AddTransaction(tx);
-            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
             verificationContext.RemoveTransaction(tx);
-            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
             verificationContext.AddTransaction(tx);
-            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
         }
 
         [TestMethod]
@@ -103,14 +105,101 @@ namespace Neo.UnitTests.Ledger
             var conflictingTx = CreateTransactionWithFee(1, 1); // costs 2 GAS
 
             var conflicts = new List<Transaction>();
-            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
             verificationContext.AddTransaction(tx);
-            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
             verificationContext.AddTransaction(tx);
-            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default));
 
             conflicts.Add(conflictingTx);
-            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache)); // 1 GAS is left on the balance + 2 GAS is free after conflicts removal => enough for one more trasnaction.
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache, TestProtocolSettings.Default)); // 1 GAS is left on the balance + 2 GAS is free after conflicts removal => enough for one more trasnaction.
+        }
+
+        [TestMethod]
+        public void TestTransactionSenderFeeWithUnclaimedGas()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var sender = new UInt160(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            var currentBlock = snapshotCache.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
+            var currentState = currentBlock.GetInteroperable<HashIndexState>();
+            currentState.Index = persistingBlock.Index - 1;
+            currentState.Hash = UInt256.Zero;
+
+            var neoKey = new KeyBuilder(NativeContract.NEO.Id, 20).Add(sender.ToArray());
+            snapshotCache.Add(neoKey, new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = new BigInteger(1_000_000),
+                BalanceHeight = 0,
+                VoteTo = null,
+                LastGasPerVote = 0
+            }));
+
+            var unclaimed = NativeContract.NEO.UnclaimedGas(snapshotCache, sender, persistingBlock.Index);
+            Assert.IsTrue(unclaimed > 0);
+
+            TransactionVerificationContext verificationContext = new();
+            var tx = CreateTransactionWithFee(1, 1);
+            tx.Signers = [new Signer { Account = sender }];
+
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, Array.Empty<Transaction>(), snapshotCache, TestProtocolSettings.Default));
+        }
+
+        [TestMethod]
+        public void TestTransactionSenderFeeWithUnclaimedGas_ContractSender()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var contract = TestUtils.GetContract();
+            snapshotCache.AddContract(contract.Hash, contract);
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            var currentBlock = snapshotCache.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
+            var currentState = currentBlock.GetInteroperable<HashIndexState>();
+            currentState.Index = persistingBlock.Index - 1;
+            currentState.Hash = UInt256.Zero;
+
+            var neoKey = new KeyBuilder(NativeContract.NEO.Id, 20).Add(contract.Hash.ToArray());
+            snapshotCache.Add(neoKey, new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = new BigInteger(1_000_000),
+                BalanceHeight = 0,
+                VoteTo = null,
+                LastGasPerVote = 0
+            }));
+
+            var unclaimed = NativeContract.NEO.UnclaimedGas(snapshotCache, contract.Hash, persistingBlock.Index);
+            Assert.IsTrue(unclaimed > 0);
+
+            TransactionVerificationContext verificationContext = new();
+            var tx = CreateTransactionWithFee(1, 1);
+            tx.Signers = [new Signer { Account = contract.Hash }];
+
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, Array.Empty<Transaction>(), snapshotCache, TestProtocolSettings.Default));
         }
     }
 }
