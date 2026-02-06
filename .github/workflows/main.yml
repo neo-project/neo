@@ -123,16 +123,19 @@ jobs:
             continue
           fi
 
-          keep_v3=$(echo "$versions_json" | jq -r '[.versions[]? | select(test("^3\\..*-CI[0-9]+$"))] | last // empty')
-          keep_v4=$(echo "$versions_json" | jq -r '[.versions[]? | select(test("^4\\..*-CI[0-9]+$"))] | last // empty')
+          keep_v3=$(
+            {
+              echo "$versions_json" | jq -r '.versions[]? | select(test("^3\\..*-CI[0-9]+$"))'
+              [[ "$current_version" =~ ^3\..*-CI[0-9]+$ ]] && echo "$current_version"
+            } | awk 'NF' | sort -V | tail -n 1
+          )
 
-          if [[ "$current_version" =~ ^3\..*-CI[0-9]+$ ]]; then
-            keep_v3="$current_version"
-          fi
-
-          if [[ "$current_version" =~ ^4\..*-CI[0-9]+$ ]]; then
-            keep_v4="$current_version"
-          fi
+          keep_v4=$(
+            {
+              echo "$versions_json" | jq -r '.versions[]? | select(test("^4\\..*-CI[0-9]+$"))'
+              [[ "$current_version" =~ ^4\..*-CI[0-9]+$ ]] && echo "$current_version"
+            } | awk 'NF' | sort -V | tail -n 1
+          )
 
           declare -A keep_ci_versions=()
           [[ -n "$keep_v3" ]] && keep_ci_versions["$keep_v3"]=1
