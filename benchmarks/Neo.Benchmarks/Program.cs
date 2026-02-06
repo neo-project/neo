@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Running;
+using Neo.Benchmarks.NativeContracts;
 
 // List all benchmarks:
 //  dotnet run -c Release --framework [for example: net9.0] -- --list flat(or tree)
@@ -20,4 +21,13 @@ using BenchmarkDotNet.Running;
 // Run all benchmarks of a class:
 //  dotnet run -c Release --framework [for example: net9.0] -- -f '*Class*'
 // More options: https://benchmarkdotnet.org/articles/guides/console-args.html
-BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+// dotnet run -c Release --framework net10.0 --project benchmarks/Neo.Benchmarks/Neo.Benchmarks.csproj -- --native-manual-run
+var parsed = NativeContractManualRunner.ParseArguments(args);
+if (parsed.RunManualSuite)
+{
+    var options = NativeContractManualRunner.CreateOptions(parsed);
+    Environment.ExitCode = NativeContractManualRunner.Run(options, parsed);
+    return;
+}
+
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(parsed.ForwardedArgs);
