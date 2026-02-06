@@ -10,9 +10,13 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
+using Neo.UnitTests.Extensions;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Numerics;
@@ -197,6 +201,113 @@ namespace Neo.UnitTests.SmartContract
                 68, 216, 160, 6, 89, 102, 86, 72, 37, 15, 132, 45, 76, 221, 170, 21, 128, 51, 34, 168, 205, 56, 10, 228, 51, 114, 4, 218, 245, 155, 172, 132
             };
             Assert.ThrowsExactly<ArgumentException>(() => engine.RuntimeLog(msg));
+        }
+
+        [TestMethod]
+        public void TestMintGasMintsAndAddsFee()
+        {
+            var snapshotBase = _snapshotCache.CloneCache();
+            var payer = UInt160.Parse("0x0102030405060708090a0b0c0d0e0f1011121314");
+            const long mintAmount = 5;
+
+            using var mintScript = new ScriptBuilder();
+            mintScript.EmitSysCall(ApplicationEngine.System_Runtime_MintGas.Hash, mintAmount);
+            mintScript.Emit(OpCode.RET);
+
+            var mintManifest = TestUtils.CreateManifest("charge", ContractParameterType.Void);
+            mintManifest.Abi.Methods[0].Offset = 0;
+
+            var mintContract = TestUtils.GetContract(mintScript.ToArray(), mintManifest);
+            mintContract.Id = 1;
+
+            using var noopScript = new ScriptBuilder();
+            noopScript.Emit(OpCode.RET);
+
+            var noopManifest = TestUtils.CreateManifest("noop", ContractParameterType.Void);
+            noopManifest.Abi.Methods[0].Offset = 0;
+
+            var noopContract = TestUtils.GetContract(noopScript.ToArray(), noopManifest);
+            noopContract.Id = 2;
+
+            snapshotBase.AddContract(mintContract.Hash, mintContract);
+            snapshotBase.AddContract(noopContract.Hash, noopContract);
+
+            var tx = TestUtils.GetTransaction(payer);
+
+            var snapshotNoop = snapshotBase.CloneCache();
+            using var engineNoop = ApplicationEngine.Create(TriggerType.Application, tx, snapshotNoop, _system.GenesisBlock, settings: TestProtocolSettings.Default);
+            using (var callScript = new ScriptBuilder())
+            {
+                callScript.EmitDynamicCall(noopContract.Hash, "noop");
+                engineNoop.LoadScript(callScript.ToArray());
+            }
+            Assert.AreEqual(VMState.HALT, engineNoop.Execute());
+            var feeNoop = engineNoop.FeeConsumed;
+
+            var snapshotMint = snapshotBase.CloneCache();
+            using var engineMint = ApplicationEngine.Create(TriggerType.Application, tx, snapshotMint, _system.GenesisBlock, settings: TestProtocolSettings.Default);
+            using (var callScript = new ScriptBuilder())
+            {
+                callScript.EmitDynamicCall(mintContract.Hash, "charge");
+                engineMint.LoadScript(callScript.ToArray());
+            }
+            Assert.AreEqual(VMState.HALT, engineMint.Execute());
+            var feeMint = engineMint.FeeConsumed;
+
+            Assert.AreEqual(new BigInteger(mintAmount), NativeContract.GAS.BalanceOf(snapshotMint, mintContract.Hash));
+            Assert.IsTrue(feeMint >= feeNoop + mintAmount);
+        }
+
+        [TestMethod]
+        public void TestMintGasRejectsNegative()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var payer = UInt160.Parse("0x1112131415161718191a1b1c1d1e1f2021222324");
+
+            using var mintScript = new ScriptBuilder();
+            mintScript.EmitSysCall(ApplicationEngine.System_Runtime_MintGas.Hash, -1);
+            mintScript.Emit(OpCode.RET);
+
+            var manifest = TestUtils.CreateManifest("charge", ContractParameterType.Void);
+            manifest.Abi.Methods[0].Offset = 0;
+
+            var contract = TestUtils.GetContract(mintScript.ToArray(), manifest);
+            contract.Id = 3;
+            snapshot.AddContract(contract.Hash, contract);
+
+            var tx = TestUtils.GetTransaction(payer);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default);
+            using var callScript = new ScriptBuilder();
+            callScript.EmitDynamicCall(contract.Hash, "charge");
+            engine.LoadScript(callScript.ToArray());
+
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+        }
+
+        [TestMethod]
+        public void TestMintGasRequiresWriteStates()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var payer = UInt160.Parse("0x2122232425262728292a2b2c2d2e2f3031323334");
+
+            using var mintScript = new ScriptBuilder();
+            mintScript.EmitSysCall(ApplicationEngine.System_Runtime_MintGas.Hash, 1);
+            mintScript.Emit(OpCode.RET);
+
+            var manifest = TestUtils.CreateManifest("charge", ContractParameterType.Void);
+            manifest.Abi.Methods[0].Offset = 0;
+
+            var contract = TestUtils.GetContract(mintScript.ToArray(), manifest);
+            contract.Id = 4;
+            snapshot.AddContract(contract.Hash, contract);
+
+            var tx = TestUtils.GetTransaction(payer);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default);
+            using var callScript = new ScriptBuilder();
+            callScript.EmitDynamicCall(contract.Hash, "charge", CallFlags.ReadOnly);
+            engine.LoadScript(callScript.ToArray());
+
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
         }
     }
 }
