@@ -35,14 +35,14 @@ namespace Neo.UnitTests.SmartContract
             {
                 Hardforks = ProtocolSettings.Default.Hardforks
                     .SetItem(Hardfork.HF_Echidna, EchidnaEnable)
-                    .SetItem(Hardfork.HF_Faun, FaunEnable)
+                    .SetItem(Hardfork.HF_Gorgon, FaunEnable)
             };
 
             Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Echidna, 5u));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Echidna, 15u));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Echidna, 30u));
-            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Faun, 15u));
-            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Faun, 30u));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 15u));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 30u));
 
             // Case A: pre-Echidna => Overflow
             ExecuteAndAssertFault<OverflowException>(script, settings, index: 5u);
