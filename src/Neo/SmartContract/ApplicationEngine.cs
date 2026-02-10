@@ -38,7 +38,7 @@ namespace Neo.SmartContract
     {
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
         protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
-        protected static readonly JumpTable NotFaunJumpTable = ComposeNotFaunJumpTable();
+        protected static readonly JumpTable NotGorgonJumpTable = ComposeNotGorgonJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -279,7 +279,7 @@ namespace Neo.SmartContract
             return table;
         }
 
-        public static JumpTable ComposeNotFaunJumpTable()
+        public static JumpTable ComposeNotGorgonJumpTable()
         {
             var table = ComposeDefaultJumpTable();
             Patch543(table);
@@ -670,7 +670,7 @@ namespace Neo.SmartContract
 
             JumpTable jumpTable;
 
-            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, index))
+            if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
             {
                 jumpTable = DefaultJumpTable;
             }
@@ -682,7 +682,7 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    jumpTable = NotFaunJumpTable;
+                    jumpTable = NotGorgonJumpTable;
                 }
             }
 
