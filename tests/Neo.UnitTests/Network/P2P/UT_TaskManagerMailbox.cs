@@ -14,15 +14,12 @@ using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using System;
 
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
     public class UT_TaskManagerMailbox : TestKit
     {
-        private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
-
         TaskManagerMailbox uut;
 
         [TestCleanup]

@@ -30,11 +30,24 @@ namespace Neo.Wallets
     /// backup and recovery. This class provides methods to create, parse, and represent mnemonic phrases according to the
     /// BIP-0039 standard, supporting multiple languages based on the current or specified culture.
     /// </remarks>
-    public class Mnemonic
+    public class Mnemonic : IReadOnlyList<string>
     {
         static readonly Dictionary<string, string[]> s_wordlists = new();
         static readonly Dictionary<string, int> s_wordlistsReverseIndex = new();
         readonly string[] words;
+
+        /// <summary>
+        /// Gets the word at the specified zero-based index.
+        /// </summary>
+        /// <param name="index">The zero-based index of the word to retrieve. Must be greater than or equal to 0 and less than the total number
+        /// of words.</param>
+        /// <returns>The word at the specified index.</returns>
+        public string this[int index] => words[index];
+
+        /// <summary>
+        /// Gets the total number of words in the mnemonic phrase.
+        /// </summary>
+        public int Count => words.Length;
 
         static Mnemonic()
         {
@@ -223,6 +236,16 @@ namespace Neo.Wallets
         public override string ToString()
         {
             return string.Join(' ', words);
+        }
+
+        IEnumerator<string> IEnumerable<string>.GetEnumerator()
+        {
+            return words.AsEnumerable().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return words.GetEnumerator();
         }
 
         static bool GetBitMSB(ReadOnlySpan<byte> data, int bitIndex)
