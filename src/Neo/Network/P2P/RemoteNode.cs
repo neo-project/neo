@@ -137,6 +137,16 @@ public partial class RemoteNode : Connection
         CheckMessageQueue();
     }
 
+    protected override void OnDisconnect(DisconnectReason reason)
+    {
+        if (reason != DisconnectReason.Close)
+        {
+            // DHT: connection dropped. Penalize the contact (do not immediately delete; allow churn).
+            if (Version != null)
+                _localNode.RoutingTable.MarkFailure(Version.NodeId);
+        }
+    }
+
     protected override void OnData(ByteString data)
     {
         _messageBuffer = _messageBuffer.Concat(data);

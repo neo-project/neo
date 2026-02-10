@@ -12,6 +12,7 @@
 using Neo.IO;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -39,6 +40,27 @@ public class UInt256 : IComparable, IComparable<UInt256>, IEquatable<UInt256>, I
     [FieldOffset(24)] private ulong _value4;
 
     public int Size => Length;
+
+    /// <summary>
+    /// Gets the index of the most significant set bit in the current value.
+    /// </summary>
+    /// <remarks>The most significant bit is the highest-order bit that is set to 1. If no bits are set, the
+    /// property returns -1.</remarks>
+    public int MostSignificantBit
+    {
+        get
+        {
+            if (_value4 != 0)
+                return 192 + BitOperations.Log2(_value4);
+            if (_value3 != 0)
+                return 128 + BitOperations.Log2(_value3);
+            if (_value2 != 0)
+                return 64 + BitOperations.Log2(_value2);
+            if (_value1 != 0)
+                return BitOperations.Log2(_value1);
+            return -1;
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UInt256"/> class.
@@ -251,5 +273,22 @@ public class UInt256 : IComparable, IComparable<UInt256>, IEquatable<UInt256>, I
     public static bool operator <=(UInt256 left, UInt256 right)
     {
         return left.CompareTo(right) <= 0;
+    }
+
+    /// <summary>
+    /// Performs a bitwise XOR operation on two <see cref="UInt256"/> values.
+    /// </summary>
+    /// <param name="left">The first operand.</param>
+    /// <param name="right">The second operand.</param>
+    /// <returns>The result of the bitwise XOR operation.</returns>
+    public static UInt256 operator ^(UInt256 left, UInt256 right)
+    {
+        return new UInt256
+        {
+            _value1 = left._value1 ^ right._value1,
+            _value2 = left._value2 ^ right._value2,
+            _value3 = left._value3 ^ right._value3,
+            _value4 = left._value4 ^ right._value4
+        };
     }
 }
