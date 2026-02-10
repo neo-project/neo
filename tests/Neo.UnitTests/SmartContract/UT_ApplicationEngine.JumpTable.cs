@@ -25,17 +25,17 @@ namespace Neo.UnitTests.SmartContract
         {
             var script = BuildHasKeyLargeIndexScript();
             const uint EchidnaEnable = 10u;
-            const uint FaunEnable = 20u;
+            const uint GorgonEnable = 20u;
             // Hardfork heights:
-            // Echidna at 10, Faun at 20
+            // Echidna at 10, Gorgon at 20
             //  - index=5 => pre-Echidna (NotEchidnaJumpTable)
-            //  - index=15 => Echidna enabled, Faun NOT enabled (NotFaunJumpTable)
-            //  - index=30 => Faun enabled (DefaultJumpTable)
+            //  - index=15 => Echidna enabled, Gorgon NOT enabled (NotGorgonJumpTable)
+            //  - index=30 => Gorgon enabled (DefaultJumpTable)
             var settings = ProtocolSettings.Default with
             {
                 Hardforks = ProtocolSettings.Default.Hardforks
                     .SetItem(Hardfork.HF_Echidna, EchidnaEnable)
-                    .SetItem(Hardfork.HF_Gorgon, FaunEnable)
+                    .SetItem(Hardfork.HF_Gorgon, GorgonEnable)
             };
 
             Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Echidna, 5u));
@@ -47,10 +47,10 @@ namespace Neo.UnitTests.SmartContract
             // Case A: pre-Echidna => Overflow
             ExecuteAndAssertFault<OverflowException>(script, settings, index: 5u);
 
-            // Case B: Echidna enabled but pre-Faun => Overflow
+            // Case B: Echidna enabled but pre-Gorgon => Overflow
             ExecuteAndAssertFault<OverflowException>(script, settings, index: 15u);
 
-            // Case C: Faun enabled => InvalidOperationException
+            // Case C: Gorgon enabled => InvalidOperationException
             ExecuteAndAssertFault<OverflowException>(script, settings, index: 30u);
         }
 
