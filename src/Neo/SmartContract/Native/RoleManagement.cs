@@ -72,10 +72,14 @@ namespace Neo.SmartContract.Native
 
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException("Persisting block is null");
+
             var index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role, index);
             if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException("Role already designated");
+
+            var deduplicated = nodes.Distinct().Count();
+            if (deduplicated != nodes.Length) throw new InvalidOperationException($"Duplicate publickeys are not allowed");
 
             NodeList list = new();
             list.AddRange(nodes);
