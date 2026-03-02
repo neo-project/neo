@@ -11,9 +11,9 @@
 
 using BenchmarkDotNet.Attributes;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
-using System.Diagnostics;
 
 namespace Neo.Benchmark
 {
@@ -21,59 +21,64 @@ namespace Neo.Benchmark
     {
         private static readonly ProtocolSettings protocol = ProtocolSettings.Load("config.json");
         private static readonly NeoSystem system = new(protocol, (string)null);
+        private readonly Random rnd = new();
+        private StoreCache snapshot;
+        private ApplicationEngine engine;
+        private Transaction tx;
+        private byte[] script;
 
-        [Benchmark]
-        public void NeoIssue2725()
+        [ParamsSource(nameof(PocFiles))]
+        public string PocFile { get; set; } = string.Empty;
+
+        public static IEnumerable<string> PocFiles()
         {
-            // https://github.com/neo-project/neo/issues/2725
-            // L00: INITSSLOT 1
-            // L01: NEWARRAY0
-            // L02: PUSHDATA1 6161616161 //"aaaaa"
-            // L03: PUSHINT16 500
-            // L04: STSFLD0
-            // L05: OVER
-            // L06: OVER
-            // L07: SYSCALL 95016f61 //System.Runtime.Notify
-            // L08: LDSFLD0
-            // L09: DEC
-            // L10: DUP
-            // L11: STSFLD0
-            // L12: JMPIF L05
-            // L13: CLEAR
-            // L14: SYSCALL dbfea874 //System.Runtime.GetExecutingScriptHash
-            // L15: PUSHINT16 8000
-            // L16: STSFLD0
-            // L17: DUP
-            // L18: SYSCALL 274335f1 //System.Runtime.GetNotifications
-            // L19: DROP
-            // L20: LDSFLD0
-            // L21: DEC
-            // L22: DUP
-            // L23: STSFLD0
-            // L24: JMPIF L17
-            Run(nameof(NeoIssue2725), "VgHCDAVhYWFhYQH0AWBLS0GVAW9hWJ1KYCT1SUHb/qh0AUAfYEpBJ0M18UVYnUpgJPU=");
+            var pocsFolder = Path.Combine(AppContext.BaseDirectory, "pocs");
+            if (!Directory.Exists(pocsFolder))
+                yield break;
+
+            foreach (var f in Directory.GetFiles(pocsFolder, "*.b64").OrderBy(x => x))
+            {
+                yield return Path.GetFileName(f);
+            }
         }
 
-        private static void Run(string name, string poc)
+        [IterationSetup]
+        public void IterationSetup()
         {
-            Random random = new();
-            Transaction tx = new()
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "pocs", PocFile);
+            var base64 = File.ReadAllText(path).Trim();
+            script = Convert.FromBase64String(base64);
+
+            snapshot = system.GetSnapshotCache();
+            tx = new Transaction
             {
                 Version = 0,
-                Nonce = (uint)random.Next(),
+                Nonce = (uint)rnd.Next(),
                 SystemFee = 20_00000000,
                 NetworkFee = 1_00000000,
                 ValidUntilBlock = ProtocolSettings.Default.MaxTraceableBlocks,
                 Signers = Array.Empty<Signer>(),
                 Attributes = Array.Empty<TransactionAttribute>(),
-                Script = Convert.FromBase64String(poc),
+                Script = script,
                 Witnesses = Array.Empty<Witness>()
             };
-            using var snapshot = system.GetSnapshotCache();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, system.GenesisBlock, protocol, tx.SystemFee);
+            engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, system.GenesisBlock, protocol, tx.SystemFee);
             engine.LoadScript(tx.Script);
-            engine.Execute();
-            Debug.Assert(engine.State == VMState.FAULT);
+        }
+
+        [Benchmark]
+        public void ExecuteOnly()
+        {
+            engine!.Execute();
+            if (engine.State != VMState.FAULT) throw new InvalidOperationException($"Bad state for {PocFile}");
+        }
+
+        [IterationCleanup]
+        public void IterationCleanup()
+        {
+            engine?.Dispose(); engine = null;
+            snapshot?.Dispose(); snapshot = null;
+            tx = null; script = null;
         }
     }
 }
