@@ -24,7 +24,12 @@ using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
+using Integer = Neo.VM.Types.Integer;
+using InteropInterface = Neo.VM.Types.InteropInterface;
+using StackItem = Neo.VM.Types.StackItem;
+using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -52,9 +57,296 @@ namespace Neo.UnitTests.SmartContract.Native
             "089a1c5b46e5110b86750ec6a532348868a84045483c92b7af5af689452eafabf1a8943e50439f1d59882a98eaa0170f" +
             "1250ebd871fc0a92a7b2d83168d0d727272d441befa15c503dd8e90ce98db3e7b6d194f60839c508a84305aaca1789b6";
 
+        private static readonly string s_g1EthHex =
+            "0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58" +
+            "6c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+            "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1";
+
+        private static readonly string s_g2EthHex =
+            "00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d177" +
+            "0bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+            "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e00000000000000000000000000000000" +
+            "0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+            "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab" +
+            "3f370d275cec1da1aaa9075ff05f79be";
+
+        private static readonly string s_ethG1MultiExpSingleInputHex =
+            "0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58" +
+            "6c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+            "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e100000000000000000000000000000000" +
+            "00000000000000000000000000000011";
+
+        private static readonly string s_ethG1MultiExpSingleExpectedHex =
+            "000000000000000000000000000000001098f178f84fc753a76bb63709e9be91eec3ff5f7f3a5f4836f34fe8a1a6d6c5" +
+            "578d8fd820573cef3a01e2bfef3eaf3a000000000000000000000000000000000ea923110b733b531006075f796cc9368" +
+            "f2477fe26020f465468efbb380ce1f8eebaf5c770f31d320f9bd378dc758436";
+
+        private static readonly string s_ethG1MultiExpMultipleInputHex =
+            "0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58" +
+            "6c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+            "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e100000000000000000000000000000000" +
+            "00000000000000000000000000000032000000000000000000000000000000000e12039459c60491672b6a6282355d87" +
+            "65ba6272387fb91a3e9604fa2a81450cf16b870bb446fc3a3e0a187fff6f894500000000000000000000000000000000" +
+            "18b6c1ed9f45d3cbc0b01b9d038dcecacbd702eb26469a0eb3905bd421461712f67f782b4735849644c1772c93fe3d09" +
+            "000000000000000000000000000000000000000000000000000000000000003300000000000000000000000000000000" +
+            "147b327c8a15b39634a426af70c062b50632a744eddd41b5a4686414ef4cd9746bb11d0a53c6c2ff21bbcf331e07ac92" +
+            "00000000000000000000000000000000078c2e9782fa5d9ab4e728684382717aa2b8fad61b5f5e7cf3baa0bc9465f573" +
+            "42bb7c6d7b232e70eebcdbf70f903a450000000000000000000000000000000000000000000000000000000000000034";
+
+        private static readonly string s_ethG1MultiExpMultipleExpectedHex =
+            "000000000000000000000000000000001339b4f51923efe38905f590ba2031a2e7154f0adb34a498dfde8fb0f1ccf6862" +
+            "ae5e3070967056385055a666f1b6fc70000000000000000000000000000000009fb423f7e7850ef9c4c11a119bb7161fe" +
+            "1d11ac5527051b29fe8f73ad4262c84c37b0f1b9f0e163a9682c22c7f98c80";
+
+        private static readonly string s_ethG2MultiExpSingleInputHex =
+            "00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d177" +
+            "0bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+            "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e00000000000000000000000000000000" +
+            "0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+            "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab" +
+            "3f370d275cec1da1aaa9075ff05f79be0000000000000000000000000000000000000000000000000000000000000011";
+
+        private static readonly string s_ethG2MultiExpSingleExpectedHex =
+            "000000000000000000000000000000000ef786ebdcda12e142a32f091307f2fedf52f6c36beb278b0007a03ad81bf9fe" +
+            "e3710a04928e43e541d02c9be44722e8000000000000000000000000000000000d05ceb0be53d2624a796a7a033aec59" +
+            "d9463c18d672c451ec4f2e679daef882cab7d8dd88789065156a1340ca9d426500000000000000000000000000000000" +
+            "118ed350274bc45e63eaaa4b8ddf119b3bf38418b5b9748597edfc456d9bc3e864ec7283426e840fd29fa84e7d89c934" +
+            "000000000000000000000000000000001594b866a28946b6d444bf0481558812769ea3222f5dfc961ca33e78e0ea62ee" +
+            "8ba63fd1ece9cc3e315abfa96d536944";
+
+        private static readonly (string Name, byte[] Input, byte[] Expected)[] s_ethG1AddVectors = new[]
+        {
+            (
+                "bls_g1add_g1+p1",
+                ("0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58" +
+                "6c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+                "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e100000000000000000000000000000000" +
+                "112b98340eee2777cc3c14163dea3ec97977ac3dc5c70da32e6e87578f44912e902ccef9efe28d4a78b8999dfbca9426" +
+                "00000000000000000000000000000000186b28d92356c4dfec4b5201ad099dbdede3781f8998ddf929b4cd7756192185" +
+                "ca7b8f4ef7088f813270ac3d48868a21").HexToBytes(),
+                ("000000000000000000000000000000000a40300ce2dec9888b60690e9a41d3004fda4886854573974fab73b046d3147b" +
+                "a5b7a5bde85279ffede1b45b3918d82d0000000000000000000000000000000006d3d887e9f53b9ec4eb6cedf5607226" +
+                "754b07c01ace7834f57f3e7315faefb739e59018e22c492006190fba4a870025").HexToBytes()
+            ),
+            (
+                "bls_g1add_(g1+0=g1)",
+                ("0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0f" +
+                "c3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb" +
+                "0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+                "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000").HexToBytes(),
+                ("0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58" +
+                "6c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+                "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1").HexToBytes()
+            ),
+            (
+                "bls_g1add_(g1-g1=0)",
+                ("0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58" +
+                "6c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+                "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e100000000000000000000000000000000" +
+                "17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb" +
+                "00000000000000000000000000000000114d1d6855d545a8aa7d76c8cf2e21f267816aef1db507c96655b9d5caac4236" +
+                "4e6f38ba0ecb751bad54dcd6b939c2ca").HexToBytes(),
+                ("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000").HexToBytes()
+            )
+        };
+
+        private static readonly (string Name, byte[] Input, byte[] Expected)[] s_ethG2AddVectors = new[]
+        {
+            (
+                "bls_g2add_g2+p2",
+                ("00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d177" +
+                "0bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e00000000000000000000000000000000" +
+                "0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+                "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab" +
+                "3f370d275cec1da1aaa9075ff05f79be00000000000000000000000000000000103121a2ceaae586d240843a39896732" +
+                "5f8eb5a93e8fea99b62b9f88d8556c80dd726a4b30e84a36eeabaf3592937f2700000000000000000000000000000000" +
+                "086b990f3da2aeac0a36143b7d7c824428215140db1bb859338764cb58458f081d92664f9053b50b3fbd2e4723121b68" +
+                "000000000000000000000000000000000f9e7ba9a86a8f7624aa2b42dcc8772e1af4ae115685e60abc2c9b90242167ac" +
+                "ef3d0be4050bf935eed7c3b6fc7ba77e000000000000000000000000000000000d22c3652d0dc6f0fc9316e14268477c" +
+                "2049ef772e852108d269d9c38dba1d4802e8dae479818184c08f9a569d878451").HexToBytes(),
+                ("000000000000000000000000000000000b54a8a7b08bd6827ed9a797de216b8c9057b3a9ca93e2f88e7f04f19accc42d" +
+                "a90d883632b9ca4dc38d013f71ede4db00000000000000000000000000000000077eba4eecf0bd764dce8ed5f45040dd" +
+                "8f3b3427cb35230509482c14651713282946306247866dfe39a8e33016fcbe5200000000000000000000000000000000" +
+                "14e60a76a29ef85cbd69f251b9f29147b67cfe3ed2823d3f9776b3a0efd2731941d47436dc6d2b58d9e65f8438bad073" +
+                "000000000000000000000000000000001586c3c910d95754fef7a732df78e279c3d37431c6a2b77e67a00c7c130a8fcd" +
+                "4d19f159cbeb997a178108fffffcbd20").HexToBytes()
+            ),
+            (
+                "bls_g2add_(g2+0=g2)",
+                ("00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d177" +
+                "0bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e00000000000000000000000000000000" +
+                "0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+                "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab" +
+                "3f370d275cec1da1aaa9075ff05f79be0000000000000000000000000000000000000000000000000000000000000000" +
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000").HexToBytes(),
+                ("00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d177" +
+                "0bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e00000000000000000000000000000000" +
+                "0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+                "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab" +
+                "3f370d275cec1da1aaa9075ff05f79be").HexToBytes()
+            ),
+            (
+                "bls_g2add_(g2-g2=0)",
+                ("00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d177" +
+                "0bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e00000000000000000000000000000000" +
+                "0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+                "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab" +
+                "3f370d275cec1da1aaa9075ff05f79be00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051" +
+                "c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb800000000000000000000000000000000" +
+                "13e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e" +
+                "000000000000000000000000000000000d1b3cc2c7027888be51d9ef691d77bcb679afda66c73f17f9ee3837a55024f7" +
+                "8c71363275a75d75d86bab79f74782aa0000000000000000000000000000000013fa4d4a0ad8b1ce186ed5061789213d" +
+                "993923066dddaf1040bc3ff59f825c78df74f2d75467e25e0f55f8a00fa030ed").HexToBytes(),
+                ("0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000").HexToBytes()
+            )
+        };
+
+        private static readonly (string Name, byte[] Input, byte[] Expected)[] s_ethG1MulVectors = new[]
+        {
+            (
+                "bls_g1mul_(g1+g1=2*g1)",
+                ("0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58" +
+                "6c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+                "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e100000000000000000000000000000000" +
+                "00000000000000000000000000000002").HexToBytes(),
+                ("000000000000000000000000000000000572cbea904d67468808c8eb50a9450c9721db309128012543902d0ac358a62a" +
+                "e28f75bb8f1c7c42c39a8c5529bf0f4e00000000000000000000000000000000166a9d8cabc673a322fda673779d8e38" +
+                "22ba3ecb8670e461f73bb9021d5fd76a4c56d9d4cd16bd1bba86881979749d28").HexToBytes()
+            ),
+            (
+                "bls_g1mul_(1*g1=g1)",
+                ("0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58" +
+                "6c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+                "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e100000000000000000000000000000000" +
+                "00000000000000000000000000000001").HexToBytes(),
+                ("0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58" +
+                "6c55e83ff97a1aeffb3af00adb22c6bb0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+                "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1").HexToBytes()
+            )
+        };
+
+        private static readonly (string Name, byte[] Input, byte[] Expected)[] s_ethG2MulVectors = new[]
+        {
+            (
+                "bls_g2mul_(g2+g2=2*g2)",
+                ("00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d177" +
+                "0bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e00000000000000000000000000000000" +
+                "0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+                "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab" +
+                "3f370d275cec1da1aaa9075ff05f79be0000000000000000000000000000000000000000000000000000000000000002").HexToBytes(),
+                ("000000000000000000000000000000001638533957d540a9d2370f17cc7ed5863bc0b995b8825e0ee1ea1e1e4d00dbae" +
+                "81f14b0bf3611b78c952aacab827a053000000000000000000000000000000000a4edef9c1ed7f729f520e47730a124f" +
+                "d70662a904ba1074728114d1031e1572c6c886f6b57ec72a6178288c47c3357700000000000000000000000000000000" +
+                "0468fb440d82b0630aeb8dca2b5256789a66da69bf91009cbfe6bd221e47aa8ae88dece9764bf3bd999d95d71e4c9899" +
+                "000000000000000000000000000000000f6d4552fa65dd2638b361543f887136a43253d9c66c411697003f7a13c308f5" +
+                "422e1aa0a59c8967acdefd8b6e36ccf3").HexToBytes()
+            ),
+            (
+                "bls_g2mul_(1*g2=g2)",
+                ("00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d177" +
+                "0bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e00000000000000000000000000000000" +
+                "0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+                "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab" +
+                "3f370d275cec1da1aaa9075ff05f79be0000000000000000000000000000000000000000000000000000000000000001").HexToBytes(),
+                ("00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d177" +
+                "0bac0326a805bbefd48056c8c121bdb80000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e00000000000000000000000000000000" +
+                "0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+                "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab" +
+                "3f370d275cec1da1aaa9075ff05f79be").HexToBytes()
+            )
+        };
+
+        private static readonly (string Name, byte[] Input, bool Expected)[] s_ethPairingVectors = new[]
+        {
+            (
+                "bls_pairing_e(0,G2)",
+                ("0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051" +
+                "c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8" +
+                "0000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e" +
+                "000000000000000000000000000000000ce5d527727d6e118cc9cdc6da2e351a" +
+                "adfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+                "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99" +
+                "cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be").HexToBytes(),
+                true
+            ),
+            (
+                "bls_pairing_e(0,-G2)!=e(-G1,G2)",
+                ("0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051" +
+                "c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8" +
+                "0000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e" +
+                "000000000000000000000000000000000ce5d527727d6e118cc9cdc6da2e351a" +
+                "adfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801" +
+                "000000000000000000000000000000000606c4a02ea734cc32acd2b02bc28b99" +
+                "cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be" +
+                "0000000000000000000000000000000017f1d3a73197d7942695638c4fa9ac0f" +
+                "c3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb" +
+                "0000000000000000000000000000000008b3f481e3aaa0f1a09e30ed741d8ae4" +
+                "fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1" +
+                "00000000000000000000000000000000024aa2b2f08f0a91260805272dc51051" +
+                "c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8" +
+                "0000000000000000000000000000000013e02b6052719f607dacd3a088274f65" +
+                "596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e" +
+                "000000000000000000000000000000000d1b3cc2c7027888be51d9ef691d77bc" +
+                "b679afda66c73f17f9ee3837a55024f78c71363275a75d75d86bab79f74782aa" +
+                "0000000000000000000000000000000013fa4d4a0ad8b1ce186ed5061789213d" +
+                "993923066dddaf1040bc3ff59f825c78df74f2d75467e25e0f55f8a00fa030ed").HexToBytes(),
+                false
+            )
+        };
+
+        private static readonly string s_scalarModulusHex =
+            "73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001";
+
+        private const int Bls12381MaxPairs = 128;
+        private const int EthG1EncodedLength = 128;
+        private const int EthG2EncodedLength = 256;
+
         private readonly byte[] g1 = s_g1Hex.HexToBytes();
         private readonly byte[] g2 = s_g2Hex.HexToBytes();
         private readonly byte[] gt = s_gtHex.HexToBytes();
+        private readonly byte[] g1Eth = s_g1EthHex.HexToBytes();
+        private readonly byte[] g2Eth = s_g2EthHex.HexToBytes();
+        private readonly byte[] ethG1MultiExpSingleInput = s_ethG1MultiExpSingleInputHex.HexToBytes();
+        private readonly byte[] ethG1MultiExpSingleExpected = s_ethG1MultiExpSingleExpectedHex.HexToBytes();
+        private readonly byte[] ethG1MultiExpMultipleInput = s_ethG1MultiExpMultipleInputHex.HexToBytes();
+        private readonly byte[] ethG1MultiExpMultipleExpected = s_ethG1MultiExpMultipleExpectedHex.HexToBytes();
+        private readonly byte[] ethG2MultiExpSingleInput = s_ethG2MultiExpSingleInputHex.HexToBytes();
+        private readonly byte[] ethG2MultiExpSingleExpected = s_ethG2MultiExpSingleExpectedHex.HexToBytes();
+        private readonly byte[] scalarModulusLE = GetScalarModulusLittleEndian();
 
 
         private readonly byte[] notG1 =
@@ -520,6 +812,591 @@ namespace Neo.UnitTests.SmartContract.Native
                 "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 BLS12381PointType.G2Proj
             );
+        }
+
+        [TestMethod]
+        public void TestBls12381SerializeEthereum()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+
+            CollectionAssert.AreEqual(g1Eth, CryptoLib.Bls12381SerializeEthereum(new InteropInterface(g1Point)));
+            CollectionAssert.AreEqual(g2Eth, CryptoLib.Bls12381SerializeEthereum(new InteropInterface(g2Point)));
+
+            byte[] zero = CryptoLib.Bls12381SerializeEthereum(new InteropInterface(G1Affine.Identity));
+            Assert.AreEqual(g1Eth.Length, zero.Length);
+            Assert.IsTrue(zero.All(b => b == 0));
+        }
+
+        [TestMethod]
+        public void TestBls12381SerializeEthereum_Errors()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381SerializeEthereum(new InteropInterface(new byte[] { 0x01 })));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeEthereum()
+        {
+            var g1Point = CryptoLib.Bls12381DeserializeEthereum(g1Eth).GetInterface<G1Affine>();
+            var g2Point = CryptoLib.Bls12381DeserializeEthereum(g2Eth).GetInterface<G2Affine>();
+
+            Assert.IsTrue(g1Point.Equals(G1Affine.FromCompressed(g1)));
+            Assert.IsTrue(g2Point.Equals(G2Affine.FromCompressed(g2)));
+
+            var zero = CryptoLib.Bls12381DeserializeEthereum(new byte[g1Eth.Length]).GetInterface<G1Affine>();
+            Assert.IsTrue(zero.IsIdentity);
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeEthereum_Errors()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereum(Array.Empty<byte>()));
+
+            var invalidPadding = new byte[g1Eth.Length];
+            invalidPadding[0] = 1;
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereum(invalidPadding));
+
+            var invalidFlags = (byte[])g1Eth.Clone();
+            invalidFlags[16] = 0xE0;
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381DeserializeEthereum(invalidFlags));
+        }
+
+        [TestMethod]
+        public void TestBls12381SerializeList()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+
+            var points = new VMArray(new StackItem[]
+            {
+                new InteropInterface(g1Point),
+                new InteropInterface(g2Point)
+            });
+
+            var expectedPoints = g1Point.ToCompressed()
+                .Concat(g2Point.ToCompressed())
+                .ToArray();
+            CollectionAssert.AreEqual(expectedPoints, CryptoLib.Bls12381SerializeList(points));
+
+            var one = new byte[Scalar.Size];
+            one[0] = 1;
+            var three = new byte[Scalar.Size];
+            three[0] = 3;
+
+            var pairs = new VMArray(new StackItem[]
+            {
+                new VMArray(new StackItem[]
+                {
+                    new InteropInterface(g1Point),
+                    new Integer(BigInteger.One)
+                }),
+                new VMArray(new StackItem[]
+                {
+                    new InteropInterface(g1Point),
+                    new Integer(new BigInteger(3))
+                })
+            });
+
+            var expectedPairs = g1Point.ToCompressed()
+                .Concat(one)
+                .Concat(g1Point.ToCompressed())
+                .Concat(three)
+                .ToArray();
+            CollectionAssert.AreEqual(expectedPairs, CryptoLib.Bls12381SerializeList(pairs));
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381SerializeList(new VMArray(Array.Empty<StackItem>())));
+        }
+
+        [TestMethod]
+        public void TestBls12381SerializeList_Errors()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381SerializeList(new VMArray(new StackItem[] { new Integer(BigInteger.One) })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381SerializeList(new VMArray(new StackItem[] { new VMArray(Array.Empty<StackItem>()) })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381SerializeList(new VMArray(new StackItem[]
+                {
+                    new VMArray(new StackItem[]
+                    {
+                        new InteropInterface(g1Point),
+                        new Neo.VM.Types.ByteString(new byte[] { 0x01 })
+                    })
+                })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381SerializeList(new VMArray(new StackItem[]
+                {
+                    new VMArray(new StackItem[]
+                    {
+                        new Integer(BigInteger.One),
+                        new Integer(BigInteger.One)
+                    })
+                })));
+        }
+
+        [TestMethod]
+        public void TestBls12381SerializeEthereumList()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+
+            var points = new VMArray(new StackItem[]
+            {
+                new InteropInterface(g1Point),
+                new InteropInterface(g2Point)
+            });
+
+            var expected = g1Eth.Concat(g2Eth).ToArray();
+            CollectionAssert.AreEqual(expected, CryptoLib.Bls12381SerializeEthereumList(points));
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381SerializeEthereumList(new VMArray(Array.Empty<StackItem>())));
+        }
+
+        [TestMethod]
+        public void TestBls12381SerializeEthereumList_Errors()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381SerializeEthereumList(new VMArray(new StackItem[] { new Integer(BigInteger.One) })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381SerializeEthereumList(new VMArray(new StackItem[] { new VMArray(Array.Empty<StackItem>()) })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381SerializeEthereumList(new VMArray(new StackItem[]
+                {
+                    new VMArray(new StackItem[]
+                    {
+                        new InteropInterface(g1Point),
+                        new Neo.VM.Types.ByteString(new byte[] { 0x01 })
+                    })
+                })));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeList()
+        {
+            var input = g1.Concat(g2).ToArray();
+            var result = CryptoLib.Bls12381DeserializeList(input);
+
+            Assert.AreEqual(2, result.Length);
+            Assert.IsTrue(result[0].GetInterface<G1Affine>().Equals(G1Affine.FromCompressed(g1)));
+            Assert.IsTrue(result[1].GetInterface<G2Affine>().Equals(G2Affine.FromCompressed(g2)));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeList_Errors()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeList(Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeList(new byte[1]));
+
+            var invalid = new byte[g1.Length + g2.Length];
+            invalid[0] = 0xE0;
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381DeserializeList(invalid));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeEthereumList()
+        {
+            var input = g1Eth.Concat(g2Eth).ToArray();
+            var result = CryptoLib.Bls12381DeserializeEthereumList(input);
+
+            Assert.AreEqual(2, result.Length);
+            Assert.IsTrue(result[0].GetInterface<G1Affine>().Equals(G1Affine.FromCompressed(g1)));
+            Assert.IsTrue(result[1].GetInterface<G2Affine>().Equals(G2Affine.FromCompressed(g2)));
+
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+            var expected = Bls12.Pairing(in g1Point, in g2Point).IsIdentity;
+            var vmPoints = new VMArray(result.Select(p => (StackItem)p));
+            Assert.AreEqual(expected, CryptoLib.Bls12381PairingList(vmPoints));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeEthereumList_Errors()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereumList(Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereumList(new byte[1]));
+
+            var invalidPadding = new byte[g1Eth.Length + g2Eth.Length];
+            invalidPadding[0] = 1;
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereumList(invalidPadding));
+
+            var invalidFlags = g1Eth.Concat(g2Eth).ToArray();
+            invalidFlags[16] = 0xE0;
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381DeserializeEthereumList(invalidFlags));
+        }
+
+        [TestMethod]
+        public void TestBls12381EthereumAddVectors()
+        {
+            foreach (var (name, input, expected) in s_ethG1AddVectors)
+            {
+                Assert.AreEqual(EthG1EncodedLength * 2, input.Length, name);
+                var left = input.AsSpan(0, EthG1EncodedLength).ToArray();
+                var right = input.AsSpan(EthG1EncodedLength, EthG1EncodedLength).ToArray();
+                var sum = CryptoLib.Bls12381Add(
+                    CryptoLib.Bls12381DeserializeEthereum(left),
+                    CryptoLib.Bls12381DeserializeEthereum(right));
+                CollectionAssert.AreEqual(expected, CryptoLib.Bls12381SerializeEthereum(sum), name);
+            }
+
+            foreach (var (name, input, expected) in s_ethG2AddVectors)
+            {
+                Assert.AreEqual(EthG2EncodedLength * 2, input.Length, name);
+                var left = input.AsSpan(0, EthG2EncodedLength).ToArray();
+                var right = input.AsSpan(EthG2EncodedLength, EthG2EncodedLength).ToArray();
+                var sum = CryptoLib.Bls12381Add(
+                    CryptoLib.Bls12381DeserializeEthereum(left),
+                    CryptoLib.Bls12381DeserializeEthereum(right));
+                CollectionAssert.AreEqual(expected, CryptoLib.Bls12381SerializeEthereum(sum), name);
+            }
+        }
+
+        [TestMethod]
+        public void TestBls12381EthereumMulVectors()
+        {
+            foreach (var (name, input, expected) in s_ethG1MulVectors)
+            {
+                Assert.AreEqual(EthG1EncodedLength + Scalar.Size, input.Length, name);
+                var pairs = CryptoLib.Bls12381DeserializeEthereumG1ScalarPairs(input);
+                var vmPairs = ToStackItemPairs(pairs);
+                var result = CryptoLib.Bls12381MultiExp(vmPairs);
+                CollectionAssert.AreEqual(expected, CryptoLib.Bls12381SerializeEthereum(result), name);
+            }
+
+            foreach (var (name, input, expected) in s_ethG2MulVectors)
+            {
+                Assert.AreEqual(EthG2EncodedLength + Scalar.Size, input.Length, name);
+                var pairs = CryptoLib.Bls12381DeserializeEthereumG2ScalarPairs(input);
+                var vmPairs = ToStackItemPairs(pairs);
+                var result = CryptoLib.Bls12381MultiExp(vmPairs);
+                CollectionAssert.AreEqual(expected, CryptoLib.Bls12381SerializeEthereum(result), name);
+            }
+        }
+
+        [TestMethod]
+        public void TestBls12381EthereumPairingVectors()
+        {
+            foreach (var (name, input, expected) in s_ethPairingVectors)
+            {
+                Assert.AreEqual(0, input.Length % (EthG1EncodedLength + EthG2EncodedLength), name);
+                var points = CryptoLib.Bls12381DeserializeEthereumList(input);
+                var vmPoints = new VMArray(points.Select(p => (StackItem)p));
+                Assert.AreEqual(expected, CryptoLib.Bls12381PairingList(vmPoints), name);
+            }
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeG1ScalarPairs()
+        {
+            var one = new byte[Scalar.Size];
+            one[0] = 1;
+            var three = new byte[Scalar.Size];
+            three[0] = 3;
+
+            var input = g1.Concat(one).Concat(g1).Concat(three).ToArray();
+            var pairs = CryptoLib.Bls12381DeserializeG1ScalarPairs(input);
+
+            Assert.AreEqual(2, pairs.Length);
+
+            var pair1 = (object[])pairs[0];
+            var point1 = ((InteropInterface)pair1[0]).GetInterface<G1Affine>();
+            var scalar1 = (BigInteger)pair1[1];
+            Assert.IsTrue(point1.Equals(G1Affine.FromCompressed(g1)));
+            Assert.AreEqual(BigInteger.One, scalar1);
+
+            var pair2 = (object[])pairs[1];
+            var point2 = ((InteropInterface)pair2[0]).GetInterface<G1Affine>();
+            var scalar2 = (BigInteger)pair2[1];
+            Assert.IsTrue(point2.Equals(G1Affine.FromCompressed(g1)));
+            Assert.AreEqual(new BigInteger(3), scalar2);
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeG1ScalarPairs(Array.Empty<byte>()));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeG1ScalarPairs_Errors()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeG1ScalarPairs(new byte[1]));
+
+            var invalidPoint = new byte[g1.Length + Scalar.Size];
+            System.Buffer.BlockCopy(g1, 0, invalidPoint, 0, g1.Length);
+            invalidPoint[0] &= 0x1F;
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381DeserializeG1ScalarPairs(invalidPoint));
+
+            var invalidScalar = g1.Concat(scalarModulusLE).ToArray();
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeG1ScalarPairs(invalidScalar));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeG2ScalarPairs()
+        {
+            var one = new byte[Scalar.Size];
+            one[0] = 1;
+
+            var input = g2.Concat(one).ToArray();
+            var pairs = CryptoLib.Bls12381DeserializeG2ScalarPairs(input);
+
+            Assert.AreEqual(1, pairs.Length);
+
+            var pair = (object[])pairs[0];
+            var point = ((InteropInterface)pair[0]).GetInterface<G2Affine>();
+            var scalar = (BigInteger)pair[1];
+            Assert.IsTrue(point.Equals(G2Affine.FromCompressed(g2)));
+            Assert.AreEqual(BigInteger.One, scalar);
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeG2ScalarPairs(Array.Empty<byte>()));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeG2ScalarPairs_Errors()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeG2ScalarPairs(new byte[1]));
+
+            var invalidPoint = new byte[g2.Length + Scalar.Size];
+            System.Buffer.BlockCopy(g2, 0, invalidPoint, 0, g2.Length);
+            invalidPoint[0] &= 0x1F;
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381DeserializeG2ScalarPairs(invalidPoint));
+
+            var invalidScalar = g2.Concat(scalarModulusLE).ToArray();
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeG2ScalarPairs(invalidScalar));
+        }
+
+        [TestMethod]
+        public void TestBls12381MultiExp()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+
+            var pairsG1 = new VMArray(new StackItem[]
+            {
+                new VMArray(new StackItem[]
+                {
+                    new InteropInterface(g1Point),
+                    new Integer(BigInteger.One)
+                }),
+                new VMArray(new StackItem[]
+                {
+                    new InteropInterface(g1Point),
+                    new Integer(new BigInteger(2))
+                })
+            });
+
+            var resultG1 = CryptoLib.Bls12381MultiExp(pairsG1).GetInterface<G1Projective>();
+            var scalarThree = new byte[Scalar.Size];
+            scalarThree[0] = 3;
+            var expectedG1 = g1Point * Scalar.FromBytes(scalarThree);
+            Assert.IsTrue(expectedG1.Equals(resultG1));
+
+            var pairsG2 = new VMArray(new StackItem[]
+            {
+                new VMArray(new StackItem[]
+                {
+                    new InteropInterface(g2Point),
+                    new Integer(new BigInteger(5))
+                })
+            });
+
+            var resultG2 = CryptoLib.Bls12381MultiExp(pairsG2).GetInterface<G2Projective>();
+            var scalarFive = new byte[Scalar.Size];
+            scalarFive[0] = 5;
+            var expectedG2 = g2Point * Scalar.FromBytes(scalarFive);
+            Assert.IsTrue(expectedG2.Equals(resultG2));
+
+            var mixedPairs = new VMArray(new StackItem[]
+            {
+                new VMArray(new StackItem[]
+                {
+                    new InteropInterface(g1Point),
+                    new Integer(BigInteger.One)
+                }),
+                new VMArray(new StackItem[]
+                {
+                    new InteropInterface(g2Point),
+                    new Integer(BigInteger.One)
+                })
+            });
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381MultiExp(new VMArray(Array.Empty<StackItem>())));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381MultiExp(mixedPairs));
+
+            var tooManyPairs = new VMArray(Enumerable
+                .Repeat<StackItem>(new Integer(BigInteger.Zero), Bls12381MaxPairs + 1)
+                .ToArray());
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381MultiExp(tooManyPairs));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381MultiExp(new VMArray(new StackItem[] { new Integer(BigInteger.One) })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381MultiExp(new VMArray(new StackItem[]
+                {
+                    new VMArray(Array.Empty<StackItem>())
+                })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381MultiExp(new VMArray(new StackItem[]
+                {
+                    new VMArray(new StackItem[]
+                    {
+                        new Integer(BigInteger.One),
+                        new Integer(BigInteger.One)
+                    })
+                })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381MultiExp(new VMArray(new StackItem[]
+                {
+                    new VMArray(new StackItem[]
+                    {
+                        new InteropInterface(new byte[] { 0x01 }),
+                        new Integer(BigInteger.One)
+                    })
+                })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381MultiExp(new VMArray(new StackItem[]
+                {
+                    new VMArray(new StackItem[]
+                    {
+                        new InteropInterface(g1Point),
+                        new Neo.VM.Types.ByteString(new byte[] { 0x01 })
+                    })
+                })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381MultiExp(new VMArray(new StackItem[]
+                {
+                    new VMArray(new StackItem[]
+                    {
+                        new InteropInterface(g1Point),
+                        new Integer(BigInteger.Zero)
+                    })
+                })));
+        }
+
+        [TestMethod]
+        public void TestBls12381PairingList()
+        {
+            var g1Point = G1Affine.FromCompressed(g1);
+            var g2Point = G2Affine.FromCompressed(g2);
+
+            var points = new VMArray(new StackItem[]
+            {
+                new InteropInterface(g1Point),
+                new InteropInterface(g2Point),
+                new InteropInterface(-g1Point),
+                new InteropInterface(g2Point)
+            });
+
+            Assert.IsTrue(CryptoLib.Bls12381PairingList(points));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381PairingList(new VMArray(new StackItem[] { new InteropInterface(g1Point) })));
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381PairingList(new VMArray(Array.Empty<StackItem>())));
+
+            var tooManyPoints = new VMArray(Enumerable
+                .Repeat<StackItem>(new Integer(BigInteger.Zero), (Bls12381MaxPairs + 1) * 2)
+                .ToArray());
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381PairingList(tooManyPoints));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381PairingList(new VMArray(new StackItem[]
+                {
+                    new Integer(BigInteger.One),
+                    new Integer(BigInteger.One)
+                })));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CryptoLib.Bls12381PairingList(new VMArray(new StackItem[]
+                {
+                    new InteropInterface(g1Point),
+                    new InteropInterface(g1Point)
+                })));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeEthereumG1ScalarPairs()
+        {
+            foreach (var (input, expected) in new[]
+            {
+                (ethG1MultiExpSingleInput, ethG1MultiExpSingleExpected),
+                (ethG1MultiExpMultipleInput, ethG1MultiExpMultipleExpected)
+            })
+            {
+                var pairs = CryptoLib.Bls12381DeserializeEthereumG1ScalarPairs(input);
+                var vmPairs = ToStackItemPairs(pairs);
+                var result = CryptoLib.Bls12381MultiExp(vmPairs);
+                var serialized = CryptoLib.Bls12381SerializeEthereum(result);
+                CollectionAssert.AreEqual(expected, serialized);
+            }
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereumG1ScalarPairs(Array.Empty<byte>()));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeEthereumG1ScalarPairs_Errors()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereumG1ScalarPairs(new byte[1]));
+
+            var invalidPadding = new byte[g1Eth.Length + Scalar.Size];
+            invalidPadding[0] = 1;
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereumG1ScalarPairs(invalidPadding));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeEthereumG2ScalarPairs()
+        {
+            var pairs = CryptoLib.Bls12381DeserializeEthereumG2ScalarPairs(ethG2MultiExpSingleInput);
+            var vmPairs = ToStackItemPairs(pairs);
+            var result = CryptoLib.Bls12381MultiExp(vmPairs);
+            var serialized = CryptoLib.Bls12381SerializeEthereum(result);
+            CollectionAssert.AreEqual(ethG2MultiExpSingleExpected, serialized);
+
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereumG2ScalarPairs(Array.Empty<byte>()));
+        }
+
+        [TestMethod]
+        public void TestBls12381DeserializeEthereumG2ScalarPairs_Errors()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereumG2ScalarPairs(new byte[1]));
+
+            var invalidPadding = new byte[g2Eth.Length + Scalar.Size];
+            invalidPadding[0] = 1;
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381DeserializeEthereumG2ScalarPairs(invalidPadding));
+        }
+
+        private static VMArray ToStackItemPairs(object[] pairs)
+        {
+            return new VMArray(pairs.Select(pairObj =>
+            {
+                var pair = (object[])pairObj;
+                return (StackItem)new VMArray(new StackItem[]
+                {
+                    (InteropInterface)pair[0],
+                    new Integer((BigInteger)pair[1])
+                });
+            }));
+        }
+
+        private static byte[] GetScalarModulusLittleEndian()
+        {
+            var bytes = s_scalarModulusHex.HexToBytes();
+            Array.Reverse(bytes);
+            if (bytes.Length < Scalar.Size)
+            {
+                var padded = new byte[Scalar.Size];
+                System.Buffer.BlockCopy(bytes, 0, padded, 0, bytes.Length);
+                return padded;
+            }
+            return bytes;
         }
 
         /// <summary>
