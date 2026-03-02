@@ -253,10 +253,10 @@ public sealed class Notary : NativeContract
     private void SetMaxNotValidBeforeDelta(ApplicationEngine engine, uint value)
     {
         var maxVUBIncrement = engine.ProtocolSettings.MaxValidUntilBlockIncrement;
-        if (value > maxVUBIncrement / 2 || value < ProtocolSettings.Default.ValidatorsCount)
+        if (value > maxVUBIncrement / 2 || value < engine.ProtocolSettings.ValidatorsCount)
         {
             throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}",
-               maxVUBIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
+               maxVUBIncrement / 2, engine.ProtocolSettings.ValidatorsCount));
         }
         AssertCommittee(engine);
 
