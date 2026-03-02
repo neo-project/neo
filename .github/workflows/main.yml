@@ -59,13 +59,13 @@ jobs:
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
         dotnet test /p:GITHUB_ACTIONS=true /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:CoverletOutputFormat=\"lcov,json\" -m:1
-    - name: Coveralls
+    - name: Codecov
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@v2
+      uses: codecov/codecov-action@v5
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        format: lcov
-        file: ${{ github.workspace }}/TestResults/coverage/coverage.info
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ${{ github.workspace }}/TestResults/coverage/coverage.info
+        fail_ci_if_error: false
 
   PublishMyGet:
     if: github.ref == 'refs/heads/master-n3' && startsWith(github.repository, 'neo-project/')
