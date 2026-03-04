@@ -531,8 +531,8 @@ public sealed class Governance : NativeContract
 
     IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(IReadOnlyStore snapshot, uint end)
     {
-        var key = CreateStorageKey(Prefix_GasPerBlock, end).ToArray();
-        var boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();
+        var key = CreateStorageKey(Prefix_GasPerBlock, end);
+        var boundary = CreateStorageKey(Prefix_GasPerBlock);
         return snapshot.FindRange(key, boundary, SeekDirection.Backward)
             .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.Span[^sizeof(uint)..]), (BigInteger)u.Value));
     }
