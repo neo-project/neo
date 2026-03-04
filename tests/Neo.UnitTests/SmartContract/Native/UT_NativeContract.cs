@@ -69,8 +69,8 @@ public class UT_NativeContract
 
         // Ensure that NeoToken and GasToken TokenState exist in the genesis block.
         // These tokens are managed by Governance contract through TokenManagement and are created during initialization.
-        var neoTokenId = NativeContract.Governance.NeoTokenId;
-        var gasTokenId = NativeContract.Governance.GasTokenId;
+        var neoTokenId = Governance.NeoTokenId;
+        var gasTokenId = Governance.GasTokenId;
 
         // Check NeoToken TokenState exists
         var neoTokenState = NativeContract.TokenManagement.GetTokenInfo(snapshot, neoTokenId);

@@ -710,10 +710,10 @@ public class UT_Notary
         // and no underflow happens during GAS distribution.
         var validators = NativeContract.Governance.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
         var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock!.PrimaryIndex]).ToScriptHash();
-        Assert.AreEqual(netFee - expectedNotaryReward, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, primary));
+        Assert.AreEqual(netFee - expectedNotaryReward, NativeContract.TokenManagement.BalanceOf(snapshot, Governance.GasTokenId, primary));
 
         var scriptHash = Contract.CreateSignatureRedeemScript(key1.PublicKey).ToScriptHash();
-        Assert.AreEqual(expectedNotaryReward, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, NativeContract.Governance.GasTokenId, scriptHash));
+        Assert.AreEqual(expectedNotaryReward, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, Governance.GasTokenId, scriptHash));
     }
 
     [TestMethod]
@@ -793,7 +793,7 @@ public class UT_Notary
         // Check that block's Primary balance is 0.
         var validators = NativeContract.Governance.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
         var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock!.PrimaryIndex]).ToScriptHash();
-        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, NativeContract.Governance.GasTokenId, primary));
+        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, Governance.GasTokenId, primary));
 
         // Execute OnPersist script.
         engine.LoadScript(script.ToArray());
@@ -806,12 +806,12 @@ public class UT_Notary
 
         // Verify primary balance (minted amount = netFee1 + netFee2 - expectedNotaryReward)
         var expectedPrimaryAmount = netFee1 + netFee2 - expectedNotaryReward;
-        Assert.AreEqual(expectedPrimaryAmount, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, NativeContract.Governance.GasTokenId, primary));
+        Assert.AreEqual(expectedPrimaryAmount, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, Governance.GasTokenId, primary));
 
         // Find the mint notification to primary (from=null, to=primary)
         var primaryMintNotification = engine.Notifications.FirstOrDefault(n =>
             n.EventName == "Transfer" &&
-            new UInt160(n.State[0].GetSpan()) == NativeContract.Governance.GasTokenId &&
+            new UInt160(n.State[0].GetSpan()) == Governance.GasTokenId &&
             n.State[1].IsNull &&
             new UInt160(n.State[2].GetSpan()) == primary);
         Assert.IsNotNull(primaryMintNotification, "Primary mint notification not found");
@@ -819,24 +819,24 @@ public class UT_Notary
 
         var scriptHash1 = Contract.CreateSignatureRedeemScript(key1.PublicKey).ToScriptHash();
         var expectedNotaryRewardPerNode = expectedNotaryReward / 2;
-        Assert.AreEqual(expectedNotaryRewardPerNode, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, NativeContract.Governance.GasTokenId, scriptHash1));
+        Assert.AreEqual(expectedNotaryRewardPerNode, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, Governance.GasTokenId, scriptHash1));
 
         // Find the mint notification to Notary1 (from=null, to=scriptHash1)
         var notary1MintNotification = engine.Notifications.FirstOrDefault(n =>
             n.EventName == "Transfer" &&
-            new UInt160(n.State[0].GetSpan()) == NativeContract.Governance.GasTokenId &&
+            new UInt160(n.State[0].GetSpan()) == Governance.GasTokenId &&
             n.State[1].IsNull &&
             new UInt160(n.State[2].GetSpan()) == scriptHash1);
         Assert.IsNotNull(notary1MintNotification, "Notary1 mint notification not found");
         Assert.AreEqual(expectedNotaryRewardPerNode, notary1MintNotification.State[3].GetInteger());
 
         var scriptHash2 = Contract.CreateSignatureRedeemScript(key2.PublicKey).ToScriptHash();
-        Assert.AreEqual(expectedNotaryRewardPerNode, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, NativeContract.Governance.GasTokenId, scriptHash2));
+        Assert.AreEqual(expectedNotaryRewardPerNode, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, Governance.GasTokenId, scriptHash2));
 
         // Find the mint notification to Notary2 (from=null, to=scriptHash2)
         var notary2MintNotification = engine.Notifications.FirstOrDefault(n =>
             n.EventName == "Transfer" &&
-            new UInt160(n.State[0].GetSpan()) == NativeContract.Governance.GasTokenId &&
+            new UInt160(n.State[0].GetSpan()) == Governance.GasTokenId &&
             n.State[1].IsNull &&
             new UInt160(n.State[2].GetSpan()) == scriptHash2);
         Assert.IsNotNull(notary2MintNotification, "Notary2 mint notification not found");
@@ -862,7 +862,7 @@ public class UT_Notary
             new Nep17NativeContractExtensions.ManualWitness(signFrom ? [new UInt160(from)] : []), snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
         using var script = new ScriptBuilder();
-        script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, from, to, amount, data);
+        script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", Governance.GasTokenId, from, to, amount, data);
         engine.LoadScript(script.ToArray());
 
         if (engine.Execute() == VMState.FAULT)
@@ -883,7 +883,7 @@ public class UT_Notary
             snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
         using var script = new ScriptBuilder();
-        script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, from, to, amount, data);
+        script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", Governance.GasTokenId, from, to, amount, data);
         engine.LoadScript(script.ToArray());
 
         if (engine.Execute() == VMState.FAULT)

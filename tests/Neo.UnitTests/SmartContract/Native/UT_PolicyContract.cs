@@ -437,7 +437,7 @@ public class UT_PolicyContract
         byte[] script;
         using (var sb = new ScriptBuilder())
         {
-            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "balanceOf", NativeContract.Governance.NeoTokenId, NativeContract.Governance.GetCommitteeAddress(_snapshotCache.CloneCache()));
+            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "balanceOf", Governance.NeoTokenId, NativeContract.Governance.GetCommitteeAddress(_snapshotCache.CloneCache()));
             script = sb.ToArray();
         }
 

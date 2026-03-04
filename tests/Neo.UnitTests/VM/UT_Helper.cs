@@ -204,7 +204,7 @@ public class UT_Helper
     [TestMethod]
     public void TestMakeScript()
     {
-        byte[] testScript = NativeContract.TokenManagement.Hash.MakeScript("balanceOf", NativeContract.Governance.GasTokenId, UInt160.Zero);
+        byte[] testScript = NativeContract.TokenManagement.Hash.MakeScript("balanceOf", Governance.GasTokenId, UInt160.Zero);
         Assert.AreEqual("0c1400000000000000000000000000000000000000000c1428ee6a1db43c446df56cfe333234fecabdfd84f612c01f0c0962616c616e63654f660c149f040ea4a8448f015af645659b0fb2ae7dc500ae41627d5b52",
                                 testScript.ToHexString());
     }

@@ -38,8 +38,8 @@ public sealed class Governance : NativeContract
     public const byte GasTokenDecimals = 8;
     public static readonly BigInteger GasTokenFactor = BigInteger.Pow(10, GasTokenDecimals);
 
-    public UInt160 NeoTokenId => field ??= TokenManagement.GetAssetId(Hash, NeoTokenName);
-    public UInt160 GasTokenId => field ??= TokenManagement.GetAssetId(Hash, GasTokenName);
+    public static UInt160 NeoTokenId { get; } = TokenManagement.GetAssetId(NativeContract.Governance.Hash, NeoTokenName);
+    public static UInt160 GasTokenId { get; } = TokenManagement.GetAssetId(NativeContract.Governance.Hash, GasTokenName);
 
     public const decimal EffectiveVoterTurnout = 0.2M;
     private const long VoteFactor = 100000000L;

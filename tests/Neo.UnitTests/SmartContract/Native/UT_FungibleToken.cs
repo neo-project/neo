@@ -21,7 +21,7 @@ public class UT_FungibleToken : TestKit
     public void TestTotalSupply()
     {
         var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(snapshotCache, NativeContract.Governance.GasTokenId);
+        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(snapshotCache, Governance.GasTokenId);
         Assert.AreEqual(5200000050000000, tokenInfo!.TotalSupply);
     }
 }

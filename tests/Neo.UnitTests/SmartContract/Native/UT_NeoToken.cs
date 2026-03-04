@@ -47,21 +47,21 @@ public class UT_NeoToken
     [TestMethod]
     public void Check_Name()
     {
-        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(_snapshotCache, NativeContract.Governance.NeoTokenId);
+        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(_snapshotCache, Governance.NeoTokenId);
         Assert.AreEqual(Governance.NeoTokenName, tokenInfo!.Name);
     }
 
     [TestMethod]
     public void Check_Symbol()
     {
-        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(_snapshotCache, NativeContract.Governance.NeoTokenId);
+        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(_snapshotCache, Governance.NeoTokenId);
         Assert.AreEqual(Governance.NeoTokenSymbol, tokenInfo!.Symbol);
     }
 
     [TestMethod]
     public void Check_Decimals()
     {
-        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(_snapshotCache, NativeContract.Governance.NeoTokenId);
+        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(_snapshotCache, Governance.NeoTokenId);
         Assert.AreEqual(Governance.NeoTokenDecimals, tokenInfo!.Decimals);
     }
 
@@ -153,7 +153,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -169,7 +169,7 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(fromUInt160).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(fromUInt160).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(balanceKey))
         {
             clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 100 }));
@@ -220,7 +220,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -236,7 +236,7 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(fromUInt160).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(fromUInt160).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(balanceKey))
         {
             clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 100 }));
@@ -272,7 +272,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey2 = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey2 = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey2))
         {
             var tokenState = new TokenState
@@ -288,7 +288,7 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey2, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey2 = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(G_AccountUInt160).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey2 = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(G_AccountUInt160).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey2, new StorageItem(new AccountState { Balance = 200 }));
 
         ret = Check_Vote(clonedCache, G_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
@@ -327,7 +327,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -343,7 +343,7 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(from_AccountUInt160).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(from_AccountUInt160).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 100 }));
 
         var candidateState = CreateCandidateState();
@@ -405,7 +405,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -421,7 +421,7 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(from_AccountUInt160).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(from_AccountUInt160).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 100 }));
 
         var candidateState = CreateCandidateState();
@@ -568,7 +568,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -584,7 +584,7 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(G_AccountUInt160).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(G_AccountUInt160).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 100 }));
 
         Check_Vote(clonedCache, G_Account, TestProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
@@ -623,7 +623,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -639,7 +639,7 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(G_AccountUInt160).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(G_AccountUInt160).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 20000000 }));
 
         var ret = Check_RegisterValidator(clonedCache, ECCurve.Secp256r1.G.ToArray(), persistingBlock);
@@ -727,8 +727,8 @@ public class UT_NeoToken
         Assert.AreEqual(99999999, BalanceOf(clonedCache, from));
         Assert.AreEqual(1, BalanceOf(clonedCache, to));
 
-        var from_balance = NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, new UInt160(from));
-        var to_balance = NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, new UInt160(to));
+        var from_balance = NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.NeoTokenId, new UInt160(from));
+        var to_balance = NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.NeoTokenId, new UInt160(to));
 
         Assert.AreEqual(99999999, from_balance);
         Assert.AreEqual(1, to_balance);
@@ -776,11 +776,11 @@ public class UT_NeoToken
         var clonedCache = _snapshotCache.CloneCache();
         byte[] account = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
-        Assert.AreEqual(100_000_000, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, new UInt160(account)));
+        Assert.AreEqual(100_000_000, NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.NeoTokenId, new UInt160(account)));
 
         account[5]++; // Without existing balance
 
-        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, new UInt160(account)));
+        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.NeoTokenId, new UInt160(account)));
     }
 
     [TestMethod]
@@ -802,9 +802,9 @@ public class UT_NeoToken
         Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
         var committee = TestProtocolSettings.Default.StandbyCommittee;
-        Assert.AreEqual(50000000, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.GasTokenId, Contract.CreateSignatureContract(committee[0]).ScriptHash));
-        Assert.AreEqual(50000000, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.GasTokenId, Contract.CreateSignatureContract(committee[1]).ScriptHash));
-        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.GasTokenId, Contract.CreateSignatureContract(committee[2]).ScriptHash));
+        Assert.AreEqual(50000000, NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.GasTokenId, Contract.CreateSignatureContract(committee[0]).ScriptHash));
+        Assert.AreEqual(50000000, NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.GasTokenId, Contract.CreateSignatureContract(committee[1]).ScriptHash));
+        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.GasTokenId, Contract.CreateSignatureContract(committee[2]).ScriptHash));
     }
 
     [TestMethod]
@@ -828,7 +828,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -895,7 +895,7 @@ public class UT_NeoToken
         clonedCache.GetAndChange(key, () => new StorageItem(CreateNeoAccountState()));
 
         // Set NEO balance
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 100 }));
 
         var ledgerKey4 = new KeyBuilder(NativeContract.Ledger.Id, 12);
@@ -914,7 +914,7 @@ public class UT_NeoToken
         clonedCache.GetAndChange(key, () => new StorageItem(neoAccountState22));
 
         // Set NEO balance
-        balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(NativeContract.Governance.NeoTokenId);
+        balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 100 }));
 
         var ledgerKey5 = new KeyBuilder(NativeContract.Ledger.Id, 12);
@@ -933,7 +933,7 @@ public class UT_NeoToken
         clonedCache.GetAndChange(key, () => new StorageItem(neoAccountState23));
 
         // Set NEO balance
-        balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(NativeContract.Governance.NeoTokenId);
+        balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 100 }));
 
         clonedCache.Add(new KeyBuilder(NativeContract.Governance.Id, 23).Add(TestProtocolSettings.Default.StandbyCommittee[0]).Add(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
@@ -1119,7 +1119,7 @@ public class UT_NeoToken
     public void TestTotalSupply()
     {
         var clonedCache = _snapshotCache.CloneCache();
-        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(clonedCache, NativeContract.Governance.NeoTokenId);
+        var tokenInfo = NativeContract.TokenManagement.GetTokenInfo(clonedCache, Governance.NeoTokenId);
         Assert.AreEqual(new BigInteger(100000000), tokenInfo!.TotalSupply);
     }
 
@@ -1177,7 +1177,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -1193,7 +1193,7 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 1000 }));
 
         height.Index = persistingBlock.Index + 1;
@@ -1244,7 +1244,7 @@ public class UT_NeoToken
         var committee = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
         var accountA = committee[0];
         var accountB = committee[TestProtocolSettings.Default.CommitteeMembersCount - 1];
-        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, Contract.CreateSignatureContract(accountA).ScriptHash));
+        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.NeoTokenId, Contract.CreateSignatureContract(accountA).ScriptHash));
 
         StorageItem storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.Governance.Id, 23).Add(accountA))!;
         Assert.AreEqual(30000000000, (BigInteger)storageItem);
@@ -1267,7 +1267,7 @@ public class UT_NeoToken
         };
         Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
-        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, Contract.CreateSignatureContract(committee[1]).ScriptHash));
+        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.NeoTokenId, Contract.CreateSignatureContract(committee[1]).ScriptHash));
 
         storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.Governance.Id, 23).Add(committee[1]))!;
         Assert.AreEqual(30000000000, (BigInteger)storageItem);
@@ -1289,7 +1289,7 @@ public class UT_NeoToken
         Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
         accountA = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray()[2];
-        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, Contract.CreateSignatureContract(committee[2]).ScriptHash));
+        Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.NeoTokenId, Contract.CreateSignatureContract(committee[2]).ScriptHash));
 
         storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.Governance.Id, 23).Add(committee[2]))!;
         Assert.AreEqual(30000000000 * 2, (BigInteger)storageItem);
@@ -1307,7 +1307,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -1323,10 +1323,10 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 1999800 }));
 
-        Assert.AreEqual(1999800, NativeContract.TokenManagement.BalanceOf(clonedCache, NativeContract.Governance.NeoTokenId, account));
+        Assert.AreEqual(1999800, NativeContract.TokenManagement.BalanceOf(clonedCache, Governance.NeoTokenId, account));
         var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
         clonedCache.GetAndChange(storageKey)!.GetInteroperable<HashIndexState>().Index = 29 + 2;
         var persistingBlock2 = new Block
@@ -1394,7 +1394,7 @@ public class UT_NeoToken
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
         // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -1410,7 +1410,7 @@ public class UT_NeoToken
             clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
         }
         // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(account).Add(Governance.NeoTokenId);
         clonedCache.Add(balanceKey, new StorageItem(new AccountState { Balance = 1 }));
 
         var neoAccountState13 = CreateNeoAccountState();
@@ -1440,7 +1440,7 @@ public class UT_NeoToken
         UInt160 from = engine.ScriptContainer!.GetScriptHashesForVerifying(engine.SnapshotCache)[0];
 
         // Ensure TokenState exists for NeoTokenId (required by TokenManagement.transfer)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!clonedCache.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -1457,7 +1457,7 @@ public class UT_NeoToken
         }
 
         // Set up NEO balance using TokenManagement storage (Prefix_AccountState = 12)
-        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(from).Add(NativeContract.Governance.NeoTokenId);
+        var balanceKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(from).Add(Governance.NeoTokenId);
         var balanceItem = clonedCache.GetAndChange(balanceKey, () => new StorageItem(new AccountState()));
         balanceItem.GetInteroperable<AccountState>().Balance = 1000;
         balanceItem.Seal();
@@ -1490,7 +1490,7 @@ public class UT_NeoToken
             clonedCache.GetAndChange(neoAccountKey, () => new StorageItem(neoAccountState15));
         }
 
-        sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.NeoTokenId, from, UInt160.Zero, amount, null);
+        sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", Governance.NeoTokenId, from, UInt160.Zero, amount, null);
         engine.LoadScript(sb.ToArray());
         var state = engine.Execute();
         var result = engine.ResultStack.Peek();
@@ -1617,7 +1617,7 @@ public class UT_NeoToken
         {
             // NEO now uses TokenManagement with Prefix_AccountState = 12
             // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-            var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+            var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
             if (!clonedCache.Contains(tokenStateKey))
             {
                 var tokenState = new TokenState
@@ -1633,14 +1633,14 @@ public class UT_NeoToken
                 clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
             }
             // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-            storageKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(keyScriptHash).Add(NativeContract.Governance.NeoTokenId);
+            storageKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(keyScriptHash).Add(Governance.NeoTokenId);
             clonedCache.Add(storageKey, new StorageItem(new AccountState { Balance = amount }));
         }
         else
         {
             // GasToken uses TokenManagement with Prefix_AccountState = 12
             // First, ensure TokenState exists (required by TokenManagement.BalanceOf)
-            var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.GasTokenId);
+            var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.GasTokenId);
             if (!clonedCache.Contains(tokenStateKey))
             {
                 var tokenState = new TokenState
@@ -1656,7 +1656,7 @@ public class UT_NeoToken
                 clonedCache.Add(tokenStateKey, new StorageItem(tokenState));
             }
             // Then set account balance: KeyBuilder(TokenManagement.Id, 12).Add(account).Add(assetId)
-            storageKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(keyScriptHash).Add(NativeContract.Governance.GasTokenId);
+            storageKey = new KeyBuilder(NativeContract.TokenManagement.Id, 12).Add(keyScriptHash).Add(Governance.GasTokenId);
             clonedCache.Add(storageKey, new StorageItem(new AccountState { Balance = amount }));
         }
 
@@ -1665,9 +1665,9 @@ public class UT_NeoToken
 
         using var script = new ScriptBuilder();
         if (passNEO)
-            script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.NeoTokenId, keyScriptHash, NativeContract.Governance.Hash, amount, data);
+            script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", Governance.NeoTokenId, keyScriptHash, NativeContract.Governance.Hash, amount, data);
         else
-            script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, keyScriptHash, NativeContract.Governance.Hash, amount, data);
+            script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", Governance.GasTokenId, keyScriptHash, NativeContract.Governance.Hash, amount, data);
         engine.LoadScript(script.ToArray());
 
         var execRes = engine.Execute();
@@ -1784,7 +1784,7 @@ public class UT_NeoToken
         UInt160 toAddr = new(to);
 
         // Ensure TokenState exists for NeoTokenId (required by TokenManagement.transfer)
-        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(NativeContract.Governance.NeoTokenId);
+        var tokenStateKey = new KeyBuilder(NativeContract.TokenManagement.Id, 10).Add(Governance.NeoTokenId);
         if (!snapshot.Contains(tokenStateKey))
         {
             var tokenState = new TokenState
@@ -1803,7 +1803,7 @@ public class UT_NeoToken
         using var engine = ApplicationEngine.Create(TriggerType.Application,
             signAccount ? new Nep17NativeContractExtensions.ManualWitness(fromAddr) : null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
         using var script = new ScriptBuilder();
-        script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.NeoTokenId, fromAddr, toAddr, amount, null);
+        script.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", Governance.NeoTokenId, fromAddr, toAddr, amount, null);
         engine.LoadScript(script.ToArray());
         var state = engine.Execute();
         if (state == VMState.FAULT)
@@ -1837,7 +1837,7 @@ public class UT_NeoToken
     internal static BigInteger BalanceOf(DataCache snapshot, byte[] account)
     {
         if (account.Length != 20) return BigInteger.Zero;
-        return NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.NeoTokenId, new UInt160(account));
+        return NativeContract.TokenManagement.BalanceOf(snapshot, Governance.NeoTokenId, new UInt160(account));
     }
 
     private static Type GetNeoAccountStateType()

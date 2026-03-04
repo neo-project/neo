@@ -900,7 +900,7 @@ public partial class UT_InteropService : TestKit
         var descriptor1 = ContractPermissionDescriptor.CreateWildcard();
         Assert.IsFalse(descriptor1.Equals(null));
         Assert.IsFalse(descriptor1.Equals(null as object));
-        var descriptor2 = ContractPermissionDescriptor.Create(NativeContract.Governance.NeoTokenId);
+        var descriptor2 = ContractPermissionDescriptor.Create(Governance.NeoTokenId);
         var descriptor3 = ContractPermissionDescriptor.Create(hash: null!);
         Assert.IsTrue(descriptor1.Equals(descriptor3));
         Assert.IsTrue(descriptor1.Equals(descriptor3 as object));

@@ -335,7 +335,7 @@ public abstract class Wallet : ISigner
     /// <returns>The balance for the specified asset.</returns>
     public BigDecimal GetBalance(DataCache snapshot, UInt160 asset_id, params UInt160[] accounts)
     {
-        if (asset_id.Equals(NativeContract.Governance.GasTokenId))
+        if (asset_id.Equals(Governance.GasTokenId))
         {
             BigInteger totalBalance = BigInteger.Zero;
             foreach (UInt160 account in accounts)
@@ -593,12 +593,12 @@ public abstract class Wallet : ISigner
                         sb.Emit(OpCode.ASSERT);
                     }
                 }
-                if (assetId.Equals(NativeContract.Governance.GasTokenId))
+                if (assetId.Equals(Governance.GasTokenId))
                     balances_gas = balances;
             }
             script = sb.ToArray();
         }
-        balances_gas ??= accounts.Select(p => (Account: p, Value: NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, p))).Where(p => p.Value.Sign > 0).ToList();
+        balances_gas ??= accounts.Select(p => (Account: p, Value: NativeContract.TokenManagement.BalanceOf(snapshot, Governance.GasTokenId, p))).Where(p => p.Value.Sign > 0).ToList();
 
         return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), [], balances_gas, persistingBlock: persistingBlock);
     }
@@ -633,7 +633,7 @@ public abstract class Wallet : ISigner
             accounts = new[] { sender };
         }
 
-        var balancesGas = accounts.Select(p => (Account: p, Value: NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, p)))
+        var balancesGas = accounts.Select(p => (Account: p, Value: NativeContract.TokenManagement.BalanceOf(snapshot, Governance.GasTokenId, p)))
             .Where(p => p.Value.Sign > 0)
             .ToList();
         return MakeTransaction(snapshot, script, cosigners ?? [], attributes ?? [], balancesGas, maxGas, persistingBlock: persistingBlock);
