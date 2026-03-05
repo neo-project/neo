@@ -69,6 +69,9 @@ public sealed class RoleManagement : NativeContract
         if (engine.SnapshotCache.Contains(key))
             throw new InvalidOperationException("Role already designated");
 
+        if (nodes.Distinct().Count() != nodes.Length)
+            throw new InvalidOperationException($"Duplicate public keys are not allowed");
+
         NodeList list = new();
         list.AddRange(nodes);
         list.Sort();
