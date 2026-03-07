@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
-using Neo.SmartContract.Native;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
