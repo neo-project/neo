@@ -78,7 +78,6 @@ namespace Neo.Cryptography
         /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature, default is <see cref="ECC.ECCurve.Secp256r1"/>.</param>
         /// <param name="hashAlgorithm">The hash algorithm to hash the message, default is SHA256.</param>
         /// <returns>The ECDSA signature for the specified message.</returns>
-        [ContractMethod(Hardfork.HF_Gorgon, Name = "sign")]
         public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve? ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             ecCurve ??= ECC.ECCurve.Secp256r1;
@@ -105,7 +104,6 @@ namespace Neo.Cryptography
         /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature, default is <see cref="ECC.ECCurve.Secp256r1"/>.</param>
         /// <param name="hashAlgorithm">The hash algorithm to hash the message, default is SHA256.</param>
         /// <returns>The ECDSA signature for the specified message.</returns>
-        [ContractMethod(true, Hardfork.HF_Gorgon, Name = "sign")]
         public static byte[] SignV0(byte[] message, byte[] priKey, ECC.ECCurve? ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             ecCurve ??= ECC.ECCurve.Secp256r1;
@@ -168,8 +166,6 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         internal static bool VerifySignatureInternal(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
-            if (signature.Length != 64)
-                throw new FormatException("Signature size should be 64 bytes.");
             var point = pubkey.Curve.BouncyCastleCurve.Curve.CreatePoint(
                 new BigInteger(pubkey.X!.Value.ToString()),
                 new BigInteger(pubkey.Y!.Value.ToString()));
@@ -182,25 +178,13 @@ namespace Neo.Cryptography
             return signer.VerifySignature(messageHash, r, s);
         }
 
-        [ContractMethod(true, Hardfork.HF_Gorgon, Name = "verifySignature")]
         public static bool VerifySignatureV0(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             if (signature.Length != 64) return false;
 
             if (hashAlgorithm == HashAlgorithm.Keccak256 || (s_isOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
             {
-                var point = pubkey.Curve.BouncyCastleCurve.Curve.CreatePoint(
-                    new BigInteger(pubkey.X!.Value.ToString()),
-                    new BigInteger(pubkey.Y!.Value.ToString()));
-                var pubKey = new ECPublicKeyParameters("ECDSA", point, pubkey.Curve.BouncyCastleDomainParams);
-                var signer = new ECDsaSigner();
-                signer.Init(false, pubKey);
-
-                var sig = signature.ToArray();
-                var r = new BigInteger(1, sig, 0, 32);
-                var s = new BigInteger(1, sig, 32, 32);
-                var messageHash = GetMessageHash(message, hashAlgorithm);
-                return signer.VerifySignature(messageHash, r, s);
+                return VerifySignatureInternal(message, signature, pubkey, hashAlgorithm);
             }
 
             var ecdsa = CreateECDsa(pubkey);
@@ -240,7 +224,6 @@ namespace Neo.Cryptography
             return ecdsa;
         }
 
-        [ContractMethod(Hardfork.HF_Gorgon, Name = "verifySignature")]
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             if (signature.Length != 64)
