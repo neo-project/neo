@@ -34,8 +34,9 @@ namespace Neo.UnitTests.Wallets
         public override string Name => "MyWallet";
 
         public override Version Version => Version.Parse("0.0.1");
+        public override bool IsUnlocked => true;
 
-        private readonly Dictionary<UInt160, WalletAccount> accounts = new();
+        private readonly Dictionary<UInt160, WalletAccount> _accounts = [];
 
         public MyWallet() : base(null, TestProtocolSettings.Default) { }
 
@@ -46,12 +47,12 @@ namespace Neo.UnitTests.Wallets
 
         public override bool Contains(UInt160 scriptHash)
         {
-            return accounts.ContainsKey(scriptHash);
+            return _accounts.ContainsKey(scriptHash);
         }
 
         public void AddAccount(WalletAccount account)
         {
-            accounts.Add(account.ScriptHash, account);
+            _accounts.Add(account.ScriptHash, account);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -91,18 +92,18 @@ namespace Neo.UnitTests.Wallets
 
         public override bool DeleteAccount(UInt160 scriptHash)
         {
-            return accounts.Remove(scriptHash);
+            return _accounts.Remove(scriptHash);
         }
 
         public override WalletAccount GetAccount(UInt160 scriptHash)
         {
-            accounts.TryGetValue(scriptHash, out WalletAccount account);
+            _accounts.TryGetValue(scriptHash, out WalletAccount account);
             return account;
         }
 
         public override IEnumerable<WalletAccount> GetAccounts()
         {
-            return accounts.Values;
+            return _accounts.Values;
         }
 
         public override bool VerifyPassword(string password)
