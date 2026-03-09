@@ -20,8 +20,6 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System.Numerics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using Helper = Neo.SmartContract.Helper;
 
 namespace Neo.UnitTests.Wallets;
@@ -31,6 +29,7 @@ internal class MyWallet : Wallet
     public override string Name => "MyWallet";
 
     public override Version Version => Version.Parse("0.0.1");
+    public override bool IsUnlocked => true;
 
     private readonly Dictionary<UInt160, WalletAccount> accounts = new();
 
