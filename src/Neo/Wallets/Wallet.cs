@@ -41,7 +41,7 @@ namespace Neo.Wallets
     /// </summary>
     public abstract class Wallet : ISigner
     {
-        private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance };
+        private static readonly List<IWalletFactory> s_factories = [NEP6WalletFactory.Instance];
 
         /// <summary>
         /// The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.
@@ -62,6 +62,11 @@ namespace Neo.Wallets
         /// The version of the wallet.
         /// </summary>
         public abstract Version Version { get; }
+
+        /// <summary>
+        /// Indicates whether the wallet is unlocked.
+        /// </summary>
+        public abstract bool IsUnlocked { get; }
 
         /// <summary>
         /// Changes the password of the wallet.
@@ -854,12 +859,12 @@ namespace Neo.Wallets
 
         private static IWalletFactory? GetFactory(string path)
         {
-            return factories.FirstOrDefault(p => p.Handle(path));
+            return s_factories.FirstOrDefault(p => p.Handle(path));
         }
 
         public static void RegisterFactory(IWalletFactory factory)
         {
-            factories.Add(factory);
+            s_factories.Add(factory);
         }
     }
 }
