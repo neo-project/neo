@@ -21,8 +21,10 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using Helper = Neo.SmartContract.Helper;
@@ -34,8 +36,9 @@ namespace Neo.UnitTests.Wallets
         public override string Name => "MyWallet";
 
         public override Version Version => Version.Parse("0.0.1");
+        public override bool IsUnlocked => true;
 
-        private readonly Dictionary<UInt160, WalletAccount> accounts = new();
+        private readonly Dictionary<UInt160, WalletAccount> _accounts = [];
 
         public MyWallet() : base(null, TestProtocolSettings.Default) { }
 
@@ -46,12 +49,12 @@ namespace Neo.UnitTests.Wallets
 
         public override bool Contains(UInt160 scriptHash)
         {
-            return accounts.ContainsKey(scriptHash);
+            return _accounts.ContainsKey(scriptHash);
         }
 
         public void AddAccount(WalletAccount account)
         {
-            accounts.Add(account.ScriptHash, account);
+            _accounts.Add(account.ScriptHash, account);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -91,18 +94,18 @@ namespace Neo.UnitTests.Wallets
 
         public override bool DeleteAccount(UInt160 scriptHash)
         {
-            return accounts.Remove(scriptHash);
+            return _accounts.Remove(scriptHash);
         }
 
         public override WalletAccount GetAccount(UInt160 scriptHash)
         {
-            accounts.TryGetValue(scriptHash, out WalletAccount account);
+            _accounts.TryGetValue(scriptHash, out WalletAccount account);
             return account;
         }
 
         public override IEnumerable<WalletAccount> GetAccounts()
         {
-            return accounts.Values;
+            return _accounts.Values;
         }
 
         public override bool VerifyPassword(string password)
@@ -551,6 +554,21 @@ namespace Neo.UnitTests.Wallets
             Assert.Contains(actualMultiSigAccount2.GetKey().PublicKey, [expectedAccountKey1.PublicKey, expectedAccountKey2.PublicKey, expectedAccountKey3.PublicKey]);
             Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount2.Contract.Script));
             Assert.IsTrue(expectedWallet.GetMultiSigAccounts().Contains(actualMultiSigAccount2));
+        }
+
+        [TestMethod]
+        public void TestIsUnlocked()
+        {
+            var settings = TestProtocolSettings.Default;
+            var walletPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.json");
+
+            if (File.Exists(walletPath)) File.Delete(walletPath);
+
+            var lockedWallet = new NEP6Wallet(walletPath, null, settings, name: "test");
+            Assert.IsFalse(lockedWallet.IsUnlocked);
+
+            var unlockedWallet = new NEP6Wallet(walletPath, "pwd", settings, name: "test");
+            Assert.IsTrue(unlockedWallet.IsUnlocked);
         }
     }
 }

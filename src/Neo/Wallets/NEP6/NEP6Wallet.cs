@@ -54,6 +54,9 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public override Version Version => version;
 
+        /// <inheritdoc/>
+        public override bool IsUnlocked => password != null;
+
         /// <summary>
         /// Loads or creates a wallet at the specified path.
         /// </summary>
