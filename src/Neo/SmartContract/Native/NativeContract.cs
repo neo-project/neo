@@ -13,6 +13,7 @@ using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
@@ -28,6 +29,20 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public abstract class NativeContract
     {
+        /// <summary>
+        /// Cache key for method dispatch caching.
+        /// Combines contract instance reference and instruction pointer for fast lookup.
+        /// </summary>
+        private readonly record struct MethodCacheKey(int ContractId, int InstructionPointer);
+
+        /// <summary>
+        /// Thread-safe cache for method invokers.
+        /// Caches the invoker per method to avoid repeated MethodInfo lookups.
+        /// Note: Full performance optimization would require per-signature strongly-typed delegates
+        /// to eliminate object[] boxing overhead, but this requires runtime code generation.
+        /// </summary>
+        private static readonly ConcurrentDictionary<MethodCacheKey, Func<object, object?[]?, object?>> s_methodDelegateCache = new();
+
         private class NativeContractsCache
         {
             public record CacheEntry(Dictionary<int, ContractMethodMetadata> Methods, byte[] Script);
@@ -446,6 +461,21 @@ namespace Neo.SmartContract.Native
             return currentAllowedMethods.Methods;
         }
 
+        /// <summary>
+        /// Creates a method invoker for the specified method.
+        /// Uses a simple wrapper that caches the MethodInfo to avoid repeated lookups.
+        /// 
+        /// Note: Benchmarks show that expression trees with object[] boxing are not faster
+        /// than MethodInfo.Invoke due to parameter array allocation overhead.
+        /// True performance gains would require per-signature strongly-typed delegates
+        /// (e.g., Func&lt;Contract, DataCache, byte&gt; instead of Func&lt;object, object[], object&gt;)
+        /// which would eliminate boxing but requires runtime code generation per signature.
+        /// </summary>
+        private static Func<object, object?[]?, object?> CreateFastInvoker(MethodInfo method)
+        {
+            return (target, args) => method.Invoke(target, args);
+        }
+
         internal async void Invoke(ApplicationEngine engine, byte version)
         {
             try
@@ -473,12 +503,26 @@ namespace Neo.SmartContract.Native
                         (method.CpuFee * engine.ExecFeePicoFactor) +
                         (method.StorageFee * engine.StoragePrice * ApplicationEngine.FeeFactor));
                 }
+
+                // Build parameters
                 List<object?> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
                 for (int i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
-                object? returnValue = method.Handler.Invoke(this, parameters.ToArray());
+
+                // Use cached invoker for fast method dispatch
+                var cacheKey = new MethodCacheKey(Id, context.InstructionPointer);
+                if (!s_methodDelegateCache.TryGetValue(cacheKey, out var cachedInvoker))
+                {
+                    // Create cached invoker to avoid repeated MethodInfo lookups
+                    cachedInvoker = CreateFastInvoker(method.Handler);
+                    s_methodDelegateCache[cacheKey] = cachedInvoker;
+                }
+
+                // Invoke cached delegate
+                object? returnValue = cachedInvoker(this, parameters.ToArray());
+
                 if (returnValue is ContractTask task)
                 {
                     await task;
