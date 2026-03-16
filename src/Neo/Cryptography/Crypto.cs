@@ -11,8 +11,11 @@
 
 using Neo.IO.Caching;
 using Org.BouncyCastle.Asn1.X9;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
@@ -26,6 +29,7 @@ public static class Crypto
     private static readonly BigInteger s_prime = new(1,
         Hex.Decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"));
     private static readonly ECDsaCache s_cacheECDsa = [];
+    private static readonly bool s_isOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
     private static readonly ECCurve s_secP256k1 = ECCurve.CreateFromFriendlyName("secP256k1");
 
     /// <summary>
@@ -59,6 +63,23 @@ public static class Crypto
     public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve? ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
     {
         ecCurve ??= ECC.ECCurve.Secp256r1;
+        if (s_isOSX && ecCurve == ECC.ECCurve.Secp256k1)
+        {
+            var signer = new ECDsaSigner();
+            var privateKey = new BigInteger(1, priKey);
+            var priKeyParameters = new ECPrivateKeyParameters(privateKey, ecCurve.BouncyCastleDomainParams);
+            signer.Init(true, priKeyParameters);
+            var messageHash = GetMessageHash(message, hashAlgorithm);
+            var signature = signer.GenerateSignature(messageHash);
+            var signatureBytes = new byte[64];
+            var rBytes = signature[0].ToByteArrayUnsigned();
+            var sBytes = signature[1].ToByteArrayUnsigned();
+            // Copy r and s into their respective parts of the signatureBytes array, aligning them to the right.
+            Buffer.BlockCopy(rBytes, 0, signatureBytes, 32 - rBytes.Length, rBytes.Length);
+            Buffer.BlockCopy(sBytes, 0, signatureBytes, 64 - sBytes.Length, sBytes.Length);
+            return signatureBytes;
+        }
+
         var curve =
             ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
             ecCurve == ECC.ECCurve.Secp256k1 ? s_secP256k1 :
@@ -96,6 +117,19 @@ public static class Crypto
     {
         if (signature.Length != 64)
             throw new FormatException("Signature size should be 64 bytes.");
+        if (s_isOSX && pubkey.Curve == ECC.ECCurve.Secp256k1)
+        {
+            var point = pubkey.Curve.BouncyCastleCurve.Curve.CreatePoint(
+            new BigInteger(pubkey.X!.Value.ToString()),
+            new BigInteger(pubkey.Y!.Value.ToString()));
+            var pubKey = new ECPublicKeyParameters("ECDSA", point, pubkey.Curve.BouncyCastleDomainParams);
+            var signer = new ECDsaSigner();
+            signer.Init(false, pubKey);
+            var r = new BigInteger(1, signature[..32]);
+            var s = new BigInteger(1, signature[32..]);
+            var messageHash = GetMessageHash(message, hashAlgorithm);
+            return signer.VerifySignature(messageHash, r, s);
+        }
         var ecdsa = CreateECDsa(pubkey);
         if (hashAlgorithm == HashAlgorithm.Keccak256)
         {
