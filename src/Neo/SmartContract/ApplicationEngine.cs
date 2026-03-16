@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Configuration.Hocon;
 using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Json;
@@ -362,16 +361,9 @@ public partial class ApplicationEngine : ExecutionEngine
 
     internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
-        StackItem[] argsObjects = [];
-
-        if (args != null)
-        {
-            argsObjects = new StackItem[args.Length];
-            for (int i = 0; i < args.Length; i++)
-                argsObjects[i] = Convert(args[i]);
-        }
+        StackItem[] argsObjects = args.Select(Convert).ToArray();
         Diagnostic?.CallFromNative(hash, method, argsObjects);
-        var contextNew = CallContractInternal(hash, method, CallFlags.All, false, args.Select(Convert).ToArray());
+        var contextNew = CallContractInternal(hash, method, CallFlags.All, false, argsObjects);
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
         ContractTask task = new();
@@ -381,16 +373,9 @@ public partial class ApplicationEngine : ExecutionEngine
 
     internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
-        StackItem[] argsObjects = [];
-
-        if (args != null)
-        {
-            argsObjects = new StackItem[args.Length];
-            for (int i = 0; i < args.Length; i++)
-                argsObjects[i] = Convert(args[i]);
-        }
+        StackItem[] argsObjects = args.Select(Convert).ToArray();
         Diagnostic?.CallFromNative(hash, method, argsObjects);
-        var contextNew = CallContractInternal(hash, method, CallFlags.All, true, args.Select(Convert).ToArray());
+        var contextNew = CallContractInternal(hash, method, CallFlags.All, true, argsObjects);
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
         ContractTask<T> task = new();
