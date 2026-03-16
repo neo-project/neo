@@ -61,6 +61,11 @@ public abstract class Wallet : ISigner
     public abstract Version Version { get; }
 
     /// <summary>
+    /// Indicates whether the wallet is unlocked.
+    /// </summary>
+    public abstract bool IsUnlocked { get; }
+
+    /// <summary>
     /// Changes the password of the wallet.
     /// </summary>
     /// <param name="oldPassword">The old password of the wallet.</param>

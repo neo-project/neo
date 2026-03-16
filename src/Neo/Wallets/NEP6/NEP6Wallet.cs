@@ -48,6 +48,8 @@ public class NEP6Wallet : Wallet
     /// </summary>
     public override Version Version => version;
 
+    public override bool IsUnlocked => password != null;
+
     /// <summary>
     /// Loads or creates a wallet at the specified path.
     /// </summary>

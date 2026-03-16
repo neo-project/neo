@@ -66,7 +66,7 @@ public class UT_NeoToken
     }
 
     [TestMethod]
-    public void Test_HF_EchidnaStates()
+    public void Test_RegisterCandidateCallFlags()
     {
         var clonedCache = _snapshotCache.CloneCache();
         var persistingBlock = new Block
