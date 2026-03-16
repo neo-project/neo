@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Configuration.Hocon;
 using Neo.Extensions.IO;
 using Neo.IO;
 using Neo.Json;
@@ -361,6 +362,15 @@ public partial class ApplicationEngine : ExecutionEngine
 
     internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
+        StackItem[] argsObjects = [];
+
+        if (args != null)
+        {
+            argsObjects = new StackItem[args.Length];
+            for (int i = 0; i < args.Length; i++)
+                argsObjects[i] = Convert(args[i]);
+        }
+        Diagnostic?.CallFromNative(hash, method, argsObjects);
         var contextNew = CallContractInternal(hash, method, CallFlags.All, false, args.Select(Convert).ToArray());
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
@@ -371,6 +381,15 @@ public partial class ApplicationEngine : ExecutionEngine
 
     internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
+        StackItem[] argsObjects = [];
+
+        if (args != null)
+        {
+            argsObjects = new StackItem[args.Length];
+            for (int i = 0; i < args.Length; i++)
+                argsObjects[i] = Convert(args[i]);
+        }
+        Diagnostic?.CallFromNative(hash, method, argsObjects);
         var contextNew = CallContractInternal(hash, method, CallFlags.All, true, args.Select(Convert).ToArray());
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
