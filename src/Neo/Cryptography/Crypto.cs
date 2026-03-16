@@ -169,6 +169,10 @@ public static class Crypto
                 }
             });
         }
+        catch (CryptographicException ex)
+        {
+            throw new ArgumentException(ex.Message, nameof(pubkey), ex);
+        }
         catch (PlatformNotSupportedException ex)
         {
             throw new ArgumentException(ex.Message, nameof(pubkey), ex);
