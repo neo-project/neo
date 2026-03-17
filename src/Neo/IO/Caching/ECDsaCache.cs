@@ -14,7 +14,10 @@ using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.IO.Caching;
 
-record ECDsaCacheItem(ECPoint Key, ECDsa Value);
+record ECDsaCacheItem(ECPoint Key, ECDsa Value) : IDisposable
+{
+    public void Dispose() => Value.Dispose();
+}
 
 internal class ECDsaCache : FIFOCache<ECPoint, ECDsaCacheItem>
 {
