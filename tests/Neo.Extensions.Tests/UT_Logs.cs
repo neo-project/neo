@@ -36,14 +36,5 @@ namespace Neo.Tests
             Assert.IsTrue(File.Exists(Path.Combine(Logs.LogDirectory, "test", fileName)));
             Assert.ThrowsExactly<InvalidOperationException>(() => Logs.LogDirectory = "test");
         }
-
-        [TestMethod]
-        public void TestConsoleLogger()
-        {
-            var logger = Logs.ConsoleLogger;
-            Assert.IsNotNull(logger);
-
-            logger.Information("test");
-        }
     }
 }

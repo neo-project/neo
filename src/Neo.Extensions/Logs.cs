@@ -9,7 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
+using Akka.Event;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using System;
 using System.Collections.Concurrent;
@@ -23,13 +26,19 @@ namespace Neo
 
         private static readonly ConcurrentDictionary<string, ILogger> s_loggers = new();
 
-        private static readonly ILogger s_noopLogger = new LoggerConfiguration().CreateLogger();
+        private static readonly LoggingLevelSwitch s_levelSwitch = new(initialMinimumLevel: LogEventLevel.Information);
 
-        public static ILogger ConsoleLogger { get; private set; } = new LoggerConfiguration().WriteTo.Console().CreateLogger();
+        private static readonly ILogger s_noopLogger = new LoggerConfiguration().CreateLogger();
 
         public static ILogger RuntimeLogger { get; private set; } = GetLogger("Runtime");
 
         internal static ILogger AkkaLogger { get; private set; } = GetLogger("Akka");
+
+        public static LogLevel MinimumLevel
+        {
+            get => (LogLevel)s_levelSwitch.MinimumLevel;
+            set => s_levelSwitch.MinimumLevel = (LogEventLevel)value;
+        }
 
         /// <summary>
         /// The directory where the logs are stored. If not set, the logs will be disabled.
@@ -69,6 +78,7 @@ namespace Neo
             }
 
             return new LoggerConfiguration()
+                .MinimumLevel.ControlledBy(s_levelSwitch)
                 .WriteTo.File(
                     path: Path.Combine(LogDirectory, source, "log-.txt"),
                     fileSizeLimitBytes: 100 * 1024 * 1024, // 100 MiB
@@ -79,14 +89,28 @@ namespace Neo
                 .CreateLogger();
         }
 
-        public static LogEventLevel ToLogEventLevel(this LogLevel level) => level switch
+        internal class LogActor : ReceiveActor
         {
-            LogLevel.Debug => LogEventLevel.Debug,
-            LogLevel.Info => LogEventLevel.Information,
-            LogLevel.Warning => LogEventLevel.Warning,
-            LogLevel.Error => LogEventLevel.Error,
-            LogLevel.Fatal => LogEventLevel.Fatal,
-            _ => LogEventLevel.Information,
-        };
+            public LogActor()
+            {
+                Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
+                Receive<Akka.Event.LogEvent>(Log);
+            }
+
+            private static void Log(Akka.Event.LogEvent e)
+            {
+                AkkaLogger.Write(ToLogEventLevel(e.LogLevel()), e.Cause,
+                    "LogEvent {Message} from {Thread}:{LogSource}", e.Message, e.Thread.Name, e.LogSource);
+            }
+
+            private static LogEventLevel ToLogEventLevel(Akka.Event.LogLevel level) => level switch
+            {
+                Akka.Event.LogLevel.DebugLevel => LogEventLevel.Debug,
+                Akka.Event.LogLevel.InfoLevel => LogEventLevel.Information,
+                Akka.Event.LogLevel.WarningLevel => LogEventLevel.Warning,
+                Akka.Event.LogLevel.ErrorLevel => LogEventLevel.Error,
+                _ => LogEventLevel.Information,
+            };
+        }
     }
 }

@@ -240,7 +240,7 @@ namespace Neo.Plugins
         [Obsolete("Use Logs.GetLogger(source) instead.")]
         protected void Log(object message, LogLevel level = LogLevel.Info)
         {
-            Logger.Write(level.ToLogEventLevel(), "{Message}", message);
+            Logger.Write((Serilog.Events.LogEventLevel)level, "{Message}", message);
         }
 
         /// <summary>
