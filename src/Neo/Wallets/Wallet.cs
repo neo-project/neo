@@ -48,7 +48,7 @@ public abstract class Wallet : ISigner
     /// <summary>
     /// The name of the wallet.
     /// </summary>
-    public abstract string Name { get; }
+    public abstract string Name { get; set; }
 
     /// <summary>
     /// The path of the wallet.

@@ -40,8 +40,11 @@ public class NEP6Wallet : Wallet
     /// The name of the wallet.
     /// If the name is not set, it will be the file name without extension of the wallet file.
     /// </summary>
-    public override string Name =>
-        !string.IsNullOrEmpty(name) ? name : System.IO.Path.GetFileNameWithoutExtension(Path);
+    public override string Name
+    {
+        get => !string.IsNullOrEmpty(name) ? name : System.IO.Path.GetFileNameWithoutExtension(Path);
+        set => name = value;
+    }
 
     /// <summary>
     /// The version of the wallet standard. It is currently fixed at 1.0 and will be used for functional upgrades in the future.

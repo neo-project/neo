@@ -26,7 +26,7 @@ namespace Neo.UnitTests.Wallets;
 
 internal class MyWallet : Wallet
 {
-    public override string Name => "MyWallet";
+    public override string Name { get; set; } = "MyWallet";
 
     public override Version Version => Version.Parse("0.0.1");
     public override bool IsUnlocked => true;
