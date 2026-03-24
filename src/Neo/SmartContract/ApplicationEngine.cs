@@ -37,7 +37,8 @@ namespace Neo.SmartContract
     public partial class ApplicationEngine : ExecutionEngine
     {
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
-        protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
+        protected static readonly JumpTable PreGorgonJumpTable = ComposePreGorgonJumpTable();
+        protected static readonly JumpTable PreEchidnaJumpTable = ComposePreEchidnaJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -268,9 +269,17 @@ namespace Neo.SmartContract
             return table;
         }
 
-        public static JumpTable ComposeNotEchidnaJumpTable()
+        public static JumpTable ComposePreGorgonJumpTable()
         {
             var jumpTable = ComposeDefaultJumpTable();
+            jumpTable[OpCode.SHR] = VulnerableSHR;
+            jumpTable[OpCode.SHL] = VulnerableSHL;
+            return jumpTable;
+        }
+
+        public static JumpTable ComposePreEchidnaJumpTable()
+        {
+            var jumpTable = ComposePreGorgonJumpTable();
             jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
             return jumpTable;
         }
@@ -495,7 +504,13 @@ namespace Neo.SmartContract
             var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             settings ??= ProtocolSettings.Default;
             // Adjust jump table according persistingBlock
-            var jumpTable = settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
+            JumpTable jumpTable;
+            if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
+                jumpTable = DefaultJumpTable;
+            else if (settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+                jumpTable = PreGorgonJumpTable;
+            else
+                jumpTable = PreEchidnaJumpTable;
             var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
 
@@ -527,6 +542,42 @@ namespace Neo.SmartContract
             Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
+        }
+
+        /// <summary>
+        /// Computes the left shift of an integer. Vulnerable implementation of
+        /// <see cref="OpCode.SHL"/> since it doesn't pop operand from stack in
+        /// case of zero shift.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void VulnerableSHL(ExecutionEngine engine, Instruction instruction)
+        {
+            var shift = (int)engine.Pop().GetInteger();
+            engine.Limits.AssertShift(shift);
+            if (shift == 0) return;
+            var x = engine.Pop().GetInteger();
+            engine.Push(x << shift);
+        }
+
+        /// <summary>
+        /// Computes the right shift of an integer. Vulnerable implementation of
+        /// <see cref="OpCode.SHR"/> since it doesn't pop operand from stack in
+        /// case of zero shift.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void VulnerableSHR(ExecutionEngine engine, Instruction instruction)
+        {
+            var shift = (int)engine.Pop().GetInteger();
+            engine.Limits.AssertShift(shift);
+            if (shift == 0) return;
+            var x = engine.Pop().GetInteger();
+            engine.Push(x >> shift);
         }
 
         public override void LoadContext(ExecutionContext context)
