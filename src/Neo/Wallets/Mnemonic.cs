@@ -149,7 +149,7 @@ namespace Neo.Wallets
         {
             if (bits < 128 || bits > 256)
                 throw new ArgumentException("The length of entropy should be between 128 and 256 bits.", nameof(bits));
-            if (bits % 4 != 0)
+            if (bits % 32 != 0)
                 throw new ArgumentException("The length of entropy should be a multiple of 32 bits.", nameof(bits));
             byte[] entropy = RandomNumberGenerator.GetBytes(bits / 8);
             return Create(entropy);

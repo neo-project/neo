@@ -589,6 +589,7 @@ namespace Neo.SmartContract
 
         internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
+            Diagnostic?.CallFromNative(hash, method, args);
             var contextNew = CallContractInternal(hash, method, CallFlags.All, false, args);
             var state = contextNew.GetState<ExecutionContextState>();
             state.NativeCallingScriptHash = callingScriptHash;
@@ -599,6 +600,7 @@ namespace Neo.SmartContract
 
         internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
+            Diagnostic?.CallFromNative(hash, method, args);
             var contextNew = CallContractInternal(hash, method, CallFlags.All, true, args);
             var state = contextNew.GetState<ExecutionContextState>();
             state.NativeCallingScriptHash = callingScriptHash;

@@ -29,7 +29,13 @@ namespace Neo
             public Logger()
             {
                 Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
-                Receive<LogEvent>(e => Log("Akka", (LogLevel)e.LogLevel(), $"[{e.LogSource}] {e.Message}{Environment.NewLine}{e.Cause?.StackTrace ?? ""}"));
+                Receive<LogEvent>(Log);
+            }
+
+            private static void Log(LogEvent e)
+            {
+                Logs.AkkaLogger.Write(((LogLevel)e.LogLevel()).ToLogEventLevel(), e.Cause,
+                    "LogEvent {Message} from {Thread}:{LogSource}", e.Message, e.Thread.Name, e.LogSource);
             }
         }
 
@@ -48,6 +54,7 @@ namespace Neo
         /// <param name="source">The source of the log. Used to identify the producer of the log.</param>
         /// <param name="level">The level of the log.</param>
         /// <param name="message">The message of the log.</param>
+        [Obsolete("Use Logs.GetLogger(source) instead.")]
         public static void Log(string source, LogLevel level, object message)
         {
             if ((int)level < (int)LogLevel) return;

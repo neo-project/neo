@@ -25,6 +25,12 @@ namespace Neo
 
         private static readonly ILogger s_noopLogger = new LoggerConfiguration().CreateLogger();
 
+        public static ILogger ConsoleLogger { get; private set; } = new LoggerConfiguration().WriteTo.Console().CreateLogger();
+
+        public static ILogger RuntimeLogger { get; private set; } = GetLogger("Runtime");
+
+        internal static ILogger AkkaLogger { get; private set; } = GetLogger("Akka");
+
         /// <summary>
         /// The directory where the logs are stored. If not set, the logs will be disabled.
         /// It only can be set once on startup.
@@ -37,11 +43,14 @@ namespace Neo
                 if (s_logDirectory is not null) // cannot be changed after setup
                     throw new InvalidOperationException("LogDirectory is already set");
                 s_logDirectory = value;
+                RuntimeLogger = GetLogger("Runtime");
+                AkkaLogger = GetLogger("Akka");
             }
         }
 
         /// <summary>
         /// Get a logger for the given source. If the log directory is not set, a no-op logger will be returned.
+        /// If want to set the log directory, set it before calling this method.
         /// </summary>
         /// <param name="source">The source of the log.</param>
         /// <returns>A logger for the given source.</returns>
@@ -69,8 +78,6 @@ namespace Neo
                 )
                 .CreateLogger();
         }
-
-        public static ILogger ConsoleLogger => new LoggerConfiguration().WriteTo.Console().CreateLogger();
 
         public static LogEventLevel ToLogEventLevel(this LogLevel level) => level switch
         {
