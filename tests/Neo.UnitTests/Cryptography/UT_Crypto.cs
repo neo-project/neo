@@ -11,10 +11,13 @@
 
 using Neo.Cryptography;
 using Neo.Extensions.IO;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System.Security.Cryptography;
 using System.Text;
 using ECCurve = Neo.Cryptography.ECC.ECCurve;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
+using HashAlgorithm = Neo.Cryptography.HashAlgorithm;
 
 namespace Neo.UnitTests.Cryptography;
 
@@ -22,6 +25,34 @@ namespace Neo.UnitTests.Cryptography;
 public class UT_Crypto
 {
     private KeyPair _key = null!;
+    private static readonly byte[] s_secp256r1Priv =
+        "aabbccdd11223344556677889900112233445566778899001122334455667788".HexToBytes();
+    private static readonly byte[] s_secp256k1Priv =
+        "7177f0d04c79fa0b8c91fe90c1cf1d44772d1fba6e5eb9b281a22cd3aafb51fe".HexToBytes();
+    private static ECPoint Secp256r1Pub => ECCurve.Secp256r1.G * s_secp256r1Priv;
+    private static ECPoint Secp256k1Pub => ECCurve.Secp256k1.G * s_secp256k1Priv;
+
+    private static byte[] GetFormatValidButInvalidSecp256r1PubKey()
+    {
+        return (
+            "04" +
+            "0000000000000000000000000000000000000000000000000000000000000001" +
+            "0000000000000000000000000000000000000000000000000000000000000001")
+            .HexToBytes();
+    }
+
+    private static string GetExpectedInnerExceptionTypeForInvalidSecp256r1PubKey()
+    {
+        if (OperatingSystem.IsWindows())
+            return "System.PlatformNotSupportedException";
+        if (OperatingSystem.IsLinux())
+            return "Interop+Crypto+OpenSslCryptographicException";
+        if (OperatingSystem.IsMacOS())
+            return "Interop+AppleCrypto+AppleCFErrorCryptographicException";
+
+        Assert.Fail("Unsupported platform.");
+        return string.Empty;
+    }
 
     public static KeyPair GenerateKey(int privateKeyLength)
     {
@@ -237,5 +268,143 @@ public class UT_Crypto
             .ToArray();
 
         Assert.IsTrue(Crypto.VerifySignature(message2, verifySig, recoveredKey2, Neo.Cryptography.HashAlgorithm.Keccak256));
+    }
+
+    [TestMethod]
+    public void TestGetMessageHash()
+    {
+        var sha256Input = Encoding.UTF8.GetBytes("neo-crypto-signverify-sha256");
+        CollectionAssert.AreEqual(sha256Input.Sha256(), Crypto.GetMessageHash(sha256Input, HashAlgorithm.SHA256));
+
+        ReadOnlySpan<byte> spanInput = "neo-crypto-span"u8;
+        CollectionAssert.AreEqual(spanInput.ToArray().Sha256(), Crypto.GetMessageHash(spanInput, HashAlgorithm.SHA256));
+
+        ReadOnlySpan<byte> sha512Input = "test"u8;
+        using var sha512 = SHA512.Create();
+        CollectionAssert.AreEqual(sha512.ComputeHash(sha512Input.ToArray()), Crypto.GetMessageHash(sha512Input, HashAlgorithm.SHA512));
+
+        var keccakInput = Encoding.UTF8.GetBytes("abc");
+        CollectionAssert.AreEqual(keccakInput.Keccak256(), Crypto.GetMessageHash(keccakInput, HashAlgorithm.Keccak256));
+    }
+
+    [TestMethod]
+    public void TestGetMessageHashUnsupported()
+    {
+        Assert.ThrowsExactly<NotSupportedException>(() =>
+            Crypto.GetMessageHash(ReadOnlySpan<byte>.Empty, (HashAlgorithm)0xFF));
+        Assert.ThrowsExactly<NotSupportedException>(() =>
+            Crypto.GetMessageHash(Array.Empty<byte>(), (HashAlgorithm)0xFE));
+    }
+
+    [TestMethod]
+    public void TestSignWithKeccak256()
+    {
+        var r1Message = Encoding.UTF8.GetBytes("round-trip-keccak-r1");
+        var r1Signature = Crypto.Sign(r1Message, s_secp256r1Priv, ECCurve.Secp256r1, HashAlgorithm.Keccak256);
+        Assert.AreEqual(64, r1Signature.Length);
+        Assert.IsTrue(Crypto.VerifySignature(r1Message, r1Signature, Secp256r1Pub, HashAlgorithm.Keccak256));
+
+        var k1Message = Encoding.UTF8.GetBytes("round-trip-keccak-k1");
+        var k1Signature = Crypto.Sign(k1Message, s_secp256k1Priv, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
+        Assert.AreEqual(64, k1Signature.Length);
+        Assert.IsTrue(Crypto.VerifySignature(k1Message, k1Signature, Secp256k1Pub, HashAlgorithm.Keccak256));
+    }
+
+    [TestMethod]
+    public void TestSignSecp256k1CrossPlatformPath()
+    {
+        var sha256Message = Encoding.UTF8.GetBytes("k1-sha256-sign-path");
+        var sha256Signature = Crypto.Sign(sha256Message, s_secp256k1Priv, ECCurve.Secp256k1, HashAlgorithm.SHA256);
+        Assert.AreEqual(64, sha256Signature.Length);
+        Assert.IsTrue(Crypto.VerifySignature(sha256Message, sha256Signature, Secp256k1Pub, HashAlgorithm.SHA256));
+
+        var keccakMessage = Encoding.UTF8.GetBytes("k1-keccak-sign-path");
+        var keccakSignature = Crypto.Sign(keccakMessage, s_secp256k1Priv, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
+        Assert.AreEqual(64, keccakSignature.Length);
+        Assert.IsTrue(Crypto.VerifySignature(keccakMessage, keccakSignature, Secp256k1Pub, HashAlgorithm.Keccak256));
+    }
+
+    [TestMethod]
+    public void TestSignUnsupportedHashAlgorithm()
+    {
+        Assert.ThrowsExactly<NotSupportedException>(() =>
+            Crypto.Sign(Array.Empty<byte>(), s_secp256r1Priv, ECCurve.Secp256r1, HashAlgorithm.SHA512));
+    }
+
+    [TestMethod]
+    public void TestVerifySignatureAdditionalCases()
+    {
+        var message = Encoding.UTF8.GetBytes("message-a");
+        var signature = Crypto.Sign(message, s_secp256r1Priv, ECCurve.Secp256r1, HashAlgorithm.SHA256);
+
+        Assert.ThrowsExactly<NotSupportedException>(() =>
+            Crypto.VerifySignature(message, new byte[64], Secp256r1Pub, (HashAlgorithm)0xFD));
+        Assert.ThrowsExactly<NotSupportedException>(() =>
+            Crypto.VerifySignature(message, new byte[64], Secp256r1Pub, HashAlgorithm.SHA512));
+
+        signature[0] ^= 0x01;
+        Assert.IsFalse(Crypto.VerifySignature(message, signature, Secp256r1Pub, HashAlgorithm.SHA256));
+
+        var validSignature = Crypto.Sign(message, s_secp256r1Priv, ECCurve.Secp256r1, HashAlgorithm.SHA256);
+        Assert.IsFalse(Crypto.VerifySignature(Encoding.UTF8.GetBytes("message-b"), validSignature, Secp256r1Pub, HashAlgorithm.SHA256));
+    }
+
+    [TestMethod]
+    public void TestVerifySignatureAdditionalVectors()
+    {
+        var message = Encoding.UTF8.GetBytes("span-overload");
+        var signature = Crypto.Sign(message, s_secp256r1Priv);
+        var pubBytes = Secp256r1Pub.EncodePoint(true);
+        Assert.IsTrue(Crypto.VerifySignature(message, signature, pubBytes, ECCurve.Secp256r1, HashAlgorithm.SHA256));
+        Assert.IsTrue(Crypto.VerifySignature(message, signature, Secp256r1Pub, HashAlgorithm.SHA256));
+
+        var fixedMessage = Encoding.Default.GetBytes("中文");
+        var fixedSignature = ("b8cba1ff42304d74d083e87706058f59cdd4f755b995926d2cd80a734c5a3c37" +
+            "e4583bfd4339ac762c1c91eee3782660a6baf62cd29e407eccd3da3e9de55a02").HexToBytes();
+        var compressedPub = "03661b86d54eb3a8e7ea2399e0db36ab65753f95fff661da53ae0121278b881ad0".HexToBytes();
+        var point = ECPoint.DecodePoint(compressedPub, ECCurve.Secp256k1);
+        Assert.IsTrue(Crypto.VerifySignature(fixedMessage, fixedSignature, point.EncodePoint(false), ECCurve.Secp256k1, HashAlgorithm.SHA256));
+    }
+
+    [TestMethod]
+    public void TestCreateECDsa()
+    {
+        var ecdsaR1First = Crypto.CreateECDsa(Secp256r1Pub);
+        var ecdsaR1Second = Crypto.CreateECDsa(Secp256r1Pub);
+        Assert.AreSame(ecdsaR1First, ecdsaR1Second);
+
+        var infinity = new ECPoint();
+        Assert.IsTrue(infinity.IsInfinity);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Crypto.CreateECDsa(infinity));
+    }
+
+    [TestMethod]
+    public void TestVerifySignatureInvalidButFormatValidPubkey()
+    {
+        var message = Encoding.UTF8.GetBytes("neo-crypto-signverify-sha256");
+        var signature = Crypto.Sign(message, s_secp256r1Priv, ECCurve.Secp256r1, HashAlgorithm.SHA256);
+        var invalidPubKey = GetFormatValidButInvalidSecp256r1PubKey();
+
+        var ex = Assert.ThrowsExactly<ArgumentException>(() =>
+            Crypto.VerifySignature(message, signature, invalidPubKey, ECCurve.Secp256r1, HashAlgorithm.SHA256));
+
+        Assert.AreEqual("System.ArgumentException", ex.GetType().FullName);
+        Assert.IsNotNull(ex.InnerException);
+        Assert.AreEqual(GetExpectedInnerExceptionTypeForInvalidSecp256r1PubKey(), ex.InnerException!.GetType().FullName);
+    }
+
+    [TestMethod]
+    public void TestVerifyWithECDsaInvalidButFormatValidPubkey()
+    {
+        var message = Encoding.UTF8.GetBytes("neo-crypto-signverify-sha256");
+        var signature = Crypto.Sign(message, s_secp256r1Priv, ECCurve.Secp256r1, HashAlgorithm.SHA256);
+        var invalidPubKey = GetFormatValidButInvalidSecp256r1PubKey();
+
+        var ex = Assert.ThrowsExactly<ArgumentException>(() =>
+            CryptoLib.VerifyWithECDsa(message, invalidPubKey, signature, NamedCurveHash.secp256r1SHA256));
+
+        Assert.AreEqual("System.ArgumentException", ex.GetType().FullName);
+        Assert.IsNotNull(ex.InnerException);
+        Assert.AreEqual(GetExpectedInnerExceptionTypeForInvalidSecp256r1PubKey(), ex.InnerException!.GetType().FullName);
     }
 }
