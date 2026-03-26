@@ -67,6 +67,11 @@ public record ProtocolSettings
     public uint MaxValidUntilBlockIncrement { get; init; }
 
     /// <summary>
+    /// The maximum increment of the <see cref="Transaction.ValidUntilBlock"/> field for high priority transactions.
+    /// </summary>
+    public uint MaxValidUntilBlockIncrementForHighPriority { get; init; }
+
+    /// <summary>
     /// Indicates the maximum number of transactions that can be contained in a block.
     /// </summary>
     public uint MaxTransactionsPerBlock { get; init; }
@@ -109,7 +114,8 @@ public record ProtocolSettings
         SeedList = Array.Empty<string>(),
         MillisecondsPerBlock = 15000,
         MaxTransactionsPerBlock = 512,
-        MaxValidUntilBlockIncrement = 86400000 / 15000,
+        MaxValidUntilBlockIncrement = 86400000 / 15000,                     // 1 day
+        MaxValidUntilBlockIncrementForHighPriority = 2592000000 / 15000,    // 30 days
         MemoryPoolMaxTransactions = 50_000,
         MaxTraceableBlocks = 2_102_400,
         InitialGasDistribution = 52_000_000_00000000,
@@ -206,6 +212,7 @@ public record ProtocolSettings
             MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
             MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
             MaxValidUntilBlockIncrement = section.GetValue("MaxValidUntilBlockIncrement", Default.MaxValidUntilBlockIncrement),
+            MaxValidUntilBlockIncrementForHighPriority = section.GetValue("MaxValidUntilBlockIncrementForHighPriority", Default.MaxValidUntilBlockIncrementForHighPriority),
             InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
             Hardforks = section.GetSection("Hardforks").Exists()
                 ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value!))).ToImmutableDictionary()
