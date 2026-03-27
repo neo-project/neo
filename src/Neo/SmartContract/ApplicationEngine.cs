@@ -403,7 +403,6 @@ namespace Neo.SmartContract
                 // For arrays, check if the index is within bounds and push the result onto the stack.
                 case VMArray array:
                     {
-                        // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
                             throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
@@ -419,7 +418,6 @@ namespace Neo.SmartContract
                 // For buffers, check if the index is within bounds and push the result onto the stack.
                 case VM.Types.Buffer buffer:
                     {
-                        // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
                             throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
@@ -429,7 +427,6 @@ namespace Neo.SmartContract
                 // For byte strings, check if the index is within bounds and push the result onto the stack.
                 case ByteString array:
                     {
-                        // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
                             throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
