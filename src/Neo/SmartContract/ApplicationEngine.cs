@@ -271,10 +271,9 @@ namespace Neo.SmartContract
 
         public static JumpTable ComposeNotEchidnaJumpTable()
         {
-            var table = ComposeDefaultJumpTable();
+            var table = ComposeNotGorgonJumpTable();
 
             table[OpCode.SUBSTR] = VulnerableSubStr;
-            Patch543(table);
 
             return table;
         }
@@ -282,14 +281,8 @@ namespace Neo.SmartContract
         public static JumpTable ComposeNotGorgonJumpTable()
         {
             var table = ComposeDefaultJumpTable();
-            Patch543(table);
-            return table;
-        }
 
-        private static JumpTable Patch543(JumpTable table)
-        {
             // Before https://github.com/neo-project/neo-vm/pull/543
-
             table[OpCode.HASKEY] = HasKey_Before543;
             table[OpCode.PICKITEM] = PickItem_Before543;
             table[OpCode.SETITEM] = SetItem_Before543;
