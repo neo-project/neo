@@ -126,7 +126,7 @@ namespace Neo.SmartContract.Native
                 try
                 {
                     var ch = s_curves[curveHash];
-                    return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
+                    return Crypto.VerifySignatureV0(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
                 }
                 catch (ArgumentException)
                 {

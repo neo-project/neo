@@ -347,6 +347,20 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Verifies that a digital signature is appropriate for the provided key, curve, message and hasher.
+        /// </summary>
+        /// <param name="message">The signed message.</param>
+        /// <param name="signature">The signature to be verified.</param>
+        /// <param name="pubkey">The public key to be used.</param>
+        /// <param name="curve">The curve to be used by the ECDSA algorithm.</param>
+        /// <param name="hashAlgorithm">The hash algorithm to be used hash the message, the default is SHA256.</param>
+        /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
+        public static bool VerifySignatureV0(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+        {
+            return VerifySignatureV0(message, signature, ECPoint.DecodePoint(pubkey, curve), hashAlgorithm);
+        }
+
+        /// <summary>
         /// Get hash from message.
         /// </summary>
         /// <param name="message">Original message</param>

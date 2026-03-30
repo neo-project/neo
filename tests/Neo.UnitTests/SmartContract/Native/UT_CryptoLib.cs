@@ -1217,7 +1217,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 "3643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
             var signature = Crypto.Sign(message, privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
 
-            Assert.IsFalse(Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, publicKey.EncodePoint(false), signature, NamedCurveHash.secp256k1SHA256));
+            var differentMessage = "different message"u8.ToArray();
+            Assert.IsFalse(Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, differentMessage, publicKey.EncodePoint(false), signature, NamedCurveHash.secp256r1SHA256));
         }
 
         private bool CallVerifyWithECDsa(byte[] message, ECPoint pub, byte[] signature, NamedCurveHash curveHash)
