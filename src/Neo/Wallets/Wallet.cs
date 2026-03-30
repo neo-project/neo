@@ -775,14 +775,15 @@ public abstract class Wallet : ISigner
         var account = GetAccount(publicKey)
             ?? throw new SignException("No such account found");
 
-        var privateKey = account.GetKey()?.PrivateKey
-            ?? throw new SignException("No private key found for the given public key");
+        var key = account.GetKey();
+        if (key?.PrivateKey is null)
+            throw new SignException("No private key found for the given public key");
 
         if (account.Lock)
             throw new SignException("Account is locked");
 
         var signData = block.GetSignData(network);
-        return Crypto.Sign(signData, privateKey);
+        return Crypto.Sign(signData, key);
     }
 
     /// <summary>

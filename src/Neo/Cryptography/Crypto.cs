@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
+using Neo.Wallets;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
@@ -56,18 +57,16 @@ public static class Crypto
     /// Signs the specified message using the ECDSA algorithm and specified hash algorithm.
     /// </summary>
     /// <param name="message">The message to be signed.</param>
-    /// <param name="priKey">The private key to be used.</param>
-    /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature, default is <see cref="ECC.ECCurve.Secp256r1"/>.</param>
+    /// <param name="key">The private key to be used.</param>
     /// <param name="hashAlgorithm">The hash algorithm to hash the message, default is SHA256.</param>
     /// <returns>The ECDSA signature for the specified message.</returns>
-    public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve? ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+    public static byte[] Sign(byte[] message, KeyPair key, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
     {
-        ecCurve ??= ECC.ECCurve.Secp256r1;
-        if (s_isOSX && ecCurve == ECC.ECCurve.Secp256k1)
+        if (s_isOSX && key.PublicKey.Curve == ECC.ECCurve.Secp256k1)
         {
             var signer = new ECDsaSigner();
-            var privateKey = new BigInteger(1, priKey);
-            var priKeyParameters = new ECPrivateKeyParameters(privateKey, ecCurve.BouncyCastleDomainParams);
+            var privateKey = new BigInteger(1, key.PrivateKey);
+            var priKeyParameters = new ECPrivateKeyParameters(privateKey, key.PublicKey.Curve.BouncyCastleDomainParams);
             signer.Init(true, priKeyParameters);
             var messageHash = GetMessageHash(message, hashAlgorithm);
             var signature = signer.GenerateSignature(messageHash);
@@ -81,14 +80,20 @@ public static class Crypto
         }
 
         var curve =
-            ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
-            ecCurve == ECC.ECCurve.Secp256k1 ? s_secP256k1 :
-            throw new NotSupportedException($"The elliptic curve {ecCurve} is not supported. Only Secp256r1 and Secp256k1 curves are supported for ECDSA signing operations.");
+            key.PublicKey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
+            key.PublicKey.Curve == ECC.ECCurve.Secp256k1 ? s_secP256k1 :
+            throw new NotSupportedException($"The elliptic curve {key.PublicKey.Curve} is not supported. Only Secp256r1 and Secp256k1 curves are supported for ECDSA signing operations.");
 
+        byte[] pubkey = key.PublicKey.EncodePoint(false);
         using var ecdsa = ECDsa.Create(new ECParameters
         {
             Curve = curve,
-            D = priKey,
+            D = key.PrivateKey,
+            Q = new System.Security.Cryptography.ECPoint
+            {
+                X = pubkey[1..33],
+                Y = pubkey[33..]
+            }
         });
 
         if (hashAlgorithm == HashAlgorithm.Keccak256)
@@ -103,6 +108,19 @@ public static class Crypto
                 throw new NotSupportedException($"The hash algorithm {nameof(hashAlgorithm)} is not supported.");
             return ecdsa.SignData(message, hashAlg);
         }
+    }
+
+    /// <summary>
+    /// Verifies the digital signature of a message using the specified public key and hash algorithm.
+    /// </summary>
+    /// <param name="message">The message data to verify, provided as a read-only span of bytes.</param>
+    /// <param name="signature">The digital signature to verify, provided as a read-only span of bytes.</param>
+    /// <param name="key">The key pair containing the public key used for signature verification.</param>
+    /// <param name="hashAlgorithm">The hash algorithm to use when verifying the signature. The default is SHA256.</param>
+    /// <returns>true if the signature is valid for the specified message and public key; otherwise, false.</returns>
+    public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, KeyPair key, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+    {
+        return VerifySignature(message, signature, key.PublicKey, hashAlgorithm);
     }
 
     /// <summary>

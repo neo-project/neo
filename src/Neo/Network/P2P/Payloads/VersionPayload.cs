@@ -114,7 +114,7 @@ public class VersionPayload : ISerializable
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
         ret.Serialize(writer, false);
-        ret.Signature = Crypto.Sign(ms.ToArray(), nodeKey.PrivateKey);
+        ret.Signature = Crypto.Sign(ms.ToArray(), nodeKey);
 
         return ret;
     }
