@@ -231,7 +231,7 @@ namespace Neo.SmartContract.Native
                     // deprecated method hardfork is involved
                     u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, blockHeight) == false ||
                     // active method hardfork is involved
-                    u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, blockHeight);
+                    (u.DeprecatedIn is null && u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, blockHeight));
         }
 
         /// <summary>
