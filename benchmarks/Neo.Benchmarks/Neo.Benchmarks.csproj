@@ -18,4 +18,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="pocs\*.b64">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
