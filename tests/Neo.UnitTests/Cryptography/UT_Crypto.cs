@@ -400,14 +400,14 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestVerifyWithECDsaInvalidButFormatValidPubkey()
         {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+            //var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            //using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             var message = Encoding.UTF8.GetBytes("neo-crypto-signverify-sha256");
             var signature = Crypto.Sign(message, s_secp256r1Priv, ECCurve.Secp256r1, HashAlgorithm.SHA256);
             var invalidPubKey = GetFormatValidButInvalidSecp256r1PubKey();
 
             var ex = Assert.ThrowsExactly<ArgumentException>(() =>
-                CryptoLib.VerifyWithECDsa(engine, message, invalidPubKey, signature, NamedCurveHash.secp256r1SHA256));
+                CryptoLib.VerifyWithECDsa(message, invalidPubKey, signature, NamedCurveHash.secp256r1SHA256));
 
             Assert.AreEqual("System.ArgumentException", ex.GetType().FullName);
             Assert.IsNotNull(ex.InnerException);

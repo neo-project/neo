@@ -286,7 +286,8 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(script.ToArray());
 
             var state = engine.Execute();
-
+            Console.WriteLine($"State: {state}");
+            Console.WriteLine($"Fault: {engine.FaultException?.Message}");
             Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
             Assert.IsTrue(result.GetBoolean());
@@ -1124,36 +1125,35 @@ namespace Neo.UnitTests.SmartContract.Native
             var publicKey = ECPoint.Parse("04" +
                 "cae768e1cf58d50260cab808da8d6d83d5d3ab91eac41cdce577ce5862d73641" +
                 "3643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
+
             var sign = Crypto.Sign(message, privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
 
             // IndexOutOfRangeException, but should be FormatException
-            Assert.ThrowsExactly<IndexOutOfRangeException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, null!, sign, NamedCurveHash.secp256r1SHA256));
+            Assert.ThrowsExactly<IndexOutOfRangeException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(message, null!, sign, NamedCurveHash.secp256r1SHA256));
 
             // IndexOutOfRangeException, but should be FormatException
-            Assert.ThrowsExactly<IndexOutOfRangeException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, [], sign, NamedCurveHash.secp256r1SHA256));
+            Assert.ThrowsExactly<IndexOutOfRangeException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(message, [], sign, NamedCurveHash.secp256r1SHA256));
 
             // KeyNotFoundException, but should be ArgumentException
-            Assert.ThrowsExactly<NotSupportedException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, [], sign, (NamedCurveHash)99));
+            Assert.ThrowsExactly<NotSupportedException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(message, [], sign, (NamedCurveHash)99));
 
             // FormatException if the signature is empty
-            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, [0x01], sign, NamedCurveHash.secp256r1SHA256));
-            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, publicKey.EncodePoint(true), [], NamedCurveHash.secp256r1SHA256));
-            bool ok = Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
+            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(message, [0x01], sign, NamedCurveHash.secp256r1SHA256));
+            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), [], NamedCurveHash.secp256r1SHA256));
+            bool ok = Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
             Assert.IsTrue(ok);
 
-            ok = Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256r1SHA256);
+            ok = Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256r1SHA256);
             Assert.IsTrue(ok);
 
-            Assert.ThrowsExactly<ArgumentException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
+            Assert.ThrowsExactly<ArgumentException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
             // ArithmeticException, but should be ArgumentException
             byte[] invalidPublicKey = [0x03, .. Enumerable.Repeat<byte>(0x03, 32)];
-            Assert.ThrowsExactly<ArithmeticException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, invalidPublicKey, sign, NamedCurveHash.secp256k1SHA256));
+            Assert.ThrowsExactly<ArithmeticException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(message, invalidPublicKey, sign, NamedCurveHash.secp256k1SHA256));
 
             // null messsage and signature is valid, result is true
             sign = Crypto.Sign([], privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
-            ok = Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, null!, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
+            ok = Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(null!, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
             Assert.IsTrue(ok);
         }
 
@@ -1187,10 +1187,6 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestVerifyWithECDsa_PreCockatrice_UsesV0Behavior()
         {
-            var settings = CreateProtocolSettingsUpTo(Hardfork.HF_Basilisk);
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
-
             var message = "hello world"u8.ToArray();
             var privateKey = "6e63fda41e9e3aba9bb5696d58a75731f044a9bdc48fe546da571543b2fa460e".HexToBytes();
             var publicKey = ECPoint.Parse("04" +
@@ -1198,18 +1194,14 @@ namespace Neo.UnitTests.SmartContract.Native
                 "3643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
             var signature = Crypto.SignV0(message, privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
 
-            Assert.IsTrue(Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, publicKey.EncodePoint(true), signature, NamedCurveHash.secp256r1SHA256));
+            Assert.IsTrue(Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV0(message, publicKey.EncodePoint(true), signature, NamedCurveHash.secp256r1SHA256));
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
-                Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, message, publicKey.EncodePoint(true), signature, NamedCurveHash.secp256r1Keccak256));
+                Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV0(message, publicKey.EncodePoint(true), signature, NamedCurveHash.secp256r1Keccak256));
         }
 
         [TestMethod]
         public void TestVerifyWithECDsa_CockatriceBeforeGorgon_ReturnsFalseOnCurveMismatch()
         {
-            var settings = CreateProtocolSettingsUpTo(Hardfork.HF_Echidna);
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
-
             var message = "hello world"u8.ToArray();
             var privateKey = "6e63fda41e9e3aba9bb5696d58a75731f044a9bdc48fe546da571543b2fa460e".HexToBytes();
             var publicKey = ECPoint.Parse("04" +
@@ -1218,7 +1210,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var signature = Crypto.Sign(message, privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
 
             var differentMessage = "different message"u8.ToArray();
-            Assert.IsFalse(Neo.SmartContract.Native.CryptoLib.VerifyWithECDsa(engine, differentMessage, publicKey.EncodePoint(false), signature, NamedCurveHash.secp256r1SHA256));
+            Assert.IsFalse(Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV1(differentMessage, publicKey.EncodePoint(false), signature, NamedCurveHash.secp256r1SHA256));
         }
 
         private bool CallVerifyWithECDsa(byte[] message, ECPoint pub, byte[] signature, NamedCurveHash curveHash)
@@ -1247,7 +1239,6 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestVerifyWithEd25519()
         {
-            // byte[] privateKey = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60".HexToBytes();
             byte[] publicKey = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a".HexToBytes();
             byte[] message = Array.Empty<byte>();
             byte[] signature = ("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155" +
