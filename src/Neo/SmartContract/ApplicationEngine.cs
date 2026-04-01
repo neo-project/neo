@@ -38,6 +38,7 @@ namespace Neo.SmartContract
     {
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
         protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
+        protected static readonly JumpTable NotGorgonJumpTable = ComposeNotGorgonJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -270,10 +271,173 @@ namespace Neo.SmartContract
 
         public static JumpTable ComposeNotEchidnaJumpTable()
         {
-            var jumpTable = ComposeDefaultJumpTable();
-            jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
-            return jumpTable;
+            var table = ComposeNotGorgonJumpTable();
+
+            table[OpCode.SUBSTR] = VulnerableSubStr;
+
+            return table;
         }
+
+        public static JumpTable ComposeNotGorgonJumpTable()
+        {
+            var table = ComposeDefaultJumpTable();
+
+            // Before https://github.com/neo-project/neo-vm/pull/543
+            table[OpCode.HASKEY] = HasKey_Before543;
+            table[OpCode.PICKITEM] = PickItem_Before543;
+            table[OpCode.SETITEM] = SetItem_Before543;
+            table[OpCode.REMOVE] = Remove_Before543;
+
+            return table;
+        }
+
+        private static void Remove_Before543(ExecutionEngine engine, Instruction instruction)
+        {
+            var key = engine.Pop<PrimitiveType>();
+            var x = engine.Pop();
+            switch (x)
+            {
+                case VMArray array:
+                    var index = (int)key.GetInteger();
+                    if (index < 0 || index >= array.Count)
+                        throw new InvalidOperationException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                    array.RemoveAt(index);
+                    break;
+                case Map map:
+                    map.Remove(key);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+            }
+        }
+
+        private static void SetItem_Before543(ExecutionEngine engine, Instruction instruction)
+        {
+            var value = engine.Pop();
+            if (value is Struct s) value = s.Clone(engine.Limits);
+            var key = engine.Pop<PrimitiveType>();
+            var x = engine.Pop();
+            switch (x)
+            {
+                case VMArray array:
+                    {
+                        var index = (int)key.GetInteger();
+                        if (index < 0 || index >= array.Count)
+                            throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                        array[index] = value;
+                        break;
+                    }
+                case Map map:
+                    {
+                        map[key] = value;
+                        break;
+                    }
+                case VM.Types.Buffer buffer:
+                    {
+                        var index = (int)key.GetInteger();
+                        if (index < 0 || index >= buffer.Size)
+                            throw new CatchableException($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                        if (value is not PrimitiveType p)
+                            throw new InvalidOperationException($"Only primitive type values can be set in {nameof(Buffer)} in {instruction.OpCode}.");
+                        var b = (int)p.GetInteger();
+                        if (b < sbyte.MinValue || b > byte.MaxValue)
+                            throw new InvalidOperationException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
+                        buffer.InnerBuffer.Span[index] = (byte)b;
+                        break;
+                    }
+                default:
+                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+            }
+        }
+
+        private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction)
+        {
+            var key = engine.Pop<PrimitiveType>();
+            var x = engine.Pop();
+            switch (x)
+            {
+                case VMArray array:
+                    {
+                        var index = (int)key.GetInteger();
+                        if (index < 0 || index >= array.Count)
+                            throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                        engine.Push(array[index]);
+                        break;
+                    }
+                case Map map:
+                    {
+                        if (!map.TryGetValue(key, out var value))
+                            throw new CatchableException($"Key {key} not found in {nameof(Map)}.");
+                        engine.Push(value);
+                        break;
+                    }
+                case PrimitiveType primitive:
+                    {
+                        var byteArray = primitive.GetSpan();
+                        var index = (int)key.GetInteger();
+                        if (index < 0 || index >= byteArray.Length)
+                            throw new CatchableException($"The index of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length}).");
+                        engine.Push((BigInteger)byteArray[index]);
+                        break;
+                    }
+                case Buffer buffer:
+                    {
+                        var index = (int)key.GetInteger();
+                        if (index < 0 || index >= buffer.Size)
+                            throw new CatchableException($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                        engine.Push((BigInteger)buffer.InnerBuffer.Span[index]);
+                        break;
+                    }
+                default:
+                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+            }
+        }
+
+        private static void HasKey_Before543(ExecutionEngine engine, Instruction instruction)
+        {
+            var key = engine.Pop<PrimitiveType>();
+            var x = engine.Pop();
+            // Check the type of the top item and perform the corresponding action.
+            switch (x)
+            {
+                // For arrays, check if the index is within bounds and push the result onto the stack.
+                case VMArray array:
+                    {
+                        var index = (int)key.GetInteger();
+                        if (index < 0)
+                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
+                        engine.Push(index < array.Count);
+                        break;
+                    }
+                // For maps, check if the key exists and push the result onto the stack.
+                case Map map:
+                    {
+                        engine.Push(map.ContainsKey(key));
+                        break;
+                    }
+                // For buffers, check if the index is within bounds and push the result onto the stack.
+                case VM.Types.Buffer buffer:
+                    {
+                        var index = (int)key.GetInteger();
+                        if (index < 0)
+                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
+                        engine.Push(index < buffer.Size);
+                        break;
+                    }
+                // For byte strings, check if the index is within bounds and push the result onto the stack.
+                case ByteString array:
+                    {
+                        var index = (int)key.GetInteger();
+                        if (index < 0)
+                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
+                        engine.Push(index < array.Size);
+                        break;
+                    }
+                default:
+                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+            }
+        }
+
 
         protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
         {
@@ -495,7 +659,25 @@ namespace Neo.SmartContract
             var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             settings ??= ProtocolSettings.Default;
             // Adjust jump table according persistingBlock
-            var jumpTable = settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
+
+            JumpTable jumpTable;
+
+            if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
+            {
+                jumpTable = DefaultJumpTable;
+            }
+            else
+            {
+                if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+                {
+                    jumpTable = NotEchidnaJumpTable;
+                }
+                else
+                {
+                    jumpTable = NotGorgonJumpTable;
+                }
+            }
+
             var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
 
