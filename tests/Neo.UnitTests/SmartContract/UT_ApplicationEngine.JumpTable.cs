@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract
             ExecuteAndAssertFault<OverflowException>(script, settings, index: 15u);
 
             // Case C: Gorgon enabled => InvalidOperationException
-            ExecuteAndAssertFault<OverflowException>(script, settings, index: 30u);
+            ExecuteAndAssertFault<InvalidOperationException>(script, settings, index: 30u);
         }
 
         private static byte[] BuildHasKeyLargeIndexScript()
