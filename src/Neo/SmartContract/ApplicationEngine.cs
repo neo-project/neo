@@ -288,6 +288,10 @@ namespace Neo.SmartContract
             table[OpCode.SETITEM] = SetItem_Before543;
             table[OpCode.REMOVE] = Remove_Before543;
 
+            // Before https://github.com/neo-project/neo-vm/pull/567.
+            table[OpCode.SHR] = VulnerableSHR;
+            table[OpCode.SHL] = VulnerableSHL;
+
             return table;
         }
 
@@ -709,6 +713,42 @@ namespace Neo.SmartContract
             Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
+        }
+
+        /// <summary>
+        /// Computes the left shift of an integer. Vulnerable implementation of
+        /// <see cref="OpCode.SHL"/> since it doesn't pop operand from stack in
+        /// case of zero shift.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void VulnerableSHL(ExecutionEngine engine, Instruction instruction)
+        {
+            var shift = (int)engine.Pop().GetInteger();
+            engine.Limits.AssertShift(shift);
+            if (shift == 0) return;
+            var x = engine.Pop().GetInteger();
+            engine.Push(x << shift);
+        }
+
+        /// <summary>
+        /// Computes the right shift of an integer. Vulnerable implementation of
+        /// <see cref="OpCode.SHR"/> since it doesn't pop operand from stack in
+        /// case of zero shift.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void VulnerableSHR(ExecutionEngine engine, Instruction instruction)
+        {
+            var shift = (int)engine.Pop().GetInteger();
+            engine.Limits.AssertShift(shift);
+            if (shift == 0) return;
+            var x = engine.Pop().GetInteger();
+            engine.Push(x >> shift);
         }
 
         public override void LoadContext(ExecutionContext context)
