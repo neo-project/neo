@@ -21,6 +21,54 @@ namespace Neo.UnitTests.SmartContract
     public partial class UT_ApplicationEngine
     {
         [TestMethod]
+        public void TestSHR_SHL_WithDifferentHF()
+        {
+            foreach (var op in new OpCode[] { OpCode.SHL, OpCode.SHR })
+            {
+                using var sb = new ScriptBuilder();
+
+                sb.Emit(OpCode.NEWARRAY0); // intentionally wrong argument for SHL or SHR.
+                sb.EmitPush(0); // zero shift.
+                sb.Emit(op);
+
+                var script = sb.ToArray();
+
+                const uint EchidnaEnable = 10u;
+                const uint GorgonEnable = 20u;
+                // Hardfork heights:
+                // Echidna at 10, Gorgon at 20
+                //  - index=5 => pre-Echidna (NotEchidnaJumpTable)
+                //  - index=15 => Echidna enabled, Gorgon NOT enabled (NotGorgonJumpTable)
+                //  - index=30 => Gorgon enabled (DefaultJumpTable)
+                var settings = ProtocolSettings.Default with
+                {
+                    Hardforks = ProtocolSettings.Default.Hardforks
+                        .SetItem(Hardfork.HF_Echidna, EchidnaEnable)
+                        .SetItem(Hardfork.HF_Gorgon, GorgonEnable)
+                };
+
+                Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Echidna, 5u));
+                Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Echidna, 15u));
+                Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Echidna, 30u));
+                Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 15u));
+                Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 30u));
+
+                // Case A: pre-Echidna => no exception.
+                var engine = Execute(script, settings, index: 5u);
+                Assert.AreEqual(VMState.HALT, engine.State);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+
+                // Case B: Echidna enabled but pre-Gorgon => no exception.
+                engine = Execute(script, settings, index: 15u);
+                Assert.AreEqual(VMState.HALT, engine.State);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+
+                // Case C: Gorgon enabled => InvalidCastException on attempt to convert Array to Integer.
+                ExecuteAndAssertFault<InvalidCastException>(script, settings, index: 30u);
+            }
+        }
+
+        [TestMethod]
         public void TestHasKeyWithDifferentHF()
         {
             var script = BuildHasKeyLargeIndexScript();
@@ -77,6 +125,16 @@ namespace Neo.UnitTests.SmartContract
 
         private static void ExecuteAndAssertFault<TException>(byte[] script, ProtocolSettings settings, uint index) where TException : Exception
         {
+            var engine = Execute(script, settings, index);
+
+            Assert.AreEqual(VMState.FAULT, engine.State, $"Expected FAULT at index={index}.");
+            Assert.IsNotNull(engine.FaultException, $"Expected FaultException at index={index}.");
+            Assert.IsInstanceOfType(engine.FaultException, typeof(TException),
+                $"Expected {typeof(TException).Name} at index={index}, but got {engine.FaultException.GetType().Name}.");
+        }
+
+        private static ApplicationEngine Execute(byte[] script, ProtocolSettings settings, uint index)
+        {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var block = new Block
             {
@@ -102,10 +160,7 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(script);
             engine.Execute();
 
-            Assert.AreEqual(VMState.FAULT, engine.State, $"Expected FAULT at index={index}.");
-            Assert.IsNotNull(engine.FaultException, $"Expected FaultException at index={index}.");
-            Assert.IsInstanceOfType(engine.FaultException, typeof(TException),
-                $"Expected {typeof(TException).Name} at index={index}, but got {engine.FaultException.GetType().Name}.");
+            return engine;
         }
     }
 }
