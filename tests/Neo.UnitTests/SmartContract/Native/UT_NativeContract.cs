@@ -76,6 +76,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 1));
             Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 20));
 
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 9));
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 10));
             Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 19));
             Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 20));
         }
