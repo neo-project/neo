@@ -506,7 +506,7 @@ public sealed partial class Blockchain : UntypedActor
             catch (Exception ex) when (handler.Target is Plugin plugin)
             {
                 var cause = ex.InnerException ?? ex;
-                Utility.Log(nameof(plugin.Name), LogLevel.Error, $"{plugin.Name} exception: {cause.Message}{Environment.NewLine}{cause.StackTrace}");
+                Logs.RuntimeLogger.Error(cause, "{Plugin} exception: {Message}", plugin.Name, cause.Message);
                 switch (plugin.ExceptionPolicy)
                 {
                     case UnhandledExceptionPolicy.StopNode:

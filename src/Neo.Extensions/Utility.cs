@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Actor;
-using Akka.Event;
 using System.Text;
 
 namespace Neo;
@@ -22,15 +20,6 @@ public delegate void LogEventHandler(string source, LogLevel level, object messa
 /// </summary>
 public static class Utility
 {
-    internal class Logger : ReceiveActor
-    {
-        public Logger()
-        {
-            Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
-            Receive<LogEvent>(e => Log("Akka", (LogLevel)e.LogLevel(), $"[{e.LogSource}] {e.Message}{Environment.NewLine}{e.Cause?.StackTrace ?? ""}"));
-        }
-    }
-
     public static LogLevel LogLevel { get; set; } = LogLevel.Info;
 
     public static event LogEventHandler? Logging;

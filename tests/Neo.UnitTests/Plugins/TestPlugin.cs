@@ -68,11 +68,6 @@ internal class TestPlugin : Plugin
         TestPluginSettings.Load(GetConfiguration());
     }
 
-    public void LogMessage(string message)
-    {
-        Log(message);
-    }
-
     public bool TestOnMessage(object message)
     {
         return OnMessage(message);

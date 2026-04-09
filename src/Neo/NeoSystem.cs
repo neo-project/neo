@@ -44,7 +44,7 @@ public class NeoSystem : IDisposable
     /// The <see cref="Akka.Actor.ActorSystem"/> used to create actors for the <see cref="NeoSystem"/>.
     /// </summary>
     public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
-        $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Utility.Logger).AssemblyQualifiedName}\" ] }}" +
+        $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Logs.LogActor).AssemblyQualifiedName}\" ] }}" +
         $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
         $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
         $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}");
@@ -179,7 +179,7 @@ public class NeoSystem : IDisposable
 
     private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
-        Utility.Log("UnhandledException", LogLevel.Fatal, e.ExceptionObject);
+        Logs.RuntimeLogger.Fatal("UnhandledException {Exception} from {Sender}", e.ExceptionObject, sender);
     }
 
     public void Dispose()
