@@ -284,7 +284,6 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
                 settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
-
             Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
             Assert.IsTrue(result.GetBoolean());
