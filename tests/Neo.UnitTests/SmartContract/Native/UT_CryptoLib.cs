@@ -285,9 +285,6 @@ namespace Neo.UnitTests.SmartContract.Native
                 settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            var state = engine.Execute();
-            Console.WriteLine($"State: {state}");
-            Console.WriteLine($"Fault: {engine.FaultException?.Message}");
             Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
             Assert.IsTrue(result.GetBoolean());
