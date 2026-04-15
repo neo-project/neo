@@ -333,7 +333,7 @@ namespace Neo.UnitTests.Cryptography
         public void TestSignUnsupportedHashAlgorithm()
         {
             Assert.ThrowsExactly<NotSupportedException>(() =>
-                Crypto.Sign(Array.Empty<byte>(), Secp256k1Key, HashAlgorithm.SHA512));
+                Crypto.Sign(Array.Empty<byte>(), Secp256r1Key, HashAlgorithm.SHA512));
         }
 
         [TestMethod]
