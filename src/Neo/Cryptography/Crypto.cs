@@ -507,8 +507,9 @@ namespace Neo.Cryptography
 
         /// <summary>
         /// Signs a message using BouncyCastle's ECDsaSigner.
-        /// Used on platforms where the native ECDsa is not supported (e.g. OSX + Secp256k1)
-        /// or when the hash algorithm requires pre-hashing (e.g. Keccak256).
+        /// Used on platforms where the native <see cref="ECDsa"/> implementation is not supported
+        /// for the requested signing operation (for example, OSX + Secp256k1).
+        /// The message is hashed with the specified algorithm before signing.
         /// </summary>
         private static byte[] SignWithBouncyCastle(byte[] message, byte[] priKey, ECC.ECCurve ecCurve, HashAlgorithm hashAlgorithm)
         {
