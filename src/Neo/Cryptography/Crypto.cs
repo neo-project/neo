@@ -542,7 +542,7 @@ namespace Neo.Cryptography
 
             var hashAlg =
                 hashAlgorithm == HashAlgorithm.SHA256 ? HashAlgorithmName.SHA256 :
-                throw new NotSupportedException($"The hash algorithm {nameof(hashAlgorithm)} is not supported.");
+                throw new NotSupportedException($"The hash algorithm {hashAlgorithm} is not supported. Only {HashAlgorithm.SHA256} and {HashAlgorithm.Keccak256} are supported.");
 
             return ecdsa.SignData(message, hashAlg);
         }
