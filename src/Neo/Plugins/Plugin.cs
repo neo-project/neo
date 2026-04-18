@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -76,8 +75,6 @@ namespace Neo.Plugins
         /// </summary>
         protected internal virtual UnhandledExceptionPolicy ExceptionPolicy { get; init; } = UnhandledExceptionPolicy.StopNode;
 
-        protected ILogger Logger { get; private set; }
-
         /// <summary>
         /// The plugin will be stopped if an exception is thrown.
         /// But it also depends on <see cref="UnhandledExceptionPolicy"/>.
@@ -107,7 +104,6 @@ namespace Neo.Plugins
         protected Plugin()
         {
             Plugins.Add(this);
-            Logger = Logs.GetLogger($"{nameof(Plugin)}_{Name}");
             Configure();
         }
 
@@ -230,17 +226,6 @@ namespace Neo.Plugins
             {
                 LoadPlugin(assembly);
             }
-        }
-
-        /// <summary>
-        /// Write a log for the plugin.
-        /// </summary>
-        /// <param name="message">The message of the log.</param>
-        /// <param name="level">The level of the log.</param>
-        [Obsolete("Use Logs.GetLogger(source) instead.")]
-        protected void Log(object message, LogLevel level = LogLevel.Info)
-        {
-            Logger.Write((Serilog.Events.LogEventLevel)level, "{Message}", message);
         }
 
         /// <summary>
