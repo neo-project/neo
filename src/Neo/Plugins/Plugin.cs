@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
-using Serilog;
 using System.Reflection;
 using System.Runtime.Loader;
 using static System.IO.Path;
@@ -72,8 +71,6 @@ public abstract class Plugin : IDisposable
     /// </summary>
     protected internal virtual UnhandledExceptionPolicy ExceptionPolicy { get; init; } = UnhandledExceptionPolicy.StopNode;
 
-    internal ILogger Logger { get; private set; }
-
     /// <summary>
     /// The plugin will be stopped if an exception is thrown.
     /// But it also depends on <see cref="UnhandledExceptionPolicy"/>.
@@ -103,7 +100,6 @@ public abstract class Plugin : IDisposable
     protected Plugin()
     {
         Plugins.Add(this);
-        Logger = Logs.GetLogger($"{nameof(Plugin)}_{Name}");
         Configure();
     }
 
@@ -237,17 +233,6 @@ public abstract class Plugin : IDisposable
         {
             LoadPlugin(assembly);
         }
-    }
-
-    /// <summary>
-    /// Write a log for the plugin.
-    /// </summary>
-    /// <param name="message">The message of the log.</param>
-    /// <param name="level">The level of the log.</param>
-    [Obsolete("Use Logs.GetLogger(source) instead.")]
-    protected void Log(object message, LogLevel level = LogLevel.Info)
-    {
-        Logger.Write((Serilog.Events.LogEventLevel)level, "{Message}", message);
     }
 
     /// <summary>
