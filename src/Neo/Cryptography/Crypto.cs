@@ -501,7 +501,7 @@ namespace Neo.Cryptography
         /// for the requested signing operation (for example, OSX + Secp256k1).
         /// The message is hashed with the specified algorithm before signing.
         /// </summary>
-        private static byte[] SignWithBouncyCastle(byte[] message, byte[] priKey, ECC.ECCurve ecCurve, HashAlgorithm hashAlgorithm)
+        internal static byte[] SignWithBouncyCastle(byte[] message, byte[] priKey, ECC.ECCurve ecCurve, HashAlgorithm hashAlgorithm)
         {
             var signer = new ECDsaSigner();
             var privateKey = new BigInteger(1, priKey);
@@ -523,7 +523,7 @@ namespace Neo.Cryptography
         /// Signs a message using the native <see cref="ECDsa"/> instance,
         /// dispatching between pre-hash (Keccak256) and direct-data signing (SHA256).
         /// </summary>
-        private static byte[] SignWithECDsa(ECDsa ecdsa, byte[] message, HashAlgorithm hashAlgorithm)
+        internal static byte[] SignWithECDsa(ECDsa ecdsa, byte[] message, HashAlgorithm hashAlgorithm)
         {
             if (hashAlgorithm == HashAlgorithm.Keccak256)
             {
@@ -541,7 +541,7 @@ namespace Neo.Cryptography
         /// <summary>
         /// Resolves the .NET <see cref="ECCurve"/> from a NEO <see cref="ECC.ECCurve"/>.
         /// </summary>
-        private static ECCurve ResolveECCurve(ECC.ECCurve ecCurve)
+        internal static ECCurve ResolveECCurve(ECC.ECCurve ecCurve)
         {
             return
                 ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
