@@ -81,9 +81,6 @@ namespace Neo.Cryptography
         public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve? ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             ecCurve ??= ECC.ECCurve.Secp256r1;
-            if (s_isOSX && ecCurve == ECC.ECCurve.Secp256k1)
-                return SignWithBouncyCastle(message, priKey, ecCurve, hashAlgorithm);
-
             var keyPair = new KeyPair(priKey, ecCurve);
             return Sign(message, keyPair, hashAlgorithm);
         }
