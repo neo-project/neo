@@ -84,7 +84,7 @@ namespace Neo.Cryptography
             if (s_isOSX && ecCurve == ECC.ECCurve.Secp256k1)
                 return SignWithBouncyCastle(message, priKey, ecCurve, hashAlgorithm);
 
-            var keyPair = new KeyPair(priKey);
+            var keyPair = new KeyPair(priKey, ecCurve);
             return Sign(message, keyPair, hashAlgorithm);
         }
 
