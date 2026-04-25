@@ -376,25 +376,63 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Destroys a contract.
+        /// Destroys a contract. Pre-Gorgon version of `destroy` that blocks the contract's account
+        /// *after* removing the contract state and contract storage items from the snapshot.
         /// </summary>
         /// <param name="engine">The engine used to write data.</param>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask Destroy(ApplicationEngine engine)
+        [ContractMethod(true, Hardfork.HF_Gorgon, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "destroy")]
+        private async ContractTask DestroyV0(ApplicationEngine engine)
+        {
+            await DestroyInternal(engine, false);
+        }
+
+        /// <summary>
+        /// Destroys a contract. Post-Gorgon version of `destroy` that blocks the contract's account
+        /// *prior to* removing the contract state and contract storage items from the snapshot.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "destroy")]
+        private async ContractTask DestroyV1(ApplicationEngine engine)
+        {
+            await DestroyInternal(engine, true);
+        }
+
+        /// <summary>
+        /// An internal representation of `destroy` method that destroys a contract.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="blockBeforeErase">Denotes whether the contract account blocking should happen before the contract state and storage items removal from the storage.</param>
+        private async ContractTask DestroyInternal(ApplicationEngine engine, bool blockBeforeErase)
         {
             UInt160 hash = engine.CallingScriptHash!;
             StorageKey ckey = CreateStorageKey(Prefix_Contract, hash);
             ContractState? contract = engine.SnapshotCache.TryGet(ckey)?.GetInteroperable<ContractState>(false);
             if (contract is null) return;
+
+            if (blockBeforeErase)
+            {
+                // Lock contract (and allow to receive an unclaimed GAS after votes revoke, if so,
+                // because the contract is not yet removed from the snapshot).
+                await Policy.BlockAccountInternal(engine, hash);
+                // Clean whitelist (emit event if exists with the old manifest information).
+                Policy.CleanWhitelist(engine, contract);
+            }
+
             engine.SnapshotCache.Delete(ckey);
             engine.SnapshotCache.Delete(CreateStorageKey(Prefix_ContractHash, contract.Id));
             foreach (var (key, _) in engine.SnapshotCache.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
                 engine.SnapshotCache.Delete(key);
-            // lock contract
-            await Policy.BlockAccountInternal(engine, hash);
-            // Clean whitelist (emit event if exists with the old manifest information)
-            Policy.CleanWhitelist(engine, contract);
-            // emit event
+
+            if (!blockBeforeErase)
+            {
+                // Lock contract (and skip any side calls like onNEP17Payment on votes revoke
+                // because the contract is already removed from the snapshot).
+                await Policy.BlockAccountInternal(engine, hash);
+                // Clean whitelist (emit event if exists with the old manifest information).
+                Policy.CleanWhitelist(engine, contract);
+            }
+
+            // Emit event.
             engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
         }
     }
