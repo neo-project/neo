@@ -13,6 +13,7 @@ using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
@@ -469,24 +470,34 @@ namespace Neo.SmartContract.Native
                         (method.CpuFee * engine.ExecFeePicoFactor) +
                         (method.StorageFee * engine.StoragePrice * ApplicationEngine.FeeFactor));
                 }
-                List<object?> parameters = new();
-                if (method.NeedApplicationEngine) parameters.Add(engine);
-                if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
-                for (int i = 0; i < method.Parameters.Length; i++)
-                    parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
-                object? returnValue = method.Handler.Invoke(this, parameters.ToArray());
-                if (returnValue is ContractTask task)
+                int parameterCount = method.Parameters.Length;
+                object?[] parameters = parameterCount == 0 ? [] : ArrayPool<object?>.Shared.Rent(parameterCount);
+                try
                 {
-                    await task;
-                    returnValue = task.GetResult();
+                    for (int i = 0; i < parameterCount; i++)
+                        parameters[i] = engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]);
+                    object? returnValue = method.Invoke(this, engine, parameters);
+                    if (returnValue is ContractTask task)
+                    {
+                        await task;
+                        returnValue = task.GetResult();
+                    }
+                    for (int i = 0; i < parameterCount; i++)
+                    {
+                        context.EvaluationStack.Pop();
+                    }
+                    if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
+                    {
+                        context.EvaluationStack.Push(engine.Convert(returnValue));
+                    }
                 }
-                for (int i = 0; i < method.Parameters.Length; i++)
+                finally
                 {
-                    context.EvaluationStack.Pop();
-                }
-                if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
-                {
-                    context.EvaluationStack.Push(engine.Convert(returnValue));
+                    if (parameterCount > 0)
+                    {
+                        Array.Clear(parameters, 0, parameterCount);
+                        ArrayPool<object?>.Shared.Return(parameters);
+                    }
                 }
             }
             catch (Exception ex)
