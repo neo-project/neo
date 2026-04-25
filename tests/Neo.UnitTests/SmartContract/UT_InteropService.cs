@@ -460,7 +460,7 @@ namespace Neo.UnitTests.SmartContract
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new(privateKey);
             var pubkey = keyPair.PublicKey;
-            var signature = Crypto.Sign(message, privateKey);
+            var signature = Crypto.Sign(message, keyPair);
             Assert.IsTrue(engine.CheckSig(pubkey.EncodePoint(false), signature));
 
             var wrongkey = pubkey.EncodePoint(false);
@@ -818,17 +818,17 @@ namespace Neo.UnitTests.SmartContract
             var privateKey = new byte[32];
             using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(privateKey);
-            var publicKeyR1 = new KeyPair(privateKey).PublicKey.ToArray();
-            var publicKeyK1 = (ECCurve.Secp256k1.G * privateKey).ToArray();
+            var keyR1 = new KeyPair(privateKey, ECCurve.Secp256r1);
+            var keyK1 = new KeyPair(privateKey, ECCurve.Secp256k1);
             var hexMessage = "Hello, world!"u8.ToArray();
-            var signatureR1 = Crypto.Sign(hexMessage, privateKey, ECCurve.Secp256r1);
-            var signatureK1 = Crypto.Sign(hexMessage, privateKey, ECCurve.Secp256k1);
+            var signatureR1 = Crypto.Sign(hexMessage, keyR1);
+            var signatureK1 = Crypto.Sign(hexMessage, keyK1);
 
-            var result = CryptoLib.VerifyWithECDsaV2(hexMessage, publicKeyR1, signatureR1, NamedCurveHash.secp256r1SHA256);
+            var result = CryptoLib.VerifyWithECDsaV2(hexMessage, keyR1.PublicKey.EncodePoint(true), signatureR1, NamedCurveHash.secp256r1SHA256);
             Assert.IsTrue(result);
-            result = CryptoLib.VerifyWithECDsaV2(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
+            result = CryptoLib.VerifyWithECDsaV2(hexMessage, keyK1.PublicKey.EncodePoint(true), signatureK1, NamedCurveHash.secp256k1SHA256);
             Assert.IsTrue(result);
-            Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsaV2(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256));
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsaV2(hexMessage, keyK1.PublicKey.EncodePoint(true), [], NamedCurveHash.secp256k1SHA256));
         }
 
         [TestMethod]

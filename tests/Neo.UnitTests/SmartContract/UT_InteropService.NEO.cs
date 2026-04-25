@@ -35,7 +35,7 @@ namespace Neo.UnitTests.SmartContract
             var privateKey = Enumerable.Repeat((byte)0x01, 32).ToArray();
             var keyPair = new KeyPair(privateKey);
             var pubkey = keyPair.PublicKey;
-            var signature = Crypto.Sign(message, privateKey);
+            var signature = Crypto.Sign(message, keyPair);
             Assert.IsTrue(engine.CheckSig(pubkey.EncodePoint(false), signature));
             Action action = () => engine.CheckSig(new byte[70], signature);
             Assert.ThrowsExactly<FormatException>(action);
@@ -51,12 +51,12 @@ namespace Neo.UnitTests.SmartContract
             var privkey1 = Enumerable.Repeat((byte)0x01, 32).ToArray();
             var key1 = new KeyPair(privkey1);
             var pubkey1 = key1.PublicKey;
-            var signature1 = Crypto.Sign(message, privkey1);
+            var signature1 = Crypto.Sign(message, key1);
 
             var privkey2 = Enumerable.Repeat((byte)0x01, 32).ToArray();
             var key2 = new KeyPair(privkey2);
             var pubkey2 = key2.PublicKey;
-            var signature2 = Crypto.Sign(message, privkey2);
+            var signature2 = Crypto.Sign(message, key2);
 
             var pubkeys = new[] { pubkey1.EncodePoint(false), pubkey2.EncodePoint(false) };
             var signatures = new[] { signature1, signature2 };
@@ -145,7 +145,7 @@ namespace Neo.UnitTests.SmartContract
 
             var pubkey = key.PublicKey;
             var state = TestUtils.GetContract();
-            var signature = Crypto.Sign(state.Hash.ToArray(), privkey);
+            var signature = Crypto.Sign(state.Hash.ToArray(), key);
             manifest.Groups = [new() { PubKey = pubkey, Signature = signature }];
 
             var storageItem = new StorageItem

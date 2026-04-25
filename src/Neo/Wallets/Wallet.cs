@@ -775,15 +775,15 @@ namespace Neo.Wallets
             if (account is null)
                 throw new SignException("No such account found");
 
-            var privateKey = account.GetKey()?.PrivateKey;
-            if (privateKey is null)
+            var key = account.GetKey();
+            if (key?.PrivateKey is null)
                 throw new SignException("No private key found for the given public key");
 
             if (account.Lock)
                 throw new SignException("Account is locked");
 
             var signData = block.GetSignData(network);
-            return Crypto.Sign(signData, privateKey);
+            return Crypto.Sign(signData, key);
         }
 
         /// <summary>
