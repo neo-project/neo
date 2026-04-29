@@ -83,7 +83,7 @@ namespace Neo.SmartContract
         internal readonly uint StoragePrice;
         private byte[] nonceData;
         private Action<Instruction>? PreExecutor;
-        private Action<Instruction>? PostExecutor;
+        private Action<Instruction, Neo.VM.OpCodePriceParams?>? PostExecutor;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -149,7 +149,7 @@ namespace Neo.SmartContract
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor * Fee.OpcodePriceMultiplier);
+        public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor * OpcodePriceMultiplier);
 
         /// <summary>
         /// Exec Fee Factor. In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
@@ -160,7 +160,7 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => (long)((_feeAmount - _feeConsumed) / (FeeFactor * Fee.OpcodePriceMultiplier));
+        public long GasLeft => (long)((_feeAmount - _feeConsumed) / (FeeFactor * OpcodePriceMultiplier));
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
@@ -222,7 +222,7 @@ namespace Neo.SmartContract
             originalSnapshotCache = snapshotCache;
             PersistingBlock = persistingBlock;
             ProtocolSettings = settings;
-            _feeAmount = gas * FeeFactor * Fee.OpcodePriceMultiplier; // FemtoGAS
+            _feeAmount = gas * FeeFactor * OpcodePriceMultiplier; // FemtoGAS
             Diagnostic = diagnostic;
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (snapshotCache is null || persistingBlock?.Index == 0)
@@ -259,18 +259,15 @@ namespace Neo.SmartContract
 
             if (IsHardforkEnabled(Hardfork.HF_Gorgon))
             {
-                PreExecutor = null;
-                PostExecutor = instruction =>
+                PostExecutor = (instruction, priceArgs) =>
                 {
-                    long price = Fee.OpcodeV1((long)(_execFeeFactor / FeeFactor), instruction.OpCode, PriceArgs);
-                    AddFee(price * FeeFactor);
-                    PriceArgs = null;
+                    long price = OpcodeV1((long)(_execFeeFactor), instruction.OpCode, priceArgs);
+                    AddFee(price);
                 };
             }
             else
             {
                 PreExecutor = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
-                PostExecutor = null;
             }
         }
 
@@ -293,7 +290,7 @@ namespace Neo.SmartContract
             return jumpTable;
         }
 
-        protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        protected static Neo.VM.OpCodePriceParams? OnCallT(ExecutionEngine engine, Instruction instruction)
         {
             if (engine is ApplicationEngine app)
             {
@@ -315,9 +312,10 @@ namespace Neo.SmartContract
             {
                 throw new InvalidOperationException();
             }
+            return null;
         }
 
-        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        protected static Neo.VM.OpCodePriceParams? OnSysCall(ExecutionEngine engine, Instruction instruction)
         {
             if (engine is ApplicationEngine app)
             {
@@ -331,11 +329,9 @@ namespace Neo.SmartContract
                 }
 
                 app.OnSysCall(interop);
+                return null;
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
 
         #endregion
@@ -354,7 +350,7 @@ namespace Neo.SmartContract
                 return;
             }
 
-            _feeConsumed = _feeConsumed + picoGas * Fee.OpcodePriceMultiplier;
+            _feeConsumed = _feeConsumed + picoGas * OpcodePriceMultiplier;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
@@ -527,7 +523,7 @@ namespace Neo.SmartContract
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>Pop 3, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
+        private static Neo.VM.OpCodePriceParams? VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
         {
             var count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -543,6 +539,7 @@ namespace Neo.SmartContract
             Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
+            return null;
         }
 
         public override void LoadContext(ExecutionContext context)
@@ -747,11 +744,11 @@ namespace Neo.SmartContract
             PreExecutor?.Invoke(instruction);
         }
 
-        protected override void PostExecuteInstruction(Instruction instruction)
+        protected override void PostExecuteInstruction(Instruction instruction, Neo.VM.OpCodePriceParams? priceArgs)
         {
-            base.PostExecuteInstruction(instruction);
+            base.PostExecuteInstruction(instruction, priceArgs);
             Diagnostic?.PostExecuteInstruction(instruction);
-            PostExecutor?.Invoke(instruction);
+            PostExecutor?.Invoke(instruction, priceArgs);
         }
 
         private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
