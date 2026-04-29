@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Actor;
-using Akka.Event;
 using Neo.Extensions;
 using System;
 using System.Text;
@@ -24,15 +22,6 @@ namespace Neo
     /// </summary>
     public static class Utility
     {
-        internal class Logger : ReceiveActor
-        {
-            public Logger()
-            {
-                Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
-                Receive<LogEvent>(e => Log("Akka", (LogLevel)e.LogLevel(), $"[{e.LogSource}] {e.Message}{Environment.NewLine}{e.Cause?.StackTrace ?? ""}"));
-            }
-        }
-
         public static LogLevel LogLevel { get; set; } = LogLevel.Info;
 
         public static event LogEventHandler? Logging;
@@ -48,6 +37,7 @@ namespace Neo
         /// <param name="source">The source of the log. Used to identify the producer of the log.</param>
         /// <param name="level">The level of the log.</param>
         /// <param name="message">The message of the log.</param>
+        [Obsolete("Use Logs.GetLogger(source) instead.")]
         public static void Log(string source, LogLevel level, object message)
         {
             if ((int)level < (int)LogLevel) return;

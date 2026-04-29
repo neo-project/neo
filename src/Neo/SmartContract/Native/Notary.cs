@@ -147,13 +147,17 @@ namespace Neo.SmartContract.Native
         {
             if (engine.CallingScriptHash != GAS.Hash) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash!.ToString()));
             if (data is not Array additionalParams || additionalParams.Count != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
+
             var to = from;
             if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
+
             var till = (uint)additionalParams[1].GetInteger();
             var tx = (Transaction)engine.ScriptContainer!;
             var allowedChangeTill = tx.Sender == to;
             var currentHeight = Ledger.CurrentIndex(engine.SnapshotCache);
-            if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
+            if (till < currentHeight + 2)
+                throw new ArgumentOutOfRangeException($"`till` shouldn't be less than the chain's height {currentHeight + 1} + 1");
+
             // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
             var deposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, to))?.GetInteroperable<Deposit>();
             if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
@@ -164,7 +168,10 @@ namespace Neo.SmartContract.Native
                 deposit = new Deposit() { Amount = 0, Till = 0 };
                 if (!allowedChangeTill) till = currentHeight + DefaultDepositDeltaTill;
             }
-            else if (!allowedChangeTill) till = deposit.Till;
+            else if (!allowedChangeTill)
+            {
+                till = deposit.Till;
+            }
 
             deposit.Amount += amount;
             deposit.Till = till;
@@ -263,10 +270,10 @@ namespace Neo.SmartContract.Native
         private void SetMaxNotValidBeforeDelta(ApplicationEngine engine, uint value)
         {
             var maxVUBIncrement = engine.SnapshotCache.GetMaxValidUntilBlockIncrement(engine.ProtocolSettings);
-            if (value > maxVUBIncrement / 2 || value < ProtocolSettings.Default.ValidatorsCount)
+            if (value > maxVUBIncrement / 2 || value < engine.ProtocolSettings.ValidatorsCount)
             {
                 throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}",
-                   maxVUBIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
+                   maxVUBIncrement / 2, engine.ProtocolSettings.ValidatorsCount));
             }
             AssertCommittee(engine);
 

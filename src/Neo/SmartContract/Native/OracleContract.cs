@@ -237,8 +237,9 @@ namespace Neo.SmartContract.Native
             if (callback.StartsWith('_'))
                 throw new ArgumentException("Callback cannot start with underscore.");
 
-            if (gasForResponse < 0_10000000)
-                throw new ArgumentException($"gasForResponse {gasForResponse} must be at least 0.1 datoshi.");
+            const long MinGasForResponse = 0_10000000;
+            if (gasForResponse < MinGasForResponse)
+                throw new ArgumentException($"gasForResponse {gasForResponse} must be at least {MinGasForResponse} Datoshi.");
 
             engine.AddFee(GetPrice(engine.SnapshotCache) * ApplicationEngine.FeeFactor);
 
@@ -251,9 +252,9 @@ namespace Neo.SmartContract.Native
             var id = (ulong)(BigInteger)itemId;
             itemId.Add(1);
 
-            //Put the request to storage
+            // Put the request to storage
             if (!ContractManagement.IsContract(engine.SnapshotCache, engine.CallingScriptHash!))
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Only contracts can make Oracle requests");
             var request = new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
