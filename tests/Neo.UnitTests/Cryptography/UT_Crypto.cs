@@ -412,5 +412,78 @@ namespace Neo.UnitTests.Cryptography
             Assert.IsNotNull(ex.InnerException);
             Assert.AreEqual(GetExpectedInnerExceptionTypeForInvalidSecp256r1PubKey(), ex.InnerException!.GetType().FullName);
         }
+
+        private static System.Security.Cryptography.ECDsa CreateSigningEcdsa(KeyPair key)
+        {
+            var curve = Crypto.ResolveECCurve(key.PublicKey.Curve);
+            var pubkey = key.PublicKey.EncodePoint(false);
+            return System.Security.Cryptography.ECDsa.Create(new System.Security.Cryptography.ECParameters
+            {
+                Curve = curve,
+                D = key.PrivateKey,
+                Q = new System.Security.Cryptography.ECPoint
+                {
+                    X = pubkey[1..33],
+                    Y = pubkey[33..]
+                }
+            });
+        }
+
+        [TestMethod]
+        public void TestSign_Secp256r1_SHA256()
+        {
+            var message = Encoding.UTF8.GetBytes("internal-paths-r1-sha256");
+            var differentMessage = Encoding.UTF8.GetBytes("internal-paths-r1-sha256-different");
+
+            var bcSignature = Crypto.SignWithBouncyCastle(message, Secp256r1Key.PrivateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
+
+            using var ecdsa = CreateSigningEcdsa(Secp256r1Key);
+            var nativeSignature = Crypto.SignWithECDsa(ecdsa, message, HashAlgorithm.SHA256);
+
+            Assert.HasCount(64, bcSignature);
+            Assert.HasCount(64, nativeSignature);
+
+            Assert.IsTrue(Crypto.VerifySignature(message, bcSignature, Secp256r1Key.PublicKey, HashAlgorithm.SHA256));
+            Assert.IsTrue(Crypto.VerifySignature(message, nativeSignature, Secp256r1Key.PublicKey, HashAlgorithm.SHA256));
+
+            Assert.IsFalse(Crypto.VerifySignature(differentMessage, bcSignature, Secp256r1Key.PublicKey, HashAlgorithm.SHA256));
+            Assert.IsFalse(Crypto.VerifySignature(differentMessage, nativeSignature, Secp256r1Key.PublicKey, HashAlgorithm.SHA256));
+
+            Assert.IsFalse(Crypto.VerifySignature(message, bcSignature, Secp256r1Key.PublicKey, HashAlgorithm.Keccak256));
+            Assert.IsFalse(Crypto.VerifySignature(message, nativeSignature, Secp256r1Key.PublicKey, HashAlgorithm.Keccak256));
+        }
+
+        [TestMethod]
+        public void TestSign_Secp256r1_Keccak256()
+        {
+            var message = Encoding.UTF8.GetBytes("internal-paths-r1-keccak256");
+            var differentMessage = Encoding.UTF8.GetBytes("internal-paths-r1-keccak256-different");
+
+            var bcSignature = Crypto.SignWithBouncyCastle(message, Secp256r1Key.PrivateKey, ECCurve.Secp256r1, HashAlgorithm.Keccak256);
+
+            using var ecdsa = CreateSigningEcdsa(Secp256r1Key);
+            var nativeSignature = Crypto.SignWithECDsa(ecdsa, message, HashAlgorithm.Keccak256);
+
+            Assert.HasCount(64, bcSignature);
+            Assert.HasCount(64, nativeSignature);
+
+            Assert.IsTrue(Crypto.VerifySignature(message, bcSignature, Secp256r1Key.PublicKey, HashAlgorithm.Keccak256));
+            Assert.IsTrue(Crypto.VerifySignature(message, nativeSignature, Secp256r1Key.PublicKey, HashAlgorithm.Keccak256));
+
+            Assert.IsFalse(Crypto.VerifySignature(differentMessage, bcSignature, Secp256r1Key.PublicKey, HashAlgorithm.Keccak256));
+            Assert.IsFalse(Crypto.VerifySignature(differentMessage, nativeSignature, Secp256r1Key.PublicKey, HashAlgorithm.Keccak256));
+
+            Assert.IsFalse(Crypto.VerifySignature(message, bcSignature, Secp256r1Key.PublicKey, HashAlgorithm.SHA256));
+            Assert.IsFalse(Crypto.VerifySignature(message, nativeSignature, Secp256r1Key.PublicKey, HashAlgorithm.SHA256));
+        }
+
+        [TestMethod]
+        public void TestSignWithECDsa_UnsupportedHashAlgorithm()
+        {
+            var message = Encoding.UTF8.GetBytes("internal-paths-r1-unsupported");
+            using var ecdsa = CreateSigningEcdsa(Secp256r1Key);
+
+            Assert.ThrowsExactly<NotSupportedException>(() => Crypto.SignWithECDsa(ecdsa, message, HashAlgorithm.SHA512));
+        }
     }
 }
