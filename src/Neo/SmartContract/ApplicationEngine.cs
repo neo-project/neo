@@ -19,6 +19,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -938,13 +939,25 @@ namespace Neo.SmartContract
             ValidateCallFlags(descriptor.RequiredCallFlags);
             AddFee(descriptor.FixedPrice * _execFeeFactor);
 
-            object?[] parameters = new object?[descriptor.Parameters.Count];
-            for (int i = 0; i < parameters.Length; i++)
-                parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
+            int parameterCount = descriptor.Parameters.Count;
+            object?[] parameters = parameterCount == 0 ? [] : ArrayPool<object?>.Shared.Rent(parameterCount);
+            try
+            {
+                for (int i = 0; i < parameterCount; i++)
+                    parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
 
-            object? returnValue = descriptor.Handler.Invoke(this, parameters);
-            if (descriptor.Handler.ReturnType != typeof(void))
-                Push(Convert(returnValue));
+                object? returnValue = descriptor.Invoke(this, parameters);
+                if (descriptor.Handler.ReturnType != typeof(void))
+                    Push(Convert(returnValue));
+            }
+            finally
+            {
+                if (parameterCount > 0)
+                {
+                    Array.Clear(parameters, 0, parameterCount);
+                    ArrayPool<object?>.Shared.Return(parameters);
+                }
+            }
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
