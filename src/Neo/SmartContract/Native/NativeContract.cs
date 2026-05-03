@@ -226,12 +226,8 @@ namespace Neo.SmartContract.Native
 
         internal static bool IsActive(IHardforkActivable u, IsHardforkEnabledDelegate hfChecker, uint blockHeight)
         {
-            return  // no hardfork is involved
-                    u.ActiveIn is null && u.DeprecatedIn is null ||
-                    // deprecated method hardfork is involved
-                    u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, blockHeight) == false ||
-                    // active method hardfork is involved
-                    (u.DeprecatedIn is null && u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, blockHeight));
+            // Method/event is active iff ActiveIn hardfork IS active AND DeprecatedIn hardfork IS NOT active.
+            return (u.ActiveIn is null || hfChecker(u.ActiveIn.Value, blockHeight)) && (u.DeprecatedIn is null || !hfChecker(u.DeprecatedIn.Value, blockHeight));
         }
 
         /// <summary>
