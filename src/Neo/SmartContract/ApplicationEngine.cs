@@ -260,9 +260,10 @@ namespace Neo.SmartContract
 
             if (IsHardforkEnabled(Hardfork.HF_Gorgon))
             {
-                PostExecutor = (instruction, priceArgs) =>
+                PostExecutor = (instruction, priceParams) =>
                 {
-                    long price = OpcodeV1((long)(_execFeeFactor), instruction.OpCode, priceArgs);
+                    var param = priceParams ?? new OpCodePriceParams();
+                    long price = OpcodeV1((long)(_execFeeFactor), instruction.OpCode, param);
                     AddFee(price);
                 };
             }
