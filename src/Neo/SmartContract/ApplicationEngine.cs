@@ -310,7 +310,7 @@ namespace Neo.SmartContract
             return table;
         }
 
-        private static OpCodePriceParams? Remove_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void Remove_Before543(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -328,10 +328,10 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
-            return null;
+            priceParams = null;
         }
 
-        private static OpCodePriceParams? SetItem_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void SetItem_Before543(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var value = engine.Pop();
             if (value is Struct s) value = s.Clone(engine.Limits, out var _);
@@ -368,10 +368,10 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
-            return null;
+            priceParams = null;
         }
 
-        private static OpCodePriceParams? PickItem_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -412,10 +412,10 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
-            return null;
+            priceParams = null;
         }
 
-        private static OpCodePriceParams? HasKey_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void HasKey_Before543(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -458,11 +458,11 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
-            return null;
+            priceParams = null;
         }
 
 
-        protected static OpCodePriceParams? OnCallT(ExecutionEngine engine, Instruction instruction)
+        protected static void OnCallT(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             if (engine is ApplicationEngine app)
             {
@@ -479,15 +479,15 @@ namespace Neo.SmartContract
                 for (int i = 0; i < token.ParametersCount; i++)
                     args[i] = app.Pop();
                 app.CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
+                priceParams = null;
             }
             else
             {
                 throw new InvalidOperationException();
             }
-            return null;
         }
 
-        protected static Neo.VM.OpCodePriceParams? OnSysCall(ExecutionEngine engine, Instruction instruction)
+        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             if (engine is ApplicationEngine app)
             {
@@ -501,7 +501,8 @@ namespace Neo.SmartContract
                 }
 
                 app.OnSysCall(interop);
-                return null;
+                priceParams = null;
+                return;
             }
             throw new InvalidOperationException();
         }
@@ -713,9 +714,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <param name="priceParams">The opcode parameters for dynamic pricing.</param>
         /// <remarks>Pop 3, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Neo.VM.OpCodePriceParams? VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
+        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -731,7 +733,7 @@ namespace Neo.SmartContract
             Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
-            return null;
+            priceParams = null;
         }
 
         /// <summary>
@@ -741,16 +743,17 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <param name="priceParams">The opcode parameters for dynamic pricing.</param>
         /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static OpCodePriceParams? VulnerableSHL(ExecutionEngine engine, Instruction instruction)
+        private static void VulnerableSHL(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var shift = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(shift);
-            if (shift == 0) return null;
+            priceParams = null;
+            if (shift == 0) return;
             var x = engine.Pop().GetInteger();
             engine.Push(x << shift);
-            return null;
         }
 
         /// <summary>
@@ -760,16 +763,17 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <param name="priceParams">The opcode parameters for dynamic pricing.</param>
         /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static OpCodePriceParams? VulnerableSHR(ExecutionEngine engine, Instruction instruction)
+        private static void VulnerableSHR(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var shift = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(shift);
-            if (shift == 0) return null;
+            priceParams = null;
+            if (shift == 0) return;
             var x = engine.Pop().GetInteger();
             engine.Push(x >> shift);
-            return null;
         }
 
         public override void LoadContext(ExecutionContext context)
