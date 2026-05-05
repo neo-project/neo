@@ -176,9 +176,13 @@ namespace Neo.UnitTests.SmartContract
             byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).ToArray();
 
             var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+            };
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
-                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>(), Witnesses = [] }, snapshot, settings: TestProtocolSettings.Default))
+                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>(), Witnesses = [] }, snapshot, settings: settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
@@ -206,9 +210,13 @@ namespace Neo.UnitTests.SmartContract
             byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).EmitPush(UInt160.Zero).ToArray();
 
             long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+            };
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
-                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>(), Witnesses = [] }, snapshot, settings: TestProtocolSettings.Default))
+                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>(), Witnesses = [] }, snapshot, settings: settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();

@@ -194,8 +194,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -272,8 +276,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                };
                 using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -380,8 +388,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -462,8 +474,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -549,8 +565,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -683,8 +703,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -1070,8 +1094,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());

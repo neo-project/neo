@@ -125,9 +125,13 @@ namespace Neo.UnitTests.GasTests
 
             foreach (var execute in fixture.Execute)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, persistingBlock.Index + 1)
+                };
                 using var engine = ApplicationEngine.Create(TriggerType.Application,
                   new Nep17NativeContractExtensions.ManualWitness([.. signatures]), snapshot,
-                  persistingBlock, settings: TestProtocolSettings.Default);
+                  persistingBlock, settings: settings);
 
                 engine.LoadScript(execute.Script);
                 Assert.AreEqual(execute.State, engine.Execute());
