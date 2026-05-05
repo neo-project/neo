@@ -83,8 +83,14 @@ namespace Neo.SmartContract
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
-        private Action<Instruction>? PreExecutor;
-        private Action<Instruction, Neo.VM.OpCodePriceParams?>? PostExecutor;
+        /// <summary>
+        /// Charges VM instruction price prior to opcode execution. Applied before Gorgon hardfork.
+        /// </summary>
+        private readonly Action<Instruction>? _preExecuteInstruction;
+        /// <summary>
+        /// Charges VM instruction price after opcode execution. Applied starting from Gorgon hardfork.
+        /// </summary>
+        private readonly Action<Instruction, OpCodePriceParams?>? _postExecuteInstruction;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -230,6 +236,10 @@ namespace Neo.SmartContract
             {
                 _execFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
                 StoragePrice = PolicyContract.DefaultStoragePrice;
+
+                // Default opcode price calculator if Gorgon is not enabled: use static prices and
+                // charge the fee prior to instruction execution.
+                _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
             }
             else
             {
@@ -249,6 +259,19 @@ namespace Neo.SmartContract
                 }
 
                 StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
+
+                // Initialize opcode price calculator: if Gorgon is not enabled, use static prices and
+                // charge the fee prior to instruction execution. If Gorgon is enabled, use dynamic prices
+                // and charge the fee after instruction execution.
+                if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Gorgon, persistingIndex))
+                    _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+                else
+                    _postExecuteInstruction = (instruction, priceParams) =>
+                    {
+                        var param = priceParams ?? new OpCodePriceParams();
+                        long price = OpcodeV1((long)_execFeeFactor, instruction.OpCode, param);
+                        AddFee(price);
+                    };
             }
 
             if (persistingBlock is not null)
@@ -257,20 +280,6 @@ namespace Neo.SmartContract
                 nonce ^= persistingBlock.Nonce;
             }
             diagnostic?.Initialized(this);
-
-            if (IsHardforkEnabled(Hardfork.HF_Gorgon))
-            {
-                PostExecutor = (instruction, priceParams) =>
-                {
-                    var param = priceParams ?? new OpCodePriceParams();
-                    long price = OpcodeV1((long)(_execFeeFactor), instruction.OpCode, param);
-                    AddFee(price);
-                };
-            }
-            else
-            {
-                PreExecutor = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
-            }
         }
 
         #region JumpTable
@@ -976,14 +985,14 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            PreExecutor?.Invoke(instruction);
+            _preExecuteInstruction?.Invoke(instruction);
         }
 
-        protected override void PostExecuteInstruction(Instruction instruction, Neo.VM.OpCodePriceParams? priceArgs)
+        protected override void PostExecuteInstruction(Instruction instruction, OpCodePriceParams? priceArgs)
         {
             base.PostExecuteInstruction(instruction, priceArgs);
             Diagnostic?.PostExecuteInstruction(instruction);
-            PostExecutor?.Invoke(instruction, priceArgs);
+            _postExecuteInstruction?.Invoke(instruction, priceArgs);
         }
 
         private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
