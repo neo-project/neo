@@ -59,15 +59,20 @@ namespace Neo.UnitTests.SmartContract
 
             var hash = UInt160.Parse("0x179ab5d297fd34ecd48643894242fc3527f42853");
             engine.SendNotification(hash, "Test", ns);
-            // This should have being 0, but we have optimized the vm to not clean the reference counter
-            // unless it is necessary, so the reference counter will be 1000.
-            // Same reason why its 1504 instead of 504.
-            Assert.AreEqual(1000, engine.ReferenceCounter.Count);
+            // This should be 0, because there's actiually no items on the stack yet
+            // (with the new RC implementation).
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
             // This will make a deepcopy for the notification, along with the 500 state items.
-            engine.GetNotifications(hash);
+            engine.Push(engine.GetNotifications(hash));
             // With the fix of issue 3300, the reference counter calculates not only
             // the notifaction items, but also the subitems of the notification state.
-            Assert.AreEqual(1504, engine.ReferenceCounter.Count);
+            // Pushing the result on stack as in OnSysCall will result in the reference counter change.
+            // The result RC value consists of: 1 outer Array of notifications; the array content is a
+            // single notification (1 Array) consisting of 3 items:
+            // 1 ByteString (contract ScriptHash)
+            // 1 ByteString (notification name)
+            // 1 Array (includes 500 primitive stackitems).
+            Assert.AreEqual(1 + 1 + 3 + 500, engine.ReferenceCounter.Count);
         }
     }
 }
