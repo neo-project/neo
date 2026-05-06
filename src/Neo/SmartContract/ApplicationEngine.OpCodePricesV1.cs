@@ -135,7 +135,7 @@ namespace Neo.SmartContract
                 _ => StaticCoefficients[(byte)opcode],
             };
 
-            return baseFee * Math.Max(1, price);
+            return baseFee * price;
         }
 
         private static long AppendGas(OpCodePriceParams args) => AppendW[0] * args.RefsDelta + AppendW[1] * args.NClonedItems + AppendW[2];
