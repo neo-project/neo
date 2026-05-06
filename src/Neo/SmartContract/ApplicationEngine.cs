@@ -83,6 +83,14 @@ namespace Neo.SmartContract
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
+        /// <summary>
+        /// Charges VM instruction price prior to opcode execution. Applied before Gorgon hardfork.
+        /// </summary>
+        private readonly Action<Instruction>? _preExecuteInstruction;
+        /// <summary>
+        /// Charges VM instruction price after opcode execution. Applied starting from Gorgon hardfork.
+        /// </summary>
+        private readonly Action<Instruction, OpCodePriceParams?>? _postExecuteInstruction;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -148,7 +156,7 @@ namespace Neo.SmartContract
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor);
+        public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor * OpcodePriceMultiplier);
 
         /// <summary>
         /// Exec Fee Factor. In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
@@ -159,7 +167,7 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => (long)((_feeAmount - _feeConsumed) / FeeFactor);
+        public long GasLeft => (long)((_feeAmount - _feeConsumed) / (FeeFactor * OpcodePriceMultiplier));
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
@@ -221,13 +229,17 @@ namespace Neo.SmartContract
             originalSnapshotCache = snapshotCache;
             PersistingBlock = persistingBlock;
             ProtocolSettings = settings;
-            _feeAmount = gas * FeeFactor; // PicoGAS
+            _feeAmount = gas * FeeFactor * OpcodePriceMultiplier; // FemtoGAS
             Diagnostic = diagnostic;
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
                 _execFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
                 StoragePrice = PolicyContract.DefaultStoragePrice;
+
+                // Default opcode price calculator if Gorgon is not enabled: use static prices and
+                // charge the fee prior to instruction execution.
+                _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
             }
             else
             {
@@ -247,6 +259,19 @@ namespace Neo.SmartContract
                 }
 
                 StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
+
+                // Initialize opcode price calculator: if Gorgon is not enabled, use static prices and
+                // charge the fee prior to instruction execution. If Gorgon is enabled, use dynamic prices
+                // and charge the fee after instruction execution.
+                if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Gorgon, persistingIndex))
+                    _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+                else
+                    _postExecuteInstruction = (instruction, priceParams) =>
+                    {
+                        var param = priceParams ?? new OpCodePriceParams();
+                        long price = OpcodeV1((long)_execFeeFactor, instruction.OpCode, param);
+                        AddFee(price);
+                    };
             }
 
             if (persistingBlock is not null)
@@ -295,7 +320,7 @@ namespace Neo.SmartContract
             return table;
         }
 
-        private static void Remove_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void Remove_Before543(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -313,12 +338,13 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
+            priceParams = null;
         }
 
-        private static void SetItem_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void SetItem_Before543(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var value = engine.Pop();
-            if (value is Struct s) value = s.Clone(engine.Limits);
+            if (value is Struct s) value = s.Clone(engine.Limits, out var _);
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
             switch (x)
@@ -352,9 +378,10 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
+            priceParams = null;
         }
 
-        private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -395,9 +422,10 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
+            priceParams = null;
         }
 
-        private static void HasKey_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void HasKey_Before543(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -440,10 +468,11 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
+            priceParams = null;
         }
 
 
-        protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        protected static void OnCallT(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             if (engine is ApplicationEngine app)
             {
@@ -460,6 +489,7 @@ namespace Neo.SmartContract
                 for (int i = 0; i < token.ParametersCount; i++)
                     args[i] = app.Pop();
                 app.CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
+                priceParams = null;
             }
             else
             {
@@ -467,7 +497,7 @@ namespace Neo.SmartContract
             }
         }
 
-        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             if (engine is ApplicationEngine app)
             {
@@ -481,11 +511,10 @@ namespace Neo.SmartContract
                 }
 
                 app.OnSysCall(interop);
+                priceParams = null;
+                return;
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
 
         #endregion
@@ -504,7 +533,7 @@ namespace Neo.SmartContract
                 return;
             }
 
-            _feeConsumed = _feeConsumed + picoGas;
+            _feeConsumed = _feeConsumed + picoGas * OpcodePriceMultiplier;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
@@ -695,9 +724,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <param name="priceParams">The opcode parameters for dynamic pricing.</param>
         /// <remarks>Pop 3, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
+        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -713,6 +743,7 @@ namespace Neo.SmartContract
             Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
+            priceParams = null;
         }
 
         /// <summary>
@@ -722,12 +753,14 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <param name="priceParams">The opcode parameters for dynamic pricing.</param>
         /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSHL(ExecutionEngine engine, Instruction instruction)
+        private static void VulnerableSHL(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var shift = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(shift);
+            priceParams = null;
             if (shift == 0) return;
             var x = engine.Pop().GetInteger();
             engine.Push(x << shift);
@@ -740,12 +773,14 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <param name="priceParams">The opcode parameters for dynamic pricing.</param>
         /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSHR(ExecutionEngine engine, Instruction instruction)
+        private static void VulnerableSHR(ExecutionEngine engine, Instruction instruction, out OpCodePriceParams? priceParams)
         {
             var shift = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(shift);
+            priceParams = null;
             if (shift == 0) return;
             var x = engine.Pop().GetInteger();
             engine.Push(x >> shift);
@@ -950,13 +985,14 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            _preExecuteInstruction?.Invoke(instruction);
         }
 
-        protected override void PostExecuteInstruction(Instruction instruction)
+        protected override void PostExecuteInstruction(Instruction instruction, OpCodePriceParams? priceArgs)
         {
-            base.PostExecuteInstruction(instruction);
+            base.PostExecuteInstruction(instruction, priceArgs);
             Diagnostic?.PostExecuteInstruction(instruction);
+            _postExecuteInstruction?.Invoke(instruction, priceArgs);
         }
 
         private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
