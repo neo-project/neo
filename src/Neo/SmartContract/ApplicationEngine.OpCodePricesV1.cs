@@ -30,7 +30,7 @@ namespace Neo.SmartContract
         private static readonly long[] DropW = { 99, 1486 };
         private static readonly long[] DupW = { 7, 3142 };
         private static readonly long[] HasKeyW = { 99, 2575 };
-        private static readonly long[] InitSlotW = { 155, 2156 };
+        private static readonly long[] InitSlotW = { 67, 160, 1702 };
         private static readonly long[] IsNullW = { 97, 1236 };
         private static readonly long[] IsTypeW = { 97, 1154 };
         private static readonly long[] KeysW = { 1419, 2606 };
@@ -81,6 +81,7 @@ namespace Neo.SmartContract
                 OpCode.DUP => DupGas(param),
                 OpCode.HASKEY => HasKeyGas(param),
                 OpCode.INITSLOT => InitSlotGas(param),
+                OpCode.INITSSLOT => InitSlotGas(param),
                 OpCode.ISNULL => IsNullGas(param),
                 OpCode.ISTYPE => IsTypeGas(param),
                 OpCode.KEYS => KeysGas(param),
@@ -152,7 +153,7 @@ namespace Neo.SmartContract
         private static long DropGas(OpCodePriceParams args) => DropW[0] * args.RefsDelta + DropW[1];
         private static long DupGas(OpCodePriceParams args) => DupW[0] * args.Length + DupW[1];
         private static long HasKeyGas(OpCodePriceParams args) => HasKeyW[0] * args.RefsDelta + HasKeyW[1];
-        private static long InitSlotGas(OpCodePriceParams args) => InitSlotW[0] * args.Length + InitSlotW[1];
+        private static long InitSlotGas(OpCodePriceParams args) => InitSlotW[0] * args.RefsDelta + InitSlotW[1] * args.Length + InitSlotW[2];
         private static long IsNullGas(OpCodePriceParams args) => IsNullW[0] * args.Length + IsNullW[1];
         private static long IsTypeGas(OpCodePriceParams args) => IsTypeW[0] * args.Length + IsTypeW[1];
         private static long KeysGas(OpCodePriceParams args) => KeysW[0] * args.Length + KeysW[1];
