@@ -21,6 +21,7 @@ namespace Neo.SmartContract
 
         // Dynamic fee weights
         private static readonly long[] AppendW = { 97, 192, 2715 };
+        private static readonly long[] AssertW = { 99, 9, 1847 };
         private static readonly long[] CatW = { 8, 2706 };
         private static readonly long[] ClearW = { 93, -15, 1515 };
         private static readonly long[] ClearItemsW = { 103, 1455 };
@@ -51,6 +52,7 @@ namespace Neo.SmartContract
         private static readonly long[] SizeW = { 100, 2693 };
         private static readonly long[] StW = { 98, 1599 };
         private static readonly long[] SubstrW = { 7, 2908 };
+        private static readonly long[] ThrowW = { 84, 1742 };
         private static readonly long[] UnpackW = { 254, 2604 };
         private static readonly long[] ValuesW = { 307, 369, 9868 };
         private static readonly long[] XDropW = { 98, 6, 1791 };
@@ -69,6 +71,8 @@ namespace Neo.SmartContract
             long price = opcode switch
             {
                 OpCode.APPEND => AppendGas(param),
+                OpCode.ASSERT => AssertGas(param),
+                OpCode.ASSERTMSG => AssertGas(param),
                 OpCode.CAT => CatGas(param),
                 OpCode.CLEAR => ClearGas(param),
                 OpCode.CLEARITEMS => ClearItemsGas(param),
@@ -129,6 +133,7 @@ namespace Neo.SmartContract
                 OpCode.STARG6 => StGas(param),
                 OpCode.STARG => StGas(param),
                 OpCode.SUBSTR => SubstrGas(param),
+                OpCode.THROW => ThrowGas(param),
                 OpCode.UNPACK => UnpackGas(param),
                 OpCode.VALUES => ValuesGas(param),
                 OpCode.XDROP => XDropGas(param),
@@ -139,6 +144,7 @@ namespace Neo.SmartContract
         }
 
         private static long AppendGas(OpCodePriceParams args) => AppendW[0] * args.RefsDelta + AppendW[1] * args.NClonedItems + AppendW[2];
+        private static long AssertGas(OpCodePriceParams args) => AssertW[0] * args.RefsDelta + AssertW[1] * args.Length + AssertW[2];
         private static long CatGas(OpCodePriceParams args) => CatW[0] * args.Length + CatW[1];
         private static long ClearGas(OpCodePriceParams args) => ClearW[0] * args.RefsDelta + ClearW[1] * args.Length + ClearW[2];
         private static long ClearItemsGas(OpCodePriceParams args) => ClearItemsW[0] * args.RefsDelta + ClearItemsW[1];
@@ -165,6 +171,7 @@ namespace Neo.SmartContract
         private static long SizeGas(OpCodePriceParams args) => SizeW[0] * args.RefsDelta + SizeW[1];
         private static long StGas(OpCodePriceParams args) => StW[0] * args.RefsDelta + StW[1];
         private static long SubstrGas(OpCodePriceParams args) => SubstrW[0] * args.Length + SubstrW[1];
+        private static long ThrowGas(OpCodePriceParams args) => ThrowW[0] * args.RefsDelta + ThrowW[1];
         private static long UnpackGas(OpCodePriceParams args) => UnpackW[0] * args.Length + UnpackW[1];
         private static long ValuesGas(OpCodePriceParams args) => ValuesW[0] * args.Length + ValuesW[1] * args.NClonedItems + ValuesW[2];
         private static long XDropGas(OpCodePriceParams args) => XDropW[0] * args.RefsDelta + XDropW[1] * args.Length + XDropW[2];
