@@ -326,7 +326,7 @@ namespace Neo.Network.P2P.Payloads
             if (ValidUntilBlock <= height)
                 return VerifyResult.Expired;
             if (ValidUntilBlock > height + snapshot.GetMaxValidUntilBlockIncrement(settings))
-                return VerifyResult.ValidUntilBlockTooFarInFuture;
+                return VerifyResult.NotYetValid;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             foreach (UInt160 hash in hashes)
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))

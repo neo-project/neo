@@ -74,9 +74,9 @@ namespace Neo.Ledger
         Expired,
 
         /// <summary>
-        /// Indicates that the <see cref="Transaction"/> has a ValidUntilBlock that is too far in the future.
+        /// Indicates that the <see cref="Transaction"/> has a NotYetValid that is too far in the future.
         /// </summary>
-        ValidUntilBlockTooFarInFuture,
+        NotYetValid,
 
         /// <summary>
         /// Indicates that the <see cref="Transaction"/> failed to verify due to insufficient fees.
