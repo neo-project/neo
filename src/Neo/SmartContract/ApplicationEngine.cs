@@ -270,7 +270,7 @@ namespace Neo.SmartContract
                     {
                         var param = priceParams ?? new OpCodePriceParams();
                         long price = OpcodeV1((long)_execFeeFactor, instruction.OpCode, param);
-                        AddFee(price);
+                        AddFemtoGas(price);
                     };
             }
 
@@ -525,6 +525,15 @@ namespace Neo.SmartContract
         /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
         protected internal void AddFee(BigInteger picoGas)
         {
+            AddFemtoGas(picoGas * OpcodePriceMultiplier);
+        }
+
+        /// <summary>
+        /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
+        /// </summary>
+        /// <param name="femtoGas">The amount of GAS, in the unit of femtoGAS, 1 femtoGAS = 1e-15 GAS, to be added.</param>
+        protected internal void AddFemtoGas(BigInteger femtoGas)
+        {
             // Check whitelist
 
             if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
@@ -533,7 +542,7 @@ namespace Neo.SmartContract
                 return;
             }
 
-            _feeConsumed = _feeConsumed + picoGas * OpcodePriceMultiplier;
+            _feeConsumed = _feeConsumed + femtoGas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
