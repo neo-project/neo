@@ -135,6 +135,7 @@ namespace Neo.SmartContract
                 OpCode.STARG => StGas(param),
                 OpCode.SUBSTR => SubstrGas(param),
                 OpCode.THROW => ThrowGas(param),
+                OpCode.TUCK => DupGas(param),
                 OpCode.UNPACK => UnpackGas(param),
                 OpCode.VALUES => ValuesGas(param),
                 OpCode.XDROP => XDropGas(param),
