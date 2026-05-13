@@ -66,7 +66,7 @@ namespace Neo.SmartContract
         /// <param name="opcode">The opcode.</param>
         /// <param name="param">The price parameters.</param>
         /// <returns>The price in picoGAS.</returns>
-        public static long OpcodeV1(long baseFee, OpCode opcode, OpCodePriceParams param)
+        public static long OpcodeV1(long baseFee, OpCode opcode, RunStats param)
         {
             long price = opcode switch
             {
@@ -145,37 +145,37 @@ namespace Neo.SmartContract
             return baseFee * price;
         }
 
-        private static long AppendGas(OpCodePriceParams args) => AppendW[0] * args.RefsDelta + AppendW[1] * args.NClonedItems + AppendW[2];
-        private static long AssertGas(OpCodePriceParams args) => AssertW[0] * args.RefsDelta + AssertW[1] * args.Length + AssertW[2];
-        private static long CatGas(OpCodePriceParams args) => CatW[0] * args.Length + CatW[1];
-        private static long ClearGas(OpCodePriceParams args) => ClearW[0] * args.RefsDelta + ClearW[1] * args.Length + ClearW[2];
-        private static long ClearItemsGas(OpCodePriceParams args) => ClearItemsW[0] * args.RefsDelta + ClearItemsW[1];
-        private static long ConvertGas(OpCodePriceParams args) => args.Type == StackItemType.Array || args.Type == StackItemType.Struct ? ConvertArrOrStructW[0] * args.Length + ConvertArrOrStructW[1] : ConvertByteArrOrBufW[0] * args.Length + ConvertByteArrOrBufW[1];
-        private static long DropGas(OpCodePriceParams args) => DropW[0] * args.RefsDelta + DropW[1];
-        private static long DupGas(OpCodePriceParams args) => DupW[0] * args.Length + DupW[1];
-        private static long HasKeyGas(OpCodePriceParams args) => HasKeyW[0] * args.RefsDelta + HasKeyW[1];
-        private static long InitSlotGas(OpCodePriceParams args) => InitSlotW[0] * args.RefsDelta + InitSlotW[1] * args.Length + InitSlotW[2];
-        private static long IsNullGas(OpCodePriceParams args) => IsNullW[0] * args.Length + IsNullW[1];
-        private static long IsTypeGas(OpCodePriceParams args) => IsTypeW[0] * args.Length + IsTypeW[1];
-        private static long KeysGas(OpCodePriceParams args) => KeysW[0] * args.Length + KeysW[1];
-        private static long MemcpyGas(OpCodePriceParams args) => MemcpyW[0] * args.Length + MemcpyW[1];
-        private static long NewArrayGas(OpCodePriceParams args) => (args.Type == StackItemType.ByteString || args.Type == StackItemType.Integer) ? NewArrayByteOrIntW[0] * args.Length + NewArrayByteOrIntW[1] : NewArrayAnyW[0] * args.Length + NewArrayAnyW[1];
-        private static long NewBufferGas(OpCodePriceParams args) => NewBufferW[0] * args.Length + NewBufferW[1];
-        private static long PackGas(OpCodePriceParams args) => PackW[0] * args.Length + PackW[1];
-        private static long PackMapGas(OpCodePriceParams args) => PackMapW[0] * args.RefsDelta + PackMapW[1] * args.Length + PackMapW[2];
-        private static long PickItemGas(OpCodePriceParams args) => PickItemW[0] * args.RefsDelta + PickItemW[1] * args.Length + PickItemW[2];
-        private static long PopItemGas(OpCodePriceParams args) => PopItemW[0] * args.RefsDelta + PopItemW[1];
-        private static long RemoveGas(OpCodePriceParams args) => args.Type == StackItemType.Map ? RemoveMapW[0] * args.RefsDelta + RemoveMapW[1] * args.Length + RemoveMapW[2] : RemoveArrOrStructW[0] * args.RefsDelta + RemoveArrOrStructW[1] * args.Length + RemoveArrOrStructW[2];
-        private static long ReverseItemsGas(OpCodePriceParams args) => args.Type == StackItemType.Buffer ? ReverseItemsBufW[0] * args.Length + ReverseItemsBufW[1] : ReverseItemsArrW[0] * args.RefsDelta + ReverseItemsArrW[1] * args.Length + ReverseItemsArrW[2];
-        private static long ReverseGas(OpCodePriceParams args) => ReverseW[0] * args.Length + ReverseW[1];
-        private static long RollGas(OpCodePriceParams args) => RollW[0] * args.Length + RollW[1];
-        private static long SetItemGas(OpCodePriceParams args) => SetitemW[0] * args.RefsDelta + SetitemW[1] * args.NClonedItems + SetitemW[2];
-        private static long SizeGas(OpCodePriceParams args) => SizeW[0] * args.RefsDelta + SizeW[1];
-        private static long StGas(OpCodePriceParams args) => StW[0] * args.RefsDelta + StW[1];
-        private static long SubstrGas(OpCodePriceParams args) => SubstrW[0] * args.Length + SubstrW[1];
-        private static long ThrowGas(OpCodePriceParams args) => ThrowW[0] * args.RefsDelta + ThrowW[1];
-        private static long UnpackGas(OpCodePriceParams args) => UnpackW[0] * args.Length + UnpackW[1];
-        private static long ValuesGas(OpCodePriceParams args) => ValuesW[0] * args.Length + ValuesW[1] * args.NClonedItems + ValuesW[2];
-        private static long XDropGas(OpCodePriceParams args) => XDropW[0] * args.RefsDelta + XDropW[1] * args.Length + XDropW[2];
+        private static long AppendGas(RunStats args) => AppendW[0] * args.RefsDelta + AppendW[1] * args.NClonedItems + AppendW[2];
+        private static long AssertGas(RunStats args) => AssertW[0] * args.RefsDelta + AssertW[1] * args.Length + AssertW[2];
+        private static long CatGas(RunStats args) => CatW[0] * args.Length + CatW[1];
+        private static long ClearGas(RunStats args) => ClearW[0] * args.RefsDelta + ClearW[1] * args.Length + ClearW[2];
+        private static long ClearItemsGas(RunStats args) => ClearItemsW[0] * args.RefsDelta + ClearItemsW[1];
+        private static long ConvertGas(RunStats args) => args.Type == StackItemType.Array || args.Type == StackItemType.Struct ? ConvertArrOrStructW[0] * args.Length + ConvertArrOrStructW[1] : ConvertByteArrOrBufW[0] * args.Length + ConvertByteArrOrBufW[1];
+        private static long DropGas(RunStats args) => DropW[0] * args.RefsDelta + DropW[1];
+        private static long DupGas(RunStats args) => DupW[0] * args.Length + DupW[1];
+        private static long HasKeyGas(RunStats args) => HasKeyW[0] * args.RefsDelta + HasKeyW[1];
+        private static long InitSlotGas(RunStats args) => InitSlotW[0] * args.RefsDelta + InitSlotW[1] * args.Length + InitSlotW[2];
+        private static long IsNullGas(RunStats args) => IsNullW[0] * args.Length + IsNullW[1];
+        private static long IsTypeGas(RunStats args) => IsTypeW[0] * args.Length + IsTypeW[1];
+        private static long KeysGas(RunStats args) => KeysW[0] * args.Length + KeysW[1];
+        private static long MemcpyGas(RunStats args) => MemcpyW[0] * args.Length + MemcpyW[1];
+        private static long NewArrayGas(RunStats args) => (args.Type == StackItemType.ByteString || args.Type == StackItemType.Integer) ? NewArrayByteOrIntW[0] * args.Length + NewArrayByteOrIntW[1] : NewArrayAnyW[0] * args.Length + NewArrayAnyW[1];
+        private static long NewBufferGas(RunStats args) => NewBufferW[0] * args.Length + NewBufferW[1];
+        private static long PackGas(RunStats args) => PackW[0] * args.Length + PackW[1];
+        private static long PackMapGas(RunStats args) => PackMapW[0] * args.RefsDelta + PackMapW[1] * args.Length + PackMapW[2];
+        private static long PickItemGas(RunStats args) => PickItemW[0] * args.RefsDelta + PickItemW[1] * args.Length + PickItemW[2];
+        private static long PopItemGas(RunStats args) => PopItemW[0] * args.RefsDelta + PopItemW[1];
+        private static long RemoveGas(RunStats args) => args.Type == StackItemType.Map ? RemoveMapW[0] * args.RefsDelta + RemoveMapW[1] * args.Length + RemoveMapW[2] : RemoveArrOrStructW[0] * args.RefsDelta + RemoveArrOrStructW[1] * args.Length + RemoveArrOrStructW[2];
+        private static long ReverseItemsGas(RunStats args) => args.Type == StackItemType.Buffer ? ReverseItemsBufW[0] * args.Length + ReverseItemsBufW[1] : ReverseItemsArrW[0] * args.RefsDelta + ReverseItemsArrW[1] * args.Length + ReverseItemsArrW[2];
+        private static long ReverseGas(RunStats args) => ReverseW[0] * args.Length + ReverseW[1];
+        private static long RollGas(RunStats args) => RollW[0] * args.Length + RollW[1];
+        private static long SetItemGas(RunStats args) => SetitemW[0] * args.RefsDelta + SetitemW[1] * args.NClonedItems + SetitemW[2];
+        private static long SizeGas(RunStats args) => SizeW[0] * args.RefsDelta + SizeW[1];
+        private static long StGas(RunStats args) => StW[0] * args.RefsDelta + StW[1];
+        private static long SubstrGas(RunStats args) => SubstrW[0] * args.Length + SubstrW[1];
+        private static long ThrowGas(RunStats args) => ThrowW[0] * args.RefsDelta + ThrowW[1];
+        private static long UnpackGas(RunStats args) => UnpackW[0] * args.Length + UnpackW[1];
+        private static long ValuesGas(RunStats args) => ValuesW[0] * args.Length + ValuesW[1] * args.NClonedItems + ValuesW[2];
+        private static long XDropGas(RunStats args) => XDropW[0] * args.RefsDelta + XDropW[1] * args.Length + XDropW[2];
     }
 }
