@@ -125,39 +125,26 @@ namespace Neo.Cryptography
         public static byte[] SignV0(byte[] message, byte[] priKey, ECC.ECCurve? ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             ecCurve ??= ECC.ECCurve.Secp256r1;
+
             if (hashAlgorithm == HashAlgorithm.Keccak256 || (s_isOSX && ecCurve == ECC.ECCurve.Secp256k1))
-            {
-                var signer = new ECDsaSigner();
-                var privateKey = new BigInteger(1, priKey);
-                var priKeyParameters = new ECPrivateKeyParameters(privateKey, ecCurve.BouncyCastleDomainParams);
-                signer.Init(true, priKeyParameters);
-                var messageHash = GetMessageHash(message, hashAlgorithm);
-                var signature = signer.GenerateSignature(messageHash);
+                return SignWithBouncyCastle(message, priKey, ecCurve, hashAlgorithm);
 
-                var signatureBytes = new byte[64];
-                var rBytes = signature[0].ToByteArrayUnsigned();
-                var sBytes = signature[1].ToByteArrayUnsigned();
-
-                // Copy r and s into their respective parts of the signatureBytes array, aligning them to the right.
-                Buffer.BlockCopy(rBytes, 0, signatureBytes, 32 - rBytes.Length, rBytes.Length);
-                Buffer.BlockCopy(sBytes, 0, signatureBytes, 64 - sBytes.Length, sBytes.Length);
-                return signatureBytes;
-            }
-
-            var curve =
-                ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
-                ecCurve == ECC.ECCurve.Secp256k1 ? s_secP256k1 :
-                throw new NotSupportedException($"The elliptic curve {ecCurve} is not supported. Only Secp256r1 and Secp256k1 curves are supported for ECDSA signing operations.");
+            var keyPair = new KeyPair(priKey, ecCurve);
+            var pubKeyEncoded = keyPair.PublicKey.EncodePoint(false);
+            var curve = ResolveECCurve(ecCurve);
 
             using var ecdsa = ECDsa.Create(new ECParameters
             {
                 Curve = curve,
                 D = priKey,
+                Q = new System.Security.Cryptography.ECPoint
+                {
+                    X = pubKeyEncoded[1..33],
+                    Y = pubKeyEncoded[33..]
+                }
             });
-            var hashAlg =
-                hashAlgorithm == HashAlgorithm.SHA256 ? HashAlgorithmName.SHA256 :
-                throw new NotSupportedException($"The hash algorithm {nameof(hashAlgorithm)} is not supported.");
-            return ecdsa.SignData(message, hashAlg);
+
+            return SignWithECDsa(ecdsa, message, hashAlgorithm);
         }
 
         /// <summary>
