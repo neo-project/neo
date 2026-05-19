@@ -122,9 +122,7 @@ public sealed class RoutingTable
         ArgumentOutOfRangeException.ThrowIfNegative(count);
         if (count == 0) return Array.Empty<NodeContact>();
 
-        var candidates = new List<NodeContact>();
-        foreach (var contact in EnumerateAllContacts())
-            candidates.Add(contact);
+        var candidates = EnumerateAllContacts().ToList();
 
         // Sort by XOR distance to target.
         candidates.Sort((a, b) => CompareDistance(a.NodeId, b.NodeId, targetId));
