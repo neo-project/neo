@@ -59,6 +59,25 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
+        public void FindClosest_ConsidersAllBucketsWhenLowerBucketIsCloser()
+        {
+            var table = new RoutingTable(UInt256.Zero, bucketSize: 1, replacementSize: 0, badThreshold: 1);
+            UInt256 target = WithBit(128);
+            UInt256 closest = WithBit(0);
+
+            for (int bit = 127; bit >= 124; bit--)
+                table.Update(WithBit(bit), Endpoint(10000 + bit, EndpointKind.Observed));
+            for (int bit = 129; bit <= 132; bit++)
+                table.Update(WithBit(bit), Endpoint(10000 + bit, EndpointKind.Observed));
+            table.Update(closest, Endpoint(10000, EndpointKind.Observed));
+
+            var result = table.FindClosest(target, 1);
+
+            Assert.HasCount(1, result);
+            Assert.AreEqual(closest, result[0].NodeId);
+        }
+
+        [TestMethod]
         public void MarkFailure_PromotesMostRecentReplacement()
         {
             var table = new RoutingTable(UInt256.Zero, bucketSize: 1, replacementSize: 2, badThreshold: 2);

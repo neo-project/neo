@@ -125,12 +125,9 @@ namespace Neo.Network.P2P
             ArgumentOutOfRangeException.ThrowIfNegative(count);
             if (count == 0) return Array.Empty<NodeContact>();
 
-            // Start from the bucket corresponding to target distance, then expand outward.
-            int start = GetBucketIndex(targetId);
-            if (start < 0) start = 0;
-
-            var candidates = new List<NodeContact>(Math.Min(count * 3, BucketSize * 8));
-            CollectFromBuckets(start, candidates, hardLimit: Math.Max(count * 8, BucketSize * 8));
+            var candidates = new List<NodeContact>();
+            foreach (var contact in EnumerateAllContacts())
+                candidates.Add(contact);
 
             // Sort by XOR distance to target.
             candidates.Sort((a, b) => CompareDistance(a.NodeId, b.NodeId, targetId));
@@ -177,34 +174,6 @@ namespace Neo.Network.P2P
                 }
             }
             return list;
-        }
-
-        void CollectFromBuckets(int start, List<NodeContact> output, int hardLimit)
-        {
-            void AddRange(int bucketIndex)
-            {
-                lock (_buckets[bucketIndex])
-                    foreach (var c in _buckets[bucketIndex].Contacts)
-                    {
-                        output.Add(c);
-                        if (output.Count >= hardLimit) return;
-                    }
-            }
-
-            AddRange(start);
-            if (output.Count >= hardLimit) return;
-
-            for (int step = 1; step < IdBits; step++)
-            {
-                int left = start - step;
-                int right = start + step;
-
-                if (left >= 0) AddRange(left);
-                if (output.Count >= hardLimit) break;
-                if (right < IdBits) AddRange(right);
-                if (output.Count >= hardLimit) break;
-                if (left < 0 && right >= IdBits) break;
-            }
         }
 
         IEnumerable<NodeContact> EnumerateAllContacts()
