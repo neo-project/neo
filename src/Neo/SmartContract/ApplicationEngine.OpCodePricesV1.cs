@@ -28,7 +28,6 @@ namespace Neo.SmartContract
         private static readonly long[] ConvertArrOrStructW = { 318, 3435 };
         private static readonly long[] ConvertByteArrOrBufW = { 7, 3417 };
         private static readonly long[] DropW = { 99, 1486 };
-        private static readonly long[] DupW = { 7, 3142 };
         private static readonly long[] HasKeyW = { 99, 2575 };
         private static readonly long[] InitSlotW = { 67, 160, 1702 };
         private static readonly long[] IsNullW = { 97, 1236 };
@@ -78,7 +77,6 @@ namespace Neo.SmartContract
                 OpCode.CLEARITEMS => ClearItemsGas(param),
                 OpCode.CONVERT => ConvertGas(param),
                 OpCode.DROP => DropGas(param),
-                OpCode.DUP => DupGas(param),
                 OpCode.HASKEY => HasKeyGas(param),
                 OpCode.INITSLOT => InitSlotGas(param),
                 OpCode.INITSSLOT => InitSlotGas(param),
@@ -92,11 +90,9 @@ namespace Neo.SmartContract
                 OpCode.NEWBUFFER => NewBufferGas(param),
                 OpCode.NEWSTRUCT => NewArrayGas(param),
                 OpCode.NIP => DropGas(param),
-                OpCode.OVER => DupGas(param),
                 OpCode.PACK => PackGas(param),
                 OpCode.PACKMAP => PackMapGas(param),
                 OpCode.PACKSTRUCT => PackGas(param),
-                OpCode.PICK => DupGas(param),
                 OpCode.PICKITEM => PickItemGas(param),
                 OpCode.POPITEM => PopItemGas(param),
                 OpCode.REMOVE => RemoveGas(param),
@@ -135,7 +131,6 @@ namespace Neo.SmartContract
                 OpCode.STARG => StGas(param),
                 OpCode.SUBSTR => SubstrGas(param),
                 OpCode.THROW => ThrowGas(param),
-                OpCode.TUCK => DupGas(param),
                 OpCode.UNPACK => UnpackGas(param),
                 OpCode.VALUES => ValuesGas(param),
                 OpCode.XDROP => XDropGas(param),
@@ -152,7 +147,6 @@ namespace Neo.SmartContract
         private static long ClearItemsGas(RunStats args) => ClearItemsW[0] * args.RefsDelta + ClearItemsW[1];
         private static long ConvertGas(RunStats args) => args.Type == StackItemType.Array || args.Type == StackItemType.Struct ? ConvertArrOrStructW[0] * args.Length + ConvertArrOrStructW[1] : ConvertByteArrOrBufW[0] * args.Length + ConvertByteArrOrBufW[1];
         private static long DropGas(RunStats args) => DropW[0] * args.RefsDelta + DropW[1];
-        private static long DupGas(RunStats args) => DupW[0] * args.Length + DupW[1];
         private static long HasKeyGas(RunStats args) => HasKeyW[0] * args.RefsDelta + HasKeyW[1];
         private static long InitSlotGas(RunStats args) => InitSlotW[0] * args.RefsDelta + InitSlotW[1] * args.Length + InitSlotW[2];
         private static long IsNullGas(RunStats args) => IsNullW[0] * args.Length + IsNullW[1];

@@ -303,6 +303,10 @@ namespace Neo.SmartContract
             StaticCoefficients[(byte)OpCode.RET] = 1085;
             StaticCoefficients[(byte)OpCode.SYSCALL] = 0;
             StaticCoefficients[(byte)OpCode.DEPTH] = 2053;
+            StaticCoefficients[(byte)OpCode.DUP] = 1166;
+            StaticCoefficients[(byte)OpCode.OVER] = 1183;
+            StaticCoefficients[(byte)OpCode.PICK] = 1418;
+            StaticCoefficients[(byte)OpCode.TUCK] = 1379;
             StaticCoefficients[(byte)OpCode.SWAP] = 1041;
             StaticCoefficients[(byte)OpCode.LDSFLD0] = 1103;
             StaticCoefficients[(byte)OpCode.LDSFLD1] = 1103;
