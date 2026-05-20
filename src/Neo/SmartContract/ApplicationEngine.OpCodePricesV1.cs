@@ -25,7 +25,8 @@ namespace Neo.SmartContract
         private static readonly long[] CatW = { 8, 2706 };
         private static readonly long[] ClearW = { 93, -15, 1515 };
         private static readonly long[] ClearItemsW = { 103, 1455 };
-        private static readonly long[] ConvertArrOrStructW = { 318, 3435 };
+        private static readonly long[] ConvertAnyW = { 78, 1610 };
+        private static readonly long[] ConvertArrOrStructW = { 77, 134, 3218 };
         private static readonly long[] ConvertByteArrOrBufW = { 7, 3417 };
         private static readonly long[] DropW = { 99, 1486 };
         private static readonly long[] HasKeyW = { 99, 2575 };
@@ -35,7 +36,7 @@ namespace Neo.SmartContract
         private static readonly long[] KeysW = { 1419, 2606 };
         private static readonly long[] MemcpyW = { 1, 3514 };
         private static readonly long[] NewArrayAnyW = { 126, 2718 };
-        private static readonly long[] NewArrayByteOrIntW = { 849, 2718 };
+        private static readonly long[] NewArrayByteOrIntW = { 134, 2718 };
         private static readonly long[] NewBufferW = { 6, 2507 };
         private static readonly long[] PackW = { 173, 2649 };
         private static readonly long[] PackMapW = { 80, 5281, 3481 };
@@ -145,7 +146,13 @@ namespace Neo.SmartContract
         private static long CatGas(RunStats args) => CatW[0] * args.Length + CatW[1];
         private static long ClearGas(RunStats args) => ClearW[0] * args.RefsDelta + ClearW[1] * args.Length + ClearW[2];
         private static long ClearItemsGas(RunStats args) => ClearItemsW[0] * args.RefsDelta + ClearItemsW[1];
-        private static long ConvertGas(RunStats args) => args.Type == StackItemType.Array || args.Type == StackItemType.Struct ? ConvertArrOrStructW[0] * args.Length + ConvertArrOrStructW[1] : ConvertByteArrOrBufW[0] * args.Length + ConvertByteArrOrBufW[1];
+        private static long ConvertGas(RunStats args) => args.Type switch
+        {
+            StackItemType.Any => ConvertAnyW[0] * args.RefsDelta + ConvertAnyW[1],
+            StackItemType.Array => ConvertArrOrStructW[0] * args.RefsDelta + ConvertArrOrStructW[1] * args.Length + ConvertArrOrStructW[2],
+            StackItemType.ByteString => ConvertByteArrOrBufW[0] * args.Length + ConvertByteArrOrBufW[1],
+            _ => throw new InvalidOperationException($"Unsupported type {args.Type} for {OpCode.CONVERT} dynamic pricing."),
+        };
         private static long DropGas(RunStats args) => DropW[0] * args.RefsDelta + DropW[1];
         private static long HasKeyGas(RunStats args) => HasKeyW[0] * args.RefsDelta + HasKeyW[1];
         private static long InitSlotGas(RunStats args) => InitSlotW[0] * args.RefsDelta + InitSlotW[1] * args.Length + InitSlotW[2];
