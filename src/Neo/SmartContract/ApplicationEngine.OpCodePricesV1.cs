@@ -33,7 +33,7 @@ namespace Neo.SmartContract
         private static readonly long[] InitSlotW = { 67, 160, 1702 };
         private static readonly long[] IsNullW = { 97, 1236 };
         private static readonly long[] IsTypeW = { 97, 1154 };
-        private static readonly long[] KeysW = { 1419, 2606 };
+        private static readonly long[] KeysW = { 96, 167, 2039 };
         private static readonly long[] MemcpyW = { 1, 3514 };
         private static readonly long[] NewArrayAnyW = { 126, 2718 };
         private static readonly long[] NewArrayByteOrIntW = { 134, 2718 };
@@ -54,7 +54,7 @@ namespace Neo.SmartContract
         private static readonly long[] SubstrW = { 7, 2908 };
         private static readonly long[] ThrowW = { 84, 1742 };
         private static readonly long[] UnpackW = { 254, 2604 };
-        private static readonly long[] ValuesW = { 307, 369, 9868 };
+        private static readonly long[] ValuesW = { 86, 312, 168, 4758 };
         private static readonly long[] XDropW = { 98, 6, 1791 };
 
         private static readonly long[] StaticCoefficients;
@@ -158,7 +158,7 @@ namespace Neo.SmartContract
         private static long InitSlotGas(RunStats args) => InitSlotW[0] * args.RefsDelta + InitSlotW[1] * args.Length + InitSlotW[2];
         private static long IsNullGas(RunStats args) => IsNullW[0] * args.Length + IsNullW[1];
         private static long IsTypeGas(RunStats args) => IsTypeW[0] * args.Length + IsTypeW[1];
-        private static long KeysGas(RunStats args) => KeysW[0] * args.Length + KeysW[1];
+        private static long KeysGas(RunStats args) => KeysW[0] * args.RefsDelta + KeysW[1] * args.Length + KeysW[2];
         private static long MemcpyGas(RunStats args) => MemcpyW[0] * args.Length + MemcpyW[1];
         private static long NewArrayGas(RunStats args) => (args.Type == StackItemType.ByteString || args.Type == StackItemType.Integer) ? NewArrayByteOrIntW[0] * args.Length + NewArrayByteOrIntW[1] : NewArrayAnyW[0] * args.Length + NewArrayAnyW[1];
         private static long NewBufferGas(RunStats args) => NewBufferW[0] * args.Length + NewBufferW[1];
@@ -176,7 +176,7 @@ namespace Neo.SmartContract
         private static long SubstrGas(RunStats args) => SubstrW[0] * args.Length + SubstrW[1];
         private static long ThrowGas(RunStats args) => ThrowW[0] * args.RefsDelta + ThrowW[1];
         private static long UnpackGas(RunStats args) => UnpackW[0] * args.Length + UnpackW[1];
-        private static long ValuesGas(RunStats args) => ValuesW[0] * args.Length + ValuesW[1] * args.NClonedItems + ValuesW[2];
+        private static long ValuesGas(RunStats args) => ValuesW[0] * args.RefsDelta + ValuesW[1] * args.Length + ValuesW[2] * args.NClonedItems + ValuesW[3];
         private static long XDropGas(RunStats args) => XDropW[0] * args.RefsDelta + XDropW[1] * args.Length + XDropW[2];
     }
 }
