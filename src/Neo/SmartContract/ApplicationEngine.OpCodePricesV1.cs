@@ -40,7 +40,7 @@ namespace Neo.SmartContract
         private static readonly long[] NewBufferW = { 6, 2507 };
         private static readonly long[] PackW = { 173, 2649 };
         private static readonly long[] PackMapW = { 80, 5281, 3481 };
-        private static readonly long[] PickItemW = { 91, 6, 2751 };
+        private static readonly long[] PickItemW = { 91, 2751 };
         private static readonly long[] PopItemW = { 91, 3078 };
         private static readonly long[] RemoveArrOrStructW = { 98, 9, 1991 };
         private static readonly long[] RemoveMapW = { 96, 706, 6776 };
@@ -164,7 +164,7 @@ namespace Neo.SmartContract
         private static long NewBufferGas(RunStats args) => NewBufferW[0] * args.Length + NewBufferW[1];
         private static long PackGas(RunStats args) => PackW[0] * args.Length + PackW[1];
         private static long PackMapGas(RunStats args) => PackMapW[0] * args.RefsDelta + PackMapW[1] * args.Length + PackMapW[2];
-        private static long PickItemGas(RunStats args) => PickItemW[0] * args.RefsDelta + PickItemW[1] * args.Length + PickItemW[2];
+        private static long PickItemGas(RunStats args) => PickItemW[0] * args.RefsDelta + PickItemW[1];
         private static long PopItemGas(RunStats args) => PopItemW[0] * args.RefsDelta + PopItemW[1];
         private static long RemoveGas(RunStats args) => args.Type == StackItemType.Map ? RemoveMapW[0] * args.RefsDelta + RemoveMapW[1] * args.Length + RemoveMapW[2] : RemoveArrOrStructW[0] * args.RefsDelta + RemoveArrOrStructW[1] * args.Length + RemoveArrOrStructW[2];
         private static long ReverseItemsGas(RunStats args) => args.Type == StackItemType.Buffer ? ReverseItemsBufW[0] * args.Length + ReverseItemsBufW[1] : ReverseItemsArrW[0] * args.RefsDelta + ReverseItemsArrW[1] * args.Length + ReverseItemsArrW[2];
