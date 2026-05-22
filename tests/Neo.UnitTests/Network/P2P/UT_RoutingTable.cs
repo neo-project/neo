@@ -55,6 +55,28 @@ public class UT_RoutingTable
         Assert.AreEqual(closest, result[0].NodeId);
     }
 
+    [TestMethod]
+    public void FindClosest_ReturnsClosestContactsEvenWhenDiscoveredAfterManyCandidates()
+    {
+        var table = new RoutingTable(UInt256.Zero, bucketSize: 1, replacementSize: 0, badThreshold: 1);
+        UInt256 target = WithBit(128);
+
+        for (int bit = 117; bit <= 127; bit++)
+            Add(table, WithBit(bit), 10000 + bit);
+        for (int bit = 129; bit <= 141; bit++)
+            Add(table, WithBit(bit), 10000 + bit);
+        Add(table, WithBit(2), 10002);
+        Add(table, WithBit(1), 10001);
+        Add(table, WithBit(0), 10000);
+
+        IReadOnlyList<NodeContact> result = table.FindClosest(target, 3);
+
+        Assert.HasCount(3, result);
+        Assert.AreEqual(WithBit(0), result[0].NodeId);
+        Assert.AreEqual(WithBit(1), result[1].NodeId);
+        Assert.AreEqual(WithBit(2), result[2].NodeId);
+    }
+
     private static void Add(RoutingTable table, UInt256 nodeId, int port)
     {
         table.Update(nodeId, new OverlayEndpoint(
