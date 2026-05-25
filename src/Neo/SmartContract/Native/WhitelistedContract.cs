@@ -34,7 +34,7 @@ namespace Neo.SmartContract.Native
 
         public virtual StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
-            return new Struct(referenceCounter) { ContractHash.ToArray(), Method, ArgCount, FixedFee };
+            return new Struct() { ContractHash.ToArray(), Method, ArgCount, FixedFee };
         }
     }
 }

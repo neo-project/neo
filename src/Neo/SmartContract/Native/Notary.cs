@@ -351,7 +351,7 @@ namespace Neo.SmartContract.Native
 
             public StackItem ToStackItem(IReferenceCounter? referenceCounter)
             {
-                return new Struct(referenceCounter) { Amount, Till };
+                return new Struct() { Amount, Till };
             }
         }
     }

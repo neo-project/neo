@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Native
 
         public StackItem ToStackItem(IReferenceCounter? referenceCounter)
         {
-            return new Array(referenceCounter, this.Select(p => ElementToStackItem(p, referenceCounter)));
+            return new Array(this.Select(p => ElementToStackItem(p, referenceCounter)));
         }
     }
 }

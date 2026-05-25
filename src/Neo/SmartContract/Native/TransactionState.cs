@@ -61,8 +61,8 @@ namespace Neo.SmartContract.Native
         StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
         {
             if (Transaction is null)
-                return new Struct(referenceCounter) { BlockIndex };
-            return new Struct(referenceCounter) { BlockIndex, Transaction.ToArray(), (byte)State };
+                return new Struct() { BlockIndex };
+            return new Struct() { BlockIndex, Transaction.ToArray(), (byte)State };
         }
     }
 }

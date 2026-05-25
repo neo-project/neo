@@ -228,13 +228,13 @@ namespace Neo.Network.P2P.Payloads
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
         {
-            return new Array(referenceCounter,
+            return new Array(
             [
                 Account.ToArray(),
                 (byte)Scopes,
-                Scopes.HasFlag(WitnessScope.CustomContracts) ? new Array(referenceCounter, AllowedContracts!.Select(u => new ByteString(u.ToArray()))) : new Array(referenceCounter),
-                Scopes.HasFlag(WitnessScope.CustomGroups) ? new Array(referenceCounter, AllowedGroups!.Select(u => new ByteString(u.ToArray()))) : new Array(referenceCounter),
-                Scopes.HasFlag(WitnessScope.WitnessRules) ? new Array(referenceCounter, Rules!.Select(u => u.ToStackItem(referenceCounter))) : new Array(referenceCounter)
+                Scopes.HasFlag(WitnessScope.CustomContracts) ? new Array(AllowedContracts!.Select(u => new ByteString(u.ToArray()))) : new Array(),
+                Scopes.HasFlag(WitnessScope.CustomGroups) ? new Array(AllowedGroups!.Select(u => new ByteString(u.ToArray()))) : new Array(),
+                Scopes.HasFlag(WitnessScope.WitnessRules) ? new Array(Rules!.Select(u => u.ToStackItem(referenceCounter))) : new Array()
             ]);
         }
 

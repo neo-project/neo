@@ -186,7 +186,7 @@ namespace Neo.SmartContract
                         List<StackItem> list = new(array.Count);
                         foreach (JToken? obj in array)
                             list.Add(Deserialize(engine, obj, ref maxStackSize, referenceCounter));
-                        return new Array(referenceCounter, list);
+                        return new Array(list);
                     }
                 case JString str:
                     {
@@ -207,7 +207,7 @@ namespace Neo.SmartContract
                     }
                 case JObject obj:
                     {
-                        var item = new Map(referenceCounter);
+                        var item = new Map();
 
                         foreach (var entry in obj.Properties)
                         {
