@@ -68,7 +68,7 @@ namespace Neo.SmartContract.Manifest
             };
         }
 
-        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+        public StackItem ToStackItem()
         {
             return new Struct()
             {

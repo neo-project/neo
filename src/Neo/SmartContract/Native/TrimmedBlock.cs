@@ -108,7 +108,7 @@ namespace Neo.SmartContract.Native
             throw new NotSupportedException();
         }
 
-        StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
+        StackItem IInteroperable.ToStackItem()
         {
             return new Array(
             [

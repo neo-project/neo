@@ -34,7 +34,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             };
 
             ContractGroup clone = (ContractGroup)RuntimeHelpers.GetUninitializedObject(typeof(ContractGroup));
-            ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
+            ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem());
             Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
         }
 

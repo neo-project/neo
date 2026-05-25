@@ -50,7 +50,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestDeserialize()
         {
-            var data = BinarySerializer.Serialize(((IInteroperable)_origin).ToStackItem(null), ExecutionEngineLimits.Default);
+            var data = BinarySerializer.Serialize(((IInteroperable)_origin).ToStackItem(), ExecutionEngineLimits.Default);
             var reader = new MemoryReader(data);
 
             TransactionState dest = new();
@@ -66,14 +66,14 @@ namespace Neo.UnitTests.Ledger
         {
             var clone = ((IInteroperable)_origin).Clone() as TransactionState;
             CollectionAssert.AreEqual(
-                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
-                BinarySerializer.Serialize((_origin as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((_origin as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
             clone.Transaction.Nonce++;
             Assert.AreNotEqual(clone.Transaction.Nonce, _origin.Transaction.Nonce);
             CollectionAssert.AreNotEqual(
-                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
-                BinarySerializer.Serialize((_origin as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((_origin as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
         }
 
@@ -84,8 +84,8 @@ namespace Neo.UnitTests.Ledger
             (replica as IInteroperable).FromReplica(_origin);
             Assert.AreEqual(replica.Transaction.Nonce, _origin.Transaction.Nonce);
             CollectionAssert.AreEqual(
-                ((replica as IInteroperable).ToStackItem(null) as VM.Types.Struct)[1].GetSpan().ToArray(),
-                ((_origin as IInteroperable).ToStackItem(null) as VM.Types.Struct)[1].GetSpan().ToArray()
+                ((replica as IInteroperable).ToStackItem() as VM.Types.Struct)[1].GetSpan().ToArray(),
+                ((_origin as IInteroperable).ToStackItem() as VM.Types.Struct)[1].GetSpan().ToArray()
                 );
 
             var newOrigin = new TransactionState
@@ -108,15 +108,15 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(replica.Transaction.Nonce, newOrigin.Transaction.Nonce);
             Assert.AreEqual(replica.Transaction.NetworkFee, newOrigin.Transaction.NetworkFee);
             CollectionAssert.AreEqual(
-                ((replica as IInteroperable).ToStackItem(null) as VM.Types.Struct)[1].GetSpan().ToArray(),
-                ((newOrigin as IInteroperable).ToStackItem(null) as VM.Types.Struct)[1].GetSpan().ToArray()
+                ((replica as IInteroperable).ToStackItem() as VM.Types.Struct)[1].GetSpan().ToArray(),
+                ((newOrigin as IInteroperable).ToStackItem() as VM.Types.Struct)[1].GetSpan().ToArray()
                 );
         }
 
         [TestMethod]
         public void TestDeserializeTrimmed()
         {
-            var data = BinarySerializer.Serialize(((IInteroperable)_originTrimmed).ToStackItem(null), ExecutionEngineLimits.Default);
+            var data = BinarySerializer.Serialize(((IInteroperable)_originTrimmed).ToStackItem(), ExecutionEngineLimits.Default);
             var reader = new MemoryReader(data);
 
             TransactionState dest = new();

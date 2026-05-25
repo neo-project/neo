@@ -844,7 +844,7 @@ namespace Neo.SmartContract
                 string s => s,
                 BigInteger i => i,
                 JObject o => o.ToByteArray(false),
-                IInteroperable interoperable => interoperable.ToStackItem(ReferenceCounter),
+                IInteroperable interoperable => interoperable.ToStackItem(),
                 ISerializable i => i.ToArray(),
                 StackItem item => item,
                 (object a, object b) => new Struct() { Convert(a), Convert(b) },

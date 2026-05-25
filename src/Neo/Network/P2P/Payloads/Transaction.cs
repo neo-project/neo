@@ -424,7 +424,7 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+        public StackItem ToStackItem()
         {
             if (Signers.Length == 0) throw new ArgumentException("Sender is not specified in the transaction.");
             return new Array(new StackItem[]

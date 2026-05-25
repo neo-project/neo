@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native
             FixedFee = (long)data[3].GetInteger();
         }
 
-        public virtual StackItem ToStackItem(IReferenceCounter? referenceCounter)
+        public virtual StackItem ToStackItem()
         {
             return new Struct() { ContractHash.ToArray(), Method, ArgCount, FixedFee };
         }

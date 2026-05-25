@@ -226,7 +226,7 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
+        StackItem IInteroperable.ToStackItem()
         {
             return new Array(
             [
@@ -234,7 +234,7 @@ namespace Neo.Network.P2P.Payloads
                 (byte)Scopes,
                 Scopes.HasFlag(WitnessScope.CustomContracts) ? new Array(AllowedContracts!.Select(u => new ByteString(u.ToArray()))) : new Array(),
                 Scopes.HasFlag(WitnessScope.CustomGroups) ? new Array(AllowedGroups!.Select(u => new ByteString(u.ToArray()))) : new Array(),
-                Scopes.HasFlag(WitnessScope.WitnessRules) ? new Array(Rules!.Select(u => u.ToStackItem(referenceCounter))) : new Array()
+                Scopes.HasFlag(WitnessScope.WitnessRules) ? new Array(Rules!.Select(u => u.ToStackItem())) : new Array()
             ]);
         }
 

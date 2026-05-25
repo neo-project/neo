@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestDeserialize()
         {
-            var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(null), ExecutionEngineLimits.Default);
+            var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(), ExecutionEngineLimits.Default);
             var reader = new MemoryReader(data);
 
             HashIndexState dest = new();

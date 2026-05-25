@@ -21,7 +21,7 @@ namespace Neo.SmartContract
     /// <summary>
     /// The <see cref="EventArgs"/> of <see cref="ApplicationEngine.Notify"/>.
     /// </summary>
-    public class NotifyEventArgs : EventArgs, IInteroperable
+    public class NotifyEventArgs : EventArgs
     {
         /// <summary>
         /// The container that containing the executed script.
@@ -63,17 +63,7 @@ namespace Neo.SmartContract
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
-        {
-            return new Array()
-                {
-                    ScriptHash.ToArray(),
-                    EventName,
-                    State
-                };
-        }
-
-        public StackItem ToStackItem(IReferenceCounter referenceCounter, ApplicationEngine engine)
+        public StackItem ToStackItem(ApplicationEngine engine)
         {
             if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
             {

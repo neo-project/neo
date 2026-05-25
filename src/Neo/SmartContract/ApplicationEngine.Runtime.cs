@@ -207,7 +207,7 @@ namespace Neo.SmartContract
         protected internal StackItem GetScriptContainer()
         {
             if (ScriptContainer is not IInteroperable interop) throw new InvalidOperationException();
-            return interop.ToStackItem(ReferenceCounter);
+            return interop.ToStackItem();
         }
 
         /// <summary>
@@ -435,7 +435,7 @@ namespace Neo.SmartContract
             Array notifyArray = new();
             foreach (var notify in array)
             {
-                notifyArray.Add(notify.ToStackItem(ReferenceCounter, this));
+                notifyArray.Add(notify.ToStackItem(this));
             }
             return notifyArray;
         }
