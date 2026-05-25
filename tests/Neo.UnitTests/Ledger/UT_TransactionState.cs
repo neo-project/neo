@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Ledger
             var reader = new MemoryReader(data);
 
             TransactionState dest = new();
-            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
+            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default));
 
             Assert.AreEqual(_origin.BlockIndex, dest.BlockIndex);
             Assert.AreEqual(_origin.Transaction.Hash, dest.Transaction.Hash);
@@ -120,7 +120,7 @@ namespace Neo.UnitTests.Ledger
             var reader = new MemoryReader(data);
 
             TransactionState dest = new();
-            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
+            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default));
 
             Assert.AreEqual(_originTrimmed.BlockIndex, dest.BlockIndex);
             Assert.IsNull(dest.Transaction);

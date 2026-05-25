@@ -42,10 +42,10 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var item = manifest.ToStackItem();
             var data = BinarySerializer.Serialize(item, 1024 * 1024, 4096);
 
-            Assert.ThrowsExactly<FormatException>(() => _ = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default, counter));
+            Assert.ThrowsExactly<FormatException>(() => _ = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default));
             Assert.ThrowsExactly<FormatException>(() => _ = BinarySerializer.Serialize(item, 1024 * 1024, 2048));
 
-            item = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default with { MaxStackSize = 4096 }, counter);
+            item = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default with { MaxStackSize = 4096 });
             var copy = item.ToInteroperable<ContractManifest>();
 
             Assert.AreEqual(manifest.ToJson().ToString(false), copy.ToJson().ToString(false));

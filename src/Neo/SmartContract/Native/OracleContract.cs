@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native
             OracleRequest? request = GetRequest(engine.SnapshotCache, response.Id);
             if (request == null) throw new ArgumentException("Oracle request not found");
             engine.SendNotification(Hash, "OracleResponse", new Array() { response.Id, request.OriginalTxid.ToArray() });
-            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits, engine.ReferenceCounter);
+            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits);
             return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
 

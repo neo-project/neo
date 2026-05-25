@@ -715,7 +715,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var iter = engine.ResultStack[0].GetInterface<object>() as StorageIterator;
             Assert.IsTrue(iter.Next());
-            Assert.AreEqual(new UInt160(iter.Value(new ReferenceCounter()).GetSpan()), UInt160.Zero);
+            Assert.AreEqual(new UInt160(iter.Value().GetSpan()), UInt160.Zero);
         }
 
         [TestMethod]
