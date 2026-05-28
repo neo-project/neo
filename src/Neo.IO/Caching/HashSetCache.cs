@@ -25,9 +25,9 @@ namespace Neo.IO.Caching
     /// <typeparam name="T">The type of the items in the cache.</typeparam>
     internal class HashSetCache<T> : ICollection<T> where T : IEquatable<T>
     {
-        private class Items(int initialCapacity) : KeyedCollectionSlim<T, Tuple<T, DateTime?>>(initialCapacity)
+        private sealed class Items(int initialCapacity) : KeyedCollectionSlim<T, Tuple<T, DateTime?>>(initialCapacity)
         {
-            protected override T GetKeyForItem(Tuple<T, DateTime?> item) => item.Item1;
+            protected sealed override T GetKeyForItem(Tuple<T, DateTime?> item) => item.Item1;
         }
 
         private readonly int _capacity;
