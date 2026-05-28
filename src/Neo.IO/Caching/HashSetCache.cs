@@ -138,6 +138,11 @@ namespace Neo.IO.Caching
             }
         }
 
+        /// <summary>
+        /// Removes all cache entries with timestamps earlier than the specified time.
+        /// </summary>
+        /// <param name="lessThan">The DateTime threshold. Entries with timestamps before this value are removed.</param>
+        /// <exception cref="InvalidOperationException">Thrown when pruning is not allowed for this cache.</exception>
         public void Prune(DateTime lessThan)
         {
             if (_timeProvider == null) throw new InvalidOperationException("Pruning is not allowed for this cache.");
