@@ -333,7 +333,7 @@ namespace Neo.SmartContract
                     array.RemoveAt(index);
                     break;
                 case Map map:
-                    map.Remove(key);
+                    map.Remove(key, out _);
                     break;
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
