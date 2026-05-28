@@ -84,6 +84,7 @@ namespace Neo.Network.P2P
             _localNode = localNode;
             _knownHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes));
             _sentHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes));
+            _pendingKnownHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes), () => TimeProvider.Current.UtcNow);
             localNode.RemoteNodes.TryAdd(Self, this);
         }
 
@@ -210,6 +211,7 @@ namespace Neo.Network.P2P
             timer.CancelIfNotNull();
             if (_localNode.RemoteNodes.TryRemove(Self, out _))
             {
+                _pendingKnownHashes.Clear();
                 _knownHashes.Clear();
                 _sentHashes.Clear();
             }
