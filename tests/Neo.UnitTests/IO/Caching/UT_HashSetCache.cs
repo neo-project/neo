@@ -58,11 +58,8 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestConstructor()
         {
-            Action action1 = () => new HashSetCache<UInt256>(-1);
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action1());
-
-            Action action2 = () => new HashSetCache<UInt256>(-1);
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action2());
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new HashSetCache<UInt256>(-1));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new HashSetCache<UInt256>(-1));
         }
 
         [TestMethod]
@@ -150,6 +147,85 @@ namespace Neo.UnitTests.IO.Caching
             set.TryAdd(c);
             set.ExceptWith([c]);
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, b });
+        }
+
+        [TestMethod]
+        public void TestPrune()
+        {
+            var cache = new HashSetCache<int>(100, () => DateTime.UtcNow)
+            {
+                // Add elements at different timestamps
+                1,
+                2,
+                3,
+                4,
+                5
+            };
+
+            // Wait to create a time difference
+            System.Threading.Thread.Sleep(100);
+            var pruneTime = DateTime.UtcNow;
+            System.Threading.Thread.Sleep(100);
+
+            // Add more elements after prune time
+            cache.Add(6);
+            cache.Add(7);
+            cache.Add(8);
+
+            Assert.HasCount(8, cache);
+
+            // Prune old elements (first 5)
+            cache.Prune(pruneTime);
+
+            // Verify only elements added after prune time remain
+            Assert.HasCount(3, cache);
+            Assert.Contains(6, cache);
+            Assert.Contains(7, cache);
+            Assert.Contains(8, cache);
+            Assert.DoesNotContain(1, cache);
+            Assert.DoesNotContain(2, cache);
+            Assert.DoesNotContain(3, cache);
+            Assert.DoesNotContain(4, cache);
+            Assert.DoesNotContain(5, cache);
+        }
+
+        [TestMethod]
+        public void TestPruneAll()
+        {
+            var cache = new HashSetCache<int>(100, () => DateTime.UtcNow)
+            {
+                1,
+                2,
+                3
+            };
+
+            Assert.HasCount(3, cache);
+
+            // Prune all elements (future date)
+            cache.Prune(DateTime.UtcNow.AddHours(1));
+
+            Assert.IsEmpty(cache);
+        }
+
+        [TestMethod]
+        public void TestPruneNone()
+        {
+            var cache = new HashSetCache<int>(100, () => DateTime.UtcNow)
+            {
+                1,
+                2,
+                3
+            };
+
+            Assert.HasCount(3, cache);
+
+            // Prune nothing (past date)
+            cache.Prune(DateTime.UtcNow.AddHours(-1));
+
+            Assert.HasCount(3, cache);
+            Assert.Contains(1, cache);
+            Assert.Contains(2, cache);
+            Assert.Contains(3, cache);
         }
     }
 }
