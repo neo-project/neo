@@ -99,7 +99,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var witness = new Witness
             {
-                InvocationScript = new byte[1025],
+                InvocationScript = new byte[ushort.MaxValue + 1],
                 VerificationScript = new byte[10]
             };
 
@@ -110,7 +110,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Check max size
 
             witness.InvocationScript = new byte[10];
-            witness.VerificationScript = new byte[1025];
+            witness.VerificationScript = new byte[ushort.MaxValue + 1];
             Assert.ThrowsExactly<FormatException>(() => _ = witness.ToArray().AsSerializable<Witness>());
         }
 
@@ -168,6 +168,86 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(0, w2.InvocationScript.Length);
             Assert.AreEqual(0, w2.VerificationScript.Length);
             Assert.IsFalse(ReferenceEquals(w1, w2));
+        }
+
+        [TestMethod]
+        public void Serialize_InvocationScript_ExceedsUshortMaxValue_ThrowsException()
+        {
+            // InvocationScript con tamaño mayor a ushort.MaxValue no puede serializarse correctamente
+            var witness = new Witness
+            {
+                InvocationScript = new byte[ushort.MaxValue + 1],
+                VerificationScript = new byte[10]
+            };
+
+            Assert.ThrowsExactly<FormatException>(() => _ = witness.ToArray().AsSerializable<Witness>());
+        }
+
+        [TestMethod]
+        public void Serialize_VerificationScript_ExceedsUshortMaxValue_ThrowsException()
+        {
+            // VerificationScript con tamaño mayor a ushort.MaxValue no puede serializarse correctamente
+            var witness = new Witness
+            {
+                InvocationScript = new byte[10],
+                VerificationScript = new byte[ushort.MaxValue + 1]
+            };
+
+            Assert.ThrowsExactly<FormatException>(() => _ = witness.ToArray().AsSerializable<Witness>());
+        }
+
+        [TestMethod]
+        public void Serialize_InvocationScript_EqualsUshortMaxValue_Success()
+        {
+            // InvocationScript con tamaño exactamente igual a ushort.MaxValue debe serializarse correctamente
+            var witness = new Witness
+            {
+                InvocationScript = new byte[ushort.MaxValue],
+                VerificationScript = new byte[10]
+            };
+
+            var copy = witness.ToArray().AsSerializable<Witness>();
+
+            Assert.AreEqual(ushort.MaxValue, copy.InvocationScript.Length);
+            Assert.AreEqual(10, copy.VerificationScript.Length);
+            Assert.IsTrue(witness.InvocationScript.Span.SequenceEqual(copy.InvocationScript.Span));
+            Assert.IsTrue(witness.VerificationScript.Span.SequenceEqual(copy.VerificationScript.Span));
+        }
+
+        [TestMethod]
+        public void Serialize_VerificationScript_EqualsUshortMaxValue_Success()
+        {
+            // VerificationScript con tamaño exactamente igual a ushort.MaxValue debe serializarse correctamente
+            var witness = new Witness
+            {
+                InvocationScript = new byte[10],
+                VerificationScript = new byte[ushort.MaxValue]
+            };
+
+            var copy = witness.ToArray().AsSerializable<Witness>();
+
+            Assert.AreEqual(10, copy.InvocationScript.Length);
+            Assert.AreEqual(ushort.MaxValue, copy.VerificationScript.Length);
+            Assert.IsTrue(witness.InvocationScript.Span.SequenceEqual(copy.InvocationScript.Span));
+            Assert.IsTrue(witness.VerificationScript.Span.SequenceEqual(copy.VerificationScript.Span));
+        }
+
+        [TestMethod]
+        public void Serialize_BothScripts_LessThanUshortMaxValue_Success()
+        {
+            // Ambos scripts con tamaños menores a ushort.MaxValue deben serializarse correctamente
+            var witness = new Witness
+            {
+                InvocationScript = new byte[1000],
+                VerificationScript = new byte[2000]
+            };
+
+            var copy = witness.ToArray().AsSerializable<Witness>();
+
+            Assert.AreEqual(1000, copy.InvocationScript.Length);
+            Assert.AreEqual(2000, copy.VerificationScript.Length);
+            Assert.IsTrue(witness.InvocationScript.Span.SequenceEqual(copy.InvocationScript.Span));
+            Assert.IsTrue(witness.VerificationScript.Span.SequenceEqual(copy.VerificationScript.Span));
         }
     }
 }
