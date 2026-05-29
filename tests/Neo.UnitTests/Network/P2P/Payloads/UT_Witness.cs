@@ -173,7 +173,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize_InvocationScript_ExceedsUshortMaxValue_ThrowsException()
         {
-            // InvocationScript con tamaño mayor a ushort.MaxValue no puede serializarse correctamente
+            // InvocationScript with size greater than ushort.MaxValue cannot be serialized correctly
             var witness = new Witness
             {
                 InvocationScript = new byte[ushort.MaxValue + 1],
@@ -186,7 +186,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize_VerificationScript_ExceedsUshortMaxValue_ThrowsException()
         {
-            // VerificationScript con tamaño mayor a ushort.MaxValue no puede serializarse correctamente
+            // VerificationScript with size greater than ushort.MaxValue cannot be serialized correctly
             var witness = new Witness
             {
                 InvocationScript = new byte[10],
@@ -199,7 +199,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize_InvocationScript_EqualsUshortMaxValue_Success()
         {
-            // InvocationScript con tamaño exactamente igual a ushort.MaxValue debe serializarse correctamente
+            // InvocationScript with size exactly equal to ushort.MaxValue should serialize correctly
             var witness = new Witness
             {
                 InvocationScript = new byte[ushort.MaxValue],
@@ -217,7 +217,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize_VerificationScript_EqualsUshortMaxValue_Success()
         {
-            // VerificationScript con tamaño exactamente igual a ushort.MaxValue debe serializarse correctamente
+            // VerificationScript with size exactly equal to ushort.MaxValue should serialize correctly
             var witness = new Witness
             {
                 InvocationScript = new byte[10],
@@ -235,7 +235,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize_BothScripts_LessThanUshortMaxValue_Success()
         {
-            // Ambos scripts con tamaños menores a ushort.MaxValue deben serializarse correctamente
+            // Both scripts with sizes less than ushort.MaxValue should serialize correctly
             var witness = new Witness
             {
                 InvocationScript = new byte[1000],
