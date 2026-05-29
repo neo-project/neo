@@ -17,18 +17,23 @@ using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using static Neo.SmartContract.Native.NativeContract;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -59,6 +64,44 @@ namespace Neo.UnitTests.SmartContract.Native
         private readonly byte[] g1 = s_g1Hex.HexToBytes();
         private readonly byte[] g2 = s_g2Hex.HexToBytes();
         private readonly byte[] gt = s_gtHex.HexToBytes();
+
+        private const string Bn254G1X = "1";
+        private const string Bn254G1Y = "2";
+        private const string Bn254G2XIm = "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2";
+        private const string Bn254G2XRe = "1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed";
+        private const string Bn254G2YIm = "090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b";
+        private const string Bn254G2YRe = "12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa";
+        private const string Bn254DoubleX = "030644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd3";
+        private const string Bn254DoubleY = "15ed738c0e0a7c92e7845f96b2ae9c0a68a6a449e3538fc7ff3ebf7a5a18a2c4";
+        private const string Bn254PairingPositive =
+            "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002203e205db4f19b37b60121b83a7333706db86431c6d835849957ed8c3928ad7927dc7234fd11d3e8c36c59277c3e6f149d5cd3cfa9a62aee49f8130962b4b3b9195e8aa5b7827463722b8c153931579d3505566b4edf48d498e185f0509de15204bb53b8977e5f92a0bc372742c4830944a59b4fe6b1c0466e2a6dad122b5d2e104316c97997c17267a1bb67365523b4388e1306d66ea6e4d8f4a4a4b65f5c7d06e286b49c56f6293b2cea30764f0d5eabe5817905468a41f09b77588f692e8b081070efe3d4913dde35bba2513c426d065dee815c478700cef07180fb6146182432428b1490a4f25053d4c20c8723a73de6f0681bd3a8fca41008a6c3c288252d50f18403272e96c10135f96db0f8d0aec25033ebdffb88d2e7956c9bb198ec072462211ebc0a2f042f993d5bd76caf4adb5e99610dcf7c1d992595e6976aa3";
+        private const string Bn254PairingNegative =
+            "0x142c9123c08a0d7f66d95f3ad637a06b95700bc525073b75610884ef45416e1610104c796f40bfeef3588e996c040d2a88c0b4b85afd2578327b99413c6fe820198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed275dc4a288d1afb3cbb1ac09187524c7db36395df7be3b99e673b13a075a65ec1d9befcd05a5323e6da4d435f3b617cdb3af83285c2df711ef39c01571827f9d";
+        private const string Bn254PairingInvalidG1 =
+            "0x00000000000000000000000000000000000000000000000000000000000000000000000000be00be00bebebebebebe00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+
+        // BN254 G2 point that lies on the sextic twist curve but is NOT a member of the
+        // prime-order subgroup (it is a cofactor multiple). Because the G2 cofactor is
+        // greater than one, accepting such a point would allow pairing-equation forgeries,
+        // so deserialization must reject it. Encoded in EIP-197 order: x_im || x_re || y_im || y_re.
+        private const string Bn254G2NonSubgroupXIm = "0000000000000000000000000000000000000000000000000000000000000001";
+        private const string Bn254G2NonSubgroupXRe = "0000000000000000000000000000000000000000000000000000000000000002";
+        private const string Bn254G2NonSubgroupYIm = "2b76c179599bb92a963dac85546a005a777f7c13f6a7b75d5918b6b5808f5fde";
+        private const string Bn254G2NonSubgroupYRe = "101f7278419308b95099eca02dcee0c5381f4d26d1d62313f057167f064101ce";
+
+        // BN254 G2 coordinates that are canonical (each strictly below the field modulus)
+        // yet do NOT satisfy the twist curve equation y^2 = x^3 + 3/(9 + u); deserialization
+        // must reject points that are not on the curve.
+        private const string Bn254G2OffCurveXIm = "0000000000000000000000000000000000000000000000000000000000000001";
+        private const string Bn254G2OffCurveXRe = "0000000000000000000000000000000000000000000000000000000000000001";
+        private const string Bn254G2OffCurveYIm = "0000000000000000000000000000000000000000000000000000000000000000";
+        private const string Bn254G2OffCurveYRe = "0000000000000000000000000000000000000000000000000000000000000000";
+
+        // Non-canonical G1 x-coordinate: the generator's x (= 1) plus the field modulus p.
+        // Under modular reduction this collapses back to the valid generator, but the EVM
+        // alt_bn128 precompiles require every coordinate to be strictly below p, so a strict
+        // decoder must reject it to preserve byte-for-byte parity.
+        private const string Bn254NonCanonicalG1X = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd48";
 
 
         private readonly byte[] notG1 =
@@ -1236,7 +1279,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestVerifyWithEd25519()
         {
             byte[] publicKey = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a".HexToBytes();
-            byte[] message = Array.Empty<byte>();
+            byte[] message = System.Array.Empty<byte>();
             byte[] signature = ("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155" +
                                 "5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b").HexToBytes();
 
@@ -1252,13 +1295,13 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Test with an invalid signature
             byte[] invalidSignature = new byte[signature.Length];
-            Array.Copy(signature, invalidSignature, signature.Length);
+            System.Array.Copy(signature, invalidSignature, signature.Length);
             invalidSignature[0] ^= 0x01; // Flip one bit
             Assert.IsFalse(CallVerifyWithEd25519(message, publicKey, invalidSignature));
 
             // Test with an invalid public key
             byte[] invalidPublicKey = new byte[publicKey.Length];
-            Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
+            System.Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
             invalidPublicKey[0] ^= 0x01; // Flip one bit
             Assert.ThrowsExactly<InvalidOperationException>(() => CallVerifyWithEd25519(message, invalidPublicKey, signature));
         }
@@ -1289,6 +1332,276 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsFalse(Neo.SmartContract.Native.CryptoLib.VerifyWithEd25519V0(message, publicKey, signature[..^1]));
         }
 
+        [TestMethod]
+        public void TestBn254Add()
+        {
+            var point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            var result = Neo.SmartContract.Native.CryptoLib.Bn254Add(point, point);
+            var serialized = Neo.SmartContract.Native.CryptoLib.Bn254Serialize(result);
+            byte[] expected = new byte[64];
+            WriteBn254Field(Bn254DoubleX, expected, 0);
+            WriteBn254Field(Bn254DoubleY, expected, 32);
+
+            CollectionAssert.AreEqual(expected, serialized);
+        }
+
+        [TestMethod]
+        public void TestBn254Mul()
+        {
+            var point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            byte[] scalar = Bn254Field("2");
+            var result = Neo.SmartContract.Native.CryptoLib.Bn254Mul(point, scalar);
+            var serialized = Neo.SmartContract.Native.CryptoLib.Bn254Serialize(result);
+            byte[] expected = new byte[64];
+            WriteBn254Field(Bn254DoubleX, expected, 0);
+            WriteBn254Field(Bn254DoubleY, expected, 32);
+
+            CollectionAssert.AreEqual(expected, serialized);
+        }
+
+        [TestMethod]
+        public void TestBn254Equal()
+        {
+            var point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            var same = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+
+            Assert.IsTrue(Neo.SmartContract.Native.CryptoLib.Bn254Equal(point, same));
+
+            var doubled = Neo.SmartContract.Native.CryptoLib.Bn254Add(point, same);
+            Assert.IsFalse(Neo.SmartContract.Native.CryptoLib.Bn254Equal(point, doubled));
+
+            var g2Point = DecodeBn254G2(Bn254G2XIm, Bn254G2XRe, Bn254G2YIm, Bn254G2YRe);
+            Assert.ThrowsExactly<ArgumentException>(() => Neo.SmartContract.Native.CryptoLib.Bn254Equal(point, g2Point));
+        }
+
+        [TestMethod]
+        public void TestBn254PairingGenerator()
+        {
+            // e(G1, G2) for the canonical generators is a well-defined, non-trivial target-group
+            // element. It must serialize to a full GT encoding and must differ from the GT identity
+            // (which is what a pairing with the point at infinity produces).
+            var g1Point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            var g2Point = DecodeBn254G2(Bn254G2XIm, Bn254G2XRe, Bn254G2YIm, Bn254G2YRe);
+
+            var pairing = Neo.SmartContract.Native.CryptoLib.Bn254Pairing(g1Point, g2Point);
+
+            byte[] serialized = Neo.SmartContract.Native.CryptoLib.Bn254Serialize(pairing);
+            Assert.AreEqual(BN254.GtEncodedLength, serialized.Length);
+
+            var infinityG1 = Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(new byte[BN254.G1EncodedLength]);
+            var identity = Neo.SmartContract.Native.CryptoLib.Bn254Pairing(infinityG1, g2Point);
+            Assert.IsFalse(Neo.SmartContract.Native.CryptoLib.Bn254Equal(pairing, identity));
+        }
+
+        [TestMethod]
+        public void TestBn254PairingBilinearity()
+        {
+            // Bilinearity of the pairing: e(2P, Q) = e(P, Q)^2. The target group's operation is
+            // field multiplication, exposed through Bn254Add, so e(P, Q) composed with itself must
+            // equal the pairing of the doubled G1 generator. The doubled pairing must also be a
+            // genuinely different GT element from the single pairing.
+            var p = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            var doubleP = DecodeBn254G1(Bn254DoubleX, Bn254DoubleY);
+            var q = DecodeBn254G2(Bn254G2XIm, Bn254G2XRe, Bn254G2YIm, Bn254G2YRe);
+
+            var ePQ = Neo.SmartContract.Native.CryptoLib.Bn254Pairing(p, q);
+            var eDoublePQ = Neo.SmartContract.Native.CryptoLib.Bn254Pairing(doubleP, q);
+            var ePQSquared = Neo.SmartContract.Native.CryptoLib.Bn254Add(ePQ, ePQ);
+
+            Assert.IsTrue(Neo.SmartContract.Native.CryptoLib.Bn254Equal(eDoublePQ, ePQSquared),
+                "e(2P, Q) must equal e(P, Q) composed with itself in the target group");
+            Assert.IsFalse(Neo.SmartContract.Native.CryptoLib.Bn254Equal(eDoublePQ, ePQ),
+                "e(2P, Q) must differ from e(P, Q)");
+        }
+
+        [TestMethod]
+        public void TestBn254PairingInfinityIsIdentity()
+        {
+            // A pairing whose G1 argument is the point at infinity is the target-group identity,
+            // so composing it with another pairing must leave that pairing unchanged (X * 1 = X).
+            var p = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            var q = DecodeBn254G2(Bn254G2XIm, Bn254G2XRe, Bn254G2YIm, Bn254G2YRe);
+            var infinityG1 = Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(new byte[BN254.G1EncodedLength]);
+
+            var ePQ = Neo.SmartContract.Native.CryptoLib.Bn254Pairing(p, q);
+            var identity = Neo.SmartContract.Native.CryptoLib.Bn254Pairing(infinityG1, q);
+            var composed = Neo.SmartContract.Native.CryptoLib.Bn254Add(ePQ, identity);
+
+            Assert.IsTrue(Neo.SmartContract.Native.CryptoLib.Bn254Equal(composed, ePQ),
+                "composing with the infinity pairing (GT identity) must be a no-op");
+        }
+
+        [TestMethod]
+        public void TestBn254GtSerializationRoundTrip()
+        {
+            // A target-group element survives a serialize/deserialize round-trip: the encoding is
+            // exactly GtEncodedLength bytes and decodes back to an equal GT value.
+            var p = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+            var q = DecodeBn254G2(Bn254G2XIm, Bn254G2XRe, Bn254G2YIm, Bn254G2YRe);
+            var pairing = Neo.SmartContract.Native.CryptoLib.Bn254Pairing(p, q);
+
+            byte[] serialized = Neo.SmartContract.Native.CryptoLib.Bn254Serialize(pairing);
+            Assert.AreEqual(BN254.GtEncodedLength, serialized.Length);
+
+            var restored = Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(serialized);
+            Assert.IsTrue(Neo.SmartContract.Native.CryptoLib.Bn254Equal(pairing, restored));
+        }
+
+        [TestMethod]
+        public void TestBn254PairingVectors()
+        {
+            // Vectors sourced from ethereum/tests (MIT) GeneralStateTests/stZeroKnowledge/ecpairing_inputs.json
+            // commit c67e485ff8b5be9abc8ad15345ec21aa22e290d9 labels 5 (positive), 0 (negative), 38 (invalid_g1_point)
+            var cases = new (string Hex, bool ExpectedSuccess, string Label)[]
+            {
+                (Bn254PairingPositive, true, "positive"),
+                (Bn254PairingNegative, false, "negative"),
+                (Bn254PairingInvalidG1, false, "invalid_g1_point"),
+            };
+
+            foreach (var (hex, expectedSuccess, label) in cases)
+            {
+                byte[] input = HexToBytes(hex);
+                byte[] result = BN254.Pairing(input);
+
+                Assert.AreEqual(32, result.Length, label);
+                if (expectedSuccess)
+                {
+                    Assert.AreEqual(1, result[^1], label);
+                    Assert.IsTrue(result.Take(result.Length - 1).All(b => b == 0), label);
+                }
+                else
+                {
+                    Assert.IsTrue(result.All(b => b == 0), label);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestBn254InvalidInputs()
+        {
+            // The EIP-196/197 byte-encoded surface rejects malformed lengths with ArgumentException.
+            Assert.ThrowsExactly<ArgumentException>(() => BN254.Add(System.Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => BN254.Mul(System.Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => BN254.Pairing(new byte[1]));
+        }
+
+        [TestMethod]
+        public void TestBn254AddGethVectors()
+        {
+            foreach (var vector in LoadGethPrecompileVectors("bn256Add.json"))
+            {
+                byte[] input = HexToBytes(vector.Input);
+                if (input.Length != BN254.G1EncodedLength * 2)
+                {
+                    Assert.ThrowsExactly<ArgumentException>(() => BN254.Add(input), vector.Name);
+                    continue;
+                }
+
+                byte[] expected = HexToBytes(vector.Expected);
+                byte[] actual = BN254.Add(input);
+                CollectionAssert.AreEqual(expected, actual, vector.Name);
+            }
+        }
+
+        [TestMethod]
+        public void TestBn254MulGethVectors()
+        {
+            foreach (var vector in LoadGethPrecompileVectors("bn256ScalarMul.json"))
+            {
+                byte[] input = HexToBytes(vector.Input);
+                if (input.Length != BN254.G1EncodedLength + BN254.FieldElementLength)
+                {
+                    Assert.ThrowsExactly<ArgumentException>(() => BN254.Mul(input), vector.Name);
+                    continue;
+                }
+
+                byte[] expected = HexToBytes(vector.Expected);
+                byte[] actual = BN254.Mul(input);
+                CollectionAssert.AreEqual(expected, actual, vector.Name);
+            }
+        }
+
+        [TestMethod]
+        public void TestBn254PairingGethVectors()
+        {
+            foreach (var vector in LoadGethPrecompileVectors("bn256Pairing.json"))
+            {
+                byte[] input = HexToBytes(vector.Input);
+                if (input.Length % BN254.PairInputLength != 0)
+                {
+                    Assert.ThrowsExactly<ArgumentException>(() => BN254.Pairing(input), vector.Name);
+                    continue;
+                }
+
+                byte[] expected = HexToBytes(vector.Expected);
+                byte[] actual = BN254.Pairing(input);
+                CollectionAssert.AreEqual(expected, actual, vector.Name);
+            }
+        }
+
+        [TestMethod]
+        public void TestBn254DeserializeRejectsNonSubgroupG2()
+        {
+            byte[] encoded = new byte[BN254.G2EncodedLength];
+            WriteBn254Field(Bn254G2NonSubgroupXIm, encoded, 0);
+            WriteBn254Field(Bn254G2NonSubgroupXRe, encoded, BN254.FieldElementLength);
+            WriteBn254Field(Bn254G2NonSubgroupYIm, encoded, BN254.FieldElementLength * 2);
+            WriteBn254Field(Bn254G2NonSubgroupYRe, encoded, BN254.FieldElementLength * 3);
+
+            Assert.ThrowsExactly<ArgumentException>(() => Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(encoded));
+        }
+
+        [TestMethod]
+        public void TestBn254DeserializeRejectsOffCurveG2()
+        {
+            byte[] encoded = new byte[BN254.G2EncodedLength];
+            WriteBn254Field(Bn254G2OffCurveXIm, encoded, 0);
+            WriteBn254Field(Bn254G2OffCurveXRe, encoded, BN254.FieldElementLength);
+            WriteBn254Field(Bn254G2OffCurveYIm, encoded, BN254.FieldElementLength * 2);
+            WriteBn254Field(Bn254G2OffCurveYRe, encoded, BN254.FieldElementLength * 3);
+
+            Assert.ThrowsExactly<ArgumentException>(() => Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(encoded));
+        }
+
+        [TestMethod]
+        public void TestBn254DeserializeAcceptsValidG2Generator()
+        {
+            // The canonical, in-subgroup G2 generator must continue to deserialize successfully.
+            byte[] encoded = new byte[BN254.G2EncodedLength];
+            WriteBn254Field(Bn254G2XIm, encoded, 0);
+            WriteBn254Field(Bn254G2XRe, encoded, BN254.FieldElementLength);
+            WriteBn254Field(Bn254G2YIm, encoded, BN254.FieldElementLength * 2);
+            WriteBn254Field(Bn254G2YRe, encoded, BN254.FieldElementLength * 3);
+
+            var point = Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(encoded);
+            CollectionAssert.AreEqual(encoded, Neo.SmartContract.Native.CryptoLib.Bn254Serialize(point));
+        }
+
+        [TestMethod]
+        public void TestBn254DeserializeRejectsNonCanonicalG1()
+        {
+            // x = generator_x + p is congruent to the valid generator under reduction, but a
+            // strict (EVM-parity) decoder must reject any coordinate that is not below p.
+            byte[] encoded = new byte[BN254.G1EncodedLength];
+            WriteBn254Field(Bn254NonCanonicalG1X, encoded, 0);
+            WriteBn254Field(Bn254G1Y, encoded, BN254.FieldElementLength);
+
+            Assert.ThrowsExactly<ArgumentException>(() => Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(encoded));
+        }
+
+        [TestMethod]
+        public void TestBn254DeserializeAcceptsCanonicalG1Generator()
+        {
+            // The canonical generator (1, 2) must continue to deserialize successfully.
+            byte[] encoded = new byte[BN254.G1EncodedLength];
+            WriteBn254Field(Bn254G1X, encoded, 0);
+            WriteBn254Field(Bn254G1Y, encoded, BN254.FieldElementLength);
+
+            var point = Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(encoded);
+            CollectionAssert.AreEqual(encoded, Neo.SmartContract.Native.CryptoLib.Bn254Serialize(point));
+        }
+
         private bool CallVerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
@@ -1312,5 +1625,70 @@ namespace Neo.UnitTests.SmartContract.Native
                 return engine.ResultStack.Pop().GetBoolean();
             }
         }
+
+        private static void WriteBn254Field(string hex, byte[] buffer, int offset)
+        {
+            var field = Bn254Field(hex);
+            System.Buffer.BlockCopy(field, 0, buffer, offset, field.Length);
+        }
+
+        private static InteropInterface DecodeBn254G1(string x, string y)
+        {
+            byte[] encoded = new byte[BN254.G1EncodedLength];
+            WriteBn254Field(x, encoded, 0);
+            WriteBn254Field(y, encoded, BN254.FieldElementLength);
+            return Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(encoded);
+        }
+
+        private static InteropInterface DecodeBn254G2(string xImag, string xReal, string yImag, string yReal)
+        {
+            byte[] encoded = new byte[BN254.G2EncodedLength];
+            WriteBn254Field(xImag, encoded, 0);
+            WriteBn254Field(xReal, encoded, BN254.FieldElementLength);
+            WriteBn254Field(yImag, encoded, BN254.FieldElementLength * 2);
+            WriteBn254Field(yReal, encoded, BN254.FieldElementLength * 3);
+            return Neo.SmartContract.Native.CryptoLib.Bn254Deserialize(encoded);
+        }
+
+        private static byte[] Bn254Field(string hex)
+        {
+            if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                hex = hex[2..];
+            if (hex.Length > 64)
+                throw new ArgumentOutOfRangeException(nameof(hex));
+            return hex.PadLeft(64, '0').HexToBytes();
+        }
+
+        private static byte[] HexToBytes(string hex)
+        {
+            if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                hex = hex[2..];
+            return Convert.FromHexString(hex);
+        }
+
+        private static IEnumerable<GethPrecompileVector> LoadGethPrecompileVectors(string fileName)
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "SmartContract", "Native", "BN254TestVectors", fileName);
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"BN254 test vector file not found: {path}", path);
+
+            using var stream = File.OpenRead(path);
+            var vectors = JsonSerializer.Deserialize<List<GethPrecompileVector>>(stream, s_jsonOptions);
+            if (vectors is null || vectors.Count == 0)
+                throw new InvalidOperationException($"Unable to read BN254 test vectors from {path}.");
+            return vectors;
+        }
+
+        private sealed record GethPrecompileVector
+        {
+            public string Name { get; init; } = string.Empty;
+            public string Input { get; init; } = string.Empty;
+            public string Expected { get; init; } = string.Empty;
+        }
+
+        private static readonly JsonSerializerOptions s_jsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
     }
 }
