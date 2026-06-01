@@ -90,7 +90,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Charges VM instruction price after opcode execution. Applied starting from Gorgon hardfork.
         /// </summary>
-        private readonly Action<Instruction, RunStats?>? _postExecuteInstruction;
+        private readonly Action<Instruction?, RunStats?>? _postExecuteInstruction;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -269,7 +269,7 @@ namespace Neo.SmartContract
                     _postExecuteInstruction = (instruction, runStats) =>
                     {
                         var stats = runStats ?? new RunStats();
-                        long price = OpcodeV1((long)_execFeeFactor, instruction.OpCode, stats);
+                        long price = instruction is null ? 0 : OpcodeV1((long)_execFeeFactor, instruction.OpCode, stats);
                         AddFemtoGas(price);
                     };
             }
@@ -997,7 +997,7 @@ namespace Neo.SmartContract
             _preExecuteInstruction?.Invoke(instruction);
         }
 
-        protected override void PostExecuteInstruction(Instruction instruction, RunStats? priceArgs)
+        protected override void PostExecuteInstruction(Instruction? instruction, RunStats? priceArgs)
         {
             base.PostExecuteInstruction(instruction, priceArgs);
             Diagnostic?.PostExecuteInstruction(instruction);

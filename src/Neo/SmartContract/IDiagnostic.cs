@@ -21,7 +21,7 @@ namespace Neo.SmartContract
         void ContextLoaded(ExecutionContext context);
         void ContextUnloaded(ExecutionContext context);
         void PreExecuteInstruction(Instruction instruction);
-        void PostExecuteInstruction(Instruction instruction);
+        void PostExecuteInstruction(Instruction? instruction);
         void CallFromNative(UInt160 hash, string method, StackItem[] args);
     }
 }
