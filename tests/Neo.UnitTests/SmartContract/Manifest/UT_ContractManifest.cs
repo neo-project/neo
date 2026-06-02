@@ -37,8 +37,6 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var path = Path.Combine("SmartContract", "Manifest", "TestFile", "SampleContract.manifest.json");
             var json = File.ReadAllText(path);
             var manifest = ContractManifest.Parse(json);
-
-            var counter = new ReferenceCounter();
             var item = manifest.ToStackItem();
             var data = BinarySerializer.Serialize(item, 1024 * 1024, 4096);
 
