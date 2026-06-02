@@ -21,7 +21,7 @@ namespace Neo.SmartContract
     /// <summary>
     /// The <see cref="EventArgs"/> of <see cref="ApplicationEngine.Notify"/>.
     /// </summary>
-    public class NotifyEventArgs : EventArgs
+    public class NotifyEventArgs : EventArgs, IInteroperable
     {
         /// <summary>
         /// The container that containing the executed script.
@@ -61,6 +61,16 @@ namespace Neo.SmartContract
         public void FromStackItem(StackItem stackItem)
         {
             throw new NotSupportedException();
+        }
+
+        public StackItem ToStackItem()
+        {
+            return new Array()
+            {
+                ScriptHash.ToArray(),
+                EventName,
+                State,
+            };
         }
 
         public StackItem ToStackItem(ApplicationEngine engine)
