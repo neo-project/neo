@@ -81,6 +81,7 @@ public partial class RemoteNode : Connection
         _localNode = localNode;
         _knownHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes));
         _sentHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes));
+        _pendingKnownHashes = new HashSetCache<UInt256>(Math.Max(1, config.MaxKnownHashes), () => TimeProvider.Current.UtcNow);
         localNode.RemoteNodes.TryAdd(Self, this);
     }
 
@@ -217,6 +218,7 @@ public partial class RemoteNode : Connection
         timer.CancelIfNotNull();
         if (_localNode.RemoteNodes.TryRemove(Self, out _))
         {
+            _pendingKnownHashes.Clear();
             _knownHashes.Clear();
             _sentHashes.Clear();
         }

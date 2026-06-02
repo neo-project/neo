@@ -27,10 +27,6 @@ public delegate bool MessageReceivedHandler(NeoSystem system, Message message);
 partial class RemoteNode
 {
     private class Timer { }
-    private class PendingKnownHashesCollection : KeyedCollectionSlim<UInt256, Tuple<UInt256, DateTime>>
-    {
-        protected override UInt256 GetKeyForItem(Tuple<UInt256, DateTime> item) => item.Item1;
-    }
 
     public static event MessageReceivedHandler MessageReceived
     {
@@ -39,7 +35,7 @@ partial class RemoteNode
     }
 
     private static readonly List<MessageReceivedHandler> s_handlers = new();
-    private readonly PendingKnownHashesCollection _pendingKnownHashes = new();
+    private readonly HashSetCache<UInt256> _pendingKnownHashes;
     private readonly HashSetCache<UInt256> _knownHashes;
     private readonly HashSetCache<UInt256> _sentHashes;
     private bool _verack = false;
@@ -360,7 +356,7 @@ partial class RemoteNode
         }
         if (hashes.Length == 0) return;
         foreach (var hash in hashes)
-            _pendingKnownHashes.TryAdd(Tuple.Create(hash, TimeProvider.Current.UtcNow));
+            _pendingKnownHashes.TryAdd(hash);
         _system.TaskManager.Tell(new TaskManager.NewTasks(InvPayload.Create(payload.Type, hashes)));
     }
 
@@ -438,12 +434,7 @@ partial class RemoteNode
     private void OnTimer()
     {
         var oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
-        while (_pendingKnownHashes.Count > 0)
-        {
-            var (_, time) = _pendingKnownHashes.FirstOrDefault!;
-            if (oneMinuteAgo <= time) break;
-            if (!_pendingKnownHashes.RemoveFirst()) break;
-        }
+        _pendingKnownHashes.Prune(oneMinuteAgo);
         if (oneMinuteAgo > _lastSent)
             EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_system.StoreView))));
     }
