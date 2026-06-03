@@ -55,7 +55,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                                            0x01,0x01,0x01,0x01,0x01,
                                            0x01,0x01,0x01,0x01,0x01,
                                            0x01,0x01,0x01,0x01,0x01 };
-            var signature = Crypto.Sign(message, keyPair.PrivateKey);
+            var signature = Crypto.Sign(message, keyPair);
             contractGroup = new ContractGroup
             {
                 PubKey = keyPair.PublicKey,
