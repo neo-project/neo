@@ -41,12 +41,12 @@ namespace Neo.SmartContract.Manifest
             Parameters = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractParameterDefinition>()).ToArray();
         }
 
-        public virtual StackItem ToStackItem(IReferenceCounter? referenceCounter)
+        public virtual StackItem ToStackItem()
         {
-            return new Struct(referenceCounter)
+            return new Struct()
             {
                 Name,
-                new Array(referenceCounter, Parameters.Select(p => p.ToStackItem(referenceCounter)))
+                new Array(Parameters.Select(p => p.ToStackItem()))
             };
         }
 

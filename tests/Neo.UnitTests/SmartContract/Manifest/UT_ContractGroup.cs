@@ -34,7 +34,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             };
 
             ContractGroup clone = (ContractGroup)RuntimeHelpers.GetUninitializedObject(typeof(ContractGroup));
-            ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
+            ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem());
             Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
         }
 
@@ -55,7 +55,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                                            0x01,0x01,0x01,0x01,0x01,
                                            0x01,0x01,0x01,0x01,0x01,
                                            0x01,0x01,0x01,0x01,0x01 };
-            var signature = Crypto.Sign(message, keyPair.PrivateKey);
+            var signature = Crypto.Sign(message, keyPair);
             contractGroup = new ContractGroup
             {
                 PubKey = keyPair.PublicKey,

@@ -103,8 +103,8 @@ namespace Neo.SmartContract.Native
             if (response == null) throw new ArgumentException("Oracle response not found");
             OracleRequest? request = GetRequest(engine.SnapshotCache, response.Id);
             if (request == null) throw new ArgumentException("Oracle request not found");
-            engine.SendNotification(Hash, "OracleResponse", new Array(engine.ReferenceCounter) { response.Id, request.OriginalTxid.ToArray() });
-            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits, engine.ReferenceCounter);
+            engine.SendNotification(Hash, "OracleResponse", new Array() { response.Id, request.OriginalTxid.ToArray() });
+            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits);
             return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
 
@@ -277,7 +277,7 @@ namespace Neo.SmartContract.Native
                 list.Add(id);
             }
 
-            engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) {
+            engine.SendNotification(Hash, "OracleRequest", new Array() {
                 id,
                 engine.CallingScriptHash!.ToArray(),
                 url,
@@ -299,7 +299,7 @@ namespace Neo.SmartContract.Native
                 return (ulong)item.GetInteger();
             }
 
-            protected override StackItem ElementToStackItem(ulong element, IReferenceCounter? referenceCounter)
+            protected override StackItem ElementToStackItem(ulong element)
             {
                 return element;
             }

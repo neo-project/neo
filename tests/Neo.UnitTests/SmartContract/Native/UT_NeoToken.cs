@@ -997,7 +997,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 }));
                 cachedCommittee.Add((member, 200 * 10000));
             }
-            engine.SnapshotCache.GetOrAdd(new KeyBuilder(NativeContract.NEO.Id, 14), () => new StorageItem()).Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), ExecutionEngineLimits.Default);
+            engine.SnapshotCache.GetOrAdd(new KeyBuilder(NativeContract.NEO.Id, 14), () => new StorageItem()).Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(), ExecutionEngineLimits.Default);
 
             var item = engine.SnapshotCache.GetAndChange(new KeyBuilder(NativeContract.NEO.Id, 1), () => new StorageItem());
             item.Value = ((BigInteger)2100 * 10000L).ToByteArray();
