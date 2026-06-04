@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem Deserialize(ApplicationEngine engine, byte[] data)
         {
-            return BinarySerializer.Deserialize(data, engine.Limits, engine.ReferenceCounter);
+            return BinarySerializer.Deserialize(data, engine.Limits);
         }
 
         [ContractMethod(CpuFee = 1 << 12)]
@@ -54,7 +54,7 @@ namespace Neo.SmartContract.Native
         {
             JToken? token = JToken.Parse(json, 10);
             if (token is null) return StackItem.Null;
-            return JsonSerializer.Deserialize(engine, token, engine.Limits, engine.ReferenceCounter);
+            return JsonSerializer.Deserialize(engine, token, engine.Limits);
         }
 
         /// <summary>

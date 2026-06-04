@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract
                 engine.LoadScript(script.ToArray());
             }
 
-            var ns = new Array(engine.ReferenceCounter);
+            var ns = new Array();
             for (var i = 0; i < 500; i++)
             {
                 ns.Add("");
@@ -59,15 +59,20 @@ namespace Neo.UnitTests.SmartContract
 
             var hash = UInt160.Parse("0x179ab5d297fd34ecd48643894242fc3527f42853");
             engine.SendNotification(hash, "Test", ns);
-            // This should have being 0, but we have optimized the vm to not clean the reference counter
-            // unless it is necessary, so the reference counter will be 1000.
-            // Same reason why its 1504 instead of 504.
-            Assert.AreEqual(1000, engine.ReferenceCounter.Count);
-            // This will make a deepcopy for the notification, along with the 500 state items.
-            engine.GetNotifications(hash);
+            // This should have be 0, because notifications are not on stack yet.
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            // This will make a deepcopy for the notification, along with the 500 state items,
+            // and push the resulting item on stack.
+            engine.Push(engine.GetNotifications(hash));
             // With the fix of issue 3300, the reference counter calculates not only
             // the notifaction items, but also the subitems of the notification state.
-            Assert.AreEqual(1504, engine.ReferenceCounter.Count);
+            // There should be 505 items on stack:
+            // 1 Array (notifications container) + 
+            // 1 ByteArray (contract scripthash) +
+            // 1 ByteArray (event name) +
+            // 1 Array (array of notification subitems) +
+            // 501 Array filled with 500 subitems (ByteArrays)
+            Assert.AreEqual(505, engine.ReferenceCounter.Count);
         }
     }
 }
