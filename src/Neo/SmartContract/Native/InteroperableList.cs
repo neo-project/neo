@@ -39,7 +39,7 @@ namespace Neo.SmartContract.Native
         public void Sort() => List.Sort();
 
         protected abstract T ElementFromStackItem(StackItem item);
-        protected abstract StackItem ElementToStackItem(T element, IReferenceCounter? referenceCounter);
+        protected abstract StackItem ElementToStackItem(T element);
 
         public void FromStackItem(StackItem stackItem)
         {
@@ -50,9 +50,9 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+        public StackItem ToStackItem()
         {
-            return new Array(referenceCounter, this.Select(p => ElementToStackItem(p, referenceCounter)));
+            return new Array(this.Select(p => ElementToStackItem(p)));
         }
     }
 }

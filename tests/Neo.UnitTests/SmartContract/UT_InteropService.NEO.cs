@@ -227,7 +227,7 @@ namespace Neo.UnitTests.SmartContract
                 IsReadOnly = false
             }, [0x01], FindOptions.ValuesOnly);
             iterator.Next();
-            var ele = iterator.Value(null);
+            var ele = iterator.Value();
             Assert.AreEqual(storageItem.Value.Span.ToHexString(), ele.GetSpan().ToHexString());
         }
     }

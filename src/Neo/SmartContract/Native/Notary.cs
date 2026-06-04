@@ -349,9 +349,9 @@ namespace Neo.SmartContract.Native
                 Till = (uint)@struct[1].GetInteger();
             }
 
-            public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+            public StackItem ToStackItem()
             {
-                return new Struct(referenceCounter) { Amount, Till };
+                return new Struct() { Amount, Till };
             }
         }
     }

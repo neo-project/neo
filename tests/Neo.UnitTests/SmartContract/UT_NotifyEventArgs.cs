@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract
                 engine.LoadScript(script.ToArray());
             }
 
-            var ns = new Array(engine.ReferenceCounter);
+            var ns = new Array();
             for (var i = 0; i < 500; i++)
             {
                 ns.Add("");
@@ -59,20 +59,20 @@ namespace Neo.UnitTests.SmartContract
 
             var hash = UInt160.Parse("0x179ab5d297fd34ecd48643894242fc3527f42853");
             engine.SendNotification(hash, "Test", ns);
-            // This should be 0, because there's actiually no items on the stack yet
-            // (with the new RC implementation).
+            // This should have be 0, because notifications are not on stack yet.
             Assert.AreEqual(0, engine.ReferenceCounter.Count);
-            // This will make a deepcopy for the notification, along with the 500 state items.
+            // This will make a deepcopy for the notification, along with the 500 state items,
+            // and push the resulting item on stack.
             engine.Push(engine.GetNotifications(hash));
             // With the fix of issue 3300, the reference counter calculates not only
             // the notifaction items, but also the subitems of the notification state.
-            // Pushing the result on stack as in OnSysCall will result in the reference counter change.
-            // The result RC value consists of: 1 outer Array of notifications; the array content is a
-            // single notification (1 Array) consisting of 3 items:
-            // 1 ByteString (contract ScriptHash)
-            // 1 ByteString (notification name)
-            // 1 Array (includes 500 primitive stackitems).
-            Assert.AreEqual(1 + 1 + 3 + 500, engine.ReferenceCounter.Count);
+            // There should be 505 items on stack:
+            // 1 Array (notifications container) + 
+            // 1 ByteArray (contract scripthash) +
+            // 1 ByteArray (event name) +
+            // 1 Array (array of notification subitems) +
+            // 501 Array filled with 500 subitems (ByteArrays)
+            Assert.AreEqual(505, engine.ReferenceCounter.Count);
         }
     }
 }

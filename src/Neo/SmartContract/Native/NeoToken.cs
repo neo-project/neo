@@ -240,9 +240,9 @@ namespace Neo.SmartContract.Native
 
                     if (!newCommittee.SequenceEqual(prevCommittee))
                     {
-                        engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter) {
-                            new VM.Types.Array(engine.ReferenceCounter, prevCommittee.Select(u => (ByteString)u.ToArray())) ,
-                            new VM.Types.Array(engine.ReferenceCounter, newCommittee.Select(u => (ByteString)u.ToArray()))
+                        engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array() {
+                            new VM.Types.Array(prevCommittee.Select(u => (ByteString)u.ToArray())) ,
+                            new VM.Types.Array(newCommittee.Select(u => (ByteString)u.ToArray()))
                         });
                     }
                 }
@@ -418,7 +418,7 @@ namespace Neo.SmartContract.Native
             if (state.Registered) return true;
             state.Registered = true;
             engine.SendNotification(Hash, "CandidateStateChanged",
-                new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), true, state.Votes });
+                new VM.Types.Array() { pubkey.ToArray(), true, state.Votes });
             return true;
         }
 
@@ -442,7 +442,7 @@ namespace Neo.SmartContract.Native
             state.Registered = false;
             CheckCandidate(engine.SnapshotCache, pubkey, state);
             engine.SendNotification(Hash, "CandidateStateChanged",
-                new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), false, state.Votes });
+                new VM.Types.Array() { pubkey.ToArray(), false, state.Votes });
             return true;
         }
 
@@ -509,7 +509,7 @@ namespace Neo.SmartContract.Native
                 stateAccount.LastGasPerVote = 0;
             }
             engine.SendNotification(Hash, "Vote",
-                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, stateAccount.Balance });
+                new VM.Types.Array() { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, stateAccount.Balance });
             if (gasDistribution is not null)
                 await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
             return true;
@@ -686,9 +686,9 @@ namespace Neo.SmartContract.Native
                 LastGasPerVote = @struct[3].GetInteger();
             }
 
-            public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
+            public override StackItem ToStackItem()
             {
-                Struct @struct = (Struct)base.ToStackItem(referenceCounter);
+                Struct @struct = (Struct)base.ToStackItem();
                 @struct.Add(BalanceHeight);
                 @struct.Add(VoteTo?.ToArray() ?? StackItem.Null);
                 @struct.Add(LastGasPerVote);
@@ -708,9 +708,9 @@ namespace Neo.SmartContract.Native
                 Votes = @struct[1].GetInteger();
             }
 
-            public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+            public StackItem ToStackItem()
             {
-                return new Struct(referenceCounter) { Registered, Votes };
+                return new Struct() { Registered, Votes };
             }
         }
 
@@ -725,9 +725,9 @@ namespace Neo.SmartContract.Native
                 return (ECPoint.DecodePoint(@struct[0].GetSpan(), ECCurve.Secp256r1), @struct[1].GetInteger());
             }
 
-            protected override StackItem ElementToStackItem((ECPoint PublicKey, BigInteger Votes) element, IReferenceCounter? referenceCounter)
+            protected override StackItem ElementToStackItem((ECPoint PublicKey, BigInteger Votes) element)
             {
-                return new Struct(referenceCounter) { element.PublicKey.ToArray(), element.Votes };
+                return new Struct() { element.PublicKey.ToArray(), element.Votes };
             }
         }
 
