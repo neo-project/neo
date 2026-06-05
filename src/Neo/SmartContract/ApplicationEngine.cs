@@ -532,7 +532,10 @@ namespace Neo.SmartContract
 
             _feeConsumed = _feeConsumed + picoGas;
             if (_feeConsumed > _feeAmount)
+            {
+                _feeConsumed = _feeAmount;
                 throw new InvalidOperationException("Insufficient GAS.");
+            }
         }
 
         protected override void OnFault(Exception ex)
