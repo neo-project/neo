@@ -10,9 +10,11 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Numerics;
@@ -197,6 +199,55 @@ namespace Neo.UnitTests.SmartContract
                 68, 216, 160, 6, 89, 102, 86, 72, 37, 15, 132, 45, 76, 221, 170, 21, 128, 51, 34, 168, 205, 56, 10, 228, 51, 114, 4, 218, 245, 155, 172, 132
             };
             Assert.ThrowsExactly<ArgumentException>(() => engine.RuntimeLog(msg));
+        }
+
+        [TestMethod]
+        public void FeeConsumed_ExcessiveFee_DoesNotOverflow()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const long gas = 100_000_000;
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: gas);
+            var feeConsumedField = typeof(ApplicationEngine).GetField("_feeConsumed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            feeConsumedField.SetValue(engine, BigInteger.Parse("92233720368547758080000000000000"));
+
+            Assert.AreEqual(gas, engine.FeeConsumed);
+
+            var executed = new Blockchain.ApplicationExecuted(engine);
+            Assert.AreEqual(gas, executed.GasConsumed);
+        }
+
+        [TestMethod]
+        public void GasLeft_AfterInsufficientGas_ReturnsZero()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const long gas = 100_000;
+
+            using var script = new ScriptBuilder();
+            script.EmitPush(gas + 1);
+            script.EmitSysCall(ApplicationEngine.System_Runtime_BurnGas);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: gas);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+
+            Assert.AreEqual(0L, engine.GasLeft);
+        }
+
+        [TestMethod]
+        public void FeeConsumed_InsufficientGas_DoesNotCapInternalFee()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const long gas = 10_000;
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: gas);
+            var excessFee = (BigInteger)gas * ApplicationEngine.FeeFactor + 1;
+            var exception = Assert.ThrowsExactly<InvalidOperationException>(() => engine.AddFee(excessFee));
+            Assert.AreEqual("Insufficient GAS.", exception.Message);
+
+            var feeConsumedField = typeof(ApplicationEngine).GetField("_feeConsumed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            Assert.AreEqual(excessFee, (BigInteger)feeConsumedField.GetValue(engine)!);
+            Assert.AreEqual(gas + 1, engine.FeeConsumed);
         }
     }
 }
