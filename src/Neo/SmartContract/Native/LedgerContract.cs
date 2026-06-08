@@ -89,8 +89,7 @@ public sealed class LedgerContract : NativeContract
 
     /// <summary>
     /// Checks whether block with the specified index is reachable from the smart contract
-    /// based on the current state of application engine with respect to MaxTraceableBlocks
-    /// setting stored in native Policy smartcontract starting from HF_Echidna.
+    /// based on the current state of application engine with respect to MaxTraceableBlocks setting.
     /// </summary>
     /// <param name="engine">The execution engine.</param>
     /// <param name="index">The index of the block.</param>
@@ -102,16 +101,11 @@ public sealed class LedgerContract : NativeContract
 
     /// <summary>
     /// Checks whether block with the specified index is reachable from the smart contract
-    /// based on the current state of snapshot and provided maxTraceableBlocks value. It's
-    /// the caller's duty to provide proper maxTraceableBlocks value with respect to
-    /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
-    /// HF_Echidna.
+    /// based on the current state of snapshot and provided maxTraceableBlocks value.
     /// </summary>
     /// <param name="snapshot">The snapshot used to read data.</param>
     /// <param name="index">The index of the block.</param>
-    /// <param name="maxTraceableBlocks">The maximum number of traceable blocks with respect to
-    /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
-    /// HF_Echidna.</param>
+    /// <param name="maxTraceableBlocks">The maximum number of traceable blocks with respect to MaxTraceableBlocks setting.</param>
     /// <returns>Whether the block is traceable.</returns>
     private bool IsTraceableBlock(IReadOnlyStore snapshot, uint index, uint maxTraceableBlocks)
     {

@@ -48,7 +48,7 @@ public abstract class Wallet : ISigner
     /// <summary>
     /// The name of the wallet.
     /// </summary>
-    public abstract string Name { get; }
+    public abstract string Name { get; set; }
 
     /// <summary>
     /// The path of the wallet.
@@ -59,6 +59,11 @@ public abstract class Wallet : ISigner
     /// The version of the wallet.
     /// </summary>
     public abstract Version Version { get; }
+
+    /// <summary>
+    /// Indicates whether the wallet is unlocked.
+    /// </summary>
+    public abstract bool IsUnlocked { get; }
 
     /// <summary>
     /// Changes the password of the wallet.
@@ -770,14 +775,15 @@ public abstract class Wallet : ISigner
         var account = GetAccount(publicKey)
             ?? throw new SignException("No such account found");
 
-        var privateKey = account.GetKey()?.PrivateKey
-            ?? throw new SignException("No private key found for the given public key");
+        var key = account.GetKey();
+        if (key?.PrivateKey is null)
+            throw new SignException("No private key found for the given public key");
 
         if (account.Lock)
             throw new SignException("Account is locked");
 
         var signData = block.GetSignData(network);
-        return Crypto.Sign(signData, privateKey);
+        return Crypto.Sign(signData, key);
     }
 
     /// <summary>

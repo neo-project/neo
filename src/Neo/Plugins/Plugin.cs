@@ -120,8 +120,7 @@ public abstract class Plugin : IDisposable
         {
             case ".json":
             case ".dll":
-                Utility.Log(nameof(Plugin), LogLevel.Warning,
-                    $"File {e.Name} is {e.ChangeType}, please restart node.");
+                Logs.RuntimeLogger.Warning("File {File} is {ChangeType}, please restart node.", e.Name, e.ChangeType);
                 break;
         }
     }
@@ -151,7 +150,7 @@ public abstract class Plugin : IDisposable
         }
         catch (Exception ex)
         {
-            Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+            Logs.RuntimeLogger.Error(ex, "Failed to load plugin assembly {Assembly}", args.Name);
             return null;
         }
     }
@@ -186,7 +185,7 @@ public abstract class Plugin : IDisposable
         }
         catch (Exception ex)
         {
-            Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly {assemblyName}: {ex}");
+            Logs.RuntimeLogger.Error(ex, "Failed to load plugin assembly {Assembly}", assemblyName);
             throw;
         }
 
@@ -204,7 +203,7 @@ public abstract class Plugin : IDisposable
             }
             catch (Exception ex)
             {
-                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} of {assemblyName}: {ex}");
+                Logs.RuntimeLogger.Error(ex, "Failed to initialize plugin type {Type} of {Assembly}", type.FullName, assemblyName);
             }
         }
     }
@@ -225,7 +224,7 @@ public abstract class Plugin : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {filename}: {ex}");
+                    Logs.RuntimeLogger.Error(ex, "Failed to load plugin assembly file {File}", filename);
                 }
             }
         }
@@ -234,16 +233,6 @@ public abstract class Plugin : IDisposable
         {
             LoadPlugin(assembly);
         }
-    }
-
-    /// <summary>
-    /// Write a log for the plugin.
-    /// </summary>
-    /// <param name="message">The message of the log.</param>
-    /// <param name="level">The level of the log.</param>
-    protected void Log(object message, LogLevel level = LogLevel.Info)
-    {
-        Utility.Log($"{nameof(Plugin)}:{Name}", level, message);
     }
 
     /// <summary>
@@ -272,10 +261,7 @@ public abstract class Plugin : IDisposable
     {
         foreach (var plugin in Plugins)
         {
-            if (plugin.IsStopped)
-            {
-                continue;
-            }
+            if (plugin.IsStopped) continue;
 
             bool result;
             try
@@ -284,7 +270,7 @@ public abstract class Plugin : IDisposable
             }
             catch (Exception ex)
             {
-                Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                Logs.RuntimeLogger.Error(ex, "Failed to send message to plugin {Plugin}", plugin.Name);
 
                 switch (plugin.ExceptionPolicy)
                 {

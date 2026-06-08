@@ -12,7 +12,7 @@ jobs:
 
     steps:
     - name: Delete Neo Package (docker)
-      uses: actions/delete-package-versions@v4
+      uses: actions/delete-package-versions@v5
       continue-on-error: true
       with:
         package-name: Neo

@@ -480,4 +480,13 @@ public class UT_NEP6Wallet
         ac2.IsDefault = true;
         Assert.AreEqual(ac2.Address, w.GetDefaultAccount()!.Address);
     }
+
+    [TestMethod]
+    public void TestSetName()
+    {
+        Assert.AreEqual("noname", uut.Name);
+
+        uut.Name = "test";
+        Assert.AreEqual("test", uut.Name);
+    }
 }

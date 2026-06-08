@@ -46,8 +46,8 @@ public sealed class RoleManagement : NativeContract
         var currentIndex = Ledger.CurrentIndex(snapshot);
         if (currentIndex + 1 < index)
             throw new ArgumentOutOfRangeException(nameof(index), $"Index {index} exceeds current index + 1 ({currentIndex + 1})");
-        var key = CreateStorageKey((byte)role, index).ToArray();
-        var boundary = CreateStorageKey((byte)role).ToArray();
+        var key = CreateStorageKey((byte)role, index);
+        var boundary = CreateStorageKey((byte)role);
         return snapshot.FindRange(key, boundary, SeekDirection.Backward)
             .Select(u => u.Value.GetInteroperable<NodeList>().ToArray())
             .FirstOrDefault() ?? [];
@@ -68,6 +68,9 @@ public sealed class RoleManagement : NativeContract
         var key = CreateStorageKey((byte)role, index);
         if (engine.SnapshotCache.Contains(key))
             throw new InvalidOperationException("Role already designated");
+
+        if (nodes.Distinct().Count() != nodes.Length)
+            throw new InvalidOperationException($"Duplicate public keys are not allowed");
 
         NodeList list = new();
         list.AddRange(nodes);

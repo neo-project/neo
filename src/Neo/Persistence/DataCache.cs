@@ -246,6 +246,12 @@ public abstract class DataCache : IReadOnlyStore
         return Find(key, direction);
     }
 
+    /// <inheritdoc/>
+    public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(StorageKey start, StorageKey end, SeekDirection direction = SeekDirection.Forward)
+    {
+        return FindRange(start.ToArray(), end.ToArray(), direction);
+    }
+
     /// <summary>
     /// Finds the entries starting with the specified prefix.
     /// </summary>

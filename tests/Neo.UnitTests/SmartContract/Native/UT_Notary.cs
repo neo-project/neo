@@ -664,7 +664,7 @@ public class UT_Notary
         );
         snapshot.Commit();
 
-        // Create engine with custom settings (HF_Echidna should be enabled to properly interact with NotaryAssisted attribute).
+        // Create engine with custom settings.
         var settings = ProtocolSettings.Default with
         {
             Network = 0x334F454Eu,

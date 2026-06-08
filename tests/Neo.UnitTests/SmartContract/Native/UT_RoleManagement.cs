@@ -59,6 +59,34 @@ public class UT_RoleManagement
             List<NotifyEventArgs> notifications = [];
             void Ev(ApplicationEngine o, NotifyEventArgs e) => notifications.Add(e);
 
+            var nodes = new List<ContractParameter>();
+            Assert.ThrowsExactly<ArgumentException>(() =>  // Cannot be empty.
+                {
+                    NativeContract.RoleManagement.Call(
+                        snapshot1,
+                        new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                        new Block { Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)), Transactions = [] },
+                        "designateAsRole", Ev,
+                        new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
+                        new ContractParameter(ContractParameterType.Array) { Value = nodes }
+                    );
+                });
+
+            nodes = [new(ContractParameterType.ByteArray) { Value = publicKeys[0].ToArray() },
+                    new(ContractParameterType.ByteArray) { Value = publicKeys[0].ToArray() }];
+            Assert.ThrowsExactly<InvalidOperationException>(() =>  // Cannot contain duplicate elements.
+                {
+                    NativeContract.RoleManagement.Call(
+                        snapshot1,
+                        new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                        new Block { Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)), Transactions = [] },
+                        "designateAsRole", Ev,
+                        new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
+                        new ContractParameter(ContractParameterType.Array) { Value = nodes }
+                    );
+                });
+
+            nodes = [.. publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() })];
             var ret = NativeContract.RoleManagement.Call(
                 snapshot1,
                 new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
@@ -69,11 +97,23 @@ public class UT_RoleManagement
                 },
                 "designateAsRole", Ev,
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
-                new ContractParameter(ContractParameterType.Array) { Value = publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
+                new ContractParameter(ContractParameterType.Array) { Value = nodes }
             );
             snapshot1.Commit();
             Assert.HasCount(1, notifications);
             Assert.AreEqual("Designation", notifications[0].EventName);
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>  // Cannot re-designate the same role at the same height.
+                {
+                    NativeContract.RoleManagement.Call(
+                        snapshot1,
+                        new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                        new Block { Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)), Transactions = [] },
+                        "designateAsRole", Ev,
+                        new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
+                        new ContractParameter(ContractParameterType.Array) { Value = nodes }
+                    );
+                });
 
             var snapshot2 = system.GetTestSnapshotCache(false);
 

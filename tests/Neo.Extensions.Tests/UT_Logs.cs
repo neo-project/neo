@@ -9,11 +9,28 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Serilog;
+using Serilog.Events;
+
 namespace Neo.Tests;
 
 [TestClass]
-public class UT_Log
+public class UT_Logs
 {
+    private static readonly string LogPath = Path.Combine(Environment.CurrentDirectory, "Logs");
+
+    private static ILogger TestLoggerFactory(string source)
+    {
+        return new LoggerConfiguration()
+            .WriteTo.File(
+                path: Path.Combine(LogPath, source, "log-.txt"),
+                fileSizeLimitBytes: 100 * 1024 * 1024, // 100 MiB
+                rollOnFileSizeLimit: true,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 30 // about 1 month
+            ).CreateLogger();
+    }
+
     [TestMethod]
     public void TestGetLogger()
     {
@@ -21,25 +38,27 @@ public class UT_Log
         Assert.IsNotNull(logger);
         logger.Information("test");
 
-        var logDir = Logs.LogDirectory;
-        Assert.IsNull(logDir);
 
-        Logs.LogDirectory = Path.Combine(Environment.CurrentDirectory, "Logs");
+        Logs.LoggerFactory = TestLoggerFactory;
         logger = Logs.GetLogger("test");
         Assert.IsNotNull(logger);
         logger.Information("test");
 
         var fileName = $"log-{DateTime.Now:yyyyMMdd}.txt";
-        Assert.IsTrue(File.Exists(Path.Combine(Logs.LogDirectory, "test", fileName)));
-        Assert.ThrowsExactly<InvalidOperationException>(() => Logs.LogDirectory = "test");
+        Assert.IsTrue(File.Exists(Path.Combine(LogPath, "test", fileName)));
+
+        (logger as IDisposable)?.Dispose();
+        Logs.LoggerFactory = null;
+        Directory.Delete(LogPath, true);
     }
 
     [TestMethod]
-    public void TestConsoleLogger()
+    public void TestToLogEventLevel()
     {
-        var logger = Logs.ConsoleLogger;
-        Assert.IsNotNull(logger);
-
-        logger.Information("test");
+        Assert.AreEqual(Logs.LogActor.ToLogEventLevel(Akka.Event.LogLevel.DebugLevel), LogEventLevel.Debug);
+        Assert.AreEqual(Logs.LogActor.ToLogEventLevel(Akka.Event.LogLevel.InfoLevel), LogEventLevel.Information);
+        Assert.AreEqual(Logs.LogActor.ToLogEventLevel(Akka.Event.LogLevel.WarningLevel), LogEventLevel.Warning);
+        Assert.AreEqual(Logs.LogActor.ToLogEventLevel(Akka.Event.LogLevel.ErrorLevel), LogEventLevel.Error);
+        Assert.AreEqual(Logs.LogActor.ToLogEventLevel(Akka.Event.LogLevel.ErrorLevel + 1), LogEventLevel.Information);
     }
 }
