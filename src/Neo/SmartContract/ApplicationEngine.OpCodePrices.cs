@@ -299,7 +299,6 @@ namespace Neo.SmartContract
             StaticCoefficients[(byte)OpCode.TRY_L] = 1753;
             StaticCoefficients[(byte)OpCode.ENDTRY] = 1127;
             StaticCoefficients[(byte)OpCode.ENDTRY_L] = 1127;
-            StaticCoefficients[(byte)OpCode.ENDFINALLY] = 1108;
             StaticCoefficients[(byte)OpCode.RET] = 1085;
             StaticCoefficients[(byte)OpCode.SYSCALL] = 0;
             StaticCoefficients[(byte)OpCode.DEPTH] = 2053;

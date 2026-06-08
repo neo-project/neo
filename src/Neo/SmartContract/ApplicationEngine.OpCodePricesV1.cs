@@ -29,6 +29,7 @@ namespace Neo.SmartContract
         private static readonly long[] ConvertArrOrStructW = { 77, 134, 3218 };
         private static readonly long[] ConvertByteArrOrBufW = { 7, 3417 };
         private static readonly long[] DropW = { 99, 1486 };
+        private static readonly long[] EndFinallyW = { 93, 1137 };
         private static readonly long[] HasKeyW = { 99, 2575 };
         private static readonly long[] InitSlotW = { 67, 160, 1702 };
         private static readonly long[] IsNullW = { 97, 1236 };
@@ -78,6 +79,7 @@ namespace Neo.SmartContract
                 OpCode.CLEARITEMS => ClearItemsGas(param),
                 OpCode.CONVERT => ConvertGas(param),
                 OpCode.DROP => DropGas(param),
+                OpCode.ENDFINALLY => EndFinallyGas(param),
                 OpCode.HASKEY => HasKeyGas(param),
                 OpCode.INITSLOT => InitSlotGas(param),
                 OpCode.INITSSLOT => InitSlotGas(param),
@@ -154,6 +156,7 @@ namespace Neo.SmartContract
             _ => throw new InvalidOperationException($"Unsupported type {args.Type} for {OpCode.CONVERT} dynamic pricing."),
         };
         private static long DropGas(RunStats args) => DropW[0] * args.RefsDelta + DropW[1];
+        private static long EndFinallyGas(RunStats args) => EndFinallyW[0] * args.RefsDelta + EndFinallyW[1];
         private static long HasKeyGas(RunStats args) => HasKeyW[0] * args.RefsDelta + HasKeyW[1];
         private static long InitSlotGas(RunStats args) => InitSlotW[0] * args.RefsDelta + InitSlotW[1] * args.Length + InitSlotW[2];
         private static long IsNullGas(RunStats args) => IsNullW[0] * args.Length + IsNullW[1];
