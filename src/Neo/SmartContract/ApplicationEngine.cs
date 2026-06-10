@@ -156,7 +156,16 @@ namespace Neo.SmartContract
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor * OpcodePriceMultiplier);
+        public long FeeConsumed
+        {
+            get
+            {
+                var consumed = _feeConsumed.DivideCeiling(FeeFactor * OpcodePriceMultiplier);
+                if (consumed > long.MaxValue)
+                    return (long)(_feeAmount / FeeFactor);
+                return (long)consumed;
+            }
+        }
 
         /// <summary>
         /// Exec Fee Factor. In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
@@ -167,7 +176,16 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => (long)((_feeAmount - _feeConsumed) / (FeeFactor * OpcodePriceMultiplier));
+        public long GasLeft
+        {
+            get
+            {
+                if (_feeConsumed >= _feeAmount)
+                    return 0;
+                var left = (_feeAmount - _feeConsumed) / (FeeFactor * OpcodePriceMultiplier);
+                return left > long.MaxValue ? long.MaxValue : (long)left;
+            }
+        }
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
