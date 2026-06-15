@@ -17,6 +17,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Numerics;
 using Array = System.Array;
 
@@ -25,6 +26,36 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_StdLib
     {
+        private static byte[] ItoaThroughVM(string culture)
+        {
+            var prev = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+
+                var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+                using var script = new ScriptBuilder();
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "itoa", BigInteger.MinusOne, 10);
+
+                using var engine = ApplicationEngine.Create(
+                    TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                return engine.ResultStack.Pop<ByteString>().GetSpan().ToArray();
+            }
+            finally { CultureInfo.CurrentCulture = prev; }
+        }
+
+        [TestMethod]
+        public void ItoaCultureInfoTests()
+        {
+            var nodeUS = ItoaThroughVM("en-US");
+            var nodeFI = ItoaThroughVM("fi-FI");
+
+            CollectionAssert.AreEqual(nodeUS, nodeFI);
+        }
+
         [TestMethod]
         public void TestBinary()
         {
