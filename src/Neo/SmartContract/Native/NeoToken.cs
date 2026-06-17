@@ -404,7 +404,7 @@ namespace Neo.SmartContract.Native
                 !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
-            engine.AddFee(GetRegisterPrice(engine.SnapshotCache) * ApplicationEngine.FeeFactor);
+            engine.AddFee(GetRegisterPrice(engine.SnapshotCache), true);
             return RegisterInternal(engine, pubkey);
         }
 

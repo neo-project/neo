@@ -538,7 +538,8 @@ namespace Neo.SmartContract
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
         /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
-        protected internal void AddFee(BigInteger picoGas)
+        /// <param name="applyFactor">Indicates whether to apply the fee factor.</param>
+        protected internal void AddFee(BigInteger picoGas, bool applyFactor)
         {
             // Check whitelist
 
@@ -546,6 +547,11 @@ namespace Neo.SmartContract
             {
                 // The execution is whitelisted
                 return;
+            }
+
+            if (applyFactor)
+            {
+                picoGas *= FeeFactor;
             }
 
             _feeConsumed = _feeConsumed + picoGas;
@@ -615,7 +621,7 @@ namespace Neo.SmartContract
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
                 NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
             {
-                AddFee(fixedFee.Value * FeeFactor);
+                AddFee(fixedFee.Value, true);
                 state.WhiteListed = true;
             }
 
@@ -980,7 +986,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * _execFeeFactor);
+            AddFee(descriptor.FixedPrice * _execFeeFactor, false);
 
             object?[] parameters = new object?[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -994,7 +1000,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
