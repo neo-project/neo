@@ -549,6 +549,11 @@ namespace Neo.SmartContract
                 return;
             }
 
+            if (picoGas < 0)
+            {
+                throw new InvalidOperationException("AddFee can't be negative.");
+            }
+
             if (applyFactor)
             {
                 picoGas *= FeeFactor;
