@@ -71,7 +71,7 @@ namespace Neo.SmartContract
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
-        public const uint FeeFactor = 10000;
+        public static readonly BigInteger FeeFactor = 10000;
         private Dictionary<Type, object>? states;
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs>? notifications;
