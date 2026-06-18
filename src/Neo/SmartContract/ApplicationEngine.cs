@@ -541,17 +541,17 @@ namespace Neo.SmartContract
         /// <param name="applyFactor">Indicates whether to apply the fee factor.</param>
         protected internal void AddFee(BigInteger picoGas, bool applyFactor)
         {
+            if (picoGas < 0)
+            {
+                throw new InvalidOperationException("AddFee can't be negative.");
+            }
+
             // Check whitelist
 
             if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
             {
                 // The execution is whitelisted
                 return;
-            }
-
-            if (picoGas < 0)
-            {
-                throw new InvalidOperationException("AddFee can't be negative.");
             }
 
             if (applyFactor)
