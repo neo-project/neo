@@ -537,11 +537,11 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
-        /// <param name="applyFactor">Indicates whether to apply the fee factor.</param>
-        protected internal void AddFee(BigInteger picoGas, bool applyFactor)
+        /// <param name="gas">The amount of GAS, either in the unit of Datoshi or in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
+        /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
+        protected internal void AddFee(BigInteger gas, bool applyFactor)
         {
-            if (picoGas < 0)
+            if (gas < 0)
             {
                 throw new InvalidOperationException("AddFee can't be negative.");
             }
@@ -556,10 +556,10 @@ namespace Neo.SmartContract
 
             if (applyFactor)
             {
-                picoGas *= FeeFactor;
+                gas *= FeeFactor;
             }
 
-            _feeConsumed = _feeConsumed + picoGas;
+            _feeConsumed = _feeConsumed + gas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
