@@ -71,7 +71,7 @@ namespace Neo.SmartContract
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
-        public const uint FeeFactor = 10000;
+        public static readonly BigInteger FeeFactor = 10000;
         private Dictionary<Type, object>? states;
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs>? notifications;
@@ -537,9 +537,15 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
-        protected internal void AddFee(BigInteger picoGas)
+        /// <param name="gas">The amount of GAS, either in the unit of Datoshi or in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
+        /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
+        protected internal void AddFee(BigInteger gas, bool applyFactor)
         {
+            if (gas < 0)
+            {
+                throw new InvalidOperationException("AddFee can't be negative.");
+            }
+
             // Check whitelist
 
             if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
@@ -548,7 +554,12 @@ namespace Neo.SmartContract
                 return;
             }
 
-            _feeConsumed = _feeConsumed + picoGas;
+            if (applyFactor)
+            {
+                gas *= FeeFactor;
+            }
+
+            _feeConsumed = _feeConsumed + gas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
@@ -615,7 +626,7 @@ namespace Neo.SmartContract
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
                 NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
             {
-                AddFee(fixedFee.Value * FeeFactor);
+                AddFee(fixedFee.Value, true);
                 state.WhiteListed = true;
             }
 
@@ -980,7 +991,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * _execFeeFactor);
+            AddFee(descriptor.FixedPrice * _execFeeFactor, false);
 
             object?[] parameters = new object?[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -994,7 +1005,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
