@@ -254,9 +254,9 @@ namespace Neo.SmartContract.Native
         {
             // Distribute GAS for committee
 
-            int m = engine.ProtocolSettings.CommitteeMembersCount;
-            int n = engine.ProtocolSettings.ValidatorsCount;
-            int index = (int)(engine.PersistingBlock!.Index % (uint)m);
+            var m = engine.ProtocolSettings.CommitteeMembersCount;
+            var n = engine.ProtocolSettings.ValidatorsCount;
+            var index = (int)(engine.PersistingBlock!.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.SnapshotCache);
             var committee = GetCommitteeFromCache(engine.SnapshotCache);
             var pubkey = committee[index].PublicKey;
@@ -267,16 +267,18 @@ namespace Neo.SmartContract.Native
 
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, m))
             {
-                BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100; // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
+                var voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100; // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
                 for (index = 0; index < committee.Count; index++)
                 {
-                    var (publicKey, votes) = committee[index];
+                    //var (publicKey, votes) = committee[index];
+                    var publicKey = committee[index].PublicKey;
+                    var votes = GetCandidateVote(engine.SnapshotCache, publicKey);
                     var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
                     if (votes > 0)
                     {
-                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
-                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
-                        StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
+                        var voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
+                        var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
+                        var lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
                         lastRewardPerNeo.Add(voterSumRewardPerNEO);
                     }
                 }
