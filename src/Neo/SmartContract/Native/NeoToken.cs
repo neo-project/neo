@@ -269,8 +269,11 @@ namespace Neo.SmartContract.Native
                 BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100; // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
                 for (index = 0; index < committee.Count; index++)
                 {
-                    var publicKey = committee[index].PublicKey;
-                    var votes = GetCandidateVote(engine.SnapshotCache, publicKey);
+                    var (publicKey, votes) = committee[index];
+                    if (engine.IsHardforkEnabled(Hardfork.HF_Gorgon))
+                    {
+                        votes = GetCandidateVote(engine.SnapshotCache, publicKey);
+                    }
                     var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
                     if (votes > 0)
                     {

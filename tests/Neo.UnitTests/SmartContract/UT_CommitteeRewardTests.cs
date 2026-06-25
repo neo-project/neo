@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2026 The Neo Project.
+//
+// UT_CommitteeRewardTests.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -9,6 +20,8 @@ using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract
@@ -29,7 +42,8 @@ namespace Neo.UnitTests.SmartContract
             var settings = ProtocolSettings.Default with
             {
                 StandbyCommittee = [validatorKey.PublicKey],
-                ValidatorsCount = 1
+                ValidatorsCount = 1,
+                Hardforks = new Dictionary<Hardfork, uint>() { { Hardfork.HF_Gorgon, 0 } }.ToImmutableDictionary()
             };
             _system = new NeoSystem(settings);
         }
