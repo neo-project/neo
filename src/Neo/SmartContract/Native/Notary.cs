@@ -74,12 +74,12 @@ namespace Neo.SmartContract.Native
                     {
                         var payer = tx.Signers[1];
                         // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
-                        var balance = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, payer.Account))?.GetInteroperable<Deposit>();
-                        if (balance != null)
-                        {
-                            balance.Amount -= tx.SystemFee + tx.NetworkFee;
-                            if (balance.Amount.Sign == 0) RemoveDepositFor(engine.SnapshotCache, payer.Account);
-                        }
+                        var balance = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, payer.Account))?.GetInteroperable<Deposit>()
+                            ?? throw new InvalidOperationException($"Deposit not found for {payer.Account}");
+                        balance.Amount -= tx.SystemFee + tx.NetworkFee;
+                        if (balance.Amount.Sign < 0)
+                            throw new InvalidOperationException($"Insufficient deposit for {payer.Account}: need {tx.SystemFee + tx.NetworkFee}, overdraw is {balance.Amount}");
+                        if (balance.Amount.Sign == 0) RemoveDepositFor(engine.SnapshotCache, payer.Account);
                     }
                 }
             }
