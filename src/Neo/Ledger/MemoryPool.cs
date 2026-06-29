@@ -12,6 +12,7 @@
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -89,7 +90,8 @@ namespace Neo.Ledger
         public int Capacity { get; }
 
         /// <summary>
-        /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
+        /// Store all verified unsorted transactions' payers' fee currently in the memory pool.
+        /// Each payer is a tuple of primary and secondary accounts.
         /// </summary>
         private TransactionVerificationContext VerificationContext = new();
 
@@ -371,6 +373,24 @@ namespace Neo.Ledger
         }
 
         /// <summary>
+        /// Returns a tuple of accounts (primamry and secondary) that pay transaction fees.
+        /// If primary account is native Notary contract, the fees will be checked against
+        /// funds deposited by the secondary account to native Notary contract. For the rest
+        /// of cases the secondary account is null, and the primary account is used to track
+        /// an ordinary GAS balance.
+        /// </summary>
+        internal static (UInt160 Primary, UInt160? Secondary) GetPayer(Transaction tx, out bool isSponsored)
+        {
+            if (tx.Sender == NativeContract.Notary.Hash)
+            {
+                isSponsored = true;
+                return (tx.Sender, tx.Signers[1].Account);
+            }
+            isSponsored = false;
+            return (tx.Sender, null);
+        }
+
+        /// <summary>
         /// Checks whether there is no mismatch in Conflicts attributes between the current transaction
         /// and mempooled unsorted transactions. If true, then these unsorted transactions will be added
         /// into conflictsList.
@@ -380,6 +400,8 @@ namespace Neo.Ledger
         /// <returns>True if transaction fits the pool, otherwise false.</returns>
         private bool CheckConflicts(Transaction tx, out List<PoolItem> conflictsList)
         {
+            var payer = GetPayer(tx, out var isSponsored);
+            UInt160 author = isSponsored ? payer.Secondary! : payer.Primary;
             conflictsList = new();
             long conflictsFeeSum = 0;
             // Step 1: check if `tx` was in Conflicts attributes of unsorted transactions.
@@ -388,7 +410,7 @@ namespace Neo.Ledger
                 foreach (var hash in conflicting)
                 {
                     var unsortedTx = _unsortedTransactions[hash];
-                    if (unsortedTx.Tx.Signers.Select(s => s.Account).Contains(tx.Sender))
+                    if (unsortedTx.Tx.Signers.Select(s => s.Account).Contains(author))
                         conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }

@@ -897,11 +897,13 @@ namespace Neo.UnitTests.SmartContract.Native
                 $"But deposit({depositBalance}) < combined({feePerTx * 2}) — the TOCTOU gap");
 
             // CheckTransaction accumulates fees under tx.Sender = Notary.Hash.
-            // It checks GAS.BalanceOf(Notary.Hash) = 7 GAS >= cumulative 3 GAS. Passes.
+            // GAS.BalanceOf(Notary.Hash) = 7 GAS >= cumulative 3 GAS. But CheckTransaction
+            // tracks depositer balance for cases when Notary contract is a sender, so the check
+            // fails as expected: deposit of 2 GAS is not enough to cover two transactions each costs 1.5 GAS.
             var verificationContext = new TransactionVerificationContext();
             verificationContext.AddTransaction(tx1);
-            Assert.IsTrue(verificationContext.CheckTransaction(tx2, [], snapshot),
-                "CheckTransaction passes: pool covers cumulative fees by tx.Sender");
+            Assert.IsFalse(verificationContext.CheckTransaction(tx2, [], snapshot),
+                "CheckTransaction passes: pool covers cumulative fees by tx.Sender when Notary is a sender");
 
             // --- Persist both txs in one block ---
             var blockIndex = (uint)TestProtocolSettings.Default.CommitteeMembersCount;
