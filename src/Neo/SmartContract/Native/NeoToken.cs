@@ -16,7 +16,6 @@ using Neo.Extensions;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
@@ -271,6 +270,10 @@ namespace Neo.SmartContract.Native
                 for (index = 0; index < committee.Count; index++)
                 {
                     var (publicKey, votes) = committee[index];
+                    if (engine.IsHardforkEnabled(Hardfork.HF_Gorgon))
+                    {
+                        votes = GetCandidateVote(engine.SnapshotCache, publicKey);
+                    }
                     var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
                     if (votes > 0)
                     {
