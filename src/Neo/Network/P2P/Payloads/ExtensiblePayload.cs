@@ -92,6 +92,8 @@ namespace Neo.Network.P2P.Payloads
             if (count != 1)
                 throw new FormatException($"Expected 1 witness, got {count}.");
             Witness = reader.ReadSerializable<Witness>();
+            if (Witness.ScriptHash != Sender)
+                throw new FormatException($"Witness script hash {Witness.ScriptHash} does not match sender {Sender}.");
         }
 
         void IVerifiable.DeserializeUnsigned(ref MemoryReader reader)
