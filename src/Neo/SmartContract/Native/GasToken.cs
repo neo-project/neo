@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Native
             long totalNetworkFee = 0;
             foreach (Transaction tx in engine.PersistingBlock!.Transactions)
             {
-                await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+                await BurnForFees(engine, tx);
                 totalNetworkFee += tx.NetworkFee;
 
                 // Reward for NotaryAssisted attribute will be minted to designated notary nodes
@@ -55,6 +55,21 @@ namespace Neo.SmartContract.Native
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             await Mint(engine, primary, totalNetworkFee, false);
+        }
+
+        private async ContractTask BurnForFees(ApplicationEngine engine, Transaction tx)
+        {
+            long fee = tx.SystemFee + tx.NetworkFee;
+            if (engine.IsHardforkEnabled(Hardfork.HF_Faun) &&
+                !ContractManagement.IsContract(engine.SnapshotCache, tx.Sender) &&
+                BalanceOf(engine.SnapshotCache, tx.Sender) < fee)
+            {
+                // Just-in-time auto-claim to avoid insufficient balance during fee burn.
+                var claimed = NEO.ClaimUnclaimedGas(engine, tx.Sender);
+                if (claimed > 0)
+                    await Mint(engine, tx.Sender, claimed, false);
+            }
+            await Burn(engine, tx.Sender, fee);
         }
     }
 }
