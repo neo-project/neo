@@ -381,7 +381,7 @@ namespace Neo.Ledger
         /// </summary>
         internal static (UInt160 Primary, UInt160? Secondary) GetPayer(Transaction tx, out bool isSponsored)
         {
-            if (tx.Sender == NativeContract.Notary.Hash)
+            if (tx.Sender == NativeContract.Notary.Hash && tx.Signers.Length >= 2)
             {
                 isSponsored = true;
                 return (tx.Sender, tx.Signers[1].Account);
