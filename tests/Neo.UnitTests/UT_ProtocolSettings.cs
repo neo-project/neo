@@ -115,6 +115,7 @@ namespace Neo.UnitTests
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Faun, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 10));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Huyao, 10));
         }
 
         [TestMethod]
