@@ -20,6 +20,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.UnitTests.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -443,6 +444,118 @@ namespace Neo.UnitTests.Ledger
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, balance, true);
             await NativeContract.GAS.Burn(engine, maliciousSender, 100);
             _ = NativeContract.GAS.Mint(engine, maliciousSender, balance, true);
+        }
+
+        [TestMethod]
+        public async Task TryAdd_EnsureNotaryDeposit()
+        {
+            var snapshot = GetSnapshot();
+            var funder = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            var depositer = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
+
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+
+            // Transfer 2 GAS to depositer account.
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(snapshot, funder.ToArray(), depositer.ToArray(), 2_0000_0000, true, persistingBlock, null));
+
+            // Deposit 6 GAS to Notary contract from depositer.
+            var till = persistingBlock.Index + 500;
+            var depositData = new ContractParameter
+            {
+                Type = ContractParameterType.Array,
+                Value = new List<ContractParameter>()
+                {
+                    new() { Type = ContractParameterType.Hash160, Value = depositer },
+                    new() { Type = ContractParameterType.Integer, Value = till },
+                }
+            };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(snapshot, funder.ToArray(), NativeContract.Notary.Hash.ToArray(), 6_0000_0000, true, persistingBlock, depositData));
+
+            // Deposit some more GAS to Notary contract from another random depositer so that overall Notary contract balance can cover all the fees.
+            depositData = new ContractParameter
+            {
+                Type = ContractParameterType.Array,
+                Value = new List<ContractParameter>()
+                {
+                    new() { Type = ContractParameterType.Hash160, Value = funder },
+                    new() { Type = ContractParameterType.Integer, Value = till },
+                }
+            };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(snapshot, funder.ToArray(), NativeContract.Notary.Hash.ToArray(), 100_0000_0000, true, persistingBlock, depositData));
+
+            Transaction createSponsored(long fee)
+            {
+                var tx = CreateTransactionWithFeeAndBalanceVerify(fee);
+                tx.Signers =
+                [
+                    new() { Account = NativeContract.Notary.Hash, Scopes = WitnessScope.None },
+                    new() { Account = depositer, Scopes = WitnessScope.None }
+                ];
+                tx.Witnesses = [Witness.Empty, Witness.Empty];
+                return tx;
+            }
+            Transaction createSimple(long fee)
+            {
+                var tx = CreateTransactionWithFeeAndBalanceVerify(fee);
+                tx.Signers = [new() { Account = depositer, Scopes = WitnessScope.None }];
+                tx.Witnesses = [Witness.Empty];
+                return tx;
+            }
+
+            // Notary deposit is 6 GAS, sponsored tx0 fee is larger => verification should fail.
+            var tx0 = createSponsored(6_0000_0000 + 1);
+            Assert.AreEqual(VerifyResult.InsufficientFunds, _unit.TryAdd(tx0, snapshot));
+            Assert.AreEqual(0, _unit.VerifiedCount);
+
+            // Add sponsored tx with 2 GAS fee, 4 GAS deposit is left.
+            var tx1 = createSponsored(2_0000_0000);
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx1, snapshot));
+            Assert.AreEqual(1, _unit.VerifiedCount);
+
+            // Add one more sponsored tx with 3 GAS fee, 1 GAS deposit is left.
+            var tx2 = createSponsored(3_0000_0000);
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx2, snapshot));
+            Assert.AreEqual(2, _unit.VerifiedCount);
+
+            // Can't add one more sponsored tx with 2 GAS fee since deposit is insufficient,
+            // even despite the fact that Notary contract itself has a lot of funds on the balance.
+            var tx3 = createSponsored(2_0000_0000);
+            Assert.AreEqual(VerifyResult.InsufficientFunds, _unit.TryAdd(tx3, snapshot));
+            Assert.AreEqual(2, _unit.VerifiedCount);
+
+            // Still can add simple tx with 2 GAS fees, since depositer has 2 GAS on a standard balance.
+            var tx4 = createSimple(2_0000_0000);
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx4, snapshot));
+            Assert.AreEqual(3, _unit.VerifiedCount);
+
+            // Adding more simple txs should fail since balance is 0 GAS.
+            var tx5 = createSimple(1);
+            Assert.AreEqual(VerifyResult.InsufficientFunds, _unit.TryAdd(tx5, snapshot));
+            Assert.AreEqual(3, _unit.VerifiedCount);
+
+            // Add more prioritized sponsored tx that conflicts with tx1: tx1 should be evicted.
+            var tx6 = createSponsored(3_0000_0000);
+            tx6.Attributes = [new Conflicts() { Hash = tx1.Hash }];
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(tx6, snapshot));
+            Assert.AreEqual(3, _unit.VerifiedCount);
+            Assert.IsFalse(_unit.ContainsKey(tx1.Hash));
+            Assert.IsTrue(_unit.ContainsKey(tx2.Hash));
+            Assert.IsTrue(_unit.ContainsKey(tx4.Hash));
+            Assert.IsTrue(_unit.ContainsKey(tx6.Hash));
         }
 
         [TestMethod]
