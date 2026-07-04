@@ -111,5 +111,5 @@ public class KeyBuilder : IEnumerable
     /// <returns>The storage key.</returns>
     public byte[] ToArray() => _cacheData[.._keyLength];
 
-    public static implicit operator StorageKey(KeyBuilder builder) => new(builder._cacheData.AsMemory(0, builder._keyLength), false);
+    public static implicit operator StorageKey(KeyBuilder builder) => new(builder._cacheData.AsMemory(0, builder._keyLength));
 }

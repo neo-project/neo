@@ -24,42 +24,39 @@ public sealed record StorageKey
     /// <summary>
     /// The id of the contract.
     /// </summary>
-    public int Id { get; init; }
+    public int Id
+    {
+        get => _id;
+        init
+        {
+            if (!_memory.IsEmpty)
+                BinaryPrimitives.WriteInt32LittleEndian(_memory.Span, value);
+            _id = value;
+        }
+    }
 
     /// <summary>
     /// The key of the storage entry.
     /// </summary>
     public ReadOnlyMemory<byte> Key
     {
-        get => _key;
-        // The example below shows how you would of been
-        // able to overwrite keys in the pass
-        // Example:
-        //      byte[] keyData = [0x00, 0x00, 0x00, 0x00, 0x12];
-        //      var keyMemory = new ReadOnlyMemory<byte>(keyData);
-        //      var storageKey1 = new StorageKey { Id = 0, Key = keyMemory };
-        //      // Below will overwrite the key in "storageKey1.Key"
-        //      keyData[0] = 0xff;
-        init => _key = value.ToArray(); // make new region of memory (a copy).
-    }
-
-    /// <summary>
-    /// Get key length
-    /// </summary>
-    public int Length
-    {
-        get
+        get => _memory.IsEmpty ? ReadOnlyMemory<byte>.Empty : _memory[sizeof(int)..];
+        init
         {
-            if (_cache is { IsEmpty: true })
-            {
-                _cache = Build();
-            }
-            return _cache.Length;
+            _memory = new byte[(sizeof(int) + value.Length)];
+            BinaryPrimitives.WriteInt32LittleEndian(_memory.Span, Id);
+            value.CopyTo(_memory[sizeof(int)..]);
         }
     }
 
-    private ReadOnlyMemory<byte> _cache;
-    private readonly ReadOnlyMemory<byte> _key;
+    /// <summary>
+    /// Get StorageKey length(sizeof(int) + key.Length)
+    /// </summary>
+    public int Length => _memory.Length;
+
+    private readonly int _id;
+
+    private readonly Memory<byte> _memory;
 
     // NOTE: StorageKey is readonly, so we can cache the hash code.
     private int _hashCode = 0;
@@ -81,26 +78,20 @@ public sealed record StorageKey
     public StorageKey() { }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="StorageKey"/> class.
+    /// Initializes a StorageKey from not shared memory.
+    /// The size must greater than sizeof(int).
     /// </summary>
-    /// <param name="cache">The cached byte array.</param>
-    internal StorageKey(ReadOnlySpan<byte> cache) : this(cache.ToArray(), false) { }
-
-    internal StorageKey(ReadOnlyMemory<byte> cache, bool copy)
+    internal StorageKey(Memory<byte> memory)
     {
-        if (copy) cache = cache.ToArray();
-        _cache = cache;
-        Id = BinaryPrimitives.ReadInt32LittleEndian(_cache.Span);
-        Key = _cache[sizeof(int)..]; // "Key" init makes a copy already.
+        _memory = memory;
+        Id = BinaryPrimitives.ReadInt32LittleEndian(_memory.Span);
     }
 
     public bool Equals(StorageKey? other)
     {
-        if (other is null)
-            return false;
-        if (ReferenceEquals(this, other))
-            return true;
-        return Id == other.Id && Key.Span.SequenceEqual(other.Key.Span);
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Id == other.Id && _memory.Span.SequenceEqual(other._memory.Span);
     }
 
     public override int GetHashCode()
@@ -112,32 +103,26 @@ public sealed record StorageKey
 
     public byte[] ToArray()
     {
-        if (_cache is { IsEmpty: true })
+        if (_memory.IsEmpty)
         {
-            _cache = Build();
+            var buffer = new byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32LittleEndian(buffer, Id);
+            return buffer;
         }
-        return _cache.ToArray(); // Make a copy
-    }
-
-    private byte[] Build()
-    {
-        var buffer = new byte[sizeof(int) + Key.Length];
-        BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(), Id);
-        Key.CopyTo(buffer.AsMemory(sizeof(int)..));
-        return buffer;
+        return _memory.ToArray();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator StorageKey(byte[] value) => new(value);
+    public static implicit operator StorageKey(byte[] value) => new(value[..].AsMemory());
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator StorageKey(ReadOnlyMemory<byte> value) => new(value, true);
+    public static implicit operator StorageKey(ReadOnlyMemory<byte> value) => new(value.ToArray().AsMemory());
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator StorageKey(ReadOnlySpan<byte> value) => new(value);
+    public static implicit operator StorageKey(ReadOnlySpan<byte> value) => new(value.ToArray().AsMemory());
 
     public override string ToString()
     {
-        return _key.IsEmpty ? $"StorageKey{{Id={Id}}}" : $"StorageKey{{Id={Id},Key={_key.ToHexString()}}}";
+        return _memory.IsEmpty ? $"StorageKey{{Id={Id}}}" : $"StorageKey{{Id={Id},Key={Key.ToHexString()}}}";
     }
 }

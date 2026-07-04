@@ -73,7 +73,7 @@ public class UT_Storage
         // Make sure we create copies of the memory in StorageKey class
         // WE DO NOT WANT DATA REFERENCED TO OVER THE MEMORY REGION
         byte[] dataCopy = [0xff, 0xff, 0xff, 0xfe, 0xff];
-        storageKey2 = new StorageKey(dataCopy);
+        storageKey2 = dataCopy;
         Assert.IsTrue(storageKey2.Key.Span.SequenceEqual([(byte)0xff]));
         Assert.AreNotEqual(storageKey1, storageKey2);
         ((byte[])[0x00, 0x00, 0x00, 0x00, 0x01]).CopyTo(dataCopy.AsMemory());
@@ -82,6 +82,18 @@ public class UT_Storage
         // This shows data isn't referenced
         dataCopy.CopyTo(keyData.AsMemory());
         Assert.IsFalse(storageKey1.Key.Span.SequenceEqual(dataCopy));
+
+        var onlyId = new StorageKey { Id = 1 };
+        Assert.AreEqual("01000000", onlyId.ToArray().ToHexString());
+
+        var onlyKey = new StorageKey { Key = new ReadOnlyMemory<byte>([0x01, 0x02, 0x03]) };
+        Assert.AreEqual("00000000010203", onlyKey.ToArray().ToHexString());
+
+        var idKey = new StorageKey { Id = 1, Key = new ReadOnlyMemory<byte>([0x01, 0x02, 0x03]) };
+        Assert.AreEqual("01000000010203", idKey.ToArray().ToHexString());
+
+        idKey = new StorageKey { Key = new ReadOnlyMemory<byte>([0x04, 0x05, 0x06]), Id = 2 };
+        Assert.AreEqual("02000000040506", idKey.ToArray().ToHexString());
     }
 
     [TestMethod]
