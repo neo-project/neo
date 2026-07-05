@@ -42,7 +42,6 @@ public sealed class Governance : NativeContract
     public UInt160 GasTokenId => field ??= TokenManagement.GetAssetId(Hash, GasTokenName);
 
     public const decimal EffectiveVoterTurnout = 0.2M;
-    private const long VoteFactor = 100000000L;
 
     private const byte Prefix_NeoAccount = 10;
     private const byte Prefix_VotersCount = 1;
@@ -50,11 +49,9 @@ public sealed class Governance : NativeContract
     private const byte Prefix_Committee = 14;
     private const byte Prefix_GasPerBlock = 29;
     private const byte Prefix_RegisterPrice = 13;
-    private const byte Prefix_VoterRewardPerCommittee = 23;
 
-    private const byte NeoHolderRewardRatio = 10;
+    private const byte NeoHolderRewardRatio = 90;
     private const byte CommitteeRewardRatio = 10;
-    private const byte VoterRewardRatio = 80;
 
     internal Governance() : base(-13) { }
 
@@ -115,31 +112,12 @@ public sealed class Governance : NativeContract
     {
         // Distribute GAS for committee
         int m = engine.ProtocolSettings.CommitteeMembersCount;
-        int n = engine.ProtocolSettings.ValidatorsCount;
         int index = (int)(engine.PersistingBlock!.Index % (uint)m);
         var gasPerBlock = GetGasPerBlock(engine.SnapshotCache);
         var committee = GetCommitteeFromCache(engine.SnapshotCache);
         var pubkey = committee[index].PublicKey;
         var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
         await TokenManagement.MintInternal(engine, Governance.GasTokenId, account, gasPerBlock * CommitteeRewardRatio / 100, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
-
-        // Record the cumulative reward of the voters of committee
-        if (ShouldRefreshCommittee(engine.PersistingBlock.Index, m))
-        {
-            BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * VoteFactor * m / (m + n) / 100; // Zoom in VoteFactor times, and the final calculation should be divided VoteFactor
-            for (index = 0; index < committee.Count; index++)
-            {
-                var (publicKey, votes) = committee[index];
-                var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
-                if (votes > 0)
-                {
-                    BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / votes;
-                    StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, publicKey);
-                    StorageItem lastRewardPerNeo = engine.SnapshotCache.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
-                    lastRewardPerNeo.Add(voterSumRewardPerNEO);
-                }
-            }
-        }
     }
 
     /// <summary>
@@ -204,8 +182,6 @@ public sealed class Governance : NativeContract
     [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
     public BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
     {
-        var expectEnd = Ledger.CurrentIndex(engine.SnapshotCache) + 1;
-        ArgumentOutOfRangeException.ThrowIfNotEqual(end, expectEnd);
         BigInteger balance = TokenManagement.BalanceOf(engine.SnapshotCache, NeoTokenId, account);
         if (balance.IsZero) return BigInteger.Zero;
         StorageKey accountKey = CreateStorageKey(Prefix_NeoAccount, account);
@@ -304,21 +280,11 @@ public sealed class Governance : NativeContract
             stateValidator.Votes -= balance;
             CheckCandidate(engine.SnapshotCache, stateAccount.VoteTo, stateValidator);
         }
-        if (voteTo != null && voteTo != stateAccount.VoteTo)
-        {
-            StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteTo);
-            var latestGasPerVote = engine.SnapshotCache.TryGet(voterRewardKey) ?? BigInteger.Zero;
-            stateAccount.LastGasPerVote = latestGasPerVote;
-        }
         ECPoint? from = stateAccount.VoteTo;
         stateAccount.VoteTo = voteTo;
         if (validatorNew != null)
         {
             validatorNew.Votes += balance;
-        }
-        else
-        {
-            stateAccount.LastGasPerVote = 0;
         }
         Notify(engine, "Vote", account, from, voteTo, balance);
         if (gasDistribution is not null)
@@ -484,11 +450,6 @@ public sealed class Governance : NativeContract
     {
         BigInteger amount = CalculateBonus(engine.SnapshotCache, state, balance, engine.PersistingBlock!.Index);
         state.BalanceHeight = engine.PersistingBlock.Index;
-        if (state.VoteTo is not null)
-        {
-            StorageKey key = CreateStorageKey(Prefix_VoterRewardPerCommittee, state.VoteTo);
-            state.LastGasPerVote = engine.SnapshotCache.TryGet(key) ?? BigInteger.Zero;
-        }
         if (amount == 0) return null;
         return new GasDistribution(account, amount);
     }
@@ -497,13 +458,6 @@ public sealed class Governance : NativeContract
     {
         if (balance.IsZero) return BigInteger.Zero;
         if (state.BalanceHeight >= end) return BigInteger.Zero;
-        var (neoHolderReward, voteReward) = CalculateReward(snapshot, state, balance, end);
-        return neoHolderReward + voteReward;
-    }
-
-    (BigInteger NeoHolderReward, BigInteger VoteReward) CalculateReward(IReadOnlyStore snapshot, NeoAccountState state, BigInteger balance, uint end)
-    {
-        // Compute Neo holder reward
         BigInteger sumGasPerBlock = 0;
         foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end - 1))
         {
@@ -518,15 +472,7 @@ public sealed class Governance : NativeContract
                 break;
             }
         }
-        // Compute vote reward
-        BigInteger voteReward = BigInteger.Zero;
-        if (state.VoteTo != null)
-        {
-            var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee, state.VoteTo);
-            var latestGasPerVote = snapshot.TryGet(keyLastest) ?? BigInteger.Zero;
-            voteReward = balance * (latestGasPerVote - state.LastGasPerVote) / VoteFactor;
-        }
-        return (balance * sumGasPerBlock * NeoHolderRewardRatio / 100 / NeoTokenTotalAmount, voteReward);
+        return balance * sumGasPerBlock * NeoHolderRewardRatio / 100 / NeoTokenTotalAmount;
     }
 
     IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(IReadOnlyStore snapshot, uint end)
@@ -541,7 +487,6 @@ public sealed class Governance : NativeContract
     {
         if (!candidate.Registered && candidate.Votes.IsZero)
         {
-            snapshot.Delete(CreateStorageKey(Prefix_VoterRewardPerCommittee, pubkey));
             snapshot.Delete(CreateStorageKey(Prefix_Candidate, pubkey));
         }
     }
@@ -589,24 +534,21 @@ public sealed class Governance : NativeContract
     {
         public uint BalanceHeight;
         public ECPoint? VoteTo;
-        public BigInteger LastGasPerVote;
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
             BalanceHeight = (uint)@struct[0].GetInteger();
             VoteTo = @struct[1].IsNull ? null : ECPoint.DecodePoint(@struct[1].GetSpan(), ECCurve.Secp256r1);
-            LastGasPerVote = @struct[2].GetInteger();
         }
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter? referenceCounter)
         {
             return new Struct(referenceCounter)
-        {
-            BalanceHeight,
-            VoteTo?.ToArray() ?? StackItem.Null,
-            LastGasPerVote
-        };
+            {
+                BalanceHeight,
+                VoteTo?.ToArray() ?? StackItem.Null
+            };
         }
     }
 
