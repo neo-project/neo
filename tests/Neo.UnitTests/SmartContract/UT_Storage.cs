@@ -54,6 +54,8 @@ namespace Neo.UnitTests.SmartContract
             StorageKey storageKeyFromMemory = keyMemory;
             Assert.AreEqual(0, storageKeyFromMemory.Id);
             Assert.IsTrue(keyMemory.Span.ToArray().Skip(sizeof(int)).SequenceEqual(storageKeyFromMemory.Key.Span.ToArray()));
+            Assert.AreEqual("StorageKey{Id=0,Key=12}", storageKeyFromMemory.ToString());
+            Assert.AreEqual("StorageKey{Id=0}", new StorageKey().ToString());
 
             // Test CreateSearchPrefix method
             byte[] prefix = { 0xAA };
