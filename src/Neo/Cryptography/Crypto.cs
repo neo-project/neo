@@ -411,8 +411,8 @@ namespace Neo.Cryptography
                 if (signature.Length == 65)
                 {
                     // Format: r[32] || s[32] || v[1]
-                    r = new BigInteger(1, [.. signature.Take(32)]);
-                    s = new BigInteger(1, [.. signature.Skip(32).Take(32)]);
+                    r = new BigInteger(1, signature[..32]);
+                    s = new BigInteger(1, signature[32..64]);
 
                     // v could be 0..3 or 27..30 (Ethereum style).
                     var v = signature[64];
@@ -425,8 +425,8 @@ namespace Neo.Cryptography
                     // 64 bytes "compact" format: r[32] || yParityAndS[32]
                     // yParity is fused into the top bit of s.
 
-                    r = new BigInteger(1, [.. signature.Take(32)]);
-                    var yParityAndS = new BigInteger(1, signature.Skip(32).ToArray());
+                    r = new BigInteger(1, signature[..32]);
+                    var yParityAndS = new BigInteger(1, signature[32..64]);
 
                     // Mask out top bit to get s
                     var mask = BigInteger.One.ShiftLeft(255).Subtract(BigInteger.One);
