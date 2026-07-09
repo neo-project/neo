@@ -281,7 +281,7 @@ namespace Neo.SmartContract
                 // Initialize opcode price calculator: if Gorgon is not enabled, use static prices and
                 // charge the fee prior to instruction execution. If Gorgon is enabled, use dynamic prices
                 // and charge the fee after instruction execution.
-                if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Gorgon, persistingIndex))
+                if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Huyao, persistingIndex))
                     _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
                 else
                     _postExecuteInstruction = (instruction, runStats) =>
