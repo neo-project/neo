@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -810,6 +811,151 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var scriptHash2 = Contract.CreateSignatureRedeemScript(key2.PublicKey).ToScriptHash();
             Assert.AreEqual(expectedNotaryReward / 2, NativeContract.GAS.BalanceOf(engine.SnapshotCache, scriptHash2));
+        }
+
+        [TestMethod]
+        public void Check_DepositOverdraw()
+        {
+            var snapshot = _snapshot.CloneCache();
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+
+            var payerAddr = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            var payer = payerAddr.ToArray();
+            var notaryHash = NativeContract.Notary.Hash.ToArray();
+
+            // Ledger index so deposits don't reject on the Till height check.
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+
+            // --- Payer deposits 2 GAS ---
+            var till = persistingBlock.Index + 500;
+            long payerDeposit = 2_0000_0000;
+            var data = new ContractParameter
+            {
+                Type = ContractParameterType.Array,
+                Value = new List<ContractParameter>()
+                {
+                    new() { Type = ContractParameterType.Any },
+                    new() { Type = ContractParameterType.Integer, Value = till },
+                }
+            };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(
+                snapshot, payer, notaryHash, payerDeposit, true, persistingBlock, data));
+            Assert.AreEqual(payerDeposit, Call_BalanceOf(snapshot, payer, persistingBlock));
+
+            // --- Victim deposits 5 GAS into a separate Notary account ---
+            var victimAddr = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
+            long victimDeposit = 5_0000_0000;
+            data = new ContractParameter
+            {
+                Type = ContractParameterType.Array,
+                Value = new List<ContractParameter>()
+                {
+                    new() { Type = ContractParameterType.Hash160, Value = victimAddr },
+                    new() { Type = ContractParameterType.Integer, Value = till },
+                }
+            };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(
+                snapshot, payer, notaryHash, victimDeposit, true, persistingBlock, data));
+            Assert.AreEqual(victimDeposit, Call_BalanceOf(snapshot, victimAddr.ToArray(), persistingBlock));
+
+            // Notary contract now holds 7 GAS total (2 from payer + 5 from victim).
+            var notaryGasBefore = NativeContract.GAS.BalanceOf(snapshot, NativeContract.Notary.Hash);
+            Assert.AreEqual(payerDeposit + victimDeposit, notaryGasBefore);
+
+            // --- Two NotaryAssisted txs from payer, each costing 1.5 GAS ---
+            var tx1 = TestUtils.GetTransaction(NativeContract.Notary.Hash, payerAddr);
+            tx1.Attributes = [new NotaryAssisted() { NKeys = 4 }];
+            tx1.NetworkFee = 1_0000_0000;
+            tx1.SystemFee = 5000_0000;
+            tx1.Nonce = 1;
+
+            var tx2 = TestUtils.GetTransaction(NativeContract.Notary.Hash, payerAddr);
+            tx2.Attributes = [new NotaryAssisted() { NKeys = 4 }];
+            tx2.NetworkFee = 1_0000_0000;
+            tx2.SystemFee = 5000_0000;
+            tx2.Nonce = 2;
+
+            // Notary.Verify checks deposit >= individual tx fee.
+            // Each tx costs 1.5 GAS, deposit is 2 GAS. Both pass individually.
+            long feePerTx = tx1.NetworkFee + tx1.SystemFee;
+            var depositBalance = Call_BalanceOf(snapshot, payer, persistingBlock);
+            Assert.IsTrue(depositBalance >= feePerTx,
+                $"Notary.Verify passes per-tx: deposit({depositBalance}) >= fee({feePerTx})");
+            Assert.IsTrue(depositBalance < feePerTx * 2,
+                $"But deposit({depositBalance}) < combined({feePerTx * 2}) — the TOCTOU gap");
+
+            // CheckTransaction accumulates fees under tx.Sender = Notary.Hash.
+            // GAS.BalanceOf(Notary.Hash) = 7 GAS >= cumulative 3 GAS. But CheckTransaction
+            // tracks depositer balance for cases when Notary contract is a sender, so the check
+            // fails as expected: deposit of 2 GAS is not enough to cover two transactions each costs 1.5 GAS.
+            var verificationContext = new TransactionVerificationContext();
+            verificationContext.AddTransaction(tx1);
+            Assert.IsFalse(verificationContext.CheckTransaction(tx2, [], snapshot),
+                "CheckTransaction passes: pool covers cumulative fees by tx.Sender when Notary is a sender");
+
+            // --- Persist both txs in one block ---
+            var blockIndex = (uint)TestProtocolSettings.Default.CommitteeMembersCount;
+            persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    Index = blockIndex,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = Witness.Empty,
+                },
+                Transactions = [tx1, tx2]
+            };
+
+            // Designate one Notary node (required for reward distribution in OnPersist).
+            var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            var privateKey = new byte[32];
+            rng.GetBytes(privateKey);
+            var notaryKey = new KeyPair(privateKey);
+            var committeeAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            NativeContract.RoleManagement.Call(
+                snapshot,
+                new Nep17NativeContractExtensions.ManualWitness(committeeAddr),
+                new Block
+                {
+                    Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
+                    Transactions = []
+                },
+                "designateAsRole",
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
+                new ContractParameter(ContractParameterType.Array)
+                {
+                    Value = new List<ContractParameter>()
+                    {
+                new(ContractParameterType.ByteArray) { Value = notaryKey.PublicKey.ToArray() },
+                    },
+                }
+            );
+            snapshot.Commit();
+
+            // GAS.OnPersist burns 3 GAS from Notary's pool, then
+            // Notary.OnPersist must fail because payer's deposit is insufficient to cover fees.
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            var engine = ApplicationEngine.Create(
+                TriggerType.OnPersist, null, snapshot, persistingBlock,
+                settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+            Assert.Contains("Insufficient deposit for 0x9f8f056a53e39585c7bb52886418c7bed83d126b: need 150000000, overdraw is -100000000", engine.FaultException?.ToString());
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)

@@ -241,10 +241,10 @@ namespace Neo.SmartContract.Native
             if (gasForResponse < MinGasForResponse)
                 throw new ArgumentException($"gasForResponse {gasForResponse} must be at least {MinGasForResponse} Datoshi.");
 
-            engine.AddFee(GetPrice(engine.SnapshotCache) * ApplicationEngine.FeeFactor);
+            engine.AddFee(GetPrice(engine.SnapshotCache), true);
 
             //Mint gas for the response
-            engine.AddFee(gasForResponse * ApplicationEngine.FeeFactor);
+            engine.AddFee(gasForResponse, true);
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id

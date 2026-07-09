@@ -846,7 +846,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(Check_PostPersist(cloneCache, persistingBlock));
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            Assert.HasCount(1, cloneCache.Find(storageKey).ToArray());
+            Assert.HasCount(0, cloneCache.Find(storageKey).ToArray());
         }
 
         [TestMethod]

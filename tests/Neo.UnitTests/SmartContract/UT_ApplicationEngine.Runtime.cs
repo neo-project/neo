@@ -242,7 +242,7 @@ namespace Neo.UnitTests.SmartContract
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: gas);
             var excessFee = (BigInteger)gas * ApplicationEngine.FeeFactor + 1;
-            var exception = Assert.ThrowsExactly<InvalidOperationException>(() => engine.AddFee(excessFee));
+            var exception = Assert.ThrowsExactly<InvalidOperationException>(() => engine.AddFee(excessFee, false));
             Assert.AreEqual("Insufficient GAS.", exception.Message);
 
             var feeConsumedField = typeof(ApplicationEngine).GetField("_feeConsumed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;

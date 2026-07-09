@@ -79,8 +79,8 @@ namespace Neo.SmartContract.Native
         {
             return @base switch
             {
-                10 => value.ToString(),
-                16 => value.ToString("x"),
+                10 => value.ToString(CultureInfo.InvariantCulture),
+                16 => value.ToString("x", CultureInfo.InvariantCulture),
                 _ => throw new ArgumentOutOfRangeException(nameof(@base), $"Invalid base: {@base}")
             };
         }
