@@ -122,11 +122,17 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
-        /// Decodes a 32-byte big-endian scalar, reduced modulo the curve order. Always
-        /// succeeds; the reduced value is a valid exponent for scalar multiplication.
+        /// Decodes a 32-byte big-endian scalar, reduced modulo the curve order.
+        /// Returns <see langword="false"/> when the input is not exactly 32 bytes.
         /// </summary>
         internal static bool TryDeserializeScalar(ReadOnlySpan<byte> encoded, out BigInteger scalar)
         {
+            if (encoded.Length != FieldElementLength)
+            {
+                scalar = BigInteger.Zero;
+                return false;
+            }
+
             scalar = ReadFieldElement(encoded) % Bn254Pairing.CurveOrder;
             return true;
         }

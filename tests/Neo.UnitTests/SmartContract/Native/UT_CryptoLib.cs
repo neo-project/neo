@@ -1338,6 +1338,18 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        [DataRow(0)]
+        [DataRow(BN254.FieldElementLength - 1)]
+        [DataRow(BN254.FieldElementLength + 1)]
+        public void TestBn254MulRejectsInvalidScalarLength(int scalarLength)
+        {
+            var point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                Neo.SmartContract.Native.CryptoLib.Bn254Mul(point, new byte[scalarLength]));
+        }
+
+        [TestMethod]
         public void TestBn254Equal()
         {
             var point = DecodeBn254G1(Bn254G1X, Bn254G1Y);
