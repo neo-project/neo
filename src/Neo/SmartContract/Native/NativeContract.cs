@@ -467,7 +467,7 @@ namespace Neo.SmartContract.Native
                     // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
                     engine.AddFee(
                         (method.CpuFee * engine.ExecFeePicoFactor) +
-                        (method.StorageFee * engine.StoragePrice * ApplicationEngine.FeeFactor));
+                        (method.StorageFee * engine.StoragePrice * ApplicationEngine.FeeFactor), false);
                 }
                 List<object?> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);

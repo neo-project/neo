@@ -71,7 +71,7 @@ namespace Neo.SmartContract
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
-        public const uint FeeFactor = 10000;
+        public static readonly BigInteger FeeFactor = 10000;
         private Dictionary<Type, object>? states;
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs>? notifications;
@@ -148,7 +148,16 @@ namespace Neo.SmartContract
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor);
+        public long FeeConsumed
+        {
+            get
+            {
+                var consumed = _feeConsumed.DivideCeiling(FeeFactor);
+                if (consumed > long.MaxValue)
+                    return (long)(_feeAmount / FeeFactor);
+                return (long)consumed;
+            }
+        }
 
         /// <summary>
         /// Exec Fee Factor. In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
@@ -159,7 +168,16 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => (long)((_feeAmount - _feeConsumed) / FeeFactor);
+        public long GasLeft
+        {
+            get
+            {
+                if (_feeConsumed >= _feeAmount)
+                    return 0;
+                var left = (_feeAmount - _feeConsumed) / FeeFactor;
+                return left > long.MaxValue ? long.MaxValue : (long)left;
+            }
+        }
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
@@ -519,9 +537,15 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
-        protected internal void AddFee(BigInteger picoGas)
+        /// <param name="gas">The amount of GAS, either in the unit of Datoshi or in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
+        /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
+        protected internal void AddFee(BigInteger gas, bool applyFactor)
         {
+            if (gas < 0)
+            {
+                throw new InvalidOperationException("AddFee can't be negative.");
+            }
+
             // Check whitelist
 
             if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
@@ -530,7 +554,12 @@ namespace Neo.SmartContract
                 return;
             }
 
-            _feeConsumed = _feeConsumed + picoGas;
+            if (applyFactor)
+            {
+                gas *= FeeFactor;
+            }
+
+            _feeConsumed = _feeConsumed + gas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
@@ -597,7 +626,7 @@ namespace Neo.SmartContract
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
                 NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
             {
-                AddFee(fixedFee.Value * FeeFactor);
+                AddFee(fixedFee.Value, true);
                 state.WhiteListed = true;
             }
 
@@ -962,7 +991,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * _execFeeFactor);
+            AddFee(descriptor.FixedPrice * _execFeeFactor, false);
 
             object?[] parameters = new object?[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -976,7 +1005,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
