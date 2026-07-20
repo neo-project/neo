@@ -310,6 +310,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             using (var script = new ScriptBuilder())
             {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "1e3");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "123");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "null");
 
@@ -317,10 +318,11 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.HasCount(2, engine.ResultStack);
+                Assert.HasCount(3, engine.ResultStack);
 
                 engine.ResultStack.Pop<Null>();
                 Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
+                Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 1000);
             }
 
             // Error 1 - Wrong Json
