@@ -246,18 +246,23 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abc", "");
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "a,b", ",");
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.HasCount(1, engine.ResultStack);
+            Assert.HasCount(2, engine.ResultStack);
 
             var arr = engine.ResultStack.Pop<VM.Types.Array>();
             Assert.HasCount(2, arr);
             Assert.AreEqual("a", arr[0].GetString());
             Assert.AreEqual("b", arr[1].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(1, arr);
+            Assert.AreEqual("abc", arr[0].GetString());
         }
 
         [TestMethod]
