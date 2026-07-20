@@ -188,6 +188,9 @@ namespace Neo.UnitTests.SmartContract
 
             json = @"[""a"":]";
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
+
+            json = @"{""a"":1,""a"":2}";
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
         }
 
         [TestMethod]

@@ -348,6 +348,19 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
                 Assert.IsEmpty(engine.ResultStack);
             }
+
+            // Error 3 - Duplicate object entries
+
+            using (ScriptBuilder script = new())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "{\"z\":42,\"z\":100500}");
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.IsEmpty(engine.ResultStack);
+            }
         }
 
         [TestMethod]
