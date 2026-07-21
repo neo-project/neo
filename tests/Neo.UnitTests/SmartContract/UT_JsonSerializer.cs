@@ -91,10 +91,10 @@ namespace Neo.UnitTests.SmartContract
 
             Assert.AreEqual("[1,-2,3.5]", parsed.ToString());
 
-            json = "[200.500000E+005,200.500000e+5,-1.1234e-100,9.05E+28]";
+            json = "[200.500000E+005,200.500000e+5,-1.1234e-100,9.05E+28,1e3,10e3,1000e-3]";
             parsed = JObject.Parse(json);
 
-            Assert.AreEqual("[20050000,20050000,-1.1234E-100,9.05E+28]", parsed.ToString());
+            Assert.AreEqual("[20050000,20050000,-1.1234E-100,9.05E+28,1000,10000,1]", parsed.ToString());
 
             json = "[-]";
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
@@ -187,6 +187,9 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = @"[""a"":]";
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
+
+            json = @"{""a"":1,""a"":2}";
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
         }
 
