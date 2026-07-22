@@ -102,6 +102,19 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestInvalidSize()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using ScriptBuilder script = new();
+            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", new byte[42]);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
+                settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+        }
+
+        [TestMethod]
         public void TestNotG1()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
