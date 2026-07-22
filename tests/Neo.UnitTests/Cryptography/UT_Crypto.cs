@@ -185,6 +185,13 @@ namespace Neo.UnitTests.Cryptography
             // Test with wrong message hash
             var recoveredWrongHash = Crypto.ECRecover(signature1, messageHash2);
             CollectionAssert.AreNotEquivalent(expectedPubKey1, recoveredWrongHash.EncodePoint(true));
+
+            // Zero S can't be valid.
+            var invalidSSignature = signature1.ToArray();
+            Array.Copy(invalidSignature, 0, invalidSSignature, 32, 32); // Zero out S.
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidSSignature, messageHash1));
+            // But compatibility code still allows for that.
+            _ = Crypto.ECRecoverV0(invalidSSignature, messageHash1);
         }
 
         [TestMethod]
