@@ -145,6 +145,11 @@ namespace Neo.UnitTests.Cryptography
             var recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
             CollectionAssert.AreEqual(expectedPubKey1, recoveredKey1.EncodePoint(true));
 
+            // Test with Bitcoin magic offset
+            signature1[64] += 27;
+            recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
+            CollectionAssert.AreEqual(expectedPubKey1, recoveredKey1.EncodePoint(true));
+
             // Test case 2
             var message2 = ("17cd4a74d724d55355b6fb2b0759ca095298e3fd1856b87ca1cb2df540905802" +
                 "2736d21be071d820b16dfc441be97fbcea5df787edc886e759475469e2128b22" +
@@ -179,7 +184,11 @@ namespace Neo.UnitTests.Cryptography
 
             // Test with invalid recovery value
             var invalidRecoverySignature = signature1.ToArray();
-            invalidRecoverySignature[64] = 29; // Invalid recovery value
+            invalidRecoverySignature[64]++; // The original is 1 or 27 (with bitcoin offset), this makes it 2.
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidRecoverySignature, messageHash1));
+
+            // Test with invalid "compressed" recovery value
+            invalidRecoverySignature[64] = 32; // The original is 1, this one is 31 + 1.
             Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidRecoverySignature, messageHash1));
 
             // Test with wrong message hash
