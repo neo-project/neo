@@ -397,6 +397,17 @@ namespace Neo.Cryptography
         /// <exception cref="ArgumentException">Thrown if signature or hash is invalid</exception>
         public static ECC.ECPoint ECRecover(byte[] signature, byte[] hash)
         {
+            return ECRecoverInternal(signature, hash, true);
+        }
+
+        // Similar to ECRecover, has known bugs, for compatibility only.
+        public static ECC.ECPoint ECRecoverV0(byte[] signature, byte[] hash)
+        {
+            return ECRecoverInternal(signature, hash, false);
+        }
+
+        internal static ECC.ECPoint ECRecoverInternal(byte[] signature, byte[] hash, bool checkRS)
+        {
             if (signature.Length != 65 && signature.Length != 64)
                 throw new ArgumentException("Signature must be 65 or 64 bytes", nameof(signature));
             if (hash.Length != 32)
@@ -440,12 +451,16 @@ namespace Neo.Cryptography
                     recId = yParity ? 1 : 0;
                 }
 
+                // BouncyCastle curve constant
+                var n = ECC.ECCurve.Secp256k1.BouncyCastleCurve.N;
+
+                if (checkRS && (r.SignValue == 0 || s.SignValue == 0 || r.CompareTo(n) >= 0 || s.CompareTo(n) >= 0))
+                    throw new ArgumentException("Invalid R or S value", nameof(signature));
+
                 // Decompose recId into i = recId >> 1 and yBit = recId & 1
                 var iPart = recId >> 1;   // usually 0..1
                 var yBit = (recId & 1) == 1;
 
-                // BouncyCastle curve constants
-                var n = ECC.ECCurve.Secp256k1.BouncyCastleCurve.N;
                 var e = new BigInteger(1, hash);
 
                 // eInv = -e mod n
