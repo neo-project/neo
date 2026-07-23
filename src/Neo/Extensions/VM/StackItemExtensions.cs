@@ -24,9 +24,10 @@ namespace Neo.Extensions
     public static class StackItemExtensions
     {
         /// <summary>
-        /// The maximum size in bytes of the result of <see cref="ToJson(StackItem, int)"/> (16 MB).
+        /// The maximum size in bytes of the result of <see cref="ToJson(StackItem, int)"/> (262,140 bytes).
+        /// This value is twice the size of <see cref="MaxItemSize"/>.
         /// </summary>
-        public const int MaxToJsonSize = 16 * 1024 * 1024;
+        public const int MaxToJsonSize = ushort.MaxValue * 4;
 
         /// <summary>
         /// Converts the <see cref="StackItem"/> to a JSON object.
