@@ -77,9 +77,22 @@ namespace Neo.UnitTests.Sign
         [TestMethod]
         public void GetSignerOrDefault_EmptyName_WithoutSingleSigner_ReturnsNull()
         {
-            // When zero or multiple signers are registered, empty name returns null.
-            // Clean up any leftover from this test class first for isolation of empty-name path.
-            Assert.IsNull(SignerManager.GetSignerOrDefault(""));
+            // Empty name returns the only registered signer when Count == 1; otherwise null.
+            // SignerManager is process-wide, so establish "multiple signers" with unique names
+            // rather than assuming the global dictionary is empty or already multi-valued.
+            const string nameA = "ut-signer-manager-empty-a";
+            const string nameB = "ut-signer-manager-empty-b";
+            try
+            {
+                SignerManager.RegisterSigner(nameA, new StubSigner());
+                SignerManager.RegisterSigner(nameB, new StubSigner());
+                Assert.IsNull(SignerManager.GetSignerOrDefault(""));
+            }
+            finally
+            {
+                SignerManager.UnregisterSigner(nameA);
+                SignerManager.UnregisterSigner(nameB);
+            }
         }
 
         [TestMethod]
