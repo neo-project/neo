@@ -14,6 +14,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.BLS12_381;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -26,6 +27,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -1252,6 +1254,32 @@ namespace Neo.UnitTests.SmartContract.Native
             Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
             invalidPublicKey[0] ^= 0x01; // Flip one bit
             Assert.ThrowsExactly<InvalidOperationException>(() => CallVerifyWithEd25519(message, invalidPublicKey, signature));
+        }
+
+        [TestMethod]
+        public void TestVerifyWithEd25519Speccheck()
+        {
+            var path = Path.Combine("SmartContract", "Native", "TestFile", "ed25519-speccheck.json");
+            var json = File.ReadAllText(path);
+            var spec = (JArray)JArray.Parse(json);
+            string[] good = ["false", "throws", "throws", "throws", "throws", "throws", "throws", "throws", "throws", "throws", "false", "false"];
+            var res = new List<string> { };
+
+            foreach (var vector in spec)
+            {
+                try
+                {
+                    if (Ed25519.Verify(vector["message"].AsString().HexToBytes(), vector["pub_key"].AsString().HexToBytes(), vector["signature"].AsString().HexToBytes()))
+                        res.Add("true");
+                    else
+                        res.Add("false");
+                }
+                catch
+                {
+                    res.Add("throws");
+                }
+            }
+            CollectionAssert.AreEqual(good, res);
         }
 
         [TestMethod]
