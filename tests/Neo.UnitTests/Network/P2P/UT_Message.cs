@@ -183,5 +183,62 @@ namespace Neo.UnitTests.Network.P2P
 
             Assert.IsTrue(copy.Flags.HasFlag(MessageFlags.Compressed));
         }
+
+        [TestMethod]
+        public void ToArray_RespectsAllowCompression()
+        {
+            // Build a payload large enough that Message.Create will compress it.
+            var script = new byte[100];
+            Array.Fill(script, (byte)OpCode.NOP);
+            var payload = new Transaction()
+            {
+                Nonce = 1,
+                Version = 0,
+                Attributes = [],
+                Script = script,
+                Signers = [new() { Account = UInt160.Zero }],
+                Witnesses = [Witness.Empty],
+            };
+
+            var msg = Message.Create(MessageCommand.Transaction, payload);
+            Assert.IsTrue(msg.IsCompressed, "Test setup requires a compressible Transaction message.");
+
+            var compressed = msg.ToArray(enablecompression: true);
+            var uncompressed = msg.ToArray(enablecompression: false);
+
+            // enablecompression=true keeps the compressed on-wire form.
+            Assert.IsTrue(msg.Flags.HasFlag(MessageFlags.Compressed));
+
+            // enablecompression=false (remote DisableCompression / pre-Version) strips compression.
+            Assert.IsGreaterThan(compressed.Length, uncompressed.Length);
+            Assert.AreEqual((byte)MessageFlags.None, uncompressed[0]);
+            Assert.AreEqual((byte)MessageCommand.Transaction, uncompressed[1]);
+
+            // In-memory message is unchanged; only the serialized form is rewritten.
+            Assert.IsTrue(msg.IsCompressed);
+
+            // Peer that disallows compression can still deserialize the stripped form.
+            var length = Message.TryDeserialize(ByteString.CopyFrom(uncompressed), out var copy);
+            Assert.IsNotNull(copy);
+            Assert.AreEqual(uncompressed.Length, length);
+            Assert.IsFalse(copy.Flags.HasFlag(MessageFlags.Compressed));
+            Assert.AreEqual(MessageCommand.Transaction, copy.Command);
+            Assert.IsInstanceOfType<Transaction>(copy.Payload);
+            Assert.HasCount(100, ((Transaction)copy.Payload).Script.Span.ToArray());
+        }
+
+        [TestMethod]
+        public void ToArray_WithoutCompression_WhenNotCompressed()
+        {
+            var payload = PingPayload.Create(uint.MaxValue);
+            var msg = Message.Create(MessageCommand.Ping, payload);
+            Assert.IsFalse(msg.IsCompressed);
+
+            var withFlag = msg.ToArray(enablecompression: true);
+            var withoutFlag = msg.ToArray(enablecompression: false);
+
+            CollectionAssert.AreEqual(withFlag, withoutFlag);
+            CollectionAssert.AreEqual(withFlag, msg.ToArray());
+        }
     }
 }
