@@ -22,8 +22,8 @@ namespace Neo.UnitTests
         public void StrictUTF8_IsUtf8WithExceptionFallback()
         {
             Assert.AreEqual(Encoding.UTF8.CodePage, Utility.StrictUTF8.CodePage);
-            Assert.IsInstanceOfType(Utility.StrictUTF8.DecoderFallback, typeof(DecoderFallback));
-            Assert.IsInstanceOfType(Utility.StrictUTF8.EncoderFallback, typeof(EncoderFallback));
+            Assert.IsInstanceOfType<DecoderExceptionFallback>(Utility.StrictUTF8.DecoderFallback);
+            Assert.IsInstanceOfType<EncoderExceptionFallback>(Utility.StrictUTF8.EncoderFallback);
         }
 
         [TestMethod]
