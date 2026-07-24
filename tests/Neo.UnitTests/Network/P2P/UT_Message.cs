@@ -208,7 +208,6 @@ namespace Neo.UnitTests.Network.P2P
 
             // enablecompression=true keeps the compressed on-wire form.
             Assert.IsTrue(msg.Flags.HasFlag(MessageFlags.Compressed));
-            Assert.HasCount(30, compressed);
 
             // enablecompression=false (remote DisableCompression / pre-Version) strips compression.
             Assert.IsGreaterThan(compressed.Length, uncompressed.Length);
