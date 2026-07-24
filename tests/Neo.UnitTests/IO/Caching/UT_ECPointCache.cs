@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO.Caching;
 
 namespace Neo.UnitTests.IO.Caching
@@ -18,21 +19,30 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_ECPointCache
     {
-        ECPointCache relayCache;
-
-        [TestInitialize]
-        public void SetUp()
+        [TestMethod]
+        public void Add_And_TryGet_ByEncodedPoint()
         {
-            relayCache = new ECPointCache(10);
+            var cache = new ECPointCache(4);
+            var point = ECCurve.Secp256r1.G;
+            cache.Add(point);
+
+            Assert.AreEqual(1, cache.Count);
+            Assert.IsTrue(cache.TryGet(point.EncodePoint(true), out var found));
+            Assert.AreEqual(point, found);
         }
 
         [TestMethod]
-        public void TestGetKeyForItem()
+        public void Evicts_When_OverCapacity()
         {
-            relayCache.Add(ECCurve.Secp256r1.G);
-            Assert.Contains(ECCurve.Secp256r1.G, relayCache);
-            Assert.IsTrue(relayCache.TryGet(ECCurve.Secp256r1.G.EncodePoint(true), out ECPoint tmp));
-            Assert.IsTrue(tmp is ECPoint);
+            var cache = new ECPointCache(1);
+            cache.Add(ECCurve.Secp256r1.G);
+            // Second distinct point forces eviction of first under capacity 1
+            // Use infinity-sized unique points: multiply G is hard; encode different by using Secp256k1 G
+            var k1 = ECCurve.Secp256k1.G;
+            cache.Add(k1);
+            Assert.AreEqual(1, cache.Count);
+            Assert.IsTrue(cache.TryGet(k1.EncodePoint(true), out _));
+            Assert.IsFalse(cache.TryGet(ECCurve.Secp256r1.G.EncodePoint(true), out _));
         }
     }
 }
