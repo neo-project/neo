@@ -30,7 +30,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Filter = "$.data",
                 CallbackContract = UInt160.Zero,
                 CallbackMethod = "callback",
-                UserData = new byte[] { 0x01, 0x02, 0x03 }
+                UserData = [0x01, 0x02, 0x03]
             };
 
             var item = original.ToStackItem();
@@ -44,7 +44,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Filter = null,
                 CallbackContract = UInt160.Zero,
                 CallbackMethod = "",
-                UserData = System.Array.Empty<byte>()
+                UserData = []
             };
             clone.FromStackItem(item);
 
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Filter = null,
                 CallbackContract = UInt160.Parse("0xd2a4cff31913016155e38e474a2c06d08be276cf"),
                 CallbackMethod = "onResponse",
-                UserData = System.Array.Empty<byte>()
+                UserData = []
             };
 
             var item = (Array)original.ToStackItem();
@@ -82,7 +82,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Filter = "ignore",
                 CallbackContract = UInt160.Zero,
                 CallbackMethod = "",
-                UserData = new byte[] { 9 }
+                UserData = [9]
             };
             clone.FromStackItem(item);
 
@@ -92,7 +92,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsNull(clone.Filter);
             Assert.AreEqual(original.CallbackContract, clone.CallbackContract);
             Assert.AreEqual("onResponse", clone.CallbackMethod);
-            CollectionAssert.AreEqual(System.Array.Empty<byte>(), clone.UserData);
+            Assert.IsEmpty(clone.UserData);
         }
     }
 }
