@@ -276,9 +276,10 @@ namespace Neo.UnitTests.Network.P2P
         public void MessageReceived_ReturningTrue_IsInvoked_AndAllowsHandshake()
         {
             // Scope observation to this handshake's UserAgent so static-event noise is ignored.
+            // Verack has no payload, so it cannot be attributed safely on the process-wide event;
+            // count only the uniquely marked Version, and prove handshake via actor state.
             const string marker = "UT-MessageReceived-Allow";
             var versionSeen = 0;
-            var verackSeen = 0;
             MessageReceivedHandler handler = (system, msg) =>
             {
                 if (!ReferenceEquals(system, s_system))
@@ -288,11 +289,6 @@ namespace Neo.UnitTests.Network.P2P
                     && vp.UserAgent == marker)
                 {
                     versionSeen++;
-                }
-                else if (msg.Command == MessageCommand.Verack && versionSeen > 0)
-                {
-                    // Verack has no payload; count only after our Version was observed.
-                    verackSeen++;
                 }
                 return true;
             };
@@ -310,8 +306,7 @@ namespace Neo.UnitTests.Network.P2P
 
                 Assert.IsNotNull(remote.UnderlyingActor.Version);
                 Assert.AreEqual(marker, remote.UnderlyingActor.Version.UserAgent);
-                Assert.IsTrue(versionSeen >= 1);
-                Assert.IsTrue(verackSeen >= 1);
+                Assert.AreEqual(1, versionSeen);
             }
             finally
             {
