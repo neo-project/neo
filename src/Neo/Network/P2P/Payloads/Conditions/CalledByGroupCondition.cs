@@ -43,7 +43,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             if (other is null) return false;
             return
                 Type == other.Type &&
-                Group == other.Group;
+                Group.Equals(other.Group);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
