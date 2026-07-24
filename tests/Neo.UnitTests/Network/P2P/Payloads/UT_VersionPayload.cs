@@ -59,5 +59,37 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.HasCount(4, clone.Capabilities);
             Assert.AreEqual(2, clone.Capabilities.OfType<UnknownCapability>().Count());
         }
+
+        [TestMethod]
+        public void AllowCompression_WithoutDisableCompressionCapability()
+        {
+            var test = VersionPayload.Create(123, 456, "neo3",
+                new ServerCapability(NodeCapabilityType.TcpServer, 22),
+                new FullNodeCapability(1));
+
+            Assert.IsTrue(test.AllowCompression);
+
+            var clone = test.ToArray().AsSerializable<VersionPayload>();
+            Assert.IsTrue(clone.AllowCompression);
+            Assert.IsFalse(clone.Capabilities.OfType<DisableCompressionCapability>().Any());
+        }
+
+        [TestMethod]
+        public void AllowCompression_WithDisableCompressionCapability()
+        {
+            var test = VersionPayload.Create(123, 456, "neo3",
+                new ServerCapability(NodeCapabilityType.TcpServer, 22),
+                new DisableCompressionCapability());
+
+            Assert.IsFalse(test.AllowCompression);
+
+            var clone = test.ToArray().AsSerializable<VersionPayload>();
+
+            // Capability must deserialize as DisableCompressionCapability (not Unknown),
+            // otherwise AllowCompression would incorrectly stay true.
+            Assert.HasCount(1, clone.Capabilities.OfType<DisableCompressionCapability>());
+            Assert.IsFalse(clone.Capabilities.OfType<UnknownCapability>().Any());
+            Assert.IsFalse(clone.AllowCompression);
+        }
     }
 }

@@ -59,7 +59,7 @@ namespace Neo.Network.P2P.Capabilities
         /// <returns>The deserialized <see cref="NodeCapability"/>.</returns>
         public static NodeCapability DeserializeFrom(ref MemoryReader reader)
         {
-            NodeCapabilityType type = (NodeCapabilityType)reader.ReadByte();
+            var type = (NodeCapabilityType)reader.ReadByte();
             NodeCapability capability = type switch
             {
 #pragma warning disable CS0612 // Type or member is obsolete
@@ -67,6 +67,7 @@ namespace Neo.Network.P2P.Capabilities
 #pragma warning restore CS0612 // Type or member is obsolete
                 NodeCapabilityType.FullNode => new FullNodeCapability(),
                 NodeCapabilityType.ArchivalNode => new ArchivalNodeCapability(),
+                NodeCapabilityType.DisableCompression => new DisableCompressionCapability(),
                 _ => new UnknownCapability(type),
             };
             capability.DeserializeWithoutType(ref reader);
