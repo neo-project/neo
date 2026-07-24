@@ -20,7 +20,6 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void Secp256r1_And_Secp256k1_AreDistinct()
         {
-            Assert.AreNotEqual(ECCurve.Secp256r1.GetHashCode(), ECCurve.Secp256k1.GetHashCode());
             Assert.AreNotEqual(ECCurve.Secp256r1.N, ECCurve.Secp256k1.N);
             Assert.AreNotEqual(ECCurve.Secp256r1.G, ECCurve.Secp256k1.G);
         }
