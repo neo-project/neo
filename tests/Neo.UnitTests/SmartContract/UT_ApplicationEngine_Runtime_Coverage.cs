@@ -100,13 +100,17 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void GetRandom_ReturnsNonNegative()
+        public void GetRandom_IncreasesFeeConsumed()
         {
+            // GetRandom returns an unsigned BigInteger, so non-negativity is not a useful assert.
+            // Observable behavior: each call charges fee via AddFee.
             using var engine = TestEngineRunner.CreateWithScript(_snapshot, new byte[] { (byte)OpCode.NOP }, gas: 100_0000_0000);
-            var a = engine.GetRandom();
-            var b = engine.GetRandom();
-            Assert.IsTrue(a >= 0);
-            Assert.IsTrue(b >= 0);
+            var fee0 = engine.FeeConsumed;
+            _ = engine.GetRandom();
+            var fee1 = engine.FeeConsumed;
+            Assert.IsTrue(fee1 > fee0);
+            _ = engine.GetRandom();
+            Assert.IsTrue(engine.FeeConsumed > fee1);
         }
 
         [TestMethod]
