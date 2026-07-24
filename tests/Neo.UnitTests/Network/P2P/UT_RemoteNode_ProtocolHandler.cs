@@ -47,7 +47,7 @@ namespace Neo.UnitTests.Network.P2P
             s_system = TestBlockchain.GetSystem();
         }
 
-        private static VersionPayload MakeVersion(uint startHeight = 7, ushort tcpPort = 20333)
+        private static VersionPayload MakeVersion(uint startHeight = 7, ushort tcpPort = 20333, string userAgent = "ProtocolHandlerUT")
         {
             // Nonce must not equal LocalNode.Nonce or AllowNewConnection rejects the peer.
             var nonce = s_nextNonce++;
@@ -56,7 +56,7 @@ namespace Neo.UnitTests.Network.P2P
 
             return new VersionPayload
             {
-                UserAgent = "ProtocolHandlerUT",
+                UserAgent = userAgent,
                 Nonce = nonce,
                 Network = TestProtocolSettings.Default.Network,
                 Timestamp = 1,
@@ -68,6 +68,9 @@ namespace Neo.UnitTests.Network.P2P
                 ]
             };
         }
+
+        private static VersionPayload MakeVersionWithAgent(string userAgent, uint startHeight = 0)
+            => MakeVersion(startHeight, userAgent: userAgent);
 
         private static Tcp.Received AsReceived(Message message)
         {
@@ -234,23 +237,34 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void MessageReceived_ReturningFalse_StopsProtocolHandling()
         {
-            var received = new List<MessageCommand>();
+            // MessageReceived is static and shared by every RemoteNode in the process.
+            // Scope the short-circuit to this test's Version only so other nodes (or residual
+            // actors) are not blocked and we do not count unrelated traffic.
+            const string marker = "UT-MessageReceived-ShortCircuit";
+            var intercepted = 0;
             MessageReceivedHandler handler = (_, msg) =>
             {
-                received.Add(msg.Command);
-                return false; // stop further OnMessage handling
+                if (msg.Command == MessageCommand.Version
+                    && msg.Payload is VersionPayload vp
+                    && vp.UserAgent == marker)
+                {
+                    intercepted++;
+                    return false; // stop OnMessage for this Version only
+                }
+                return true;
             };
             RemoteNode.MessageReceived += handler;
             try
             {
                 var (remote, connection) = SpawnRemoteNode();
                 var sender = CreateTestProbe();
-                sender.Send(remote, AsReceived(Message.Create(MessageCommand.Version, MakeVersion())));
+                var version = MakeVersion();
+                version.UserAgent = marker;
+                sender.Send(remote, AsReceived(Message.Create(MessageCommand.Version, version)));
 
                 connection.ExpectNoMsg(TimeSpan.FromMilliseconds(400), cancellationToken: CancellationToken.None);
                 Assert.IsNull(remote.UnderlyingActor.Version);
-                Assert.HasCount(1, received);
-                Assert.AreEqual(MessageCommand.Version, received[0]);
+                Assert.AreEqual(1, intercepted);
             }
             finally
             {
@@ -261,21 +275,43 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void MessageReceived_ReturningTrue_IsInvoked_AndAllowsHandshake()
         {
-            var seen = new List<MessageCommand>();
+            // Scope observation to this handshake's UserAgent so static-event noise is ignored.
+            const string marker = "UT-MessageReceived-Allow";
+            var versionSeen = 0;
+            var verackSeen = 0;
             MessageReceivedHandler handler = (system, msg) =>
             {
-                Assert.AreSame(s_system, system);
-                seen.Add(msg.Command);
+                if (!ReferenceEquals(system, s_system))
+                    return true;
+                if (msg.Command == MessageCommand.Version
+                    && msg.Payload is VersionPayload vp
+                    && vp.UserAgent == marker)
+                {
+                    versionSeen++;
+                }
+                else if (msg.Command == MessageCommand.Verack && versionSeen > 0)
+                {
+                    // Verack has no payload; count only after our Version was observed.
+                    verackSeen++;
+                }
                 return true;
             };
             RemoteNode.MessageReceived += handler;
             try
             {
                 var (remote, connection) = SpawnRemoteNode();
-                CompleteHandshake(remote, connection);
+                var sender = CreateTestProbe();
+                // Handshake with a unique UserAgent so Version is attributable to this test.
+                sender.Send(remote, AsReceived(Message.Create(MessageCommand.Version, MakeVersionWithAgent(marker))));
+                connection.ExpectMsg<Tcp.Write>(TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+                sender.Send(remote, Connection.Ack.Instance);
+                sender.Send(remote, AsReceived(Message.Create(MessageCommand.Verack)));
+                DrainTaskManagerOutbound(remote, connection, sender);
 
-                Assert.IsTrue(seen.Contains(MessageCommand.Version));
-                Assert.IsTrue(seen.Contains(MessageCommand.Verack));
+                Assert.IsNotNull(remote.UnderlyingActor.Version);
+                Assert.AreEqual(marker, remote.UnderlyingActor.Version.UserAgent);
+                Assert.IsTrue(versionSeen >= 1);
+                Assert.IsTrue(verackSeen >= 1);
             }
             finally
             {
