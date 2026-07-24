@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract
             // With the fix of issue 3300, the reference counter calculates not only
             // the notifaction items, but also the subitems of the notification state.
             // There should be 505 items on stack:
-            // 1 Array (notifications container) + 
+            // 1 Array (notifications container) +
             // 1 ByteArray (contract scripthash) +
             // 1 ByteArray (event name) +
             // 1 Array (array of notification subitems) +
