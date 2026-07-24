@@ -98,7 +98,11 @@ namespace Neo.SmartContract.Manifest
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Name, Parameters);
+            var hc = new HashCode();
+            hc.Add(Name);
+            foreach (var p in Parameters)
+                hc.Add(p);
+            return hc.ToHashCode();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
