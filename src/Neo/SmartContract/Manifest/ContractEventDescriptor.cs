@@ -98,7 +98,8 @@ namespace Neo.SmartContract.Manifest
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Name, Parameters);
+            // Parameters content is compared in Equals; length keeps GetHashCode fast.
+            return HashCode.Combine(Name, Parameters.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
