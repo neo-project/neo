@@ -148,11 +148,11 @@ namespace Neo.UnitTests.IO
 
             data = new byte[UInt160.Length];
             value.Serialize(data.AsSpan());
-            CollectionAssert.AreEqual(data, value.ToArray());
+            Assert.AreSequenceEqual(data, value.ToArray());
 
             data = new byte[UInt160.Length];
             ((ISerializableSpan)value).Serialize(data.AsSpan());
-            CollectionAssert.AreEqual(data, value.ToArray());
+            Assert.AreSequenceEqual(data, value.ToArray());
         }
 
         [TestMethod]
@@ -164,16 +164,16 @@ namespace Neo.UnitTests.IO
             var value = new UInt160(data);
 
             var spanLittleEndian = value.GetSpanLittleEndian();
-            CollectionAssert.AreEqual(data, spanLittleEndian.ToArray());
+            Assert.AreSequenceEqual(data, spanLittleEndian.ToArray());
 
             var dataLittleEndian = new byte[UInt160.Length];
             value.SafeSerialize(dataLittleEndian.AsSpan());
-            CollectionAssert.AreEqual(data, dataLittleEndian);
+            Assert.AreSequenceEqual(data, dataLittleEndian);
 
             // Check that Serialize LittleEndian and Serialize BigEndian are equals
             var dataSerialized = new byte[UInt160.Length];
             value.Serialize(dataSerialized.AsSpan());
-            CollectionAssert.AreEqual(value.ToArray(), dataSerialized);
+            Assert.AreSequenceEqual(value.ToArray(), dataSerialized);
 
             var shortBuffer = new byte[UInt160.Length - 1];
             Assert.ThrowsExactly<ArgumentException>(() => value.Serialize(shortBuffer.AsSpan()));
