@@ -40,7 +40,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.AreEqual(original.Id, clone.Id);
             Assert.AreEqual(original.Code, clone.Code);
-            CollectionAssert.AreEqual(original.Result.ToArray(), clone.Result.ToArray());
+            Assert.AreSequenceEqual(original.Result.ToArray(), clone.Result.ToArray());
         }
 
         [TestMethod]
