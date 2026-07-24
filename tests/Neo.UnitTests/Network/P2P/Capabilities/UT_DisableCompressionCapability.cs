@@ -11,7 +11,9 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.IO;
 using Neo.Network.P2P.Capabilities;
+using System;
 
 namespace Neo.UnitTests.Network.P2P.Capabilities
 {
@@ -19,20 +21,52 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
     public class UT_DisableCompressionCapability
     {
         [TestMethod]
-        public void Size_And_Type()
+        public void Size_Get()
         {
-            var cap = new DisableCompressionCapability();
-            Assert.AreEqual(2, cap.Size);
-            Assert.AreEqual(NodeCapabilityType.DisableCompression, cap.Type);
+            var test = new DisableCompressionCapability();
+            Assert.AreEqual(2, test.Size);
         }
 
         [TestMethod]
-        public void Serialize_WritesTypeAndZeroByte()
+        public void DeserializeAndSerialize()
         {
-            var bytes = new DisableCompressionCapability().ToArray();
-            Assert.HasCount(2, bytes);
-            Assert.AreEqual((byte)NodeCapabilityType.DisableCompression, bytes[0]);
-            Assert.AreEqual(0, bytes[1]);
+            var test = new DisableCompressionCapability();
+            var buffer = test.ToArray();
+
+            var br = new MemoryReader(buffer);
+            var clone = (DisableCompressionCapability)NodeCapability.DeserializeFrom(ref br);
+
+            Assert.AreEqual(test.Type, clone.Type);
+            Assert.AreEqual(NodeCapabilityType.DisableCompression, clone.Type);
+            Assert.IsInstanceOfType<DisableCompressionCapability>(clone);
+            CollectionAssert.AreEqual(buffer, clone.ToArray());
+
+            // Non-zero payload must fail (empty VarBytes / string required).
+            buffer[1] = 0x01;
+            br = new MemoryReader(buffer);
+
+            var exceptionHappened = false;
+            // CS8175 prevents from using Assert.ThrowsException here
+            try
+            {
+                NodeCapability.DeserializeFrom(ref br);
+            }
+            catch (FormatException)
+            {
+                exceptionHappened = true;
+            }
+            Assert.IsTrue(exceptionHappened);
+        }
+
+        [TestMethod]
+        public void DeserializeFrom_DoesNotFallBackToUnknownCapability()
+        {
+            var buffer = new DisableCompressionCapability().ToArray();
+            var br = new MemoryReader(buffer);
+            var capability = NodeCapability.DeserializeFrom(ref br);
+
+            Assert.IsNotInstanceOfType<UnknownCapability>(capability);
+            Assert.IsInstanceOfType<DisableCompressionCapability>(capability);
         }
     }
 }
