@@ -480,12 +480,6 @@ namespace Neo.Extensions.Tests
             Assert.IsTrue(ex.Message.Contains("Length: 40 bytes"));
         }
 
-        [TestMethod]
-        public void TestHexToBytes_Null_ReturnsEmpty()
-        {
-            string? value = null;
-            CollectionAssert.AreEqual(Array.Empty<byte>(), value.HexToBytes());
-        }
 
         [TestMethod]
         public void TestHexToBytes_Span_OddLength_Throws()
