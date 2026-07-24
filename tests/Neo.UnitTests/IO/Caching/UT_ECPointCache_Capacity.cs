@@ -24,8 +24,10 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void Evicts_When_OverCapacity()
         {
-            var cache = new ECPointCache(1);
-            cache.Add(ECCurve.Secp256r1.G);
+            var cache = new ECPointCache(1)
+            {
+                ECCurve.Secp256r1.G
+            };
             var k1 = ECCurve.Secp256k1.G;
             cache.Add(k1);
             Assert.AreEqual(1, cache.Count);
