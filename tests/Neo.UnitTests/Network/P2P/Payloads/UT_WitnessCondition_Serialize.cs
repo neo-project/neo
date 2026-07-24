@@ -82,7 +82,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(hash, fromJson.Hash);
 
             var stack = (Array)original.ToStackItem();
-            Assert.AreEqual(hash, new UInt160(stack[stack.Count - 1].GetSpan()));
+            Assert.AreEqual(hash, new UInt160(stack[^1].GetSpan()));
         }
 
         [TestMethod]
