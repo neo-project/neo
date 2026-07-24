@@ -256,8 +256,6 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 8)]
         private static string[] StringSplit(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
         {
-            var options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
-
             // Case 1: Empty separator
             if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
             {
@@ -271,7 +269,7 @@ namespace Neo.SmartContract.Native
             }
 
             // Case 2: Non-empty separator (handles empty str properly by returning [""])
-            return str.Split(separator, options);
+            return str.Split(separator, removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None);
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
