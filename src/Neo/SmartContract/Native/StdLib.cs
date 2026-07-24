@@ -15,11 +15,10 @@ using Microsoft.IdentityModel.Tokens;
 using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Json;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -251,35 +250,27 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 8)]
         private static string[] StringSplit(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str, string separator)
         {
+            return StringSplit(engine, str, separator, false);
+        }
+
+        [ContractMethod(CpuFee = 1 << 8)]
+        private static string[] StringSplit(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
+        {
+            var options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
+
             // Case 1: Empty separator
-            if (string.IsNullOrEmpty(separator))
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                if (string.IsNullOrEmpty(str))
+                if (string.IsNullOrEmpty(separator))
                 {
-                    return [];
-                }
+                    if (string.IsNullOrEmpty(str))
+                        return [];
 
-                if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
-                {
-                    // Split into individual characters (handling UTF-16 surrogate pairs correctly)
-                    var result = new List<string>(str.Length);
-                    for (var i = 0; i < str.Length; i += char.IsHighSurrogate(str[i]) ? 2 : 1)
-                    {
-                        result.Add(char.ConvertFromUtf32(char.ConvertToUtf32(str, i)));
-                    }
-
-                    return [.. result];
+                    return [.. str.EnumerateRunes().Select(static r => $"{r}")];
                 }
             }
 
             // Case 2: Non-empty separator (handles empty str properly by returning [""])
-            return str.Split(separator, StringSplitOptions.None);
-        }
-
-        [ContractMethod(CpuFee = 1 << 8)]
-        private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
-        {
-            StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
             return str.Split(separator, options);
         }
 
@@ -288,16 +279,7 @@ namespace Neo.SmartContract.Native
         {
             // return the length of the string in elements
             // it should return 1 for both  "🦆" and "ã"
-
-            TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(str);
-            int count = 0;
-
-            while (enumerator.MoveNext())
-            {
-                count++;
-            }
-
-            return count;
+            return new StringInfo(str).LengthInTextElements;
         }
     }
 }
