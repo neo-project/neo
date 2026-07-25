@@ -24,7 +24,6 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -55,6 +54,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = []
             };
+
+            // Production defaults to register paused (public register closed).
+            // Unit tests unpause registration unless a test re-pauses it.
+            var committee = NativeContract.NEO.GetCommitteeAddress(_snapshotCache);
+            CallWithWitness(_snapshotCache, _persistingBlock, [committee], "setRegisterPaused",
+                args: new ContractParameter(ContractParameterType.Boolean) { Value = false });
         }
 
         private static Block BlockAt(uint index, ulong timestamp = 1_000_000) =>
@@ -76,11 +81,18 @@ namespace Neo.UnitTests.SmartContract.Native
         private static UInt160 OwnerHash() =>
             Contract.CreateSignatureRedeemScript(TestProtocolSettings.Default.StandbyCommittee[0]).ToScriptHash();
 
+        private static void AssertOwner(DataCache snapshot, Block block, byte[] tokenId, UInt160 expected)
+        {
+            var ownerOf = NativeContract.NameService.Call(snapshot, null, block, "ownerOf",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId });
+            Assert.AreSequenceEqual(expected.ToArray(), ownerOf.GetSpan().ToArray());
+        }
+
         private static ProtocolSettings SettingsWithHuyaoAt(uint height)
         {
             // Omitted hardforks become 0; Huyao activates at `height`.
             var json = UT_ProtocolSettings.CreateHFSettings($"\"HF_Huyao\": {height}");
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            using var stream = new MemoryStream(Utility.StrictUTF8.GetBytes(json));
             return ProtocolSettings.Load(stream);
         }
 
@@ -195,7 +207,7 @@ namespace Neo.UnitTests.SmartContract.Native
             [
                 "symbol", "decimals", "totalSupply", "balanceOf", "ownerOf", "tokens", "tokensOf",
                 "properties", "transfer", "register", "setPrice", "addRoot", "setAdmin", "setRecord",
-                "onNEP11Payment", "addLegacyContract"
+                "onNEP11Payment", "addLegacyContract", "setRegisterPaused", "isRegisterPaused"
             ];
             foreach (var methodName in expectedMethods)
                 Assert.Contains(methodName, names);
@@ -308,6 +320,65 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(isLegacy.GetBoolean());
         }
 
+        [TestMethod]
+        public void SetRegisterPaused_WithoutCommittee_Throws()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CallWithWitness(snapshot, _persistingBlock, [], "setRegisterPaused",
+                    args: new ContractParameter(ContractParameterType.Boolean) { Value = true }));
+        }
+
+        [TestMethod]
+        public void RegisterPaused_BlocksPublicRegister_UntilCommitteeUnpauses()
+        {
+            // Fresh chain: register is paused after native init (TestSetup unpaused _snapshotCache only).
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var block = BlockAt(0, 10_000_000);
+            var owner = OwnerHash();
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            Assert.IsTrue(NativeContract.NameService.Call(snapshot, "isRegisterPaused").GetBoolean());
+
+            Assert.IsFalse(NativeContract.NameService.Call(snapshot, null, block, "isAvailable",
+                new ContractParameter(ContractParameterType.String) { Value = "paused.neo" }).GetBoolean());
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CallWithWitness(snapshot, block, [owner], "register",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "paused.neo" },
+                        new ContractParameter(ContractParameterType.Hash160) { Value = owner }
+                    ]));
+
+            CallWithWitness(snapshot, block, [committee], "setRegisterPaused",
+                args: new ContractParameter(ContractParameterType.Boolean) { Value = false });
+
+            Assert.IsFalse(NativeContract.NameService.Call(snapshot, "isRegisterPaused").GetBoolean());
+            Assert.IsTrue(NativeContract.NameService.Call(snapshot, null, block, "isAvailable",
+                new ContractParameter(ContractParameterType.String) { Value = "paused.neo" }).GetBoolean());
+
+            var ok = CallWithWitness(snapshot, block, [owner], "register",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "paused.neo" },
+                    new ContractParameter(ContractParameterType.Hash160) { Value = owner }
+                ]);
+            Assert.IsTrue(ok.GetBoolean());
+
+            // Committee can re-pause (blocks further public registrations).
+            CallWithWitness(snapshot, block, [committee], "setRegisterPaused",
+                args: new ContractParameter(ContractParameterType.Boolean) { Value = true });
+            Assert.IsTrue(NativeContract.NameService.Call(snapshot, "isRegisterPaused").GetBoolean());
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CallWithWitness(snapshot, block, [owner], "register",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "another.neo" },
+                        new ContractParameter(ContractParameterType.Hash160) { Value = owner }
+                    ]));
+        }
+
         #endregion
 
         #region Register / transfer / admin (witness)
@@ -341,12 +412,10 @@ namespace Neo.UnitTests.SmartContract.Native
                 ]);
             Assert.IsTrue(ok.GetBoolean());
 
-            var tokenId = Encoding.UTF8.GetBytes("bob.neo");
-            var ownerOf = NativeContract.NameService.Call(snapshot, "ownerOf",
-                new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId });
-            Assert.AreSequenceEqual(owner.ToArray(), ownerOf.GetSpan().ToArray());
+            var tokenId = Utility.StrictUTF8.GetBytes("bob.neo");
+            AssertOwner(snapshot, block, tokenId, owner);
 
-            var props = NativeContract.NameService.Call(snapshot, "properties",
+            var props = NativeContract.NameService.Call(snapshot, null, block, "properties",
                 new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId });
             Assert.IsInstanceOfType<Map>(props);
             Assert.AreEqual("bob.neo", ((Map)props)["name"].GetString());
@@ -358,8 +427,9 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshotCache.CloneCache();
             var owner = OwnerHash();
             var other = Contract.CreateSignatureRedeemScript(TestProtocolSettings.Default.StandbyCommittee[1]).ToScriptHash();
+            var admin = Contract.CreateSignatureRedeemScript(TestProtocolSettings.Default.StandbyCommittee[2]).ToScriptHash();
             var block = BlockAt(0, 10_000_000);
-            var tokenId = Encoding.UTF8.GetBytes("xfer.neo");
+            var tokenId = Utility.StrictUTF8.GetBytes("xfer.neo");
 
             CallWithWitness(snapshot, block, [owner], "register",
                 args:
@@ -368,7 +438,22 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Hash160) { Value = owner }
                 ]);
 
-            // No witness → transfer returns false (NEP-11), does not throw
+            // Ownership and balances after register
+            AssertOwner(snapshot, block, tokenId, owner);
+            Assert.AreEqual(1, (int)NativeContract.NameService.Call(snapshot, null, block, "balanceOf",
+                new ContractParameter(ContractParameterType.Hash160) { Value = owner }).GetInteger());
+            Assert.AreEqual(0, (int)NativeContract.NameService.Call(snapshot, null, block, "balanceOf",
+                new ContractParameter(ContractParameterType.Hash160) { Value = other }).GetInteger());
+
+            // Admin is cleared on ownership transfer (non-native NNS behavior)
+            CallWithWitness(snapshot, block, [owner, admin], "setAdmin",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "xfer.neo" },
+                    new ContractParameter(ContractParameterType.Hash160) { Value = admin }
+                ]);
+
+            // No witness → transfer returns false (NEP-11), ownership unchanged
             var denied = CallWithWitness(snapshot, block, [], "transfer",
                 args:
                 [
@@ -377,6 +462,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Any) { Value = null }
                 ]);
             Assert.IsFalse(denied.GetBoolean());
+            AssertOwner(snapshot, block, tokenId, owner);
 
             var ok = CallWithWitness(snapshot, block, [owner], "transfer",
                 args:
@@ -387,9 +473,16 @@ namespace Neo.UnitTests.SmartContract.Native
                 ]);
             Assert.IsTrue(ok.GetBoolean());
 
-            var ownerOf = NativeContract.NameService.Call(snapshot, "ownerOf",
+            // Ownership transferred: ownerOf, balances, admin cleared
+            AssertOwner(snapshot, block, tokenId, other);
+            Assert.AreEqual(0, (int)NativeContract.NameService.Call(snapshot, null, block, "balanceOf",
+                new ContractParameter(ContractParameterType.Hash160) { Value = owner }).GetInteger());
+            Assert.AreEqual(1, (int)NativeContract.NameService.Call(snapshot, null, block, "balanceOf",
+                new ContractParameter(ContractParameterType.Hash160) { Value = other }).GetInteger());
+
+            var props = (Map)NativeContract.NameService.Call(snapshot, null, block, "properties",
                 new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId });
-            Assert.AreSequenceEqual(other.ToArray(), ownerOf.GetSpan().ToArray());
+            Assert.IsTrue(props["admin"].IsNull);
         }
 
         [TestMethod]
@@ -465,6 +558,57 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual("hello", rec.GetString());
         }
 
+        [TestMethod]
+        public void ExpiredName_RecordAndTransfer_Throw()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var owner = OwnerHash();
+            var other = Contract.CreateSignatureRedeemScript(TestProtocolSettings.Default.StandbyCommittee[1]).ToScriptHash();
+            // Register at t=1_000_000 → expires at 1_000_000 + OneYear
+            var registerAt = 1_000_000ul;
+            var oneYear = 365ul * (ulong)TimeSpan.MillisecondsPerDay;
+            var registerBlock = BlockAt(0, registerAt);
+            var expiredBlock = BlockAt(1, registerAt + oneYear);
+
+            CallWithWitness(snapshot, registerBlock, [owner], "register",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "old.neo" },
+                    new ContractParameter(ContractParameterType.Hash160) { Value = owner }
+                ]);
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CallWithWitness(snapshot, expiredBlock, [owner], "setRecord",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "old.neo" },
+                        new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)RecordType.TXT },
+                        new ContractParameter(ContractParameterType.String) { Value = "stale" }
+                    ]));
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CallWithWitness(snapshot, expiredBlock, [], "getRecord",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "old.neo" },
+                        new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)RecordType.TXT }
+                    ]));
+
+            var tokenId = Utility.StrictUTF8.GetBytes("old.neo");
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CallWithWitness(snapshot, expiredBlock, [owner], "transfer",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.Hash160) { Value = other },
+                        new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId },
+                        new ContractParameter(ContractParameterType.Any) { Value = null }
+                    ]));
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                NativeContract.NameService.Call(snapshot, null, expiredBlock, "ownerOf",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId }));
+        }
+
         #endregion
 
         #region Availability / migration / state
@@ -501,7 +645,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     [
                         new ContractParameter(ContractParameterType.Hash160) { Value = from },
                         new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)1 },
-                        new ContractParameter(ContractParameterType.ByteArray) { Value = Encoding.UTF8.GetBytes("mig.neo") },
+                        new ContractParameter(ContractParameterType.ByteArray) { Value = Utility.StrictUTF8.GetBytes("mig.neo") },
                         new ContractParameter(ContractParameterType.Any) { Value = null }
                     ]));
         }

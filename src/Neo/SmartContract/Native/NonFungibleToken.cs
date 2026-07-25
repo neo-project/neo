@@ -18,7 +18,6 @@ using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
 using System.Numerics;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
@@ -102,19 +101,19 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        protected virtual UInt160 OwnerOf(IReadOnlyStore snapshot, byte[] tokenId)
+        protected virtual UInt160 OwnerOf(ApplicationEngine engine, byte[] tokenId)
         {
             tokenId = ValidateTokenId(tokenId);
-            var state = GetTokenState(snapshot, tokenId)
+            var state = GetTokenState(engine.SnapshotCache, tokenId)
                 ?? throw new InvalidOperationException("The token does not exist.");
             return state.Owner;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        protected virtual Map Properties(IReadOnlyStore snapshot, byte[] tokenId)
+        protected virtual Map Properties(ApplicationEngine engine, byte[] tokenId)
         {
             tokenId = ValidateTokenId(tokenId);
-            var state = GetTokenState(snapshot, tokenId)
+            var state = GetTokenState(engine.SnapshotCache, tokenId)
                 ?? throw new InvalidOperationException("The token does not exist.");
             return BuildProperties(state);
         }
@@ -267,13 +266,12 @@ namespace Neo.SmartContract.Native
             ApplicationEngine engine, UInt160? from, UInt160? to, byte[] tokenId, StackItem data, bool callOnPayment)
         {
             engine.SendNotification(Hash, "Transfer",
-                new Array()
-                {
+                [
                     from?.ToArray() ?? StackItem.Null,
                     to?.ToArray() ?? StackItem.Null,
                     1,
                     tokenId
-                });
+                ]);
 
             if (!callOnPayment || to is null || !ContractManagement.IsContract(engine.SnapshotCache, to))
                 return;

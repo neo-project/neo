@@ -23,9 +23,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
-using System.Text;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Array = Neo.VM.Types.Array;
-using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract.Native
 {
@@ -37,11 +37,13 @@ namespace Neo.SmartContract.Native
     public sealed class NameService : NonFungibleToken<NameState>
     {
         private const int NameMaxLength = 64; // NEP-11 tokenId limit; name is the token id
-        private const ulong OneYear = 365ul * 24 * 3600 * 1000;
+        private const ulong OneYear = 365ul * TimeSpan.MillisecondsPerDay;
         private const ulong TenYears = OneYear * 10;
 
         // Storage prefixes aligned with non-native NNS where applicable
         private const byte Prefix_RegisterPrice = 0x11;
+        /// <summary>Boolean: when true, public <see cref="Register"/> is paused.</summary>
+        private const byte Prefix_RegisterPaused = 0x12;
         private const byte Prefix_Root = 0x20;
         private const byte Prefix_Name = 0x21;
         private const byte Prefix_Record = 0x22;
@@ -85,7 +87,10 @@ namespace Neo.SmartContract.Native
                     70_00000000,  // length 4
                 ];
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(SerializePriceList(priceList)));
-                engine.SnapshotCache.Add(CreateStorageKey(Prefix_Root, Encoding.UTF8.GetBytes("neo")), new StorageItem(0));
+                // Public register starts paused so legacy migration can proceed without open races.
+                // Committee unpauses when ready for open registration.
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_RegisterPaused), new StorageItem(BigInteger.One));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_Root, Utility.StrictUTF8.GetBytes("neo")), new StorageItem(0));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_TotalSupply), new StorageItem(BigInteger.Zero));
             }
             return ContractTask.CompletedTask;
@@ -97,8 +102,8 @@ namespace Neo.SmartContract.Native
         protected override byte[] ValidateTokenId(byte[] tokenId)
         {
             tokenId = base.ValidateTokenId(tokenId);
-            // Token id is the domain name UTF-8 bytes
-            var name = Encoding.UTF8.GetString(tokenId);
+            // Token id is the domain name StrictUTF-8 bytes
+            var name = Utility.StrictUTF8.GetString(tokenId);
             if (SplitAndCheck(name, false) is null)
                 throw new FormatException("The format of the name is incorrect.");
             return tokenId;
@@ -110,8 +115,36 @@ namespace Neo.SmartContract.Native
             map["name"] = state.Name;
             map["expiration"] = state.Expiration;
             map["admin"] = state.Admin is null ? StackItem.Null : state.Admin.ToArray();
-            map["image"] = "https://neo3.azureedge.net/images/neons.png";
+            // TODO: Find a CDN site for the NNS logo image
+            map["image"] = "https://neo.link/_next/static/media/nnslogo.1314e9b5.svg";
             return map;
+        }
+
+        protected override UInt160 OwnerOf(ApplicationEngine engine, byte[] tokenId)
+        {
+            tokenId = ValidateTokenId(tokenId);
+            var state = GetTokenState(engine.SnapshotCache, tokenId)
+                ?? throw new InvalidOperationException("The token does not exist.");
+            state.EnsureNotExpired(engine.GetTime());
+            return state.Owner;
+        }
+
+        protected override Map Properties(ApplicationEngine engine, byte[] tokenId)
+        {
+            tokenId = ValidateTokenId(tokenId);
+            var state = GetTokenState(engine.SnapshotCache, tokenId)
+                ?? throw new InvalidOperationException("The token does not exist.");
+            state.EnsureNotExpired(engine.GetTime());
+            return BuildProperties(state);
+        }
+
+        private protected override async ContractTask<bool> Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId, StackItem data)
+        {
+            tokenId = ValidateTokenId(tokenId);
+            var state = GetTokenState(engine.SnapshotCache, tokenId)
+                ?? throw new ArgumentException("The token does not exist.", nameof(tokenId));
+            state.EnsureNotExpired(engine.GetTime());
+            return await base.Transfer(engine, to, tokenId, data);
         }
 
         protected override void OnTransferring(ApplicationEngine engine, NameState state, UInt160 from, UInt160 to, byte[] tokenId)
@@ -127,7 +160,7 @@ namespace Neo.SmartContract.Native
             AssertCommittee(engine);
             if (!CheckFragment(root, true))
                 throw new FormatException("The format of the root is incorrect.");
-            var key = CreateStorageKey(Prefix_Root, Encoding.UTF8.GetBytes(root));
+            var key = CreateStorageKey(Prefix_Root, Utility.StrictUTF8.GetBytes(root));
             if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException("The root already exists.");
             engine.SnapshotCache.Add(key, new StorageItem(0));
@@ -199,6 +232,31 @@ namespace Neo.SmartContract.Native
             return snapshot.Contains(CreateStorageKey(Prefix_LegacyContract, contractHash));
         }
 
+        /// <summary>
+        /// Pauses or unpauses public name registration. Committee only.
+        /// When paused, <c>register</c> is closed so legacy holders can migrate via
+        /// <c>onNEP11Payment</c> without open-registration races.
+        /// </summary>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetRegisterPaused(ApplicationEngine engine, bool paused)
+        {
+            AssertCommittee(engine);
+            var item = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RegisterPaused),
+                () => new StorageItem(BigInteger.Zero));
+            item!.Set(paused ? BigInteger.One : BigInteger.Zero);
+        }
+
+        /// <summary>
+        /// Whether public <c>register</c> is paused.
+        /// </summary>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private bool IsRegisterPaused(IReadOnlyStore snapshot)
+        {
+            var key = CreateStorageKey(Prefix_RegisterPaused);
+            if (!snapshot.TryGet(key, out var item)) return false;
+            return (BigInteger)item != BigInteger.Zero;
+        }
+
         #endregion
 
         #region Registry
@@ -208,11 +266,13 @@ namespace Neo.SmartContract.Native
         {
             var fragments = SplitAndCheck(name, false)
                 ?? throw new FormatException("The format of the name is incorrect.");
-            if (!engine.SnapshotCache.Contains(CreateStorageKey(Prefix_Root, Encoding.UTF8.GetBytes(fragments[^1]))))
+            if (!engine.SnapshotCache.Contains(CreateStorageKey(Prefix_Root, Utility.StrictUTF8.GetBytes(fragments[^1]))))
                 throw new InvalidOperationException("The root does not exist.");
+            // While registration is paused, names are not available for public registration.
+            if (IsRegisterPaused(engine.SnapshotCache)) return false;
             var price = GetPrice(engine.SnapshotCache, (byte)fragments[0].Length);
             if (price < 0) return false;
-            var tokenId = Encoding.UTF8.GetBytes(name);
+            var tokenId = Utility.StrictUTF8.GetBytes(name);
             if (tokenId.Length > MaxTokenIdLength) return false;
             var state = GetTokenState(engine.SnapshotCache, tokenId);
             if (state is null) return true;
@@ -223,9 +283,11 @@ namespace Neo.SmartContract.Native
         private async ContractTask<bool> Register(ApplicationEngine engine, string name, UInt160 owner)
         {
             ArgumentNullException.ThrowIfNull(owner);
+            if (IsRegisterPaused(engine.SnapshotCache))
+                throw new InvalidOperationException("Public registration is paused.");
             var fragments = SplitAndCheck(name, false)
                 ?? throw new FormatException("The format of the name is incorrect.");
-            if (!engine.SnapshotCache.Contains(CreateStorageKey(Prefix_Root, Encoding.UTF8.GetBytes(fragments[^1]))))
+            if (!engine.SnapshotCache.Contains(CreateStorageKey(Prefix_Root, Utility.StrictUTF8.GetBytes(fragments[^1]))))
                 throw new InvalidOperationException("The root does not exist.");
             if (!owner.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(owner))
                 throw new InvalidOperationException("No authorization.");
@@ -236,7 +298,7 @@ namespace Neo.SmartContract.Native
             else
                 engine.AddFee(price, true);
 
-            var tokenId = Encoding.UTF8.GetBytes(name);
+            var tokenId = Utility.StrictUTF8.GetBytes(name);
             if (tokenId.Length > MaxTokenIdLength)
                 throw new FormatException("The format of the name is incorrect.");
 
@@ -276,7 +338,7 @@ namespace Neo.SmartContract.Native
             else
                 engine.AddFee(price * years, true);
 
-            var tokenId = Encoding.UTF8.GetBytes(name);
+            var tokenId = Utility.StrictUTF8.GetBytes(name);
             var tokenKey = GetTokenKey(tokenId);
             var storageKey = CreateStorageKey(Prefix_Name, tokenKey);
             var storage = engine.SnapshotCache.GetAndChange(storageKey)
@@ -298,7 +360,7 @@ namespace Neo.SmartContract.Native
             if (admin is not null && !admin.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(admin))
                 throw new InvalidOperationException("No authorization.");
 
-            var tokenId = Encoding.UTF8.GetBytes(name);
+            var tokenId = Utility.StrictUTF8.GetBytes(name);
             var storageKey = CreateStorageKey(Prefix_Name, GetTokenKey(tokenId));
             var storage = engine.SnapshotCache.GetAndChange(storageKey)
                 ?? throw new InvalidOperationException("The token does not exist.");
@@ -358,7 +420,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private IIterator GetAllRecords(ApplicationEngine engine, string name)
         {
-            var tokenId = Encoding.UTF8.GetBytes(name);
+            var tokenId = Utility.StrictUTF8.GetBytes(name);
             var tokenKey = GetTokenKey(tokenId);
             var storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Name, tokenKey))
                 ?? throw new InvalidOperationException("The token does not exist.");
@@ -385,10 +447,6 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private string? Resolve(ApplicationEngine engine, string name, byte type) =>
             Resolve(engine, name, (RecordType)type, 2);
-
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private string? Resolve(ApplicationEngine engine, string name, byte type, int redirect) =>
-            Resolve(engine, name, (RecordType)type, redirect);
 
         private string? Resolve(ApplicationEngine engine, string name, RecordType type, int redirect)
         {
@@ -426,7 +484,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentException("Invalid amount.", nameof(amount));
 
             tokenId = ValidateTokenId(tokenId);
-            var name = Encoding.UTF8.GetString(tokenId);
+            var name = Utility.StrictUTF8.GetString(tokenId);
 
             // If already native-owned and not expired, reject; if expired, reclaim.
             var existing = GetTokenState(engine.SnapshotCache, tokenId);
@@ -460,26 +518,23 @@ namespace Neo.SmartContract.Native
 
         private static byte[] SerializePriceList(long[] prices)
         {
-            // Simple: count + int64 LE each
-            var buffer = new byte[4 + prices.Length * 8];
-            BitConverter.TryWriteBytes(buffer.AsSpan(0, 4), prices.Length);
-            for (var i = 0; i < prices.Length; i++)
-                BitConverter.TryWriteBytes(buffer.AsSpan(4 + i * 8, 8), prices[i]);
-            return buffer;
+            var pricesLength = prices.Length;
+            var prefixLengthBytes = MemoryMarshal.CreateSpan(ref Unsafe.As<int, byte>(ref pricesLength), sizeof(int));
+            var pricesArrayBytes = MemoryMarshal.CreateSpan(ref Unsafe.As<long, byte>(ref prices[0]), prices.Length * sizeof(long));
+            return [.. prefixLengthBytes, .. pricesArrayBytes];
         }
+
 
         private static long[] DeserializePriceList(ReadOnlySpan<byte> data)
         {
-            var count = BitConverter.ToInt32(data[..4]);
-            var prices = new long[count];
-            for (var i = 0; i < count; i++)
-                prices[i] = BitConverter.ToInt64(data.Slice(4 + i * 8, 8));
-            return prices;
+            var pricesLength = Unsafe.As<byte, int>(ref MemoryMarshal.GetReference(data));
+            var pricesSpan = MemoryMarshal.CreateSpan(ref Unsafe.As<byte, long>(ref MemoryMarshal.GetReference(data[sizeof(int)..])), pricesLength);
+            return [.. pricesSpan];
         }
 
         private StorageKey GetRecordKey(byte[] tokenKey, string name, RecordType type)
         {
-            var nameKey = Encoding.UTF8.GetBytes(name).AsSpan().RIPEMD160();
+            var nameKey = Utility.StrictUTF8.GetBytes(name).AsSpan().RIPEMD160();
             var content = new byte[tokenKey.Length + nameKey.Length + 1];
             tokenKey.CopyTo(content.AsSpan(0));
             nameKey.CopyTo(content.AsSpan(tokenKey.Length));
@@ -493,7 +548,7 @@ namespace Neo.SmartContract.Native
                 ?? throw new FormatException("The format of the name is incorrect.");
             // second-level domain: last two labels
             var tokenName = name[^(fragments[^2].Length + fragments[^1].Length + 1)..];
-            var tokenId = Encoding.UTF8.GetBytes(tokenName);
+            var tokenId = Utility.StrictUTF8.GetBytes(tokenName);
             if (tokenId.Length > MaxTokenIdLength)
                 throw new FormatException("The format of the name is incorrect.");
             return (tokenId, GetTokenKey(tokenId));
@@ -514,7 +569,7 @@ namespace Neo.SmartContract.Native
                 ?? throw new InvalidOperationException("The token does not exist.");
             storage.GetInteroperableClone<NameState>().EnsureNotExpired(engine.GetTime());
 
-            var nameKey = Encoding.UTF8.GetBytes(name).AsSpan().RIPEMD160();
+            var nameKey = Utility.StrictUTF8.GetBytes(name).AsSpan().RIPEMD160();
             var content = new byte[tokenKey.Length + nameKey.Length];
             tokenKey.CopyTo(content.AsSpan(0));
             nameKey.CopyTo(content.AsSpan(tokenKey.Length));
