@@ -38,7 +38,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var json = group.ToJson();
             var clone = ContractGroup.FromJson(json);
             Assert.AreEqual(group.PubKey, clone.PubKey);
-            CollectionAssert.AreEqual(group.Signature, clone.Signature);
+            Assert.AreSequenceEqual(group.Signature, clone.Signature);
         }
 
         [TestMethod]

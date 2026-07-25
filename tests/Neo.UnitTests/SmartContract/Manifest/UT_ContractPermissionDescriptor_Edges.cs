@@ -41,7 +41,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var d = ContractPermissionDescriptor.Create(hash);
             Assert.IsTrue(d.IsHash);
             Assert.IsFalse(d.IsWildcard);
-            CollectionAssert.AreEqual(hash.ToArray(), d.ToArray());
+            Assert.AreSequenceEqual(hash.ToArray(), d.ToArray());
             Assert.AreEqual(hash.ToString(), d.ToJson().GetString());
         }
 
