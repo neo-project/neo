@@ -6,15 +6,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit" Version="1.5.58" />
-    <PackageReference Include="Akka.TestKit.MSTest" Version="1.5.0" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.70" />
+    <PackageReference Include="Akka.TestKit.MSTest" Version="1.5.67" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
-    <PackageReference Include="Namotion.Reflection" Version="3.4.3" />
+    <PackageReference Include="Namotion.Reflection" Version="3.5.1" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="SmartContract\Manifest\TestFile\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="SmartContract\Native\TestFile\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="GasTests\Fixtures\**">

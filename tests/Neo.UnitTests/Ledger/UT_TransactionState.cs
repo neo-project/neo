@@ -65,13 +65,13 @@ namespace Neo.UnitTests.Ledger
         public void TestClone()
         {
             var clone = ((IInteroperable)_origin).Clone() as TransactionState;
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(
                 BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
                 BinarySerializer.Serialize((_origin as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
             clone.Transaction.Nonce++;
             Assert.AreNotEqual(clone.Transaction.Nonce, _origin.Transaction.Nonce);
-            CollectionAssert.AreNotEqual(
+            Assert.AreNotSequenceEqual(
                 BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
                 BinarySerializer.Serialize((_origin as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
@@ -83,7 +83,7 @@ namespace Neo.UnitTests.Ledger
             var replica = new TransactionState();
             (replica as IInteroperable).FromReplica(_origin);
             Assert.AreEqual(replica.Transaction.Nonce, _origin.Transaction.Nonce);
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(
                 ((replica as IInteroperable).ToStackItem() as VM.Types.Struct)[1].GetSpan().ToArray(),
                 ((_origin as IInteroperable).ToStackItem() as VM.Types.Struct)[1].GetSpan().ToArray()
                 );
@@ -107,7 +107,7 @@ namespace Neo.UnitTests.Ledger
             (replica as IInteroperable).FromReplica(newOrigin);
             Assert.AreEqual(replica.Transaction.Nonce, newOrigin.Transaction.Nonce);
             Assert.AreEqual(replica.Transaction.NetworkFee, newOrigin.Transaction.NetworkFee);
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(
                 ((replica as IInteroperable).ToStackItem() as VM.Types.Struct)[1].GetSpan().ToArray(),
                 ((newOrigin as IInteroperable).ToStackItem() as VM.Types.Struct)[1].GetSpan().ToArray()
                 );

@@ -293,7 +293,7 @@ namespace Neo.UnitTests.SmartContract
 
             var array = (VM.Types.Array)stackItem;
             Assert.HasCount(3, array);
-            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetSpan().ToArray());
+            Assert.AreSequenceEqual(scriptHash.ToArray(), array[0].GetSpan().ToArray());
             Assert.AreEqual(notification, array[1].GetString());
         }
 

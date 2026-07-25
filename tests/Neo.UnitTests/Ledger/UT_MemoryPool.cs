@@ -581,13 +581,13 @@ namespace Neo.UnitTests.Ledger
 
             Assert.AreEqual(VerifyResult.HasConflicts, _unit.TryAdd(mp1, engine.SnapshotCache)); // mp1 conflicts with mp2 but has lower network fee
             Assert.AreEqual(1, _unit.SortedTxCount);
-            CollectionAssert.Contains(_unit.GetVerifiedTransactions().ToList(), mp2);
+            Assert.Contains(mp2, _unit.GetVerifiedTransactions().ToList());
 
             // Act & Assert: try to invalidate verified transactions and push conflicting one.
             _unit.InvalidateVerifiedTransactions();
             Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(mp1, engine.SnapshotCache)); // mp1 conflicts with mp2 but mp2 is not verified anymore
             Assert.AreEqual(1, _unit.SortedTxCount);
-            CollectionAssert.Contains(_unit.GetVerifiedTransactions().ToList(), mp1);
+            Assert.Contains(mp1, _unit.GetVerifiedTransactions().ToList());
 
             var tx1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx1 doesn't conflict with anyone and is aimed to trigger reverification
             var block = new Block
@@ -603,7 +603,7 @@ namespace Neo.UnitTests.Ledger
             };
             _unit.UpdatePoolForBlockPersisted(block, engine.SnapshotCache);
             Assert.AreEqual(1, _unit.SortedTxCount);
-            CollectionAssert.Contains(_unit.GetVerifiedTransactions().ToList(), mp2); // after reverificaion mp2 should be back at verified list; mp1 should be completely kicked off
+            Assert.Contains(mp2, _unit.GetVerifiedTransactions().ToList()); // after reverificaion mp2 should be back at verified list; mp1 should be completely kicked off
         }
 
         private static void VerifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)

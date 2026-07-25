@@ -191,7 +191,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check the results
 
-                CollectionAssert.AreEqual
+                Assert.AreSequenceEqual
                     (
                     engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
                     new int[] { 99_999_490, 99_998_980, 99_998_410 }
@@ -268,7 +268,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check the results
 
-                CollectionAssert.AreEqual(
+                Assert.AreSequenceEqual(
                     engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
                     new int[] { 1 /* A */, 1 /* B */, 2 /* B */, 1  /* C */});
             }

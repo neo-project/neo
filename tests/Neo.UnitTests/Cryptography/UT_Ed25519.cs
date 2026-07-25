@@ -123,8 +123,8 @@ namespace Neo.UnitTests.Cryptography
             byte[] signature = ("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155" +
                                 "5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b").HexToBytes();
 
-            CollectionAssert.AreEqual(publicKey, Ed25519.GetPublicKey(privateKey));
-            CollectionAssert.AreEqual(signature, Ed25519.Sign(privateKey, message));
+            Assert.AreSequenceEqual(publicKey, Ed25519.GetPublicKey(privateKey));
+            Assert.AreSequenceEqual(signature, Ed25519.Sign(privateKey, message));
         }
 
         [TestMethod]
@@ -136,8 +136,8 @@ namespace Neo.UnitTests.Cryptography
             byte[] signature = ("92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da" +
                                 "085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00").HexToBytes();
 
-            CollectionAssert.AreEqual(publicKey, Ed25519.GetPublicKey(privateKey));
-            CollectionAssert.AreEqual(signature, Ed25519.Sign(privateKey, message));
+            Assert.AreSequenceEqual(publicKey, Ed25519.GetPublicKey(privateKey));
+            Assert.AreSequenceEqual(signature, Ed25519.Sign(privateKey, message));
         }
 
         [TestMethod]
@@ -148,8 +148,8 @@ namespace Neo.UnitTests.Cryptography
             byte[] signature = ("6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac" +
                                 "18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a").HexToBytes();
             byte[] message = "af82".HexToBytes();
-            CollectionAssert.AreEqual(publicKey, Ed25519.GetPublicKey(privateKey));
-            CollectionAssert.AreEqual(signature, Ed25519.Sign(privateKey, message));
+            Assert.AreSequenceEqual(publicKey, Ed25519.GetPublicKey(privateKey));
+            Assert.AreSequenceEqual(signature, Ed25519.Sign(privateKey, message));
         }
     }
 }

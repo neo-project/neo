@@ -142,25 +142,25 @@ namespace Neo.Extensions.Tests
         public void TestToByteArrayStandard()
         {
             BigInteger number = BigInteger.Zero;
-            CollectionAssert.AreEqual(Array.Empty<byte>(), number.ToByteArrayStandard());
+            Assert.AreSequenceEqual(Array.Empty<byte>(), number.ToByteArrayStandard());
 
             number = BigInteger.One;
-            CollectionAssert.AreEqual(new byte[] { 0x01 }, number.ToByteArrayStandard());
+            Assert.AreSequenceEqual(new byte[] { 0x01 }, number.ToByteArrayStandard());
 
             number = new BigInteger(256); // Binary: 100000000
-            CollectionAssert.AreEqual(new byte[] { 0x00, 0x01 }, number.ToByteArrayStandard());
+            Assert.AreSequenceEqual(new byte[] { 0x00, 0x01 }, number.ToByteArrayStandard());
         }
 
         [TestMethod]
         public void TestToByteArrayStandard_EdgeCases()
         {
-            CollectionAssert.AreEqual(new byte[] { 0xFF }, BigInteger.MinusOne.ToByteArrayStandard());
-            CollectionAssert.AreEqual(new byte[] { 0xFF, 0x00 }, new BigInteger(byte.MaxValue).ToByteArrayStandard());
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(new byte[] { 0xFF }, BigInteger.MinusOne.ToByteArrayStandard());
+            Assert.AreSequenceEqual(new byte[] { 0xFF, 0x00 }, new BigInteger(byte.MaxValue).ToByteArrayStandard());
+            Assert.AreSequenceEqual(
                 new byte[] { 0xFF, 0xFF, 0x00 },
                 new BigInteger(ushort.MaxValue).ToByteArrayStandard()
             );
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(
                 new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0 },
                 new BigInteger(JNumber.MIN_SAFE_INTEGER).ToByteArrayStandard()
             );

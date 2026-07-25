@@ -53,7 +53,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var nodeUS = ItoaThroughVM("en-US");
             var nodeFI = ItoaThroughVM("fi-FI");
 
-            CollectionAssert.AreEqual(nodeUS, nodeFI);
+            Assert.AreSequenceEqual(nodeUS, nodeFI);
         }
 
         [TestMethod]
@@ -61,14 +61,14 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var data = Array.Empty<byte>();
 
-            CollectionAssert.AreEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
-            CollectionAssert.AreEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
+            Assert.AreSequenceEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
+            Assert.AreSequenceEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
 
             data = new byte[] { 1, 2, 3 };
 
-            CollectionAssert.AreEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
-            CollectionAssert.AreEqual(data, StdLib.Base64Decode("A \r Q \t I \n D"));
-            CollectionAssert.AreEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
+            Assert.AreSequenceEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
+            Assert.AreSequenceEqual(data, StdLib.Base64Decode("A \r Q \t I \n D"));
+            Assert.AreSequenceEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
             Assert.AreEqual("AQIDBA==", StdLib.Base64Encode(new byte[] { 1, 2, 3, 4 }));
             Assert.AreEqual("2VfUX", StdLib.Base58Encode(new byte[] { 1, 2, 3, 4 }));
         }
@@ -148,7 +148,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.HasCount(1, engine.ResultStack);
 
-                CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, engine.ResultStack.Pop<ByteString>().GetSpan().ToArray());
+                Assert.AreSequenceEqual(new byte[] { 1, 2, 3 }, engine.ResultStack.Pop<ByteString>().GetSpan().ToArray());
             }
 
             // Error
