@@ -32,7 +32,6 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_NameService
     {
-        private static readonly byte[] RetScript = [(byte)OpCode.RET];
         private const long TestGas = 1000_00000000;
 
         private DataCache _snapshotCache;

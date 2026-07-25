@@ -41,19 +41,16 @@ namespace Neo.SmartContract.Native
         private const ulong TenYears = OneYear * 10;
 
         // Storage prefixes aligned with non-native NNS where applicable
-        private const byte P_TotalSupply = 0x00;
-        private const byte P_Balance = 0x01;
-        private const byte P_AccountToken = 0x02;
-        private const byte P_RegisterPrice = 0x11;
-        private const byte P_Root = 0x20;
-        private const byte P_Name = 0x21;
-        private const byte P_Record = 0x22;
-        private const byte P_LegacyContract = 0x30;
+        private const byte Prefix_RegisterPrice = 0x11;
+        private const byte Prefix_Root = 0x20;
+        private const byte Prefix_Name = 0x21;
+        private const byte Prefix_Record = 0x22;
+        private const byte Prefix_LegacyContract = 0x30;
 
-        protected override byte Prefix_TotalSupply => P_TotalSupply;
-        protected override byte Prefix_Balance => P_Balance;
-        protected override byte Prefix_AccountToken => P_AccountToken;
-        protected override byte Prefix_Token => P_Name;
+        protected override byte Prefix_TotalSupply => 0x00;
+        protected override byte Prefix_Balance => 0x01;
+        protected override byte Prefix_AccountToken => 0x02;
+        protected override byte Prefix_Token => Prefix_Name;
 
         public override string Symbol => "NNS";
 
@@ -87,9 +84,9 @@ namespace Neo.SmartContract.Native
                     200_00000000, // length 3
                     70_00000000,  // length 4
                 ];
-                engine.SnapshotCache.Add(CreateStorageKey(P_RegisterPrice), new StorageItem(SerializePriceList(priceList)));
-                engine.SnapshotCache.Add(CreateStorageKey(P_Root, Encoding.UTF8.GetBytes("neo")), new StorageItem(0));
-                engine.SnapshotCache.Add(CreateStorageKey(P_TotalSupply), new StorageItem(BigInteger.Zero));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(SerializePriceList(priceList)));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_Root, Encoding.UTF8.GetBytes("neo")), new StorageItem(0));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_TotalSupply), new StorageItem(BigInteger.Zero));
             }
             return ContractTask.CompletedTask;
         }
@@ -130,7 +127,7 @@ namespace Neo.SmartContract.Native
             AssertCommittee(engine);
             if (!CheckFragment(root, true))
                 throw new FormatException("The format of the root is incorrect.");
-            var key = CreateStorageKey(P_Root, Encoding.UTF8.GetBytes(root));
+            var key = CreateStorageKey(Prefix_Root, Encoding.UTF8.GetBytes(root));
             if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException("The root already exists.");
             engine.SnapshotCache.Add(key, new StorageItem(0));
@@ -139,7 +136,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private IIterator Roots(IReadOnlyStore snapshot)
         {
-            var prefix = CreateStorageKey(P_Root);
+            var prefix = CreateStorageKey(Prefix_Root);
             var enumerator = snapshot.Find(prefix).GetEnumerator();
             return new StorageIterator(enumerator, 1, FindOptions.KeysOnly | FindOptions.RemovePrefix);
         }
@@ -160,7 +157,7 @@ namespace Neo.SmartContract.Native
             }
             if (prices[0] == -1)
                 throw new ArgumentException("The price is out of range.");
-            var priceItem = engine.SnapshotCache.GetAndChange(CreateStorageKey(P_RegisterPrice),
+            var priceItem = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RegisterPrice),
                 () => new StorageItem(SerializePriceList([2_00000000])));
             priceItem!.Value = SerializePriceList(prices);
         }
@@ -179,7 +176,7 @@ namespace Neo.SmartContract.Native
         {
             AssertCommittee(engine);
             ArgumentNullException.ThrowIfNull(contractHash);
-            var key = CreateStorageKey(P_LegacyContract, contractHash);
+            var key = CreateStorageKey(Prefix_LegacyContract, contractHash);
             if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException("Legacy contract already registered.");
             engine.SnapshotCache.Add(key, new StorageItem(1));
@@ -189,7 +186,7 @@ namespace Neo.SmartContract.Native
         private void RemoveLegacyContract(ApplicationEngine engine, UInt160 contractHash)
         {
             AssertCommittee(engine);
-            var key = CreateStorageKey(P_LegacyContract, contractHash);
+            var key = CreateStorageKey(Prefix_LegacyContract, contractHash);
             if (!engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException("Legacy contract not found.");
             engine.SnapshotCache.Delete(key);
@@ -199,7 +196,7 @@ namespace Neo.SmartContract.Native
         private bool IsLegacyContract(IReadOnlyStore snapshot, UInt160 contractHash)
         {
             if (contractHash is null) return false;
-            return snapshot.Contains(CreateStorageKey(P_LegacyContract, contractHash));
+            return snapshot.Contains(CreateStorageKey(Prefix_LegacyContract, contractHash));
         }
 
         #endregion
@@ -211,7 +208,7 @@ namespace Neo.SmartContract.Native
         {
             var fragments = SplitAndCheck(name, false)
                 ?? throw new FormatException("The format of the name is incorrect.");
-            if (!engine.SnapshotCache.Contains(CreateStorageKey(P_Root, Encoding.UTF8.GetBytes(fragments[^1]))))
+            if (!engine.SnapshotCache.Contains(CreateStorageKey(Prefix_Root, Encoding.UTF8.GetBytes(fragments[^1]))))
                 throw new InvalidOperationException("The root does not exist.");
             var price = GetPrice(engine.SnapshotCache, (byte)fragments[0].Length);
             if (price < 0) return false;
@@ -228,7 +225,7 @@ namespace Neo.SmartContract.Native
             ArgumentNullException.ThrowIfNull(owner);
             var fragments = SplitAndCheck(name, false)
                 ?? throw new FormatException("The format of the name is incorrect.");
-            if (!engine.SnapshotCache.Contains(CreateStorageKey(P_Root, Encoding.UTF8.GetBytes(fragments[^1]))))
+            if (!engine.SnapshotCache.Contains(CreateStorageKey(Prefix_Root, Encoding.UTF8.GetBytes(fragments[^1]))))
                 throw new InvalidOperationException("The root does not exist.");
             if (!owner.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(owner))
                 throw new InvalidOperationException("No authorization.");
@@ -281,7 +278,7 @@ namespace Neo.SmartContract.Native
 
             var tokenId = Encoding.UTF8.GetBytes(name);
             var tokenKey = GetTokenKey(tokenId);
-            var storageKey = CreateStorageKey(P_Name, tokenKey);
+            var storageKey = CreateStorageKey(Prefix_Name, tokenKey);
             var storage = engine.SnapshotCache.GetAndChange(storageKey)
                 ?? throw new InvalidOperationException("The token does not exist.");
             var token = storage.GetInteroperable<NameState>();
@@ -302,7 +299,7 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException("No authorization.");
 
             var tokenId = Encoding.UTF8.GetBytes(name);
-            var storageKey = CreateStorageKey(P_Name, GetTokenKey(tokenId));
+            var storageKey = CreateStorageKey(Prefix_Name, GetTokenKey(tokenId));
             var storage = engine.SnapshotCache.GetAndChange(storageKey)
                 ?? throw new InvalidOperationException("The token does not exist.");
             var token = storage.GetInteroperable<NameState>();
@@ -330,7 +327,7 @@ namespace Neo.SmartContract.Native
             var recordType = (RecordType)type;
             ValidateRecordData(name, recordType, data);
             var (tokenId, tokenKey) = ResolveTokenFromRecordName(engine.SnapshotCache, name, true);
-            var storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(P_Name, tokenKey))
+            var storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Name, tokenKey))
                 ?? throw new InvalidOperationException("The token does not exist.");
             var token = storage.GetInteroperable<NameState>();
             token.EnsureNotExpired(engine.GetTime());
@@ -349,7 +346,7 @@ namespace Neo.SmartContract.Native
         {
             var recordType = (RecordType)type;
             var (_, tokenKey) = ResolveTokenFromRecordName(engine.SnapshotCache, name, true);
-            var storage = engine.SnapshotCache.TryGet(CreateStorageKey(P_Name, tokenKey))
+            var storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Name, tokenKey))
                 ?? throw new InvalidOperationException("The token does not exist.");
             var token = storage.GetInteroperableClone<NameState>();
             token.EnsureNotExpired(engine.GetTime());
@@ -363,11 +360,11 @@ namespace Neo.SmartContract.Native
         {
             var tokenId = Encoding.UTF8.GetBytes(name);
             var tokenKey = GetTokenKey(tokenId);
-            var storage = engine.SnapshotCache.TryGet(CreateStorageKey(P_Name, tokenKey))
+            var storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Name, tokenKey))
                 ?? throw new InvalidOperationException("The token does not exist.");
             var token = storage.GetInteroperableClone<NameState>();
             token.EnsureNotExpired(engine.GetTime());
-            var prefix = CreateStorageKey(P_Record, tokenKey);
+            var prefix = CreateStorageKey(Prefix_Record, tokenKey);
             var enumerator = engine.SnapshotCache.Find(prefix).GetEnumerator();
             return new StorageIterator(enumerator, 1 + tokenKey.Length, FindOptions.ValuesOnly | FindOptions.DeserializeValues);
         }
@@ -377,7 +374,7 @@ namespace Neo.SmartContract.Native
         {
             var recordType = (RecordType)type;
             var (_, tokenKey) = ResolveTokenFromRecordName(engine.SnapshotCache, name, true);
-            var storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(P_Name, tokenKey))
+            var storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Name, tokenKey))
                 ?? throw new InvalidOperationException("The token does not exist.");
             var token = storage.GetInteroperable<NameState>();
             token.EnsureNotExpired(engine.GetTime());
@@ -457,7 +454,7 @@ namespace Neo.SmartContract.Native
 
         private long[] GetPriceList(IReadOnlyStore snapshot)
         {
-            var item = snapshot[CreateStorageKey(P_RegisterPrice)];
+            var item = snapshot[CreateStorageKey(Prefix_RegisterPrice)];
             return DeserializePriceList(item.Value.Span);
         }
 
@@ -487,7 +484,7 @@ namespace Neo.SmartContract.Native
             tokenKey.CopyTo(content.AsSpan(0));
             nameKey.CopyTo(content.AsSpan(tokenKey.Length));
             content[^1] = (byte)type;
-            return CreateStorageKey(P_Record, content);
+            return CreateStorageKey(Prefix_Record, content);
         }
 
         private (byte[] tokenId, byte[] tokenKey) ResolveTokenFromRecordName(IReadOnlyStore snapshot, string name, bool allowMultiple)
@@ -505,7 +502,7 @@ namespace Neo.SmartContract.Native
         private void ClearRecords(DataCache snapshot, byte[] tokenId)
         {
             var tokenKey = GetTokenKey(tokenId);
-            var prefix = CreateStorageKey(P_Record, tokenKey);
+            var prefix = CreateStorageKey(Prefix_Record, tokenKey);
             foreach (var (key, _) in snapshot.Find(prefix).ToArray())
                 snapshot.Delete(key);
         }
@@ -513,7 +510,7 @@ namespace Neo.SmartContract.Native
         private IEnumerable<(RecordType type, string data)> GetRecords(ApplicationEngine engine, string name)
         {
             var (_, tokenKey) = ResolveTokenFromRecordName(engine.SnapshotCache, name, true);
-            var storage = engine.SnapshotCache.TryGet(CreateStorageKey(P_Name, tokenKey))
+            var storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Name, tokenKey))
                 ?? throw new InvalidOperationException("The token does not exist.");
             storage.GetInteroperableClone<NameState>().EnsureNotExpired(engine.GetTime());
 
@@ -521,7 +518,7 @@ namespace Neo.SmartContract.Native
             var content = new byte[tokenKey.Length + nameKey.Length];
             tokenKey.CopyTo(content.AsSpan(0));
             nameKey.CopyTo(content.AsSpan(tokenKey.Length));
-            var prefix = CreateStorageKey(P_Record, content);
+            var prefix = CreateStorageKey(Prefix_Record, content);
             foreach (var (_, value) in engine.SnapshotCache.Find(prefix))
             {
                 var record = value.GetInteroperableClone<RecordState>();
