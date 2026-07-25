@@ -180,33 +180,35 @@ namespace Neo.UnitTests.SmartContract
                 engine.ValidateCallFlags(CallFlags.WriteStates));
         }
 
-        [TestMethod]
-        public void Create_WithPersistingBlock_UsesIndexForJumpTable()
-        {
-            var block = new Block
-            {
-                Header = new Header
-                {
-                    Index = 0,
-                    Timestamp = 0,
-                    Nonce = 0,
-                    NextConsensus = UInt160.Zero,
-                    PrevHash = UInt256.Zero,
-                    MerkleRoot = UInt256.Zero,
-                    Witness = Witness.Empty
-                },
-                Transactions = []
-            };
-            using var engine = ApplicationEngine.Create(
-                TriggerType.Application,
-                null,
-                _snapshot,
-                persistingBlock: block,
-                settings: TestProtocolSettings.Default,
-                gas: 100_0000_0000);
-            Assert.AreEqual(block, engine.PersistingBlock);
-            Assert.AreEqual(TriggerType.Application, engine.Trigger);
-        }
+		[TestMethod]
+		public void Create_WithPersistingBlock_PreservesBlockAndTrigger()
+		{
+			var block = new Block
+			{
+				Header = new Header
+				{
+					Index = 0,
+					Timestamp = 0,
+					Nonce = 0,
+					NextConsensus = UInt160.Zero,
+					PrevHash = UInt256.Zero,
+					MerkleRoot = UInt256.Zero,
+					Witness = Witness.Empty
+				},
+				Transactions = []
+			};
+
+			using var engine = ApplicationEngine.Create(
+				TriggerType.Application,
+				null,
+				_snapshot,
+				persistingBlock: block,
+				settings: TestProtocolSettings.Default,
+				gas: 100_0000_0000);
+
+			Assert.AreSame(block, engine.PersistingBlock);
+			Assert.AreEqual(TriggerType.Application, engine.Trigger);
+		}
 
         [TestMethod]
         public void Services_Dictionary_IsPopulated()
