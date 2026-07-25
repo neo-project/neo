@@ -176,7 +176,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.IsTrue(NativeContract.NameService.IsInitializeBlock(settings, 10, out hfs));
             Assert.IsNotNull(hfs);
-            Assert.IsTrue(hfs.Contains(Hardfork.HF_Huyao));
+            Assert.Contains(Hardfork.HF_Huyao, hfs);
         }
 
         [TestMethod]
@@ -192,22 +192,14 @@ namespace Neo.UnitTests.SmartContract.Native
             var methods = NativeContract.NameService.GetContractMethods(engine);
             var names = methods.Values.Select(m => m.Name).ToHashSet();
 
-            Assert.IsTrue(names.Contains("symbol"));
-            Assert.IsTrue(names.Contains("decimals"));
-            Assert.IsTrue(names.Contains("totalSupply"));
-            Assert.IsTrue(names.Contains("balanceOf"));
-            Assert.IsTrue(names.Contains("ownerOf"));
-            Assert.IsTrue(names.Contains("tokens"));
-            Assert.IsTrue(names.Contains("tokensOf"));
-            Assert.IsTrue(names.Contains("properties"));
-            Assert.IsTrue(names.Contains("transfer"));
-            Assert.IsTrue(names.Contains("register"));
-            Assert.IsTrue(names.Contains("setPrice"));
-            Assert.IsTrue(names.Contains("addRoot"));
-            Assert.IsTrue(names.Contains("setAdmin"));
-            Assert.IsTrue(names.Contains("setRecord"));
-            Assert.IsTrue(names.Contains("onNEP11Payment"));
-            Assert.IsTrue(names.Contains("addLegacyContract"));
+            string[] expectedMethods =
+            [
+                "symbol", "decimals", "totalSupply", "balanceOf", "ownerOf", "tokens", "tokensOf",
+                "properties", "transfer", "register", "setPrice", "addRoot", "setAdmin", "setRecord",
+                "onNEP11Payment", "addLegacyContract"
+            ];
+            foreach (var methodName in expectedMethods)
+                Assert.Contains(methodName, names);
 
             var transfer = methods.Values.Single(m => m.Name == "transfer");
             Assert.AreEqual(CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify, transfer.RequiredCallFlags);
@@ -221,11 +213,12 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var settings = SettingsWithHuyaoAt(10);
             var state = NativeContract.NameService.GetContractState(settings, 10);
-            Assert.IsTrue(state.Manifest.SupportedStandards.Contains("NEP-11"));
+            Assert.Contains("NEP-11", state.Manifest.SupportedStandards);
             Assert.AreEqual(nameof(NameService), state.Manifest.Name);
-            Assert.IsTrue(state.Manifest.Abi.Events.Any(e => e.Name == "Transfer"));
-            Assert.IsTrue(state.Manifest.Abi.Events.Any(e => e.Name == "SetAdmin"));
-            Assert.IsTrue(state.Manifest.Abi.Events.Any(e => e.Name == "Renew"));
+            var eventNames = state.Manifest.Abi.Events.Select(e => e.Name).ToHashSet();
+            Assert.Contains("Transfer", eventNames);
+            Assert.Contains("SetAdmin", eventNames);
+            Assert.Contains("Renew", eventNames);
         }
 
         #endregion
@@ -261,7 +254,8 @@ namespace Neo.UnitTests.SmartContract.Native
             var prices = new ContractParameter(ContractParameterType.Array) { Value = priceParams };
 
             var ret = CallWithWitness(snapshot, _persistingBlock, [committee], "setPrice", args: prices);
-            Assert.IsTrue(ret is null || ret.IsNull);
+            Assert.IsNotNull(ret);
+            Assert.IsTrue(ret.IsNull);
 
             var p0 = NativeContract.NameService.Call(snapshot, "getPrice",
                 new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)3 });
@@ -286,7 +280,8 @@ namespace Neo.UnitTests.SmartContract.Native
             var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
             var ret = CallWithWitness(snapshot, _persistingBlock, [committee], "addRoot",
                 args: new ContractParameter(ContractParameterType.String) { Value = "test" });
-            Assert.IsTrue(ret is null || ret.IsNull);
+            Assert.IsNotNull(ret);
+            Assert.IsTrue(ret.IsNull);
         }
 
         [TestMethod]
