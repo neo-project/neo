@@ -91,13 +91,13 @@ namespace Neo.UnitTests.Ledger
         {
             var block = GetTrimmedBlockWithNoTransaction();
             var clone = ((IInteroperable)block).Clone() as TrimmedBlock;
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(
                 BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
                 BinarySerializer.Serialize((block as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
             clone.Header.Index++;
             Assert.AreNotEqual(clone.Header.Index, block.Header.Index);
-            CollectionAssert.AreNotEqual(
+            Assert.AreNotSequenceEqual(
                 BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
                 BinarySerializer.Serialize((block as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
