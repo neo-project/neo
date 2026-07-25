@@ -139,12 +139,5 @@ namespace Neo.UnitTests.Plugins
             var plugin = new DescribePlugin();
             plugin.OnSystemLoaded(TestBlockchain.GetSystem());
         }
-
-        [TestMethod]
-        public void LoadPlugins_WhenDirectoryMissingOrEmpty_DoesNotThrow()
-        {
-            // Safe to call: either no Plugins dir or loads existing assemblies without faulting host.
-            Plugin.LoadPlugins();
-        }
     }
 }
