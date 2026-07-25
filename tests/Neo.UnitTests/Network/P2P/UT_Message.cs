@@ -237,8 +237,8 @@ namespace Neo.UnitTests.Network.P2P
             var withFlag = msg.ToArray(enablecompression: true);
             var withoutFlag = msg.ToArray(enablecompression: false);
 
-            CollectionAssert.AreEqual(withFlag, withoutFlag);
-            CollectionAssert.AreEqual(withFlag, msg.ToArray());
+            Assert.AreSequenceEqual(withFlag, withoutFlag);
+            Assert.AreSequenceEqual(withFlag, msg.ToArray());
         }
     }
 }

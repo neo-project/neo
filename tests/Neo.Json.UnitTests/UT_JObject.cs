@@ -135,7 +135,7 @@ namespace Neo.Json.UnitTests
                         Assert.IsNull(bobClone[key]);
                         break;
                     case JObject obj:
-                        CollectionAssert.AreEqual(
+                        Assert.AreSequenceEqual(
                             ((JObject)_bob[key]).Properties.ToList(),
                             ((JObject)bobClone[key]).Properties.ToList());
                         break;

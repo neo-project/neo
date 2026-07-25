@@ -241,7 +241,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(map.TryGetValue("test2", out value));
             Assert.AreEqual(321, value.GetInteger());
 
-            CollectionAssert.AreEqual(map.Values.Select(u => u.GetInteger()).ToArray(), new BigInteger[] { 123, 321 });
+            Assert.AreSequenceEqual(map.Values.Select(u => u.GetInteger()).ToArray(), new BigInteger[] { 123, 321 });
         }
 
         [TestMethod]

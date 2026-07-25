@@ -58,7 +58,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestClone()
         {
             var clone = ((IInteroperable)contract).Clone() as ContractState;
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(
                 BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
                 BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreNotEqual(clone.Nef.CheckSum, contract.Nef.CheckSum);
             clone.Manifest.Name += "X";
             Assert.AreNotEqual(clone.Manifest.Name, contract.Manifest.Name);
-            CollectionAssert.AreNotEqual(
+            Assert.AreNotSequenceEqual(
                 BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
                 BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
