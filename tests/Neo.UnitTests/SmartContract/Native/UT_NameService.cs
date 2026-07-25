@@ -58,20 +58,21 @@ namespace Neo.UnitTests.SmartContract.Native
             };
         }
 
-        private static Block BlockAt(uint index, ulong timestamp = 1_000_000) => new()
-        {
-            Header = new Header
+        private static Block BlockAt(uint index, ulong timestamp = 1_000_000) =>
+            new()
             {
-                Index = index,
-                Timestamp = timestamp,
-                Nonce = 0,
-                NextConsensus = UInt160.Zero,
-                PrevHash = UInt256.Zero,
-                MerkleRoot = UInt256.Zero,
-                Witness = Witness.Empty
-            },
-            Transactions = []
-        };
+                Header = new Header
+                {
+                    Index = index,
+                    Timestamp = timestamp,
+                    Nonce = 0,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
 
         private static UInt160 OwnerHash() =>
             Contract.CreateSignatureRedeemScript(TestProtocolSettings.Default.StandbyCommittee[0]).ToScriptHash();
@@ -113,19 +114,24 @@ namespace Neo.UnitTests.SmartContract.Native
         #region Basics
 
         [TestMethod]
-        public void Check_Name() => Assert.AreEqual(nameof(NameService), NativeContract.NameService.Name);
+        public void Check_Name() =>
+            Assert.AreEqual(nameof(NameService), NativeContract.NameService.Name);
 
         [TestMethod]
-        public void Check_Symbol() => Assert.AreEqual("NNS", NativeContract.NameService.Symbol);
+        public void Check_Symbol() =>
+            Assert.AreEqual("NNS", NativeContract.NameService.Symbol);
 
         [TestMethod]
-        public void Check_Decimals() => Assert.AreEqual((byte)0, NativeContract.NameService.Decimals);
+        public void Check_Decimals() =>
+            Assert.AreEqual((byte)0, NativeContract.NameService.Decimals);
 
         [TestMethod]
-        public void Check_ActiveIn() => Assert.AreEqual(Hardfork.HF_Huyao, NativeContract.NameService.ActiveIn);
+        public void Check_ActiveIn() =>
+            Assert.AreEqual(Hardfork.HF_Huyao, NativeContract.NameService.ActiveIn);
 
         [TestMethod]
-        public void Check_Id() => Assert.AreEqual(-12, NativeContract.NameService.Id);
+        public void Check_Id() =>
+            Assert.AreEqual(-12, NativeContract.NameService.Id);
 
         [TestMethod]
         public void TotalSupply_NonNegative()

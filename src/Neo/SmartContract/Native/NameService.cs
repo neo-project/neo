@@ -94,7 +94,8 @@ namespace Neo.SmartContract.Native
             return ContractTask.CompletedTask;
         }
 
-        protected override byte[] GetTokenKey(ReadOnlySpan<byte> tokenId) => tokenId.RIPEMD160();
+        protected override byte[] GetTokenKey(ReadOnlySpan<byte> tokenId) =>
+            tokenId.RIPEMD160();
 
         protected override byte[] ValidateTokenId(byte[] tokenId)
         {
@@ -262,7 +263,8 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private ulong Renew(ApplicationEngine engine, string name) => Renew(engine, name, 1);
+        private ulong Renew(ApplicationEngine engine, string name) =>
+            Renew(engine, name, 1);
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ulong Renew(ApplicationEngine engine, string name, byte years)
@@ -571,8 +573,11 @@ namespace Neo.SmartContract.Native
             return IsAlphaNum(root[^1]);
         }
 
-        private static bool IsAlpha(char c) => c is >= 'a' and <= 'z';
-        private static bool IsAlphaNum(char c) => IsAlpha(c) || c is >= '0' and <= '9';
+        private static bool IsAlpha(char c) =>
+            c is >= 'a' and <= 'z';
+
+        private static bool IsAlphaNum(char c) =>
+            IsAlpha(c) || c is >= '0' and <= '9';
 
         private static string[]? SplitAndCheck(string name, bool allowMultipleFragments)
         {
