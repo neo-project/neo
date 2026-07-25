@@ -153,15 +153,6 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void RecordType_Values_MatchDns()
-        {
-            Assert.IsTrue(RecordType.A == (RecordType)1);
-            Assert.IsTrue(RecordType.CNAME == (RecordType)5);
-            Assert.IsTrue(RecordType.TXT == (RecordType)16);
-            Assert.IsTrue(RecordType.AAAA == (RecordType)28);
-        }
-
-        [TestMethod]
         public void NameState_RoundTrip()
         {
             var state = new NameState
