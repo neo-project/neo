@@ -127,8 +127,7 @@ namespace Neo.UnitTests.Plugins
             lock (s_locker)
             {
                 Plugin.Plugins.Clear();
-                var stopped = new MessageHandlingPlugin();
-                stopped.IsStopped = true;
+                var stopped = new MessageHandlingPlugin { IsStopped = true };
                 Assert.IsFalse(Plugin.SendMessage("ignored"));
                 Assert.IsNull(stopped.LastMessage);
             }
