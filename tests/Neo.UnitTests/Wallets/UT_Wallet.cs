@@ -133,14 +133,7 @@ namespace Neo.UnitTests.Wallets
         public void TestContains()
         {
             MyWallet wallet = new();
-            try
-            {
-                wallet.Contains(UInt160.Zero);
-            }
-            catch (Exception)
-            {
-                Assert.Fail();
-            }
+            _ = wallet.Contains(UInt160.Zero);
         }
 
         [TestMethod]
@@ -205,29 +198,14 @@ namespace Neo.UnitTests.Wallets
         public void TestGetAccount2()
         {
             var wallet = new MyWallet();
-
-            try
-            {
-                wallet.GetAccount(UInt160.Zero);
-            }
-            catch (Exception)
-            {
-                Assert.Fail();
-            }
+            _ = wallet.GetAccount(UInt160.Zero);
         }
 
         [TestMethod]
         public void TestGetAccounts()
         {
             var wallet = new MyWallet();
-            try
-            {
-                wallet.GetAccounts();
-            }
-            catch (Exception)
-            {
-                Assert.Fail();
-            }
+            _ = wallet.GetAccounts();
         }
 
         [TestMethod]
@@ -283,7 +261,7 @@ namespace Neo.UnitTests.Wallets
             action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             Assert.ThrowsExactly<FormatException>(action);
 
-            CollectionAssert.AreEqual("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f".HexToBytes(),
+            Assert.AreSequenceEqual("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f".HexToBytes(),
                 Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1));
         }
 
@@ -296,7 +274,7 @@ namespace Neo.UnitTests.Wallets
             action = () => Wallet.GetPrivateKeyFromWIF("3vQB7B6MrGQZaxCuFg4oh");
             Assert.ThrowsExactly<FormatException>(action);
 
-            CollectionAssert.AreEqual("c7134d6fd8e73d819e82755c64c93788d8db0961929e025a53363c4cc02a6962".HexToBytes(),
+            Assert.AreSequenceEqual("c7134d6fd8e73d819e82755c64c93788d8db0961929e025a53363c4cc02a6962".HexToBytes(),
                 Wallet.GetPrivateKeyFromWIF("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU"));
         }
 
@@ -430,14 +408,7 @@ namespace Neo.UnitTests.Wallets
         public void TestVerifyPassword()
         {
             var wallet = new MyWallet();
-            try
-            {
-                wallet.VerifyPassword("Test");
-            }
-            catch (Exception)
-            {
-                Assert.Fail();
-            }
+            _ = wallet.VerifyPassword("Test");
         }
 
         [TestMethod]

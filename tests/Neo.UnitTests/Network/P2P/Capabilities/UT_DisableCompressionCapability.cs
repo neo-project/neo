@@ -39,7 +39,7 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
             Assert.AreEqual(test.Type, clone.Type);
             Assert.AreEqual(NodeCapabilityType.DisableCompression, clone.Type);
             Assert.IsInstanceOfType<DisableCompressionCapability>(clone);
-            CollectionAssert.AreEqual(buffer, clone.ToArray());
+            Assert.AreSequenceEqual(buffer, clone.ToArray());
 
             // Non-zero payload must fail (empty VarBytes / string required).
             buffer[1] = 0x01;

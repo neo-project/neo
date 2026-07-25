@@ -48,10 +48,12 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void MessageFlags_Compressed_IsDistinctFromNone()
         {
-            Assert.AreEqual(MessageFlags.None, (MessageFlags)0);
+            // Avoid constant-to-constant Assert.AreEqual (MSTEST0025).
             Assert.AreNotEqual(MessageFlags.None, MessageFlags.Compressed);
             Assert.IsTrue(MessageFlags.Compressed.HasFlag(MessageFlags.Compressed));
             Assert.IsFalse(MessageFlags.None.HasFlag(MessageFlags.Compressed));
+            Assert.IsTrue((byte)default(MessageFlags) == (byte)MessageFlags.None);
+            Assert.IsTrue(((int)MessageFlags.Compressed & 1) == 1);
         }
     }
 }
