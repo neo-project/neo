@@ -64,19 +64,19 @@ namespace Neo.UnitTests.Ledger
             _sender.ExpectNoMsg(TimeSpan.FromMilliseconds(300), cancellationToken: CancellationToken.None);
         }
 
-        [TestMethod]
-        public void Relay_AlreadyKnownBlock_ReturnsAlreadyExistsOrInvalid()
-        {
-            var genesis = NativeContract.Ledger.GetBlock(_system.StoreView, 0);
-            Assert.IsNotNull(genesis);
-            _sender.Send(_system.Blockchain, genesis);
-            var result = _sender.ExpectMsg<Blockchain.RelayResult>(TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
-            Assert.IsTrue(
-                result.Result is VerifyResult.AlreadyExists
-                    or VerifyResult.Invalid
-                    or VerifyResult.Succeed
-                    or VerifyResult.AlreadyInPool);
-        }
+		[TestMethod]
+		public void Relay_AlreadyKnownBlock_ReturnsAlreadyExists()
+		{
+			var genesis = NativeContract.Ledger.GetBlock(_system.StoreView, 0);
+			Assert.IsNotNull(genesis);
+
+			_sender.Send(_system.Blockchain, genesis);
+
+			var result = _sender.ExpectMsg<Blockchain.RelayResult>(TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
+
+			Assert.AreSame(genesis, result.Inventory);
+			Assert.AreEqual(VerifyResult.AlreadyExists, result.Result);
+		}
 
         [TestMethod]
         public void Idle_DoesNotFault()
