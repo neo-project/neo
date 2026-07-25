@@ -69,15 +69,19 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(CryptoLib.Bls12381Equal(original, restored));
         }
 
-        [TestMethod]
-        public void Bls12381Add_G1_ProducesPoint()
-        {
-            var a = CryptoLib.Bls12381Deserialize(G1);
-            var b = CryptoLib.Bls12381Deserialize(G1);
-            var sum = CryptoLib.Bls12381Add(a, b);
-            Assert.IsNotNull(sum);
-            Assert.IsNotNull(CryptoLib.Bls12381Serialize(sum));
-        }
+		[TestMethod]
+		public void Bls12381Add_G1_ReturnsExpectedSum()
+		{
+			var a = CryptoLib.Bls12381Deserialize(G1);
+			var b = CryptoLib.Bls12381Deserialize(G1);
+			var sum = CryptoLib.Bls12381Add(a, b);
+
+			var affine = a.GetInterface<G1Affine>();
+			var expected = new G1Affine(new G1Projective(affine) + affine).ToCompressed();
+			var actual = CryptoLib.Bls12381Serialize(sum);
+
+			Assert.AreSequenceEqual(expected, actual);
+		}
 
         [TestMethod]
         public void Bls12381Add_TypeMismatch_Throws()
