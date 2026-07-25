@@ -47,7 +47,7 @@ namespace Neo.UnitTests.Wallets
         {
             byte[] x = [0x0F, 0xF0, 0xAA];
             byte[] y = [0xF0, 0x0F, 0x55];
-            CollectionAssert.AreEqual((byte[])[0xFF, 0xFF, 0xFF], WalletHelper.XOR(x, y));
+            Assert.AreSequenceEqual((byte[])[0xFF, 0xFF, 0xFF], WalletHelper.XOR(x, y));
         }
 
         [TestMethod]

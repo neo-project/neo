@@ -56,12 +56,12 @@ namespace Neo.UnitTests.Persistence
             Assert.IsNull(got);
 
             store.Put([1], [1, 2, 3]);
-            CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, store.TryGet([1]));
+            Assert.AreSequenceEqual(new byte[] { 1, 2, 3 }, store.TryGet([1]));
 
             store.Put([2], [4, 5, 6]);
-            CollectionAssert.AreEqual(new byte[] { 1 }, store.Find([]).Select(u => u.Key).First());
-            CollectionAssert.AreEqual(new byte[] { 2 }, store.Find([2], SeekDirection.Backward).Select(u => u.Key).First());
-            CollectionAssert.AreEqual(new byte[] { 1 }, store.Find([1], SeekDirection.Backward).Select(u => u.Key).First());
+            Assert.AreSequenceEqual(new byte[] { 1 }, store.Find([]).Select(u => u.Key).First());
+            Assert.AreSequenceEqual(new byte[] { 2 }, store.Find([2], SeekDirection.Backward).Select(u => u.Key).First());
+            Assert.AreSequenceEqual(new byte[] { 1 }, store.Find([1], SeekDirection.Backward).Select(u => u.Key).First());
 
             store.Delete([1]);
             store.Delete([2]);
@@ -105,7 +105,7 @@ namespace Neo.UnitTests.Persistence
             storeCache.Add(key, new StorageItem(UInt256.Zero.ToArray()));
             storeCache.Commit();
 
-            CollectionAssert.AreEqual(UInt256.Zero.ToArray(), storeCache.TryGet(key).ToArray());
+            Assert.AreSequenceEqual(UInt256.Zero.ToArray(), storeCache.TryGet(key).ToArray());
         }
 
         [TestMethod]
@@ -117,13 +117,13 @@ namespace Neo.UnitTests.Persistence
             storeView.Delete(key);
             Assert.IsNull(storeView.TryGet(key));
             storeView.Add(key, item);
-            CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, storeView.TryGet(key).ToArray());
+            Assert.AreSequenceEqual(new byte[] { 1, 2, 3 }, storeView.TryGet(key).ToArray());
 
             var key2 = new KeyBuilder(1, 2);
             var item2 = new StorageItem([4, 5, 6]);
             storeView.Add(key2, item2);
-            CollectionAssert.AreEqual(key2.ToArray(), storeView.Seek(key2.ToArray(), SeekDirection.Backward).Select(u => u.Key).First().ToArray());
-            CollectionAssert.AreEqual(key.ToArray(), storeView.Seek(key.ToArray(), SeekDirection.Backward).Select(u => u.Key).First().ToArray());
+            Assert.AreSequenceEqual(key2.ToArray(), storeView.Seek(key2.ToArray(), SeekDirection.Backward).Select(u => u.Key).First().ToArray());
+            Assert.AreSequenceEqual(key.ToArray(), storeView.Seek(key.ToArray(), SeekDirection.Backward).Select(u => u.Key).First().ToArray());
 
             storeView.Delete(key);
             storeView.Delete(key2);
