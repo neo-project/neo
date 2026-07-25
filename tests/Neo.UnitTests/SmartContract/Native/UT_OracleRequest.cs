@@ -54,7 +54,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(original.Filter, clone.Filter);
             Assert.AreEqual(original.CallbackContract, clone.CallbackContract);
             Assert.AreEqual(original.CallbackMethod, clone.CallbackMethod);
-            CollectionAssert.AreEqual(original.UserData, clone.UserData);
+            Assert.AreSequenceEqual(original.UserData, clone.UserData);
         }
 
         [TestMethod]

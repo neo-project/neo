@@ -28,7 +28,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var item = new StorageItem(new BigInteger(12345));
             Assert.IsFalse(item.Value.IsEmpty);
-            CollectionAssert.AreEqual(new BigInteger(12345).ToByteArrayStandard(), item.Value.ToArray());
+            Assert.AreSequenceEqual(new BigInteger(12345).ToByteArrayStandard(), item.Value.ToArray());
         }
 
         [TestMethod]
@@ -49,7 +49,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var item = new StorageItem(new BigInteger(10));
             item.Add(5);
-            CollectionAssert.AreEqual(new BigInteger(15).ToByteArrayStandard(), item.Value.ToArray());
+            Assert.AreSequenceEqual(new BigInteger(15).ToByteArrayStandard(), item.Value.ToArray());
         }
     }
 }
