@@ -145,34 +145,34 @@ namespace Neo.UnitTests.Cryptography.ECC
         {
             ECPoint point = new ECPoint(null, null, ECCurve.Secp256k1);
             byte[] result1 = [0];
-            CollectionAssert.AreEqual(result1, point.EncodePoint(true));
+            Assert.AreSequenceEqual(result1, point.EncodePoint(true));
 
             point = ECCurve.Secp256k1.G;
             var result2 = s_uncompressed.HexToBytes();
-            CollectionAssert.AreEqual(result2, point.EncodePoint(false));
-            CollectionAssert.AreEqual(result2, point.EncodePoint(false));
+            Assert.AreSequenceEqual(result2, point.EncodePoint(false));
+            Assert.AreSequenceEqual(result2, point.EncodePoint(false));
 
             var result3 = s_compressedX.HexToBytes();
-            CollectionAssert.AreEqual(result3, point.EncodePoint(true));
-            CollectionAssert.AreEqual(result3, point.EncodePoint(true));
+            Assert.AreSequenceEqual(result3, point.EncodePoint(true));
+            Assert.AreSequenceEqual(result3, point.EncodePoint(true));
 
             point = ECCurve.Secp256r1.G;
             var result4 = s_compressedY.HexToBytes();
-            CollectionAssert.AreEqual(result4, point.EncodePoint(true));
-            CollectionAssert.AreEqual(result4, point.EncodePoint(true));
+            Assert.AreSequenceEqual(result4, point.EncodePoint(true));
+            Assert.AreSequenceEqual(result4, point.EncodePoint(true));
 
             // Test cache
             point = ECPoint.DecodePoint(ECCurve.Secp256r1.G.EncodePoint(true), ECCurve.Secp256r1);
-            CollectionAssert.AreEqual(result4, point.EncodePoint(true));
-            CollectionAssert.AreEqual(result4, point.EncodePoint(true));
+            Assert.AreSequenceEqual(result4, point.EncodePoint(true));
+            Assert.AreSequenceEqual(result4, point.EncodePoint(true));
 
             var result5 = "04" + "6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296" +
                 "4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5";
             point = ECPoint.DecodePoint(ECCurve.Secp256r1.G.EncodePoint(false), ECCurve.Secp256r1);
-            CollectionAssert.AreEqual(result4, point.EncodePoint(true));
-            CollectionAssert.AreEqual(result4, point.EncodePoint(true));
-            CollectionAssert.AreEqual(result5.HexToBytes(), point.EncodePoint(false));
-            CollectionAssert.AreEqual(result5.HexToBytes(), point.EncodePoint(false));
+            Assert.AreSequenceEqual(result4, point.EncodePoint(true));
+            Assert.AreSequenceEqual(result4, point.EncodePoint(true));
+            Assert.AreSequenceEqual(result5.HexToBytes(), point.EncodePoint(false));
+            Assert.AreSequenceEqual(result5.HexToBytes(), point.EncodePoint(false));
         }
 
         [TestMethod]
@@ -367,11 +367,11 @@ namespace Neo.UnitTests.Cryptography.ECC
             var point = new ECPoint(null, null, ECCurve.Secp256k1);
             ISerializable serializable = point;
             serializable.Serialize(new BinaryWriter(stream));
-            CollectionAssert.AreEqual(new byte[] { 0 }, stream.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0 }, stream.ToArray());
 
-            CollectionAssert.AreEqual(point.GetSpan().ToArray(), stream.ToArray());
+            Assert.AreSequenceEqual(point.GetSpan().ToArray(), stream.ToArray());
             point = ECCurve.Secp256r1.G;
-            CollectionAssert.AreEqual(point.GetSpan().ToArray(), point.ToArray());
+            Assert.AreSequenceEqual(point.GetSpan().ToArray(), point.ToArray());
         }
 
         [TestMethod]

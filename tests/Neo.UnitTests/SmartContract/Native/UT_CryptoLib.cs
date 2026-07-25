@@ -1279,7 +1279,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     res.Add("throws");
                 }
             }
-            CollectionAssert.AreEqual(good, res);
+            Assert.AreSequenceEqual(good, res);
         }
 
         [TestMethod]
