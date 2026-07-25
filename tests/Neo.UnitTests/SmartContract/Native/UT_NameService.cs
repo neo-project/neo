@@ -15,6 +15,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Iterators;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
@@ -120,6 +121,77 @@ namespace Neo.UnitTests.SmartContract.Native
             params ContractParameter[] args)
         {
             return CallWithGas(snapshot, new Nep17NativeContractExtensions.ManualWitness(witnesses), block, method, gas, settings, args);
+        }
+
+        /// <summary>
+        /// Invoke a NameService method with a faked calling script hash (legacy NNS migration).
+        /// </summary>
+        private static StackItem CallWithCallingScript(
+            DataCache snapshot,
+            Block block,
+            UInt160 callingScriptHash,
+            UInt160[] witnesses,
+            string method,
+            params ContractParameter[] args)
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(witnesses), snapshot, block,
+                settings: TestProtocolSettings.Default, gas: TestGas);
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, method, args);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.GetState<ExecutionContextState>().NativeCallingScriptHash = callingScriptHash;
+            engine.CurrentContext.GetState<ExecutionContextState>().ScriptHash = callingScriptHash;
+
+            if (engine.Execute() != VMState.HALT)
+            {
+                var exception = engine.FaultException;
+                while (exception?.InnerException != null) exception = exception.InnerException;
+                throw exception ?? new InvalidOperationException();
+            }
+            return engine.ResultStack.Count > 0 ? engine.ResultStack.Pop() : StackItem.Null;
+        }
+
+        private static void RegisterName(DataCache snapshot, Block block, UInt160 owner, string name)
+        {
+            CallWithWitness(snapshot, block, [owner], "register",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = name },
+                    new ContractParameter(ContractParameterType.Hash160) { Value = owner }
+                ]);
+        }
+
+        private static ContractParameter RecordTypeParam(RecordType type) =>
+            new(ContractParameterType.Integer) { Value = (BigInteger)(byte)type };
+
+        private static List<StackItem> DrainIterator(StackItem item)
+        {
+            var iter = item.GetInterface<object>() as IIterator
+                ?? throw new AssertFailedException("Expected IIterator");
+            var values = new List<StackItem>();
+            while (iter.Next())
+                values.Add(iter.Value());
+            return values;
+        }
+
+        /// <summary>
+        /// Call a method returning an iterator and drain it before the engine is disposed.
+        /// </summary>
+        private static List<StackItem> CallAndDrain(
+            DataCache snapshot,
+            Block block,
+            string method,
+            params ContractParameter[] args)
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(), snapshot, block,
+                settings: TestProtocolSettings.Default, gas: TestGas);
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, method, args);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            return DrainIterator(engine.ResultStack.Pop());
         }
 
         #region Basics
@@ -682,6 +754,399 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual("NNS", engine.ResultStack.Pop().GetString());
+        }
+
+        #endregion
+
+        #region Renew / records / resolve / iterators
+
+        [TestMethod]
+        public void Renew_ExtendsExpiration()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var owner = OwnerHash();
+            var t0 = 10_000_000ul;
+            var oneYear = 365ul * (ulong)TimeSpan.MillisecondsPerDay;
+            var block = BlockAt(0, t0);
+
+            RegisterName(snapshot, block, owner, "renew.neo");
+
+            var props = (Map)NativeContract.NameService.Call(snapshot, null, block, "properties",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = Utility.StrictUTF8.GetBytes("renew.neo") });
+            Assert.AreEqual(t0 + oneYear, (ulong)props["expiration"].GetInteger());
+
+            var newExp = CallWithWitness(snapshot, block, [owner], "renew",
+                args: new ContractParameter(ContractParameterType.String) { Value = "renew.neo" });
+            Assert.AreEqual(t0 + oneYear * 2, (ulong)newExp.GetInteger());
+
+            var newExp2 = CallWithWitness(snapshot, block, [owner], "renew",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "renew.neo" },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)2 }
+                ]);
+            Assert.AreEqual(t0 + oneYear * 4, (ulong)newExp2.GetInteger());
+        }
+
+        [TestMethod]
+        public void Renew_YearsOutOfRange_Throws()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var owner = OwnerHash();
+            var block = BlockAt(0, 10_000_000);
+            RegisterName(snapshot, block, owner, "yrange.neo");
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CallWithWitness(snapshot, block, [owner], "renew",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "yrange.neo" },
+                        new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)0 }
+                    ]));
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CallWithWitness(snapshot, block, [owner], "renew",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "yrange.neo" },
+                        new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)11 }
+                    ]));
+        }
+
+        [TestMethod]
+        public void Renew_BeyondTenYearsTotal_Throws()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var owner = OwnerHash();
+            var block = BlockAt(0, 10_000_000);
+            RegisterName(snapshot, block, owner, "long.neo");
+
+            // register = 1y; renew 9y => 10y from now OK; renew 1 more => exceeds 10y from now
+            CallWithWitness(snapshot, block, [owner], "renew",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "long.neo" },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)9 }
+                ]);
+
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                CallWithWitness(snapshot, block, [owner], "renew",
+                    args: new ContractParameter(ContractParameterType.String) { Value = "long.neo" }));
+        }
+
+        [TestMethod]
+        public void Records_A_AAAA_CNAME_Delete_Resolve()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var owner = OwnerHash();
+            var block = BlockAt(0, 20_000_000);
+            RegisterName(snapshot, block, owner, "host.neo");
+
+            // A record (public IPv4)
+            CallWithWitness(snapshot, block, [owner], "setRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                    RecordTypeParam(RecordType.A),
+                    new ContractParameter(ContractParameterType.String) { Value = "1.1.1.1" }
+                ]);
+            Assert.AreEqual("1.1.1.1", CallWithWitness(snapshot, block, [], "getRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                    RecordTypeParam(RecordType.A)
+                ]).GetString());
+
+            // Invalid private A record
+            Assert.ThrowsExactly<FormatException>(() =>
+                CallWithWitness(snapshot, block, [owner], "setRecord",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                        RecordTypeParam(RecordType.A),
+                        new ContractParameter(ContractParameterType.String) { Value = "192.168.1.1" }
+                    ]));
+
+            // AAAA
+            CallWithWitness(snapshot, block, [owner], "setRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                    RecordTypeParam(RecordType.AAAA),
+                    new ContractParameter(ContractParameterType.String) { Value = "2001:4860:4860:0:0:0:0:8888" }
+                ]);
+            Assert.AreEqual("2001:4860:4860:0:0:0:0:8888", CallWithWitness(snapshot, block, [], "getRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                    RecordTypeParam(RecordType.AAAA)
+                ]).GetString());
+
+            // Invalid AAAA (link-local / out of allowed range)
+            Assert.ThrowsExactly<FormatException>(() =>
+                CallWithWitness(snapshot, block, [owner], "setRecord",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                        RecordTypeParam(RecordType.AAAA),
+                        new ContractParameter(ContractParameterType.String) { Value = "fe80::1" }
+                    ]));
+
+            // Subdomain CNAME -> resolve chain
+            RegisterName(snapshot, block, owner, "alias.neo");
+            CallWithWitness(snapshot, block, [owner], "setRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "www.host.neo" },
+                    RecordTypeParam(RecordType.CNAME),
+                    new ContractParameter(ContractParameterType.String) { Value = "alias.neo" }
+                ]);
+            CallWithWitness(snapshot, block, [owner], "setRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "alias.neo" },
+                    RecordTypeParam(RecordType.A),
+                    new ContractParameter(ContractParameterType.String) { Value = "8.8.8.8" }
+                ]);
+
+            var resolved = CallWithWitness(snapshot, block, [], "resolve",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "www.host.neo" },
+                    RecordTypeParam(RecordType.A)
+                ]);
+            Assert.AreEqual("8.8.8.8", resolved.GetString());
+
+            // deleteRecord
+            CallWithWitness(snapshot, block, [owner], "deleteRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                    RecordTypeParam(RecordType.TXT)
+                ]);
+            CallWithWitness(snapshot, block, [owner], "setRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                    RecordTypeParam(RecordType.TXT),
+                    new ContractParameter(ContractParameterType.String) { Value = "bye" }
+                ]);
+            CallWithWitness(snapshot, block, [owner], "deleteRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                    RecordTypeParam(RecordType.TXT)
+                ]);
+            var missing = CallWithWitness(snapshot, block, [], "getRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "host.neo" },
+                    RecordTypeParam(RecordType.TXT)
+                ]);
+            Assert.IsTrue(missing.IsNull);
+
+            // getAllRecords returns at least A and AAAA for host.neo
+            var allRecords = CallAndDrain(snapshot, block, "getAllRecords",
+                new ContractParameter(ContractParameterType.String) { Value = "host.neo" });
+            Assert.IsGreaterThanOrEqualTo(2, allRecords.Count);
+        }
+
+        [TestMethod]
+        public void SetRecord_InvalidTxtTooLong_Throws()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var owner = OwnerHash();
+            var block = BlockAt(0, 20_000_000);
+            RegisterName(snapshot, block, owner, "txt.neo");
+
+            Assert.ThrowsExactly<FormatException>(() =>
+                CallWithWitness(snapshot, block, [owner], "setRecord",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "txt.neo" },
+                        RecordTypeParam(RecordType.TXT),
+                        new ContractParameter(ContractParameterType.String) { Value = new string('x', 256) }
+                    ]));
+        }
+
+        [TestMethod]
+        public void Roots_IncludesNeo_AndTokensOf()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var owner = OwnerHash();
+            var block = BlockAt(0, 15_000_000);
+
+            var rootValues = CallAndDrain(snapshot, block, "roots");
+            Assert.IsTrue(rootValues.Any(v => v.GetSpan().ToArray().AsSpan().SequenceEqual(Utility.StrictUTF8.GetBytes("neo"))
+                || v.GetString() == "neo"));
+
+            RegisterName(snapshot, block, owner, "tok.neo");
+            var tokenIds = CallAndDrain(snapshot, block, "tokensOf",
+                new ContractParameter(ContractParameterType.Hash160) { Value = owner });
+            Assert.IsTrue(tokenIds.Any(v =>
+                Utility.StrictUTF8.GetString(v.GetSpan()) == "tok.neo"));
+
+            var tokens = CallAndDrain(snapshot, block, "tokens");
+            Assert.IsGreaterThanOrEqualTo(1, tokens.Count);
+
+            Assert.AreEqual(1, (int)NativeContract.NameService.Call(snapshot, null, block, "totalSupply").GetInteger());
+        }
+
+        [TestMethod]
+        public void Register_AfterExpiry_AllowsReregister()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var owner = OwnerHash();
+            var other = Contract.CreateSignatureRedeemScript(TestProtocolSettings.Default.StandbyCommittee[1]).ToScriptHash();
+            var registerAt = 1_000_000ul;
+            var oneYear = 365ul * (ulong)TimeSpan.MillisecondsPerDay;
+            var registerBlock = BlockAt(0, registerAt);
+            var expiredBlock = BlockAt(1, registerAt + oneYear);
+            // First label length >= 3 so default open price applies (length 1/2 are closed).
+            const string name = "rereg.neo";
+
+            RegisterName(snapshot, registerBlock, owner, name);
+            Assert.IsFalse(NativeContract.NameService.Call(snapshot, null, registerBlock, "isAvailable",
+                new ContractParameter(ContractParameterType.String) { Value = name }).GetBoolean());
+            Assert.IsTrue(NativeContract.NameService.Call(snapshot, null, expiredBlock, "isAvailable",
+                new ContractParameter(ContractParameterType.String) { Value = name }).GetBoolean());
+
+            var ok = CallWithWitness(snapshot, expiredBlock, [other], "register",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = name },
+                    new ContractParameter(ContractParameterType.Hash160) { Value = other }
+                ]);
+            Assert.IsTrue(ok.GetBoolean());
+            AssertOwner(snapshot, expiredBlock, Utility.StrictUTF8.GetBytes(name), other);
+        }
+
+        #endregion
+
+        #region Migration success / legacy allowlist
+
+        [TestMethod]
+        public void RemoveLegacyContract_RoundTrip()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var legacy = UInt160.Parse("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            var block = _persistingBlock;
+
+            CallWithWitness(snapshot, block, [committee], "addLegacyContract",
+                args: new ContractParameter(ContractParameterType.Hash160) { Value = legacy });
+            Assert.IsTrue(NativeContract.NameService.Call(snapshot, "isLegacyContract",
+                new ContractParameter(ContractParameterType.Hash160) { Value = legacy }).GetBoolean());
+
+            CallWithWitness(snapshot, block, [committee], "removeLegacyContract",
+                args: new ContractParameter(ContractParameterType.Hash160) { Value = legacy });
+            Assert.IsFalse(NativeContract.NameService.Call(snapshot, "isLegacyContract",
+                new ContractParameter(ContractParameterType.Hash160) { Value = legacy }).GetBoolean());
+        }
+
+        [TestMethod]
+        public void OnNEP11Payment_FromLegacy_MintsName()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var legacy = UInt160.Parse("0x1111111111111111111111111111111111111111");
+            var from = OwnerHash();
+            var block = BlockAt(0, 50_000_000);
+            var tokenId = Utility.StrictUTF8.GetBytes("mig.neo");
+
+            CallWithWitness(snapshot, block, [committee], "addLegacyContract",
+                args: new ContractParameter(ContractParameterType.Hash160) { Value = legacy });
+
+            CallWithCallingScript(snapshot, block, legacy, [from], "onNEP11Payment",
+                new ContractParameter(ContractParameterType.Hash160) { Value = from },
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)1 },
+                new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId },
+                new ContractParameter(ContractParameterType.Any) { Value = null });
+
+            AssertOwner(snapshot, block, tokenId, from);
+            Assert.AreEqual(1, (int)NativeContract.NameService.Call(snapshot, null, block, "balanceOf",
+                new ContractParameter(ContractParameterType.Hash160) { Value = from }).GetInteger());
+
+            // Live native name: second migrate throws
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CallWithCallingScript(snapshot, block, legacy, [from], "onNEP11Payment",
+                    new ContractParameter(ContractParameterType.Hash160) { Value = from },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)1 },
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId },
+                    new ContractParameter(ContractParameterType.Any) { Value = null }));
+        }
+
+        [TestMethod]
+        public void OnNEP11Payment_ReclaimsExpiredNativeName()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var legacy = UInt160.Parse("0x2222222222222222222222222222222222222222");
+            var owner = OwnerHash();
+            var migrator = Contract.CreateSignatureRedeemScript(TestProtocolSettings.Default.StandbyCommittee[1]).ToScriptHash();
+            var registerAt = 1_000_000ul;
+            var oneYear = 365ul * (ulong)TimeSpan.MillisecondsPerDay;
+            var registerBlock = BlockAt(0, registerAt);
+            var expiredBlock = BlockAt(1, registerAt + oneYear);
+            var tokenId = Utility.StrictUTF8.GetBytes("take.neo");
+
+            RegisterName(snapshot, registerBlock, owner, "take.neo");
+            CallWithWitness(snapshot, registerBlock, [owner], "setRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "take.neo" },
+                    RecordTypeParam(RecordType.TXT),
+                    new ContractParameter(ContractParameterType.String) { Value = "clear-me" }
+                ]);
+
+            CallWithWitness(snapshot, expiredBlock, [committee], "addLegacyContract",
+                args: new ContractParameter(ContractParameterType.Hash160) { Value = legacy });
+
+            CallWithCallingScript(snapshot, expiredBlock, legacy, [migrator], "onNEP11Payment",
+                new ContractParameter(ContractParameterType.Hash160) { Value = migrator },
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)1 },
+                new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId },
+                new ContractParameter(ContractParameterType.Any) { Value = null });
+
+            AssertOwner(snapshot, expiredBlock, tokenId, migrator);
+            // Records cleared on reclaim
+            var rec = CallWithWitness(snapshot, expiredBlock, [], "getRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = "take.neo" },
+                    RecordTypeParam(RecordType.TXT)
+                ]);
+            Assert.IsTrue(rec.IsNull);
+        }
+
+        [TestMethod]
+        public void RecordState_RoundTrip()
+        {
+            var state = new RecordState
+            {
+                Name = "x.neo",
+                Type = RecordType.A,
+                Data = "1.2.3.4"
+            };
+            var restored = new RecordState();
+            restored.FromStackItem(state.ToStackItem());
+            Assert.AreEqual(state.Name, restored.Name);
+            Assert.AreEqual(state.Type, restored.Type);
+            Assert.AreEqual(state.Data, restored.Data);
+        }
+
+        [TestMethod]
+        public void Nep11TokenState_RoundTrip()
+        {
+            var state = new Nep11TokenState
+            {
+                Owner = UInt160.Parse("0xcccccccccccccccccccccccccccccccccccccccc"),
+                Name = "nft"
+            };
+            var restored = new Nep11TokenState();
+            restored.FromStackItem(state.ToStackItem());
+            Assert.AreEqual(state.Owner, restored.Owner);
+            Assert.AreEqual(state.Name, restored.Name);
         }
 
         #endregion
