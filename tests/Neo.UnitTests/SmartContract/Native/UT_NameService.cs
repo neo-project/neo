@@ -30,6 +30,8 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_NameService
     {
+        private static readonly byte[] RetScript = [(byte)OpCode.RET];
+
         private DataCache _snapshot;
 
         [TestInitialize]
@@ -104,7 +106,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 ValidUntilBlock = 100,
                 Attributes = [],
                 Signers = [new Signer { Account = owner, Scopes = WitnessScope.Global }],
-                Script = new byte[] { (byte)OpCode.RET },
+                Script = RetScript,
                 Witnesses = []
             };
             var block = PersistingBlock(timestamp: 10_000_000);
@@ -132,13 +134,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void SetPrice_WithoutCommittee_Throws()
         {
-            var prices = new ContractParameter(ContractParameterType.Array)
-            {
-                Value = new List<ContractParameter>
-                {
-                    new(ContractParameterType.Integer) { Value = (BigInteger)1_00000000 }
-                }
-            };
+            List<ContractParameter> priceParams =
+            [
+                new(ContractParameterType.Integer) { Value = (BigInteger)1_00000000 }
+            ];
+            var prices = new ContractParameter(ContractParameterType.Array) { Value = priceParams };
             Assert.ThrowsExactly<InvalidOperationException>(() =>
                 NativeContract.NameService.Call(_snapshot, "setPrice", prices));
         }
@@ -184,7 +184,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 ValidUntilBlock = 100,
                 Attributes = [],
                 Signers = [new Signer { Account = owner, Scopes = WitnessScope.Global }],
-                Script = new byte[] { (byte)OpCode.RET },
+                Script = RetScript,
                 Witnesses = []
             };
             var block = PersistingBlock(timestamp: 20_000_000);

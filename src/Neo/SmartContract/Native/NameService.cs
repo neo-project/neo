@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native
             if (priceList.Count == 0)
                 throw new ArgumentException("The price list must contain at least 1 item.");
             var prices = new long[priceList.Count];
-            for (int i = 0; i < priceList.Count; i++)
+            for (var i = 0; i < priceList.Count; i++)
             {
                 var price = (long)priceList[i].GetInteger();
                 if (price < -1 || price > 10000_00000000)
@@ -212,7 +212,7 @@ namespace Neo.SmartContract.Native
                 ?? throw new FormatException("The format of the name is incorrect.");
             if (!engine.SnapshotCache.Contains(CreateStorageKey(P_Root, Encoding.UTF8.GetBytes(fragments[^1]))))
                 throw new InvalidOperationException("The root does not exist.");
-            long price = GetPrice(engine.SnapshotCache, (byte)fragments[0].Length);
+            var price = GetPrice(engine.SnapshotCache, (byte)fragments[0].Length);
             if (price < 0) return false;
             var tokenId = Encoding.UTF8.GetBytes(name);
             if (tokenId.Length > MaxTokenIdLength) return false;
@@ -232,7 +232,7 @@ namespace Neo.SmartContract.Native
             if (!owner.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(owner))
                 throw new InvalidOperationException("No authorization.");
 
-            long price = GetPrice(engine.SnapshotCache, (byte)fragments[0].Length);
+            var price = GetPrice(engine.SnapshotCache, (byte)fragments[0].Length);
             if (price < 0)
                 AssertCommittee(engine);
             else
@@ -271,7 +271,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentException("The argument `years` is out of range.");
             var fragments = SplitAndCheck(name, false)
                 ?? throw new FormatException("The format of the name is incorrect.");
-            long price = GetPrice(engine.SnapshotCache, (byte)fragments[0].Length);
+            var price = GetPrice(engine.SnapshotCache, (byte)fragments[0].Length);
             if (price < 0)
                 AssertCommittee(engine);
             else
@@ -464,16 +464,16 @@ namespace Neo.SmartContract.Native
             // Simple: count + int64 LE each
             var buffer = new byte[4 + prices.Length * 8];
             BitConverter.TryWriteBytes(buffer.AsSpan(0, 4), prices.Length);
-            for (int i = 0; i < prices.Length; i++)
+            for (var i = 0; i < prices.Length; i++)
                 BitConverter.TryWriteBytes(buffer.AsSpan(4 + i * 8, 8), prices[i]);
             return buffer;
         }
 
         private static long[] DeserializePriceList(ReadOnlySpan<byte> data)
         {
-            int count = BitConverter.ToInt32(data[..4]);
+            var count = BitConverter.ToInt32(data[..4]);
             var prices = new long[count];
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
                 prices[i] = BitConverter.ToInt64(data.Slice(4 + i * 8, 8));
             return prices;
         }
@@ -493,7 +493,7 @@ namespace Neo.SmartContract.Native
             var fragments = SplitAndCheck(name, allowMultiple)
                 ?? throw new FormatException("The format of the name is incorrect.");
             // second-level domain: last two labels
-            string tokenName = name[^(fragments[^2].Length + fragments[^1].Length + 1)..];
+            var tokenName = name[^(fragments[^2].Length + fragments[^1].Length + 1)..];
             var tokenId = Encoding.UTF8.GetBytes(tokenName);
             if (tokenId.Length > MaxTokenIdLength)
                 throw new FormatException("The format of the name is incorrect.");
@@ -551,9 +551,9 @@ namespace Neo.SmartContract.Native
 
         private static bool CheckFragment(string root, bool isRoot)
         {
-            int maxLength = isRoot ? 16 : 63;
+            var maxLength = isRoot ? 16 : 63;
             if (root.Length == 0 || root.Length > maxLength) return false;
-            char c = root[0];
+            var c = root[0];
             if (isRoot)
             {
                 if (!IsAlpha(c)) return false;
@@ -563,7 +563,7 @@ namespace Neo.SmartContract.Native
                 if (!IsAlphaNum(c)) return false;
             }
             if (root.Length == 1) return true;
-            for (int i = 1; i < root.Length - 1; i++)
+            for (var i = 1; i < root.Length - 1; i++)
             {
                 c = root[i];
                 if (!(IsAlphaNum(c) || c == '-')) return false;
@@ -576,13 +576,13 @@ namespace Neo.SmartContract.Native
 
         private static string[]? SplitAndCheck(string name, bool allowMultipleFragments)
         {
-            int length = name.Length;
+            var length = name.Length;
             if (length < 3 || length > NameMaxLength) return null;
             var fragments = name.Split('.');
             length = fragments.Length;
             if (length < 2 || length > 8) return null;
             if (length > 2 && !allowMultipleFragments) return null;
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
                 if (!CheckFragment(fragments[i], i == length - 1))
                     return null;
             return fragments;
@@ -590,16 +590,16 @@ namespace Neo.SmartContract.Native
 
         private static bool CheckIPv4(string ipv4)
         {
-            int length = ipv4.Length;
+            var length = ipv4.Length;
             if (length < 7 || length > 15) return false;
             var fragments = ipv4.Split('.');
             if (fragments.Length != 4) return false;
             var numbers = new byte[4];
-            for (int i = 0; i < 4; i++)
+            for (var i = 0; i < 4; i++)
             {
                 var fragment = fragments[i];
                 if (fragment.Length == 0) return false;
-                if (!byte.TryParse(fragment, out byte number)) return false;
+                if (!byte.TryParse(fragment, out var number)) return false;
                 if (number > 0 && fragment[0] == '0') return false;
                 if (number == 0 && fragment.Length > 1) return false;
                 numbers[i] = number;
@@ -627,14 +627,14 @@ namespace Neo.SmartContract.Native
 
         private static bool CheckIPv6(string ipv6)
         {
-            int length = ipv6.Length;
+            var length = ipv6.Length;
             if (length < 2 || length > 39) return false;
             var fragments = ipv6.Split(':');
             length = fragments.Length;
             if (length < 3 || length > 8) return false;
             var numbers = new ushort[8];
-            bool isCompressed = false;
-            for (int i = 0; i < length; i++)
+            var isCompressed = false;
+            for (var i = 0; i < length; i++)
             {
                 var fragment = fragments[i];
                 if (fragment.Length == 0)
@@ -653,21 +653,21 @@ namespace Neo.SmartContract.Native
                     {
                         if (isCompressed) return false;
                         isCompressed = true;
-                        int endIndex = 9 - length + i;
-                        for (int j = i; j < endIndex; j++)
+                        var endIndex = 9 - length + i;
+                        for (var j = i; j < endIndex; j++)
                             numbers[j] = 0;
                     }
                 }
                 else
                 {
                     if (fragment.Length > 4) return false;
-                    int index = isCompressed ? i + 8 - length : i;
+                    var index = isCompressed ? i + 8 - length : i;
                     if (!ushort.TryParse(fragment, System.Globalization.NumberStyles.HexNumber, null, out numbers[index]))
                         return false;
                 }
             }
             if (length < 8 && !isCompressed) return false;
-            ushort number = numbers[0];
+            var number = numbers[0];
             if (number < 0x2000 || number == 0x2002 || number == 0x3ffe || number > 0x3fff)
                 return false;
             if (number == 0x2001)
