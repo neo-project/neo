@@ -80,8 +80,8 @@
   <a href="https://github.com/neo-project/neo/releases">
     <img src="https://badge.fury.io/gh/neo-project%2Fneo.svg" alt="Current neo version.">
   </a>
-  <a href='https://coveralls.io/github/neo-project/neo'>
-    <img src='https://coveralls.io/repos/github/neo-project/neo/badge.svg' alt='Coverage Status' />
+  <a href='https://codecov.io/gh/neo-project/neo'>
+    <img src='https://codecov.io/gh/neo-project/neo/branch/master-n3/graph/badge.svg' alt='Coverage Status' />
   </a>
   <a href="https://deepwiki.com/neo-project/neo">
     <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki.">
