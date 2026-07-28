@@ -13,7 +13,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -193,6 +195,102 @@ namespace Neo.UnitTests.SmartContract.Native
                 "CustomReadOnlyStore parameter should not be skipped, leaving both CustomReadOnlyStore and UInt160");
             Assert.AreEqual(typeof(UInt160), metadata.Parameters[1].Type,
                 "Second parameter should be UInt160");
+        }
+
+        private sealed class InvokeTestEngine(DataCache snapshot) : ApplicationEngine(TriggerType.Application, null, snapshot, null, TestProtocolSettings.Default, 0)
+        {
+        }
+
+        private sealed class InvokeTestNativeContract : NativeContract
+        {
+            public ApplicationEngine SeenEngine { get; private set; }
+            public IReadOnlyStore SeenSnapshot { get; private set; }
+
+            [ContractMethod]
+            private int MethodUsingEngine(ApplicationEngine engine, int value)
+            {
+                SeenEngine = engine;
+                return value + 1;
+            }
+
+            [ContractMethod]
+            private bool MethodUsingSnapshot(IReadOnlyStore snapshot)
+            {
+                SeenSnapshot = snapshot;
+                return snapshot is not null;
+            }
+
+            [ContractMethod]
+            private static int MethodUsingParametersOnly(int left, int right)
+            {
+                return left + right;
+            }
+
+            [ContractMethod]
+            private static void MethodThrowing()
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        private static readonly InvokeTestNativeContract s_invokeContract = (InvokeTestNativeContract)RuntimeHelpers.GetUninitializedObject(typeof(InvokeTestNativeContract));
+
+        [TestMethod]
+        public void TestInvokePassesApplicationEngine()
+        {
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = new InvokeTestEngine(snapshot);
+            var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+            var method = typeof(InvokeTestNativeContract).GetMethod("MethodUsingEngine", flags);
+            var metadata = new ContractMethodMetadata(method!, new ContractMethodAttribute());
+
+            var result = metadata.Invoke(s_invokeContract, engine, [41]);
+
+            Assert.AreEqual(42, result);
+            Assert.AreSame(engine, s_invokeContract.SeenEngine);
+        }
+
+        [TestMethod]
+        public void TestInvokePassesSnapshot()
+        {
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = new InvokeTestEngine(snapshot);
+            var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+            var method = typeof(InvokeTestNativeContract).GetMethod("MethodUsingSnapshot", flags);
+            var metadata = new ContractMethodMetadata(method!, new ContractMethodAttribute());
+
+            var result = metadata.Invoke(s_invokeContract, engine, []);
+
+            Assert.AreEqual(true, result);
+            Assert.AreSame(engine.SnapshotCache, s_invokeContract.SeenSnapshot);
+        }
+
+        [TestMethod]
+        public void TestInvokePassesPublicParametersOnly()
+        {
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = new InvokeTestEngine(snapshot);
+            var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+            var method = typeof(InvokeTestNativeContract).GetMethod("MethodUsingParametersOnly", flags);
+            var metadata = new ContractMethodMetadata(method!, new ContractMethodAttribute());
+
+            var result = metadata.Invoke(s_invokeContract, engine, [2, 5]);
+
+            Assert.AreEqual(7, result);
+        }
+
+        [TestMethod]
+        public void TestInvokeWrapsTargetException()
+        {
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = new InvokeTestEngine(snapshot);
+            var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+            var method = typeof(InvokeTestNativeContract).GetMethod("MethodThrowing", flags);
+            var metadata = new ContractMethodMetadata(method!, new ContractMethodAttribute());
+
+            var exception = Assert.ThrowsExactly<TargetInvocationException>(() => metadata.Invoke(s_invokeContract, engine, []));
+
+            Assert.IsInstanceOfType<InvalidOperationException>(exception.InnerException);
         }
     }
 }
