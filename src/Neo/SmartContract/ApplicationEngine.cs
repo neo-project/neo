@@ -162,7 +162,7 @@ namespace Neo.SmartContract
             {
                 var consumed = _feeConsumed.DivideCeiling(FeeFactor * OpcodePriceMultiplier);
                 if (consumed > long.MaxValue)
-                    return (long)(_feeAmount / FeeFactor);
+                    return (long)(_feeAmount / (FeeFactor * OpcodePriceMultiplier));
                 return (long)consumed;
             }
         }
