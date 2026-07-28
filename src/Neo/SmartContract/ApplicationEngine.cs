@@ -380,7 +380,10 @@ namespace Neo.SmartContract
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
-                            throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).", out int _);
+                            return;
+                        }
                         if (array.IsStackReferenced)
                             engine.ReferenceCounter.RemoveStackReference(array[index]);
                         array[index] = value;
@@ -409,7 +412,10 @@ namespace Neo.SmartContract
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
-                            throw new CatchableException($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).", out int _);
+                            return;
+                        }
                         if (value is not PrimitiveType p)
                             throw new InvalidOperationException($"Only primitive type values can be set in {nameof(Buffer)} in {instruction.OpCode}.");
                         var b = (int)p.GetInteger();
@@ -433,14 +439,20 @@ namespace Neo.SmartContract
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
-                            throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).", out int _);
+                            return;
+                        }
                         engine.Push(array[index]);
                         break;
                     }
                 case Map map:
                     {
                         if (!map.TryGetValue(key, out var value))
-                            throw new CatchableException($"Key {key} not found in {nameof(Map)}.");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"Key {key} not found in {nameof(Map)}.", out int _);
+                            return;
+                        }
                         engine.Push(value);
                         break;
                     }
@@ -449,7 +461,10 @@ namespace Neo.SmartContract
                         var byteArray = primitive.GetSpan();
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= byteArray.Length)
-                            throw new CatchableException($"The index of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length}).", out int _);
+                            return;
+                        }
                         engine.Push((BigInteger)byteArray[index]);
                         break;
                     }
@@ -457,7 +472,10 @@ namespace Neo.SmartContract
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
-                            throw new CatchableException($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).", out int _);
+                            return;
+                        }
                         engine.Push((BigInteger)buffer.InnerBuffer.Span[index]);
                         break;
                     }
