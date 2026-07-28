@@ -883,7 +883,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var settings = TestProtocolSettings.Default with
             {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
             };
             var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: settings);
             engine.LoadScript(tx.Script);

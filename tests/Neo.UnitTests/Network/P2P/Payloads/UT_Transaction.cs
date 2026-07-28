@@ -196,7 +196,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 var settings = TestProtocolSettings.Default with
                 {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
                 };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
                     settings: settings, gas: tx.NetworkFee);
@@ -278,7 +278,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 var settings = TestProtocolSettings.Default with
                 {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
                 };
                 using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
                     settings: settings, gas: tx.NetworkFee);
@@ -390,7 +390,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 var settings = TestProtocolSettings.Default with
                 {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
                 };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
                     settings: settings, gas: tx.NetworkFee);
@@ -476,7 +476,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 var settings = TestProtocolSettings.Default with
                 {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
                 };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
                     settings: settings, gas: tx.NetworkFee);
@@ -567,7 +567,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 var settings = TestProtocolSettings.Default with
                 {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
                 };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
                     settings: settings, gas: tx.NetworkFee);
@@ -705,7 +705,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 var settings = TestProtocolSettings.Default with
                 {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
                 };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
                     settings: settings, gas: tx.NetworkFee);
@@ -1096,7 +1096,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 var settings = TestProtocolSettings.Default with
                 {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
                 };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
                     settings: settings, gas: tx.NetworkFee);

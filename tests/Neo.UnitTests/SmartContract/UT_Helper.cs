@@ -133,7 +133,7 @@ namespace Neo.UnitTests.SmartContract
 
             var settings = TestProtocolSettings.Default with
             {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
             };
             using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, settings);
             engine.LoadScript(contract.Script);
@@ -158,7 +158,7 @@ namespace Neo.UnitTests.SmartContract
 
             var settings = TestProtocolSettings.Default with
             {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
             };
             using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, settings);
             engine.LoadScript(contract.Script);

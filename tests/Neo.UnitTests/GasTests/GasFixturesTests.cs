@@ -127,7 +127,7 @@ namespace Neo.UnitTests.GasTests
             {
                 var settings = TestProtocolSettings.Default with
                 {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, persistingBlock.Index + 1)
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, persistingBlock.Index + 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
                 };
                 using var engine = ApplicationEngine.Create(TriggerType.Application,
                   new Nep17NativeContractExtensions.ManualWitness([.. signatures]), snapshot,

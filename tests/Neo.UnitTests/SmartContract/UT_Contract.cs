@@ -178,7 +178,7 @@ namespace Neo.UnitTests.SmartContract
             var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
             var settings = TestProtocolSettings.Default with
             {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
             };
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
@@ -212,7 +212,7 @@ namespace Neo.UnitTests.SmartContract
             long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
             var settings = TestProtocolSettings.Default with
             {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
             };
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
