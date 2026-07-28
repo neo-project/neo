@@ -47,7 +47,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.Address, clone.Address);
             Assert.AreEqual(test.EndPoint.ToString(), clone.EndPoint.ToString());
             Assert.AreEqual(test.Timestamp, clone.Timestamp);
-            CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
+            Assert.AreSequenceEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
 
             test = NetworkAddressWithTime.Create(IPAddress.Any, 1,
                 [

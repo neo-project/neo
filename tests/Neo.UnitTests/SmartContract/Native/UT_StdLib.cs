@@ -53,7 +53,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var nodeUS = ItoaThroughVM("en-US");
             var nodeFI = ItoaThroughVM("fi-FI");
 
-            CollectionAssert.AreEqual(nodeUS, nodeFI);
+            Assert.AreSequenceEqual(nodeUS, nodeFI);
         }
 
         [TestMethod]
@@ -61,14 +61,14 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var data = Array.Empty<byte>();
 
-            CollectionAssert.AreEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
-            CollectionAssert.AreEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
+            Assert.AreSequenceEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
+            Assert.AreSequenceEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
 
             data = new byte[] { 1, 2, 3 };
 
-            CollectionAssert.AreEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
-            CollectionAssert.AreEqual(data, StdLib.Base64Decode("A \r Q \t I \n D"));
-            CollectionAssert.AreEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
+            Assert.AreSequenceEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
+            Assert.AreSequenceEqual(data, StdLib.Base64Decode("A \r Q \t I \n D"));
+            Assert.AreSequenceEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
             Assert.AreEqual("AQIDBA==", StdLib.Base64Encode(new byte[] { 1, 2, 3, 4 }));
             Assert.AreEqual("2VfUX", StdLib.Base58Encode(new byte[] { 1, 2, 3, 4 }));
         }
@@ -85,6 +85,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(1, StdLib.Atoi("+1", 10));
             Assert.AreEqual(-1, StdLib.Atoi("ff", 16));
             Assert.AreEqual(-1, StdLib.Atoi("FF", 16));
+            Assert.ThrowsExactly<FormatException>(() => _ = StdLib.Atoi("", 10));
+            Assert.ThrowsExactly<FormatException>(() => _ = StdLib.Atoi("", 16));
             Assert.ThrowsExactly<FormatException>(() => _ = StdLib.Atoi("a", 10));
             Assert.ThrowsExactly<FormatException>(() => _ = StdLib.Atoi("g", 16));
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = StdLib.Atoi("a", 11));
@@ -146,7 +148,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.HasCount(1, engine.ResultStack);
 
-                CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, engine.ResultStack.Pop<ByteString>().GetSpan().ToArray());
+                Assert.AreSequenceEqual(new byte[] { 1, 2, 3 }, engine.ResultStack.Pop<ByteString>().GetSpan().ToArray());
             }
 
             // Error
@@ -244,18 +246,39 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abcbbbd", "b", true);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abcbbbd", "b", false);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abc", "");
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "a,b", ",");
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.HasCount(1, engine.ResultStack);
+            Assert.HasCount(4, engine.ResultStack);
 
             var arr = engine.ResultStack.Pop<VM.Types.Array>();
             Assert.HasCount(2, arr);
             Assert.AreEqual("a", arr[0].GetString());
             Assert.AreEqual("b", arr[1].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(1, arr);
+            Assert.AreEqual("abc", arr[0].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(5, arr);
+            Assert.AreEqual("a", arr[0].GetString());
+            Assert.AreEqual("c", arr[1].GetString());
+            Assert.AreEqual("", arr[2].GetString());
+            Assert.AreEqual("", arr[3].GetString());
+            Assert.AreEqual("d", arr[4].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(3, arr);
+            Assert.AreEqual("a", arr[0].GetString());
+            Assert.AreEqual("c", arr[1].GetString());
+            Assert.AreEqual("d", arr[2].GetString());
         }
 
         [TestMethod]
@@ -308,6 +331,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             using (var script = new ScriptBuilder())
             {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "1e3");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "123");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "null");
 
@@ -315,10 +339,11 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.HasCount(2, engine.ResultStack);
+                Assert.HasCount(3, engine.ResultStack);
 
                 engine.ResultStack.Pop<Null>();
                 Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
+                Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 1000);
             }
 
             // Error 1 - Wrong Json
@@ -339,6 +364,19 @@ namespace Neo.UnitTests.SmartContract.Native
             using (var script = new ScriptBuilder())
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "123.45");
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.IsEmpty(engine.ResultStack);
+            }
+
+            // Error 3 - Duplicate object entries
+
+            using (ScriptBuilder script = new())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "{\"z\":42,\"z\":100500}");
 
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());

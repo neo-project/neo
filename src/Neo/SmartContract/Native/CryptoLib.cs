@@ -39,8 +39,8 @@ namespace Neo.SmartContract.Native
         /// <param name="messageHash">The hash of the message that was signed.</param>
         /// <param name="signature">The 65-byte signature in format: r[32] + s[32] + v[1]. 64-bytes for eip-2098, where v must be 27 or 28.</param>
         /// <returns>The recovered public key in compressed format, or null if recovery fails.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, Name = "recoverSecp256K1")]
-        public static byte[]? RecoverSecp256K1(byte[] messageHash, byte[] signature)
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, Name = "recoverSecp256K1")]
+        public static byte[]? RecoverSecp256K1V1(byte[] messageHash, byte[] signature)
         {
             // It will be checked in Crypto.ECRecover
             // if (signature.Length != 65 && signature.Length != 64)
@@ -49,6 +49,21 @@ namespace Neo.SmartContract.Native
             try
             {
                 var point = Crypto.ECRecover(signature, messageHash);
+                return point.EncodePoint(true);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // Compatibility only, doesn't check for R and S validity.
+        [ContractMethod(Hardfork.HF_Echidna, Hardfork.HF_Huyao, CpuFee = 1 << 15, Name = "recoverSecp256K1")]
+        public static byte[]? RecoverSecp256K1V0(byte[] messageHash, byte[] signature)
+        {
+            try
+            {
+                var point = Crypto.ECRecoverV0(signature, messageHash);
                 return point.EncodePoint(true);
             }
             catch

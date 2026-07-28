@@ -25,15 +25,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
         {
             StorageIterator storageIterator = new(new List<(StorageKey, StorageItem)>().GetEnumerator(), 0, FindOptions.None);
             Assert.IsNotNull(storageIterator);
-            try
-            {
-                storageIterator.Dispose();
-            }
-            catch
-            {
-                Assert.Fail();
-            }
-
+            storageIterator.Dispose();
         }
 
         [TestMethod]
