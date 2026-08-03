@@ -74,7 +74,7 @@ namespace Neo.UnitTests.IO.Caching
             var set = new HashSetCache<UInt256>(1);
             Assert.IsTrue(set.TryAdd(a));
             Assert.IsTrue(set.TryAdd(b));
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b });
+            Assert.AreSequenceEqual(set.ToArray(), new UInt256[] { b });
         }
 
         [TestMethod]
@@ -93,7 +93,7 @@ namespace Neo.UnitTests.IO.Caching
             var array = new UInt256[1];
             set.CopyTo(array, 0);
 
-            CollectionAssert.AreEqual(array, new UInt256[] { b });
+            Assert.AreSequenceEqual(array, new UInt256[] { b });
         }
 
         [TestMethod]
@@ -129,24 +129,24 @@ namespace Neo.UnitTests.IO.Caching
             set.TryAdd(b);
             set.TryAdd(c);
             set.ExceptWith([b, c]);
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a });
+            Assert.AreSequenceEqual(set.ToArray(), new UInt256[] { a });
 
             set.Remove(a);
-            CollectionAssert.AreEqual(set.ToArray(), Array.Empty<UInt256>());
+            Assert.AreSequenceEqual(set.ToArray(), Array.Empty<UInt256>());
 
             set = new HashSetCache<UInt256>(10);
             set.TryAdd(a);
             set.TryAdd(b);
             set.TryAdd(c);
             set.ExceptWith([a]);
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b, c });
+            Assert.AreSequenceEqual(set.ToArray(), new UInt256[] { b, c });
 
             set = new HashSetCache<UInt256>(10);
             set.TryAdd(a);
             set.TryAdd(b);
             set.TryAdd(c);
             set.ExceptWith([c]);
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, b });
+            Assert.AreSequenceEqual(set.ToArray(), new UInt256[] { a, b });
         }
 
         [TestMethod]

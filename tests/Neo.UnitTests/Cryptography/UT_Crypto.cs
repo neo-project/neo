@@ -143,7 +143,12 @@ namespace Neo.UnitTests.Cryptography
             var expectedPubKey1 = "034a071e8a6e10aada2b8cf39fa3b5fb3400b04e99ea8ae64ceea1a977dbeaf5d5".HexToBytes();
 
             var recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
-            CollectionAssert.AreEqual(expectedPubKey1, recoveredKey1.EncodePoint(true));
+            Assert.AreSequenceEqual(expectedPubKey1, recoveredKey1.EncodePoint(true));
+
+            // Test with Bitcoin magic offset
+            signature1[64] += 27;
+            recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
+            Assert.AreSequenceEqual(expectedPubKey1, recoveredKey1.EncodePoint(true));
 
             // Test case 2
             var message2 = ("17cd4a74d724d55355b6fb2b0759ca095298e3fd1856b87ca1cb2df540905802" +
@@ -157,7 +162,7 @@ namespace Neo.UnitTests.Cryptography
             var expectedPubKey2 = "02dbf1f4092deb3cfd4246b2011f7b24840bc5dbedae02f28471ce5b3bfbf06e71".HexToBytes();
 
             var recoveredKey2 = Crypto.ECRecover(signature2, messageHash2);
-            CollectionAssert.AreEqual(expectedPubKey2, recoveredKey2.EncodePoint(true));
+            Assert.AreSequenceEqual(expectedPubKey2, recoveredKey2.EncodePoint(true));
 
             // Test case 3 - recovery param 0
             var message3 = ("db0d31717b04802adbbae1997487da8773440923c09b869e12a57c36dda34af1" +
@@ -171,7 +176,7 @@ namespace Neo.UnitTests.Cryptography
             var expectedPubKey3 = "03414549fd05bfb7803ae507ff86b99becd36f8d66037a7f5ba612792841d42eb9".HexToBytes();
 
             var recoveredKey3 = Crypto.ECRecover(signature3, messageHash3);
-            CollectionAssert.AreEqual(expectedPubKey3, recoveredKey3.EncodePoint(true));
+            Assert.AreSequenceEqual(expectedPubKey3, recoveredKey3.EncodePoint(true));
 
             // Test invalid cases
             var invalidSignature = new byte[65];
@@ -179,12 +184,23 @@ namespace Neo.UnitTests.Cryptography
 
             // Test with invalid recovery value
             var invalidRecoverySignature = signature1.ToArray();
-            invalidRecoverySignature[64] = 29; // Invalid recovery value
+            invalidRecoverySignature[64]++; // The original is 1 or 27 (with bitcoin offset), this makes it 2.
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidRecoverySignature, messageHash1));
+
+            // Test with invalid "compressed" recovery value
+            invalidRecoverySignature[64] = 32; // The original is 1, this one is 31 + 1.
             Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidRecoverySignature, messageHash1));
 
             // Test with wrong message hash
             var recoveredWrongHash = Crypto.ECRecover(signature1, messageHash2);
-            CollectionAssert.AreNotEquivalent(expectedPubKey1, recoveredWrongHash.EncodePoint(true));
+            Assert.AreNotSequenceEqual(expectedPubKey1, recoveredWrongHash.EncodePoint(true), SequenceOrder.InAnyOrder);
+
+            // Zero S can't be valid.
+            var invalidSSignature = signature1.ToArray();
+            Array.Copy(invalidSignature, 0, invalidSSignature, 32, 32); // Zero out S.
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidSSignature, messageHash1));
+            // But compatibility code still allows for that.
+            _ = Crypto.ECRecoverV0(invalidSSignature, messageHash1);
         }
 
         [TestMethod]
@@ -224,7 +240,7 @@ namespace Neo.UnitTests.Cryptography
             Console.WriteLine($"yParity: {(signature1[32] & 0x80) != 0}");
 
             var recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
-            CollectionAssert.AreEqual(expectedPubKey1.EncodePoint(true), recoveredKey1.EncodePoint(true));
+            Assert.AreSequenceEqual(expectedPubKey1.EncodePoint(true), recoveredKey1.EncodePoint(true));
 
             var sig = "68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90".HexToBytes()
                 .Concat("7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064".HexToBytes())
@@ -235,7 +251,7 @@ namespace Neo.UnitTests.Cryptography
 
             Console.WriteLine($"Recovered PubKey: {pubKey.EncodePoint(true).ToHexString()}");
             Console.WriteLine($"Recovered PubKey: {recoveredKey1.EncodePoint(true).ToHexString()}");
-            CollectionAssert.AreEqual(expectedPubKey1.EncodePoint(true), pubKey.EncodePoint(true));
+            Assert.AreSequenceEqual(expectedPubKey1.EncodePoint(true), pubKey.EncodePoint(true));
 
             // Private Key: 0x1234567890123456789012345678901234567890123456789012345678901234
             // Message: "It's a small(er) world"
@@ -265,7 +281,7 @@ namespace Neo.UnitTests.Cryptography
             Console.WriteLine($"yParity: {(signature2[31] & 0x80) != 0}");
 
             var recoveredKey2 = Crypto.ECRecover(signature2, messageHash2);
-            CollectionAssert.AreEqual(expectedPubKey1.ToArray(), recoveredKey2.EncodePoint(true));
+            Assert.AreSequenceEqual(expectedPubKey1.ToArray(), recoveredKey2.EncodePoint(true));
 
             // Normal signature without recovery param
             var verifySig = "9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76".HexToBytes()
@@ -279,17 +295,17 @@ namespace Neo.UnitTests.Cryptography
         public void TestGetMessageHash()
         {
             var sha256Input = Encoding.UTF8.GetBytes("neo-crypto-signverify-sha256");
-            CollectionAssert.AreEqual(sha256Input.Sha256(), Crypto.GetMessageHash(sha256Input, HashAlgorithm.SHA256));
+            Assert.AreSequenceEqual(sha256Input.Sha256(), Crypto.GetMessageHash(sha256Input, HashAlgorithm.SHA256));
 
             ReadOnlySpan<byte> spanInput = "neo-crypto-span"u8;
-            CollectionAssert.AreEqual(spanInput.ToArray().Sha256(), Crypto.GetMessageHash(spanInput, HashAlgorithm.SHA256));
+            Assert.AreSequenceEqual(spanInput.ToArray().Sha256(), Crypto.GetMessageHash(spanInput, HashAlgorithm.SHA256));
 
             ReadOnlySpan<byte> sha512Input = "test"u8;
             using var sha512 = SHA512.Create();
-            CollectionAssert.AreEqual(sha512.ComputeHash(sha512Input.ToArray()), Crypto.GetMessageHash(sha512Input, HashAlgorithm.SHA512));
+            Assert.AreSequenceEqual(sha512.ComputeHash(sha512Input.ToArray()), Crypto.GetMessageHash(sha512Input, HashAlgorithm.SHA512));
 
             var keccakInput = Encoding.UTF8.GetBytes("abc");
-            CollectionAssert.AreEqual(keccakInput.Keccak256(), Crypto.GetMessageHash(keccakInput, HashAlgorithm.Keccak256));
+            Assert.AreSequenceEqual(keccakInput.Keccak256(), Crypto.GetMessageHash(keccakInput, HashAlgorithm.Keccak256));
         }
 
         [TestMethod]

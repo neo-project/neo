@@ -397,6 +397,17 @@ namespace Neo.Cryptography
         /// <exception cref="ArgumentException">Thrown if signature or hash is invalid</exception>
         public static ECC.ECPoint ECRecover(byte[] signature, byte[] hash)
         {
+            return ECRecoverInternal(signature, hash, true);
+        }
+
+        // Similar to ECRecover, has known bugs, for compatibility only.
+        public static ECC.ECPoint ECRecoverV0(byte[] signature, byte[] hash)
+        {
+            return ECRecoverInternal(signature, hash, false);
+        }
+
+        internal static ECC.ECPoint ECRecoverInternal(byte[] signature, byte[] hash, bool checkRS)
+        {
             if (signature.Length != 65 && signature.Length != 64)
                 throw new ArgumentException("Signature must be 65 or 64 bytes", nameof(signature));
             if (hash.Length != 32)
@@ -411,8 +422,8 @@ namespace Neo.Cryptography
                 if (signature.Length == 65)
                 {
                     // Format: r[32] || s[32] || v[1]
-                    r = new BigInteger(1, [.. signature.Take(32)]);
-                    s = new BigInteger(1, [.. signature.Skip(32).Take(32)]);
+                    r = new BigInteger(1, signature[..32]);
+                    s = new BigInteger(1, signature[32..64]);
 
                     // v could be 0..3 or 27..30 (Ethereum style).
                     var v = signature[64];
@@ -425,8 +436,8 @@ namespace Neo.Cryptography
                     // 64 bytes "compact" format: r[32] || yParityAndS[32]
                     // yParity is fused into the top bit of s.
 
-                    r = new BigInteger(1, [.. signature.Take(32)]);
-                    var yParityAndS = new BigInteger(1, signature.Skip(32).ToArray());
+                    r = new BigInteger(1, signature[..32]);
+                    var yParityAndS = new BigInteger(1, signature[32..]);
 
                     // Mask out top bit to get s
                     var mask = BigInteger.One.ShiftLeft(255).Subtract(BigInteger.One);
@@ -440,12 +451,16 @@ namespace Neo.Cryptography
                     recId = yParity ? 1 : 0;
                 }
 
+                // BouncyCastle curve constant
+                var n = ECC.ECCurve.Secp256k1.BouncyCastleCurve.N;
+
+                if (checkRS && (r.SignValue == 0 || s.SignValue == 0 || r.CompareTo(n) >= 0 || s.CompareTo(n) >= 0))
+                    throw new ArgumentException("Invalid R or S value", nameof(signature));
+
                 // Decompose recId into i = recId >> 1 and yBit = recId & 1
                 var iPart = recId >> 1;   // usually 0..1
                 var yBit = (recId & 1) == 1;
 
-                // BouncyCastle curve constants
-                var n = ECC.ECCurve.Secp256k1.BouncyCastleCurve.N;
                 var e = new BigInteger(1, hash);
 
                 // eInv = -e mod n

@@ -182,7 +182,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetSeedList()
         {
-            CollectionAssert.AreEqual(new string[] {
+            Assert.AreSequenceEqual(new string[] {
                 "seed1.neo.org:10333",
                 "seed2.neo.org:10333",
                 "seed3.neo.org:10333",
@@ -274,15 +274,7 @@ namespace Neo.UnitTests
         {
             foreach (var point in TestProtocolSettings.Default.StandbyCommittee)
             {
-                Action act = () => ECPoint.Parse(point.ToString(), ECCurve.Secp256r1);
-                try
-                {
-                    act();
-                }
-                catch (Exception ex)
-                {
-                    Assert.Fail($"Expected no exception, but got: {ex.Message}");
-                }
+                _ = ECPoint.Parse(point.ToString(), ECCurve.Secp256r1);
             }
         }
 
@@ -352,7 +344,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestDefaultHardforksValue()
         {
-            CollectionAssert.AreEqual(ProtocolSettings.Default.Hardforks, TestProtocolSettings.Default.Hardforks);
+            Assert.AreSequenceEqual(ProtocolSettings.Default.Hardforks, TestProtocolSettings.Default.Hardforks);
         }
 
         [TestMethod]
@@ -370,19 +362,19 @@ namespace Neo.UnitTests
             // Comparing all properties
             Assert.AreEqual(TestProtocolSettings.Default.Network, loadedSetting.Network);
             Assert.AreEqual(TestProtocolSettings.Default.AddressVersion, loadedSetting.AddressVersion);
-            CollectionAssert.AreEqual(TestProtocolSettings.Default.StandbyCommittee.ToList(), loadedSetting.StandbyCommittee.ToList());
+            Assert.AreSequenceEqual(TestProtocolSettings.Default.StandbyCommittee.ToList(), loadedSetting.StandbyCommittee.ToList());
             Assert.AreEqual(TestProtocolSettings.Default.ValidatorsCount, loadedSetting.ValidatorsCount);
-            CollectionAssert.AreEqual(TestProtocolSettings.Default.SeedList, loadedSetting.SeedList);
+            Assert.AreSequenceEqual(TestProtocolSettings.Default.SeedList, loadedSetting.SeedList);
             Assert.AreEqual(TestProtocolSettings.Default.MillisecondsPerBlock, loadedSetting.MillisecondsPerBlock);
             Assert.AreEqual(TestProtocolSettings.Default.MaxTransactionsPerBlock, loadedSetting.MaxTransactionsPerBlock);
             Assert.AreEqual(TestProtocolSettings.Default.MemoryPoolMaxTransactions, loadedSetting.MemoryPoolMaxTransactions);
             Assert.AreEqual(TestProtocolSettings.Default.MaxTraceableBlocks, loadedSetting.MaxTraceableBlocks);
             Assert.AreEqual(TestProtocolSettings.Default.MaxValidUntilBlockIncrement, loadedSetting.MaxValidUntilBlockIncrement);
             Assert.AreEqual(TestProtocolSettings.Default.InitialGasDistribution, loadedSetting.InitialGasDistribution);
-            CollectionAssert.AreEqual(TestProtocolSettings.Default.Hardforks, loadedSetting.Hardforks);
+            Assert.AreSequenceEqual(TestProtocolSettings.Default.Hardforks, loadedSetting.Hardforks);
 
             // If StandbyValidators is a derived property, comparing it as well
-            CollectionAssert.AreEqual(TestProtocolSettings.Default.StandbyValidators.ToList(), loadedSetting.StandbyValidators.ToList());
+            Assert.AreSequenceEqual(TestProtocolSettings.Default.StandbyValidators.ToList(), loadedSetting.StandbyValidators.ToList());
         }
 
         [TestMethod]
