@@ -61,84 +61,101 @@ namespace Neo.SmartContract
         private static readonly long[] StaticCoefficients;
 
         /// <summary>
-        /// Gets the price for an opcode since Gorgon hardfork.
+        /// The default per-opcode dynamic price calculators. Opcodes without an entry
+        /// fall back to <see cref="StaticCoefficients"/>.
+        /// </summary>
+        protected static readonly DynamicPriceTable DefaultDynamicPriceTable = ComposeDynamicPriceTable();
+
+        /// <summary>
+        /// The <see cref="SmartContract.DynamicPriceTable"/> used by this instance to price opcodes since Gorgon hardfork.
+        /// </summary>
+        public DynamicPriceTable DynamicPriceTable { get; }
+
+        private static DynamicPriceTable ComposeDynamicPriceTable()
+        {
+            var table = new DynamicPriceTable();
+
+            table[OpCode.APPEND] = AppendGas;
+            table[OpCode.ASSERT] = AssertGas;
+            table[OpCode.ASSERTMSG] = AssertGas;
+            table[OpCode.CAT] = CatGas;
+            table[OpCode.CLEAR] = ClearGas;
+            table[OpCode.CLEARITEMS] = ClearItemsGas;
+            table[OpCode.CONVERT] = ConvertGas;
+            table[OpCode.DROP] = DropGas;
+            table[OpCode.ENDFINALLY] = EndFinallyGas;
+            table[OpCode.HASKEY] = HasKeyGas;
+            table[OpCode.INITSLOT] = InitSlotGas;
+            table[OpCode.INITSSLOT] = InitSlotGas;
+            table[OpCode.ISNULL] = IsNullGas;
+            table[OpCode.ISTYPE] = IsTypeGas;
+            table[OpCode.KEYS] = KeysGas;
+            table[OpCode.LEFT] = SubstrGas;
+            table[OpCode.MEMCPY] = MemcpyGas;
+            table[OpCode.NEWARRAY] = NewArrayGas;
+            table[OpCode.NEWARRAY_T] = NewArrayGas;
+            table[OpCode.NEWBUFFER] = NewBufferGas;
+            table[OpCode.NEWSTRUCT] = NewArrayGas;
+            table[OpCode.NIP] = DropGas;
+            table[OpCode.PACK] = PackGas;
+            table[OpCode.PACKMAP] = PackMapGas;
+            table[OpCode.PACKSTRUCT] = PackGas;
+            table[OpCode.PICKITEM] = PickItemGas;
+            table[OpCode.POPITEM] = PopItemGas;
+            table[OpCode.REMOVE] = RemoveGas;
+            table[OpCode.REVERSEITEMS] = ReverseItemsGas;
+            table[OpCode.REVERSE3] = ReverseGas;
+            table[OpCode.REVERSE4] = ReverseGas;
+            table[OpCode.REVERSEN] = ReverseGas;
+            table[OpCode.RIGHT] = SubstrGas;
+            table[OpCode.ROLL] = RollGas;
+            table[OpCode.ROT] = RollGas;
+            table[OpCode.SETITEM] = SetItemGas;
+            table[OpCode.SIZE] = SizeGas;
+            table[OpCode.STSFLD0] = StGas;
+            table[OpCode.STSFLD1] = StGas;
+            table[OpCode.STSFLD2] = StGas;
+            table[OpCode.STSFLD3] = StGas;
+            table[OpCode.STSFLD4] = StGas;
+            table[OpCode.STSFLD5] = StGas;
+            table[OpCode.STSFLD6] = StGas;
+            table[OpCode.STSFLD] = StGas;
+            table[OpCode.STLOC0] = StGas;
+            table[OpCode.STLOC1] = StGas;
+            table[OpCode.STLOC2] = StGas;
+            table[OpCode.STLOC3] = StGas;
+            table[OpCode.STLOC4] = StGas;
+            table[OpCode.STLOC5] = StGas;
+            table[OpCode.STLOC6] = StGas;
+            table[OpCode.STLOC] = StGas;
+            table[OpCode.STARG0] = StGas;
+            table[OpCode.STARG1] = StGas;
+            table[OpCode.STARG2] = StGas;
+            table[OpCode.STARG3] = StGas;
+            table[OpCode.STARG4] = StGas;
+            table[OpCode.STARG5] = StGas;
+            table[OpCode.STARG6] = StGas;
+            table[OpCode.STARG] = StGas;
+            table[OpCode.SUBSTR] = SubstrGas;
+            table[OpCode.THROW] = ThrowGas;
+            table[OpCode.UNPACK] = UnpackGas;
+            table[OpCode.VALUES] = ValuesGas;
+            table[OpCode.XDROP] = XDropGas;
+
+            return table;
+        }
+
+        /// <summary>
+        /// Gets the price for an opcode since Gorgon hardfork, using this instance's <see cref="DynamicPriceTable"/>.
         /// </summary>
         /// <param name="baseFee">The base execution fee in datoshi.</param>
         /// <param name="opcode">The opcode.</param>
         /// <param name="param">The price parameters.</param>
         /// <returns>The price in picoGAS.</returns>
-        public static long OpcodeV1(long baseFee, OpCode opcode, RunStats param)
+        public long OpcodeV1(long baseFee, OpCode opcode, RunStats param)
         {
-            long price = opcode switch
-            {
-                OpCode.APPEND => AppendGas(param),
-                OpCode.ASSERT => AssertGas(param),
-                OpCode.ASSERTMSG => AssertGas(param),
-                OpCode.CAT => CatGas(param),
-                OpCode.CLEAR => ClearGas(param),
-                OpCode.CLEARITEMS => ClearItemsGas(param),
-                OpCode.CONVERT => ConvertGas(param),
-                OpCode.DROP => DropGas(param),
-                OpCode.ENDFINALLY => EndFinallyGas(param),
-                OpCode.HASKEY => HasKeyGas(param),
-                OpCode.INITSLOT => InitSlotGas(param),
-                OpCode.INITSSLOT => InitSlotGas(param),
-                OpCode.ISNULL => IsNullGas(param),
-                OpCode.ISTYPE => IsTypeGas(param),
-                OpCode.KEYS => KeysGas(param),
-                OpCode.LEFT => SubstrGas(param),
-                OpCode.MEMCPY => MemcpyGas(param),
-                OpCode.NEWARRAY => NewArrayGas(param),
-                OpCode.NEWARRAY_T => NewArrayGas(param),
-                OpCode.NEWBUFFER => NewBufferGas(param),
-                OpCode.NEWSTRUCT => NewArrayGas(param),
-                OpCode.NIP => DropGas(param),
-                OpCode.PACK => PackGas(param),
-                OpCode.PACKMAP => PackMapGas(param),
-                OpCode.PACKSTRUCT => PackGas(param),
-                OpCode.PICKITEM => PickItemGas(param),
-                OpCode.POPITEM => PopItemGas(param),
-                OpCode.REMOVE => RemoveGas(param),
-                OpCode.REVERSEITEMS => ReverseItemsGas(param),
-                OpCode.REVERSE3 => ReverseGas(param),
-                OpCode.REVERSE4 => ReverseGas(param),
-                OpCode.REVERSEN => ReverseGas(param),
-                OpCode.RIGHT => SubstrGas(param),
-                OpCode.ROLL => RollGas(param),
-                OpCode.ROT => RollGas(param),
-                OpCode.SETITEM => SetItemGas(param),
-                OpCode.SIZE => SizeGas(param),
-                OpCode.STSFLD0 => StGas(param),
-                OpCode.STSFLD1 => StGas(param),
-                OpCode.STSFLD2 => StGas(param),
-                OpCode.STSFLD3 => StGas(param),
-                OpCode.STSFLD4 => StGas(param),
-                OpCode.STSFLD5 => StGas(param),
-                OpCode.STSFLD6 => StGas(param),
-                OpCode.STSFLD => StGas(param),
-                OpCode.STLOC0 => StGas(param),
-                OpCode.STLOC1 => StGas(param),
-                OpCode.STLOC2 => StGas(param),
-                OpCode.STLOC3 => StGas(param),
-                OpCode.STLOC4 => StGas(param),
-                OpCode.STLOC5 => StGas(param),
-                OpCode.STLOC6 => StGas(param),
-                OpCode.STLOC => StGas(param),
-                OpCode.STARG0 => StGas(param),
-                OpCode.STARG1 => StGas(param),
-                OpCode.STARG2 => StGas(param),
-                OpCode.STARG3 => StGas(param),
-                OpCode.STARG4 => StGas(param),
-                OpCode.STARG5 => StGas(param),
-                OpCode.STARG6 => StGas(param),
-                OpCode.STARG => StGas(param),
-                OpCode.SUBSTR => SubstrGas(param),
-                OpCode.THROW => ThrowGas(param),
-                OpCode.UNPACK => UnpackGas(param),
-                OpCode.VALUES => ValuesGas(param),
-                OpCode.XDROP => XDropGas(param),
-                _ => StaticCoefficients[(byte)opcode],
-            };
+            var calculator = DynamicPriceTable[opcode];
+            long price = calculator is not null ? calculator(param) : StaticCoefficients[(byte)opcode];
 
             return baseFee * price;
         }

@@ -237,9 +237,11 @@ namespace Neo.SmartContract
         /// </param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
+        /// <param name="dynamicPriceTable">The dynamic price table to be used by the <see cref="ApplicationEngine"/> since Huyao hardfork.</param>
         protected ApplicationEngine(
             TriggerType trigger, IVerifiable? container, DataCache snapshotCache, Block? persistingBlock,
-            ProtocolSettings settings, long gas, IDiagnostic? diagnostic = null, JumpTable? jumpTable = null)
+            ProtocolSettings settings, long gas, IDiagnostic? diagnostic = null, JumpTable? jumpTable = null,
+            DynamicPriceTable? dynamicPriceTable = null)
             : base(jumpTable ?? DefaultJumpTable)
         {
             Trigger = trigger;
@@ -249,6 +251,7 @@ namespace Neo.SmartContract
             ProtocolSettings = settings;
             _feeAmount = gas * FeeFactor * OpcodePriceMultiplier; // FemtoGAS
             Diagnostic = diagnostic;
+            DynamicPriceTable = dynamicPriceTable ?? DefaultDynamicPriceTable;
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
