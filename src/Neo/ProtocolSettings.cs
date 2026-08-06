@@ -97,6 +97,13 @@ namespace Neo
         public uint MaxTraceableBlocks { get; init; }
 
         /// <summary>
+        /// Denotes the initial maxmum TTL value for key-value pairs stored in the TemporaryStorage
+        /// native contract. This value is stored in the native Policy and can further be changed by
+        /// the committee. Must be an integer number of milliseconds.
+        /// </summary>
+        public ulong TemporaryStorageMaxTTL { get; init; }
+
+        /// <summary>
         /// Sets the block height from which a hardfork is activated.
         /// </summary>
         public required ImmutableDictionary<Hardfork, uint> Hardforks { get; init; }
@@ -127,6 +134,7 @@ namespace Neo
             MaxValidUntilBlockIncrement = 86400000 / 15000,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
+            TemporaryStorageMaxTTL = 7 * 24 * 60 * 60 * 1000,
             InitialGasDistribution = 52_000_000_00000000,
             Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary()
         };
@@ -221,6 +229,7 @@ namespace Neo
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
                 MaxValidUntilBlockIncrement = section.GetValue("MaxValidUntilBlockIncrement", Default.MaxValidUntilBlockIncrement),
+                TemporaryStorageMaxTTL = section.GetValue("TemporaryStorageMaxTTL", Default.TemporaryStorageMaxTTL),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value!))).ToImmutableDictionary()

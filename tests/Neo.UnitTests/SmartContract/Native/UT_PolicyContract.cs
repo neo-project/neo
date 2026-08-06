@@ -860,6 +860,53 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(123_456, fixedFee);
         }
 
+        [TestMethod]
+        public void Check_SetTemporaryStorageMaxTTL()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+
+            // Without committee signature.
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                "setTemporaryStorageMaxTTL", new ContractParameter(ContractParameterType.Integer) { Value = 30_000 });
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getTemporaryStorageMaxTTL");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(7 * 24 * 60 * 60 * 1000, ret.GetInteger());
+
+            // Too low value.
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setTemporaryStorageMaxTTL", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
+            });
+
+            // With signature.
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setTemporaryStorageMaxTTL", new ContractParameter(ContractParameterType.Integer) { Value = 30_000 });
+            Assert.IsTrue(ret.IsNull);
+
+            // Check getter.
+            ret = NativeContract.Policy.Call(snapshot, "getTemporaryStorageMaxTTL");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(30_000, ret.GetInteger());
+        }
+
         private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[] script = null)
         {
             // Get committe public keys and calculate m

@@ -87,6 +87,12 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public const uint MaxMaxTraceableBlocks = 2102400;
 
+        /// <summary>
+        /// The maximum TemporaryStorageMaxTTL value that the committee can set.
+        /// It is set to be 30 days in milliseconds.
+        /// </summary>
+        public const ulong MaxTemporaryStorageMaxTTL = 30 * 24 * 60 * 60 * 1000UL;
+
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_WhitelistedFeeContracts = 16;
         private const byte Prefix_FeePerByte = 10;
@@ -96,6 +102,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MillisecondsPerBlock = 21;
         private const byte Prefix_MaxValidUntilBlockIncrement = 22;
         private const byte Prefix_MaxTraceableBlocks = 23;
+        private const byte Prefix_TempStorageMaxTTL = 24;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
@@ -103,6 +110,7 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
         private readonly StorageKey _maxTraceableBlocks;
+        private readonly StorageKey _tempStorageMaxTTL;
         private const ulong RequiredTimeForRecoverFund = 365 * 24 * 60 * 60 * 1_000UL; // 1 year in milliseconds
 
         /// <summary>
@@ -131,6 +139,7 @@ namespace Neo.SmartContract.Native
             _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
             _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
             _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
+            _tempStorageMaxTTL = CreateStorageKey(Prefix_TempStorageMaxTTL);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -163,6 +172,11 @@ namespace Neo.SmartContract.Native
                     var blockedAcc = engine.SnapshotCache.GetAndChange(key)!;
                     blockedAcc.Set(time);
                 }
+            }
+
+            if (hardfork == Hardfork.HF_Huyao)
+            {
+                engine.SnapshotCache.Add(_tempStorageMaxTTL, new StorageItem(engine.ProtocolSettings.TemporaryStorageMaxTTL));
             }
             return ContractTask.CompletedTask;
         }
@@ -689,6 +703,33 @@ namespace Neo.SmartContract.Native
                 .GetEnumerator();
 
             return new StorageIterator(enumerator, 1, options);
+        }
+
+        /// <summary>
+        /// Gets the maximum allowed TTL value for key-value records in the native TemporaryStorage contract.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The maximum allowed TTL value in milliseconds.</returns>
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public ulong GetTemporaryStorageMaxTTL(IReadOnlyStore snapshot)
+        {
+            return (ulong)(BigInteger)snapshot[_tempStorageMaxTTL];
+        }
+
+        /// <summary>
+        /// Sets the maximum allowed TTL value for key-value records in the native TemporaryStorage contract.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="value">TemporaryStorageMaxTTL value.</param>
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetTemporaryStorageMaxTTL(ApplicationEngine engine, ulong value)
+        {
+            if (value < 2 * GetMillisecondsPerBlock(engine.SnapshotCache) || value > MaxTemporaryStorageMaxTTL)
+                throw new ArgumentOutOfRangeException(nameof(value), $"TemporaryStorageMaxTTL must be between [{2 * GetMillisecondsPerBlock(engine.SnapshotCache)}, {MaxTemporaryStorageMaxTTL}], got {value}");
+
+            AssertCommittee(engine);
+
+            engine.SnapshotCache.GetAndChange(_tempStorageMaxTTL)!.Set(value);
         }
     }
 }
