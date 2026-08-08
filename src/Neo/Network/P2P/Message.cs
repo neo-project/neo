@@ -25,7 +25,7 @@ namespace Neo.Network.P2P
     public class Message : ISerializable
     {
         /// <summary>
-        /// Indicates the maximum size of <see cref="Payload"/>.
+        /// Indicates the maximum size of <see cref="Payload"/> (32 MB).
         /// </summary>
         public const int PayloadMaxSize = 0x02000000;
 
