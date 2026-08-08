@@ -169,75 +169,44 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Request_UrlTooLong_Throws()
         {
             var longUrl = new string('x', 300);
-            try
-            {
+            Assert.ThrowsExactly<ArgumentException>(() =>
                 NativeContract.Oracle.Call(_snapshot, "request",
                     new ContractParameter(ContractParameterType.String) { Value = longUrl },
                     new ContractParameter(ContractParameterType.String) { Value = null },
                     new ContractParameter(ContractParameterType.String) { Value = "cb" },
                     new ContractParameter(ContractParameterType.Any) { Value = null },
-                    new ContractParameter(ContractParameterType.Integer) { Value = 10_00000000L });
-                Assert.Fail("Expected request with long URL to fail");
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (InvalidOperationException)
-            {
-            }
-            catch (Exception ex) when (ex.InnerException is ArgumentException or InvalidOperationException)
-            {
-            }
+                    new ContractParameter(ContractParameterType.Integer) { Value = 10_00000000L }));
         }
 
         [TestMethod]
         public void Request_CallbackStartsWithUnderscore_Throws()
         {
-            try
-            {
+            Assert.ThrowsExactly<ArgumentException>(() =>
                 NativeContract.Oracle.Call(_snapshot, "request",
                     new ContractParameter(ContractParameterType.String) { Value = "https://ok" },
                     new ContractParameter(ContractParameterType.String) { Value = null },
                     new ContractParameter(ContractParameterType.String) { Value = "_hidden" },
                     new ContractParameter(ContractParameterType.Any) { Value = null },
-                    new ContractParameter(ContractParameterType.Integer) { Value = 10_00000000L });
-                Assert.Fail("Expected failure for underscore callback");
-            }
-            catch (Exception)
-            {
-                // Expected: validation or calling-script constraints reject the call.
-            }
+                    new ContractParameter(ContractParameterType.Integer) { Value = 10_00000000L }));
         }
 
         [TestMethod]
         public void Request_GasForResponseTooLow_Throws()
         {
-            try
-            {
+            Assert.ThrowsExactly<ArgumentException>(() =>
                 NativeContract.Oracle.Call(_snapshot, "request",
                     new ContractParameter(ContractParameterType.String) { Value = "https://ok" },
                     new ContractParameter(ContractParameterType.String) { Value = null },
                     new ContractParameter(ContractParameterType.String) { Value = "cb" },
                     new ContractParameter(ContractParameterType.Any) { Value = null },
-                    new ContractParameter(ContractParameterType.Integer) { Value = 1L });
-                Assert.Fail("Expected failure for low gasForResponse");
-            }
-            catch (Exception)
-            {
-            }
+                    new ContractParameter(ContractParameterType.Integer) { Value = 1L }));
         }
 
         [TestMethod]
         public void Finish_WithoutOracleResponse_Throws()
         {
-            try
-            {
-                NativeContract.Oracle.Call(_snapshot, EmptyTx(), null, "finish");
-                Assert.Fail("Expected finish without response attribute to fail");
-            }
-            catch (Exception)
-            {
-            }
+            Assert.ThrowsExactly<ArgumentException>(() =>
+                NativeContract.Oracle.Call(_snapshot, EmptyTx(), null, "finish"));
         }
     }
 }
