@@ -18,6 +18,7 @@ using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
@@ -180,6 +181,11 @@ namespace Neo.UnitTests.SmartContract
 
             Assert.AreEqual(@"{""\uAAAA"":true}", parsed.ToString());
 
+            // neo#2612: '+' preserved in Neo.Json write path
+            json = @" {""test"":""+""} ";
+            parsed = JObject.Parse(json);
+            Assert.AreEqual(@"{""test"":""+""}", parsed.ToString());
+
             json = @"{""a"":}";
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
@@ -291,6 +297,29 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual("test2", array[1].GetString());
             Assert.AreEqual(321, array[2].GetInteger());
+        }
+
+        [TestMethod]
+        public void SerializeToByteArray_Plus_HardforkGated()
+        {
+            // Base64-like payload with '+' (issue #2612).
+            StackItem item = "a+b/c=";
+
+            var legacy = Encoding.UTF8.GetString(JsonSerializer.SerializeToByteArray(item, 1024, preservePlus: false));
+            Assert.AreEqual(@"""a\u002Bb/c=""", legacy);
+
+            var fixedJson = Encoding.UTF8.GetString(JsonSerializer.SerializeToByteArray(item, 1024, preservePlus: true));
+            Assert.AreEqual(@"""a+b/c=""", fixedJson);
+            Assert.IsTrue(fixedJson.Length < legacy.Length);
+        }
+
+        [TestMethod]
+        public void SerializeToByteArray_Default_IsLegacyEscaping()
+        {
+            // Two-arg overload stays pre-Huyao / legacy (used when caller does not pass HF flag).
+            StackItem item = "x+y";
+            var json = Encoding.UTF8.GetString(JsonSerializer.SerializeToByteArray(item, 1024));
+            Assert.AreEqual(@"""x\u002By""", json);
         }
     }
 }

@@ -426,6 +426,25 @@ namespace Neo.Json.UnitTests
 
             Assert.ThrowsExactly<ArgumentException>(() => _ = invalidEnum.GetEnum<Woo>());
         }
+
+        [TestMethod]
+        public void TestPlusNotEscapedAsUnicode()
+        {
+            // neo#2612: '+' must not become \u002B (base64-friendly, smaller storage)
+            JString plus = "a+b/c=";
+            Assert.AreEqual(@"""a+b/c=""", plus.ToString());
+            Assert.IsFalse(plus.ToString().Contains("\\u002B", StringComparison.Ordinal));
+
+            var obj = new JObject { ["k+ey"] = "val+ue" };
+            Assert.AreEqual(@"{""k+ey"":""val+ue""}", obj.ToString());
+
+            // Other escaping stays default-like (quotes, controls, non-ASCII BMP)
+            JString quoted = "say \"hi\"";
+            Assert.AreEqual(@"""say \u0022hi\u0022""", quoted.ToString());
+
+            JString nonAscii = "\uAAAA";
+            Assert.AreEqual(@"""\uAAAA""", nonAscii.ToString());
+        }
     }
     public enum EnumExample
     {

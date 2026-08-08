@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -20,6 +21,12 @@ namespace Neo.Json
     /// </summary>
     public abstract class JToken
     {
+        /// <summary>
+        /// Encoder used when writing JSON: same as <see cref="JavaScriptEncoder.Default"/>
+        /// but leaves <c>+</c> unescaped (neo-project/neo#2612).
+        /// </summary>
+        public static JavaScriptEncoder Encoder { get; } = JsonPlusEncoder.Instance;
+
         /// <summary>
         /// Represents a <see langword="null"/> token.
         /// </summary>
@@ -240,6 +247,7 @@ namespace Neo.Json
             using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
             {
                 Indented = indented,
+                Encoder = Encoder,
                 SkipValidation = true
             });
             Write(writer);

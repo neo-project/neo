@@ -46,7 +46,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 12)]
         private static byte[] JsonSerialize(ApplicationEngine engine, StackItem item)
         {
-            return JsonSerializer.SerializeToByteArray(item, engine.Limits.MaxItemSize);
+            // HF_Huyao: leave '+' unescaped in JSON strings (neo#2612). Pre-Huyao keeps \u002B.
+            var preservePlus = engine.IsHardforkEnabled(Hardfork.HF_Huyao);
+            return JsonSerializer.SerializeToByteArray(item, engine.Limits.MaxItemSize, preservePlus);
         }
 
         [ContractMethod(CpuFee = 1 << 14)]

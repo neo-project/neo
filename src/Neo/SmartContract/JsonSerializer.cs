@@ -93,10 +93,26 @@ namespace Neo.SmartContract
         /// <returns>A byte array containing the JSON output.</returns>
         public static byte[] SerializeToByteArray(StackItem item, uint maxSize)
         {
+            return SerializeToByteArray(item, maxSize, preservePlus: false);
+        }
+
+        /// <summary>
+        /// Serializes a <see cref="StackItem"/> to JSON.
+        /// </summary>
+        /// <param name="item">The <see cref="StackItem"/> to convert.</param>
+        /// <param name="maxSize">The maximum size of the JSON output.</param>
+        /// <param name="preservePlus">
+        /// When <see langword="true"/>, <c>+</c> is left unescaped (HF_Huyao / neo#2612).
+        /// When <see langword="false"/>, historical <c>\u002B</c> escaping is used.
+        /// </param>
+        /// <returns>A byte array containing the JSON output.</returns>
+        public static byte[] SerializeToByteArray(StackItem item, uint maxSize, bool preservePlus)
+        {
             using MemoryStream ms = new();
             using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
             {
                 Indented = false,
+                Encoder = preservePlus ? JToken.Encoder : null,
                 SkipValidation = false
             });
             Stack stack = new();
