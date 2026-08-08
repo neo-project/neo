@@ -141,13 +141,24 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
-        public void TestBigInteger_ParseRoundTrip()
+        public void TestBigInteger_ParseRoundTrip_ExactIntegers()
         {
             const string json = """{"Value":100000000000000000000000}""";
-            var parsed = (JObject)JToken.Parse(json)!;
+            var parsed = (JObject)JToken.Parse(json, exactIntegers: true)!;
             var number = (JNumber)parsed["Value"]!;
             Assert.AreEqual(BigInteger.Parse("100000000000000000000000"), number.GetBigInteger());
             Assert.AreEqual(json, parsed.ToString());
+        }
+
+        [TestMethod]
+        public void TestBigInteger_Parse_DefaultIsDouble_NotExact()
+        {
+            // Default parse keeps historical double semantics (consensus-safe pre-HF_Huyao).
+            const string json = """{"Value":100000000000000000000000}""";
+            var parsed = (JObject)JToken.Parse(json)!;
+            var number = (JNumber)parsed["Value"]!;
+            // Double cannot represent this integer exactly; GetBigInteger reflects the rounded value.
+            Assert.AreNotEqual(BigInteger.Parse("100000000000000000000000"), number.GetBigInteger());
         }
 
         [TestMethod]

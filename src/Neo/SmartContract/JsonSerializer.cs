@@ -193,8 +193,9 @@ namespace Neo.SmartContract
                     }
                 case JNumber num:
                     {
-                        // Prefer exact integer path (BigInteger-backed JNumber for large values).
-                        if (num.TryGetBigInteger(out var exact))
+                        // HF_Huyao: prefer exact BigInteger-backed integers (no double precision loss).
+                        // Pre-Huyao keeps the historical double-based conversion for consensus.
+                        if (engine.IsHardforkEnabled(Hardfork.HF_Huyao) && num.TryGetBigInteger(out var exact))
                             return exact;
 
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
