@@ -47,9 +47,10 @@ namespace Neo.Json
         public double Value => _integer is BigInteger bi ? (double)bi : _double;
 
         /// <summary>
-        /// Gets whether this number is stored as an exact integer representation.
+        /// Gets whether this number uses the exact <see cref="BigInteger"/> storage path
+        /// (values outside the IEEE-754 safe integer range). Safe-range integers remain double-backed.
         /// </summary>
-        public bool IsExactInteger => _integer.HasValue || (_double % 1 == 0);
+        public bool HasExactBigInteger => _integer.HasValue;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JNumber"/> class with the specified value.
@@ -113,11 +114,12 @@ namespace Neo.Json
         public override double GetNumber() => Value;
 
         /// <summary>
-        /// Tries to get the exact integer value of this token.
+        /// Tries to get the value when this token uses exact <see cref="BigInteger"/> storage
+        /// (the new path for integers outside the safe range). Does not convert double-backed numbers.
         /// </summary>
-        /// <param name="value">When successful, the integer value.</param>
-        /// <returns><see langword="true"/> if the number is an integer (fractional part is zero); otherwise <see langword="false"/>.</returns>
-        public bool TryGetBigInteger(out BigInteger value)
+        /// <param name="value">When successful, the exact integer.</param>
+        /// <returns><see langword="true"/> if stored as exact <see cref="BigInteger"/>; otherwise <see langword="false"/>.</returns>
+        public bool TryGetExactBigInteger(out BigInteger value)
         {
             if (_integer is BigInteger bi)
             {
@@ -125,14 +127,26 @@ namespace Neo.Json
                 return true;
             }
 
+            value = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Tries to get an integer value from this token (exact storage or integral double).
+        /// </summary>
+        /// <param name="value">When successful, the integer value.</param>
+        /// <returns><see langword="true"/> if the number is an integer; otherwise <see langword="false"/>.</returns>
+        public bool TryGetBigInteger(out BigInteger value)
+        {
+            if (TryGetExactBigInteger(out value))
+                return true;
+
             if (_double % 1 != 0)
             {
                 value = default;
                 return false;
             }
 
-            // Integral double: convert via decimal/string only when outside long for safety.
-            // For values within long range, cast is exact for IEEE safe integers and common whole doubles.
             try
             {
                 value = (BigInteger)_double;
@@ -146,7 +160,7 @@ namespace Neo.Json
         }
 
         /// <summary>
-        /// Gets the exact integer value of this token.
+        /// Gets the integer value of this token.
         /// </summary>
         /// <returns>The integer value.</returns>
         /// <exception cref="InvalidCastException">The number is not an integer.</exception>
@@ -221,10 +235,9 @@ namespace Neo.Json
 
         public static implicit operator JNumber(long value)
         {
-            // Preserve exact integers outside the IEEE-754 safe range.
-            if (value > MAX_SAFE_INTEGER || value < MIN_SAFE_INTEGER)
-                return FromBigInteger(value);
-            return new JNumber((double)value);
+            // Unchanged historical path: long → double (safe for consensus / existing callers).
+            // Use <see cref="FromBigInteger"/> or BigInteger implicit for exact large integers.
+            return new JNumber(value);
         }
 
         public static implicit operator JNumber(BigInteger value)

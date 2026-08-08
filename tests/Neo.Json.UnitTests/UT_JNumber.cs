@@ -131,13 +131,15 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
-        public void TestBigInteger_OutsideSafeLong_KeepsExactInteger()
+        public void TestBigInteger_OutsideSafeRange_KeepsExactInteger()
         {
-            // Beyond MAX_SAFE_INTEGER (2^53-1) but within Int64.
-            long outsideSafe = JNumber.MAX_SAFE_INTEGER + 2;
-            JNumber fromLong = outsideSafe;
-            Assert.AreEqual(new BigInteger(outsideSafe), fromLong.GetBigInteger());
-            Assert.AreEqual(outsideSafe.ToString(CultureInfo.InvariantCulture), fromLong.ToString());
+            // Beyond MAX_SAFE_INTEGER (2^53-1): exact path only via BigInteger, not long→double.
+            var outsideSafe = new BigInteger(JNumber.MAX_SAFE_INTEGER) + 2;
+            JNumber fromBig = outsideSafe;
+            Assert.IsTrue(fromBig.HasExactBigInteger);
+            Assert.IsTrue(fromBig.TryGetExactBigInteger(out var exact));
+            Assert.AreEqual(outsideSafe, exact);
+            Assert.AreEqual(outsideSafe.ToString(CultureInfo.InvariantCulture), fromBig.ToString());
         }
 
         [TestMethod]

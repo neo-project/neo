@@ -271,38 +271,37 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void Deserialize_UnsafeInteger_PreHuyao_LosesPrecision()
+        public void Deserialize_ExactBigInteger_OnlyUnderHuyao()
         {
+            const long unsafeInt = 9007199254740993L; // 2^53+1 — not exact as double
+            var exactJson = JToken.Parse($"[{unsafeInt}]", exactIntegers: true)!;
+            Assert.IsTrue(((JNumber)((JArray)exactJson)[0]!).HasExactBigInteger);
+
+            // Pre-Huyao: exact storage is ignored; historical double/Basilisk path applies.
             var snapshot = _snapshotCache.CloneCache();
-            // All hardforks through Gorgon at 0; HF_Huyao omitted → disabled.
-            var settings = ProtocolSettings.Default with
+            var preSettings = ProtocolSettings.Default with
             {
                 Hardforks = Enum.GetValues<Hardfork>()
                     .Where(hf => hf < Hardfork.HF_Huyao)
                     .ToDictionary(hf => hf, _ => 0u)
                     .ToImmutableDictionary()
             };
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, settings);
-            Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            var preEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, preSettings);
+            Assert.IsFalse(preEngine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            var preItems = (Array)JsonSerializer.Deserialize(preEngine, exactJson, ExecutionEngineLimits.Default);
+            Assert.AreNotEqual(new BigInteger(unsafeInt), preItems[0].GetInteger());
 
-            // 2^53+1 cannot be represented exactly as double; pre-Huyao uses double path.
-            const long unsafeInt = 9007199254740993L;
-            var json = JToken.Parse($"[{unsafeInt}]", exactIntegers: true)!;
-            var items = (Array)JsonSerializer.Deserialize(engine, json, ExecutionEngineLimits.Default);
-            Assert.AreNotEqual(new BigInteger(unsafeInt), items[0].GetInteger());
-        }
+            // Post-Huyao: only exact-storage numbers take the new path.
+            var postEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
+            Assert.IsTrue(postEngine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            var postItems = (Array)JsonSerializer.Deserialize(postEngine, exactJson, ExecutionEngineLimits.Default);
+            Assert.AreEqual(new BigInteger(unsafeInt), postItems[0].GetInteger());
 
-        [TestMethod]
-        public void Deserialize_UnsafeInteger_PostHuyao_IsExact()
-        {
-            var snapshot = _snapshotCache.CloneCache();
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
-            Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
-
-            const long unsafeInt = 9007199254740993L;
-            var json = JToken.Parse($"[{unsafeInt}]", exactIntegers: true)!;
-            var items = (Array)JsonSerializer.Deserialize(engine, json, ExecutionEngineLimits.Default);
-            Assert.AreEqual(new BigInteger(unsafeInt), items[0].GetInteger());
+            // Double-backed numbers still use the historical path even after Huyao.
+            var doubleJson = JToken.Parse("[42]")!; // exactIntegers: false (default)
+            Assert.IsFalse(((JNumber)((JArray)doubleJson)[0]!).HasExactBigInteger);
+            var doubleItems = (Array)JsonSerializer.Deserialize(postEngine, doubleJson, ExecutionEngineLimits.Default);
+            Assert.AreEqual(42, doubleItems[0].GetInteger());
         }
 
         [TestMethod]
