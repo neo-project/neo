@@ -94,7 +94,8 @@ namespace Neo.UnitTests.SmartContract
             json = "[200.500000E+005,200.500000e+5,-1.1234e-100,9.05E+28,1e3,10e3,1000e-3]";
             parsed = JObject.Parse(json);
 
-            Assert.AreEqual("[20050000,20050000,-1.1234E-100,9.05E+28,1000,10000,1]", parsed.ToString());
+            // Integer-valued scientific tokens keep exact BigInteger form (no double precision loss).
+            Assert.AreEqual("[20050000,20050000,-1.1234E-100,90500000000000000000000000000,1000,10000,1]", parsed.ToString());
 
             json = "[-]";
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
@@ -259,7 +260,8 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual("test", array[1].GetString());
             Assert.AreEqual(123, array[2].GetInteger());
-            Assert.AreEqual(array[3].GetInteger(), BigInteger.Parse("90500000000000000000000000000"));
+            // Exact integer from scientific notation (9.05E+28), not the imprecise double cast.
+            Assert.AreEqual(BigInteger.Parse("90500000000000000000000000000"), array[3].GetInteger());
         }
 
         [TestMethod]

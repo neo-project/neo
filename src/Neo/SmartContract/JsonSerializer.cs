@@ -193,6 +193,10 @@ namespace Neo.SmartContract
                     }
                 case JNumber num:
                     {
+                        // Prefer exact integer path (BigInteger-backed JNumber for large values).
+                        if (num.TryGetBigInteger(out var exact))
+                            return exact;
+
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
                         if (engine.IsHardforkEnabled(Hardfork.HF_Basilisk))
                         {

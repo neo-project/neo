@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Globalization;
 using System.Numerics;
 
 namespace Neo.Json.UnitTests
@@ -94,7 +95,67 @@ namespace Neo.Json.UnitTests
             Assert.IsFalse(jnum.Equals(null));
             var x = jnum;
             Assert.IsTrue(jnum.Equals(x));
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = jnum.Equals(new BigInteger(1)));
+            Assert.IsTrue(jnum.Equals(new BigInteger(1)));
+            Assert.IsFalse(jnum.Equals(new BigInteger(2)));
+        }
+
+        [TestMethod]
+        public void TestBigInteger_ImplicitConversion_AndExactWrite()
+        {
+            BigInteger huge = BigInteger.Parse("100000000000000000000000");
+            JNumber number = huge;
+            JToken token = huge;
+
+            Assert.IsInstanceOfType<JNumber>(token);
+            Assert.AreEqual(huge, number.GetBigInteger());
+            Assert.IsTrue(number.TryGetBigInteger(out var bi));
+            Assert.AreEqual(huge, bi);
+
+            // Exact JSON number literal (not a string, not scientific notation with loss).
+            Assert.AreEqual("100000000000000000000000", number.ToString());
+            Assert.AreEqual("100000000000000000000000", token.ToString());
+
+            var obj = new JObject { ["Value"] = huge };
+            Assert.AreEqual("""{"Value":100000000000000000000000}""", obj.ToString());
+        }
+
+        [TestMethod]
+        public void TestBigInteger_SafeRange_StoredAsDouble()
+        {
+            BigInteger safe = 42;
+            var number = JNumber.FromBigInteger(safe);
+            Assert.AreEqual(42d, number.Value);
+            Assert.AreEqual("42", number.ToString());
+            Assert.IsTrue(number.Equals(42));
+            Assert.IsTrue(number.Equals(new BigInteger(42)));
+        }
+
+        [TestMethod]
+        public void TestBigInteger_OutsideSafeLong_KeepsExactInteger()
+        {
+            // Beyond MAX_SAFE_INTEGER (2^53-1) but within Int64.
+            long outsideSafe = JNumber.MAX_SAFE_INTEGER + 2;
+            JNumber fromLong = outsideSafe;
+            Assert.AreEqual(new BigInteger(outsideSafe), fromLong.GetBigInteger());
+            Assert.AreEqual(outsideSafe.ToString(CultureInfo.InvariantCulture), fromLong.ToString());
+        }
+
+        [TestMethod]
+        public void TestBigInteger_ParseRoundTrip()
+        {
+            const string json = """{"Value":100000000000000000000000}""";
+            var parsed = (JObject)JToken.Parse(json)!;
+            var number = (JNumber)parsed["Value"]!;
+            Assert.AreEqual(BigInteger.Parse("100000000000000000000000"), number.GetBigInteger());
+            Assert.AreEqual(json, parsed.ToString());
+        }
+
+        [TestMethod]
+        public void TestBigInteger_FractionalDouble_NotInteger()
+        {
+            var number = new JNumber(1.5);
+            Assert.IsFalse(number.TryGetBigInteger(out _));
+            Assert.ThrowsExactly<InvalidCastException>(() => _ = number.GetBigInteger());
         }
     }
 }

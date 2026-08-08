@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Numerics;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -167,13 +169,116 @@ namespace Neo.Json
             {
                 JsonTokenType.False => false,
                 JsonTokenType.Null => Null,
-                JsonTokenType.Number => reader.GetDouble(),
+                JsonTokenType.Number => ReadNumber(ref reader),
                 JsonTokenType.StartArray => ReadArray(ref reader),
                 JsonTokenType.StartObject => ReadObject(ref reader),
                 JsonTokenType.String => ReadString(ref reader),
                 JsonTokenType.True => true,
                 _ => throw new FormatException($"Unexpected token {reader.TokenType}"),
             };
+        }
+
+        /// <summary>
+        /// Maximum decimal digits accepted for exact integer JSON numbers.
+        /// Larger values fall back to double (and fail if non-finite), matching prior
+        /// rejection of pathological inputs while covering Neo 32-byte integers (~78 digits).
+        /// </summary>
+        private const int MaxExactIntegerDigits = 100;
+
+        private static JNumber ReadNumber(ref Utf8JsonReader reader)
+        {
+            // Prefer exact integer tokens so large values (e.g. token amounts) keep full precision.
+            if (reader.TryGetInt64(out var int64))
+            {
+                if (int64 >= JNumber.MIN_SAFE_INTEGER && int64 <= JNumber.MAX_SAFE_INTEGER)
+                    return new JNumber((double)int64);
+                return JNumber.FromBigInteger(int64);
+            }
+
+            // Larger than Int64, or floating / scientific.
+            var raw = GetRawNumberText(ref reader);
+
+            if (raw.Contains('e') || raw.Contains('E'))
+            {
+                if (TryParseScientificInteger(raw, out var sci) && CountDigits(sci) <= MaxExactIntegerDigits)
+                    return JNumber.FromBigInteger(sci);
+                return new JNumber(reader.GetDouble());
+            }
+
+            if (raw.Contains('.'))
+                return new JNumber(reader.GetDouble());
+
+            // Pure integer longer than Int64.
+            var digitCount = raw[0] == '-' ? raw.Length - 1 : raw.Length;
+            if (digitCount > MaxExactIntegerDigits)
+                throw new FormatException($"JSON integer has too many digits ({digitCount}).");
+
+            if (BigInteger.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var big))
+                return JNumber.FromBigInteger(big);
+
+            return new JNumber(reader.GetDouble());
+        }
+
+        /// <summary>
+        /// Parses scientific notation into an exact integer when the value has no fractional part
+        /// (e.g. <c>9.05E+28</c> → 905000…0).
+        /// </summary>
+        private static bool TryParseScientificInteger(string raw, out BigInteger result)
+        {
+            result = default;
+            var eIndex = raw.IndexOfAny(['e', 'E']);
+            if (eIndex <= 0) return false;
+
+            if (!int.TryParse(raw.AsSpan(eIndex + 1), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var exp))
+                return false;
+            if (exp < 0) return false;
+
+            var mantissa = raw.AsSpan(0, eIndex);
+            var dot = mantissa.IndexOf('.');
+            BigInteger mant;
+            if (dot >= 0)
+            {
+                var scale = mantissa.Length - dot - 1;
+                Span<char> digits = stackalloc char[mantissa.Length - 1];
+                mantissa[..dot].CopyTo(digits);
+                mantissa[(dot + 1)..].CopyTo(digits[dot..]);
+                if (!BigInteger.TryParse(digits, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out mant))
+                    return false;
+                exp -= scale;
+                if (exp < 0) return false;
+            }
+            else if (!BigInteger.TryParse(mantissa, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out mant))
+            {
+                return false;
+            }
+
+            result = mant * BigInteger.Pow(10, exp);
+            return true;
+        }
+
+        private static int CountDigits(BigInteger value)
+        {
+            if (value.IsZero) return 1;
+            value = BigInteger.Abs(value);
+            // 10^d <= value < 10^(d+1) → d+1 digits
+            return (int)Math.Floor(BigInteger.Log10(value)) + 1;
+        }
+
+        private static string GetRawNumberText(ref Utf8JsonReader reader)
+        {
+            if (!reader.HasValueSequence)
+                return StrictUTF8.GetString(reader.ValueSpan);
+
+            // Multi-segment number tokens are rare; reassemble without System.Buffers helpers.
+            var length = checked((int)reader.ValueSequence.Length);
+            var buffer = new byte[length];
+            var offset = 0;
+            foreach (var segment in reader.ValueSequence)
+            {
+                segment.Span.CopyTo(buffer.AsSpan(offset));
+                offset += segment.Length;
+            }
+            return StrictUTF8.GetString(buffer);
         }
 
         private static JArray ReadArray(ref Utf8JsonReader reader)
@@ -300,6 +405,16 @@ namespace Neo.Json
         }
 
         public static implicit operator JToken(double value)
+        {
+            return (JNumber)value;
+        }
+
+        public static implicit operator JToken(long value)
+        {
+            return (JNumber)value;
+        }
+
+        public static implicit operator JToken(BigInteger value)
         {
             return (JNumber)value;
         }
