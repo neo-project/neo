@@ -1122,11 +1122,18 @@ namespace Neo.SmartContract
             if (ProtocolSettings == null)
                 return false;
 
-            // Return true if PersistingBlock is null and Hardfork is enabled
+            // Return true if PersistingBlock is null and Hardfork is enabled in config
+            // or already recorded on-chain via Policy (neo#4580).
             if (PersistingBlock is null)
-                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
+            {
+                if (ProtocolSettings.Hardforks.ContainsKey(hardfork))
+                    return true;
+                return SnapshotCache is not null
+                    && NativeContract.Policy.TryGetHardforkHeight(SnapshotCache, hardfork, out _);
+            }
 
-            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
+            return PolicyContract.IsHardforkEnabled(
+                ProtocolSettings, SnapshotCache, hardfork, PersistingBlock.Index);
         }
     }
 }

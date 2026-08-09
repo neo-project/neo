@@ -22,6 +22,8 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using Boolean = Neo.VM.Types.Boolean;
@@ -886,5 +888,211 @@ namespace Neo.UnitTests.SmartContract.Native
 
             return engine;
         }
+
+        #region Hardfork activation (neo#4580)
+
+        /// <summary>
+        /// Prefix used by Policy for on-chain hardfork heights (must match PolicyContract).
+        /// </summary>
+        private const byte Prefix_Hardfork = 24;
+
+        [TestMethod]
+        public void Check_GetHardfork_DefaultUnset()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardfork",
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Huyao });
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(-1, ret.GetInteger());
+        }
+
+        [TestMethod]
+        public void Check_EnableHardfork_WithoutCommittee_Rejected()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(1000);
+
+            // Without committee witness the call must fail. With only Huyao available as a known
+            // hardfork id, rejection may be config-managed or committee depending on check order;
+            // either way the transaction does not succeed.
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                    "enableHardfork", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Huyao });
+            });
+        }
+
+        [TestMethod]
+        public void Check_EnableHardfork_RejectsConfigManagedHardfork()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(1000);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            // Hardforks through Huyao must stay configuration-based.
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "enableHardfork", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Huyao });
+            });
+            Assert.Contains("ProtocolSettings", ex.Message);
+        }
+
+        [TestMethod]
+        public void Check_EnableHardfork_RejectsUnknownHardfork()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(1000);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            // Unknown id: outdated nodes must fail the call (and thus the block) until upgraded.
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "enableHardfork", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)byte.MaxValue });
+            });
+            Assert.Contains("Unknown hardfork", ex.Message);
+            Assert.Contains("Update node software", ex.Message);
+        }
+
+        [TestMethod]
+        public void Check_PolicyHardfork_StorageAndCombinedChecker()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            // Simulate an on-chain activation for Huyao at height 500 (as if written by a future enable path / migration).
+            const uint activationHeight = 500;
+            var key = StorageKey.Create(NativeContract.Policy.Id, Prefix_Hardfork, (byte)Hardfork.HF_Huyao);
+            snapshot.Add(key, new StorageItem(activationHeight));
+
+            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Huyao, out var height));
+            Assert.AreEqual(activationHeight, height);
+
+            Assert.IsFalse(NativeContract.Policy.IsHardforkEnabled(snapshot, Hardfork.HF_Huyao, activationHeight - 1));
+            Assert.IsTrue(NativeContract.Policy.IsHardforkEnabled(snapshot, Hardfork.HF_Huyao, activationHeight));
+            Assert.IsTrue(NativeContract.Policy.IsHardforkEnabled(snapshot, Hardfork.HF_Huyao, activationHeight + 10));
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardfork",
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Huyao });
+            Assert.AreEqual(activationHeight, ret.GetInteger());
+
+            // Settings without Huyao: Policy path alone enables the hardfork.
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                    { Hardfork.HF_Cockatrice, 0 },
+                    { Hardfork.HF_Domovoi, 0 },
+                    { Hardfork.HF_Echidna, 0 },
+                    { Hardfork.HF_Faun, 0 },
+                    { Hardfork.HF_Gorgon, 0 },
+                }.ToImmutableDictionary()
+            };
+
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Huyao, activationHeight));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Huyao, activationHeight));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Huyao, activationHeight - 1));
+
+            // Config still wins when present (even if Policy height would differ).
+            var settingsWithHuyao = settings with
+            {
+                Hardforks = settings.Hardforks.Add(Hardfork.HF_Huyao, 1000)
+            };
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settingsWithHuyao, snapshot, Hardfork.HF_Huyao, 500));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settingsWithHuyao, snapshot, Hardfork.HF_Huyao, 1000));
+        }
+
+        [TestMethod]
+        public void Check_ApplicationEngine_IsHardforkEnabled_UsesPolicy()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const uint activationHeight = 42;
+            var key = StorageKey.Create(NativeContract.Policy.Id, Prefix_Hardfork, (byte)Hardfork.HF_Huyao);
+            snapshot.Add(key, new StorageItem(activationHeight));
+
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                    { Hardfork.HF_Cockatrice, 0 },
+                    { Hardfork.HF_Domovoi, 0 },
+                    { Hardfork.HF_Echidna, 0 },
+                    { Hardfork.HF_Faun, 0 },
+                    { Hardfork.HF_Gorgon, 0 },
+                }.ToImmutableDictionary()
+            };
+
+            var blockBefore = CreateBlock(activationHeight - 1);
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, blockBefore, settings))
+            {
+                Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            }
+
+            var blockAt = CreateBlock(activationHeight);
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, blockAt, settings))
+            {
+                Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            }
+        }
+
+        [TestMethod]
+        public void Check_IsInitializeBlock_PolicyHardfork()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const uint activationHeight = 77;
+            var key = StorageKey.Create(NativeContract.Policy.Id, Prefix_Hardfork, (byte)Hardfork.HF_Huyao);
+            snapshot.Add(key, new StorageItem(activationHeight));
+
+            // Settings without Huyao so only Policy can trigger initialization for it.
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                    { Hardfork.HF_Cockatrice, 0 },
+                    { Hardfork.HF_Domovoi, 0 },
+                    { Hardfork.HF_Echidna, 0 },
+                    { Hardfork.HF_Faun, 0 },
+                    { Hardfork.HF_Gorgon, 0 },
+                }.ToImmutableDictionary()
+            };
+
+            // Policy uses HF_Huyao methods/events, so Huyao is in its used hardforks.
+            Assert.IsTrue(NativeContract.Policy.IsInitializeBlock(settings, snapshot, activationHeight, out var hfs));
+            Assert.IsNotNull(hfs);
+            Assert.IsTrue(hfs.Contains(Hardfork.HF_Huyao));
+
+            Assert.IsFalse(NativeContract.Policy.IsInitializeBlock(settings, snapshot, activationHeight + 1, out _));
+        }
+
+        [TestMethod]
+        public void Check_EnableHardfork_PresentInManifest_AfterHuyao()
+        {
+            var state = NativeContract.Policy.GetContractState(TestProtocolSettings.Default, 0);
+            Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == "enableHardfork"));
+            Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == "getHardfork"));
+            Assert.IsTrue(state.Manifest.Abi.Events.Any(e => e.Name == "HardforkEnabled"));
+        }
+
+        private static Block CreateBlock(uint index) => new()
+        {
+            Header = new Header
+            {
+                PrevHash = UInt256.Zero,
+                MerkleRoot = UInt256.Zero,
+                Index = index,
+                NextConsensus = UInt160.Zero,
+                Witness = null!
+            },
+            Transactions = []
+        };
+
+        #endregion
     }
 }

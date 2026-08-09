@@ -96,6 +96,11 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MillisecondsPerBlock = 21;
         private const byte Prefix_MaxValidUntilBlockIncrement = 22;
         private const byte Prefix_MaxTraceableBlocks = 23;
+        /// <summary>
+        /// Storage prefix for committee-activated hardfork heights (neo#4580).
+        /// Key: hardfork id (byte). Value: activation block height.
+        /// </summary>
+        private const byte Prefix_Hardfork = 24;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
@@ -111,6 +116,7 @@ namespace Neo.SmartContract.Native
         private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
         private const string RecoveredFundEventName = "RecoveredFund";
         private const string WhitelistChangedEventName = "WhitelistFeeChanged";
+        private const string HardforkEnabledEventName = "HardforkEnabled";
 
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
             "old", ContractParameterType.Integer,
@@ -123,6 +129,10 @@ namespace Neo.SmartContract.Native
             "fee", ContractParameterType.Any
         )]
         [ContractEvent(Hardfork.HF_Faun, 2, name: RecoveredFundEventName, "account", ContractParameterType.Hash160)]
+        [ContractEvent(Hardfork.HF_Huyao, 3, name: HardforkEnabledEventName,
+            "hardfork", ContractParameterType.Integer,
+            "height", ContractParameterType.Integer
+        )]
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
@@ -690,5 +700,123 @@ namespace Neo.SmartContract.Native
 
             return new StorageIterator(enumerator, 1, options);
         }
+
+        #region Hardfork activation (neo#4580)
+
+        /// <summary>
+        /// Gets the block height at which a hardfork was activated via committee transaction.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hardfork">The hardfork identifier.</param>
+        /// <returns>The activation height, or -1 if the hardfork was not enabled on-chain.</returns>
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetHardfork(IReadOnlyStore snapshot, byte hardfork)
+        {
+            if (!TryGetHardforkHeight(snapshot, hardfork, out var height))
+                return -1;
+            return height;
+        }
+
+        /// <summary>
+        /// Enables a hardfork via committee-signed transaction. Activation takes effect
+        /// from the next block after the persisting block that includes this call.
+        /// </summary>
+        /// <remarks>
+        /// Introduced with <see cref="Hardfork.HF_Huyao"/>. Hardforks up to and including
+        /// Huyao remain configuration-based; only later hardforks may be enabled this way.
+        /// Unknown hardfork ids cause the call (and thus the block) to fail so outdated
+        /// nodes stop following the chain until they upgrade.
+        /// </remarks>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="hardfork">The hardfork identifier to enable.</param>
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        private void EnableHardfork(ApplicationEngine engine, byte hardfork)
+        {
+            // Unknown hardfork: force outdated nodes to fail the block (stop until upgrade).
+            if (!Enum.IsDefined(typeof(Hardfork), hardfork))
+                throw new InvalidOperationException(
+                    $"Unknown hardfork id {hardfork}. Update node software to continue.");
+
+            var hf = (Hardfork)hardfork;
+
+            // Config-managed hardforks (through Huyao) cannot be activated via Policy.
+            if (hf <= Hardfork.HF_Huyao)
+                throw new InvalidOperationException(
+                    $"Hardfork {hf} must be activated via ProtocolSettings configuration, not Policy.");
+
+            AssertCommittee(engine);
+
+            if (engine.ProtocolSettings.Hardforks.ContainsKey(hf))
+                throw new InvalidOperationException(
+                    $"Hardfork {hf} is already managed by ProtocolSettings configuration.");
+
+            var key = CreateStorageKey(Prefix_Hardfork, hardfork);
+            if (engine.SnapshotCache.Contains(key))
+                throw new InvalidOperationException($"Hardfork {hf} is already enabled on-chain.");
+
+            // Activate with the next block after the one that includes this transaction.
+            if (engine.PersistingBlock is null)
+                throw new InvalidOperationException("Cannot enable hardfork without a persisting block.");
+
+            uint activationHeight = checked(engine.PersistingBlock.Index + 1);
+            engine.SnapshotCache.Add(key, new StorageItem(activationHeight));
+
+            engine.SendNotification(Hash, HardforkEnabledEventName,
+                [new Integer(hardfork), new Integer(activationHeight)]);
+        }
+
+        /// <summary>
+        /// Tries to read the on-chain activation height for a hardfork.
+        /// </summary>
+        public bool TryGetHardforkHeight(IReadOnlyStore snapshot, Hardfork hardfork, out uint height)
+            => TryGetHardforkHeight(snapshot, (byte)hardfork, out height);
+
+        /// <summary>
+        /// Tries to read the on-chain activation height for a hardfork id.
+        /// </summary>
+        public bool TryGetHardforkHeight(IReadOnlyStore snapshot, byte hardfork, out uint height)
+        {
+            var key = CreateStorageKey(Prefix_Hardfork, hardfork);
+            if (!snapshot.TryGet(key, out var item))
+            {
+                height = 0;
+                return false;
+            }
+
+            height = (uint)(BigInteger)item;
+            return true;
+        }
+
+        /// <summary>
+        /// Returns whether a hardfork is enabled at <paramref name="index"/> according to on-chain Policy state.
+        /// </summary>
+        public bool IsHardforkEnabled(IReadOnlyStore snapshot, Hardfork hardfork, uint index)
+        {
+            return TryGetHardforkHeight(snapshot, hardfork, out var height) && index >= height;
+        }
+
+        /// <summary>
+        /// Combined hardfork check: protocol configuration first, then on-chain Policy activation.
+        /// </summary>
+        /// <remarks>
+        /// Configuration remains authoritative for hardforks listed in <see cref="ProtocolSettings.Hardforks"/>
+        /// (including private/dev nets that schedule hardforks locally). When a hardfork is present in
+        /// configuration, on-chain Policy state is ignored for that hardfork. Hardforks absent from
+        /// configuration may be activated by committee via <see cref="EnableHardfork"/>.
+        /// </remarks>
+        public static bool IsHardforkEnabled(ProtocolSettings settings, IReadOnlyStore? snapshot, Hardfork hardfork, uint index)
+        {
+            // Config is the sole source of truth when the hardfork is listed there
+            // (private/dev override and historical height-based activation).
+            if (settings.Hardforks.ContainsKey(hardfork))
+                return settings.IsHardforkEnabled(hardfork, index);
+
+            if (snapshot is null)
+                return false;
+
+            return Policy.IsHardforkEnabled(snapshot, hardfork, index);
+        }
+
+        #endregion
     }
 }

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
@@ -39,7 +40,10 @@ namespace Neo.SmartContract.Native
                 if (NativeContracts.TryGetValue(native.Id, out var value)) return value;
 
                 uint index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.SnapshotCache) : engine.PersistingBlock.Index;
-                CacheEntry methods = native.GetAllowedMethods(engine.ProtocolSettings.IsHardforkEnabled, index);
+                // Combine ProtocolSettings with on-chain Policy hardfork activation (neo#4580).
+                IsHardforkEnabledDelegate hfChecker = (hf, height) =>
+                    PolicyContract.IsHardforkEnabled(engine.ProtocolSettings, engine.SnapshotCache, hf, height);
+                CacheEntry methods = native.GetAllowedMethods(hfChecker, index);
                 NativeContracts[native.Id] = methods;
                 return methods;
             }
@@ -223,6 +227,13 @@ namespace Neo.SmartContract.Native
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContractState GetContractState(ProtocolSettings settings, uint blockHeight) => GetContractState(settings.IsHardforkEnabled, blockHeight);
 
+        /// <summary>
+        /// The <see cref="ContractState"/> of the native contract, including on-chain Policy hardforks.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ContractState GetContractState(ProtocolSettings settings, IReadOnlyStore snapshot, uint blockHeight)
+            => GetContractState((hf, height) => PolicyContract.IsHardforkEnabled(settings, snapshot, hf, height), blockHeight);
+
         internal static bool IsActive(IHardforkActivable u, IsHardforkEnabledDelegate hfChecker, uint blockHeight)
         {
             // Method/event is active iff ActiveIn hardfork IS active AND DeprecatedIn hardfork IS NOT active.
@@ -287,26 +298,27 @@ namespace Neo.SmartContract.Native
         /// It is the initialize block
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
+        /// <param name="snapshot">Store used for on-chain Policy hardfork heights.</param>
         /// <param name="index">Block index</param>
         /// <param name="hardforks">Active hardforks</param>
         /// <returns>True if the native contract must be initialized</returns>
-        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, [NotNullWhen(true)] out Hardfork[]? hardforks)
+        internal bool IsInitializeBlock(ProtocolSettings settings, IReadOnlyStore snapshot, uint index, [NotNullWhen(true)] out Hardfork[]? hardforks)
         {
             var hfs = new List<Hardfork>();
 
             // If is in the hardfork height, add them to return array
             foreach (var hf in _usedHardforks)
             {
-                if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
+                if (settings.Hardforks.TryGetValue(hf, out var activeIn))
                 {
-                    // If hf is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
+                    if (activeIn == index)
+                        hfs.Add(hf);
                     continue;
                 }
 
-                if (activeIn == index)
-                {
+                // Hardfork not in ProtocolSettings: check committee Policy activation (neo#4580).
+                if (Policy.TryGetHardforkHeight(snapshot, hf, out var policyHeight) && policyHeight == index)
                     hfs.Add(hf);
-                }
             }
 
             // Return all initialize hardforks
@@ -335,16 +347,32 @@ namespace Neo.SmartContract.Native
         /// <param name="blockHeight">Block height</param>
         /// <returns>True if the native contract is active</returns>
         public bool IsActive(ProtocolSettings settings, uint blockHeight)
+            => IsActive(settings, null, blockHeight);
+
+        /// <summary>
+        /// Is the native contract active, consulting on-chain Policy hardforks when needed.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
+        /// <param name="snapshot">Optional store for Policy hardfork heights (neo#4580).</param>
+        /// <param name="blockHeight">Block height</param>
+        /// <returns>True if the native contract is active</returns>
+        public bool IsActive(ProtocolSettings settings, IReadOnlyStore? snapshot, uint blockHeight)
         {
             if (ActiveIn is null) return true;
 
-            if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
-            {
-                // If is not set in the configuration is treated as enabled from the genesis
-                activeIn = 0;
-            }
+            if (settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
+                return activeIn <= blockHeight;
 
-            return activeIn <= blockHeight;
+            // Not in ProtocolSettings: consult on-chain Policy activation.
+            if (snapshot is not null && Policy.TryGetHardforkHeight(snapshot, ActiveIn.Value, out activeIn))
+                return activeIn <= blockHeight;
+
+            // Legacy: hardforks through Huyao omitted from config are treated as active from genesis.
+            // Hardforks after Huyao wait for Policy (or explicit config) and stay inactive until then.
+            if (ActiveIn.Value <= Hardfork.HF_Huyao)
+                return true;
+
+            return false;
         }
 
         /// <summary>
