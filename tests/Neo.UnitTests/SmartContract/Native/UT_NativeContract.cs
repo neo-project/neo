@@ -18,6 +18,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -128,6 +129,83 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, snapshot, 20, out hf));
             Assert.HasCount(1, hf);
             Assert.AreEqual(Hardfork.HF_Cockatrice, hf[0]);
+        }
+
+        [TestMethod]
+        public void TestIsInitializeBlock_UsesTryGetActivationHeight()
+        {
+            // Config-managed hardforks still initialize via PolicyContract.TryGetActivationHeight.
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                    { Hardfork.HF_Cockatrice, 0 },
+                    { Hardfork.HF_Domovoi, 0 },
+                    { Hardfork.HF_Echidna, 0 },
+                    { Hardfork.HF_Faun, 0 },
+                    { Hardfork.HF_Gorgon, 0 },
+                    { Hardfork.HF_Huyao, 55 },
+                }.ToImmutableDictionary()
+            };
+            var snapshot = TestBlockchain.GetTestSnapshotCache().CloneCache();
+
+            Assert.IsTrue(NativeContract.Policy.IsInitializeBlock(settings, snapshot, 55, out var hfs));
+            Assert.IsTrue(hfs!.Contains(Hardfork.HF_Huyao));
+            Assert.IsFalse(NativeContract.Policy.IsInitializeBlock(settings, snapshot, 56, out _));
+
+            // HF_Iara is not yet referenced by any Policy method ActiveIn, so a Policy storage
+            // entry alone does not mark Policy as initializing at that height.
+            snapshot.Add(
+                StorageKey.Create(NativeContract.Policy.Id, 24 /* Prefix_Hardfork */, (byte)Hardfork.HF_Iara),
+                new StorageItem(77u));
+            Assert.IsFalse(NativeContract.Policy.IsInitializeBlock(settings, snapshot, 77, out _));
+        }
+
+        [TestMethod]
+        public void TestIsActive_WithSnapshot_ConfigManagedAndAlwaysActive()
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                    { Hardfork.HF_Cockatrice, 0 },
+                    { Hardfork.HF_Domovoi, 0 },
+                    { Hardfork.HF_Echidna, 0 },
+                    { Hardfork.HF_Faun, 0 },
+                    { Hardfork.HF_Gorgon, 0 },
+                    { Hardfork.HF_Huyao, 0 },
+                }.ToImmutableDictionary()
+            };
+            var snapshot = TestBlockchain.GetTestSnapshotCache().CloneCache();
+
+            // Policy ActiveIn is null → always active.
+            Assert.IsTrue(NativeContract.Policy.IsActive(settings, snapshot, 0));
+
+            // Config-managed: honor Hardforks; omit => treated as active from genesis.
+            Assert.IsTrue(NativeContract.CryptoLib.IsActive(settings, snapshot, 0));
+            var omitLater = settings with
+            {
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                }.ToImmutableDictionary()
+            };
+            Assert.IsTrue(NativeContract.CryptoLib.IsActive(omitLater, snapshot, 0));
+        }
+
+        [TestMethod]
+        public void TestGetContractState_WithSnapshot()
+        {
+            var settings = TestProtocolSettings.Default;
+            var snapshot = TestBlockchain.GetTestSnapshotCache().CloneCache();
+            var state = NativeContract.Policy.GetContractState(settings, snapshot, 0);
+            Assert.AreEqual(NativeContract.Policy.Hash, state.Hash);
+            Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == "getHardfork"));
         }
 
         [TestMethod]

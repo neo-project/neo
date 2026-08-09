@@ -13,6 +13,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -127,6 +129,133 @@ namespace Neo.UnitTests
             File.WriteAllText(file, json);
             Assert.ThrowsExactly<ArgumentException>(() => _ = ProtocolSettings.Load(file));
             File.Delete(file);
+        }
+
+        [TestMethod]
+        public void HardforkDebugOverrides_RejectConfigManagedHardfork()
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                Network = 0x4E455654u,
+                HardforkDebugOverrides = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Huyao, 0 }
+                }.ToImmutableDictionary()
+            };
+
+            var ex = Assert.ThrowsExactly<ArgumentException>(() =>
+                ProtocolSettings.ValidateHardforkDebugOverrides(settings));
+            Assert.Contains("cannot include", ex.Message);
+            Assert.Contains("HF_Huyao", ex.Message);
+        }
+
+        [TestMethod]
+        public void HardforkDebugOverrides_RejectHeightConflictWithHardforks()
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                Network = 0x4E455654u,
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Iara, 10),
+                HardforkDebugOverrides = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Iara, 25 }
+                }.ToImmutableDictionary()
+            };
+
+            var ex = Assert.ThrowsExactly<ArgumentException>(() =>
+                ProtocolSettings.ValidateHardforkDebugOverrides(settings));
+            Assert.Contains("disagree", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [TestMethod]
+        public void HardforkDebugOverrides_EmptyIsNoOp()
+        {
+            ProtocolSettings.ValidateHardforkDebugOverrides(TestProtocolSettings.Default);
+            Assert.IsEmpty(TestProtocolSettings.Default.HardforkDebugOverrides);
+        }
+
+        [TestMethod]
+        public void DetectHardforkConfigDivergence_AlignedAndUnset()
+        {
+            var a = TestProtocolSettings.Default with
+            {
+                Network = 0x4E455654u,
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                }.ToImmutableDictionary()
+            };
+            var b = a with { };
+            Assert.IsEmpty(ProtocolSettings.DetectHardforkConfigDivergence(a, b));
+
+            var canonicalMissing = TestProtocolSettings.Default with
+            {
+                Network = 0x4E455654u,
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                }.ToImmutableDictionary()
+            };
+            var issues = ProtocolSettings.DetectHardforkConfigDivergence(a, canonicalMissing);
+            Assert.IsTrue(issues.Any(i => i.Contains("HF_Basilisk") && i.Contains("unset")));
+
+            // Post-Huyao heights are not compared (Policy-managed).
+            var withIara = a with
+            {
+                Hardforks = a.Hardforks.Add(Hardfork.HF_Iara, 99)
+            };
+            Assert.IsEmpty(ProtocolSettings.DetectHardforkConfigDivergence(withIara, a));
+        }
+
+        [TestMethod]
+        public void Load_HardforkDebugOverrides_FromJson()
+        {
+            // Network is private (not MainNet magic); include continuous Hardforks through Huyao so Load succeeds.
+            string json = """
+            {
+                "ProtocolConfiguration": {
+                    "Network": 1313104468,
+                    "AddressVersion": 53,
+                    "MillisecondsPerBlock": 15000,
+                    "MaxTransactionsPerBlock": 512,
+                    "MemoryPoolMaxTransactions": 50000,
+                    "MaxTraceableBlocks": 2102400,
+                    "Hardforks": {
+                        "HF_Aspidochelone": 0,
+                        "HF_Basilisk": 0,
+                        "HF_Cockatrice": 0,
+                        "HF_Domovoi": 0,
+                        "HF_Echidna": 0,
+                        "HF_Faun": 0,
+                        "HF_Gorgon": 0,
+                        "HF_Huyao": 0
+                    },
+                    "HardforkDebugOverrides": {
+                        "HF_Iara": 42
+                    },
+                    "InitialGasDistribution": 5200000000000000,
+                    "ValidatorsCount": 7,
+                    "StandbyCommittee": [
+                        "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"
+                    ],
+                    "SeedList": [ "seed1.neo.org:10333" ]
+                }
+            }
+            """;
+            var file = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(file, json);
+                var settings = ProtocolSettings.Load(file);
+                Assert.AreEqual(1, settings.HardforkDebugOverrides.Count);
+                Assert.AreEqual(42u, settings.HardforkDebugOverrides[Hardfork.HF_Iara]);
+                Assert.IsFalse(settings.IsWellKnownPublicNetwork);
+            }
+            finally
+            {
+                File.Delete(file);
+            }
         }
 
         internal static string CreateHFSettings(string hf)
