@@ -125,15 +125,17 @@ namespace Neo.UnitTests.Network.P2P
 
         /// <summary>
         /// Consumes outbound Tcp.Write frames produced by TaskManager after Register, acking each.
+        /// Bounded loop + fixed idle wait (no <c>while (true)</c>).
         /// </summary>
         private static void DrainTaskManagerOutbound(
             TestActorRef<RemoteNode> remote,
             TestProbe connection,
             TestProbe sender,
-            TimeSpan? quiet = null)
+            TimeSpan? quiet = null,
+            int maxMessages = 32)
         {
             var idle = quiet ?? TimeSpan.FromMilliseconds(400);
-            while (true)
+            for (var i = 0; i < maxMessages; i++)
             {
                 var next = connection.ReceiveOne(idle);
                 if (next is null) return;
@@ -145,6 +147,7 @@ namespace Neo.UnitTests.Network.P2P
                 // Unexpected non-Write; put back is not supported — fail loudly.
                 Assert.Fail($"Unexpected message while draining TaskManager outbound: {next.GetType().Name}");
             }
+            Assert.Fail($"Drained {maxMessages} outbound messages without a quiet period; possible runaway TaskManager traffic.");
         }
 
         /// <summary>
