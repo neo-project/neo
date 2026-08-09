@@ -16,6 +16,7 @@ using Neo.Extensions;
 using Neo.Persistence;
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Numerics;
 
@@ -99,7 +100,7 @@ namespace Neo.SmartContract.Native
             if (limit == 0) return ContractTask.CompletedTask;
 
             // Materialize candidates first — never mutate the store while iterating Find/Seek.
-            var expired = new System.Collections.Generic.List<(StorageKey ExpireKey, UInt160 Contract, byte[] UserKey)>();
+            var expired = new List<(StorageKey ExpireKey, UInt160 Contract, byte[] UserKey)>();
             foreach (var (storageKey, _) in engine.SnapshotCache.Find(CreateStorageKey(Prefix_Expire)))
             {
                 if (expired.Count >= limit) break;
@@ -283,7 +284,7 @@ namespace Neo.SmartContract.Native
             engine.AddFee(engine.StoragePrice * storageBytes, true);
 
             engine.SendNotification(Hash, "Put",
-                new VM.Types.Array { contract.ToArray(), key, expireTime });
+                [contract.ToArray(), key, expireTime]);
         }
 
         private byte[]? GetInternal(ApplicationEngine engine, UInt160 contract, byte[] key)
@@ -310,7 +311,7 @@ namespace Neo.SmartContract.Native
             engine.SnapshotCache.Delete(CreateExpireKey(expireTime, contract, key));
 
             engine.SendNotification(Hash, "Delete",
-                new VM.Types.Array { contract.ToArray(), key });
+                [contract.ToArray(), key]);
             return true;
         }
 
@@ -337,7 +338,7 @@ namespace Neo.SmartContract.Native
             {
                 return Policy.GetMillisecondsPerBlock(engine.SnapshotCache);
             }
-            catch (System.Collections.Generic.KeyNotFoundException)
+            catch (KeyNotFoundException)
             {
                 // Policy value not yet available (e.g. edge genesis); fall back to protocol settings.
                 return engine.ProtocolSettings.MillisecondsPerBlock;
