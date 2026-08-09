@@ -16,11 +16,11 @@ using System.IO;
 
 namespace Neo.UnitTests.Plugins
 {
+    // Plugin.Plugins is process-wide shared state; keep these tests sequential.
     [TestClass]
+    [DoNotParallelize]
     public class UT_Plugin_Coverage
     {
-        private static readonly object s_locker = new();
-
         private sealed class MessageThrowingPlugin : Plugin
         {
             private readonly UnhandledExceptionPolicy _policy;
@@ -49,6 +49,12 @@ namespace Neo.UnitTests.Plugins
             public override string Name => "DescribePlugin";
         }
 
+        [TestCleanup]
+        public void CleanupPlugins()
+        {
+            Plugin.Plugins.Clear();
+        }
+
         [TestMethod]
         public void Description_Path_RootPath_And_Dispose()
         {
@@ -73,64 +79,49 @@ namespace Neo.UnitTests.Plugins
         [TestMethod]
         public void SendMessage_StopPlugin_StopsOnMessageException()
         {
-            lock (s_locker)
-            {
-                Plugin.Plugins.Clear();
-                var plugin = new MessageThrowingPlugin(UnhandledExceptionPolicy.StopPlugin);
-                Assert.IsFalse(plugin.IsStopped);
-                Assert.IsFalse(Plugin.SendMessage("x"));
-                Assert.IsTrue(plugin.IsStopped);
-            }
+            Plugin.Plugins.Clear();
+            var plugin = new MessageThrowingPlugin(UnhandledExceptionPolicy.StopPlugin);
+            Assert.IsFalse(plugin.IsStopped);
+            Assert.IsFalse(Plugin.SendMessage("x"));
+            Assert.IsTrue(plugin.IsStopped);
         }
 
         [TestMethod]
         public void SendMessage_Ignore_ContinuesAfterMessageException()
         {
-            lock (s_locker)
-            {
-                Plugin.Plugins.Clear();
-                var plugin = new MessageThrowingPlugin(UnhandledExceptionPolicy.Ignore);
-                Assert.IsFalse(Plugin.SendMessage("x"));
-                Assert.IsFalse(plugin.IsStopped);
-            }
+            Plugin.Plugins.Clear();
+            var plugin = new MessageThrowingPlugin(UnhandledExceptionPolicy.Ignore);
+            Assert.IsFalse(Plugin.SendMessage("x"));
+            Assert.IsFalse(plugin.IsStopped);
         }
 
         [TestMethod]
         public void SendMessage_StopNode_Rethrows()
         {
-            lock (s_locker)
-            {
-                Plugin.Plugins.Clear();
-                _ = new MessageThrowingPlugin(UnhandledExceptionPolicy.StopNode);
-                Assert.ThrowsExactly<InvalidOperationException>(() => Plugin.SendMessage("x"));
-            }
+            Plugin.Plugins.Clear();
+            _ = new MessageThrowingPlugin(UnhandledExceptionPolicy.StopNode);
+            Assert.ThrowsExactly<InvalidOperationException>(() => Plugin.SendMessage("x"));
         }
 
         [TestMethod]
         public void SendMessage_Handled_StopsPropagation()
         {
-            lock (s_locker)
-            {
-                Plugin.Plugins.Clear();
-                var first = new MessageHandlingPlugin();
-                var second = new MessageThrowingPlugin(UnhandledExceptionPolicy.StopNode);
-                Assert.IsTrue(Plugin.SendMessage("payload"));
-                Assert.AreEqual("payload", first.LastMessage);
-                // second must not run because first handled the message
-                Assert.IsFalse(second.IsStopped);
-            }
+            Plugin.Plugins.Clear();
+            var first = new MessageHandlingPlugin();
+            var second = new MessageThrowingPlugin(UnhandledExceptionPolicy.StopNode);
+            Assert.IsTrue(Plugin.SendMessage("payload"));
+            Assert.AreEqual("payload", first.LastMessage);
+            // second must not run because first handled the message
+            Assert.IsFalse(second.IsStopped);
         }
 
         [TestMethod]
         public void SendMessage_SkipsStoppedPlugins()
         {
-            lock (s_locker)
-            {
-                Plugin.Plugins.Clear();
-                var stopped = new MessageHandlingPlugin { IsStopped = true };
-                Assert.IsFalse(Plugin.SendMessage("ignored"));
-                Assert.IsNull(stopped.LastMessage);
-            }
+            Plugin.Plugins.Clear();
+            var stopped = new MessageHandlingPlugin { IsStopped = true };
+            Assert.IsFalse(Plugin.SendMessage("ignored"));
+            Assert.IsNull(stopped.LastMessage);
         }
 
         [TestMethod]
