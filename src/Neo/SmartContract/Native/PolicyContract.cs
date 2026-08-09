@@ -18,6 +18,7 @@ using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
@@ -102,6 +103,12 @@ namespace Neo.SmartContract.Native
         /// </summary>
         private const byte Prefix_Hardfork = 24;
 
+        /// <summary>
+        /// Storage prefix for the on-chain public-network marker (neo#4580).
+        /// Value: network magic sealed as public (disallows hardfork config overrides).
+        /// </summary>
+        private const byte Prefix_PublicNetwork = 25;
+
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
@@ -117,6 +124,9 @@ namespace Neo.SmartContract.Native
         private const string RecoveredFundEventName = "RecoveredFund";
         private const string WhitelistChangedEventName = "WhitelistFeeChanged";
         private const string HardforkEnabledEventName = "HardforkEnabled";
+        private const string PublicNetworkSetEventName = "PublicNetworkSet";
+
+        private readonly StorageKey _publicNetwork;
 
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
             "old", ContractParameterType.Integer,
@@ -133,6 +143,9 @@ namespace Neo.SmartContract.Native
             "hardfork", ContractParameterType.Integer,
             "height", ContractParameterType.Integer
         )]
+        [ContractEvent(Hardfork.HF_Huyao, 4, name: PublicNetworkSetEventName,
+            "network", ContractParameterType.Integer
+        )]
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
@@ -141,6 +154,7 @@ namespace Neo.SmartContract.Native
             _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
             _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
             _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
+            _publicNetwork = CreateStorageKey(Prefix_PublicNetwork);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -718,6 +732,39 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Returns the sealed public-network magic, or -1 if the on-chain public marker is not set.
+        /// </summary>
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetPublicNetwork(IReadOnlyStore snapshot)
+        {
+            if (!TryGetPublicNetworkMarker(snapshot, out var network))
+                return -1;
+            return network;
+        }
+
+        /// <summary>
+        /// Seals this chain as a public network. Once set, local hardfork debug overrides and
+        /// post-Huyao <see cref="ProtocolSettings.Hardforks"/> entries cannot override Policy activation.
+        /// </summary>
+        /// <remarks>
+        /// Can only be set once. Stores <see cref="ProtocolSettings.Network"/> from the calling node
+        /// so peers can verify identity. Well-known public magics are already treated as public
+        /// without this marker; the marker covers future public nets and explicit chain sealing.
+        /// </remarks>
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        private void SetPublicNetwork(ApplicationEngine engine)
+        {
+            AssertCommittee(engine);
+
+            if (engine.SnapshotCache.Contains(_publicNetwork))
+                throw new InvalidOperationException("Public network marker is already set and cannot be changed.");
+
+            uint network = engine.ProtocolSettings.Network;
+            engine.SnapshotCache.Add(_publicNetwork, new StorageItem(network));
+            engine.SendNotification(Hash, PublicNetworkSetEventName, [new Integer(network)]);
+        }
+
+        /// <summary>
         /// Enables a hardfork via committee-signed transaction. Activation takes effect
         /// from the next block after the persisting block that includes this call.
         /// </summary>
@@ -740,15 +787,24 @@ namespace Neo.SmartContract.Native
             var hf = (Hardfork)hardfork;
 
             // Config-managed hardforks (through Huyao) cannot be activated via Policy.
-            if (hf <= Hardfork.HF_Huyao)
+            if (hf <= ProtocolSettings.LastConfigManagedHardfork)
                 throw new InvalidOperationException(
                     $"Hardfork {hf} must be activated via ProtocolSettings configuration, not Policy.");
 
             AssertCommittee(engine);
 
-            if (engine.ProtocolSettings.Hardforks.ContainsKey(hf))
-                throw new InvalidOperationException(
-                    $"Hardfork {hf} is already managed by ProtocolSettings configuration.");
+            // On private/dev nets, refuse Policy enable if local debug override or Hardforks already schedules it.
+            // On public nets, local Hardforks/debug entries for post-Huyao HFs are not authoritative.
+            if (!IsPublicNetwork(engine.ProtocolSettings, engine.SnapshotCache))
+            {
+                if (engine.ProtocolSettings.HardforkDebugOverrides.ContainsKey(hf))
+                    throw new InvalidOperationException(
+                        $"Hardfork {hf} is already scheduled via HardforkDebugOverrides; remove the debug override before enabling on-chain.");
+
+                if (engine.ProtocolSettings.Hardforks.ContainsKey(hf))
+                    throw new InvalidOperationException(
+                        $"Hardfork {hf} is already managed by ProtocolSettings configuration.");
+            }
 
             var key = CreateStorageKey(Prefix_Hardfork, hardfork);
             if (engine.SnapshotCache.Contains(key))
@@ -788,6 +844,36 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Tries to read the on-chain public-network marker.
+        /// </summary>
+        public bool TryGetPublicNetworkMarker(IReadOnlyStore snapshot, out uint network)
+        {
+            if (!snapshot.TryGet(_publicNetwork, out var item))
+            {
+                network = 0;
+                return false;
+            }
+
+            network = (uint)(BigInteger)item;
+            return true;
+        }
+
+        /// <summary>
+        /// Returns whether hardfork activation must follow the public-network rules
+        /// (Policy-only for post-Huyao; no local debug override).
+        /// </summary>
+        public static bool IsPublicNetwork(ProtocolSettings settings, IReadOnlyStore? snapshot)
+        {
+            if (settings.IsWellKnownPublicNetwork)
+                return true;
+
+            if (snapshot is not null && Policy.TryGetPublicNetworkMarker(snapshot, out _))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
         /// Returns whether a hardfork is enabled at <paramref name="index"/> according to on-chain Policy state.
         /// </summary>
         public bool IsHardforkEnabled(IReadOnlyStore snapshot, Hardfork hardfork, uint index)
@@ -796,25 +882,126 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Combined hardfork check: protocol configuration first, then on-chain Policy activation.
+        /// Resolves the activation height for a hardfork under public/private rules (neo#4580).
+        /// </summary>
+        /// <returns><see langword="true"/> if an activation height is defined.</returns>
+        public static bool TryGetActivationHeight(ProtocolSettings settings, IReadOnlyStore? snapshot, Hardfork hardfork, out uint height)
+        {
+            // Through Huyao: ProtocolSettings.Hardforks only.
+            if (hardfork <= ProtocolSettings.LastConfigManagedHardfork)
+            {
+                if (settings.Hardforks.TryGetValue(hardfork, out height))
+                    return true;
+                height = 0;
+                return false;
+            }
+
+            bool isPublic = IsPublicNetwork(settings, snapshot);
+
+            // Public networks: on-chain Policy is the only source for post-Huyao hardforks.
+            // Local Hardforks / HardforkDebugOverrides are intentionally ignored.
+            if (!isPublic)
+            {
+                // Private/dev: HardforkDebugOverrides (neo-express), then Hardforks, then Policy.
+                if (settings.HardforkDebugOverrides.TryGetValue(hardfork, out height))
+                    return true;
+
+                if (settings.Hardforks.TryGetValue(hardfork, out height))
+                    return true;
+            }
+
+            if (snapshot is not null && Policy.TryGetHardforkHeight(snapshot, hardfork, out height))
+                return true;
+
+            height = 0;
+            return false;
+        }
+
+        /// <summary>
+        /// Combined hardfork check: config-managed HFs, private debug overrides, or on-chain Policy.
         /// </summary>
         /// <remarks>
-        /// Configuration remains authoritative for hardforks listed in <see cref="ProtocolSettings.Hardforks"/>
-        /// (including private/dev nets that schedule hardforks locally). When a hardfork is present in
-        /// configuration, on-chain Policy state is ignored for that hardfork. Hardforks absent from
-        /// configuration may be activated by committee via <see cref="EnableHardfork"/>.
+        /// <para>
+        /// Hardforks through <see cref="ProtocolSettings.LastConfigManagedHardfork"/> use
+        /// <see cref="ProtocolSettings.Hardforks"/> only.
+        /// </para>
+        /// <para>
+        /// Later hardforks on public networks (well-known magic or on-chain public marker) use
+        /// Policy storage only — local config cannot advance or delay activation relative to peers.
+        /// </para>
+        /// <para>
+        /// On private/dev nets, <see cref="ProtocolSettings.HardforkDebugOverrides"/> may schedule
+        /// post-Huyao hardforks without a committee transaction (neo-express ergonomics).
+        /// </para>
         /// </remarks>
         public static bool IsHardforkEnabled(ProtocolSettings settings, IReadOnlyStore? snapshot, Hardfork hardfork, uint index)
         {
-            // Config is the sole source of truth when the hardfork is listed there
-            // (private/dev override and historical height-based activation).
-            if (settings.Hardforks.ContainsKey(hardfork))
+            if (hardfork <= ProtocolSettings.LastConfigManagedHardfork)
                 return settings.IsHardforkEnabled(hardfork, index);
 
-            if (snapshot is null)
+            if (!TryGetActivationHeight(settings, snapshot, hardfork, out var height))
                 return false;
 
-            return Policy.IsHardforkEnabled(snapshot, hardfork, index);
+            return index >= height;
+        }
+
+        /// <summary>
+        /// Validates hardfork configuration for hard failures that must not be ignored.
+        /// Throws when debug overrides are present on a public network (well-known magic or on-chain marker).
+        /// </summary>
+        public static void ValidateHardforkConfiguration(ProtocolSettings settings, IReadOnlyStore? snapshot)
+        {
+            // Shape checks (also performed at Load for file-based config).
+            ProtocolSettings.ValidateHardforkDebugOverrides(settings);
+
+            if (settings.HardforkDebugOverrides.Count > 0 && IsPublicNetwork(settings, snapshot))
+            {
+                throw new InvalidOperationException(
+                    "HardforkDebugOverrides cannot be used on a public network " +
+                    "(well-known magic or on-chain public network marker). " +
+                    "Public chains activate post-Huyao hardforks only via Policy.enableHardfork.");
+            }
+        }
+
+        /// <summary>
+        /// Returns non-fatal misconfiguration issues that can cause operator confusion or peer divergence
+        /// if config-managed hardfork heights differ, or if public-net Hardforks entries disagree with Policy.
+        /// </summary>
+        public static IReadOnlyList<string> GetHardforkConfigurationIssues(ProtocolSettings settings, IReadOnlyStore? snapshot)
+        {
+            var issues = new List<string>();
+
+            if (settings.HardforkDebugOverrides.Count > 0 && IsPublicNetwork(settings, snapshot))
+            {
+                issues.Add("HardforkDebugOverrides are set but this is a public network; overrides are rejected.");
+            }
+
+            if (!IsPublicNetwork(settings, snapshot) || snapshot is null)
+                return issues;
+
+            foreach (var (hf, configHeight) in settings.Hardforks)
+            {
+                if (hf <= ProtocolSettings.LastConfigManagedHardfork)
+                    continue;
+
+                // Post-Huyao Hardforks on public nets are ignored for activation; report mismatch vs Policy.
+                if (!Policy.TryGetHardforkHeight(snapshot, hf, out var policyHeight))
+                {
+                    issues.Add(
+                        $"{hf}: listed in ProtocolSettings.Hardforks at {configHeight} but not enabled on-chain via Policy " +
+                        "(public network ignores local Hardforks for post-Huyao activation).");
+                    continue;
+                }
+
+                if (policyHeight != configHeight)
+                {
+                    issues.Add(
+                        $"{hf}: ProtocolSettings height {configHeight} != Policy height {policyHeight} " +
+                        "(public network uses Policy only).");
+                }
+            }
+
+            return issues;
         }
 
         #endregion

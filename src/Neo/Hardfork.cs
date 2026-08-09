@@ -21,6 +21,10 @@ namespace Neo
         HF_Faun,
         HF_Gorgon,
         HF_Huyao,
+        /// <summary>
+        /// First hardfork that can be activated via Policy.enableHardfork (neo#4580).
+        /// No protocol behavior is attached yet; reserved for committee/Policy activation.
+        /// </summary>
         HF_Iara
     }
 }

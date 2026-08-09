@@ -896,13 +896,34 @@ namespace Neo.UnitTests.SmartContract.Native
         /// </summary>
         private const byte Prefix_Hardfork = 24;
 
+        /// <summary>
+        /// Prefix used by Policy for the public-network marker (must match PolicyContract).
+        /// </summary>
+        private const byte Prefix_PublicNetwork = 25;
+
+        /// <summary>Private/dev network magic (not a well-known public network).</summary>
+        private const uint PrivateNetworkMagic = 0x4E455654u; // "NETV"
+
+        private static ImmutableDictionary<Hardfork, uint> ConfigThroughHuyao(uint height = 0) =>
+            new Dictionary<Hardfork, uint>
+            {
+                { Hardfork.HF_Aspidochelone, height },
+                { Hardfork.HF_Basilisk, height },
+                { Hardfork.HF_Cockatrice, height },
+                { Hardfork.HF_Domovoi, height },
+                { Hardfork.HF_Echidna, height },
+                { Hardfork.HF_Faun, height },
+                { Hardfork.HF_Gorgon, height },
+                { Hardfork.HF_Huyao, height },
+            }.ToImmutableDictionary();
+
         [TestMethod]
         public void Check_GetHardfork_DefaultUnset()
         {
             var snapshot = _snapshotCache.CloneCache();
 
             var ret = NativeContract.Policy.Call(snapshot, "getHardfork",
-                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Huyao });
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Iara });
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(-1, ret.GetInteger());
         }
@@ -913,13 +934,10 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshotCache.CloneCache();
             var block = CreateBlock(1000);
 
-            // Without committee witness the call must fail. With only Huyao available as a known
-            // hardfork id, rejection may be config-managed or committee depending on check order;
-            // either way the transaction does not succeed.
             Assert.ThrowsExactly<InvalidOperationException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
-                    "enableHardfork", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Huyao });
+                    "enableHardfork", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Iara });
             });
         }
 
@@ -957,52 +975,156 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_PolicyHardfork_StorageAndCombinedChecker()
+        public void Check_EnableHardfork_Iara_NextBlockActivation_OnPublicNetwork()
         {
+            // TestProtocolSettings.Default uses MainNet magic → public network (Policy-only for Iara).
             var snapshot = _snapshotCache.CloneCache();
+            const uint blockIndex = 1000;
+            var block = CreateBlock(blockIndex);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
-            // Simulate an on-chain activation for Huyao at height 500 (as if written by a future enable path / migration).
-            const uint activationHeight = 500;
-            var key = StorageKey.Create(NativeContract.Policy.Id, Prefix_Hardfork, (byte)Hardfork.HF_Huyao);
-            snapshot.Add(key, new StorageItem(activationHeight));
-
-            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Huyao, out var height));
-            Assert.AreEqual(activationHeight, height);
-
-            Assert.IsFalse(NativeContract.Policy.IsHardforkEnabled(snapshot, Hardfork.HF_Huyao, activationHeight - 1));
-            Assert.IsTrue(NativeContract.Policy.IsHardforkEnabled(snapshot, Hardfork.HF_Huyao, activationHeight));
-            Assert.IsTrue(NativeContract.Policy.IsHardforkEnabled(snapshot, Hardfork.HF_Huyao, activationHeight + 10));
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "enableHardfork", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Iara });
 
             var ret = NativeContract.Policy.Call(snapshot, "getHardfork",
-                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Huyao });
-            Assert.AreEqual(activationHeight, ret.GetInteger());
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)Hardfork.HF_Iara });
+            Assert.AreEqual(blockIndex + 1, ret.GetInteger());
 
-            // Settings without Huyao: Policy path alone enables the hardfork.
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Iara, blockIndex));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Iara, blockIndex + 1));
+        }
+
+        [TestMethod]
+        public void Check_PublicNetwork_IgnoresLocalPostHuyaoHardforks()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            // MainNet magic: public. Local Hardforks schedule Iara at 10; Policy has no entry.
             var settings = TestProtocolSettings.Default with
             {
-                Hardforks = new Dictionary<Hardfork, uint>
+                Hardforks = ConfigThroughHuyao().Add(Hardfork.HF_Iara, 10)
+            };
+
+            Assert.IsTrue(settings.IsWellKnownPublicNetwork);
+            Assert.IsTrue(PolicyContract.IsPublicNetwork(settings, snapshot));
+
+            // Local config alone would enable at 10, but public rules ignore it.
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Iara, 10));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 10));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 1_000_000));
+
+            // Policy enables at 50 → only then active.
+            snapshot.Add(StorageKey.Create(NativeContract.Policy.Id, Prefix_Hardfork, (byte)Hardfork.HF_Iara), new StorageItem(50u));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 49));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 50));
+
+            var issues = PolicyContract.GetHardforkConfigurationIssues(settings, snapshot);
+            Assert.IsTrue(issues.Any(i => i.Contains("HF_Iara") && i.Contains("!=")));
+        }
+
+        [TestMethod]
+        public void Check_PrivateNetwork_HardforkDebugOverrides()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var settings = TestProtocolSettings.Default with
+            {
+                Network = PrivateNetworkMagic,
+                Hardforks = ConfigThroughHuyao(),
+                HardforkDebugOverrides = new Dictionary<Hardfork, uint>
                 {
-                    { Hardfork.HF_Aspidochelone, 0 },
-                    { Hardfork.HF_Basilisk, 0 },
-                    { Hardfork.HF_Cockatrice, 0 },
-                    { Hardfork.HF_Domovoi, 0 },
-                    { Hardfork.HF_Echidna, 0 },
-                    { Hardfork.HF_Faun, 0 },
-                    { Hardfork.HF_Gorgon, 0 },
+                    { Hardfork.HF_Iara, 25 }
                 }.ToImmutableDictionary()
             };
 
-            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Huyao, activationHeight));
-            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Huyao, activationHeight));
-            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Huyao, activationHeight - 1));
+            Assert.IsFalse(settings.IsWellKnownPublicNetwork);
+            Assert.IsFalse(PolicyContract.IsPublicNetwork(settings, snapshot));
+            ProtocolSettings.ValidateHardforkDebugOverrides(settings); // must not throw
 
-            // Config still wins when present (even if Policy height would differ).
-            var settingsWithHuyao = settings with
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 24));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 25));
+        }
+
+        [TestMethod]
+        public void Check_HardforkDebugOverrides_ForbiddenOnWellKnownPublicNetwork()
+        {
+            var settings = TestProtocolSettings.Default with
             {
-                Hardforks = settings.Hardforks.Add(Hardfork.HF_Huyao, 1000)
+                HardforkDebugOverrides = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Iara, 0 }
+                }.ToImmutableDictionary()
             };
-            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settingsWithHuyao, snapshot, Hardfork.HF_Huyao, 500));
-            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settingsWithHuyao, snapshot, Hardfork.HF_Huyao, 1000));
+
+            var ex = Assert.ThrowsExactly<ArgumentException>(() =>
+                ProtocolSettings.ValidateHardforkDebugOverrides(settings));
+            Assert.Contains("not allowed on well-known public network", ex.Message);
+        }
+
+        [TestMethod]
+        public void Check_HardforkDebugOverrides_ForbiddenWhenPublicMarkerSet()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            snapshot.Add(StorageKey.Create(NativeContract.Policy.Id, Prefix_PublicNetwork), new StorageItem(PrivateNetworkMagic));
+
+            var settings = TestProtocolSettings.Default with
+            {
+                Network = PrivateNetworkMagic,
+                Hardforks = ConfigThroughHuyao(),
+                HardforkDebugOverrides = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Iara, 0 }
+                }.ToImmutableDictionary()
+            };
+
+            // Shape OK for private magic, but on-chain public marker forbids overrides.
+            ProtocolSettings.ValidateHardforkDebugOverrides(settings);
+
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+                PolicyContract.ValidateHardforkConfiguration(settings, snapshot));
+            Assert.Contains("public network", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [TestMethod]
+        public void Check_SetPublicNetwork_CommitteeOnly_Once()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(100);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            Assert.AreEqual(-1, NativeContract.Policy.Call(snapshot, "getPublicNetwork").GetInteger());
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block, "setPublicNetwork");
+            });
+
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block, "setPublicNetwork");
+            Assert.AreEqual(TestProtocolSettings.Default.Network, (uint)NativeContract.Policy.Call(snapshot, "getPublicNetwork").GetInteger());
+
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block, "setPublicNetwork");
+            });
+            Assert.Contains("already set", ex.Message);
+        }
+
+        [TestMethod]
+        public void Check_OnChainPublicMarker_MakesNetworkPublic()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var settings = TestProtocolSettings.Default with
+            {
+                Network = PrivateNetworkMagic,
+                Hardforks = ConfigThroughHuyao().Add(Hardfork.HF_Iara, 0)
+            };
+
+            Assert.IsFalse(PolicyContract.IsPublicNetwork(settings, snapshot));
+            // Private: Hardforks can schedule Iara.
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 0));
+
+            snapshot.Add(StorageKey.Create(NativeContract.Policy.Id, Prefix_PublicNetwork), new StorageItem(PrivateNetworkMagic));
+            Assert.IsTrue(PolicyContract.IsPublicNetwork(settings, snapshot));
+            // After marker: local Hardforks for Iara ignored until Policy enables.
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 0));
         }
 
         [TestMethod]
@@ -1010,65 +1132,44 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = _snapshotCache.CloneCache();
             const uint activationHeight = 42;
-            var key = StorageKey.Create(NativeContract.Policy.Id, Prefix_Hardfork, (byte)Hardfork.HF_Huyao);
-            snapshot.Add(key, new StorageItem(activationHeight));
+            snapshot.Add(StorageKey.Create(NativeContract.Policy.Id, Prefix_Hardfork, (byte)Hardfork.HF_Iara),
+                new StorageItem(activationHeight));
 
-            var settings = TestProtocolSettings.Default with
-            {
-                Hardforks = new Dictionary<Hardfork, uint>
-                {
-                    { Hardfork.HF_Aspidochelone, 0 },
-                    { Hardfork.HF_Basilisk, 0 },
-                    { Hardfork.HF_Cockatrice, 0 },
-                    { Hardfork.HF_Domovoi, 0 },
-                    { Hardfork.HF_Echidna, 0 },
-                    { Hardfork.HF_Faun, 0 },
-                    { Hardfork.HF_Gorgon, 0 },
-                }.ToImmutableDictionary()
-            };
+            // Public (MainNet magic): Policy only for Iara.
+            var settings = TestProtocolSettings.Default with { Hardforks = ConfigThroughHuyao() };
 
             var blockBefore = CreateBlock(activationHeight - 1);
             using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, blockBefore, settings))
             {
-                Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+                Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Iara));
             }
 
             var blockAt = CreateBlock(activationHeight);
             using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, blockAt, settings))
             {
-                Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+                Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Iara));
             }
         }
 
         [TestMethod]
-        public void Check_IsInitializeBlock_PolicyHardfork()
+        public void Check_DetectHardforkConfigDivergence_HistoricalHeights()
         {
-            var snapshot = _snapshotCache.CloneCache();
-            const uint activationHeight = 77;
-            var key = StorageKey.Create(NativeContract.Policy.Id, Prefix_Hardfork, (byte)Hardfork.HF_Huyao);
-            snapshot.Add(key, new StorageItem(activationHeight));
-
-            // Settings without Huyao so only Policy can trigger initialization for it.
-            var settings = TestProtocolSettings.Default with
+            var local = TestProtocolSettings.Default with
             {
-                Hardforks = new Dictionary<Hardfork, uint>
-                {
-                    { Hardfork.HF_Aspidochelone, 0 },
-                    { Hardfork.HF_Basilisk, 0 },
-                    { Hardfork.HF_Cockatrice, 0 },
-                    { Hardfork.HF_Domovoi, 0 },
-                    { Hardfork.HF_Echidna, 0 },
-                    { Hardfork.HF_Faun, 0 },
-                    { Hardfork.HF_Gorgon, 0 },
-                }.ToImmutableDictionary()
+                Network = PrivateNetworkMagic,
+                Hardforks = ConfigThroughHuyao(0).SetItem(Hardfork.HF_Basilisk, 100)
+            };
+            var canonical = TestProtocolSettings.Default with
+            {
+                Network = PrivateNetworkMagic,
+                Hardforks = ConfigThroughHuyao(0).SetItem(Hardfork.HF_Basilisk, 200)
             };
 
-            // Policy uses HF_Huyao methods/events, so Huyao is in its used hardforks.
-            Assert.IsTrue(NativeContract.Policy.IsInitializeBlock(settings, snapshot, activationHeight, out var hfs));
-            Assert.IsNotNull(hfs);
-            Assert.IsTrue(hfs.Contains(Hardfork.HF_Huyao));
-
-            Assert.IsFalse(NativeContract.Policy.IsInitializeBlock(settings, snapshot, activationHeight + 1, out _));
+            var issues = ProtocolSettings.DetectHardforkConfigDivergence(local, canonical);
+            Assert.IsTrue(issues.Any(i => i.Contains("HF_Basilisk")));
+            // Divergent Basilisk heights ⇒ different activation at the same index.
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(local, null, Hardfork.HF_Basilisk, 150));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(canonical, null, Hardfork.HF_Basilisk, 150));
         }
 
         [TestMethod]
@@ -1077,7 +1178,10 @@ namespace Neo.UnitTests.SmartContract.Native
             var state = NativeContract.Policy.GetContractState(TestProtocolSettings.Default, 0);
             Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == "enableHardfork"));
             Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == "getHardfork"));
+            Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == "getPublicNetwork"));
+            Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == "setPublicNetwork"));
             Assert.IsTrue(state.Manifest.Abi.Events.Any(e => e.Name == "HardforkEnabled"));
+            Assert.IsTrue(state.Manifest.Abi.Events.Any(e => e.Name == "PublicNetworkSet"));
         }
 
         private static Block CreateBlock(uint index) => new()

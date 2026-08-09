@@ -309,15 +309,7 @@ namespace Neo.SmartContract.Native
             // If is in the hardfork height, add them to return array
             foreach (var hf in _usedHardforks)
             {
-                if (settings.Hardforks.TryGetValue(hf, out var activeIn))
-                {
-                    if (activeIn == index)
-                        hfs.Add(hf);
-                    continue;
-                }
-
-                // Hardfork not in ProtocolSettings: check committee Policy activation (neo#4580).
-                if (Policy.TryGetHardforkHeight(snapshot, hf, out var policyHeight) && policyHeight == index)
+                if (PolicyContract.TryGetActivationHeight(settings, snapshot, hf, out var activeIn) && activeIn == index)
                     hfs.Add(hf);
             }
 
@@ -360,19 +352,16 @@ namespace Neo.SmartContract.Native
         {
             if (ActiveIn is null) return true;
 
-            if (settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
-                return activeIn <= blockHeight;
-
-            // Not in ProtocolSettings: consult on-chain Policy activation.
-            if (snapshot is not null && Policy.TryGetHardforkHeight(snapshot, ActiveIn.Value, out activeIn))
-                return activeIn <= blockHeight;
-
-            // Legacy: hardforks through Huyao omitted from config are treated as active from genesis.
-            // Hardforks after Huyao wait for Policy (or explicit config) and stay inactive until then.
-            if (ActiveIn.Value <= Hardfork.HF_Huyao)
+            // Config-managed hardforks: honor Hardforks; omit => legacy active from genesis.
+            if (ActiveIn.Value <= ProtocolSettings.LastConfigManagedHardfork)
+            {
+                if (settings.Hardforks.TryGetValue(ActiveIn.Value, out var configHeight))
+                    return configHeight <= blockHeight;
                 return true;
+            }
 
-            return false;
+            // Post-Huyao: public Policy / private debug overrides / Hardforks (neo#4580).
+            return PolicyContract.IsHardforkEnabled(settings, snapshot, ActiveIn.Value, blockHeight);
         }
 
         /// <summary>
