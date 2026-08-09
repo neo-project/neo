@@ -406,6 +406,13 @@ namespace Neo.UnitTests.SmartContract.Native
 
             using (var script = new ScriptBuilder())
             {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "9007199254740993e+34");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "9.007199254740993e+34");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "9.07199254740993e+34");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "11039175000000000000");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "2.2218116666666666e+21");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "4.389364916666667e+34");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "9007199254740993");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "1e3");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "123");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "null");
@@ -414,11 +421,18 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.HasCount(3, engine.ResultStack);
+                Assert.HasCount(10, engine.ResultStack);
 
                 engine.ResultStack.Pop<Null>();
                 Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
                 Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 1000);
+                Assert.AreEqual("9007199254740992", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                Assert.AreEqual("43893649166666670000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                Assert.AreEqual("2221811666666666600000", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                Assert.AreEqual("11039175000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                Assert.AreEqual("90719925474099300000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                Assert.AreEqual("90071992547409940000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                Assert.AreEqual("90071992547409930000000000000000000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
             }
 
             // Error 1 - Wrong Json
