@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -309,40 +308,32 @@ namespace Neo.SmartContract
         /// The implementation of System.Runtime.GetRandom.
         /// Gets the next random number.
         /// </summary>
-        /// <returns>The next random number.</returns>
+        /// <returns>
+        /// Before <see cref="Hardfork.HF_Huyao"/>: an unsigned 128-bit value in <c>[0, 2^128)</c>.
+        /// From <see cref="Hardfork.HF_Huyao"/>: a non-negative value in <c>[0, 2^255 - 1]</c>
+        /// (255 significant bits so the result always fits Neo VM's 32-byte integer limit).
+        /// </returns>
         protected internal BigInteger GetRandom()
         {
-            Span<byte> buffer;
+            byte[] buffer;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             long price;
-            if (IsHardforkEnabled(Hardfork.HF_Faun))
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
-                var s0 = BitConverter.ToUInt64(buffer[0..8]);
-                var s1 = BitConverter.ToUInt64(buffer[8..16]);
-
-                buffer = Cryptography.Helper.Murmur128(buffer, ProtocolSettings.Network + random_times++);
-                var s2 = BitConverter.ToUInt64(buffer[0..8]);
-                var s3 = BitConverter.ToUInt64(buffer[8..16]);
-
-                // Update PRNG state.
-                ulong t = s1 << 17;
-                s2 ^= s0;
-                s3 ^= s1;
-                s1 ^= s2;
-                s0 ^= s3;
-                s2 ^= t;
-                s3 = BitOperations.RotateLeft(s3, 45);
-
-                buffer = new byte[32];
-                MemoryMarshal.Write(buffer[0..8], s0);
-                MemoryMarshal.Write(buffer[8..16], s1);
-                MemoryMarshal.Write(buffer[16..24], s2);
-                MemoryMarshal.Write(buffer[24..32], s3);
+                // Same seed construction as Aspidochelone (Network + call counter), but two
+                // independent Murmur128 draws so we get 256 bits of material without inventing
+                // a separate PRNG. Clear the high bit so the value stays in [0, 2^255 - 1]
+                // and always serializes within MaxIntegerSize (32-byte signed).
+                Span<byte> bits = stackalloc byte[32];
+                Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++)
+                    .CopyTo(bits);
+                Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++)
+                    .CopyTo(bits[16..]);
+                bits[31] &= 0x7F;
 
                 price = 1 << 13;
-                AddFee(price * ExecFeeFactor);
-                return new BigInteger(buffer, isUnsigned: true) % (BigInteger.One << 255) - BigInteger.One;
+                AddFee(price * _execFeeFactor, false);
+                return new BigInteger(bits);
             }
             else if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {

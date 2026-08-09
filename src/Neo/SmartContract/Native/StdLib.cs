@@ -276,7 +276,7 @@ namespace Neo.SmartContract.Native
             return count;
         }
 
-        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 13)]
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 13)]
         private static BigInteger GetRandom(ApplicationEngine engine, BigInteger maxValue)
         {
             if (maxValue.Sign < 0)

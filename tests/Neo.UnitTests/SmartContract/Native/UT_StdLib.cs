@@ -18,7 +18,9 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using Array = System.Array;
 
@@ -529,55 +531,53 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
-            using (var script = new ScriptBuilder())
-            {
-                // Test encoding
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 255) - BigInteger.One);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 127) - BigInteger.One);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 63) - BigInteger.One);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 31) - BigInteger.One);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 15) - BigInteger.One);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 7) - BigInteger.One);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Zero);
+            using var script = new ScriptBuilder();
+            // Test encoding
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 255) - BigInteger.One);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 127) - BigInteger.One);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 63) - BigInteger.One);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 31) - BigInteger.One);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 15) - BigInteger.One);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", (BigInteger.One << 7) - BigInteger.One);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Zero);
 
-                var tx = TransactionBuilder.CreateEmpty()
-                    .Nonce((uint)Random.Shared.Next())
-                    .Build();
+            var tx = TransactionBuilder.CreateEmpty()
+                .Nonce((uint)Random.Shared.Next())
+                .Build();
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default, gas: long.MaxValue);
-                engine.LoadScript(script.ToArray());
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default, gas: long.MaxValue);
+            engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(7, engine.ResultStack.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(7, engine.ResultStack.Count);
 
-                var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue <= 0);
-                Assert.IsTrue(actualValue >= BigInteger.Zero);
+            var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+            Assert.IsLessThanOrEqualTo(BigInteger.Zero, actualValue);
+            Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, actualValue);
 
-                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < (BigInteger.One << 7) - BigInteger.One);
-                Assert.IsTrue(actualValue >= BigInteger.Zero);
+            actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+            Assert.IsLessThan((BigInteger.One << 7) - BigInteger.One, actualValue);
+            Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, actualValue);
 
-                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < (BigInteger.One << 15) - BigInteger.One);
-                Assert.IsTrue(actualValue >= BigInteger.Zero);
+            actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+            Assert.IsLessThan((BigInteger.One << 15) - BigInteger.One, actualValue);
+            Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, actualValue);
 
-                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < (BigInteger.One << 31) - BigInteger.One);
-                Assert.IsTrue(actualValue >= BigInteger.Zero);
+            actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+            Assert.IsLessThan((BigInteger.One << 31) - BigInteger.One, actualValue);
+            Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, actualValue);
 
-                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < (BigInteger.One << 63) - BigInteger.One);
-                Assert.IsTrue(actualValue >= BigInteger.Zero);
+            actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+            Assert.IsLessThan((BigInteger.One << 63) - BigInteger.One, actualValue);
+            Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, actualValue);
 
-                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < (BigInteger.One << 127) - BigInteger.One);
-                Assert.IsTrue(actualValue >= BigInteger.Zero);
+            actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+            Assert.IsLessThan((BigInteger.One << 127) - BigInteger.One, actualValue);
+            Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, actualValue);
 
-                actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                Assert.IsTrue(actualValue < (BigInteger.One << 255) - BigInteger.One);
-                Assert.IsTrue(actualValue >= BigInteger.Zero);
-            }
+            actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+            Assert.IsLessThan((BigInteger.One << 255) - BigInteger.One, actualValue);
+            Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, actualValue);
         }
 
 
@@ -586,31 +586,144 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
-            using (var script = new ScriptBuilder())
+            using var script = new ScriptBuilder();
+            // Test encoding
+            for (var i = 0; i < 2000; i++)
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 10);
+
+            var tx = TransactionBuilder.CreateEmpty()
+                .Nonce((uint)Random.Shared.Next())
+                .Build();
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default, gas: long.MaxValue);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(2000, engine.ResultStack.Count);
+
+            for (var i = 0; i < engine.ResultStack.Count; i++)
             {
-                // Test encoding
-                for (var i = 0; i < 2000; i++)
-                    script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 10);
-
-                var tx = TransactionBuilder.CreateEmpty()
-                    .Nonce((uint)Random.Shared.Next())
-                    .Build();
-
-                using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default, gas: long.MaxValue);
-                engine.LoadScript(script.ToArray());
-
-                Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual(2000, engine.ResultStack.Count);
-
-                for (var i = 0; i < engine.ResultStack.Count; i++)
-                {
-                    var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
-                    Assert.IsTrue(actualValue < 10);
-                    Assert.IsTrue(actualValue >= BigInteger.Zero);
-                }
+                var actualValue = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsLessThan(10, actualValue);
+                Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, actualValue);
             }
         }
 
+        [TestMethod]
+        public void TestGetRandom_PreHuyao_MethodUnavailable()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var settings = CreateProtocolSettingsUpTo(Hardfork.HF_Gorgon);
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", 10);
+
+            var tx = TransactionBuilder.CreateEmpty()
+                .Nonce((uint)Random.Shared.Next())
+                .Build();
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache,
+                settings: settings, gas: long.MaxValue);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+        }
+
+        [TestMethod]
+        public void TestGetRandom_NegativeMaxValue_Faults()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.MinusOne);
+
+            var tx = TransactionBuilder.CreateEmpty()
+                .Nonce((uint)Random.Shared.Next())
+                .Build();
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache,
+                settings: TestProtocolSettings.Default, gas: long.MaxValue);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+        }
+
+        [TestMethod]
+        public void TestGetRandom_ZeroAndOne_ReturnZero()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using var script = new ScriptBuilder();
+            for (var i = 0; i < 5; i++)
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.Zero);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", BigInteger.One);
+            }
+
+            var tx = TransactionBuilder.CreateEmpty()
+                .Nonce((uint)Random.Shared.Next())
+                .Build();
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache,
+                settings: TestProtocolSettings.Default, gas: long.MaxValue);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(10, engine.ResultStack.Count);
+
+            while (engine.ResultStack.Count > 0)
+                Assert.AreEqual(BigInteger.Zero, engine.ResultStack.Pop<Integer>().GetInteger());
+        }
+
+        [TestMethod]
+        public void TestGetRandom_NonPowerOfTwoMaxValue()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            const int samples = 500;
+            const int maxValue = 3;
+
+            using var script = new ScriptBuilder();
+            for (var i = 0; i < samples; i++)
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", maxValue);
+
+            var tx = TransactionBuilder.CreateEmpty()
+                .Nonce((uint)Random.Shared.Next())
+                .Build();
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache,
+                settings: TestProtocolSettings.Default, gas: long.MaxValue);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(samples, engine.ResultStack.Count);
+
+            var seen = new HashSet<BigInteger>();
+            for (var i = 0; i < samples; i++)
+            {
+                var value = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, value);
+                Assert.IsLessThan(maxValue, value);
+                seen.Add(value);
+            }
+
+            // Rejection sampling should still hit every residue for a tiny range.
+            Assert.AreEqual(maxValue, seen.Count);
+        }
+
+        private static ProtocolSettings CreateProtocolSettingsUpTo(Hardfork maxEnabledHardfork)
+        {
+            var hardforks = Enum.GetValues(typeof(Hardfork))
+                .Cast<Hardfork>()
+                .Where(hf => hf <= maxEnabledHardfork)
+                .ToDictionary(hf => hf, _ => 0u);
+
+            return TestProtocolSettings.Default with
+            {
+                Hardforks = hardforks.ToImmutableDictionary()
+            };
+        }
+
+        [TestMethod]
         public void TestMemorySearch()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
