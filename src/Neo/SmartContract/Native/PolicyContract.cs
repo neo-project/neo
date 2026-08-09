@@ -510,12 +510,21 @@ namespace Neo.SmartContract.Native
             engine.SnapshotCache.GetAndChange(_feePerByte)!.Set(value);
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetExecFeeFactor(ApplicationEngine engine, ulong value)
+        [ContractMethod(true, Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setExecFeeFactor")]
+        private void SetExecFeeFactorV0(ApplicationEngine engine, ulong value)
+        {
+            SetExecFeeFactorInternal(engine, value, MaxExecFeeFactor);
+        }
+
+        [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setExecFeeFactor")]
+        private void SetExecFeeFactorV1(ApplicationEngine engine, ulong value)
         {
             // After FAUN hardfork, the max exec fee factor is with decimals defined in ApplicationEngine.FeeFactor
-            var maxValue = engine.IsHardforkEnabled(Hardfork.HF_Faun) ? ApplicationEngine.FeeFactor * MaxExecFeeFactor : MaxExecFeeFactor;
+            SetExecFeeFactorInternal(engine, value, ApplicationEngine.FeeFactor * MaxExecFeeFactor);
+        }
 
+        private void SetExecFeeFactorInternal(ApplicationEngine engine, ulong value, BigInteger maxValue)
+        {
             if (value == 0 || value > maxValue)
                 throw new ArgumentOutOfRangeException(nameof(value), $"ExecFeeFactor must be between [1, {maxValue}], got {value}");
 
@@ -575,7 +584,7 @@ namespace Neo.SmartContract.Native
         {
             AssertCommittee(engine);
 
-            return await BlockAccountInternal(engine, account);
+            return await BlockAccountInternal(engine, account, applyFaunRules: false);
         }
 
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "blockAccount")]
@@ -583,10 +592,14 @@ namespace Neo.SmartContract.Native
         {
             AssertCommittee(engine);
 
-            return await BlockAccountInternal(engine, account);
+            return await BlockAccountInternal(engine, account, applyFaunRules: true);
         }
 
-        internal async ContractTask<bool> BlockAccountInternal(ApplicationEngine engine, UInt160 account)
+        /// <summary>
+        /// Blocks an account. Callers that are not the dual <c>blockAccount</c> methods must pass
+        /// <paramref name="applyFaunRules"/> matching whether HF_Faun is active (see #4455).
+        /// </summary>
+        internal async ContractTask<bool> BlockAccountInternal(ApplicationEngine engine, UInt160 account, bool applyFaunRules)
         {
             if (IsNative(account)) throw new InvalidOperationException("Cannot block a native contract.");
 
@@ -594,15 +607,21 @@ namespace Neo.SmartContract.Native
 
             if (engine.SnapshotCache.Contains(key)) return false;
 
-            if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
+            if (applyFaunRules)
                 await NEO.VoteInternal(engine, account, null);
 
-            engine.SnapshotCache.Add(key,
-                // Set request time for recover funds
-                engine.IsHardforkEnabled(Hardfork.HF_Faun) ? new StorageItem(engine.GetTime())
-                : new StorageItem([]));
+            // Post-Faun: store request time for recover-funds; pre-Faun: empty payload.
+            engine.SnapshotCache.Add(key, applyFaunRules ? new StorageItem(engine.GetTime()) : new StorageItem([]));
 
             return true;
+        }
+
+        /// <summary>
+        /// Blocks an account using the rules active at the current hardfork height.
+        /// </summary>
+        internal async ContractTask<bool> BlockAccountInternal(ApplicationEngine engine, UInt160 account)
+        {
+            return await BlockAccountInternal(engine, account, engine.IsHardforkEnabled(Hardfork.HF_Faun));
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
