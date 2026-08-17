@@ -240,8 +240,6 @@ namespace Neo.SmartContract.Native
                 .GetEnumerator();
 
             var iter = new StorageIterator(enumerator, prefix.Length, options);
-            //Console.WriteLine(iter.Next());
-            //Console.WriteLine(iter.Value());
 
             return iter;
         }
