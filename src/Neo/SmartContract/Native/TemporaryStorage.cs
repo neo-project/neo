@@ -134,7 +134,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="key">The key used to retrieve data.</param>
-        /// <returns>The end-of-life timestamp (in millisecoinds) of the given key-value pair if it exists and not expired yet.</returns>
+        /// <returns>The end-of-life timestamp (in milliseconds) of the given key-value pair if it exists and not expired yet.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private ulong GetExpiration(ApplicationEngine engine, [MaxLength(ApplicationEngine.MaxStorageKeySize)] byte[] key)
         {
