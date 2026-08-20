@@ -88,9 +88,9 @@ namespace Neo.Network.P2P
         {
             foreach (var (actor, session) in sessions)
             {
-                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out var block))
+                if (session.ReceivedBlockHashes.TryGetValue(invalidBlock.Index, out var blockHash))
                 {
-                    if (block.Hash == invalidBlock.Hash)
+                    if (blockHash == invalidBlock.Hash)
                         actor.Tell(Tcp.Abort.Instance);
                 }
             }
@@ -140,9 +140,9 @@ namespace Neo.Network.P2P
             lastSeenPersistedIndex = block.Index;
 
             foreach (var (actor, session) in sessions)
-                if (session.ReceivedBlock.Remove(block.Index, out Block? receivedBlock))
+                if (session.ReceivedBlockHashes.Remove(block.Index, out var receivedBlockHash))
                 {
-                    if (block.Hash == receivedBlock.Hash)
+                    if (block.Hash == receivedBlockHash)
                         RequestTasks(actor, session);
                     else
                         actor.Tell(Tcp.Abort.Instance);
@@ -218,8 +218,21 @@ namespace Neo.Network.P2P
         private void OnTaskCompleted(IInventory inventory)
         {
             var block = inventory as Block;
+            sessions.TryGetValue(Sender, out var session);
+
+            // A block must correspond either to a GetData request by hash
+            // or to a GetBlockByIndex request assigned to this peer.
+            if (block is not null &&
+                (session is null ||
+                 (!session.InvTasks.ContainsKey(block.Hash) &&
+                  !session.IndexTasks.ContainsKey(block.Index))))
+            {
+                return;
+            }
+
             _knownHashes.TryAdd(inventory.Hash);
             globalInvTasks.Remove(inventory.Hash);
+
             if (block is not null)
             {
                 globalIndexTasks.Remove(block.Index);
@@ -230,29 +243,33 @@ namespace Neo.Network.P2P
                 ms.AvailableTasks.Remove(inventory.Hash);
             }
 
-            if (sessions.TryGetValue(Sender, out var session))
+            if (session is null)
+                return;
+
+            session.InvTasks.Remove(inventory.Hash);
+
+            if (block is not null)
             {
-                session.InvTasks.Remove(inventory.Hash);
-                if (block is not null)
+                session.IndexTasks.Remove(block.Index);
+
+                if (session.ReceivedBlockHashes.TryGetValue(
+                    block.Index, out var previousHash))
                 {
-                    session.IndexTasks.Remove(block.Index);
-                    if (session.ReceivedBlock.TryGetValue(block.Index, out var blockOld))
+                    if (block.Hash != previousHash)
                     {
-                        if (block.Hash != blockOld.Hash)
-                        {
-                            Sender.Tell(Tcp.Abort.Instance);
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        session.ReceivedBlock.Add(block.Index, block);
+                        Sender.Tell(Tcp.Abort.Instance);
+                        return;
                     }
                 }
                 else
                 {
-                    RequestTasks(Sender, session);
+                    // Retain only the block hash instead of the complete Block object
+                    session.ReceivedBlockHashes.Add(block.Index, block.Hash);
                 }
+            }
+            else
+            {
+                RequestTasks(Sender, session);
             }
         }
 
@@ -396,7 +413,7 @@ namespace Neo.Network.P2P
             else if (currentHeight < session.LastBlockIndex)
             {
                 uint startHeight = currentHeight + 1;
-                while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlock.ContainsKey(startHeight)) { startHeight++; }
+                while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlockHashes.ContainsKey(startHeight)) { startHeight++; }
                 if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
                 uint endHeight = startHeight;
                 while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight <= currentHeight + InvPayload.MaxHashesCount) { }

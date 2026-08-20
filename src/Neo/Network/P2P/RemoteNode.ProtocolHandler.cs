@@ -313,20 +313,42 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            if (!_knownHashes.TryAdd(inventory.Hash)) return;
+            if (inventory is Block receivedBlock)
+            {
+                var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
+
+                // Avoid uint overflow from currentHeight + MaxHashesCount.
+                if (receivedBlock.Index > currentHeight &&
+                    receivedBlock.Index - currentHeight > InvPayload.MaxHashesCount)
+                {
+                    return;
+                }
+            }
+
+            if (!_knownHashes.TryAdd(inventory.Hash))
+                return;
+
             _pendingKnownHashes.Remove(inventory.Hash);
             _system.TaskManager.Tell(inventory);
+
             switch (inventory)
             {
                 case Transaction transaction:
-                    if (!(_system.ContainsTransaction(transaction.Hash) != ContainsTransactionType.NotExist || _system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))))
+                    if (!(_system.ContainsTransaction(transaction.Hash)
+                            != ContainsTransactionType.NotExist
+                        || _system.ContainsConflictHash(
+                            transaction.Hash,
+                            transaction.Signers.Select(s => s.Account))))
+                    {
                         _system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
+                    }
                     break;
+
                 case Block block:
                     UpdateLastBlockIndex(block.Index);
-                    if (block.Index > NativeContract.Ledger.CurrentIndex(_system.StoreView) + InvPayload.MaxHashesCount) return;
-                    _system.Blockchain.Tell(inventory);
+                    _system.Blockchain.Tell(block);
                     break;
+
                 default:
                     _system.Blockchain.Tell(inventory);
                     break;
