@@ -15,6 +15,7 @@ using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
@@ -37,7 +38,7 @@ namespace Neo.UnitTests.Network.P2P
         {
         }
 
-        private static Block CreateBlock(uint index)
+        private static Block CreateBlock(uint index, ulong timestamp = 1)
         {
             return new Block
             {
@@ -45,13 +46,50 @@ namespace Neo.UnitTests.Network.P2P
                 {
                     PrevHash = UInt256.Zero,
                     MerkleRoot = MerkleTree.ComputeRoot([]),
-                    Timestamp = 1,
+                    Timestamp = timestamp,
                     Index = index,
                     NextConsensus = UInt160.Zero,
                     Witness = new Witness()
                 },
                 Transactions = []
             };
+        }
+
+        private static Transaction CreateTransaction(uint nonce = 1)
+        {
+            return new Transaction
+            {
+                Nonce = nonce,
+                ValidUntilBlock = uint.MaxValue,
+                Signers =
+                [
+                    new Signer { Account = UInt160.Zero }
+                ],
+                Attributes = [],
+                Script = new[] { (byte)OpCode.NOP },
+                Witnesses =
+                [
+                    new Witness()
+                ]
+            };
+        }
+
+        private Akka.TestKit.TestProbe RegisterPeer(Akka.TestKit.TestActorRef<TaskManager> taskManager, uint startHeight)
+        {
+            var peer = CreateTestProbe();
+
+            peer.Send(
+                taskManager,
+                new TaskManager.Register(new VersionPayload
+                {
+                    UserAgent = "local-test",
+                    Capabilities =
+                    [
+                        new FullNodeCapability(startHeight)
+                    ]
+                }));
+
+            return peer;
         }
 
         private static Dictionary<IActorRef, TaskSession> GetSessions(Akka.TestKit.TestActorRef<TaskManager> taskManager)
@@ -291,6 +329,270 @@ namespace Neo.UnitTests.Network.P2P
             Assert.AreEqual(block.Hash, storedHash);
 
             Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void DivergentBlockForSameIndex_AbortsPeer()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            var blockA = CreateBlock(currentHeight + 1, timestamp: 1);
+            session.IndexTasks.Add(blockA.Index, TimeProvider.Current.UtcNow);
+            peer.Send(taskManager, blockA);
+
+            Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(blockA.Index));
+
+            // A second block for the same index with a different hash must abort the peer.
+            var blockB = CreateBlock(currentHeight + 1, timestamp: 2);
+            Assert.AreNotEqual(blockA.Hash, blockB.Hash);
+
+            session.IndexTasks.Add(blockB.Index, TimeProvider.Current.UtcNow);
+            peer.Send(taskManager, blockB);
+
+            peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void DuplicateBlockWithSameHash_IsNotAbortedAndStaysTracked()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            var block = CreateBlock(currentHeight + 1);
+
+            session.IndexTasks.Add(block.Index, TimeProvider.Current.UtcNow);
+            peer.Send(taskManager, block);
+
+            // Deliver the same block again for the same index.
+            session.IndexTasks.Add(block.Index, TimeProvider.Current.UtcNow);
+            peer.Send(taskManager, block);
+
+            Assert.IsTrue(session.ReceivedBlockHashes.TryGetValue(block.Index, out var storedHash));
+            Assert.AreEqual(block.Hash, storedHash);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void Transaction_CompletesInvTask_AndRequestsMoreTasks()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            var tx = CreateTransaction();
+            session.InvTasks.Add(tx.Hash, TimeProvider.Current.UtcNow);
+
+            peer.Send(taskManager, tx);
+
+            Assert.IsFalse(session.InvTasks.ContainsKey(tx.Hash), "The completed inventory task must be removed.");
+            Assert.IsEmpty(session.ReceivedBlockHashes, "Transactions must not be tracked as received blocks.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void InventoryFromUnregisteredPeer_IsIgnored()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var unregisteredPeer = CreateTestProbe();
+
+            // A block from an unregistered peer must be ignored by the task guard.
+            unregisteredPeer.Send(taskManager, CreateBlock(currentHeight + 1));
+
+            // A transaction from an unregistered peer completes global bookkeeping and returns.
+            unregisteredPeer.Send(taskManager, CreateTransaction());
+
+            Assert.IsFalse(GetSessions(taskManager).ContainsKey(unregisteredPeer.Ref));
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void InvalidBlock_AbortsThePeerThatSuppliedIt()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            var block = CreateBlock(currentHeight + 1);
+            session.IndexTasks.Add(block.Index, TimeProvider.Current.UtcNow);
+            peer.Send(taskManager, block);
+
+            Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(block.Index));
+
+            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid));
+
+            peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void PersistCompleted_WithMatchingHash_RemovesTrackedBlock()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            var block = CreateBlock(currentHeight + 1);
+            session.IndexTasks.Add(block.Index, TimeProvider.Current.UtcNow);
+            peer.Send(taskManager, block);
+
+            Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(block.Index));
+
+            peer.Send(taskManager, new Blockchain.PersistCompleted(block));
+
+            Assert.IsEmpty(session.ReceivedBlockHashes, "The tracked hash must be removed once the height is persisted.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void PersistCompleted_WithDivergentHash_AbortsPeer()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            var receivedBlock = CreateBlock(currentHeight + 1, timestamp: 1);
+            session.IndexTasks.Add(receivedBlock.Index, TimeProvider.Current.UtcNow);
+            peer.Send(taskManager, receivedBlock);
+
+            Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(receivedBlock.Index));
+
+            // The chain persists a different block at the same height.
+            var persistedBlock = CreateBlock(currentHeight + 1, timestamp: 2);
+            Assert.AreNotEqual(receivedBlock.Hash, persistedBlock.Hash);
+
+            peer.Send(taskManager, new Blockchain.PersistCompleted(persistedBlock));
+
+            peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void RemoteNode_InWindowBlock_UpdatesLastBlockIndex_AndDuplicateIsIgnored()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var connectionTestProbe = CreateTestProbe();
+            var remoteNodeActor = ActorOfAsTestActorRef(() =>
+                new RemoteNode(neoSystem,
+                    new LocalNode(neoSystem),
+                    connectionTestProbe,
+                    new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080),
+                    new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080),
+                    new ChannelsConfig()));
+
+            var remoteNode = remoteNodeActor.UnderlyingActor;
+
+            var versionMessage = Message.Create(MessageCommand.Version, new VersionPayload
+            {
+                UserAgent = "local-test",
+                Nonce = 1,
+                Network = TestProtocolSettings.Default.Network,
+                Timestamp = 5,
+                Version = 6,
+                Capabilities =
+                [
+                    new FullNodeCapability(currentHeight)
+                ]
+            });
+
+            var peer = CreateTestProbe();
+            peer.Send(remoteNodeActor, new Tcp.Received((ByteString)versionMessage.ToArray()));
+            connectionTestProbe.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
+            peer.Send(remoteNodeActor, new Tcp.Received((ByteString)Message.Create(MessageCommand.Verack).ToArray()));
+
+            // An in-window block is accepted, forwarded and updates LastBlockIndex.
+            var block = CreateBlock(currentHeight + 1);
+            peer.Send(remoteNodeActor, new Tcp.Received((ByteString)Message.Create(MessageCommand.Block, block).ToArray()));
+
+            AwaitAssert(
+                () => Assert.AreEqual(currentHeight + 1, remoteNode.LastBlockIndex),
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+
+            // The same block delivered again is ignored by the known-hash cache.
+            peer.Send(remoteNodeActor, new Tcp.Received((ByteString)Message.Create(MessageCommand.Block, block).ToArray()));
+
+            Assert.AreEqual(currentHeight + 1, remoteNode.LastBlockIndex);
+
+            Sys.Stop(remoteNodeActor);
+        }
+
+        [TestMethod]
+        public void RemoteNode_Transaction_IsRoutedForPreverification()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var connectionTestProbe = CreateTestProbe();
+            var remoteNodeActor = ActorOfAsTestActorRef(() =>
+                new RemoteNode(neoSystem,
+                    new LocalNode(neoSystem),
+                    connectionTestProbe,
+                    new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080),
+                    new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080),
+                    new ChannelsConfig()));
+
+            var remoteNode = remoteNodeActor.UnderlyingActor;
+
+            var versionMessage = Message.Create(MessageCommand.Version, new VersionPayload
+            {
+                UserAgent = "local-test",
+                Nonce = 1,
+                Network = TestProtocolSettings.Default.Network,
+                Timestamp = 5,
+                Version = 6,
+                Capabilities =
+                [
+                    new FullNodeCapability(currentHeight)
+                ]
+            });
+
+            var peer = CreateTestProbe();
+            peer.Send(remoteNodeActor, new Tcp.Received((ByteString)versionMessage.ToArray()));
+            connectionTestProbe.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
+            peer.Send(remoteNodeActor, new Tcp.Received((ByteString)Message.Create(MessageCommand.Verack).ToArray()));
+
+            var tx = CreateTransaction();
+            peer.Send(remoteNodeActor, new Tcp.Received((ByteString)Message.Create(MessageCommand.Transaction, tx).ToArray()));
+
+            // Transactions must not affect the peer's LastBlockIndex.
+            Assert.AreEqual(currentHeight, remoteNode.LastBlockIndex);
+
+            Sys.Stop(remoteNodeActor);
         }
     }
 }
