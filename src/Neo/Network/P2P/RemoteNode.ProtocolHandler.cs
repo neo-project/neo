@@ -313,6 +313,11 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
+            if (!_knownHashes.TryAdd(inventory.Hash))
+                return;
+
+            _pendingKnownHashes.Remove(inventory.Hash);
+
             if (inventory is Block receivedBlock)
             {
                 var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
@@ -325,10 +330,6 @@ namespace Neo.Network.P2P
                 }
             }
 
-            if (!_knownHashes.TryAdd(inventory.Hash))
-                return;
-
-            _pendingKnownHashes.Remove(inventory.Hash);
             _system.TaskManager.Tell(inventory);
 
             switch (inventory)
