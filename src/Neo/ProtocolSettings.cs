@@ -28,16 +28,8 @@ namespace Neo
         private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
 
         /// <summary>
-        /// Well-known public network magic values (MainNet N3, etc.).
-        /// Hardfork debug overrides are forbidden on these networks regardless of local config.
-        /// </summary>
-        public static readonly ImmutableHashSet<uint> WellKnownPublicNetworks = ImmutableHashSet.Create(
-            0x334F454Eu // N3 MainNet
-        );
-
-        /// <summary>
         /// The last hardfork that is activated exclusively via <see cref="Hardforks"/> configuration.
-        /// Later hardforks use Policy.enableHardfork on public networks (neo#4580).
+        /// Later hardforks are activated on-chain via Policy.activateHardfork (neo#4580).
         /// </summary>
         public const Hardfork LastConfigManagedHardfork = Hardfork.HF_Huyao;
 
@@ -112,29 +104,16 @@ namespace Neo
 
         /// <summary>
         /// Sets the block height from which a hardfork is activated.
-        /// On public networks, entries after <see cref="LastConfigManagedHardfork"/> are ignored
-        /// at runtime in favor of on-chain Policy activation (neo#4580).
+        /// Entries after <see cref="LastConfigManagedHardfork"/> are not used at runtime;
+        /// those hardforks are activated on-chain via Policy.activateHardfork (neo#4580).
         /// </summary>
         public required ImmutableDictionary<Hardfork, uint> Hardforks { get; init; }
-
-        /// <summary>
-        /// Private/dev-only hardfork height overrides (neo-express and similar tooling).
-        /// Not a production configuration surface: forbidden on well-known public networks at load time,
-        /// and ignored when an on-chain public-network marker is set (neo#4580).
-        /// Only hardforks after <see cref="LastConfigManagedHardfork"/> may appear here.
-        /// </summary>
-        public ImmutableDictionary<Hardfork, uint> HardforkDebugOverrides { get; init; } = ImmutableDictionary<Hardfork, uint>.Empty;
 
         /// <summary>
         /// Indicates the amount of gas to distribute during initialization.
         /// In the unit of datoshi, 1 GAS = 1e8 datoshi
         /// </summary>
         public ulong InitialGasDistribution { get; init; }
-
-        /// <summary>
-        /// Returns whether <see cref="Network"/> is a well-known public network magic.
-        /// </summary>
-        public bool IsWellKnownPublicNetwork => WellKnownPublicNetworks.Contains(Network);
 
         /// <summary>
         /// The public keys of the standby validators.
@@ -253,12 +232,7 @@ namespace Neo
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value!))).ToImmutableDictionary()
-                    : Default.Hardforks,
-                HardforkDebugOverrides = section.GetSection("HardforkDebugOverrides").Exists()
-                    ? section.GetSection("HardforkDebugOverrides").GetChildren()
-                        .ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value!))
-                        .ToImmutableDictionary()
-                    : ImmutableDictionary<Hardfork, uint>.Empty
+                    : Default.Hardforks
             };
             CheckingHardfork(Custom);
             return Custom;
@@ -273,6 +247,10 @@ namespace Neo
         {
             foreach (Hardfork hf in AllHardforks)
             {
+                // Post-Huyao hardforks are Policy-activated and must not be back-filled from config.
+                if (hf > LastConfigManagedHardfork)
+                    break;
+
                 if (!hardForks.ContainsKey(hf))
                 {
                     hardForks[hf] = 0;
@@ -313,34 +291,6 @@ namespace Neo
                 }
             }
 
-            ValidateHardforkDebugOverrides(settings);
-        }
-
-        /// <summary>
-        /// Validates <see cref="HardforkDebugOverrides"/>: private/dev only, post-config-managed hardforks only.
-        /// </summary>
-        public static void ValidateHardforkDebugOverrides(ProtocolSettings settings)
-        {
-            if (settings.HardforkDebugOverrides.Count == 0)
-                return;
-
-            if (settings.IsWellKnownPublicNetwork)
-                throw new ArgumentException(
-                    $"HardforkDebugOverrides are not allowed on well-known public network 0x{settings.Network:X8}. " +
-                    "Public networks must activate hardforks via committee Policy transactions (neo#4580).");
-
-            foreach (var (hf, height) in settings.HardforkDebugOverrides)
-            {
-                if (hf <= LastConfigManagedHardfork)
-                    throw new ArgumentException(
-                        $"HardforkDebugOverrides cannot include {hf}: hardforks through {LastConfigManagedHardfork} " +
-                        "are activated only via the Hardforks configuration section.");
-
-                if (settings.Hardforks.TryGetValue(hf, out var configHeight) && configHeight != height)
-                    throw new ArgumentException(
-                        $"HardforkDebugOverrides and Hardforks disagree on {hf}: debug={height}, config={configHeight}. " +
-                        "Remove one entry or make heights match to avoid silent divergence.");
-            }
         }
 
         /// <summary>
@@ -356,7 +306,7 @@ namespace Neo
             foreach (Hardfork hf in AllHardforks)
             {
                 if (hf > LastConfigManagedHardfork)
-                    continue; // Policy-managed on public nets; not compared via local Hardforks.
+                    continue; // Policy-managed; not compared via local Hardforks.
 
                 local.Hardforks.TryGetValue(hf, out var localHeight);
                 canonical.Hardforks.TryGetValue(hf, out var canonicalHeight);

@@ -118,7 +118,8 @@ namespace Neo.UnitTests
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Faun, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Huyao, 10));
-            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Iara, 10));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Iara, 10));
+            Assert.IsFalse(settings.Hardforks.ContainsKey(Hardfork.HF_Iara));
         }
 
         [TestMethod]
@@ -129,49 +130,6 @@ namespace Neo.UnitTests
             File.WriteAllText(file, json);
             Assert.ThrowsExactly<ArgumentException>(() => _ = ProtocolSettings.Load(file));
             File.Delete(file);
-        }
-
-        [TestMethod]
-        public void HardforkDebugOverrides_RejectConfigManagedHardfork()
-        {
-            var settings = TestProtocolSettings.Default with
-            {
-                Network = 0x4E455654u,
-                HardforkDebugOverrides = new Dictionary<Hardfork, uint>
-                {
-                    { Hardfork.HF_Huyao, 0 }
-                }.ToImmutableDictionary()
-            };
-
-            var ex = Assert.ThrowsExactly<ArgumentException>(() =>
-                ProtocolSettings.ValidateHardforkDebugOverrides(settings));
-            Assert.Contains("cannot include", ex.Message);
-            Assert.Contains("HF_Huyao", ex.Message);
-        }
-
-        [TestMethod]
-        public void HardforkDebugOverrides_RejectHeightConflictWithHardforks()
-        {
-            var settings = TestProtocolSettings.Default with
-            {
-                Network = 0x4E455654u,
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Iara, 10),
-                HardforkDebugOverrides = new Dictionary<Hardfork, uint>
-                {
-                    { Hardfork.HF_Iara, 25 }
-                }.ToImmutableDictionary()
-            };
-
-            var ex = Assert.ThrowsExactly<ArgumentException>(() =>
-                ProtocolSettings.ValidateHardforkDebugOverrides(settings));
-            Assert.Contains("disagree", ex.Message, StringComparison.OrdinalIgnoreCase);
-        }
-
-        [TestMethod]
-        public void HardforkDebugOverrides_EmptyIsNoOp()
-        {
-            ProtocolSettings.ValidateHardforkDebugOverrides(TestProtocolSettings.Default);
-            Assert.IsEmpty(TestProtocolSettings.Default.HardforkDebugOverrides);
         }
 
         [TestMethod]
@@ -209,9 +167,8 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Load_HardforkDebugOverrides_FromJson()
+        public void Load_IgnoresHardforkDebugOverrides_AndDoesNotEnableIara()
         {
-            // Network is private (not MainNet magic); include continuous Hardforks through Huyao so Load succeeds.
             string json = """
             {
                 "ProtocolConfiguration": {
@@ -248,9 +205,8 @@ namespace Neo.UnitTests
             {
                 File.WriteAllText(file, json);
                 var settings = ProtocolSettings.Load(file);
-                Assert.AreEqual(1, settings.HardforkDebugOverrides.Count);
-                Assert.AreEqual(42u, settings.HardforkDebugOverrides[Hardfork.HF_Iara]);
-                Assert.IsFalse(settings.IsWellKnownPublicNetwork);
+                Assert.IsFalse(settings.Hardforks.ContainsKey(Hardfork.HF_Iara));
+                Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Iara, 42));
             }
             finally
             {

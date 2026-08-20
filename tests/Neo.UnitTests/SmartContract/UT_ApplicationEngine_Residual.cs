@@ -123,7 +123,7 @@ namespace Neo.UnitTests.SmartContract
             var index = NativeContract.Ledger.CurrentIndex(_snapshot);
             foreach (Hardfork hf in Enum.GetValues<Hardfork>())
             {
-                // Engine uses PolicyContract combined rules (public/private + Policy), not raw config alone.
+                // Engine uses PolicyContract combined rules (config-managed + on-chain Policy).
                 Assert.AreEqual(
                     PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, _snapshot, hf, index),
                     engine.IsHardforkEnabled(hf));

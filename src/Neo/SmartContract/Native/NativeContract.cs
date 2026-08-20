@@ -333,22 +333,13 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Is the native contract active
-        /// </summary>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
-        /// <param name="blockHeight">Block height</param>
-        /// <returns>True if the native contract is active</returns>
-        public bool IsActive(ProtocolSettings settings, uint blockHeight)
-            => IsActive(settings, null, blockHeight);
-
-        /// <summary>
         /// Is the native contract active, consulting on-chain Policy hardforks when needed.
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
-        /// <param name="snapshot">Optional store for Policy hardfork heights (neo#4580).</param>
+        /// <param name="snapshot">Store used for Policy hardfork heights (neo#4580).</param>
         /// <param name="blockHeight">Block height</param>
         /// <returns>True if the native contract is active</returns>
-        public bool IsActive(ProtocolSettings settings, IReadOnlyStore? snapshot, uint blockHeight)
+        public bool IsActive(ProtocolSettings settings, IReadOnlyStore snapshot, uint blockHeight)
         {
             if (ActiveIn is null) return true;
 
@@ -360,7 +351,6 @@ namespace Neo.SmartContract.Native
                 return true;
             }
 
-            // Post-Huyao: public Policy / private debug overrides / Hardforks (neo#4580).
             return PolicyContract.IsHardforkEnabled(settings, snapshot, ActiveIn.Value, blockHeight);
         }
 

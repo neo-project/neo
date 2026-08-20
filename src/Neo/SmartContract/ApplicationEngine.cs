@@ -1122,8 +1122,8 @@ namespace Neo.SmartContract
             if (ProtocolSettings == null)
                 return false;
 
-            // Without a persisting block, treat "enabled" as: activation height is known
-            // under public/private rules (config-managed, debug override, or Policy).
+            // Without a persisting block, treat "enabled" as: an activation height is known
+            // (config-managed Hardforks, or on-chain Policy for later hardforks).
             if (PersistingBlock is null)
                 return PolicyContract.TryGetActivationHeight(ProtocolSettings, SnapshotCache, hardfork, out _);
 
