@@ -313,8 +313,7 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            if (!_knownHashes.TryAdd(inventory.Hash))
-                return;
+            if (!_knownHashes.TryAdd(inventory.Hash)) return;
 
             _pendingKnownHashes.Remove(inventory.Hash);
 
