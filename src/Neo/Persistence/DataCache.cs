@@ -247,17 +247,18 @@ namespace Neo.Persistence
         /// Finds the entries starting with the specified prefix.
         /// </summary>
         /// <param name="direction">The search direction.</param>
+        /// <param name="start">The index of the first entry to return.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(SeekDirection direction = SeekDirection.Forward, int start = 0)
         {
-            return Find((byte[]?)null, direction);
+            return Find((byte[]?)null, direction, start);
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int start = 0)
         {
             var key = keyPrefix?.ToArray();
-            return Find(key, direction);
+            return Find(key, direction, start);
         }
 
         /// <summary>
@@ -265,8 +266,9 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyPrefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
+        /// <param name="start">The index of the first entry to return.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyPrefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int start = 0)
         {
             var seekPrefix = keyPrefix;
             if (direction == SeekDirection.Backward)
@@ -293,12 +295,12 @@ namespace Neo.Persistence
                     throw new ArgumentException($"{nameof(keyPrefix)} with all bytes being 0xff is not supported now");
                 }
             }
-            return FindInternal(keyPrefix, seekPrefix, direction);
+            return FindInternal(keyPrefix, seekPrefix, direction, start);
         }
 
-        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? keyPrefix, byte[]? seekPrefix, SeekDirection direction)
+        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? keyPrefix, byte[]? seekPrefix, SeekDirection direction, int start)
         {
-            foreach (var (key, value) in Seek(seekPrefix, direction))
+            foreach (var (key, value) in Seek(seekPrefix, direction, start))
             {
                 if (keyPrefix == null || key.ToArray().AsSpan().StartsWith(keyPrefix))
                     yield return (key, value);
@@ -310,18 +312,19 @@ namespace Neo.Persistence
         /// <summary>
         /// Finds the entries that between [start, end).
         /// </summary>
-        /// <param name="start">The start key (inclusive).</param>
-        /// <param name="end">The end key (exclusive).</param>
+        /// <param name="keyOrPrefixStart">The start key or prefix (inclusive).</param>
+        /// <param name="keyOrPrefixStartEnd">The end key (exclusive).</param>
+        /// <param name="start">The index of the first entry to return.</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired range.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] keyOrPrefixStart, byte[] keyOrPrefixStartEnd, SeekDirection direction = SeekDirection.Forward, int start = 0)
         {
             var comparer = direction == SeekDirection.Forward
                 ? ByteArrayComparer.Default
                 : ByteArrayComparer.Reverse;
-            foreach (var (key, value) in Seek(start, direction))
+            foreach (var (key, value) in Seek(keyOrPrefixStart, direction, start))
             {
-                if (comparer.Compare(key.ToArray(), end) < 0)
+                if (comparer.Compare(key.ToArray(), keyOrPrefixStartEnd) < 0)
                     yield return (key, value);
                 else
                     yield break;
@@ -485,8 +488,9 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyOrPrefix">The key to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
+        /// <param name="start">The index of the first entry to return.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward, int start = 0)
         {
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
@@ -505,7 +509,7 @@ namespace Neo.Persistence
                     .ToArray();
                 cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
             }
-            var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction)
+            var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction, start)
                 .Where(p => !cachedKeySet.Contains(p.Key))
                 .Select(p =>
                 (
@@ -544,8 +548,9 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyOrPrefix">The key to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
+        /// <param name="start">The index of the first entry to return.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
-        protected abstract IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction);
+        protected abstract IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction, int start);
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.

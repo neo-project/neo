@@ -100,11 +100,11 @@ namespace Neo.UnitTests.SmartContract.Native
         // This should NOT be accepted as a parameter type - only IReadOnlyStore interface itself or DataCache are allowed
         class CustomReadOnlyStore : IReadOnlyStore
         {
-            public Neo.SmartContract.StorageItem this[Neo.SmartContract.StorageKey key] => throw new System.NotImplementedException();
-            public bool Contains(Neo.SmartContract.StorageKey key) => throw new System.NotImplementedException();
-            public System.Collections.Generic.IEnumerable<(Neo.SmartContract.StorageKey Key, Neo.SmartContract.StorageItem Value)> Find(Neo.SmartContract.StorageKey key_prefix = null, Neo.Persistence.SeekDirection direction = Neo.Persistence.SeekDirection.Forward) => throw new System.NotImplementedException();
-            public Neo.SmartContract.StorageItem TryGet(Neo.SmartContract.StorageKey key) => null;
-            public bool TryGet(Neo.SmartContract.StorageKey key, out Neo.SmartContract.StorageItem value)
+            public StorageItem this[StorageKey key] => throw new System.NotImplementedException();
+            public bool Contains(StorageKey key) => throw new System.NotImplementedException();
+            public System.Collections.Generic.IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey key_prefix = null, SeekDirection direction = Neo.Persistence.SeekDirection.Forward, int start = 0) => throw new System.NotImplementedException();
+            public StorageItem TryGet(StorageKey key) => null;
+            public bool TryGet(StorageKey key, out StorageItem value)
             {
                 value = null;
                 return false;

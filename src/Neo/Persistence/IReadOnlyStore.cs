@@ -69,7 +69,8 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyPrefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
+        /// <param name="start">The index of the first entry to return.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(TKey Key, TValue Value)> Find(TKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward);
+        public IEnumerable<(TKey Key, TValue Value)> Find(TKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int start = 0);
     }
 }
