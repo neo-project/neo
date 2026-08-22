@@ -509,6 +509,15 @@ namespace Neo.Persistence
                     .ToArray();
                 cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
             }
+
+            var skip = 0;
+            if (cachedKeySet.Count > 0)
+            {
+                // If the cache is not empty, we need to skip the first `start` entries in the merged result.
+                skip = start;
+                start = 0;
+            }
+
             var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction, start)
                 .Where(p => !cachedKeySet.Contains(p.Key))
                 .Select(p =>
@@ -529,14 +538,28 @@ namespace Neo.Persistence
                 if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
                 {
                     if (i1.Key == null || i1.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
-                    yield return (i1.Key, i1.Item);
+                    if (skip == 0)
+                    {
+                        yield return (i1.Key, i1.Item);
+                    }
+                    else
+                    {
+                        skip--;
+                    }
                     c1 = e1.MoveNext();
                     i1 = c1 ? e1.Current : default;
                 }
                 else
                 {
                     if (i2.Key == null || i2.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
-                    yield return (i2.Key, i2.Item);
+                    if (skip == 0)
+                    {
+                        yield return (i2.Key, i2.Item);
+                    }
+                    else
+                    {
+                        skip--;
+                    }
                     c2 = e2.MoveNext();
                     i2 = c2 ? e2.Current : default;
                 }

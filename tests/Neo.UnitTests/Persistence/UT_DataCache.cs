@@ -426,5 +426,30 @@ namespace Neo.UnitTests.Persistence
             Assert.AreEqual(s_key4, items.Current.Key);
             Assert.IsFalse(items.MoveNext());
         }
+
+        [TestMethod]
+        public void TestFindInvalidWithOffset()
+        {
+            using var store = new MemoryStore();
+            using var myDataCache = new StoreCache(store);
+            myDataCache.Add(s_key1, s_value1);
+
+            store.Put(s_key2.ToArray(), s_value2.ToArray());
+            store.Put(s_key3.ToArray(), s_value3.ToArray());
+            store.Put(s_key4.ToArray(), s_value3.ToArray());
+
+            var items = myDataCache.Find(SeekDirection.Forward, 1).GetEnumerator();
+            items.MoveNext();
+            Assert.AreEqual(s_key2, items.Current.Key);
+
+            myDataCache.TryGet(s_key3); // GETLINE
+
+            items.MoveNext();
+            Assert.AreEqual(s_key3, items.Current.Key);
+            items.MoveNext();
+            Assert.AreEqual(s_key4, items.Current.Key);
+            items.MoveNext();
+            Assert.IsFalse(items.MoveNext());
+        }
     }
 }
