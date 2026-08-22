@@ -318,17 +318,6 @@ namespace Neo.Network.P2P
 
             _system.TaskManager.Tell(inventory);
 
-            if (inventory is Block receivedBlock)
-            {
-                var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
-
-                if (receivedBlock.Index > currentHeight &&
-                    receivedBlock.Index - currentHeight > InvPayload.MaxHashesCount)
-                {
-                    return;
-                }
-            }
-
             switch (inventory)
             {
                 case Transaction transaction:
@@ -343,6 +332,14 @@ namespace Neo.Network.P2P
                     break;
 
                 case Block block:
+                    var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
+                    if (block.Index > currentHeight &&
+                        block.Index - currentHeight > InvPayload.MaxHashesCount)
+                    {
+                        // Out of the accepted synchronization window: TaskManager was
+                        // already notified above so a matching task can still complete.
+                        break;
+                    }
                     UpdateLastBlockIndex(block.Index);
                     _system.Blockchain.Tell(block);
                     break;
