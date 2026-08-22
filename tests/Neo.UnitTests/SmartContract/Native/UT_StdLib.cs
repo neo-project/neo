@@ -17,7 +17,9 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using Array = System.Array;
 
@@ -321,11 +323,42 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void StrLen()
+        public void StringSplit_EmptySeparator_PreHuyao()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
-            var crazyString = "A😀\ud83d\ude00" + char.ConvertFromUtf32(0x1F600);
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abc", string.Empty);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abc", string.Empty, true);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", string.Empty, string.Empty);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", string.Empty, string.Empty, true);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: SettingsWithoutHuyao());
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(4, engine.ResultStack);
+
+            var arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.IsEmpty(arr);
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(1, arr);
+            Assert.AreEqual(string.Empty, arr[0].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(1, arr);
+            Assert.AreEqual("abc", arr[0].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(1, arr);
+            Assert.AreEqual("abc", arr[0].GetString());
+        }
+
+        [TestMethod]
+        public void StrLen()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "abcbbbd");
@@ -633,6 +666,19 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
             Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
             Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
+        }
+
+        private static ProtocolSettings SettingsWithoutHuyao()
+        {
+            // ApplicationEngine.IsHardforkEnabled with a null persisting block is
+            // ProtocolSettings.Hardforks.ContainsKey, so Huyao must be omitted.
+            var hardforks = Enum.GetValues<Hardfork>()
+                .Where(hf => hf < Hardfork.HF_Huyao)
+                .ToDictionary(hf => hf, _ => 0u);
+            return TestProtocolSettings.Default with
+            {
+                Hardforks = hardforks.ToImmutableDictionary()
+            };
         }
     }
 }

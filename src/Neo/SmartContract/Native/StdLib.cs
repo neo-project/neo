@@ -256,19 +256,15 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 8)]
         private static string[] StringSplit(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
         {
-            // Case 1: Empty separator
-            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
+            // Huyao: empty separator splits by Unicode scalar values (Go strings.Split).
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao) && string.IsNullOrEmpty(separator))
             {
-                if (string.IsNullOrEmpty(separator))
-                {
-                    if (string.IsNullOrEmpty(str))
-                        return [];
+                if (string.IsNullOrEmpty(str))
+                    return [];
 
-                    return [.. str.EnumerateRunes().Select(static r => $"{r}")];
-                }
+                return [.. str.EnumerateRunes().Select(static r => r.ToString())];
             }
 
-            // Case 2: Non-empty separator (handles empty str properly by returning [""])
             return str.Split(separator, removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None);
         }
 
