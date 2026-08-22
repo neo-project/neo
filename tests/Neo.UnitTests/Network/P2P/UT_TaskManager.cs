@@ -99,7 +99,41 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void UnsolicitedFarFutureBlock_IsNotRetainedByTaskManager()
+        public void UnsolicitedInWindowBlock_IsTrackedByHashOnly()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peer = CreateTestProbe();
+
+            peer.Send(
+                taskManager,
+                new TaskManager.Register(new VersionPayload
+                {
+                    UserAgent = "local-test",
+                    Capabilities =
+                    [
+                        new FullNodeCapability(currentHeight)
+                    ]
+                }));
+
+            var block = CreateBlock(currentHeight + 1);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            // No InvTasks/IndexTasks entry is registered: the block is unsolicited.
+            peer.Send(taskManager, block);
+
+            Assert.IsTrue(session.ReceivedBlockHashes.TryGetValue(block.Index, out var storedHash),
+                "An unsolicited block within the synchronization window must still be tracked by hash.");
+            Assert.AreEqual(block.Hash, storedHash);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void UnsolicitedFarFutureBlock_IsNotTrackedByTaskManager()
         {
             const int TransactionCount = 510;
 
@@ -195,7 +229,7 @@ namespace Neo.UnitTests.Network.P2P
 
             var session = sessions[peer.Ref];
 
-            Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(parsedBlock.Index), "An unsolicited far-future block must not be retained.");
+            Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(parsedBlock.Index), "An unsolicited block outside the synchronization window must not be tracked.");
 
             Sys.Stop(taskManager);
         }
@@ -422,6 +456,31 @@ namespace Neo.UnitTests.Network.P2P
             unregisteredPeer.Send(taskManager, CreateTransaction());
 
             Assert.IsFalse(GetSessions(taskManager).ContainsKey(unregisteredPeer.Ref));
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void UnsolicitedInWindowBlock_LaterFoundInvalid_AbortsPeer()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            var block = CreateBlock(currentHeight + 1);
+
+            // No InvTasks/IndexTasks entry: the block is unsolicited but still in-window.
+            peer.Send(taskManager, block);
+
+            Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(block.Index),
+                "The unsolicited in-window block must be tracked by hash.");
+
+            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid));
+
+            peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             Sys.Stop(taskManager);
         }

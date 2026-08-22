@@ -220,13 +220,13 @@ namespace Neo.Network.P2P
             var block = inventory as Block;
             sessions.TryGetValue(Sender, out var session);
 
-            // A block must correspond either to a GetData request by hash
-            // or to a GetBlockByIndex request assigned to this peer.
-            if (block is not null &&
-                (session is null ||
-                 (!session.InvTasks.ContainsKey(block.Hash) &&
-                  !session.IndexTasks.ContainsKey(block.Index))))
+            var isRequestedBlock = block is not null && session is not null &&
+                (session.InvTasks.ContainsKey(block.Hash) || session.IndexTasks.ContainsKey(block.Index));
+
+            if (block is not null && !isRequestedBlock)
             {
+                if (session is not null)
+                    TrackReceivedBlockHash(session, block);
                 return;
             }
 
@@ -251,25 +251,37 @@ namespace Neo.Network.P2P
             if (block is not null)
             {
                 session.IndexTasks.Remove(block.Index);
-
-                if (session.ReceivedBlockHashes.TryGetValue(
-                    block.Index, out var previousHash))
-                {
-                    if (block.Hash != previousHash)
-                    {
-                        Sender.Tell(Tcp.Abort.Instance);
-                        return;
-                    }
-                }
-                else
-                {
-                    // Retain only the block hash instead of the complete Block object
-                    session.ReceivedBlockHashes.Add(block.Index, block.Hash);
-                }
+                TrackReceivedBlockHash(session, block);
             }
             else
             {
                 RequestTasks(Sender, session);
+            }
+        }
+
+        /// <summary>
+        /// Records the hash of a block received from the sending peer, without
+        /// ever retaining the complete <see cref="Block"/> object. Blocks outside
+        /// the synchronization window are not tracked, since Blockchain never
+        /// receives their body and RequestTasks must remain able to request that
+        /// height from another peer.
+        /// </summary>
+        private void TrackReceivedBlockHash(TaskSession session, Block block)
+        {
+            var currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
+
+            // Avoid uint overflow from currentHeight + MaxHashesCount.
+            if (block.Index > currentHeight && block.Index - currentHeight > InvPayload.MaxHashesCount)
+                return;
+
+            if (session.ReceivedBlockHashes.TryGetValue(block.Index, out var previousHash))
+            {
+                if (block.Hash != previousHash)
+                    Sender.Tell(Tcp.Abort.Instance);
+            }
+            else
+            {
+                session.ReceivedBlockHashes.Add(block.Index, block.Hash);
             }
         }
 

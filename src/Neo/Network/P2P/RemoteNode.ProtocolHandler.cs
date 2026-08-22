@@ -316,19 +316,18 @@ namespace Neo.Network.P2P
             if (!_knownHashes.TryAdd(inventory.Hash)) return;
             _pendingKnownHashes.Remove(inventory.Hash);
 
+            _system.TaskManager.Tell(inventory);
+
             if (inventory is Block receivedBlock)
             {
                 var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
 
-                // Avoid uint overflow from currentHeight + MaxHashesCount.
                 if (receivedBlock.Index > currentHeight &&
                     receivedBlock.Index - currentHeight > InvPayload.MaxHashesCount)
                 {
                     return;
                 }
             }
-
-            _system.TaskManager.Tell(inventory);
 
             switch (inventory)
             {
