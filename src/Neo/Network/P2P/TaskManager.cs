@@ -217,23 +217,28 @@ namespace Neo.Network.P2P
 
         private void OnTaskCompleted(IInventory inventory)
         {
-            var block = inventory as Block;
             sessions.TryGetValue(Sender, out var session);
 
-            var isRequestedBlock = block is not null && session is not null &&
-                (session.InvTasks.ContainsKey(block.Hash) || session.IndexTasks.ContainsKey(block.Index));
-
-            if (block is not null && !isRequestedBlock)
+            if (inventory is Block unsolicitedBlock && !IsRequestedBySession(session, unsolicitedBlock))
             {
                 if (session is not null)
-                    TrackReceivedBlockHash(session, block);
+                    TrackReceivedBlockHash(session, unsolicitedBlock);
                 return;
             }
 
+            CompleteTask(inventory, session);
+        }
+
+        private static bool IsRequestedBySession(TaskSession? session, Block block) =>
+            session is not null &&
+            (session.InvTasks.ContainsKey(block.Hash) || session.IndexTasks.ContainsKey(block.Index));
+
+        private void CompleteTask(IInventory inventory, TaskSession? session)
+        {
             _knownHashes.TryAdd(inventory.Hash);
             globalInvTasks.Remove(inventory.Hash);
 
-            if (block is not null)
+            if (inventory is Block block)
             {
                 globalIndexTasks.Remove(block.Index);
             }
@@ -248,10 +253,10 @@ namespace Neo.Network.P2P
 
             session.InvTasks.Remove(inventory.Hash);
 
-            if (block is not null)
+            if (inventory is Block requestedBlock)
             {
-                session.IndexTasks.Remove(block.Index);
-                TrackReceivedBlockHash(session, block);
+                session.IndexTasks.Remove(requestedBlock.Index);
+                TrackReceivedBlockHash(session, requestedBlock);
             }
             else
             {
