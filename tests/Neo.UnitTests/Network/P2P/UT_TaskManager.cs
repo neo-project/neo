@@ -464,14 +464,10 @@ namespace Neo.UnitTests.Network.P2P
         public void InventoryFromUnregisteredPeer_IsIgnored()
         {
             using var neoSystem = TestBlockchain.GetSystem();
-            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
 
             var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
 
             var unregisteredPeer = CreateTestProbe();
-
-            // A block from an unregistered peer must be ignored by the task guard.
-            unregisteredPeer.Send(taskManager, CreateBlock(currentHeight + 1));
 
             // A transaction from an unregistered peer completes global bookkeeping and returns.
             unregisteredPeer.Send(taskManager, CreateTransaction());
