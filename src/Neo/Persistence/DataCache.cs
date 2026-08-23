@@ -492,6 +492,8 @@ namespace Neo.Persistence
         /// <returns>An enumerator containing all the entries after seeking.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward, int start = 0)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(start);
+
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
@@ -505,8 +507,7 @@ namespace Neo.Persistence
                         p.Key,
                         p.Value.Item
                     ))
-                    .OrderBy(p => p.KeyBytes, comparer)
-                    .ToArray();
+                    .OrderBy(p => p.KeyBytes, comparer);
                 cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
             }
 
