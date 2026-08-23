@@ -300,8 +300,8 @@ namespace Neo.Persistence
             // Passing `skip` down to Seek would let that sentinel key consume offset slots before
             // the prefix filter runs, skipping too few real prefix matches.  Instead, pass skip=0
             // and apply the offset here, after both the prefix and sentinel checks.
-            var seekSkip = direction == SeekDirection.Backward ? 0 : skip;
-            var skipInMemory = direction == SeekDirection.Backward ? skip : 0;
+            var (seekSkip, skipInMemory) = direction == SeekDirection.Backward ? (0, skip) : (skip, 0);
+
             foreach (var (key, value) in Seek(seekPrefix, direction, seekSkip))
             {
                 if (keyPrefix == null || key.ToArray().AsSpan().StartsWith(keyPrefix))
