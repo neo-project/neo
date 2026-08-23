@@ -63,7 +63,7 @@ namespace Neo.Persistence.Providers
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward, int start = 0)
+        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
             keyOrPrefix ??= [];
             if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
@@ -74,7 +74,7 @@ namespace Neo.Persistence.Providers
                 records = records
                     .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
-            foreach (var pair in records.Skip(start))
+            foreach (var pair in records.Skip(skip))
                 yield return (pair.Key[..], pair.Value[..]);
         }
 

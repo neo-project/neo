@@ -247,18 +247,18 @@ namespace Neo.Persistence
         /// Finds the entries starting with the specified prefix.
         /// </summary>
         /// <param name="direction">The search direction.</param>
-        /// <param name="start">The index of the first entry to return.</param>
+        /// <param name="skip">The index of the first entry to return.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(SeekDirection direction = SeekDirection.Forward, int start = 0)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
-            return Find((byte[]?)null, direction, start);
+            return Find((byte[]?)null, direction, skip);
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int start = 0)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
             var key = keyPrefix?.ToArray();
-            return Find(key, direction, start);
+            return Find(key, direction, skip);
         }
 
         /// <summary>
@@ -266,9 +266,9 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyPrefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
-        /// <param name="start">The index of the first entry to return.</param>
+        /// <param name="skip">The index of the first entry to return.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int start = 0)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
             var seekPrefix = keyPrefix;
             if (direction == SeekDirection.Backward)
@@ -295,15 +295,24 @@ namespace Neo.Persistence
                     throw new ArgumentException($"{nameof(keyPrefix)} with all bytes being 0xff is not supported now");
                 }
             }
-            return FindInternal(keyPrefix, seekPrefix, direction, start);
-        }
 
-        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? keyPrefix, byte[]? seekPrefix, SeekDirection direction, int start)
-        {
-            foreach (var (key, value) in Seek(seekPrefix, direction, start))
+            // For backward scans the seekPrefix is a sentinel that may itself exist in the store.
+            // Passing `skip` down to Seek would let that sentinel key consume offset slots before
+            // the prefix filter runs, skipping too few real prefix matches.  Instead, pass skip=0
+            // and apply the offset here, after both the prefix and sentinel checks.
+            var seekSkip = direction == SeekDirection.Backward ? 0 : skip;
+            var skipInMemory = direction == SeekDirection.Backward ? skip : 0;
+            foreach (var (key, value) in Seek(seekPrefix, direction, seekSkip))
             {
                 if (keyPrefix == null || key.ToArray().AsSpan().StartsWith(keyPrefix))
+                {
+                    if (skipInMemory > 0)
+                    {
+                        skipInMemory--;
+                        continue;
+                    }
                     yield return (key, value);
+                }
                 else if (direction == SeekDirection.Forward || (seekPrefix == null || !key.ToArray().SequenceEqual(seekPrefix)))
                     yield break;
             }
@@ -314,15 +323,15 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyOrPrefixStart">The start key or prefix (inclusive).</param>
         /// <param name="keyOrPrefixStartEnd">The end key (exclusive).</param>
-        /// <param name="start">The index of the first entry to return.</param>
+        /// <param name="skip">The index of the first entry to return.</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired range.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] keyOrPrefixStart, byte[] keyOrPrefixStartEnd, SeekDirection direction = SeekDirection.Forward, int start = 0)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] keyOrPrefixStart, byte[] keyOrPrefixStartEnd, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
             var comparer = direction == SeekDirection.Forward
                 ? ByteArrayComparer.Default
                 : ByteArrayComparer.Reverse;
-            foreach (var (key, value) in Seek(keyOrPrefixStart, direction, start))
+            foreach (var (key, value) in Seek(keyOrPrefixStart, direction, skip))
             {
                 if (comparer.Compare(key.ToArray(), keyOrPrefixStartEnd) < 0)
                     yield return (key, value);
@@ -488,11 +497,11 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyOrPrefix">The key to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
-        /// <param name="start">The index of the first entry to return.</param>
+        /// <param name="skip">The index of the first entry to return.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward, int start = 0)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
-            ArgumentOutOfRangeException.ThrowIfNegative(start);
+            ArgumentOutOfRangeException.ThrowIfNegative(skip);
 
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
@@ -511,15 +520,15 @@ namespace Neo.Persistence
                 cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
             }
 
-            var skip = 0;
+            var skipInMemory = 0;
             if (cachedKeySet.Count > 0)
             {
-                // If the cache is not empty, we need to skip the first `start` entries in the merged result.
-                skip = start;
-                start = 0;
+                // If there are cached entries, we need to skip them first before seeking the underlying storage.
+                skipInMemory = skip;
+                skip = 0;
             }
 
-            var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction, start)
+            var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction, skip)
                 .Where(p => !cachedKeySet.Contains(p.Key))
                 .Select(p =>
                 (
@@ -539,13 +548,13 @@ namespace Neo.Persistence
                 if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
                 {
                     if (i1.Key == null || i1.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
-                    if (skip == 0)
+                    if (skipInMemory == 0)
                     {
                         yield return (i1.Key, i1.Item);
                     }
                     else
                     {
-                        skip--;
+                        skipInMemory--;
                     }
                     c1 = e1.MoveNext();
                     i1 = c1 ? e1.Current : default;
@@ -553,13 +562,13 @@ namespace Neo.Persistence
                 else
                 {
                     if (i2.Key == null || i2.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
-                    if (skip == 0)
+                    if (skipInMemory == 0)
                     {
                         yield return (i2.Key, i2.Item);
                     }
                     else
                     {
-                        skip--;
+                        skipInMemory--;
                     }
                     c2 = e2.MoveNext();
                     i2 = c2 ? e2.Current : default;
@@ -572,9 +581,9 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyOrPrefix">The key to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
-        /// <param name="start">The index of the first entry to return.</param>
+        /// <param name="skip">The index of the first entry to return.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
-        protected abstract IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction, int start);
+        protected abstract IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction, int skip);
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.

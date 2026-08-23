@@ -39,9 +39,9 @@ namespace Neo.Persistence
             return _innerCache[key].Clone();
         }
 
-        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPreifx, SeekDirection direction, int start)
+        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPreifx, SeekDirection direction, int skip)
         {
-            foreach (var (key, value) in _innerCache.Seek(keyOrPreifx, direction, start))
+            foreach (var (key, value) in _innerCache.Seek(keyOrPreifx, direction, skip))
                 yield return (key, value.Clone());
         }
 

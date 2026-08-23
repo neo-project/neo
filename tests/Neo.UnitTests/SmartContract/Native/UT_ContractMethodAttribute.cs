@@ -102,7 +102,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             public StorageItem this[StorageKey key] => throw new System.NotImplementedException();
             public bool Contains(StorageKey key) => throw new System.NotImplementedException();
-            public System.Collections.Generic.IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey key_prefix = null, SeekDirection direction = Neo.Persistence.SeekDirection.Forward, int start = 0) => throw new System.NotImplementedException();
+            public System.Collections.Generic.IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey key_prefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0) => throw new System.NotImplementedException();
             public StorageItem TryGet(StorageKey key) => null;
             public bool TryGet(StorageKey key, out StorageItem value)
             {
