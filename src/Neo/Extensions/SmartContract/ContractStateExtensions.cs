@@ -49,7 +49,7 @@ namespace Neo.Extensions
         /// <param name="snapshot">Snapshot of the database.</param>
         /// <param name="prefix">Prefix of the key.</param>
         /// <param name="seekDirection"></param>
-        /// <param name="skip">The index of the first entry to return.</param>
+        /// <param name="skip">Number of entries to skip.</param>
         /// <returns>All storage of the given contract.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="contractState"/> or <paramref name="snapshot"/> is null</exception>
         public static IEnumerable<(StorageKey Key, StorageItem Value)> FindStorage(this ContractState contractState, IReadOnlyStore snapshot, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward, int skip = 0)
@@ -69,7 +69,7 @@ namespace Neo.Extensions
         /// <param name="prefix">Prefix of the key.</param>
         /// <param name="contractId">Id of the contract.</param>
         /// <param name="seekDirection"></param>
-        /// <param name="skip">The index of the first entry to return.</param>
+        /// <param name="skip">Number of entries to skip.</param>
         /// <returns>All storage of the given contract.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="snapshot"/> is null</exception>
         public static IEnumerable<(StorageKey Key, StorageItem Value)> FindContractStorage(this ContractManagement contractManagement, IReadOnlyStore snapshot, int contractId, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward, int skip = 0)

@@ -247,7 +247,7 @@ namespace Neo.Persistence
         /// Finds the entries starting with the specified prefix.
         /// </summary>
         /// <param name="direction">The search direction.</param>
-        /// <param name="skip">The index of the first entry to return.</param>
+        /// <param name="skip">Number of entries to skip.</param>
         /// <returns>The entries found with the desired prefix.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Find(SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
@@ -266,7 +266,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyPrefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
-        /// <param name="skip">The index of the first entry to return.</param>
+        /// <param name="skip">Number of entries to skip.</param>
         /// <returns>The entries found with the desired prefix.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
@@ -323,7 +323,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyOrPrefixStart">The start key or prefix (inclusive).</param>
         /// <param name="keyOrPrefixStartEnd">The end key (exclusive).</param>
-        /// <param name="skip">The index of the first entry to return.</param>
+        /// <param name="skip">Number of entries to skip.</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired range.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] keyOrPrefixStart, byte[] keyOrPrefixStartEnd, SeekDirection direction = SeekDirection.Forward, int skip = 0)
@@ -497,7 +497,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyOrPrefix">The key to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
-        /// <param name="skip">The index of the first entry to return.</param>
+        /// <param name="skip">Number of entries to skip.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
