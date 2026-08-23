@@ -221,8 +221,7 @@ namespace Neo.Network.P2P
 
             if (inventory is Block unsolicitedBlock && !IsRequestedBySession(session, unsolicitedBlock))
             {
-                if (session is not null)
-                    TrackReceivedBlockHash(session, unsolicitedBlock);
+                TrackReceivedBlockHash(session!, unsolicitedBlock);
                 return;
             }
 
