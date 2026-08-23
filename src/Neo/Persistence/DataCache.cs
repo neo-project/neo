@@ -581,7 +581,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyOrPrefix">The key to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
-        /// <param name="skip">The index of the first entry to return.</param>
+        /// <param name="skip">Number of entries to skip.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
         protected abstract IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction, int skip);
 
