@@ -413,16 +413,16 @@ namespace Neo.UnitTests.Persistence
             store.Put(s_key4.ToArray(), s_value3.ToArray());
 
             var items = myDataCache.Find(SeekDirection.Forward).GetEnumerator();
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key1, items.Current.Key);
 
             myDataCache.TryGet(s_key3); // GETLINE
 
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key2, items.Current.Key);
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key3, items.Current.Key);
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key4, items.Current.Key);
             Assert.IsFalse(items.MoveNext());
         }
@@ -439,16 +439,15 @@ namespace Neo.UnitTests.Persistence
             store.Put(s_key4.ToArray(), s_value3.ToArray());
 
             var items = myDataCache.Find(SeekDirection.Forward, 1).GetEnumerator();
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key2, items.Current.Key);
 
             myDataCache.TryGet(s_key3); // GETLINE
 
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key3, items.Current.Key);
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key4, items.Current.Key);
-            items.MoveNext();
             Assert.IsFalse(items.MoveNext());
         }
 

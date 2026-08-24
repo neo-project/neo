@@ -296,6 +296,10 @@ namespace Neo.Persistence
                 }
             }
 
+            return FindInternal(keyPrefix, seekPrefix, direction, skip);
+        }
+        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? keyPrefix, byte[]? seekPrefix, SeekDirection direction, int skip)
+        {
             // For backward scans the seekPrefix is a sentinel that may itself exist in the store.
             // Passing `skip` down to Seek would let that sentinel key consume offset slots before
             // the prefix filter runs, skipping too few real prefix matches.  Instead, pass skip=0
