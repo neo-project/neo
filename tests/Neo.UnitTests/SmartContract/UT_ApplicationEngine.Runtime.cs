@@ -204,8 +204,11 @@ namespace Neo.UnitTests.SmartContract
             var first = engine.GetRandom();
             var second = engine.GetRandom();
             Assert.AreNotEqual(first, second);
-            Assert.IsTrue(first >= 0 && first <= uint.MaxValue);
-            Assert.IsTrue(second >= 0 && second <= uint.MaxValue);
+            var max32 = (BigInteger.One << 255) - 1;
+            Assert.IsTrue(first >= 0 && first <= max32);
+            Assert.IsTrue(second >= 0 && second <= max32);
+            Assert.IsLessThanOrEqualTo(32, first.GetByteCount());
+            Assert.IsLessThanOrEqualTo(32, second.GetByteCount());
             Assert.AreEqual(first, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 0), isUnsigned: true));
             Assert.AreEqual(second, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 1), isUnsigned: true));
             Assert.AreEqual(Convert.ToHexString(beacon), Convert.ToHexString(engine.GetBlockBeacon()));
@@ -246,8 +249,11 @@ namespace Neo.UnitTests.SmartContract
             var a = engine1.GetRandom();
             var b = engine2.GetRandom();
             Assert.AreNotEqual(a, b);
-            Assert.IsTrue(a >= 0 && a <= uint.MaxValue);
-            Assert.IsTrue(b >= 0 && b <= uint.MaxValue);
+            var max32 = (BigInteger.One << 255) - 1;
+            Assert.IsTrue(a >= 0 && a <= max32);
+            Assert.IsTrue(b >= 0 && b <= max32);
+            Assert.IsLessThanOrEqualTo(32, a.GetByteCount());
+            Assert.IsLessThanOrEqualTo(32, b.GetByteCount());
         }
 
         [TestMethod]

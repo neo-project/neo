@@ -307,7 +307,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The implementation of System.Runtime.GetRandom.
         /// Gets the next random number.
-        /// With a block beacon, the value is an unsigned 32-bit integer.
+        /// With a block beacon, the value is an unsigned 32-byte integer (at most 2^255 − 1).
         /// Without a beacon, the historical Murmur128 (128-bit) path is used.
         /// </summary>
         /// <returns>The next random number.</returns>

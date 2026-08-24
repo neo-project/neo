@@ -27,9 +27,11 @@ namespace Neo.Cryptography
         public const int Size = 32;
 
         /// <summary>
-        /// Width of each <c>GetRandom</c> sample when a beacon is set (32-bit unsigned).
+        /// Width of each <c>GetRandom</c> sample when a beacon is set (32-byte NeoVM integer).
+        /// The high bit of the little-endian encoding is cleared so the value fits
+        /// signed 32-byte <c>Integer</c> (<c>GetByteCount() ≤ 32</c>, at most 2^255 − 1).
         /// </summary>
-        public const int DerivedSize = sizeof(uint);
+        public const int DerivedSize = 32;
 
         /// <summary>
         /// Computes <c>rn = SHA256(network ‖ height ‖ view)</c>.
@@ -60,7 +62,8 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
-        /// Contract PRF: first 4 bytes of <c>SHA256(beacon ‖ network ‖ txHash ‖ counter)</c> (uint32).
+        /// Contract PRF: 32-byte <c>SHA256(beacon ‖ network ‖ txHash ‖ counter)</c>,
+        /// with the high bit cleared so the unsigned integer fits NeoVM 32-byte size.
         /// </summary>
         public static byte[] Derive(ReadOnlySpan<byte> beacon, uint network, ReadOnlySpan<byte> txHash, uint counter)
         {
@@ -75,7 +78,8 @@ namespace Neo.Cryptography
             txHash.CopyTo(buffer.AsSpan(Size + 4));
             BinaryPrimitives.WriteUInt32LittleEndian(buffer.AsSpan(Size + 4 + txHash.Length), counter);
             var hash = buffer.Sha256();
-            return hash[..DerivedSize];
+            hash[31] &= 0x7F;
+            return hash;
         }
     }
 }

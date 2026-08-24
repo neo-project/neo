@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using System;
+using System.Numerics;
 
 namespace Neo.UnitTests.Cryptography
 {
@@ -49,7 +50,8 @@ namespace Neo.UnitTests.Cryptography
             var rTx = RandomBeacon.Derive(beacon, 1, txB, 0);
 
             Assert.HasCount(RandomBeacon.DerivedSize, r0);
-            Assert.AreEqual(sizeof(uint), r0.Length);
+            Assert.AreEqual(32, r0.Length);
+            Assert.IsLessThanOrEqualTo(32, new BigInteger(r0, isUnsigned: true).GetByteCount());
             Assert.AreNotEqual(Convert.ToHexString(r0), Convert.ToHexString(r1));
             Assert.AreNotEqual(Convert.ToHexString(r0), Convert.ToHexString(rNet));
             Assert.AreNotEqual(Convert.ToHexString(r0), Convert.ToHexString(rTx));
