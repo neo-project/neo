@@ -503,7 +503,7 @@ namespace Neo.Persistence
         {
             ArgumentOutOfRangeException.ThrowIfNegative(skip);
 
-            IEnumerable<(byte[], StorageKey, StorageItem)> cached;
+            (byte[], StorageKey, StorageItem)[] cached;
             HashSet<StorageKey> cachedKeySet;
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             lock (_dictionary)
@@ -516,12 +516,13 @@ namespace Neo.Persistence
                         p.Key,
                         p.Value.Item
                     ))
-                    .OrderBy(p => p.KeyBytes, comparer);
+                    .OrderBy(p => p.KeyBytes, comparer)
+                    .ToArray();
                 cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
             }
 
             var skipInMemory = 0;
-            if (cachedKeySet.Count > 0)
+            if (cached.Length > 0)
             {
                 // If there are cached entries, we need to skip them first before seeking the underlying storage.
                 skipInMemory = skip;
@@ -536,7 +537,7 @@ namespace Neo.Persistence
                     p.Key,
                     p.Value
                 ));
-            using var e1 = cached.GetEnumerator();
+            using var e1 = ((IEnumerable<(byte[], StorageKey, StorageItem)>)cached).GetEnumerator();
             using var e2 = uncached.GetEnumerator();
             (byte[] KeyBytes, StorageKey Key, StorageItem Item) i1, i2;
             var c1 = e1.MoveNext();
