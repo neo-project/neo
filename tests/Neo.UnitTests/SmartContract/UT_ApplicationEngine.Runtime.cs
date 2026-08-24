@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -187,6 +189,59 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreNotEqual(rand_8, rand_3);
             Assert.AreNotEqual(rand_9, rand_4);
             Assert.AreNotEqual(rand_10, rand_5);
+        }
+
+        [TestMethod]
+        public void TestGetRandom_WithInjectedBeacon_UsesPrf()
+        {
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
+            var beacon = new byte[32];
+            beacon[0] = 0x42;
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            engine.SetBlockBeacon(beacon);
+
+            var first = engine.GetRandom();
+            var second = engine.GetRandom();
+            Assert.AreNotEqual(first, second);
+            Assert.AreEqual(first, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 0), isUnsigned: true));
+            Assert.AreEqual(second, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 1), isUnsigned: true));
+            Assert.AreEqual(Convert.ToHexString(beacon), Convert.ToHexString(engine.GetBlockBeacon()));
+        }
+
+        [TestMethod]
+        public void TestGetRandom_WithoutBeacon_UnchangedMurmur()
+        {
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            Assert.AreEqual(BigInteger.Parse("271339657438512451304577787170704246350"), engine.GetRandom());
+            Assert.IsEmpty(engine.GetBlockBeacon());
+        }
+
+        [TestMethod]
+        public void TestGetRandom_Beacon_DifferentTxHash()
+        {
+            var beacon = new byte[32];
+            beacon[^1] = 9;
+            var tx1 = TestUtils.GetTransaction(UInt160.Zero);
+            var tx2 = new Transaction
+            {
+                Version = 0,
+                Nonce = 1,
+                ValidUntilBlock = 0,
+                Signers = Array.Empty<Signer>(),
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Script = Array.Empty<byte>(),
+                SystemFee = 0,
+                NetworkFee = 0,
+                Witnesses = Array.Empty<Witness>()
+            };
+
+            using var engine1 = ApplicationEngine.Create(TriggerType.Application, tx1, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, tx2, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            engine1.SetBlockBeacon(beacon);
+            engine2.SetBlockBeacon(beacon);
+            Assert.AreNotEqual(engine1.GetRandom(), engine2.GetRandom());
         }
 
         [TestMethod]

@@ -83,6 +83,7 @@ namespace Neo.SmartContract
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
+        private byte[]? _blockBeacon;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -274,6 +275,19 @@ namespace Neo.SmartContract
             }
             diagnostic?.Initialized(this);
         }
+
+        /// <summary>
+        /// Supplies a 32-byte consensus beacon for <see cref="GetRandom"/>.
+        /// neo-node will set this from the aggregated DRB; unit tests inject a fixture.
+        /// </summary>
+        internal void SetBlockBeacon(ReadOnlyMemory<byte> beacon)
+        {
+            if (beacon.Length != Cryptography.RandomBeacon.Size)
+                throw new ArgumentException($"Beacon must be {Cryptography.RandomBeacon.Size} bytes.", nameof(beacon));
+            _blockBeacon = beacon.ToArray();
+        }
+
+        internal byte[]? GetBlockBeaconBytes() => _blockBeacon;
 
         #region JumpTable
 
