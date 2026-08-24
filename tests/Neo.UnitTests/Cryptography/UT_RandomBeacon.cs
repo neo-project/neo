@@ -48,7 +48,8 @@ namespace Neo.UnitTests.Cryptography
             var rNet = RandomBeacon.Derive(beacon, 2, txA, 0);
             var rTx = RandomBeacon.Derive(beacon, 1, txB, 0);
 
-            Assert.HasCount(16, r0);
+            Assert.HasCount(RandomBeacon.DerivedSize, r0);
+            Assert.AreEqual(sizeof(uint), r0.Length);
             Assert.AreNotEqual(Convert.ToHexString(r0), Convert.ToHexString(r1));
             Assert.AreNotEqual(Convert.ToHexString(r0), Convert.ToHexString(rNet));
             Assert.AreNotEqual(Convert.ToHexString(r0), Convert.ToHexString(rTx));

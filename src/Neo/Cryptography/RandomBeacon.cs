@@ -27,6 +27,11 @@ namespace Neo.Cryptography
         public const int Size = 32;
 
         /// <summary>
+        /// Width of each <c>GetRandom</c> sample when a beacon is set (32-bit unsigned).
+        /// </summary>
+        public const int DerivedSize = sizeof(uint);
+
+        /// <summary>
         /// Computes <c>rn = SHA256(network ‖ height ‖ view)</c>.
         /// </summary>
         public static byte[] ComputeRoundId(uint network, uint height, byte view)
@@ -55,7 +60,7 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
-        /// Contract PRF: <c>SHA256(beacon ‖ network ‖ txHash ‖ counter)</c>, 16 bytes (same width as Murmur128).
+        /// Contract PRF: first 4 bytes of <c>SHA256(beacon ‖ network ‖ txHash ‖ counter)</c> (uint32).
         /// </summary>
         public static byte[] Derive(ReadOnlySpan<byte> beacon, uint network, ReadOnlySpan<byte> txHash, uint counter)
         {
@@ -70,7 +75,7 @@ namespace Neo.Cryptography
             txHash.CopyTo(buffer.AsSpan(Size + 4));
             BinaryPrimitives.WriteUInt32LittleEndian(buffer.AsSpan(Size + 4 + txHash.Length), counter);
             var hash = buffer.Sha256();
-            return hash[..16];
+            return hash[..DerivedSize];
         }
     }
 }

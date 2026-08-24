@@ -204,6 +204,8 @@ namespace Neo.UnitTests.SmartContract
             var first = engine.GetRandom();
             var second = engine.GetRandom();
             Assert.AreNotEqual(first, second);
+            Assert.IsTrue(first >= 0 && first <= uint.MaxValue);
+            Assert.IsTrue(second >= 0 && second <= uint.MaxValue);
             Assert.AreEqual(first, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 0), isUnsigned: true));
             Assert.AreEqual(second, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 1), isUnsigned: true));
             Assert.AreEqual(Convert.ToHexString(beacon), Convert.ToHexString(engine.GetBlockBeacon()));
@@ -241,7 +243,11 @@ namespace Neo.UnitTests.SmartContract
             using var engine2 = ApplicationEngine.Create(TriggerType.Application, tx2, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
             engine1.SetBlockBeacon(beacon);
             engine2.SetBlockBeacon(beacon);
-            Assert.AreNotEqual(engine1.GetRandom(), engine2.GetRandom());
+            var a = engine1.GetRandom();
+            var b = engine2.GetRandom();
+            Assert.AreNotEqual(a, b);
+            Assert.IsTrue(a >= 0 && a <= uint.MaxValue);
+            Assert.IsTrue(b >= 0 && b <= uint.MaxValue);
         }
 
         [TestMethod]
