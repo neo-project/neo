@@ -153,6 +153,29 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
+        public void TestBigInteger_Parse_Max32ByteInteger()
+        {
+            var max = JNumber.MaxInteger;
+            var json = max.ToString(CultureInfo.InvariantCulture);
+            var parsed = (JNumber)JToken.Parse(json, exactIntegers: true)!;
+            Assert.AreEqual(max, parsed.GetBigInteger());
+            Assert.AreEqual(JNumber.MaxIntegerSize, max.GetByteCount());
+
+            var min = JNumber.MinInteger;
+            parsed = (JNumber)JToken.Parse(min.ToString(CultureInfo.InvariantCulture), exactIntegers: true)!;
+            Assert.AreEqual(min, parsed.GetBigInteger());
+        }
+
+        [TestMethod]
+        public void TestBigInteger_Parse_Over32ByteInteger_Throws()
+        {
+            var tooBig = JNumber.MaxInteger + 1;
+            Assert.AreEqual(JNumber.MaxIntegerSize + 1, tooBig.GetByteCount());
+            Assert.ThrowsExactly<FormatException>(() =>
+                JToken.Parse(tooBig.ToString(CultureInfo.InvariantCulture), exactIntegers: true));
+        }
+
+        [TestMethod]
         public void TestBigInteger_Parse_DefaultIsDouble_NotExact()
         {
             // Default parse keeps historical double semantics (consensus-safe pre-HF_Huyao).

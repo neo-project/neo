@@ -186,13 +186,6 @@ namespace Neo.Json
             };
         }
 
-        /// <summary>
-        /// Maximum decimal digits accepted for exact integer JSON numbers.
-        /// Larger values fall back to double (and fail if non-finite), matching prior
-        /// rejection of pathological inputs while covering Neo 32-byte integers (~78 digits).
-        /// </summary>
-        private const int MaxExactIntegerDigits = 100;
-
         private static JNumber ReadNumber(ref Utf8JsonReader reader, bool exactIntegers)
         {
             // Legacy / pre-HF_Huyao: always double (consensus-compatible with historical nodes).
@@ -212,7 +205,7 @@ namespace Neo.Json
 
             if (raw.Contains('e') || raw.Contains('E'))
             {
-                if (TryParseScientificInteger(raw, out var sci) && CountDigits(sci) <= MaxExactIntegerDigits)
+                if (TryParseScientificInteger(raw, out var sci) && JNumber.FitsMaxIntegerSize(sci))
                     return JNumber.FromBigInteger(sci);
                 return new JNumber(reader.GetDouble());
             }
@@ -220,13 +213,13 @@ namespace Neo.Json
             if (raw.Contains('.'))
                 return new JNumber(reader.GetDouble());
 
-            // Pure integer longer than Int64.
-            var digitCount = raw[0] == '-' ? raw.Length - 1 : raw.Length;
-            if (digitCount > MaxExactIntegerDigits)
-                throw new FormatException($"JSON integer has too many digits ({digitCount}).");
-
+            // Pure integer longer than Int64: cap at NeoVM 32-byte integer size.
             if (BigInteger.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var big))
+            {
+                if (!JNumber.FitsMaxIntegerSize(big))
+                    throw new FormatException($"JSON integer exceeds {JNumber.MaxIntegerSize}-byte limit.");
                 return JNumber.FromBigInteger(big);
+            }
 
             return new JNumber(reader.GetDouble());
         }
@@ -266,14 +259,6 @@ namespace Neo.Json
 
             result = mant * BigInteger.Pow(10, exp);
             return true;
-        }
-
-        private static int CountDigits(BigInteger value)
-        {
-            if (value.IsZero) return 1;
-            value = BigInteger.Abs(value);
-            // 10^d <= value < 10^(d+1) → d+1 digits
-            return (int)Math.Floor(BigInteger.Log10(value)) + 1;
         }
 
         private static string GetRawNumberText(ref Utf8JsonReader reader)

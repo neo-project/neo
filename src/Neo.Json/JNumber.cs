@@ -31,6 +31,24 @@ namespace Neo.Json
         public static readonly long MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
 
         /// <summary>
+        /// Maximum two's-complement size of an exact JSON integer, matching NeoVM 32-byte integers.
+        /// </summary>
+        public const int MaxIntegerSize = 32;
+
+        /// <summary>
+        /// Largest exact integer that fits in <see cref="MaxIntegerSize"/> bytes (2^255 − 1).
+        /// </summary>
+        public static readonly BigInteger MaxInteger = (BigInteger.One << (MaxIntegerSize * 8 - 1)) - 1;
+
+        /// <summary>
+        /// Smallest exact integer that fits in <see cref="MaxIntegerSize"/> bytes (−2^255).
+        /// </summary>
+        public static readonly BigInteger MinInteger = -MaxInteger - 1;
+
+        internal static bool FitsMaxIntegerSize(BigInteger value) =>
+            value.GetByteCount() <= MaxIntegerSize;
+
+        /// <summary>
         /// When non-null, the exact integer value. Used for integers outside the IEEE-754
         /// safe integer range (or constructed from <see cref="BigInteger"/> outside that range)
         /// so they round-trip without precision loss.
