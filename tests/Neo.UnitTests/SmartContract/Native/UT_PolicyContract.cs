@@ -742,7 +742,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(2028330, engine.FeeConsumed);
-            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(engine.ProtocolSettings, engine.SnapshotCache, 0)));
             Assert.IsEmpty(engine.Notifications);
 
             // Whitelist
@@ -764,7 +764,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.SnapshotCache.Commit();
             engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
 
-            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(engine.ProtocolSettings, engine.SnapshotCache, 0)));
             Assert.HasCount(1, engine.Notifications); // Whitelist deleted
         }
 
@@ -855,7 +855,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = _snapshotCache.CloneCache();
             var engine = CreateEngineWithCommitteeSigner(snapshotCache);
-            var method = NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)
+            var method = NativeContract.NEO.GetContractState(engine.ProtocolSettings, engine.SnapshotCache, 0)
                 .Manifest.Abi.Methods.Where(u => u.Name == "balanceOf").Single();
 
             NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, method.Name, method.Parameters.Length, 123_456);
@@ -890,7 +890,6 @@ namespace Neo.UnitTests.SmartContract.Native
             return engine;
         }
 
-        private const byte Prefix_Hardfork = 24;
         private const uint PrivateNetworkMagic = 0x4E455654u; // "NETV"
 
         private static ImmutableDictionary<Hardfork, uint> ConfigThroughHuyao(uint height = 0) =>
@@ -910,7 +909,7 @@ namespace Neo.UnitTests.SmartContract.Native
             new(ContractParameterType.String) { Value = name };
 
         private static StorageKey IaraStorageKey() =>
-            StorageKey.Create(NativeContract.Policy.Id, Prefix_Hardfork, Encoding.UTF8.GetBytes("Iara"));
+            StorageKey.Create(NativeContract.Policy.Id, 24 /* Prefix_Hardfork */, Encoding.UTF8.GetBytes("Iara"));
 
         [TestMethod]
         public void Check_GetHardforkActivationHeight_DefaultUnset()
@@ -1012,22 +1011,25 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_LocalPostHuyaoHardforks_AreIgnored()
+        public void Check_ActivateHardfork_NameIsCaseSensitive()
         {
             var snapshot = _snapshotCache.CloneCache();
-            var settings = TestProtocolSettings.Default with
+            var block = CreateBlock(1000);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            Assert.ThrowsExactly<UnknownHardforkException>(() =>
             {
-                Hardforks = ConfigThroughHuyao().Add(Hardfork.HF_Iara, 10)
-            };
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "activateHardfork", HardforkName("iara"));
+            });
+            Assert.ThrowsExactly<UnknownHardforkException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "activateHardfork", HardforkName("HF_Iara"));
+            });
 
-            // Local config would enable Iara at 10, but post-Huyao activation is Policy-only.
-            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Iara, 10));
-            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 10));
-            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 1_000_000));
-
-            snapshot.Add(IaraStorageKey(), new StorageItem(50u));
-            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 49));
-            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, 50));
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("iara"));
+            Assert.IsTrue(ret.IsNull);
         }
 
         [TestMethod]
@@ -1053,37 +1055,12 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_DetectHardforkConfigDivergence_HistoricalHeights()
+        public void Check_HuyaoInitialize_StoresConfigManagedHardforks()
         {
-            var local = TestProtocolSettings.Default with
-            {
-                Network = PrivateNetworkMagic,
-                Hardforks = ConfigThroughHuyao(0).SetItem(Hardfork.HF_Basilisk, 100)
-            };
-            var canonical = TestProtocolSettings.Default with
-            {
-                Network = PrivateNetworkMagic,
-                Hardforks = ConfigThroughHuyao(0).SetItem(Hardfork.HF_Basilisk, 200)
-            };
-
-            var issues = ProtocolSettings.DetectHardforkConfigDivergence(local, canonical);
-            Assert.IsTrue(issues.Any(i => i.Contains("HF_Basilisk")));
-            Assert.IsTrue(PolicyContract.IsHardforkEnabled(local, null, Hardfork.HF_Basilisk, 150));
-            Assert.IsFalse(PolicyContract.IsHardforkEnabled(canonical, null, Hardfork.HF_Basilisk, 150));
-        }
-
-        [TestMethod]
-        public void Check_ActivateHardfork_PresentInManifest_AfterHuyao()
-        {
-            var state = NativeContract.Policy.GetContractState(TestProtocolSettings.Default, 0);
-            Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == "activateHardfork"));
-            Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == "getHardforkActivationHeight"));
-            Assert.IsFalse(state.Manifest.Abi.Methods.Any(m => m.Name == "setPublicNetwork"));
-            Assert.IsFalse(state.Manifest.Abi.Methods.Any(m => m.Name == "getPublicNetwork"));
-            Assert.IsTrue(state.Manifest.Abi.Events.Any(e => e.Name == "HardforkActivationScheduled"));
-            var hfEvent = state.Manifest.Abi.Events.Single(e => e.Name == "HardforkActivationScheduled");
-            Assert.AreEqual(ContractParameterType.String, hfEvent.Parameters[0].Type);
-            Assert.AreEqual("activationHeight", hfEvent.Parameters[1].Name);
+            var snapshot = _snapshotCache.CloneCache();
+            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Huyao, out var huyaoHeight));
+            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Aspidochelone, out _));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Huyao, huyaoHeight));
         }
 
         [TestMethod]
@@ -1127,8 +1104,8 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Iara, out var height));
             Assert.AreEqual(blockIndex + 1, height);
-            Assert.IsTrue(NativeContract.Policy.IsHardforkEnabled(snapshot, Hardfork.HF_Iara, blockIndex + 1));
-            Assert.IsFalse(NativeContract.Policy.IsHardforkEnabled(snapshot, Hardfork.HF_Iara, blockIndex));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex + 1));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex));
         }
 
         [TestMethod]

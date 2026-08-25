@@ -45,22 +45,22 @@ namespace Neo
         }
 
         /// <summary>
-        /// Parses a Policy hardfork name such as <c>Iara</c> or <c>HF_Iara</c>.
+        /// Parses a Policy hardfork name. Only the full raw name is accepted
+        /// (case-sensitive), e.g. <c>Iara</c>, not <c>iara</c> or <c>HF_Iara</c>.
         /// </summary>
-        public static bool TryParse(string? name, out Hardfork hardfork)
+        public static bool TryParseExact(string? name, out Hardfork hardfork)
         {
             hardfork = default;
             if (string.IsNullOrEmpty(name))
                 return false;
 
-            if (Enum.TryParse(name, ignoreCase: true, out hardfork) && Enum.IsDefined(hardfork))
-                return true;
-
-            if (!name.StartsWith("HF_", StringComparison.OrdinalIgnoreCase)
-                && Enum.TryParse("HF_" + name, ignoreCase: true, out hardfork)
-                && Enum.IsDefined(hardfork))
+            foreach (Hardfork value in Enum.GetValues<Hardfork>())
             {
-                return true;
+                if (GetName(value).Equals(name, StringComparison.Ordinal))
+                {
+                    hardfork = value;
+                    return true;
+                }
             }
 
             return false;

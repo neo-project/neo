@@ -133,37 +133,14 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void DetectHardforkConfigDivergence_AlignedAndUnset()
+        public void Load_PostHuyaoHardfork_Throws()
         {
-            var a = TestProtocolSettings.Default with
-            {
-                Network = 0x4E455654u,
-                Hardforks = new Dictionary<Hardfork, uint>
-                {
-                    { Hardfork.HF_Aspidochelone, 0 },
-                    { Hardfork.HF_Basilisk, 0 },
-                }.ToImmutableDictionary()
-            };
-            var b = a with { };
-            Assert.IsEmpty(ProtocolSettings.DetectHardforkConfigDivergence(a, b));
-
-            var canonicalMissing = TestProtocolSettings.Default with
-            {
-                Network = 0x4E455654u,
-                Hardforks = new Dictionary<Hardfork, uint>
-                {
-                    { Hardfork.HF_Aspidochelone, 0 },
-                }.ToImmutableDictionary()
-            };
-            var issues = ProtocolSettings.DetectHardforkConfigDivergence(a, canonicalMissing);
-            Assert.IsTrue(issues.Any(i => i.Contains("HF_Basilisk") && i.Contains("unset")));
-
-            // Post-Huyao heights are not compared (Policy-managed).
-            var withIara = a with
-            {
-                Hardforks = a.Hardforks.Add(Hardfork.HF_Iara, 99)
-            };
-            Assert.IsEmpty(ProtocolSettings.DetectHardforkConfigDivergence(withIara, a));
+            string json = CreateHFSettings("\"HF_Aspidochelone\": 0, \"HF_Basilisk\": 0, \"HF_Cockatrice\": 0, \"HF_Domovoi\": 0, \"HF_Echidna\": 0, \"HF_Faun\": 0, \"HF_Gorgon\": 0, \"HF_Huyao\": 0, \"HF_Iara\": 10");
+            var file = Path.GetTempFileName();
+            File.WriteAllText(file, json);
+            var ex = Assert.ThrowsExactly<ArgumentException>(() => _ = ProtocolSettings.Load(file));
+            File.Delete(file);
+            Assert.Contains("HF_Iara", ex.Message);
         }
 
         [TestMethod]

@@ -18,6 +18,7 @@ using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
@@ -119,6 +120,8 @@ namespace Neo.SmartContract.Native
         private const string WhitelistChangedEventName = "WhitelistFeeChanged";
         private const string HardforkActivationScheduledEventName = "HardforkActivationScheduled";
 
+        public override ImmutableHashSet<Hardfork?> Activations => [null, Hardfork.HF_Iara];
+
         [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
             "old", ContractParameterType.Integer,
             "new", ContractParameterType.Integer
@@ -173,6 +176,20 @@ namespace Neo.SmartContract.Native
                 {
                     var blockedAcc = engine.SnapshotCache.GetAndChange(key)!;
                     blockedAcc.Set(time);
+                }
+            }
+            if (hardfork == Hardfork.HF_Huyao)
+            {
+                // Persist config-managed A–H activation heights so later checks can use Policy storage.
+                foreach (Hardfork hf in Enum.GetValues<Hardfork>())
+                {
+                    if (hf > ProtocolSettings.LastConfigManagedHardfork)
+                        continue;
+                    if (!engine.ProtocolSettings.Hardforks.TryGetValue(hf, out var height))
+                        continue;
+                    var key = CreateHardforkKey(hf);
+                    if (!engine.SnapshotCache.Contains(key))
+                        engine.SnapshotCache.Add(key, new StorageItem(height));
                 }
             }
             return ContractTask.CompletedTask;
@@ -711,7 +728,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger? GetHardforkActivationHeight(IReadOnlyStore snapshot, string hardfork)
         {
-            if (!Hardforks.TryParse(hardfork, out var hf))
+            if (!Hardforks.TryParseExact(hardfork, out var hf))
                 return null;
             if (!TryGetHardforkHeight(snapshot, hf, out var height))
                 return null;
@@ -736,26 +753,25 @@ namespace Neo.SmartContract.Native
             // Committee first: a random sender must not be able to halt the node with a bogus name.
             AssertCommittee(engine);
 
-            if (!Hardforks.TryParse(hardfork, out var hf))
+            if (!Hardforks.TryParseExact(hardfork, out var hf))
                 throw new UnknownHardforkException(hardfork);
 
             // Config-managed hardforks (through Huyao) cannot be activated via Policy.
             if (hf <= ProtocolSettings.LastConfigManagedHardfork)
                 throw new InvalidOperationException(
-                    $"Hardfork {Hardforks.GetName(hf)} must be activated via ProtocolSettings configuration, not Policy.");
+                    $"Hardfork {hardfork} must be activated via ProtocolSettings configuration, not Policy.");
 
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException("Cannot activate hardfork without a persisting block.");
 
-            var key = CreateHardforkKey(hf);
-            if (engine.SnapshotCache.Contains(key) || engine.IsHardforkEnabled(hf))
-                throw new InvalidOperationException($"Hardfork {Hardforks.GetName(hf)} is already enabled.");
+            if (engine.IsHardforkEnabled(hf))
+                throw new InvalidOperationException($"Hardfork {hardfork} is already enabled.");
 
             uint activationHeight = checked(engine.PersistingBlock.Index + 1);
-            engine.SnapshotCache.Add(key, new StorageItem(activationHeight));
+            engine.SnapshotCache.Add(CreateHardforkKey(hf), new StorageItem(activationHeight));
 
             engine.SendNotification(Hash, HardforkActivationScheduledEventName,
-                [Hardforks.GetName(hf), activationHeight]);
+                [hardfork, activationHeight]);
         }
 
         /// <summary>
@@ -772,14 +788,6 @@ namespace Neo.SmartContract.Native
 
             height = (uint)(BigInteger)item;
             return true;
-        }
-
-        /// <summary>
-        /// Returns whether a hardfork is enabled at <paramref name="index"/> according to on-chain Policy state.
-        /// </summary>
-        public bool IsHardforkEnabled(IReadOnlyStore snapshot, Hardfork hardfork, uint index)
-        {
-            return TryGetHardforkHeight(snapshot, hardfork, out var height) && index >= height;
         }
 
         /// <summary>

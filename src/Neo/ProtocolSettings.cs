@@ -266,6 +266,12 @@ namespace Neo
 
         private static void CheckingHardfork(ProtocolSettings settings)
         {
+            foreach (var hf in settings.Hardforks.Keys)
+            {
+                if (hf > LastConfigManagedHardfork)
+                    throw new ArgumentException($"Hardfork {hf} cannot be configured in ProtocolSettings; activate it via Policy.activateHardfork.");
+            }
+
             var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
             // Check for continuity in configured hardforks
             var sortedHardforks = settings.Hardforks.Keys
@@ -291,36 +297,6 @@ namespace Neo
                 }
             }
 
-        }
-
-        /// <summary>
-        /// Detects hardfork height mismatches that would cause a node to diverge from peers
-        /// that share a different configuration for config-managed hardforks.
-        /// </summary>
-        /// <param name="local">This node's settings.</param>
-        /// <param name="canonical">Expected/canonical settings (e.g. peer or published mainnet config).</param>
-        /// <returns>Descriptions of mismatched hardfork heights; empty if aligned.</returns>
-        public static IReadOnlyList<string> DetectHardforkConfigDivergence(ProtocolSettings local, ProtocolSettings canonical)
-        {
-            var issues = new List<string>();
-            foreach (Hardfork hf in AllHardforks)
-            {
-                if (hf > LastConfigManagedHardfork)
-                    continue; // Policy-managed; not compared via local Hardforks.
-
-                local.Hardforks.TryGetValue(hf, out var localHeight);
-                canonical.Hardforks.TryGetValue(hf, out var canonicalHeight);
-                bool localHas = local.Hardforks.ContainsKey(hf);
-                bool canonicalHas = canonical.Hardforks.ContainsKey(hf);
-
-                if (localHas != canonicalHas || (localHas && localHeight != canonicalHeight))
-                {
-                    issues.Add(localHas && canonicalHas
-                        ? $"{hf}: local height {localHeight} != canonical height {canonicalHeight}"
-                        : $"{hf}: local {(localHas ? localHeight.ToString() : "unset")} != canonical {(canonicalHas ? canonicalHeight.ToString() : "unset")}");
-                }
-            }
-            return issues;
         }
 
         /// <summary>

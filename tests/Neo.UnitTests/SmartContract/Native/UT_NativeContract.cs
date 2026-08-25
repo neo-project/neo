@@ -71,16 +71,16 @@ namespace Neo.UnitTests.SmartContract.Native
             ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
-            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, settings.IsHardforkEnabled, 1));
-            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, settings.IsHardforkEnabled, 20));
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, PolicyContract.IsHardforkEnabled, settings, null, 1));
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, PolicyContract.IsHardforkEnabled, settings, null, 20));
 
-            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 1));
-            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 20));
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, PolicyContract.IsHardforkEnabled, settings, null, 1));
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, PolicyContract.IsHardforkEnabled, settings, null, 20));
 
-            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 9));
-            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 10));
-            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 19));
-            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 20));
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, PolicyContract.IsHardforkEnabled, settings, null, 9));
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, PolicyContract.IsHardforkEnabled, settings, null, 10));
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, PolicyContract.IsHardforkEnabled, settings, null, 19));
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, PolicyContract.IsHardforkEnabled, settings, null, 20));
         }
 
         [TestMethod]
@@ -92,8 +92,9 @@ namespace Neo.UnitTests.SmartContract.Native
             ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
-            var before = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 19);
-            var after = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 20);
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var before = NativeContract.RoleManagement.GetContractState(PolicyContract.IsHardforkEnabled, settings, snapshot, 19);
+            var after = NativeContract.RoleManagement.GetContractState(PolicyContract.IsHardforkEnabled, settings, snapshot, 20);
 
             Assert.HasCount(2, before.Manifest.Abi.Events[0].Parameters);
             Assert.HasCount(1, before.Manifest.Abi.Events);
@@ -155,12 +156,11 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(hfs!.Contains(Hardfork.HF_Huyao));
             Assert.IsFalse(NativeContract.Policy.IsInitializeBlock(settings, snapshot, 56, out _));
 
-            // HF_Iara is not yet referenced by any Policy method ActiveIn, so a Policy storage
-            // entry alone does not mark Policy as initializing at that height.
             snapshot.Add(
                 StorageKey.Create(NativeContract.Policy.Id, 24 /* Prefix_Hardfork */, System.Text.Encoding.UTF8.GetBytes("Iara")),
                 new StorageItem(77u));
-            Assert.IsFalse(NativeContract.Policy.IsInitializeBlock(settings, snapshot, 77, out _));
+            Assert.IsTrue(NativeContract.Policy.IsInitializeBlock(settings, snapshot, 77, out var iaraHfs));
+            Assert.IsTrue(iaraHfs!.Contains(Hardfork.HF_Iara));
         }
 
         [TestMethod]
