@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Extensions;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -53,6 +54,7 @@ namespace Neo.Persistence.Providers
         /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Find(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(skip);
             keyOrPrefix ??= [];
             if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
 
