@@ -300,6 +300,8 @@ namespace Neo.Persistence
         }
         private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? keyPrefix, byte[]? seekPrefix, SeekDirection direction, int skip)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(skip);
+
             // For backward scans the seekPrefix is a sentinel that may itself exist in the store.
             // Passing `skip` down to Seek would let that sentinel key consume offset slots before
             // the prefix filter runs, skipping too few real prefix matches.  Instead, pass skip=0
@@ -526,7 +528,7 @@ namespace Neo.Persistence
             }
 
             var skipInMemory = 0;
-            if (cached.Length > 0)
+            if (_dictionary.Count > 0)
             {
                 // If there are cached entries, we need to skip them first before seeking the underlying storage.
                 skipInMemory = skip;

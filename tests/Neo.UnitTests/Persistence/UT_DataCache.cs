@@ -263,6 +263,57 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        public void TestFindBackwardRejectsNegativeSkip()
+        {
+            using var store = new MemoryStore();
+            using var cache = new StoreCache(store);
+            byte[] prefix = [0x00, 0x00, 0x00, 0x00];
+            store.Put([0x00, 0x00, 0x00, 0x00, 0x01], [0x01]);
+
+            // Seek / forward Find throw ArgumentOutOfRangeException; backward Find currently returns all hits.
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+                _ = cache.Find(prefix, SeekDirection.Backward, -1).ToList());
+        }
+
+        [TestMethod]
+        public void TestFindRangeSkipDoesNotCountDeletedOverlayKeys()
+        {
+            using var store = new MemoryStore();
+            using var cache = new StoreCache(store);
+
+            store.Put(s_key1.ToArray(), s_value1.ToArray());
+            store.Put(s_key2.ToArray(), s_value2.ToArray());
+            store.Put(s_key3.ToArray(), s_value3.ToArray());
+
+            cache.Delete(s_key2);
+
+            // Range [key1, key4) visible: key1, key3. skip=2 must yield nothing.
+            // Today: store skip=2 consumes key1+deleted key2 → yields key3.
+            var results = cache.FindRange(s_key1.ToArray(), s_key4.ToArray(), SeekDirection.Forward, 2)
+                .Select(p => p.Key).ToList();
+            Assert.IsEmpty(results);
+        }
+
+        [TestMethod]
+        public void TestFindSkipDoesNotCountDeletedOverlayKeys()
+        {
+            using var store = new MemoryStore();
+            using var cache = new StoreCache(store);
+
+            store.Put(s_key1.ToArray(), s_value1.ToArray());
+            store.Put(s_key2.ToArray(), s_value2.ToArray());
+            store.Put(s_key3.ToArray(), s_value3.ToArray());
+
+            cache.Delete(s_key1); // overlay-only; cached.Length == 0, skip is forwarded to the store
+
+            // Visible view: key2, key3. skip=1 must yield key3 only.
+            // Today: store skip=1 consumes deleted key1 → yields key2, key3.
+            var results = cache.Find(SeekDirection.Forward, 1).Select(p => p.Key).ToList();
+            Assert.HasCount(1, results);
+            Assert.AreEqual(s_key3, results[0]);
+        }
+
+        [TestMethod]
         public void TestFindRange()
         {
             var store = new MemoryStore();
