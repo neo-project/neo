@@ -415,6 +415,17 @@ namespace Neo.SmartContract
             return buffer;
         }
 
+        /// <summary>
+        /// Creates a <see cref="UInt160"/> from the last 20 bytes of the serialized form of this key.
+        /// </summary>
+        /// <param name="value">The <see cref="StorageKey"/> to convert.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator UInt160(StorageKey value)
+        {
+            var keyBytes = value.EnsureCache();
+            return new UInt160(keyBytes.Span.Slice(keyBytes.Length - UInt160.Length, UInt160.Length));
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator StorageKey(byte[] value) => new(value);
 

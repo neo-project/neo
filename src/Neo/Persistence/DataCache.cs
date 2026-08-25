@@ -494,7 +494,7 @@ namespace Neo.Persistence
             lock (_dictionary)
             {
                 cached = _dictionary
-                    .Where(p => p.Value.State != TrackState.Deleted && p.Value.State != TrackState.NotFound && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
+                    .Where(p => p.Value.State != TrackState.Deleted && p.Value.State != TrackState.NotFound && (keyOrPrefix == null || p.Key.Compare(comparer, keyOrPrefix) >= 0))
                     .Select(p =>
                     (
                         KeyBytes: p.Key.ToArray(),
