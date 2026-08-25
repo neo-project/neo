@@ -54,14 +54,7 @@ namespace Neo.SmartContract
         /// </summary>
         public int Length
         {
-            get
-            {
-                if (_cache is { IsEmpty: true })
-                {
-                    _cache = Build();
-                }
-                return _cache.Length;
-            }
+            get => EnsureCache().Length;
         }
 
         private ReadOnlyMemory<byte> _cache;
@@ -356,40 +349,62 @@ namespace Neo.SmartContract
             return _hashCode;
         }
 
-        public int Compare(IComparer<ReadOnlySpan<byte>> comparer, ReadOnlySpan<byte> otherKey)
+        /// <summary>
+        /// Compares the serialized form of this key (same buffer as <see cref="ToArray"/>, i.e.
+        /// the little-endian <see cref="Id"/> followed by <see cref="Key"/>) against
+        /// <paramref name="otherKey"/>, which must already be in that same serialized form.
+        /// </summary>
+        /// <param name="comparer">The comparer used to compare the two serialized buffers.</param>
+        /// <param name="otherKey">The serialized buffer (id + key) to compare against.</param>
+        /// <returns>A signed integer as returned by <paramref name="comparer"/>.</returns>
+        internal int Compare(IComparer<ReadOnlySpan<byte>> comparer, ReadOnlySpan<byte> otherKey)
         {
-            if (_cache is { IsEmpty: true })
-            {
-                _cache = Build();
-            }
-            return comparer.Compare(_cache.Span, otherKey);
+            return comparer.Compare(EnsureCache().Span, otherKey);
         }
 
-        public bool StartsWith(ReadOnlySpan<byte> prefix)
+        /// <summary>
+        /// Determines whether the serialized form of this key (same buffer as <see cref="ToArray"/>,
+        /// i.e. the little-endian <see cref="Id"/> followed by <see cref="Key"/>) starts with
+        /// <paramref name="prefix"/>. <paramref name="prefix"/> must include the 4-byte id prefix
+        /// if it is meant to match the beginning of the serialized buffer; this does not test
+        /// <see cref="Key"/> alone.
+        /// </summary>
+        /// <param name="prefix">The serialized prefix (id + key prefix) to test against.</param>
+        internal bool StartsWith(ReadOnlySpan<byte> prefix)
         {
-            if (_cache is { IsEmpty: true })
-            {
-                _cache = Build();
-            }
-            return _cache.Span.StartsWith(prefix);
+            return EnsureCache().Span.StartsWith(prefix);
         }
 
-        public bool SequenceEqual(ReadOnlySpan<byte> other)
+        /// <summary>
+        /// Determines whether the serialized form of this key (same buffer as <see cref="ToArray"/>,
+        /// i.e. the little-endian <see cref="Id"/> followed by <see cref="Key"/>) is equal to
+        /// <paramref name="other"/>. <paramref name="other"/> must already include the 4-byte id
+        /// prefix; this does not test <see cref="Key"/> alone.
+        /// </summary>
+        /// <param name="other">The serialized buffer (id + key) to compare against.</param>
+        internal bool SequenceEqual(ReadOnlySpan<byte> other)
         {
-            if (_cache is { IsEmpty: true })
-            {
-                _cache = Build();
-            }
-            return _cache.Span.SequenceEqual(other);
+            return EnsureCache().Span.SequenceEqual(other);
         }
 
         public byte[] ToArray()
         {
+            return EnsureCache().ToArray(); // Make a copy
+        }
+
+        /// <summary>
+        /// Ensures <see cref="_cache"/> holds the serialized form of this key (little-endian
+        /// <see cref="Id"/> followed by <see cref="Key"/>), building it lazily if necessary,
+        /// and returns it.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ReadOnlyMemory<byte> EnsureCache()
+        {
             if (_cache is { IsEmpty: true })
             {
                 _cache = Build();
             }
-            return _cache.ToArray(); // Make a copy
+            return _cache;
         }
 
         private byte[] Build()
