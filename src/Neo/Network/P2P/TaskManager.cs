@@ -221,7 +221,14 @@ namespace Neo.Network.P2P
 
             if (inventory is Block unsolicitedBlock && !IsRequestedBySession(session, unsolicitedBlock))
             {
-                TrackReceivedBlockHash(session!, unsolicitedBlock);
+                if (session is null) return;
+
+                // The block was not assigned to this session, but it still occupies
+                // globalIndexTasks for whichever session it was assigned to. Clear it
+                // here so RequestTasks can reassign that height immediately instead of
+                // waiting for the original assignee's TaskTimeout.
+                globalIndexTasks.Remove(unsolicitedBlock.Index);
+                TrackReceivedBlockHash(session, unsolicitedBlock);
                 return;
             }
 

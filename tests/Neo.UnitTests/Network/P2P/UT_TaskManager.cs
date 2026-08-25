@@ -119,6 +119,18 @@ namespace Neo.UnitTests.Network.P2P
             return (Dictionary<IActorRef, TaskSession>)sessionsField.GetValue(taskManager.UnderlyingActor)!;
         }
 
+        private static Dictionary<uint, int> GetGlobalIndexTasks(Akka.TestKit.TestActorRef<TaskManager> taskManager)
+        {
+            var field = typeof(TaskManager).GetField("globalIndexTasks", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            return (Dictionary<uint, int>)field.GetValue(taskManager.UnderlyingActor)!;
+        }
+
+        private static Dictionary<UInt256, int> GetGlobalInvTasks(Akka.TestKit.TestActorRef<TaskManager> taskManager)
+        {
+            var field = typeof(TaskManager).GetField("globalInvTasks", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            return (Dictionary<UInt256, int>)field.GetValue(taskManager.UnderlyingActor)!;
+        }
+
         [TestMethod]
         public void UnsolicitedInWindowBlock_IsTrackedByHashOnly()
         {
@@ -473,6 +485,58 @@ namespace Neo.UnitTests.Network.P2P
             unregisteredPeer.Send(taskManager, CreateTransaction());
 
             Assert.IsFalse(GetSessions(taskManager).ContainsKey(unregisteredPeer.Ref));
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void UnsolicitedInWindowBlock_FromUnregisteredPeer_DoesNotThrow()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var unregisteredPeer = CreateTestProbe();
+
+            taskManager.Receive(CreateBlock(currentHeight + 1), unregisteredPeer);
+
+            Assert.IsFalse(GetSessions(taskManager).ContainsKey(unregisteredPeer.Ref));
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void UnsolicitedInvalidBlock_AllowsImmediateRetryFromAnotherPeer()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var index = currentHeight + 1;
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var assignedPeer = RegisterPeer(taskManager, currentHeight);
+            var unsolicitedPeer = RegisterPeer(taskManager, currentHeight);
+            var assignedSession = GetSessions(taskManager)[assignedPeer.Ref];
+
+            assignedSession.IndexTasks.Add(index, TimeProvider.Current.UtcNow);
+            GetGlobalIndexTasks(taskManager)[index] = 1;
+
+            var block = CreateBlock(index);
+            unsolicitedPeer.Send(taskManager, block);
+
+            Assert.IsFalse(GetGlobalIndexTasks(taskManager).ContainsKey(index), "An unsolicited in-window block must still complete global index bookkeeping so the height can be retried.");
+
+            unsolicitedPeer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid));
+            unsolicitedPeer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3; // skip GetHeaders
+
+            var retryPeer = RegisterPeer(taskManager, currentHeight + 10);
+            var request = retryPeer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+
+            var payload = (GetBlockByIndexPayload)request.Payload!;
+            Assert.AreEqual(index, payload.IndexStart, "After the unsolicited block is rejected, another peer must be asked for that height immediately.");
 
             Sys.Stop(taskManager);
         }
