@@ -355,6 +355,19 @@ namespace Neo.SmartContract
         /// <paramref name="otherKey"/>, which must already be in that same serialized form.
         /// </summary>
         /// <param name="comparer">The comparer used to compare the two serialized buffers.</param>
+        /// <param name="otherKey">The other <see cref="StorageKey"/> to compare against.</param>
+        /// <returns>A signed integer as returned by <paramref name="comparer"/>.</returns>
+        internal int Compare(IComparer<ReadOnlySpan<byte>> comparer, StorageKey otherKey)
+        {
+            return comparer.Compare(EnsureCache().Span, otherKey.EnsureCache().Span);
+        }
+
+        /// <summary>
+        /// Compares the serialized form of this key (same buffer as <see cref="ToArray"/>, i.e.
+        /// the little-endian <see cref="Id"/> followed by <see cref="Key"/>) against
+        /// <paramref name="otherKey"/>, which must already be in that same serialized form.
+        /// </summary>
+        /// <param name="comparer">The comparer used to compare the two serialized buffers.</param>
         /// <param name="otherKey">The serialized buffer (id + key) to compare against.</param>
         /// <returns>A signed integer as returned by <paramref name="comparer"/>.</returns>
         internal int Compare(IComparer<ReadOnlySpan<byte>> comparer, ReadOnlySpan<byte> otherKey)
