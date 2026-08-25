@@ -54,6 +54,7 @@ namespace Neo.Extensions
         /// <exception cref="ArgumentNullException"><paramref name="contractState"/> or <paramref name="snapshot"/> is null</exception>
         public static IEnumerable<(StorageKey Key, StorageItem Value)> FindStorage(this ContractState contractState, IReadOnlyStore snapshot, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward, int skip = 0)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(skip);
             ArgumentNullException.ThrowIfNull(contractState);
             ArgumentNullException.ThrowIfNull(snapshot);
             prefix ??= [];
@@ -74,6 +75,7 @@ namespace Neo.Extensions
         /// <exception cref="ArgumentNullException"><paramref name="snapshot"/> is null</exception>
         public static IEnumerable<(StorageKey Key, StorageItem Value)> FindContractStorage(this ContractManagement contractManagement, IReadOnlyStore snapshot, int contractId, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward, int skip = 0)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(skip);
             ArgumentNullException.ThrowIfNull(snapshot);
             prefix ??= [];
 
