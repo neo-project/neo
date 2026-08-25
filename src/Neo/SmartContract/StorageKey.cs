@@ -433,7 +433,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="value">The <see cref="StorageKey"/> to convert.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static implicit operator UInt160(StorageKey value)
+        public static implicit operator UInt160(StorageKey value)
         {
             var keyBytes = value.EnsureCache();
             return new UInt160(keyBytes.Span.Slice(keyBytes.Length - UInt160.Length, UInt160.Length));
