@@ -300,9 +300,9 @@ namespace Neo.Persistence
         {
             foreach (var (key, value) in Seek(seekPrefix, direction))
             {
-                if (keyPrefix == null || key.ToArray().AsSpan().StartsWith(keyPrefix))
+                if (keyPrefix == null || key.StartsWith(keyPrefix))
                     yield return (key, value);
-                else if (direction == SeekDirection.Forward || (seekPrefix == null || !key.ToArray().SequenceEqual(seekPrefix)))
+                else if (direction == SeekDirection.Forward || (seekPrefix == null || !key.SequenceEqual(seekPrefix)))
                     yield break;
             }
         }
@@ -321,7 +321,7 @@ namespace Neo.Persistence
                 : ByteArrayComparer.Reverse;
             foreach (var (key, value) in Seek(start, direction))
             {
-                if (comparer.Compare(key.ToArray(), end) < 0)
+                if (key.Compare(comparer, end) < 0)
                     yield return (key, value);
                 else
                     yield break;

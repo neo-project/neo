@@ -14,6 +14,7 @@ using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -353,6 +354,33 @@ namespace Neo.SmartContract
             if (_hashCode == 0)
                 _hashCode = HashCode.Combine(Id, Key.Span.XxHash3_32());
             return _hashCode;
+        }
+
+        public int Compare(IComparer<ReadOnlySpan<byte>> comparer, ReadOnlySpan<byte> otherKey)
+        {
+            if (_cache is { IsEmpty: true })
+            {
+                _cache = Build();
+            }
+            return comparer.Compare(_cache.Span, otherKey);
+        }
+
+        public bool StartsWith(ReadOnlySpan<byte> prefix)
+        {
+            if (_cache is { IsEmpty: true })
+            {
+                _cache = Build();
+            }
+            return _cache.Span.StartsWith(prefix);
+        }
+
+        public bool SequenceEqual(ReadOnlySpan<byte> other)
+        {
+            if (_cache is { IsEmpty: true })
+            {
+                _cache = Build();
+            }
+            return _cache.Span.SequenceEqual(other);
         }
 
         public byte[] ToArray()

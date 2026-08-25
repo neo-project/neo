@@ -18,7 +18,7 @@ namespace Neo.Extensions
     /// <summary>
     /// Defines methods to support the comparison of two <see cref="byte"/>[].
     /// </summary>
-    public class ByteArrayComparer : IComparer<byte[]>
+    public class ByteArrayComparer : IComparer<byte[]>, IComparer<ReadOnlySpan<byte>>
     {
         public static readonly ByteArrayComparer Default = new(1);
         public static readonly ByteArrayComparer Reverse = new(-1);
@@ -46,6 +46,21 @@ namespace Neo.Extensions
             // will overflow "int.MaxValue". Seeing how "int.MinValue * -1"
             // value would be "int.MaxValue + 1"
             return unchecked(x.AsSpan().SequenceCompareTo(y.AsSpan()) * _direction);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
+        {
+            if (x.IsEmpty) // y must not be null
+                return -y.Length * _direction;
+
+            if (y.IsEmpty) // x must not be null
+                return x.Length * _direction;
+
+            // Note: if "SequenceCompareTo" is "int.MinValue * -1", it
+            // will overflow "int.MaxValue". Seeing how "int.MinValue * -1"
+            // value would be "int.MaxValue + 1"
+            return unchecked(x.SequenceCompareTo(y) * _direction);
         }
     }
 }
