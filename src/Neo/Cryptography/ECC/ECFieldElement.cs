@@ -89,7 +89,7 @@ namespace Neo.Cryptography.ECC
 
             for (var j = 1; j <= s; ++j)
             {
-                Uh = Uh * Vl * p;
+                Uh = (Uh * Vl).Mod(p);
                 Vl = ((Vl * Vl) - (Ql << 1)).Mod(p);
                 Ql = (Ql * Ql).Mod(p);
             }
