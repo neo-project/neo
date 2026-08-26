@@ -516,15 +516,12 @@ namespace Neo.Persistence
             // Passing `skip` down to Seek would let that sentinel key consume offset slots before
             // the prefix filter runs, skipping too few real prefix matches.  Instead, pass skip=0
             // and apply the offset here, after both the prefix and sentinel checks.
-            var (seekSkip, skipInMemory) = direction == SeekDirection.Backward ? (0, skip) : (skip, 0);
+            // The offset counts over the merged sequence, and tracked keys can add or hide
+            // store entries, so the store must be sought from 0 and the offset applied below.
 
-            if (skipInMemory == 0 && cachedKeySet.Count > 0)
-            {
-                // The offset counts over the merged sequence, and tracked keys can add or hide
-                // store entries, so the store must be sought from 0 and the offset applied below.
-                skipInMemory = skip;
-                skip = 0;
-            }
+            var (seekSkip, skipInMemory) =
+                direction == SeekDirection.Backward || cachedKeySet.Count > 0
+                ? (0, skip) : (skip, 0);
 
             var uncached = SeekInternal(keyOrPrefix ?? [], direction, skip)
                 .Where(p => !cachedKeySet.Contains(p.Key));
