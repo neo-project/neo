@@ -292,7 +292,7 @@ namespace Neo.SmartContract
             StaticCoefficients[(byte)OpCode.CALL] = 2451;
             StaticCoefficients[(byte)OpCode.CALL_L] = 2451;
             StaticCoefficients[(byte)OpCode.CALLA] = 2927;
-            StaticCoefficients[(byte)OpCode.CALLT] = 1 << 15;
+            StaticCoefficients[(byte)OpCode.CALLT] = (1 << 15) * OpcodePriceMultiplier;
             StaticCoefficients[(byte)OpCode.ABORT] = 0;
             StaticCoefficients[(byte)OpCode.ABORTMSG] = 0;
             StaticCoefficients[(byte)OpCode.TRY] = 1753;
