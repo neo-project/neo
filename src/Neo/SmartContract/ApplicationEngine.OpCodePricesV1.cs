@@ -67,7 +67,7 @@ namespace Neo.SmartContract
         protected static readonly DynamicPriceTable DefaultDynamicPriceTable = ComposeDynamicPriceTable();
 
         /// <summary>
-        /// The <see cref="SmartContract.DynamicPriceTable"/> used by this instance to price opcodes since Gorgon hardfork.
+        /// The <see cref="SmartContract.DynamicPriceTable"/> used by this instance to price opcodes since Huyao hardfork.
         /// </summary>
         public DynamicPriceTable DynamicPriceTable { get; }
 
@@ -146,12 +146,12 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Gets the price for an opcode since Gorgon hardfork, using this instance's <see cref="DynamicPriceTable"/>.
+        /// Gets the price for an opcode since Huyao hardfork, using this instance's <see cref="DynamicPriceTable"/>.
         /// </summary>
-        /// <param name="baseFee">The base execution fee in datoshi.</param>
+        /// <param name="baseFee">The base execution fee, in the unit of picoGAS.</param>
         /// <param name="opcode">The opcode.</param>
         /// <param name="param">The price parameters.</param>
-        /// <returns>The price in picoGAS.</returns>
+        /// <returns>The price in femtoGAS.</returns>
         public long OpcodeV1(long baseFee, OpCode opcode, RunStats param)
         {
             var calculator = DynamicPriceTable[opcode];

@@ -84,11 +84,11 @@ namespace Neo.SmartContract
         internal readonly uint StoragePrice;
         private byte[] nonceData;
         /// <summary>
-        /// Charges VM instruction price prior to opcode execution. Applied before Gorgon hardfork.
+        /// Charges VM instruction price prior to opcode execution. Applied before Huyao hardfork.
         /// </summary>
         private readonly Action<Instruction>? _preExecuteInstruction;
         /// <summary>
-        /// Charges VM instruction price after opcode execution. Applied starting from Gorgon hardfork.
+        /// Charges VM instruction price after opcode execution. Applied starting from Huyao hardfork.
         /// </summary>
         private readonly Action<Instruction?, RunStats?>? _postExecuteInstruction;
 
