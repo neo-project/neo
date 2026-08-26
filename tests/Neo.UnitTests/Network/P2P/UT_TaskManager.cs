@@ -15,6 +15,7 @@ using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
@@ -940,6 +941,74 @@ namespace Neo.UnitTests.Network.P2P
             peer.Send(taskManager, historicalBlock);
 
             Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(historicalBlock.Index), "An already-persisted height must not be recorded in ReceivedBlockHashes.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void CompletedTask_ClearsIndexTaskOnEveryAssignedSession()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var index = currentHeight + 1;
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var firstPeer = RegisterPeer(taskManager, currentHeight);
+            var secondPeer = RegisterPeer(taskManager, currentHeight);
+            var firstSession = GetSessions(taskManager)[firstPeer.Ref];
+            var secondSession = GetSessions(taskManager)[secondPeer.Ref];
+
+            var block = CreateBlock(index);
+
+            // The same height was concurrently assigned to two sessions, as allowed by MaxConcurrentTasks.
+            firstSession.IndexTasks.Add(index, TimeProvider.Current.UtcNow);
+            secondSession.IndexTasks.Add(index, TimeProvider.Current.UtcNow);
+            GetGlobalIndexTasks(taskManager)[index] = 2;
+
+            firstPeer.Send(taskManager, block);
+
+            Assert.IsFalse(firstSession.IndexTasks.ContainsKey(index), "The completing session's index task must be cleared.");
+            Assert.IsFalse(secondSession.IndexTasks.ContainsKey(index), "Every other session assigned to the same height must also be cleared, otherwise a later timeout could steal the slot from whoever is reassigned to it.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void UnsolicitedBlock_IsMarkedAsKnownHash()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var index = currentHeight + 1;
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+
+            var block = CreateBlock(index);
+
+            var knownHashesField = typeof(TaskManager).GetField("_knownHashes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var knownHashes = (HashSetCache<UInt256>)knownHashesField.GetValue(taskManager.UnderlyingActor)!;
+
+            peer.Send(taskManager, block);
+
+            Assert.IsTrue(knownHashes.Contains(block.Hash), "An unsolicited block must be recorded as a known hash so it is not requested again via INV.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void RequestTasks_DoesNotOverflowNearMaxHeight()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = uint.MaxValue - 1;
+
+            var lastSeenPersistedIndexField = typeof(TaskManager).GetField("lastSeenPersistedIndex", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            lastSeenPersistedIndexField.SetValue(taskManager.UnderlyingActor, currentHeight);
+
+            // Registering a peer whose reported height is far above currentHeight used to
+            // overflow the uint arithmetic in RequestTasks (currentHeight + MaxHashesCount).
+            var peer = RegisterPeer(taskManager, uint.MaxValue);
 
             Sys.Stop(taskManager);
         }

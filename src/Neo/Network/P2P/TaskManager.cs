@@ -248,6 +248,7 @@ namespace Neo.Network.P2P
         /// </summary>
         private void ReleaseUnsolicitedBlockTasks(Block block)
         {
+            _knownHashes.TryAdd(block.Hash);
             globalInvTasks.Remove(block.Hash);
             globalIndexTasks.Remove(block.Index);
 
@@ -273,19 +274,25 @@ namespace Neo.Network.P2P
                 globalIndexTasks.Remove(block.Index);
             }
 
+            // Clear the entry from every session, not only the sender's: with
+            // MaxConcurrentTasks allowing the same hash/index to be assigned to more
+            // than one session, leaving it behind on the others would let a later
+            // OnTimer/DecrementGlobalTask steal the slot from whichever session was
+            // reassigned to it in the meantime.
             foreach (var ms in sessions.Values)
             {
                 ms.AvailableTasks.Remove(inventory.Hash);
+                ms.InvTasks.Remove(inventory.Hash);
+
+                if (inventory is Block completedBlock)
+                    ms.IndexTasks.Remove(completedBlock.Index);
             }
 
             if (session is null)
                 return;
 
-            session.InvTasks.Remove(inventory.Hash);
-
             if (inventory is Block requestedBlock)
             {
-                session.IndexTasks.Remove(requestedBlock.Index);
                 TrackReceivedBlockHash(session, requestedBlock);
             }
             else
@@ -465,9 +472,10 @@ namespace Neo.Network.P2P
             {
                 uint startHeight = currentHeight + 1;
                 while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlockHashes.ContainsKey(startHeight)) { startHeight++; }
-                if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
+                // Avoid uint overflow from currentHeight + MaxHashesCount.
+                if (startHeight > session.LastBlockIndex || startHeight - currentHeight >= InvPayload.MaxHashesCount) return;
                 uint endHeight = startHeight;
-                while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight <= currentHeight + InvPayload.MaxHashesCount) { }
+                while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight - currentHeight <= InvPayload.MaxHashesCount) { }
                 uint count = Math.Min(endHeight - startHeight, InvPayload.MaxHashesCount);
                 for (uint i = 0; i < count; i++)
                 {
