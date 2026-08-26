@@ -49,7 +49,7 @@ namespace Neo.SmartContract
         private static readonly long[] ReverseItemsBufW = { 9, 1690 };
         private static readonly long[] ReverseW = { 19, 1702 };
         private static readonly long[] RollW = { 5, 1910 };
-        private static readonly long[] SetitemW = { 99, 350, 2942 };
+        private static readonly long[] SetitemW = { 96, 149, 2390 };
         private static readonly long[] SizeW = { 100, 2693 };
         private static readonly long[] StW = { 98, 1599 };
         private static readonly long[] SubstrW = { 7, 2908 };
@@ -176,8 +176,8 @@ namespace Neo.SmartContract
         private static long EndFinallyGas(RunStats args) => EndFinallyW[0] * args.RefsDelta + EndFinallyW[1];
         private static long HasKeyGas(RunStats args) => HasKeyW[0] * args.RefsDelta + HasKeyW[1];
         private static long InitSlotGas(RunStats args) => InitSlotW[0] * args.RefsDelta + InitSlotW[1] * args.Length + InitSlotW[2];
-        private static long IsNullGas(RunStats args) => IsNullW[0] * args.Length + IsNullW[1];
-        private static long IsTypeGas(RunStats args) => IsTypeW[0] * args.Length + IsTypeW[1];
+        private static long IsNullGas(RunStats args) => IsNullW[0] * args.RefsDelta + IsNullW[1];
+        private static long IsTypeGas(RunStats args) => IsTypeW[0] * args.RefsDelta + IsTypeW[1];
         private static long KeysGas(RunStats args) => KeysW[0] * args.RefsDelta + KeysW[1] * args.Length + KeysW[2];
         private static long MemcpyGas(RunStats args) => MemcpyW[0] * args.Length + MemcpyW[1];
         private static long NewArrayGas(RunStats args) => (args.Type == StackItemType.ByteString || args.Type == StackItemType.Integer) ? NewArrayByteOrIntW[0] * args.Length + NewArrayByteOrIntW[1] : NewArrayAnyW[0] * args.Length + NewArrayAnyW[1];
