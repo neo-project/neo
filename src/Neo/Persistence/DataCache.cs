@@ -523,7 +523,7 @@ namespace Neo.Persistence
                 direction == SeekDirection.Backward || cachedKeySet.Count > 0
                 ? (0, skip) : (skip, 0);
 
-            var uncached = SeekInternal(keyOrPrefix ?? [], direction, skip)
+            var uncached = SeekInternal(keyOrPrefix ?? [], direction, seekSkip)
                 .Where(p => !cachedKeySet.Contains(p.Key));
             using var e1 = ((IEnumerable<(StorageKey, StorageItem)>)cached).GetEnumerator();
             using var e2 = uncached.GetEnumerator();
