@@ -140,6 +140,7 @@ namespace Neo.Network.P2P
             lastSeenPersistedIndex = block.Index;
 
             foreach (var (actor, session) in sessions)
+            {
                 if (session.ReceivedBlockHashes.Remove(block.Index, out var receivedBlockHash))
                 {
                     if (block.Hash == receivedBlockHash)
@@ -147,6 +148,12 @@ namespace Neo.Network.P2P
                     else
                         actor.Tell(Tcp.Abort.Instance);
                 }
+
+                // Prune any stale entries left behind for heights that have already
+                // been persisted (e.g. rejected unsolicited blocks for older heights),
+                // otherwise they would stay tracked until the peer disconnects.
+                session.ReceivedBlockHashes.RemoveWhere(p => p.Key <= block.Index);
+            }
         }
 
         protected override void OnReceive(object message)
@@ -223,16 +230,34 @@ namespace Neo.Network.P2P
             {
                 if (session is null) return;
 
-                // The block was not assigned to this session, but it still occupies
-                // globalIndexTasks for whichever session it was assigned to. Clear it
-                // here so RequestTasks can reassign that height immediately instead of
-                // waiting for the original assignee's TaskTimeout.
-                globalIndexTasks.Remove(unsolicitedBlock.Index);
+                ReleaseUnsolicitedBlockTasks(unsolicitedBlock);
                 TrackReceivedBlockHash(session, unsolicitedBlock);
                 return;
             }
 
             CompleteTask(inventory, session);
+        }
+
+        /// <summary>
+        /// Releases the global and per-session tasks tracked for a block that was
+        /// delivered by a session other than the one it was assigned to. This clears
+        /// both hash-based (<see cref="globalInvTasks"/>) and index-based
+        /// (<see cref="globalIndexTasks"/>) global tasks, as well as the entries left
+        /// behind in whichever session's <c>InvTasks</c>/<c>IndexTasks</c>/<c>AvailableTasks</c>
+        /// originally held them, so that height/hash can be reassigned immediately
+        /// instead of waiting for the original assignee's <see cref="TaskTimeout"/>.
+        /// </summary>
+        private void ReleaseUnsolicitedBlockTasks(Block block)
+        {
+            globalInvTasks.Remove(block.Hash);
+            globalIndexTasks.Remove(block.Index);
+
+            foreach (var ms in sessions.Values)
+            {
+                ms.AvailableTasks.Remove(block.Hash);
+                ms.InvTasks.Remove(block.Hash);
+                ms.IndexTasks.Remove(block.Index);
+            }
         }
 
         private static bool IsRequestedBySession(TaskSession? session, Block block) =>

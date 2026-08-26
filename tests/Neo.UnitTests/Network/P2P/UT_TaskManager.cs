@@ -841,5 +841,82 @@ namespace Neo.UnitTests.Network.P2P
             remote.Send(s_system.TaskManager, block);
             remote.ReceiveOne(TimeSpan.FromMilliseconds(500), cancellationToken: CancellationToken.None);
         }
+
+        [TestMethod]
+        public void UnsolicitedBlock_ReleasesHashBasedGlobalTask()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var index = currentHeight + 1;
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var assignedPeer = RegisterPeer(taskManager, currentHeight);
+            var unsolicitedPeer = RegisterPeer(taskManager, currentHeight);
+            var assignedSession = GetSessions(taskManager)[assignedPeer.Ref];
+
+            var block = CreateBlock(index);
+
+            // The block was assigned to a peer by hash, not by index.
+            assignedSession.InvTasks.Add(block.Hash, TimeProvider.Current.UtcNow);
+            GetGlobalInvTasks(taskManager)[block.Hash] = 1;
+
+            unsolicitedPeer.Send(taskManager, block);
+
+            Assert.IsFalse(GetGlobalInvTasks(taskManager).ContainsKey(block.Hash), "The hash-based global task must be released once the block is delivered by another peer.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void UnsolicitedBlock_ClearsAssignedSessionTasks()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var index = currentHeight + 1;
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var assignedPeer = RegisterPeer(taskManager, currentHeight);
+            var unsolicitedPeer = RegisterPeer(taskManager, currentHeight);
+            var assignedSession = GetSessions(taskManager)[assignedPeer.Ref];
+
+            var block = CreateBlock(index);
+
+            assignedSession.IndexTasks.Add(index, TimeProvider.Current.UtcNow);
+            assignedSession.InvTasks.Add(block.Hash, TimeProvider.Current.UtcNow);
+            GetGlobalIndexTasks(taskManager)[index] = 1;
+            GetGlobalInvTasks(taskManager)[block.Hash] = 1;
+
+            unsolicitedPeer.Send(taskManager, block);
+
+            Assert.IsFalse(assignedSession.IndexTasks.ContainsKey(index), "The originally assigned session's index task must be cleared, otherwise it could later steal the slot from a peer reassigned to that height.");
+            Assert.IsFalse(assignedSession.InvTasks.ContainsKey(block.Hash), "The originally assigned session's hash task must be cleared for the same reason.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void PersistCompleted_PrunesStaleReceivedBlockHashes()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            var persistedBlock = NativeContract.Ledger.GetBlock(neoSystem.StoreView, currentHeight);
+            Assert.IsNotNull(persistedBlock);
+
+            // Simulate stale entries left behind for heights at or below the one being persisted.
+            session.ReceivedBlockHashes[currentHeight] = persistedBlock.Hash;
+            if (currentHeight > 0)
+                session.ReceivedBlockHashes[currentHeight - 1] = UInt256.Parse("0x3333333333333333333333333333333333333333333333333333333333333333");
+
+            peer.Send(taskManager, new Blockchain.PersistCompleted(persistedBlock));
+
+            Assert.IsEmpty(session.ReceivedBlockHashes, "All entries for heights at or below the persisted one must be pruned, not just the exact match.");
+
+            Sys.Stop(taskManager);
+        }
     }
 }
