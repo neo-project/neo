@@ -526,9 +526,10 @@ namespace Neo.Persistence
             }
 
             var skipInMemory = 0;
-            if (_dictionary.Count > 0)
+            if (cachedKeySet.Count > 0)
             {
-                // If there are cached entries, we need to skip them first before seeking the underlying storage.
+                // The offset counts over the merged sequence, and tracked keys can add or hide
+                // store entries, so the store must be sought from 0 and the offset applied below.
                 skipInMemory = skip;
                 skip = 0;
             }
