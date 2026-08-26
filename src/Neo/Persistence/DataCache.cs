@@ -512,13 +512,12 @@ namespace Neo.Persistence
                 cachedKeySet = [.. _dictionary.Keys];
             }
 
-            // For backward scans the seekPrefix is a sentinel that may itself exist in the store.
-            // Passing `skip` down to Seek would let that sentinel key consume offset slots before
-            // the prefix filter runs, skipping too few real prefix matches.  Instead, pass skip=0
-            // and apply the offset here, after both the prefix and sentinel checks.
-            // The offset counts over the merged sequence, and tracked keys can add or hide
-            // store entries, so the store must be sought from 0 and the offset applied below.
-
+            // `skip` must be applied to the merged (cached + store) sequence, not to the store
+            // alone: tracked entries in `_dictionary` can add or hide store entries, so pushing
+            // `skip` down into SeekInternal would count offset slots against the wrong sequence.
+            // We only forward `skip` to SeekInternal when there is nothing to merge, i.e. a
+            // forward scan with no cached entries; otherwise the store is sought from 0 and the
+            // offset is applied below, once both sequences have been merged.
             var (seekSkip, skipInMemory) =
                 direction == SeekDirection.Backward || cachedKeySet.Count > 0
                 ? (0, skip) : (skip, 0);
