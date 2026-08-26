@@ -149,9 +149,8 @@ namespace Neo.Network.P2P
                         actor.Tell(Tcp.Abort.Instance);
                 }
 
-                // Prune any stale entries left behind for heights that have already
-                // been persisted (e.g. rejected unsolicited blocks for older heights),
-                // otherwise they would stay tracked until the peer disconnects.
+                // Safety net: drop any remaining entries for heights at or below the one
+                // just persisted, so they cannot linger until the peer disconnects.
                 session.ReceivedBlockHashes.RemoveWhere(p => p.Key <= block.Index);
             }
         }
@@ -296,18 +295,22 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Records the hash of a block received from the sending peer, without
-        /// ever retaining the complete <see cref="Block"/> object. Blocks outside
-        /// the synchronization window are not tracked, since Blockchain never
-        /// receives their body and RequestTasks must remain able to request that
-        /// height from another peer.
+        /// Records the hash of a block received from the sending peer, without ever
+        /// retaining the complete <see cref="Block"/> object. Heights already persisted
+        /// or too far ahead of the current one are not tracked, since neither is ever
+        /// consulted by <see cref="RequestTasks"/> or <see cref="OnPersistCompleted"/>.
         /// </summary>
         private void TrackReceivedBlockHash(TaskSession session, Block block)
         {
             var currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
 
+            // Already persisted heights are never consulted again: RequestTasks always
+            // starts at currentHeight + 1, so there is no point in tracking them here.
+            if (block.Index <= currentHeight)
+                return;
+
             // Avoid uint overflow from currentHeight + MaxHashesCount.
-            if (block.Index > currentHeight && block.Index - currentHeight > InvPayload.MaxHashesCount)
+            if (block.Index - currentHeight > InvPayload.MaxHashesCount)
                 return;
 
             if (session.ReceivedBlockHashes.TryGetValue(block.Index, out var previousHash))

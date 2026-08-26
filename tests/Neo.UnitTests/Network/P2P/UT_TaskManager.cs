@@ -907,7 +907,9 @@ namespace Neo.UnitTests.Network.P2P
             var persistedBlock = NativeContract.Ledger.GetBlock(neoSystem.StoreView, currentHeight);
             Assert.IsNotNull(persistedBlock);
 
-            // Simulate stale entries left behind for heights at or below the one being persisted.
+            // These entries would no longer be added by TrackReceivedBlockHash itself, but
+            // this exercises the pruning safety net for any entry that might otherwise
+            // outlive the height it refers to.
             session.ReceivedBlockHashes[currentHeight] = persistedBlock.Hash;
             if (currentHeight > 0)
                 session.ReceivedBlockHashes[currentHeight - 1] = UInt256.Parse("0x3333333333333333333333333333333333333333333333333333333333333333");
@@ -915,6 +917,29 @@ namespace Neo.UnitTests.Network.P2P
             peer.Send(taskManager, new Blockchain.PersistCompleted(persistedBlock));
 
             Assert.IsEmpty(session.ReceivedBlockHashes, "All entries for heights at or below the persisted one must be pruned, not just the exact match.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void AlreadyPersistedBlock_IsNotTrackedByHash()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            var historicalBlock = NativeContract.Ledger.GetBlock(neoSystem.StoreView, currentHeight);
+            Assert.IsNotNull(historicalBlock);
+
+            // The block for this height was already persisted, so delivering it again
+            // (e.g. unsolicited from another peer) must not be tracked by hash: nothing
+            // consults an already-persisted height afterwards.
+            peer.Send(taskManager, historicalBlock);
+
+            Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(historicalBlock.Index), "An already-persisted height must not be recorded in ReceivedBlockHashes.");
 
             Sys.Stop(taskManager);
         }
