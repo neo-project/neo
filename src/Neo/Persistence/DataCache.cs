@@ -302,23 +302,10 @@ namespace Neo.Persistence
         {
             ArgumentOutOfRangeException.ThrowIfNegative(skip);
 
-            // For backward scans the seekPrefix is a sentinel that may itself exist in the store.
-            // Passing `skip` down to Seek would let that sentinel key consume offset slots before
-            // the prefix filter runs, skipping too few real prefix matches.  Instead, pass skip=0
-            // and apply the offset here, after both the prefix and sentinel checks.
-            var (seekSkip, skipInMemory) = direction == SeekDirection.Backward ? (0, skip) : (skip, 0);
-
-            foreach (var (key, value) in Seek(seekPrefix, direction, seekSkip))
+            foreach (var (key, value) in Seek(seekPrefix, direction, skip))
             {
                 if (keyPrefix == null || key.StartsWith(keyPrefix))
-                {
-                    if (skipInMemory > 0)
-                    {
-                        skipInMemory--;
-                        continue;
-                    }
                     yield return (key, value);
-                }
                 else if (direction == SeekDirection.Forward || (seekPrefix == null || !key.SequenceEqual(seekPrefix)))
                     yield break;
             }
@@ -522,11 +509,16 @@ namespace Neo.Persistence
                     ))
                     .OrderBy(p => p.Key, comparer)
                     .ToArray();
-                cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
+                cachedKeySet = [.. _dictionary.Keys];
             }
 
-            var skipInMemory = 0;
-            if (cachedKeySet.Count > 0)
+            // For backward scans the seekPrefix is a sentinel that may itself exist in the store.
+            // Passing `skip` down to Seek would let that sentinel key consume offset slots before
+            // the prefix filter runs, skipping too few real prefix matches.  Instead, pass skip=0
+            // and apply the offset here, after both the prefix and sentinel checks.
+            var (seekSkip, skipInMemory) = direction == SeekDirection.Backward ? (0, skip) : (skip, 0);
+
+            if (skipInMemory == 0 && cachedKeySet.Count > 0)
             {
                 // The offset counts over the merged sequence, and tracked keys can add or hide
                 // store entries, so the store must be sought from 0 and the offset applied below.
@@ -534,7 +526,7 @@ namespace Neo.Persistence
                 skip = 0;
             }
 
-            var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction, skip)
+            var uncached = SeekInternal(keyOrPrefix ?? [], direction, skip)
                 .Where(p => !cachedKeySet.Contains(p.Key));
             using var e1 = ((IEnumerable<(StorageKey, StorageItem)>)cached).GetEnumerator();
             using var e2 = uncached.GetEnumerator();
