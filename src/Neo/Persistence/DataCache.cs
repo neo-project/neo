@@ -508,7 +508,7 @@ namespace Neo.Persistence
         public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
             ArgumentOutOfRangeException.ThrowIfNegative(skip);
-            (byte[], StorageKey, StorageItem)[] cached;
+            (StorageKey, StorageItem)[] cached;
             HashSet<StorageKey> cachedKeySet;
             var comparer = direction == SeekDirection.Forward ? StorageKeyComparer.Default : StorageKeyComparer.Reverse;
             lock (_dictionary)
