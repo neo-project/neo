@@ -14,6 +14,7 @@ using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -53,14 +54,7 @@ namespace Neo.SmartContract
         /// </summary>
         public int Length
         {
-            get
-            {
-                if (_cache is { IsEmpty: true })
-                {
-                    _cache = Build();
-                }
-                return _cache.Length;
-            }
+            get => EnsureCache().Length;
         }
 
         private ReadOnlyMemory<byte> _cache;
@@ -355,13 +349,75 @@ namespace Neo.SmartContract
             return _hashCode;
         }
 
+        /// <summary>
+        /// Compares the serialized form of this key (same buffer as <see cref="ToArray"/>, i.e.
+        /// the little-endian <see cref="Id"/> followed by <see cref="Key"/>) against
+        /// <paramref name="otherKey"/>, which must already be in that same serialized form.
+        /// </summary>
+        /// <param name="comparer">The comparer used to compare the two serialized buffers.</param>
+        /// <param name="otherKey">The other <see cref="StorageKey"/> to compare against.</param>
+        /// <returns>A signed integer as returned by <paramref name="comparer"/>.</returns>
+        internal int Compare(IComparer<ReadOnlySpan<byte>> comparer, StorageKey otherKey)
+        {
+            return comparer.Compare(EnsureCache().Span, otherKey.EnsureCache().Span);
+        }
+
+        /// <summary>
+        /// Compares the serialized form of this key (same buffer as <see cref="ToArray"/>, i.e.
+        /// the little-endian <see cref="Id"/> followed by <see cref="Key"/>) against
+        /// <paramref name="otherKey"/>, which must already be in that same serialized form.
+        /// </summary>
+        /// <param name="comparer">The comparer used to compare the two serialized buffers.</param>
+        /// <param name="otherKey">The serialized buffer (id + key) to compare against.</param>
+        /// <returns>A signed integer as returned by <paramref name="comparer"/>.</returns>
+        internal int Compare(IComparer<ReadOnlySpan<byte>> comparer, ReadOnlySpan<byte> otherKey)
+        {
+            return comparer.Compare(EnsureCache().Span, otherKey);
+        }
+
+        /// <summary>
+        /// Determines whether the serialized form of this key (same buffer as <see cref="ToArray"/>,
+        /// i.e. the little-endian <see cref="Id"/> followed by <see cref="Key"/>) starts with
+        /// <paramref name="prefix"/>. <paramref name="prefix"/> must include the 4-byte id prefix
+        /// if it is meant to match the beginning of the serialized buffer; this does not test
+        /// <see cref="Key"/> alone.
+        /// </summary>
+        /// <param name="prefix">The serialized prefix (id + key prefix) to test against.</param>
+        internal bool StartsWith(ReadOnlySpan<byte> prefix)
+        {
+            return EnsureCache().Span.StartsWith(prefix);
+        }
+
+        /// <summary>
+        /// Determines whether the serialized form of this key (same buffer as <see cref="ToArray"/>,
+        /// i.e. the little-endian <see cref="Id"/> followed by <see cref="Key"/>) is equal to
+        /// <paramref name="other"/>. <paramref name="other"/> must already include the 4-byte id
+        /// prefix; this does not test <see cref="Key"/> alone.
+        /// </summary>
+        /// <param name="other">The serialized buffer (id + key) to compare against.</param>
+        internal bool SequenceEqual(ReadOnlySpan<byte> other)
+        {
+            return EnsureCache().Span.SequenceEqual(other);
+        }
+
         public byte[] ToArray()
+        {
+            return EnsureCache().ToArray(); // Make a copy
+        }
+
+        /// <summary>
+        /// Ensures <see cref="_cache"/> holds the serialized form of this key (little-endian
+        /// <see cref="Id"/> followed by <see cref="Key"/>), building it lazily if necessary,
+        /// and returns it.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ReadOnlyMemory<byte> EnsureCache()
         {
             if (_cache is { IsEmpty: true })
             {
                 _cache = Build();
             }
-            return _cache.ToArray(); // Make a copy
+            return _cache;
         }
 
         private byte[] Build()
@@ -370,6 +426,17 @@ namespace Neo.SmartContract
             BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(), Id);
             Key.CopyTo(buffer.AsMemory(sizeof(int)..));
             return buffer;
+        }
+
+        /// <summary>
+        /// Creates a <see cref="UInt160"/> from the last 20 bytes of the serialized form of this key.
+        /// </summary>
+        /// <param name="value">The <see cref="StorageKey"/> to convert.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator UInt160(StorageKey value)
+        {
+            var keyBytes = value.EnsureCache();
+            return new UInt160(keyBytes.Span.Slice(keyBytes.Length - UInt160.Length, UInt160.Length));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

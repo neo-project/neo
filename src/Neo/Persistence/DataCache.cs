@@ -310,7 +310,7 @@ namespace Neo.Persistence
 
             foreach (var (key, value) in Seek(seekPrefix, direction, seekSkip))
             {
-                if (keyPrefix == null || key.ToArray().AsSpan().StartsWith(keyPrefix))
+                if (keyPrefix == null || key.StartsWith(keyPrefix))
                 {
                     if (skipInMemory > 0)
                     {
@@ -319,7 +319,7 @@ namespace Neo.Persistence
                     }
                     yield return (key, value);
                 }
-                else if (direction == SeekDirection.Forward || (seekPrefix == null || !key.ToArray().SequenceEqual(seekPrefix)))
+                else if (direction == SeekDirection.Forward || (seekPrefix == null || !key.SequenceEqual(seekPrefix)))
                     yield break;
             }
         }
@@ -339,7 +339,7 @@ namespace Neo.Persistence
                 : ByteArrayComparer.Reverse;
             foreach (var (key, value) in Seek(keyOrPrefixStart, direction, skip))
             {
-                if (comparer.Compare(key.ToArray(), keyOrPrefixStartEnd) < 0)
+                if (key.Compare(comparer, keyOrPrefixStartEnd) < 0)
                     yield return (key, value);
                 else
                     yield break;
@@ -508,21 +508,19 @@ namespace Neo.Persistence
         public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
             ArgumentOutOfRangeException.ThrowIfNegative(skip);
-
             (byte[], StorageKey, StorageItem)[] cached;
             HashSet<StorageKey> cachedKeySet;
-            var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+            var comparer = direction == SeekDirection.Forward ? StorageKeyComparer.Default : StorageKeyComparer.Reverse;
             lock (_dictionary)
             {
                 cached = _dictionary
-                    .Where(p => p.Value.State != TrackState.Deleted && p.Value.State != TrackState.NotFound && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
+                    .Where(p => p.Value.State != TrackState.Deleted && p.Value.State != TrackState.NotFound && (keyOrPrefix == null || p.Key.Compare(comparer, keyOrPrefix) >= 0))
                     .Select(p =>
                     (
-                        KeyBytes: p.Key.ToArray(),
                         p.Key,
                         p.Value.Item
                     ))
-                    .OrderBy(p => p.KeyBytes, comparer)
+                    .OrderBy(p => p.Key, comparer)
                     .ToArray();
                 cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
             }
@@ -536,23 +534,17 @@ namespace Neo.Persistence
             }
 
             var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction, skip)
-                .Where(p => !cachedKeySet.Contains(p.Key))
-                .Select(p =>
-                (
-                    KeyBytes: p.Key.ToArray(),
-                    p.Key,
-                    p.Value
-                ));
-            using var e1 = ((IEnumerable<(byte[], StorageKey, StorageItem)>)cached).GetEnumerator();
+                .Where(p => !cachedKeySet.Contains(p.Key));
+            using var e1 = ((IEnumerable<(StorageKey, StorageItem)>)cached).GetEnumerator();
             using var e2 = uncached.GetEnumerator();
-            (byte[] KeyBytes, StorageKey Key, StorageItem Item) i1, i2;
+            (StorageKey Key, StorageItem Item) i1, i2;
             var c1 = e1.MoveNext();
             var c2 = e2.MoveNext();
             i1 = c1 ? e1.Current : default;
             i2 = c2 ? e2.Current : default;
             while (c1 || c2)
             {
-                if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
+                if (!c2 || (c1 && i1.Key.Compare(comparer, i2.Key) < 0))
                 {
                     if (i1.Key == null || i1.Item == null) throw new NullReferenceException("SeekInternal returned a null key or item");
                     if (skipInMemory == 0)
