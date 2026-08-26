@@ -253,19 +253,17 @@ namespace Neo.SmartContract
             Diagnostic = diagnostic;
             DynamicPriceTable = dynamicPriceTable ?? DefaultDynamicPriceTable;
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+
+            var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache));
+
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
+                // Policy storage isn't available yet (genesis or no snapshot): fall back to the defaults.
                 _execFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
                 StoragePrice = PolicyContract.DefaultStoragePrice;
-
-                // Default opcode price calculator if Gorgon is not enabled: use static prices and
-                // charge the fee prior to instruction execution.
-                _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
             }
             else
             {
-                var persistingIndex = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshotCache);
-
                 if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingIndex))
                 {
                     // The values doesn't have the decimals stored
@@ -280,20 +278,17 @@ namespace Neo.SmartContract
                 }
 
                 StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
-
-                // Initialize opcode price calculator: if Gorgon is not enabled, use static prices and
-                // charge the fee prior to instruction execution. If Gorgon is enabled, use dynamic prices
-                // and charge the fee after instruction execution.
-                if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Huyao, persistingIndex))
-                    _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
-                else
-                    _postExecuteInstruction = (instruction, runStats) =>
-                    {
-                        var stats = runStats ?? new RunStats();
-                        long price = instruction is null ? 0 : OpcodeV1((long)_execFeeFactor, instruction.OpCode, stats);
-                        AddFemtoGas(price, false);
-                    };
             }
+
+            if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Huyao, persistingIndex))
+                _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
+            else
+                _postExecuteInstruction = (instruction, runStats) =>
+                {
+                    var stats = runStats ?? new RunStats();
+                    long price = instruction is null ? 0 : OpcodeV1((long)_execFeeFactor, instruction.OpCode, stats);
+                    AddFemtoGas(price, false);
+                };
 
             if (persistingBlock is not null)
             {
