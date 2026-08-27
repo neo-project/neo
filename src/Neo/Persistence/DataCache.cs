@@ -270,6 +270,8 @@ namespace Neo.Persistence
         /// <returns>The entries found with the desired prefix.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(skip);
+
             var seekPrefix = keyPrefix;
             if (direction == SeekDirection.Backward)
             {
@@ -300,8 +302,6 @@ namespace Neo.Persistence
         }
         private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? keyPrefix, byte[]? seekPrefix, SeekDirection direction, int skip)
         {
-            ArgumentOutOfRangeException.ThrowIfNegative(skip);
-
             // For backward scans the seekPrefix is a sentinel that may itself exist in the store.
             // Passing `skip` down to Seek would let that sentinel key consume offset slots before
             // the prefix filter runs, skipping too few real prefix matches. Instead, pass skip=0
@@ -511,6 +511,7 @@ namespace Neo.Persistence
         public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0)
         {
             ArgumentOutOfRangeException.ThrowIfNegative(skip);
+
             (StorageKey, StorageItem)[] cached;
             HashSet<StorageKey> cachedKeySet;
             var comparer = direction == SeekDirection.Forward ? StorageKeyComparer.Default : StorageKeyComparer.Reverse;
