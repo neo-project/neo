@@ -50,7 +50,7 @@ namespace Neo.Cryptography.ECC
             return Value.Equals(other.Value) && _curve.Equals(other._curve);
         }
 
-        private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
+        internal static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
         {
             var n = (int)k.GetBitLength();
             var s = k.GetLowestSetBit();
