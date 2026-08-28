@@ -278,6 +278,17 @@ namespace Neo.SmartContract
 
         #region JumpTable
 
+        /// <summary>
+        /// Maps protocol hardforks at <paramref name="persistingBlock"/> onto
+        /// <see cref="VmFeatures"/>. The VM does not know fork names.
+        /// </summary>
+        /// <remarks>
+        /// HF_Echidna → <see cref="VmFeatures.SafeSubStr"/> (checked SUBSTR).<br/>
+        /// HF_Gorgon → <see cref="VmFeatures.StrictContainerAccess"/> (HASKEY MaxItemSize)
+        /// and <see cref="VmFeatures.BoundedShift"/> (SHL/SHR always pop).
+        /// Default limits enable all current bits; this method starts from
+        /// <see cref="VmFeatures.None"/> so pre-fork heights keep the old opcode paths.
+        /// </remarks>
         internal static ExecutionEngineLimits LimitsFor(ProtocolSettings settings, DataCache? snapshot, Block? persistingBlock)
         {
             uint index = 0;
