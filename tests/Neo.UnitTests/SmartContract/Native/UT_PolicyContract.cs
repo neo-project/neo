@@ -1188,6 +1188,62 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(NativeContract.Policy.Hash, state.Hash);
         }
 
+        [TestMethod]
+        public void Check_GetHardforkActivationHeight_AfterActivate()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committee),
+                CreateBlock(1000), "activateHardfork", HardforkName("Iara"));
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
+            Assert.AreEqual(1001, ret.GetInteger());
+        }
+
+        [TestMethod]
+        public void Check_TryGetHardforkHeight_Missing()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            Assert.IsFalse(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Iara, out var height));
+            Assert.AreEqual(0u, height);
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_WithoutPersistingBlock()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(committee), snapshot, null, TestProtocolSettings.Default);
+            engine.LoadScript(new byte[] { (byte)OpCode.NOP });
+            var method = typeof(PolicyContract).GetMethod("ActivateHardfork",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => method.Invoke(NativeContract.Policy, [engine, "Iara"]));
+            Assert.Contains("persisting block", ex.InnerException.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [TestMethod]
+        public void Check_UnknownHardforkException_IsInstance()
+        {
+            Assert.IsFalse(UnknownHardforkException.IsInstance(null));
+            Assert.IsFalse(UnknownHardforkException.IsInstance(new InvalidOperationException("no")));
+            var inner = new UnknownHardforkException("Nope");
+            Assert.AreEqual("Nope", inner.HardforkName);
+            Assert.IsTrue(UnknownHardforkException.IsInstance(new InvalidOperationException("wrap", inner)));
+        }
+
+        [TestMethod]
+        public void Check_Hardforks_TryParseExact_AndGetName()
+        {
+            Assert.AreEqual("Iara", Hardforks.GetName(Hardfork.HF_Iara));
+            Assert.AreEqual("Huyao", Hardforks.GetName(Hardfork.HF_Huyao));
+            Assert.IsFalse(Hardforks.TryParseExact(null, out _));
+            Assert.IsFalse(Hardforks.TryParseExact("", out _));
+            Assert.IsTrue(Hardforks.TryParseExact("Iara", out var hf));
+            Assert.AreEqual(Hardfork.HF_Iara, hf);
+        }
+
         private static Block CreateBlock(uint index) => new()
         {
             Header = new Header
