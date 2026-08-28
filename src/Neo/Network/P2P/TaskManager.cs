@@ -225,44 +225,8 @@ namespace Neo.Network.P2P
         {
             sessions.TryGetValue(Sender, out var session);
 
-            if (inventory is Block unsolicitedBlock && !IsRequestedBySession(session, unsolicitedBlock))
-            {
-                if (session is null) return;
-
-                ReleaseUnsolicitedBlockTasks(unsolicitedBlock);
-                TrackReceivedBlockHash(session, unsolicitedBlock);
-                return;
-            }
-
             CompleteTask(inventory, session);
         }
-
-        /// <summary>
-        /// Releases the global and per-session tasks tracked for a block that was
-        /// delivered by a session other than the one it was assigned to. This clears
-        /// both hash-based (<see cref="globalInvTasks"/>) and index-based
-        /// (<see cref="globalIndexTasks"/>) global tasks, as well as the entries left
-        /// behind in whichever session's <c>InvTasks</c>/<c>IndexTasks</c>/<c>AvailableTasks</c>
-        /// originally held them, so that height/hash can be reassigned immediately
-        /// instead of waiting for the original assignee's <see cref="TaskTimeout"/>.
-        /// </summary>
-        private void ReleaseUnsolicitedBlockTasks(Block block)
-        {
-            _knownHashes.TryAdd(block.Hash);
-            globalInvTasks.Remove(block.Hash);
-            globalIndexTasks.Remove(block.Index);
-
-            foreach (var ms in sessions.Values)
-            {
-                ms.AvailableTasks.Remove(block.Hash);
-                ms.InvTasks.Remove(block.Hash);
-                ms.IndexTasks.Remove(block.Index);
-            }
-        }
-
-        private static bool IsRequestedBySession(TaskSession? session, Block block) =>
-            session is not null &&
-            (session.InvTasks.ContainsKey(block.Hash) || session.IndexTasks.ContainsKey(block.Index));
 
         private void CompleteTask(IInventory inventory, TaskSession? session)
         {
@@ -448,17 +412,17 @@ namespace Neo.Network.P2P
                     hashes.RemoveWhere(p => !IncrementGlobalTask(p));
                     session.AvailableTasks.Remove(hashes);
 
-                    foreach (UInt256 hash in hashes)
+                    foreach (var hash in hashes)
                         session.InvTasks[hash] = DateTime.UtcNow;
 
-                    foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes))
+                    foreach (var group in InvPayload.CreateGroup(InventoryType.Block, hashes))
                         remoteNode.Tell(Message.Create(MessageCommand.GetData, group));
                     return;
                 }
             }
 
-            uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
-            uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
+            var currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
+            var headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             // When the number of AvailableTasks is no more than 0,
             // no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
@@ -470,13 +434,21 @@ namespace Neo.Network.P2P
             }
             else if (currentHeight < session.LastBlockIndex)
             {
-                uint startHeight = currentHeight + 1;
+                var startHeight = currentHeight + 1;
                 while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlockHashes.ContainsKey(startHeight)) { startHeight++; }
                 // Avoid uint overflow from currentHeight + MaxHashesCount.
                 if (startHeight > session.LastBlockIndex || startHeight - currentHeight >= InvPayload.MaxHashesCount) return;
-                uint endHeight = startHeight;
-                while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight - currentHeight <= InvPayload.MaxHashesCount) { }
-                uint count = Math.Min(endHeight - startHeight, InvPayload.MaxHashesCount);
+
+                var endHeight = startHeight;
+                while (endHeight < uint.MaxValue)
+                {
+                    var next = endHeight + 1;
+                    if (globalIndexTasks.ContainsKey(next) || next > session.LastBlockIndex || next - currentHeight > InvPayload.MaxHashesCount)
+                        break;
+                    endHeight = next;
+                }
+
+                var count = Math.Min(endHeight - startHeight + 1, InvPayload.MaxHashesCount);
                 for (uint i = 0; i < count; i++)
                 {
                     session.IndexTasks[startHeight + i] = TimeProvider.Current.UtcNow;

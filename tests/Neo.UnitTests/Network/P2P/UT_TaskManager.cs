@@ -1006,9 +1006,49 @@ namespace Neo.UnitTests.Network.P2P
             var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
             lastSeenPersistedIndexField.SetValue(taskManager.UnderlyingActor, currentHeight);
 
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3; // skip GetHeaders
+
             // Registering a peer whose reported height is far above currentHeight used to
-            // overflow the uint arithmetic in RequestTasks (currentHeight + MaxHashesCount).
+            // overflow the uint arithmetic in RequestTasks (currentHeight + MaxHashesCount),
+            // and can still wrap the end-height scan (++endHeight) when it reaches uint.MaxValue.
             var peer = RegisterPeer(taskManager, uint.MaxValue);
+
+            var request = peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+
+            var payload = (GetBlockByIndexPayload)request.Payload!;
+            var session = GetSessions(taskManager)[peer.Ref];
+
+            Assert.AreEqual(currentHeight + 1, payload.IndexStart, "The requested range must start right after the current height, not a wrapped value.");
+            Assert.AreEqual(1, payload.Count, "Only the single remaining height (uint.MaxValue itself) may be requested; the end-height scan must not wrap and inflate the count.");
+
+            Assert.IsFalse(session.IndexTasks.ContainsKey(0), "The end-height scan must stop at uint.MaxValue instead of wrapping and assigning already-processed low heights.");
+            Assert.IsFalse(GetGlobalIndexTasks(taskManager).ContainsKey(0), "The end-height scan must not wrap past uint.MaxValue and pollute global index bookkeeping for height 0.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void OnTaskCompleted_UnsolicitedBlockFromUnregisteredPeer_StillClearsGlobalTasks()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var index = currentHeight + 1;
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var block = CreateBlock(index);
+            GetGlobalIndexTasks(taskManager)[index] = 1;
+            GetGlobalInvTasks(taskManager)[block.Hash] = 1;
+
+            var unregisteredPeer = CreateTestProbe();
+            unregisteredPeer.Send(taskManager, block);
+
+            Assert.IsFalse(GetSessions(taskManager).ContainsKey(unregisteredPeer.Ref));
+            Assert.IsFalse(GetGlobalIndexTasks(taskManager).ContainsKey(index), "The global index task must be released even when the delivering session no longer exists.");
+            Assert.IsFalse(GetGlobalInvTasks(taskManager).ContainsKey(block.Hash), "The global hash-based task must be released even when the delivering session no longer exists.");
 
             Sys.Stop(taskManager);
         }
