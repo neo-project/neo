@@ -905,11 +905,10 @@ namespace Neo.SmartContract
             AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
         }
 
-        protected override void PostExecuteInstruction(Instruction? instruction, RunStats runStats)
+        protected override void PostExecuteInstruction(Instruction instruction, RunStats runStats)
         {
             base.PostExecuteInstruction(instruction, runStats);
-            if (instruction is not null)
-                Diagnostic?.PostExecuteInstruction(instruction);
+            Diagnostic?.PostExecuteInstruction(instruction);
         }
 
         private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
