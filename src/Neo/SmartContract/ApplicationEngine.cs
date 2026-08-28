@@ -37,7 +37,6 @@ namespace Neo.SmartContract
     public partial class ApplicationEngine : ExecutionEngine
     {
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
-        protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
         protected static readonly JumpTable NotGorgonJumpTable = ComposeNotGorgonJumpTable();
 
         /// <summary>
@@ -229,10 +228,12 @@ namespace Neo.SmartContract
         /// </param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
+        /// <param name="limits">VM limits and <see cref="VmFeatures"/> for this height.</param>
         protected ApplicationEngine(
             TriggerType trigger, IVerifiable? container, DataCache snapshotCache, Block? persistingBlock,
-            ProtocolSettings settings, long gas, IDiagnostic? diagnostic = null, JumpTable? jumpTable = null)
-            : base(jumpTable ?? DefaultJumpTable)
+            ProtocolSettings settings, long gas, IDiagnostic? diagnostic = null, JumpTable? jumpTable = null,
+            ExecutionEngineLimits? limits = null)
+            : base(jumpTable ?? DefaultJumpTable, limits ?? LimitsFor(settings, snapshotCache, persistingBlock))
         {
             Trigger = trigger;
             ScriptContainer = container;
@@ -277,6 +278,22 @@ namespace Neo.SmartContract
 
         #region JumpTable
 
+        internal static ExecutionEngineLimits LimitsFor(ProtocolSettings settings, DataCache? snapshot, Block? persistingBlock)
+        {
+            uint index = 0;
+            if (persistingBlock is not null)
+                index = persistingBlock.Index;
+            else if (snapshot is not null)
+                index = NativeContract.Ledger.CurrentIndex(snapshot);
+
+            var features = VmFeatures.None;
+            if (settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+                features |= VmFeatures.SafeSubStr;
+            if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
+                features |= VmFeatures.StrictContainerAccess | VmFeatures.BoundedShift;
+            return ExecutionEngineLimits.Default with { Features = features };
+        }
+
         private static JumpTable ComposeDefaultJumpTable()
         {
             var table = new JumpTable();
@@ -287,33 +304,21 @@ namespace Neo.SmartContract
             return table;
         }
 
-        public static JumpTable ComposeNotEchidnaJumpTable()
-        {
-            var table = ComposeNotGorgonJumpTable();
-
-            table[OpCode.SUBSTR] = VulnerableSubStr;
-
-            return table;
-        }
+        public static JumpTable ComposeNotEchidnaJumpTable() => ComposeNotGorgonJumpTable();
 
         public static JumpTable ComposeNotGorgonJumpTable()
         {
             var table = ComposeDefaultJumpTable();
 
-            // Before https://github.com/neo-project/neo-vm/pull/543
-            table[OpCode.HASKEY] = HasKey_Before543;
+            // PICKITEM/SETITEM/REMOVE still differ in exception/refcount; keep overlays.
             table[OpCode.PICKITEM] = PickItem_Before543;
             table[OpCode.SETITEM] = SetItem_Before543;
             table[OpCode.REMOVE] = Remove_Before543;
 
-            // Before https://github.com/neo-project/neo-vm/pull/567.
-            table[OpCode.SHR] = VulnerableSHR;
-            table[OpCode.SHL] = VulnerableSHL;
-
             return table;
         }
 
-        private static void Remove_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void Remove_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -331,7 +336,7 @@ namespace Neo.SmartContract
                         engine.ReferenceCounter.RemoveStackReference(item);
                     break;
                 case Map map:
-                    var old = map.Remove(key);
+                    var old = map.Remove(key, out _);
                     if (old is not null && map.IsStackReferenced)
                     {
                         engine.ReferenceCounter.RemoveStackReference(key);
@@ -343,10 +348,10 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void SetItem_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void SetItem_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
         {
             var value = engine.Pop();
-            if (value is Struct s) value = s.Clone(engine.Limits);
+            if (value is Struct s) value = s.Clone(engine.Limits, out _);
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
             switch (x)
@@ -398,7 +403,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -441,53 +446,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void HasKey_Before543(ExecutionEngine engine, Instruction instruction)
-        {
-            var key = engine.Pop<PrimitiveType>();
-            var x = engine.Pop();
-            // Check the type of the top item and perform the corresponding action.
-            switch (x)
-            {
-                // For arrays, check if the index is within bounds and push the result onto the stack.
-                case VMArray array:
-                    {
-                        var index = (int)key.GetInteger();
-                        if (index < 0)
-                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
-                        engine.Push(index < array.Count);
-                        break;
-                    }
-                // For maps, check if the key exists and push the result onto the stack.
-                case Map map:
-                    {
-                        engine.Push(map.ContainsKey(key));
-                        break;
-                    }
-                // For buffers, check if the index is within bounds and push the result onto the stack.
-                case VM.Types.Buffer buffer:
-                    {
-                        var index = (int)key.GetInteger();
-                        if (index < 0)
-                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
-                        engine.Push(index < buffer.Size);
-                        break;
-                    }
-                // For byte strings, check if the index is within bounds and push the result onto the stack.
-                case ByteString array:
-                    {
-                        var index = (int)key.GetInteger();
-                        if (index < 0)
-                            throw new InvalidOperationException($"The negative index {index} is invalid for OpCode {instruction.OpCode}.");
-                        engine.Push(index < array.Size);
-                        break;
-                    }
-                default:
-                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
-            }
-        }
-
-
-        protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        protected static void OnCallT(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
         {
             if (engine is ApplicationEngine app)
             {
@@ -511,7 +470,7 @@ namespace Neo.SmartContract
             }
         }
 
-        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
         {
             if (engine is ApplicationEngine app)
             {
@@ -717,93 +676,17 @@ namespace Neo.SmartContract
         {
             var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             settings ??= ProtocolSettings.Default;
-            // Adjust jump table according persistingBlock
 
-            JumpTable jumpTable;
-
-            if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
-            {
-                jumpTable = DefaultJumpTable;
-            }
-            else
-            {
-                if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
-                {
-                    jumpTable = NotEchidnaJumpTable;
-                }
-                else
-                {
-                    jumpTable = NotGorgonJumpTable;
-                }
-            }
+            // PICKITEM/SETITEM/REMOVE still use pre-Gorgon overlays until those land in neo-vm.
+            var jumpTable = settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index)
+                ? DefaultJumpTable
+                : NotGorgonJumpTable;
 
             var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
 
             InstanceHandler?.Invoke(engine);
             return engine;
-        }
-
-        /// <summary>
-        /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
-        /// <see cref="OpCode.SUBSTR"/>
-        /// </summary>
-        /// <param name="engine">The execution engine.</param>
-        /// <param name="instruction">The instruction being executed.</param>
-        /// <remarks>Pop 3, Push 1</remarks>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
-        {
-            var count = (int)engine.Pop().GetInteger();
-            if (count < 0)
-                throw new InvalidOperationException($"The count can not be negative for {nameof(OpCode.SUBSTR)}, count: {count}.");
-            var index = (int)engine.Pop().GetInteger();
-            if (index < 0)
-                throw new InvalidOperationException($"The index can not be negative for {nameof(OpCode.SUBSTR)}, index: {index}.");
-            var x = engine.Pop().GetSpan();
-            // Note: here it's the main change
-            if (index + count > x.Length)
-                throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
-
-            Buffer result = new(count, false);
-            x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
-            engine.Push(result);
-        }
-
-        /// <summary>
-        /// Computes the left shift of an integer. Vulnerable implementation of
-        /// <see cref="OpCode.SHL"/> since it doesn't pop operand from stack in
-        /// case of zero shift.
-        /// </summary>
-        /// <param name="engine">The execution engine.</param>
-        /// <param name="instruction">The instruction being executed.</param>
-        /// <remarks>Pop 2, Push 1</remarks>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSHL(ExecutionEngine engine, Instruction instruction)
-        {
-            var shift = (int)engine.Pop().GetInteger();
-            engine.Limits.AssertShift(shift);
-            if (shift == 0) return;
-            var x = engine.Pop().GetInteger();
-            engine.Push(x << shift);
-        }
-
-        /// <summary>
-        /// Computes the right shift of an integer. Vulnerable implementation of
-        /// <see cref="OpCode.SHR"/> since it doesn't pop operand from stack in
-        /// case of zero shift.
-        /// </summary>
-        /// <param name="engine">The execution engine.</param>
-        /// <param name="instruction">The instruction being executed.</param>
-        /// <remarks>Pop 2, Push 1</remarks>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSHR(ExecutionEngine engine, Instruction instruction)
-        {
-            var shift = (int)engine.Pop().GetInteger();
-            engine.Limits.AssertShift(shift);
-            if (shift == 0) return;
-            var x = engine.Pop().GetInteger();
-            engine.Push(x >> shift);
         }
 
         public override void LoadContext(ExecutionContext context)
@@ -1008,10 +891,11 @@ namespace Neo.SmartContract
             AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
         }
 
-        protected override void PostExecuteInstruction(Instruction instruction)
+        protected override void PostExecuteInstruction(Instruction? instruction, RunStats runStats)
         {
-            base.PostExecuteInstruction(instruction);
-            Diagnostic?.PostExecuteInstruction(instruction);
+            base.PostExecuteInstruction(instruction, runStats);
+            if (instruction is not null)
+                Diagnostic?.PostExecuteInstruction(instruction);
         }
 
         private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
