@@ -306,9 +306,8 @@ namespace Neo.SmartContract.Native
             // If is in the hardfork height, add them to return array
             foreach (var hf in _usedHardforks)
             {
-                // If hf is not set in the configuration (with EnsureOmmitedHardforks applied over it),
-                // or not stored in Policy for post-Huyao hardforks, it is treated as disabled.
-                if (PolicyContract.TryGetActivationHeight(settings, snapshot, hf, out var activeIn) && activeIn == index)
+                // Height comes from Policy when stored (A–H after Huyao), else ProtocolSettings.
+                if (PolicyContract.TryGetActivationHeight(settings, snapshot, hf, index, out var activeIn) && activeIn == index)
                     hfs.Add(hf);
             }
 

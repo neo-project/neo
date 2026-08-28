@@ -793,33 +793,39 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Resolves the activation height for a hardfork (neo#4580).
         /// </summary>
+        /// <remarks>
+        /// After Huyao is enabled, A–H heights come from Policy (copied at Huyao
+        /// initialize). Until then they come from
+        /// <see cref="ProtocolSettings.Hardforks"/>. Later forks are always Policy-only.
+        /// </remarks>
         /// <returns><see langword="true"/> if an activation height is defined.</returns>
-        public static bool TryGetActivationHeight(ProtocolSettings settings, IReadOnlyStore? snapshot, Hardfork hardfork, out uint height)
+        public static bool TryGetActivationHeight(ProtocolSettings settings, IReadOnlyStore? snapshot, Hardfork hardfork, uint index, out uint height)
         {
-            // Through Huyao: ProtocolSettings.Hardforks only.
-            if (hardfork <= ProtocolSettings.LastConfigManagedHardfork)
+            if (hardfork > ProtocolSettings.LastConfigManagedHardfork)
             {
-                if (settings.Hardforks.TryGetValue(hardfork, out height))
+                if (snapshot is not null && Policy.TryGetHardforkHeight(snapshot, hardfork, out height))
                     return true;
                 height = 0;
                 return false;
             }
 
-            // Later hardforks: on-chain Policy only. Local Hardforks entries are ignored.
-            if (snapshot is not null && Policy.TryGetHardforkHeight(snapshot, hardfork, out height))
+            if (settings.IsHardforkEnabled(ProtocolSettings.LastConfigManagedHardfork, index)
+                && snapshot is not null
+                && Policy.TryGetHardforkHeight(snapshot, hardfork, out height))
+            {
                 return true;
+            }
 
-            height = 0;
-            return false;
+            return settings.Hardforks.TryGetValue(hardfork, out height);
         }
 
         /// <summary>
-        /// Combined hardfork check: config-managed HFs via <see cref="ProtocolSettings.Hardforks"/>,
-        /// later hardforks via on-chain Policy.
+        /// Combined hardfork check: Policy storage for A–H once Huyao is enabled,
+        /// and for all later forks; otherwise <see cref="ProtocolSettings.Hardforks"/>.
         /// </summary>
         public static bool IsHardforkEnabled(ProtocolSettings settings, IReadOnlyStore? snapshot, Hardfork hardfork, uint index)
         {
-            if (!TryGetActivationHeight(settings, snapshot, hardfork, out var height))
+            if (!TryGetActivationHeight(settings, snapshot, hardfork, index, out var height))
                 return false;
 
             return index >= height;

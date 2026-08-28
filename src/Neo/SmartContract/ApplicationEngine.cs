@@ -1125,7 +1125,7 @@ namespace Neo.SmartContract
             // Without a persisting block, treat "enabled" as: an activation height is known
             // (config-managed Hardforks, or on-chain Policy for later hardforks).
             if (PersistingBlock is null)
-                return PolicyContract.TryGetActivationHeight(ProtocolSettings, SnapshotCache, hardfork, out _);
+                return PolicyContract.TryGetActivationHeight(ProtocolSettings, SnapshotCache, hardfork, uint.MaxValue, out _);
 
             return PolicyContract.IsHardforkEnabled(
                 ProtocolSettings, SnapshotCache, hardfork, PersistingBlock.Index);

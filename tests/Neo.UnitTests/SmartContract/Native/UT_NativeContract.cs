@@ -23,6 +23,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -151,6 +152,13 @@ namespace Neo.UnitTests.SmartContract.Native
                 }.ToImmutableDictionary()
             };
             var snapshot = TestBlockchain.GetTestSnapshotCache().CloneCache();
+            // Drop the test-chain Huyao copy so config height 55 is used (pre-Policy-copy path).
+            foreach (Hardfork hf in Enum.GetValues<Hardfork>())
+            {
+                if (hf > ProtocolSettings.LastConfigManagedHardfork)
+                    continue;
+                snapshot.Delete(StorageKey.Create(NativeContract.Policy.Id, 24, Encoding.UTF8.GetBytes(Hardforks.GetName(hf))));
+            }
 
             Assert.IsTrue(NativeContract.Policy.IsInitializeBlock(settings, snapshot, 55, out var hfs));
             Assert.IsTrue(hfs!.Contains(Hardfork.HF_Huyao));

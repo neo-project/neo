@@ -1061,6 +1061,36 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Huyao, out var huyaoHeight));
             Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Aspidochelone, out _));
             Assert.IsTrue(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Huyao, huyaoHeight));
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Aspidochelone"));
+            Assert.IsFalse(ret.IsNull);
+        }
+
+        [TestMethod]
+        public void Check_AfterHuyao_ConfigManagedHeightsComeFromPolicy()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Faun, out var policyHeight));
+
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                    { Hardfork.HF_Cockatrice, 0 },
+                    { Hardfork.HF_Domovoi, 0 },
+                    { Hardfork.HF_Echidna, 0 },
+                    { Hardfork.HF_Faun, 999_999 },
+                    { Hardfork.HF_Gorgon, 999_999 },
+                    { Hardfork.HF_Huyao, 0 },
+                }.ToImmutableDictionary()
+            };
+
+            Assert.IsTrue(PolicyContract.TryGetActivationHeight(settings, snapshot, Hardfork.HF_Faun, policyHeight, out var height));
+            Assert.AreEqual(policyHeight, height);
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Faun, policyHeight));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Faun, policyHeight));
         }
 
         [TestMethod]
@@ -1138,10 +1168,10 @@ namespace Neo.UnitTests.SmartContract.Native
                 }.ToImmutableDictionary()
             };
 
-            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Huyao, out _));
-            Assert.IsTrue(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Faun, out var height));
+            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Huyao, 0, out _));
+            Assert.IsTrue(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Faun, 0, out var height));
             Assert.AreEqual(0u, height);
-            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Iara, out _));
+            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Iara, 0, out _));
         }
 
         [TestMethod]
