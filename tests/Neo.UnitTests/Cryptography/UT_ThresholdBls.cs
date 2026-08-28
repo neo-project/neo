@@ -77,6 +77,37 @@ namespace Neo.UnitTests.Cryptography
             Assert.IsTrue(a.IsTorsionFree);
         }
 
+        [TestMethod]
+        public void SplitSecret_RejectsInvalidThreshold()
+        {
+            var secret = RandomSecret();
+            var rng = RandomNumberGenerator.Create();
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => ThresholdBls.SplitSecret(secret, 0, 1, rng));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => ThresholdBls.SplitSecret(secret, 3, 0, rng));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => ThresholdBls.SplitSecret(secret, 3, 4, rng));
+        }
+
+        [TestMethod]
+        public void Combine_RejectsNullAndDuplicates()
+        {
+            Assert.ThrowsExactly<ArgumentNullException>(() => ThresholdBls.Combine(null, 1));
+            var secret = RandomSecret();
+            var message = "rn"u8.ToArray();
+            var sig = ThresholdBls.Sign(secret, message);
+            var dup = new (byte, G1Affine)[] { (0, sig), (0, sig) };
+            Assert.ThrowsExactly<ArgumentException>(() => ThresholdBls.Combine(dup, 2));
+        }
+
+        [TestMethod]
+        public void Verify_RejectsIdentity()
+        {
+            var secret = RandomSecret();
+            var message = "rn"u8.ToArray();
+            var sig = ThresholdBls.Sign(secret, message);
+            Assert.IsFalse(ThresholdBls.Verify(G2Affine.Identity, message, sig));
+            Assert.IsFalse(ThresholdBls.Verify(ThresholdBls.PublicKey(secret), message, G1Affine.Identity));
+        }
+
         private static Scalar RandomSecret()
         {
             Span<byte> wide = stackalloc byte[64];

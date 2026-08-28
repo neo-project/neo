@@ -212,6 +212,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(first, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 0), isUnsigned: true));
             Assert.AreEqual(second, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 1), isUnsigned: true));
             Assert.AreEqual(Convert.ToHexString(beacon), Convert.ToHexString(engine.GetBlockBeacon()));
+            Assert.ThrowsExactly<ArgumentException>(() => engine.SetBlockBeacon(new byte[31]));
         }
 
         [TestMethod]

@@ -41,5 +41,19 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(4, clone.ValidatorIndex);
             Assert.AreEqual(Convert.ToHexString(sig), Convert.ToHexString(clone.Signature));
         }
+
+        [TestMethod]
+        public void BlockBeacon_RejectsWrongLength()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => _ = new BlockBeacon { Value = new byte[31] });
+            Assert.ThrowsExactly<ArgumentException>(() => _ = new BlockBeacon { Value = null });
+        }
+
+        [TestMethod]
+        public void BeaconPartial_RejectsWrongLength()
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => _ = new BeaconPartial { Signature = new byte[47] });
+            Assert.ThrowsExactly<ArgumentException>(() => _ = new BeaconPartial { Signature = null });
+        }
     }
 }

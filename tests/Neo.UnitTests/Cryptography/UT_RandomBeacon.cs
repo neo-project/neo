@@ -68,5 +68,22 @@ namespace Neo.UnitTests.Cryptography
                 Convert.ToHexString(RandomBeacon.Finalize(sig, rn)),
                 Convert.ToHexString(RandomBeacon.Finalize(sig, other)));
         }
+
+        [TestMethod]
+        public void Finalize_RejectsEmptySignatureOrWrongRoundId()
+        {
+            var rn = RandomBeacon.ComputeRoundId(1, 2, 0);
+            Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Finalize([], rn));
+            Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Finalize(new byte[48], new byte[31]));
+        }
+
+        [TestMethod]
+        public void Derive_RejectsWrongBeaconOrEmptyTxHash()
+        {
+            var beacon = new byte[32];
+            var tx = new byte[32];
+            Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Derive(new byte[31], 1, tx, 0));
+            Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Derive(beacon, 1, [], 0));
+        }
     }
 }
