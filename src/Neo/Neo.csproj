@@ -14,10 +14,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.21.0" />
     <PackageReference Include="Neo.Cryptography.BLS12_381" Version="3.9.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\neo-vm\src\Neo.VM\Neo.VM.csproj" />
+    <PackageReference Include="Neo.VM" Version="3.10.1" />
   </ItemGroup>
 
   <ItemGroup>
