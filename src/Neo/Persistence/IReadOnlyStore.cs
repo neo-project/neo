@@ -69,7 +69,12 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyPrefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
+        /// <param name="skip">
+        /// Number of entries to skip in seek order, before the prefix filter is applied by the caller.
+        /// Implementations must reject negative values instead of treating them as zero.
+        /// </param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(TKey Key, TValue Value)> Find(TKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward);
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="skip"/> is negative.</exception>
+        public IEnumerable<(TKey Key, TValue Value)> Find(TKey? keyPrefix = null, SeekDirection direction = SeekDirection.Forward, int skip = 0);
     }
 }
