@@ -67,7 +67,7 @@ namespace Neo.SmartContract
 
         private static Dictionary<uint, InteropDescriptor>? services;
         // Total amount of GAS spent to execute.
-        // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+        // In the unit of femtoGAS, 1 femtoGAS = 1e-15 GAS
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation

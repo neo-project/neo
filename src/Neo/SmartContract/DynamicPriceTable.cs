@@ -16,8 +16,6 @@ namespace Neo.SmartContract
 {
     /// <summary>
     /// A table of per-opcode dynamic price calculators, indexed by <see cref="OpCode"/>.
-    /// Mirrors the design of <see cref="JumpTable"/> so pricing for individual opcodes
-    /// can be overridden by composing a new table, without forking <see cref="ApplicationEngine"/>.
     /// </summary>
     public class DynamicPriceTable
     {
