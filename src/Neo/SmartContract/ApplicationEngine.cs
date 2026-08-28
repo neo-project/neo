@@ -285,7 +285,10 @@ namespace Neo.SmartContract
         /// <remarks>
         /// HF_Echidna → <see cref="VmFeatures.SafeSubStr"/> (checked SUBSTR).<br/>
         /// HF_Gorgon → <see cref="VmFeatures.StrictContainerAccess"/> (HASKEY MaxItemSize)
-        /// and <see cref="VmFeatures.BoundedShift"/> (SHL/SHR always pop).
+        /// and <see cref="VmFeatures.BoundedShift"/> (SHL/SHR always pop).<br/>
+        /// <see cref="VmFeatures.CompoundSpan"/> is host-only (neo-vm#594).
+        /// It is not mapped from a hardfork, so CAT/SUBSTR/LEFT/RIGHT/MEMCPY
+        /// of Map/Array/Struct still FAULT.
         /// Default limits enable all current bits; this method starts from
         /// <see cref="VmFeatures.None"/> so pre-fork heights keep the old opcode paths.
         /// </remarks>
