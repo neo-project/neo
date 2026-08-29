@@ -715,7 +715,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool ContainsAccount(Signer[] signers, UInt160 account)
+        internal static bool ContainsAccount(Signer[] signers, UInt160 account)
         {
             for (int i = 0; i < signers.Length; i++)
             {
@@ -726,7 +726,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool HasCommonSigner(Signer[] left, Signer[] right)
+        internal static bool HasCommonSigner(Signer[] left, Signer[] right)
         {
             for (int i = 0; i < left.Length; i++)
             {
@@ -737,7 +737,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool HasCommonAccount(List<UInt160> accounts, Signer[] signers)
+        internal static bool HasCommonAccount(List<UInt160> accounts, Signer[] signers)
         {
             for (int i = 0; i < accounts.Count; i++)
             {
@@ -748,7 +748,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool ContainsPersistedConflict(Transaction tx, HashSet<UInt256> persisted)
+        internal static bool ContainsPersistedConflict(Transaction tx, HashSet<UInt256> persisted)
         {
             foreach (var attr in tx.GetAttributes<Conflicts>())
             {
