@@ -410,7 +410,7 @@ namespace Neo.Ledger
                 foreach (var hash in conflicting)
                 {
                     var unsortedTx = _unsortedTransactions[hash];
-                    if (unsortedTx.Tx.Signers.Select(s => s.Account).Contains(author))
+                    if (ContainsAccount(unsortedTx.Tx.Signers, author))
                         conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
@@ -420,7 +420,7 @@ namespace Neo.Ledger
             {
                 if (_unsortedTransactions.TryGetValue(hash, out var unsortedTx))
                 {
-                    if (!tx.Signers.Select(p => p.Account).Intersect(unsortedTx.Tx.Signers.Select(p => p.Account)).Any()) return false;
+                    if (!HasCommonSigner(tx.Signers, unsortedTx.Tx.Signers)) return false;
                     conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
@@ -535,26 +535,27 @@ namespace Neo.Ledger
                 foreach (Transaction tx in block.Transactions)
                 {
                     if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerified(tx.Hash, out _);
-                    var conflictingSigners = tx.Signers.Select(s => s.Account);
                     foreach (var h in tx.GetAttributes<Conflicts>().Select(a => a.Hash))
                     {
-                        if (conflicts.TryGetValue(h, out var signersList))
+                        if (!conflicts.TryGetValue(h, out var signersList))
                         {
-                            signersList.AddRange(conflictingSigners);
-                            continue;
+                            signersList = new List<UInt160>(tx.Signers.Length);
+                            conflicts.Add(h, signersList);
                         }
-                        signersList = conflictingSigners.ToList();
-                        conflicts.Add(h, signersList);
+                        for (int i = 0; i < tx.Signers.Length; i++)
+                            signersList.Add(tx.Signers[i].Account);
                     }
                 }
 
                 // Then remove the transactions conflicting with the accepted ones.
                 // No need to modify VerificationContext as it will be reset afterwards.
-                var persisted = block.Transactions.Select(t => t.Hash);
+                var persisted = new HashSet<UInt256>(block.Transactions.Length);
+                foreach (var t in block.Transactions)
+                    persisted.Add(t.Hash);
                 var stale = new List<UInt256>();
                 foreach (var item in _sortedTransactions)
                 {
-                    if ((conflicts.TryGetValue(item.Tx.Hash, out var signersList) && signersList.Intersect(item.Tx.Signers.Select(s => s.Account)).Any()) || item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Any())
+                    if ((conflicts.TryGetValue(item.Tx.Hash, out var signersList) && HasCommonAccount(signersList, item.Tx.Signers)) || ContainsPersistedConflict(item.Tx, persisted))
                     {
                         stale.Add(item.Tx.Hash);
                         conflictingItems.Add(item.Tx);
@@ -711,6 +712,50 @@ namespace Neo.Ledger
             }
 
             return _unverifiedTransactions.Count > 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ContainsAccount(Signer[] signers, UInt160 account)
+        {
+            for (int i = 0; i < signers.Length; i++)
+            {
+                if (signers[i].Account.Equals(account))
+                    return true;
+            }
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasCommonSigner(Signer[] left, Signer[] right)
+        {
+            for (int i = 0; i < left.Length; i++)
+            {
+                if (ContainsAccount(right, left[i].Account))
+                    return true;
+            }
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasCommonAccount(List<UInt160> accounts, Signer[] signers)
+        {
+            for (int i = 0; i < accounts.Count; i++)
+            {
+                if (ContainsAccount(signers, accounts[i]))
+                    return true;
+            }
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ContainsPersistedConflict(Transaction tx, HashSet<UInt256> persisted)
+        {
+            foreach (var attr in tx.GetAttributes<Conflicts>())
+            {
+                if (persisted.Contains(attr.Hash))
+                    return true;
+            }
+            return false;
         }
 
         // This method is only for test purpose
