@@ -101,7 +101,9 @@ namespace Neo
             {
                 var divisor = BigInteger.Pow(10, _decimals - decimals);
                 value = BigInteger.DivRem(_value, divisor, out var remainder);
-                if (remainder > BigInteger.Zero)
+                // DivRem remainder has the sign of the dividend, so a negative
+                // value with a leftover fraction would otherwise be truncated.
+                if (!remainder.IsZero)
                     throw new ArgumentOutOfRangeException(nameof(decimals));
             }
             return new BigDecimal(value, decimals);

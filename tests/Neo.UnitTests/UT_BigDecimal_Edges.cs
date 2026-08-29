@@ -52,6 +52,22 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void ChangeDecimals_NegativeWithRemainder_Throws()
+        {
+            var value = new BigDecimal(new BigInteger(-12300), 5);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => value.ChangeDecimals(2));
+        }
+
+        [TestMethod]
+        public void ChangeDecimals_NegativeExact_Succeeds()
+        {
+            var value = new BigDecimal(new BigInteger(-12300), 5);
+            var result = value.ChangeDecimals(3);
+            Assert.AreEqual(new BigInteger(-123), result.Value);
+            Assert.AreEqual(3, result.Decimals);
+        }
+
+        [TestMethod]
         public void ToString_IncludesDecimals()
         {
             var value = new BigDecimal(new BigInteger(12345), 3);
