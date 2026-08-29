@@ -14,7 +14,6 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.IO.Caching;
 using System;
-using System.Buffers.Binary;
 using System.IO;
 
 namespace Neo.Network.P2P
@@ -161,27 +160,27 @@ namespace Neo.Network.P2P
             msg = null;
             if (data.Count < 3) return 0;
 
-            var header = data.Slice(0, 3).ToArray();
-            var flags = (MessageFlags)header[0];
-            ulong length = header[2];
+            var flags = (MessageFlags)data[0];
+            var command = (MessageCommand)data[1];
+            ulong length = data[2];
             var payloadIndex = 3;
 
             if (length == 0xFD)
             {
                 if (data.Count < 5) return 0;
-                length = BinaryPrimitives.ReadUInt16LittleEndian(data.Slice(payloadIndex, 2).ToArray());
+                length = ReadLittleEndian(data, payloadIndex, 2);
                 payloadIndex += 2;
             }
             else if (length == 0xFE)
             {
                 if (data.Count < 7) return 0;
-                length = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(payloadIndex, 4).ToArray());
+                length = ReadLittleEndian(data, payloadIndex, 4);
                 payloadIndex += 4;
             }
             else if (length == 0xFF)
             {
                 if (data.Count < 11) return 0;
-                length = BinaryPrimitives.ReadUInt64LittleEndian(data.Slice(payloadIndex, 8).ToArray());
+                length = ReadLittleEndian(data, payloadIndex, 8);
                 payloadIndex += 8;
             }
 
@@ -192,12 +191,20 @@ namespace Neo.Network.P2P
             msg = new Message()
             {
                 Flags = flags,
-                Command = (MessageCommand)header[1],
+                Command = command,
                 _payloadCompressed = length <= 0 ? ReadOnlyMemory<byte>.Empty : data.Slice(payloadIndex, (int)length).ToArray()
             };
             msg.DecompressPayload();
 
             return payloadIndex + (int)length;
+        }
+
+        private static ulong ReadLittleEndian(ByteString data, int index, int size)
+        {
+            ulong value = 0;
+            for (int i = 0; i < size; i++)
+                value |= (ulong)data[index + i] << (8 * i);
+            return value;
         }
     }
 }
