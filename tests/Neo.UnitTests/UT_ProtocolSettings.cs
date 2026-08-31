@@ -13,6 +13,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -116,7 +118,8 @@ namespace Neo.UnitTests
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Faun, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Huyao, 10));
-            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Iara, 10));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Iara, 10));
+            Assert.IsFalse(settings.Hardforks.ContainsKey(Hardfork.HF_Iara));
         }
 
         [TestMethod]
@@ -127,6 +130,65 @@ namespace Neo.UnitTests
             File.WriteAllText(file, json);
             Assert.ThrowsExactly<ArgumentException>(() => _ = ProtocolSettings.Load(file));
             File.Delete(file);
+        }
+
+        [TestMethod]
+        public void Load_PostHuyaoHardfork_Throws()
+        {
+            string json = CreateHFSettings("\"HF_Aspidochelone\": 0, \"HF_Basilisk\": 0, \"HF_Cockatrice\": 0, \"HF_Domovoi\": 0, \"HF_Echidna\": 0, \"HF_Faun\": 0, \"HF_Gorgon\": 0, \"HF_Huyao\": 0, \"HF_Iara\": 10");
+            var file = Path.GetTempFileName();
+            File.WriteAllText(file, json);
+            var ex = Assert.ThrowsExactly<ArgumentException>(() => _ = ProtocolSettings.Load(file));
+            File.Delete(file);
+            Assert.Contains("HF_Iara", ex.Message);
+        }
+
+        [TestMethod]
+        public void Load_IgnoresHardforkDebugOverrides_AndDoesNotEnableIara()
+        {
+            string json = """
+            {
+                "ProtocolConfiguration": {
+                    "Network": 1313104468,
+                    "AddressVersion": 53,
+                    "MillisecondsPerBlock": 15000,
+                    "MaxTransactionsPerBlock": 512,
+                    "MemoryPoolMaxTransactions": 50000,
+                    "MaxTraceableBlocks": 2102400,
+                    "Hardforks": {
+                        "HF_Aspidochelone": 0,
+                        "HF_Basilisk": 0,
+                        "HF_Cockatrice": 0,
+                        "HF_Domovoi": 0,
+                        "HF_Echidna": 0,
+                        "HF_Faun": 0,
+                        "HF_Gorgon": 0,
+                        "HF_Huyao": 0
+                    },
+                    "HardforkDebugOverrides": {
+                        "HF_Iara": 42
+                    },
+                    "InitialGasDistribution": 5200000000000000,
+                    "ValidatorsCount": 7,
+                    "StandbyCommittee": [
+                        "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"
+                    ],
+                    "SeedList": [ "seed1.neo.org:10333" ]
+                }
+            }
+            """;
+            var file = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(file, json);
+                var settings = ProtocolSettings.Load(file);
+                Assert.IsFalse(settings.Hardforks.ContainsKey(Hardfork.HF_Iara));
+                Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Iara, 42));
+            }
+            finally
+            {
+                File.Delete(file);
+            }
         }
 
         internal static string CreateHFSettings(string hf)

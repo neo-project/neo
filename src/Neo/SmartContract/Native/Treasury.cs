@@ -12,6 +12,7 @@
 #nullable enable
 #pragma warning disable IDE0051
 
+using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System.Collections.Immutable;
@@ -28,7 +29,7 @@ namespace Neo.SmartContract.Native
 
         public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_Faun];
 
-        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, ProtocolSettings settings, IReadOnlyStore? snapshot, uint blockHeight, ContractManifest manifest)
         {
             manifest.SupportedStandards = ["NEP-26", "NEP-27", "NEP-30"];
         }
