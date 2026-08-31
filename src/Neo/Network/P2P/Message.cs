@@ -161,7 +161,6 @@ namespace Neo.Network.P2P
             if (data.Count < 3) return 0;
 
             var flags = (MessageFlags)data[0];
-            var command = (MessageCommand)data[1];
             ulong length = data[2];
             var payloadIndex = 3;
 
@@ -191,7 +190,7 @@ namespace Neo.Network.P2P
             msg = new Message()
             {
                 Flags = flags,
-                Command = command,
+                Command =  (MessageCommand)data[1],
                 _payloadCompressed = length <= 0 ? ReadOnlyMemory<byte>.Empty : data.Slice(payloadIndex, (int)length).ToArray()
             };
             msg.DecompressPayload();
