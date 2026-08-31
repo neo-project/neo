@@ -223,13 +223,6 @@ namespace Neo.Network.P2P
 
         private void OnTaskCompleted(IInventory inventory)
         {
-            sessions.TryGetValue(Sender, out var session);
-
-            CompleteTask(inventory, session);
-        }
-
-        private void CompleteTask(IInventory inventory, TaskSession? session)
-        {
             _knownHashes.TryAdd(inventory.Hash);
             globalInvTasks.Remove(inventory.Hash);
 
@@ -252,7 +245,7 @@ namespace Neo.Network.P2P
                     ms.IndexTasks.Remove(completedBlock.Index);
             }
 
-            if (session is null)
+            if (!sessions.TryGetValue(Sender, out var session) || session is null)
                 return;
 
             if (inventory is Block requestedBlock)
