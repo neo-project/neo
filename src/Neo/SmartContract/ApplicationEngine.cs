@@ -717,25 +717,11 @@ namespace Neo.SmartContract
         {
             var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             settings ??= ProtocolSettings.Default;
-            // Adjust jump table according persistingBlock
-
-            JumpTable jumpTable;
-
-            if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
-            {
-                jumpTable = DefaultJumpTable;
-            }
-            else
-            {
-                if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
-                {
-                    jumpTable = NotEchidnaJumpTable;
-                }
-                else
-                {
-                    jumpTable = NotGorgonJumpTable;
-                }
-            }
+            // Jump tables are stacked by hardfork; historical pre-HF paths must stay for genesis sync (#4455).
+            JumpTable jumpTable =
+                settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index) ? DefaultJumpTable :
+                settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? NotGorgonJumpTable :
+                NotEchidnaJumpTable;
 
             var engine = Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
