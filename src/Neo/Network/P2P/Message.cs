@@ -190,7 +190,7 @@ namespace Neo.Network.P2P
             msg = new Message()
             {
                 Flags = flags,
-                Command =  (MessageCommand)data[1],
+                Command = (MessageCommand)data[1],
                 _payloadCompressed = length <= 0 ? ReadOnlyMemory<byte>.Empty : data.Slice(payloadIndex, (int)length).ToArray()
             };
             msg.DecompressPayload();
