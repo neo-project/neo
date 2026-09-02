@@ -18,6 +18,7 @@ using Neo.Json;
 using Neo.VM.Types;
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -247,16 +248,24 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
-        private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator)
+        private static string[] StringSplit(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str, string separator)
         {
-            return str.Split(separator);
+            return StringSplit(engine, str, separator, false);
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
-        private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
+        private static string[] StringSplit(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
         {
-            StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
-            return str.Split(separator, options);
+            // Huyao: empty separator splits by Unicode scalar values (Go strings.Split).
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao) && string.IsNullOrEmpty(separator))
+            {
+                if (string.IsNullOrEmpty(str))
+                    return [];
+
+                return [.. str.EnumerateRunes().Select(static r => r.ToString())];
+            }
+
+            return str.Split(separator, removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None);
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
@@ -264,16 +273,7 @@ namespace Neo.SmartContract.Native
         {
             // return the length of the string in elements
             // it should return 1 for both  "🦆" and "ã"
-
-            TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(str);
-            int count = 0;
-
-            while (enumerator.MoveNext())
-            {
-                count++;
-            }
-
-            return count;
+            return new StringInfo(str).LengthInTextElements;
         }
     }
 }
