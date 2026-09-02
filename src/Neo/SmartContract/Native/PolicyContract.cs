@@ -76,7 +76,7 @@ namespace Neo.SmartContract.Native
         public const uint MaxMillisecondsPerBlock = 30_000;
 
         /// <summary>
-        /// The maximum MaxValidUntilBlockIncrement value that the committee can set.
+        /// The maximum transaction validity window value that the committee can set.
         /// It is set to be a day of 1-second blocks.
         /// </summary>
         public const uint MaxMaxValidUntilBlockIncrement = 86400;
@@ -234,11 +234,12 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the upper increment size of blockchain height (in blocks) exceeding
-        /// that a transaction should fail validation.
+        /// Gets the maximum transaction validity window, measured in blocks.
+        /// A transaction fails validation if its ValidUntilBlock exceeds the current
+        /// block height plus this value.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>MaxValidUntilBlockIncrement value.</returns>
+        /// <returns>The current transaction validity window.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetMaxValidUntilBlockIncrement(IReadOnlyStore snapshot)
         {
