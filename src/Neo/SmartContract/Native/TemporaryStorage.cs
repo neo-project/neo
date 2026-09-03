@@ -236,7 +236,7 @@ namespace Neo.SmartContract.Native
             var enumerator = engine.SnapshotCache
                 .Find(MakeRecordStorageKey(contract.Id, prefix), direction)
                 .Where(kvp => IsTraceable(engine, kvp.Value, out var _))
-                .Select(kvp => (kvp.Key, new StorageItem(kvp.Value.Value[8..].ToArray())))
+                .Select(kvp => (new StorageKey() { Id = kvp.Key.Id, Key = kvp.Key.Key[(1 + 4)..] }, new StorageItem(kvp.Value.Value[8..].ToArray())))
                 .GetEnumerator();
 
             var iter = new StorageIterator(enumerator, prefix.Length, options);
