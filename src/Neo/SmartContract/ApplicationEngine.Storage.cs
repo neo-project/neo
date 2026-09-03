@@ -180,6 +180,21 @@ namespace Neo.SmartContract
         /// <returns>An iterator for the results.</returns>
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
+            var direction = ValidateFindOptions(options);
+
+            var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
+            return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options);
+        }
+
+        /// <summary>
+        /// ValidateFindOptions ensures System.Storage.Find-alike options are valid and throws an exception otherwise.
+        /// </summary>
+        /// <param name="options">Storage iterator options to validate.</param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <returns>The direction of iteration.</returns>
+        public static SeekDirection ValidateFindOptions(FindOptions options)
+        {
             if ((options & ~FindOptions.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(options), $"Invalid find options: {options}");
 
@@ -201,9 +216,7 @@ namespace Neo.SmartContract
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
                 throw new ArgumentException("PickField0 or PickField1 requires DeserializeValues", nameof(options));
 
-            var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
-            return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options);
+            return options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
         }
 
         /// <summary>
@@ -233,17 +246,45 @@ namespace Neo.SmartContract
                 throw new ArgumentException($"Value length {value.Length} exceeds maximum allowed size of {MaxStorageValueSize} bytes.", nameof(value));
             if (context.IsReadOnly) throw new ArgumentException("StorageContext is read-only", nameof(context));
 
-            int newDataSize;
             StorageKey skey = new()
             {
                 Id = context.Id,
                 Key = key
             };
-            var item = SnapshotCache.GetAndChange(skey);
+            int newDataSize = CalculateChargableSize(skey, value, null, out var item);
+            // Add item to the storage since CalculateStoragePrice doesn't mark item as changed/added.
             if (item is null)
-            {
-                newDataSize = key.Length + value.Length;
                 SnapshotCache.Add(skey, item = new StorageItem());
+            else
+                item = SnapshotCache.GetAndChange(skey)!;
+
+            AddFee(newDataSize * StoragePrice, true);
+            item.Value = value;
+        }
+
+        /// <summary>
+        /// Defines whether the record should be considered as existing if found in the contract storage.
+        /// </summary>
+        /// <param name="record">The record.</param>
+        /// <returns>Whether the record should be considered as existing if found in the contract storage.</returns>
+        public delegate bool IsRecordTraceable(StorageItem record);
+
+        /// <summary>
+        /// Calculates the size of the storage item (in bytes) that should be payed for by the user if stored
+        /// in the contract storage.
+        /// </summary>
+        /// <param name="skey">The stored item key.</param>
+        /// <param name="value">The stored item value.</param>
+        /// <param name="isTraceable">An optional delegate defining whether the already-exists path should be applied to the calculations in case if item is already present in the storage.</param>
+        /// <param name="item">The old item stored by the given key (if exists).</param>
+        /// <returns>The number of bytes the user should pay for.</returns>
+        public int CalculateChargableSize(StorageKey skey, ReadOnlyMemory<byte> value, IsRecordTraceable? isTraceable, out StorageItem? item)
+        {
+            int newDataSize;
+            item = SnapshotCache.TryGet(skey);
+            if (item is null || (isTraceable is not null && !isTraceable(item)))
+            {
+                newDataSize = skey.Key.Length + value.Length;
             }
             else
             {
@@ -256,9 +297,7 @@ namespace Neo.SmartContract
                 else
                     newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
             }
-            AddFee(newDataSize * StoragePrice, true);
-
-            item.Value = value;
+            return newDataSize;
         }
 
         /// <summary>
