@@ -97,7 +97,7 @@ namespace Neo
         public uint MaxTraceableBlocks { get; init; }
 
         /// <summary>
-        /// Denotes the initial maxmum TTL value for key-value pairs stored in the TemporaryStorage
+        /// Denotes the initial maximum TTL value for key-value pairs stored in the TemporaryStorage
         /// native contract. This value is stored in the native Policy and can further be changed by
         /// the committee. Must be an integer number of milliseconds.
         /// </summary>

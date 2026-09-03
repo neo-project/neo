@@ -251,7 +251,7 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            int newDataSize = CalculateStoragePrice(skey, value, out var item);
+            int newDataSize = CalculateChargableSize(skey, value, null, out var item);
             // Add item to the storage since CalculateStoragePrice doesn't mark item as changed/added.
             if (item is null)
                 SnapshotCache.Add(skey, item = new StorageItem());
@@ -262,11 +262,27 @@ namespace Neo.SmartContract
             item.Value = value;
         }
 
-        public int CalculateStoragePrice(StorageKey skey, ReadOnlyMemory<byte> value, out StorageItem? item)
+        /// <summary>
+        /// Defines whether the record should be considered as existing if found in the contract storage.
+        /// </summary>
+        /// <param name="record">The record.</param>
+        /// <returns>Whether the record should be considered as existing if found in the contract storage.</returns>
+        public delegate bool IsRecordTraceable(StorageItem record);
+
+        /// <summary>
+        /// Calculates the size of the storage item (in bytes) that should be payed for by the user if stored
+        /// in the contract storage.
+        /// </summary>
+        /// <param name="skey">The stored item key.</param>
+        /// <param name="value">The stored item value.</param>
+        /// <param name="isTraceable">An optional delegate defining whether the already-exists path should be applied to the calculations in case if item is already present in the storage.</param>
+        /// <param name="item">The old item stored by the given key (if exists).</param>
+        /// <returns>The number of bytes the user should pay for.</returns>
+        public int CalculateChargableSize(StorageKey skey, ReadOnlyMemory<byte> value, IsRecordTraceable? isTraceable, out StorageItem? item)
         {
             int newDataSize;
             item = SnapshotCache.TryGet(skey);
-            if (item is null)
+            if (item is null || (isTraceable is not null && !isTraceable(item)))
             {
                 newDataSize = skey.Key.Length + value.Length;
             }

@@ -107,7 +107,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Returns value stored by the given key in the temporary storage of the calling contract.
         /// </summary>
-        /// <param name="engine">The executionn engine.</param>
+        /// <param name="engine">The execution engine.</param>
         /// <param name="key">The key used to retrieve data.</param>
         /// <returns>The requested item if exists and not yet expired, otherwise <see langword="null"/>.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Returns value stored by the given key in the temporary storage of the requested contract.
         /// </summary>
-        /// <param name="engine">The executionn engine.</param>
+        /// <param name="engine">The execution engine.</param>
         /// <param name="hash">The hash of the contract owning a temporary key-value pair.</param>
         /// <param name="key">The key used to retrieve data.</param>
         /// <returns>The requested item if exists and not yet expired, otherwise <see langword="null"/>.</returns>
@@ -210,7 +210,7 @@ namespace Neo.SmartContract.Native
         /// Finds a set of key-value pairs matching the find options in the temporary storage of the requested contract.
         /// </summary>
         /// <param name="engine">The execution engine.</param>
-        /// <param name="hash">The hash of the of the contract owning the requested temporary key-value pairs.</param>
+        /// <param name="hash">The hash of the contract owning the requested temporary key-value pairs.</param>
         /// <param name="prefix">The prefix used to find data.</param>
         /// <param name="options">Iterator options customizing the result iteration behaviour.</param>
         /// <returns>Iterator over the matching key-value pairs.</returns>
@@ -224,7 +224,7 @@ namespace Neo.SmartContract.Native
         /// An internal helper used to unify 'find' contract method overloads.
         /// </summary>
         /// <param name="engine">The execution engine.</param>
-        /// <param name="hash">The hash of the of the contract owning the requested temporary key-value pairs.</param>
+        /// <param name="hash">The hash of the contract owning the requested temporary key-value pairs.</param>
         /// <param name="prefix">The prefix used to find data.</param>
         /// <param name="options">Iterator options customizing the result iteration behaviour.</param>
         /// <returns>Iterator over the matching key-value pairs.</returns>
@@ -311,7 +311,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Creates Prefix_Record-prefixed storage key used to store key-value par.
+        /// Creates Prefix_Record-prefixed storage key used to store key-value pair.
         /// </summary>
         /// <param name="contractId">The ID of the contract that owns the specified key-value pair.</param>
         /// <param name="key">The key to be stored.</param>
@@ -372,9 +372,9 @@ namespace Neo.SmartContract.Native
                 Id = Id,
                 Key = key
             };
-            var permanentPrice = engine.CalculateStoragePrice(skey, value, out item);
+            var permanentPrice = engine.CalculateChargableSize(skey, value, (StorageItem item) => { return IsTraceable(engine, item, out var _); }, out item);
 
-            return (long)((ulong)(permanentPrice * engine.StoragePrice) / Math.Min((ulong)lifetime, MsPerYear) * MsPerYear);
+            return (long)((ulong)(permanentPrice * engine.StoragePrice) * Math.Min((ulong)lifetime, MsPerYear) / MsPerYear);
         }
 
         /// <summary>
