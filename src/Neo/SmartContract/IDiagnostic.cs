@@ -21,8 +21,7 @@ namespace Neo.SmartContract
         void ContextLoaded(ExecutionContext context);
         void ContextUnloaded(ExecutionContext context);
         void PreExecuteInstruction(Instruction instruction);
-        /// <param name="instruction"><see langword="null"/> for the synthetic RET at script end.</param>
-        void PostExecuteInstruction(Instruction? instruction);
+        void PostExecuteInstruction(Instruction instruction);
         void CallFromNative(UInt160 hash, string method, StackItem[] args);
     }
 }

@@ -1063,7 +1063,7 @@ namespace Neo.SmartContract
         protected override void PostExecuteInstruction(Instruction? instruction, RunStats priceArgs)
         {
             base.PostExecuteInstruction(instruction, priceArgs);
-            Diagnostic?.PostExecuteInstruction(instruction);
+            Diagnostic?.PostExecuteInstruction(instruction ?? Instruction.RET);
             _postExecuteInstruction?.Invoke(instruction, priceArgs);
         }
 
