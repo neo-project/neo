@@ -1142,5 +1142,142 @@ namespace Neo.UnitTests.Ledger
             var verifiedTxs = _unit.GetSortedVerifiedTransactions();
             VerifyTransactionsSortedDescending(verifiedTxs);
         }
+
+        [TestMethod]
+        public void TryAdd_ConflictWithoutSharedSigner_Rejected()
+        {
+            var snapshot = GetSnapshot();
+            var poolTx = CreateTransaction(100000);
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(poolTx, snapshot));
+
+            var outsider = CreateTransaction(200000);
+            outsider.Signers = [new Signer { Account = new UInt160(Crypto.Hash160([9, 9, 9])), Scopes = WitnessScope.None }];
+            outsider.Attributes = [new Conflicts { Hash = poolTx.Hash }];
+
+            Assert.AreEqual(VerifyResult.HasConflicts, _unit.TryAdd(outsider, snapshot));
+            Assert.IsTrue(_unit.ContainsKey(poolTx.Hash));
+            Assert.IsFalse(_unit.ContainsKey(outsider.Hash));
+        }
+
+        [TestMethod]
+        public void TryAdd_ConflictSharesLastSigner_Replaces()
+        {
+            var snapshot = GetSnapshot();
+            var first = senderAccount;
+            var last = new UInt160(Crypto.Hash160([1, 2, 3]));
+
+            var poolTx = CreateTransaction(100000);
+            poolTx.Signers =
+            [
+                new Signer { Account = first, Scopes = WitnessScope.None },
+                new Signer { Account = last, Scopes = WitnessScope.None }
+            ];
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(poolTx, snapshot));
+
+            var replacement = CreateTransaction(200000);
+            replacement.Signers = [new Signer { Account = last, Scopes = WitnessScope.None }];
+            replacement.Attributes = [new Conflicts { Hash = poolTx.Hash }];
+
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(replacement, snapshot));
+            Assert.IsTrue(_unit.ContainsKey(replacement.Hash));
+            Assert.IsFalse(_unit.ContainsKey(poolTx.Hash));
+        }
+
+        [TestMethod]
+        public void UpdatePoolForBlockPersisted_ConflictSharesSecondarySigner()
+        {
+            var snapshot = GetSnapshot();
+            var primary = senderAccount;
+            var secondary = new UInt160(Crypto.Hash160([7, 7, 7]));
+
+            var mempooled = CreateTransaction(1000);
+            mempooled.Signers = [new Signer { Account = secondary, Scopes = WitnessScope.None }];
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(mempooled, snapshot));
+
+            var blockTx = CreateTransaction(1000);
+            blockTx.Signers =
+            [
+                new Signer { Account = primary, Scopes = WitnessScope.None },
+                new Signer { Account = secondary, Scopes = WitnessScope.None }
+            ];
+            blockTx.Attributes = [new Conflicts { Hash = mempooled.Hash }];
+
+            _unit.UpdatePoolForBlockPersisted(new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = [blockTx]
+            }, snapshot);
+
+            Assert.IsFalse(_unit.ContainsKey(mempooled.Hash));
+        }
+
+        [TestMethod]
+        public void UpdatePoolForBlockPersisted_MempoolConflictsPersistedTx()
+        {
+            var snapshot = GetSnapshot();
+            var persisted = CreateTransaction(1000);
+            var mempooled = CreateTransaction(1000);
+            mempooled.Attributes = [new Conflicts { Hash = persisted.Hash }];
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(mempooled, snapshot));
+
+            var removed = new List<Transaction>();
+            _unit.TransactionRemoved += (_, e) =>
+            {
+                if (e.Reason == TransactionRemovalReason.Conflict)
+                    removed.AddRange(e.Transactions);
+            };
+
+            _unit.UpdatePoolForBlockPersisted(new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = [persisted]
+            }, snapshot);
+
+            Assert.IsFalse(_unit.ContainsKey(mempooled.Hash));
+            Assert.Contains(mempooled, removed);
+        }
+
+        [TestMethod]
+        public void UpdatePoolForBlockPersisted_TwoBlockTxsAccumulateSigners()
+        {
+            var snapshot = GetSnapshot();
+            var mempooled = CreateTransaction(1000);
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(mempooled, snapshot));
+
+            var otherSender = new UInt160(Crypto.Hash160([4, 5, 6]));
+            var first = CreateTransaction(1000);
+            first.Signers = [new Signer { Account = otherSender, Scopes = WitnessScope.None }];
+            first.Attributes = [new Conflicts { Hash = mempooled.Hash }];
+
+            var second = CreateTransaction(1000);
+            second.Signers = [new Signer { Account = senderAccount, Scopes = WitnessScope.None }];
+            second.Attributes = [new Conflicts { Hash = mempooled.Hash }];
+
+            _unit.UpdatePoolForBlockPersisted(new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = [first, second]
+            }, snapshot);
+
+            Assert.IsFalse(_unit.ContainsKey(mempooled.Hash));
+        }
     }
 }
