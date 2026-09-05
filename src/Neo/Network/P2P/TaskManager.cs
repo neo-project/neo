@@ -259,21 +259,17 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Records the hash of a block received from the sending peer, without ever
-        /// retaining the complete <see cref="Block"/> object. Heights already persisted
-        /// or too far ahead of the current one are not tracked, since neither is ever
-        /// consulted by <see cref="RequestTasks"/> or <see cref="OnPersistCompleted"/>.
+        /// Records index -> hash for a block received from the sending peer, as long as
+        /// its height is within the window RequestTasks and OnPersistCompleted care about.
         /// </summary>
         private void TrackReceivedBlockHash(TaskSession session, Block block)
         {
             var currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
 
-            // Already persisted heights are never consulted again: RequestTasks always
-            // starts at currentHeight + 1, so there is no point in tracking them here.
             if (block.Index <= currentHeight)
                 return;
 
-            // Avoid uint overflow from currentHeight + MaxHashesCount.
+            // Overflow-safe: block.Index > currentHeight is already guaranteed above.
             if (block.Index - currentHeight > InvPayload.MaxHashesCount)
                 return;
 
