@@ -319,8 +319,8 @@ namespace Neo.Network.P2P
             switch (inventory)
             {
                 case Transaction transaction:
-                    if (!(_system.ContainsTransaction(transaction.Hash) != ContainsTransactionType.NotExist
-                        || _system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))))
+                    if (!(_system.ContainsTransaction(transaction.Hash) != ContainsTransactionType.NotExist ||
+                        _system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))))
                     {
                         _system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
                     }

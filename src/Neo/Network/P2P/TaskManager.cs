@@ -405,17 +405,17 @@ namespace Neo.Network.P2P
                     hashes.RemoveWhere(p => !IncrementGlobalTask(p));
                     session.AvailableTasks.Remove(hashes);
 
-                    foreach (var hash in hashes)
+                    foreach (UInt256 hash in hashes)
                         session.InvTasks[hash] = DateTime.UtcNow;
 
-                    foreach (var group in InvPayload.CreateGroup(InventoryType.Block, hashes))
+                    foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes))
                         remoteNode.Tell(Message.Create(MessageCommand.GetData, group));
                     return;
                 }
             }
 
-            var currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
-            var headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
+            uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
+            uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             // When the number of AvailableTasks is no more than 0,
             // no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
@@ -427,12 +427,13 @@ namespace Neo.Network.P2P
             }
             else if (currentHeight < session.LastBlockIndex)
             {
-                var startHeight = currentHeight + 1;
+                uint startHeight = currentHeight + 1;
                 while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlockHashes.ContainsKey(startHeight)) { startHeight++; }
-                // Avoid uint overflow from currentHeight + MaxHashesCount.
+                // Avoid uint overflow: compare via subtraction (startHeight >= currentHeight here) instead of
+                // currentHeight + MaxHashesCount, which can wrap when currentHeight is near uint.MaxValue.
                 if (startHeight > session.LastBlockIndex || startHeight - currentHeight >= InvPayload.MaxHashesCount) return;
 
-                var endHeight = startHeight;
+                uint endHeight = startHeight;
                 while (endHeight < uint.MaxValue)
                 {
                     var next = endHeight + 1;
@@ -441,7 +442,7 @@ namespace Neo.Network.P2P
                     endHeight = next;
                 }
 
-                var count = Math.Min(endHeight - startHeight + 1, InvPayload.MaxHashesCount);
+                uint count = Math.Min(endHeight - startHeight + 1, InvPayload.MaxHashesCount);
                 for (uint i = 0; i < count; i++)
                 {
                     session.IndexTasks[startHeight + i] = TimeProvider.Current.UtcNow;
