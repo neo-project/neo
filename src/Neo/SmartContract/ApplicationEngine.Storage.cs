@@ -89,6 +89,11 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Storage_Local_Find = Register("System.Storage.Local.Find", nameof(FindLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
 
         /// <summary>
+        /// Finds storage entries for the current contract, starting at an inclusive suffix.
+        /// </summary>
+        public static readonly InteropDescriptor System_Storage_Local_FindWithStart = Register("System.Storage.Local.FindWithStart", nameof(FindLocalWithStart), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Iara);
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Put.
         /// Puts a new entry into the storage.
         /// </summary>
@@ -247,6 +252,19 @@ namespace Neo.SmartContract
         protected internal IIterator FindLocal(byte[] prefix, FindOptions options)
         {
             return Find(GetReadOnlyContext(), prefix, options);
+        }
+
+        /// <summary>
+        /// The implementation of System.Storage.Local.FindWithStart.
+        /// Finds entries for the current contract, starting at prefix + start (inclusive).
+        /// </summary>
+        /// <param name="prefix">The prefix of keys to find.</param>
+        /// <param name="start">The starting key suffix, relative to the prefix.</param>
+        /// <param name="options">The options of the search.</param>
+        /// <returns>An iterator restricted to the current contract and specified prefix.</returns>
+        protected internal IIterator FindLocalWithStart(byte[] prefix, byte[] start, FindOptions options)
+        {
+            return FindWithStart(GetReadOnlyContext(), prefix, start, options);
         }
 
         /// <summary>

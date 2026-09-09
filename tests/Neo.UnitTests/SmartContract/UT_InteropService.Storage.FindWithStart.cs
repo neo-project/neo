@@ -1,12 +1,18 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_InteropService.Storage.FindWithStart.cs file belongs to the neo project and is free
-// software distributed under the MIT software license, see the accompanying
-// file LICENSE in the main directory of the repository.
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
+using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -140,6 +146,39 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreSequenceEqual(BinarySerializer.Serialize(existing.Value(), ExecutionEngineLimits.Default), BinarySerializer.Serialize(iterator.Value(), ExecutionEngineLimits.Default));
                     Assert.IsFalse(iterator.Next());
                 }
+            }
+        }
+
+        [TestMethod]
+        [DataRow(true, true, true, false, VMState.HALT)]
+        [DataRow(true, true, true, true, VMState.HALT)]
+        [DataRow(false, true, true, false, VMState.FAULT)]
+        [DataRow(true, false, true, false, VMState.FAULT)]
+        [DataRow(true, true, false, false, VMState.FAULT)]
+        public void TestStorage_LocalFindWithStartSyscall(bool enabled, bool readStates, bool deployed, bool backwards, VMState expectedState)
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var contract = TestUtils.GetContract();
+            using var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Storage_Local_FindWithStart);
+            var settings = TestProtocolSettings.Default;
+            if (!enabled) settings = settings with { Hardforks = settings.Hardforks.Remove(Hardfork.HF_Iara) };
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
+            engine.LoadScript(script.ToArray(), configureState: state => state.CallFlags = readStates ? CallFlags.ReadStates : CallFlags.None);
+            if (deployed) snapshot.AddContract(engine.CurrentScriptHash, contract);
+            foreach (var id in new[] { contract.Id, contract.Id + 1 })
+                foreach (var suffix in new[] { "23", "28" })
+                    snapshot.Add(new StorageKey { Id = id, Key = Encoding.UTF8.GetBytes("A_" + suffix) }, new StorageItem([42]));
+            engine.Push((int)(FindOptions.KeysOnly | FindOptions.RemovePrefix | (backwards ? FindOptions.Backwards : FindOptions.None)));
+            engine.Push("27"u8.ToArray());
+            engine.Push("A_"u8.ToArray());
+            Assert.AreEqual(expectedState, engine.Execute());
+            if (expectedState == VMState.HALT)
+            {
+                using var iterator = engine.ResultStack.Pop().GetInterface<IIterator>();
+                Assert.IsTrue(iterator.Next());
+                Assert.AreEqual(backwards ? "23" : "28", Encoding.UTF8.GetString(iterator.Value().GetSpan()));
+                Assert.IsFalse(iterator.Next());
             }
         }
 
