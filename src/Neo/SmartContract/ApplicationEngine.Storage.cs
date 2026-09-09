@@ -13,6 +13,7 @@ using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
 using System;
+using System.Linq;
 
 namespace Neo.SmartContract
 {
@@ -57,6 +58,11 @@ namespace Neo.SmartContract
         /// Finds the entries from the storage.
         /// </summary>
         public static readonly InteropDescriptor System_Storage_Find = Register("System.Storage.Find", nameof(Find), 1 << 15, CallFlags.ReadStates);
+
+        /// <summary>
+        /// Finds storage entries with the specified prefix, starting at an inclusive suffix.
+        /// </summary>
+        public static readonly InteropDescriptor System_Storage_FindWithStart = Register("System.Storage.FindWithStart", nameof(FindWithStart), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Iara);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.Put.
@@ -180,6 +186,35 @@ namespace Neo.SmartContract
         /// <returns>An iterator for the results.</returns>
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
+            ValidateFindOptions(options);
+
+            var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
+            var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
+            return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options);
+        }
+
+        /// <summary>
+        /// Finds storage entries with the specified prefix, starting at prefix + start (inclusive).
+        /// If that key does not exist, returns the next key in the requested direction.
+        /// </summary>
+        /// <param name="context">The context of the storage.</param>
+        /// <param name="prefix">The prefix of keys to find.</param>
+        /// <param name="start">The starting key suffix, relative to the prefix. An empty suffix starts at the prefix itself.</param>
+        /// <param name="options">The options of the search.</param>
+        /// <returns>An iterator restricted to the specified contract and prefix.</returns>
+        protected internal IIterator FindWithStart(StorageContext context, byte[] prefix, byte[] start, FindOptions options)
+        {
+            ValidateFindOptions(options);
+
+            var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
+            byte[] startKey = [.. prefixKey, .. start];
+            var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
+            var entries = SnapshotCache.Seek(startKey, direction).TakeWhile(p => p.Key.StartsWith(prefixKey));
+            return new StorageIterator(entries.GetEnumerator(), prefix.Length, options);
+        }
+
+        private static void ValidateFindOptions(FindOptions options)
+        {
             if ((options & ~FindOptions.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(options), $"Invalid find options: {options}");
 
@@ -200,10 +235,6 @@ namespace Neo.SmartContract
 
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
                 throw new ArgumentException("PickField0 or PickField1 requires DeserializeValues", nameof(options));
-
-            var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
-            return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options);
         }
 
         /// <summary>
