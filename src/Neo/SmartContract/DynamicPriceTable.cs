@@ -39,5 +39,15 @@ namespace Neo.SmartContract
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => Table[(byte)opCode] = value;
         }
+
+        /// <summary>
+        /// Creates a copy of this table, so mutating the copy does not affect the original.
+        /// </summary>
+        public DynamicPriceTable Clone()
+        {
+            var clone = new DynamicPriceTable();
+            Table.CopyTo(clone.Table, 0);
+            return clone;
+        }
     }
 }

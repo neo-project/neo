@@ -251,7 +251,7 @@ namespace Neo.SmartContract
             ProtocolSettings = settings;
             _feeAmount = gas * FeeFactor * OpcodePriceMultiplier; // FemtoGAS
             Diagnostic = diagnostic;
-            DynamicPriceTable = dynamicPriceTable ?? DefaultDynamicPriceTable;
+            DynamicPriceTable = dynamicPriceTable ?? DefaultDynamicPriceTable.Clone();
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
 
             var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache));
