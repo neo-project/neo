@@ -26,8 +26,8 @@ namespace Neo.SmartContract
         private static readonly long[] ClearW = { 93, -15, 1515 };
         private static readonly long[] ClearItemsW = { 103, 1455 };
         private static readonly long[] ConvertAnyW = { 78, 1610 };
-        private static readonly long[] ConvertArrOrStructW = { 77, 134, 3218 };
-        private static readonly long[] ConvertByteArrOrBufW = { 7, 3417 };
+        private static readonly long[] ConvertArrayOrStructW = { 77, 134, 3218 };
+        private static readonly long[] ConvertByteArrayOrBufferW = { 7, 3417 };
         private static readonly long[] DropW = { 99, 1486 };
         private static readonly long[] EndFinallyW = { 93, 1137 };
         private static readonly long[] HasKeyW = { 99, 2575 };
@@ -43,7 +43,7 @@ namespace Neo.SmartContract
         private static readonly long[] PackMapW = { 80, 5281, 3481 };
         private static readonly long[] PickItemW = { 91, 2751 };
         private static readonly long[] PopItemW = { 91, 3078 };
-        private static readonly long[] RemoveArrOrStructW = { 98, 9, 1991 };
+        private static readonly long[] RemoveArrayOrStructW = { 98, 9, 1991 };
         private static readonly long[] RemoveMapW = { 96, 706, 6776 };
         private static readonly long[] ReverseItemsArrW = { 98, 19, 2043 };
         private static readonly long[] ReverseItemsBufW = { 9, 1690 };
@@ -168,8 +168,8 @@ namespace Neo.SmartContract
         private static long ConvertGas(RunStats args) => args.Type switch
         {
             StackItemType.Any => ConvertAnyW[0] * args.RefsDelta + ConvertAnyW[1],
-            StackItemType.Array => ConvertArrOrStructW[0] * args.RefsDelta + ConvertArrOrStructW[1] * args.Length + ConvertArrOrStructW[2],
-            StackItemType.ByteString => ConvertByteArrOrBufW[0] * args.Length + ConvertByteArrOrBufW[1],
+            StackItemType.Array => ConvertArrayOrStructW[0] * args.RefsDelta + ConvertArrayOrStructW[1] * args.Length + ConvertArrayOrStructW[2],
+            StackItemType.ByteString => ConvertByteArrayOrBufferW[0] * args.Length + ConvertByteArrayOrBufferW[1],
             _ => throw new InvalidOperationException($"Unsupported type {args.Type} for {OpCode.CONVERT} dynamic pricing."),
         };
         private static long DropGas(RunStats args) => DropW[0] * args.RefsDelta + DropW[1];
@@ -186,7 +186,7 @@ namespace Neo.SmartContract
         private static long PackMapGas(RunStats args) => PackMapW[0] * args.RefsDelta + PackMapW[1] * args.Length + PackMapW[2];
         private static long PickItemGas(RunStats args) => PickItemW[0] * args.RefsDelta + PickItemW[1];
         private static long PopItemGas(RunStats args) => PopItemW[0] * args.RefsDelta + PopItemW[1];
-        private static long RemoveGas(RunStats args) => args.Type == StackItemType.Map ? RemoveMapW[0] * args.RefsDelta + RemoveMapW[1] * args.Length + RemoveMapW[2] : RemoveArrOrStructW[0] * args.RefsDelta + RemoveArrOrStructW[1] * args.Length + RemoveArrOrStructW[2];
+        private static long RemoveGas(RunStats args) => args.Type == StackItemType.Map ? RemoveMapW[0] * args.RefsDelta + RemoveMapW[1] * args.Length + RemoveMapW[2] : RemoveArrayOrStructW[0] * args.RefsDelta + RemoveArrayOrStructW[1] * args.Length + RemoveArrayOrStructW[2];
         private static long ReverseItemsGas(RunStats args) => args.Type == StackItemType.Buffer ? ReverseItemsBufW[0] * args.Length + ReverseItemsBufW[1] : ReverseItemsArrW[0] * args.RefsDelta + ReverseItemsArrW[1] * args.Length + ReverseItemsArrW[2];
         private static long ReverseGas(RunStats args) => ReverseW[0] * args.Length + ReverseW[1];
         private static long RollGas(RunStats args) => RollW[0] * args.Length + RollW[1];
