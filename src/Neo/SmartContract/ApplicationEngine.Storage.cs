@@ -191,10 +191,9 @@ namespace Neo.SmartContract
         /// <returns>An iterator for the results.</returns>
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
-            ValidateFindOptions(options);
+            var direction = ValidateFindOptions(options);
 
             var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
             return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options);
         }
 
@@ -209,16 +208,15 @@ namespace Neo.SmartContract
         /// <returns>An iterator restricted to the specified contract and prefix.</returns>
         protected internal IIterator FindWithStart(StorageContext context, byte[] prefix, byte[] start, FindOptions options)
         {
-            ValidateFindOptions(options);
+            var direction = ValidateFindOptions(options);
 
             var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
             byte[] startKey = [.. prefixKey, .. start];
-            var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
             var entries = SnapshotCache.Seek(startKey, direction).TakeWhile(p => p.Key.StartsWith(prefixKey));
             return new StorageIterator(entries.GetEnumerator(), prefix.Length, options);
         }
 
-        private static void ValidateFindOptions(FindOptions options)
+        private static SeekDirection ValidateFindOptions(FindOptions options)
         {
             if ((options & ~FindOptions.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(options), $"Invalid find options: {options}");
@@ -240,6 +238,8 @@ namespace Neo.SmartContract
 
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
                 throw new ArgumentException("PickField0 or PickField1 requires DeserializeValues", nameof(options));
+
+            return options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
         }
 
         /// <summary>
