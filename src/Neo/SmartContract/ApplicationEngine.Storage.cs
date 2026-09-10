@@ -62,7 +62,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Finds storage entries with the specified prefix, starting at an inclusive suffix.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_FindWithStart = Register("System.Storage.FindWithStart", nameof(FindWithStart), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Iara);
+        public static readonly InteropDescriptor System_Storage_FindWithStart = Register("System.Storage.FindWithStart", nameof(FindWithStart), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Huyao);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.Put.
@@ -91,7 +91,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Finds storage entries for the current contract, starting at an inclusive suffix.
         /// </summary>
-        public static readonly InteropDescriptor System_Storage_Local_FindWithStart = Register("System.Storage.Local.FindWithStart", nameof(FindLocalWithStart), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Iara);
+        public static readonly InteropDescriptor System_Storage_Local_FindWithStart = Register("System.Storage.Local.FindWithStart", nameof(FindLocalWithStart), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Huyao);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Put.
