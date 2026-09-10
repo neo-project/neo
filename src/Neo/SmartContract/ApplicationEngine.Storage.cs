@@ -192,7 +192,6 @@ namespace Neo.SmartContract
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
             var direction = ValidateFindOptions(options);
-
             var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
             return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options);
         }
@@ -209,7 +208,6 @@ namespace Neo.SmartContract
         protected internal IIterator FindWithStart(StorageContext context, byte[] prefix, byte[] start, FindOptions options)
         {
             var direction = ValidateFindOptions(options);
-
             var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
             byte[] startKey = [.. prefixKey, .. start];
             var entries = SnapshotCache.Seek(startKey, direction).TakeWhile(p => p.Key.StartsWith(prefixKey));
