@@ -576,7 +576,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="gas">The amount of GAS, either in the unit of Datoshi or in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
+        /// <param name="gas">The amount of GAS to add, in datoshi (applyFactor=true) or picoGAS (applyFactor=false); internally this is tracked in femtoGAS.</param>
         /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
         protected internal void AddFee(BigInteger gas, bool applyFactor)
         {
