@@ -592,7 +592,7 @@ namespace Neo.SmartContract
         {
             if (gas < 0)
             {
-                throw new InvalidOperationException("AddFee can't be negative.");
+                throw new InvalidOperationException("AddFemtoGas can't be negative.");
             }
 
             // Check whitelist
