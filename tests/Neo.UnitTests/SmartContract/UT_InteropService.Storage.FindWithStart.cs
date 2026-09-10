@@ -162,7 +162,7 @@ namespace Neo.UnitTests.SmartContract
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Storage_Local_FindWithStart);
             var settings = TestProtocolSettings.Default;
-            if (!enabled) settings = settings with { Hardforks = settings.Hardforks.Remove(Hardfork.HF_Iara) };
+            if (!enabled) settings = settings with { Hardforks = settings.Hardforks.Remove(Hardfork.HF_Huyao) };
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
             engine.LoadScript(script.ToArray(), configureState: state => state.CallFlags = readStates ? CallFlags.ReadStates : CallFlags.None);
             if (deployed) snapshot.AddContract(engine.CurrentScriptHash, contract);
@@ -191,7 +191,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = _snapshotCache.CloneCache();
             snapshot.Add(new StorageKey { Id = 123, Key = "A_28"u8.ToArray() }, new StorageItem([42]));
             var settings = TestProtocolSettings.Default;
-            if (!enabled) settings = settings with { Hardforks = settings.Hardforks.Remove(Hardfork.HF_Iara) };
+            if (!enabled) settings = settings with { Hardforks = settings.Hardforks.Remove(Hardfork.HF_Huyao) };
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Storage_FindWithStart);
