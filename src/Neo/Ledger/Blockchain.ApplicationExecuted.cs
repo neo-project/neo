@@ -65,6 +65,9 @@ namespace Neo.Ledger
                 Exception = engine.FaultException;
                 Stack = [.. engine.ResultStack];
                 Notifications = [.. engine.Notifications];
+                StackItemKeepAlive.KeepAll(Stack);
+                foreach (var notification in Notifications)
+                    StackItemKeepAlive.Keep(notification.State);
             }
         }
     }
