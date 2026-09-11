@@ -52,7 +52,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem JsonDeserialize(ApplicationEngine engine, byte[] json)
         {
-            JToken? token = JToken.Parse(json, 10);
+            // HF_Huyao: exact BigInteger for large JSON integers (consensus-breaking vs double).
+            var exactIntegers = engine.IsHardforkEnabled(Hardfork.HF_Huyao);
+            JToken? token = JToken.Parse(json, 10, exactIntegers);
             if (token is null) return StackItem.Null;
             return JsonSerializer.Deserialize(engine, token, engine.Limits);
         }

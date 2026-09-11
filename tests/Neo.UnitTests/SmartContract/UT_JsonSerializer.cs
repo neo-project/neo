@@ -16,6 +16,7 @@ using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -94,7 +95,12 @@ namespace Neo.UnitTests.SmartContract
             json = "[200.500000E+005,200.500000e+5,-1.1234e-100,9.05E+28,1e3,10e3,1000e-3]";
             parsed = JObject.Parse(json);
 
+            // Default parse: double semantics (pre-HF_Huyao / exactIntegers: false).
             Assert.AreEqual("[20050000,20050000,-1.1234E-100,9.05E+28,1000,10000,1]", parsed.ToString());
+
+            // exactIntegers: integer-valued scientific tokens keep full precision.
+            parsed = JToken.Parse(json, exactIntegers: true);
+            Assert.AreEqual("[20050000,20050000,-1.1234E-100,90500000000000000000000000000,1000,10000,1]", parsed.ToString());
 
             json = "[-]";
             Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
@@ -249,7 +255,8 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = _snapshotCache.CloneCache();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
-            var items = JsonSerializer.Deserialize(engine, JObject.Parse("[true,\"test\",123,9.05E+28]"), ExecutionEngineLimits.Default);
+            // exactIntegers + HF_Huyao (enabled in Default via EnsureOmmitedHardforks at height 0)
+            var items = JsonSerializer.Deserialize(engine, JToken.Parse("[true,\"test\",123,9.05E+28]", exactIntegers: true), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Array));
             Assert.HasCount(4, (Array)items);
@@ -259,7 +266,42 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual("test", array[1].GetString());
             Assert.AreEqual(123, array[2].GetInteger());
-            Assert.AreEqual(array[3].GetInteger(), BigInteger.Parse("90500000000000000000000000000"));
+            // Exact integer from scientific notation (9.05E+28), not the imprecise double cast.
+            Assert.AreEqual(BigInteger.Parse("90500000000000000000000000000"), array[3].GetInteger());
+        }
+
+        [TestMethod]
+        public void Deserialize_ExactBigInteger_OnlyUnderHuyao()
+        {
+            const long unsafeInt = 9007199254740993L; // 2^53+1 — not exact as double
+            var exactJson = JToken.Parse($"[{unsafeInt}]", exactIntegers: true)!;
+            Assert.IsTrue(((JNumber)((JArray)exactJson)[0]!).HasExactBigInteger);
+
+            // Pre-Huyao: exact storage is ignored; historical double/Basilisk path applies.
+            var snapshot = _snapshotCache.CloneCache();
+            var preSettings = ProtocolSettings.Default with
+            {
+                Hardforks = Enum.GetValues<Hardfork>()
+                    .Where(hf => hf < Hardfork.HF_Huyao)
+                    .ToDictionary(hf => hf, _ => 0u)
+                    .ToImmutableDictionary()
+            };
+            var preEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, preSettings);
+            Assert.IsFalse(preEngine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            var preItems = (Array)JsonSerializer.Deserialize(preEngine, exactJson, ExecutionEngineLimits.Default);
+            Assert.AreNotEqual(new BigInteger(unsafeInt), preItems[0].GetInteger());
+
+            // Post-Huyao: only exact-storage numbers take the new path.
+            var postEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
+            Assert.IsTrue(postEngine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            var postItems = (Array)JsonSerializer.Deserialize(postEngine, exactJson, ExecutionEngineLimits.Default);
+            Assert.AreEqual(new BigInteger(unsafeInt), postItems[0].GetInteger());
+
+            // Double-backed numbers still use the historical path even after Huyao.
+            var doubleJson = JToken.Parse("[42]")!; // exactIntegers: false (default)
+            Assert.IsFalse(((JNumber)((JArray)doubleJson)[0]!).HasExactBigInteger);
+            var doubleItems = (Array)JsonSerializer.Deserialize(postEngine, doubleJson, ExecutionEngineLimits.Default);
+            Assert.AreEqual(42, doubleItems[0].GetInteger());
         }
 
         [TestMethod]

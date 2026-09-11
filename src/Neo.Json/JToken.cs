@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Numerics;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -128,8 +130,15 @@ namespace Neo.Json
         /// </summary>
         /// <param name="value">The byte array that contains the JSON token.</param>
         /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
+        /// <param name="exactIntegers">
+        /// When <see langword="true"/>, integer JSON numbers (including values outside the IEEE-754
+        /// safe range and integer-valued scientific notation) are stored exactly via
+        /// <see cref="BigInteger"/>. When <see langword="false"/> (default), numbers use
+        /// <see cref="double"/> only — the historical behavior required for consensus before
+        /// <c>HF_Huyao</c> enables exact integers in <c>StdLib.jsonDeserialize</c>.
+        /// </param>
         /// <returns>The parsed JSON token.</returns>
-        public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 64)
+        public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 64, bool exactIntegers = false)
         {
             var reader = new Utf8JsonReader(value, new JsonReaderOptions
             {
@@ -139,7 +148,7 @@ namespace Neo.Json
             });
             try
             {
-                var json = Read(ref reader);
+                var json = Read(ref reader, exactIntegers: exactIntegers);
                 if (reader.Read()) throw new FormatException("Read json token failed");
                 return json;
             }
@@ -154,29 +163,122 @@ namespace Neo.Json
         /// </summary>
         /// <param name="value">The <see cref="string"/> that contains the JSON token.</param>
         /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
+        /// <param name="exactIntegers">See <see cref="Parse(ReadOnlySpan{byte}, int, bool)"/>.</param>
         /// <returns>The parsed JSON token.</returns>
-        public static JToken? Parse(string value, int max_nest = 64)
+        public static JToken? Parse(string value, int max_nest = 64, bool exactIntegers = false)
         {
-            return Parse(StrictUTF8.GetBytes(value), max_nest);
+            return Parse(StrictUTF8.GetBytes(value), max_nest, exactIntegers);
         }
 
-        private static JToken? Read(ref Utf8JsonReader reader, bool skipReading = false)
+        private static JToken? Read(ref Utf8JsonReader reader, bool skipReading = false, bool exactIntegers = false)
         {
             if (!skipReading && !reader.Read()) throw new FormatException("Read json token failed");
             return reader.TokenType switch
             {
                 JsonTokenType.False => false,
                 JsonTokenType.Null => Null,
-                JsonTokenType.Number => reader.GetDouble(),
-                JsonTokenType.StartArray => ReadArray(ref reader),
-                JsonTokenType.StartObject => ReadObject(ref reader),
+                JsonTokenType.Number => ReadNumber(ref reader, exactIntegers),
+                JsonTokenType.StartArray => ReadArray(ref reader, exactIntegers),
+                JsonTokenType.StartObject => ReadObject(ref reader, exactIntegers),
                 JsonTokenType.String => ReadString(ref reader),
                 JsonTokenType.True => true,
                 _ => throw new FormatException($"Unexpected token {reader.TokenType}"),
             };
         }
 
-        private static JArray ReadArray(ref Utf8JsonReader reader)
+        private static JNumber ReadNumber(ref Utf8JsonReader reader, bool exactIntegers)
+        {
+            // Legacy / pre-HF_Huyao: always double (consensus-compatible with historical nodes).
+            if (!exactIntegers)
+                return new JNumber(reader.GetDouble());
+
+            // Prefer exact integer tokens so large values (e.g. token amounts) keep full precision.
+            if (reader.TryGetInt64(out var int64))
+            {
+                if (int64 >= JNumber.MIN_SAFE_INTEGER && int64 <= JNumber.MAX_SAFE_INTEGER)
+                    return new JNumber((double)int64);
+                return JNumber.FromBigInteger(int64);
+            }
+
+            // Larger than Int64, or floating / scientific.
+            var raw = GetRawNumberText(ref reader);
+
+            if (raw.Contains('e') || raw.Contains('E'))
+            {
+                if (TryParseScientificInteger(raw, out var sci) && JNumber.FitsMaxIntegerSize(sci))
+                    return JNumber.FromBigInteger(sci);
+                return new JNumber(reader.GetDouble());
+            }
+
+            if (raw.Contains('.'))
+                return new JNumber(reader.GetDouble());
+
+            // Pure integer longer than Int64: cap at NeoVM 32-byte integer size.
+            if (BigInteger.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var big))
+            {
+                if (!JNumber.FitsMaxIntegerSize(big))
+                    throw new FormatException($"JSON integer exceeds {JNumber.MaxIntegerSize}-byte limit.");
+                return JNumber.FromBigInteger(big);
+            }
+
+            return new JNumber(reader.GetDouble());
+        }
+
+        /// <summary>
+        /// Parses scientific notation into an exact integer when the value has no fractional part
+        /// (e.g. <c>9.05E+28</c> → 905000…0).
+        /// </summary>
+        private static bool TryParseScientificInteger(string raw, out BigInteger result)
+        {
+            result = default;
+            var eIndex = raw.IndexOfAny(['e', 'E']);
+            if (eIndex <= 0) return false;
+
+            if (!int.TryParse(raw.AsSpan(eIndex + 1), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var exp))
+                return false;
+            if (exp < 0) return false;
+
+            var mantissa = raw.AsSpan(0, eIndex);
+            var dot = mantissa.IndexOf('.');
+            BigInteger mant;
+            if (dot >= 0)
+            {
+                var scale = mantissa.Length - dot - 1;
+                Span<char> digits = stackalloc char[mantissa.Length - 1];
+                mantissa[..dot].CopyTo(digits);
+                mantissa[(dot + 1)..].CopyTo(digits[dot..]);
+                if (!BigInteger.TryParse(digits, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out mant))
+                    return false;
+                exp -= scale;
+                if (exp < 0) return false;
+            }
+            else if (!BigInteger.TryParse(mantissa, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out mant))
+            {
+                return false;
+            }
+
+            result = mant * BigInteger.Pow(10, exp);
+            return true;
+        }
+
+        private static string GetRawNumberText(ref Utf8JsonReader reader)
+        {
+            if (!reader.HasValueSequence)
+                return StrictUTF8.GetString(reader.ValueSpan);
+
+            // Multi-segment number tokens are rare; reassemble without System.Buffers helpers.
+            var length = checked((int)reader.ValueSequence.Length);
+            var buffer = new byte[length];
+            var offset = 0;
+            foreach (var segment in reader.ValueSequence)
+            {
+                segment.Span.CopyTo(buffer.AsSpan(offset));
+                offset += segment.Length;
+            }
+            return StrictUTF8.GetString(buffer);
+        }
+
+        private static JArray ReadArray(ref Utf8JsonReader reader, bool exactIntegers)
         {
             var array = new JArray();
             while (reader.Read())
@@ -186,14 +288,14 @@ namespace Neo.Json
                     case JsonTokenType.EndArray:
                         return array;
                     default:
-                        array.Add(Read(ref reader, skipReading: true));
+                        array.Add(Read(ref reader, skipReading: true, exactIntegers: exactIntegers));
                         break;
                 }
             }
             throw new FormatException("Unterminated array");
         }
 
-        private static JObject ReadObject(ref Utf8JsonReader reader)
+        private static JObject ReadObject(ref Utf8JsonReader reader, bool exactIntegers)
         {
             JObject obj = new();
             while (reader.Read())
@@ -207,7 +309,7 @@ namespace Neo.Json
                         if (obj.Properties.ContainsKey(name))
                             throw new FormatException($"Duplicate property name: {name}");
 
-                        var value = Read(ref reader);
+                        var value = Read(ref reader, exactIntegers: exactIntegers);
                         obj.Properties.Add(name, value);
                         break;
                     default:
@@ -300,6 +402,16 @@ namespace Neo.Json
         }
 
         public static implicit operator JToken(double value)
+        {
+            return (JNumber)value;
+        }
+
+        public static implicit operator JToken(long value)
+        {
+            return (JNumber)value;
+        }
+
+        public static implicit operator JToken(BigInteger value)
         {
             return (JNumber)value;
         }
