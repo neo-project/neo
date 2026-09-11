@@ -22,8 +22,11 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -739,7 +742,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(2028330, engine.FeeConsumed);
-            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+            Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(engine.ProtocolSettings, engine.SnapshotCache, 0)));
             Assert.IsEmpty(engine.Notifications);
 
             // Whitelist
@@ -761,7 +764,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.SnapshotCache.Commit();
             engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
 
-            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+            Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(engine.ProtocolSettings, engine.SnapshotCache, 0)));
             Assert.HasCount(1, engine.Notifications); // Whitelist deleted
         }
 
@@ -852,7 +855,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = _snapshotCache.CloneCache();
             var engine = CreateEngineWithCommitteeSigner(snapshotCache);
-            var method = NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)
+            var method = NativeContract.NEO.GetContractState(engine.ProtocolSettings, engine.SnapshotCache, 0)
                 .Manifest.Abi.Methods.Where(u => u.Name == "balanceOf").Single();
 
             NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, method.Name, method.Parameters.Length, 123_456);
@@ -886,5 +889,372 @@ namespace Neo.UnitTests.SmartContract.Native
 
             return engine;
         }
+
+        private const uint PrivateNetworkMagic = 0x4E455654u; // "NETV"
+
+        private static ImmutableDictionary<Hardfork, uint> ConfigThroughHuyao(uint height = 0) =>
+            new Dictionary<Hardfork, uint>
+            {
+                { Hardfork.HF_Aspidochelone, height },
+                { Hardfork.HF_Basilisk, height },
+                { Hardfork.HF_Cockatrice, height },
+                { Hardfork.HF_Domovoi, height },
+                { Hardfork.HF_Echidna, height },
+                { Hardfork.HF_Faun, height },
+                { Hardfork.HF_Gorgon, height },
+                { Hardfork.HF_Huyao, height },
+            }.ToImmutableDictionary();
+
+        private static ContractParameter HardforkName(string name) =>
+            new(ContractParameterType.String) { Value = name };
+
+        private static StorageKey IaraStorageKey() =>
+            StorageKey.Create(NativeContract.Policy.Id, 24 /* Prefix_Hardfork */, Encoding.UTF8.GetBytes("Iara"));
+
+        [TestMethod]
+        public void Check_GetHardforkActivationHeight_DefaultUnset()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
+            Assert.IsTrue(ret.IsNull);
+
+            ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Unknown"));
+            Assert.IsTrue(ret.IsNull);
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_WithoutCommittee_Rejected()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(1000);
+
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                    "activateHardfork", HardforkName("Iara"));
+            });
+            Assert.IsFalse(UnknownHardforkException.IsInstance(ex));
+            Assert.Contains("committee", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_UnknownWithoutCommittee_DoesNotHalt()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(1000);
+
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                    "activateHardfork", HardforkName("NotAHardfork"));
+            });
+            Assert.IsFalse(UnknownHardforkException.IsInstance(ex),
+                "Anyone must not be able to halt the node with an unknown hardfork name.");
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_RejectsConfigManagedHardfork()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(1000);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "activateHardfork", HardforkName("Huyao"));
+            });
+            Assert.Contains("ProtocolSettings", ex.Message);
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_UnknownHardfork_StopsNode()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(1000);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            var ex = Assert.ThrowsExactly<UnknownHardforkException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "activateHardfork", HardforkName("NotAHardfork"));
+            });
+            Assert.AreEqual("NotAHardfork", ex.HardforkName);
+            Assert.Contains("Update node software", ex.Message);
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_Iara_NextBlockActivation()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const uint blockIndex = 1000;
+            var block = CreateBlock(blockIndex);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            NotifyEventArgs notification = null;
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "activateHardfork",
+                (engine, args) => notification = args,
+                HardforkName("Iara"));
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
+            Assert.AreEqual(blockIndex + 1, ret.GetInteger());
+
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Iara, blockIndex));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Iara, blockIndex + 1));
+
+            Assert.IsNotNull(notification);
+            Assert.AreEqual("HardforkActivationScheduled", notification.EventName);
+            Assert.AreEqual("Iara", notification.State[0].GetString());
+            Assert.AreEqual(blockIndex + 1, notification.State[1].GetInteger());
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_NameIsCaseSensitive()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(1000);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            Assert.ThrowsExactly<UnknownHardforkException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "activateHardfork", HardforkName("iara"));
+            });
+            Assert.ThrowsExactly<UnknownHardforkException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "activateHardfork", HardforkName("HF_Iara"));
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("iara"));
+            Assert.IsTrue(ret.IsNull);
+        }
+
+        [TestMethod]
+        public void Check_ApplicationEngine_IsHardforkEnabled_UsesPolicy()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const uint activationHeight = 42;
+            snapshot.Add(IaraStorageKey(), new StorageItem(activationHeight));
+
+            var settings = TestProtocolSettings.Default with { Hardforks = ConfigThroughHuyao() };
+
+            var blockBefore = CreateBlock(activationHeight - 1);
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, blockBefore, settings))
+            {
+                Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            }
+
+            var blockAt = CreateBlock(activationHeight);
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, blockAt, settings))
+            {
+                Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            }
+        }
+
+        [TestMethod]
+        public void Check_HuyaoInitialize_StoresConfigManagedHardforks()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Huyao, out var huyaoHeight));
+            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Aspidochelone, out _));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Huyao, huyaoHeight));
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Aspidochelone"));
+            Assert.IsFalse(ret.IsNull);
+        }
+
+        [TestMethod]
+        public void Check_AfterHuyao_ConfigManagedHeightsComeFromPolicy()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Faun, out var policyHeight));
+
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                    { Hardfork.HF_Cockatrice, 0 },
+                    { Hardfork.HF_Domovoi, 0 },
+                    { Hardfork.HF_Echidna, 0 },
+                    { Hardfork.HF_Faun, 999_999 },
+                    { Hardfork.HF_Gorgon, 999_999 },
+                    { Hardfork.HF_Huyao, 0 },
+                }.ToImmutableDictionary()
+            };
+
+            Assert.IsTrue(PolicyContract.TryGetActivationHeight(settings, snapshot, Hardfork.HF_Faun, policyHeight, out var height));
+            Assert.AreEqual(policyHeight, height);
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Faun, policyHeight));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Faun, policyHeight));
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_AlreadyEnabled_Rejected()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = CreateBlock(1000);
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var witness = new Nep17NativeContractExtensions.ManualWitness(committee);
+
+            NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"));
+
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+                NativeContract.Policy.Call(snapshot, witness, CreateBlock(1001), "activateHardfork", HardforkName("Iara")));
+            Assert.Contains("already enabled", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_SucceedsWithoutLocalSchedule()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var settings = TestProtocolSettings.Default with
+            {
+                Network = PrivateNetworkMagic,
+                Hardforks = ConfigThroughHuyao()
+            };
+            const uint blockIndex = 200;
+            var block = CreateBlock(blockIndex);
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            using var engine = ApplicationEngine.Create(
+                TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(committee),
+                snapshot,
+                block,
+                settings);
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.Policy.Hash, "activateHardfork", "Iara");
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Iara, out var height));
+            Assert.AreEqual(blockIndex + 1, height);
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex + 1));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex));
+        }
+
+        [TestMethod]
+        public void Check_ApplicationEngine_IsHardforkEnabled_WithoutPersistingBlock()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            snapshot.Add(IaraStorageKey(), new StorageItem(42u));
+
+            var settings = TestProtocolSettings.Default with { Hardforks = ConfigThroughHuyao() };
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, settings);
+            Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+        }
+
+        [TestMethod]
+        public void Check_TryGetActivationHeight_ConfigManagedMissing()
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                Network = PrivateNetworkMagic,
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 0 },
+                    { Hardfork.HF_Basilisk, 0 },
+                    { Hardfork.HF_Cockatrice, 0 },
+                    { Hardfork.HF_Domovoi, 0 },
+                    { Hardfork.HF_Echidna, 0 },
+                    { Hardfork.HF_Faun, 0 },
+                    { Hardfork.HF_Gorgon, 0 },
+                }.ToImmutableDictionary()
+            };
+
+            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Huyao, 0, out _));
+            Assert.IsTrue(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Faun, 0, out var height));
+            Assert.AreEqual(0u, height);
+            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Iara, 0, out _));
+        }
+
+        [TestMethod]
+        public void Check_GetContractState_WithSnapshot_UsesPolicyHeights()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var settings = TestProtocolSettings.Default with { Hardforks = ConfigThroughHuyao() };
+
+            var stateBefore = NativeContract.Policy.GetContractState(settings, snapshot, 0);
+            Assert.IsTrue(stateBefore.Manifest.Abi.Methods.Any(m => m.Name == "activateHardfork"));
+
+            var state = NativeContract.Policy.GetContractState(settings, snapshot, 100);
+            Assert.IsNotNull(state);
+            Assert.AreEqual(NativeContract.Policy.Hash, state.Hash);
+        }
+
+        [TestMethod]
+        public void Check_GetHardforkActivationHeight_AfterActivate()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committee),
+                CreateBlock(1000), "activateHardfork", HardforkName("Iara"));
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
+            Assert.AreEqual(1001, ret.GetInteger());
+        }
+
+        [TestMethod]
+        public void Check_TryGetHardforkHeight_Missing()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            Assert.IsFalse(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Iara, out var height));
+            Assert.AreEqual(0u, height);
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_WithoutPersistingBlock()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(committee), snapshot, null, TestProtocolSettings.Default);
+            engine.LoadScript(new byte[] { (byte)OpCode.NOP });
+            var method = typeof(PolicyContract).GetMethod("ActivateHardfork",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => method.Invoke(NativeContract.Policy, [engine, "Iara"]));
+            Assert.Contains("persisting block", ex.InnerException.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [TestMethod]
+        public void Check_UnknownHardforkException_IsInstance()
+        {
+            Assert.IsFalse(UnknownHardforkException.IsInstance(null));
+            Assert.IsFalse(UnknownHardforkException.IsInstance(new InvalidOperationException("no")));
+            var inner = new UnknownHardforkException("Nope");
+            Assert.AreEqual("Nope", inner.HardforkName);
+            Assert.IsTrue(UnknownHardforkException.IsInstance(new InvalidOperationException("wrap", inner)));
+        }
+
+        [TestMethod]
+        public void Check_Hardforks_TryParseExact_AndGetName()
+        {
+            Assert.AreEqual("Iara", Hardforks.GetName(Hardfork.HF_Iara));
+            Assert.AreEqual("Huyao", Hardforks.GetName(Hardfork.HF_Huyao));
+            Assert.IsFalse(Hardforks.TryParseExact(null, out _));
+            Assert.IsFalse(Hardforks.TryParseExact("", out _));
+            Assert.IsTrue(Hardforks.TryParseExact("Iara", out var hf));
+            Assert.AreEqual(Hardfork.HF_Iara, hf);
+        }
+
+        private static Block CreateBlock(uint index) => new()
+        {
+            Header = new Header
+            {
+                PrevHash = UInt256.Zero,
+                MerkleRoot = UInt256.Zero,
+                Index = index,
+                NextConsensus = UInt160.Zero,
+                Witness = null!
+            },
+            Transactions = []
+        };
     }
 }

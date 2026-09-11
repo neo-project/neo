@@ -1122,11 +1122,13 @@ namespace Neo.SmartContract
             if (ProtocolSettings == null)
                 return false;
 
-            // Return true if PersistingBlock is null and Hardfork is enabled
+            // Without a persisting block, treat "enabled" as: an activation height is known
+            // (config-managed Hardforks, or on-chain Policy for later hardforks).
             if (PersistingBlock is null)
-                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
+                return PolicyContract.TryGetActivationHeight(ProtocolSettings, SnapshotCache, hardfork, uint.MaxValue, out _);
 
-            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
+            return PolicyContract.IsHardforkEnabled(
+                ProtocolSettings, SnapshotCache, hardfork, PersistingBlock.Index);
         }
     }
 }

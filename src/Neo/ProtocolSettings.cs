@@ -28,6 +28,12 @@ namespace Neo
         private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
 
         /// <summary>
+        /// The last hardfork that is activated exclusively via <see cref="Hardforks"/> configuration.
+        /// Later hardforks are activated on-chain via Policy.activateHardfork (neo#4580).
+        /// </summary>
+        public const Hardfork LastConfigManagedHardfork = Hardfork.HF_Huyao;
+
+        /// <summary>
         /// The magic number of the NEO network.
         /// </summary>
         public uint Network { get; init; }
@@ -98,6 +104,8 @@ namespace Neo
 
         /// <summary>
         /// Sets the block height from which a hardfork is activated.
+        /// Entries after <see cref="LastConfigManagedHardfork"/> are not used at runtime;
+        /// those hardforks are activated on-chain via Policy.activateHardfork (neo#4580).
         /// </summary>
         public required ImmutableDictionary<Hardfork, uint> Hardforks { get; init; }
 
@@ -239,6 +247,10 @@ namespace Neo
         {
             foreach (Hardfork hf in AllHardforks)
             {
+                // Post-Huyao hardforks are Policy-activated and must not be back-filled from config.
+                if (hf > LastConfigManagedHardfork)
+                    break;
+
                 if (!hardForks.ContainsKey(hf))
                 {
                     hardForks[hf] = 0;
@@ -254,6 +266,12 @@ namespace Neo
 
         private static void CheckingHardfork(ProtocolSettings settings)
         {
+            foreach (var hf in settings.Hardforks.Keys)
+            {
+                if (hf > LastConfigManagedHardfork)
+                    throw new ArgumentException($"Hardfork {hf} cannot be configured in ProtocolSettings; activate it via Policy.activateHardfork.");
+            }
+
             var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
             // Check for continuity in configured hardforks
             var sortedHardforks = settings.Hardforks.Keys
@@ -278,6 +296,7 @@ namespace Neo
                     throw new ArgumentException($"Invalid hardfork configuration: {sortedHardforks[i]} is configured to activate at block {settings.Hardforks[sortedHardforks[i]]}, which is greater than {sortedHardforks[i + 1]} at block {settings.Hardforks[sortedHardforks[i + 1]]}. Earlier hardforks must activate at lower block numbers than later hardforks.");
                 }
             }
+
         }
 
         /// <summary>
