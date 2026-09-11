@@ -33,7 +33,6 @@ namespace Neo.Wallets
     public class Mnemonic : IReadOnlyList<string>
     {
         static readonly Dictionary<string, string[]> s_wordlists = new();
-        static readonly Dictionary<string, int> s_wordlistsReverseIndex = new();
         readonly string[] words;
 
         /// <summary>
@@ -59,8 +58,6 @@ namespace Neo.Wallets
                 string value = (string)res.Value!;
                 string[] wordlist = value.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
                 s_wordlists.Add(key[7..], wordlist);
-                for (int i = 0; i < wordlist.Length; i++)
-                    s_wordlistsReverseIndex[wordlist[i]] = i;
             }
         }
 
@@ -102,9 +99,12 @@ namespace Neo.Wallets
             int entropyBytes = entropyBits / 8;
             byte[] entropy = new byte[entropyBytes];
             Span<byte> checksum = stackalloc byte[(checksumBits + 7) / 8];
+            var reverseIndex = new Dictionary<string, int>(wordlist.Length);
+            for (int i = 0; i < wordlist.Length; i++)
+                reverseIndex[wordlist[i]] = i;
             for (int i = 0; i < wordCount; i++)
             {
-                if (!s_wordlistsReverseIndex.TryGetValue(words[i], out int index))
+                if (!reverseIndex.TryGetValue(words[i], out int index))
                     throw new ArgumentException($"The word '{words[i]}' is not in the BIP-0039 wordlist.", nameof(words));
                 for (int j = 0; j < 11; j++)
                 {
