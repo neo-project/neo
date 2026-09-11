@@ -392,20 +392,32 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Registers a candidate.
+        /// Registers a candidate (pre-Echidna). Witness is checked before charging the register fee.
         /// </summary>
         /// <param name="engine">The engine used to check witness and read data.</param>
         /// <param name="pubkey">The public key of the candidate.</param>
         /// <returns><see langword="true"/> if the candidate is registered; otherwise, <see langword="false"/>.</returns>
-        [ContractMethod(true, Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States)]
-        [ContractMethod(Hardfork.HF_Echidna, /* */ RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
+        [ContractMethod(true, Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States, Name = "registerCandidate")]
+        private bool RegisterCandidateV0(ApplicationEngine engine, ECPoint pubkey)
         {
-            // This check can be removed post-Echidna if compatible,
-            // RegisterInternal does this anyway.
-            if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna) &&
-                !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+            // Pre-Echidna: fail before fee if witness is missing (fee was not charged on early return).
+            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
+            // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+            engine.AddFee(GetRegisterPrice(engine.SnapshotCache), true);
+            return RegisterInternal(engine, pubkey);
+        }
+
+        /// <summary>
+        /// Registers a candidate (post-Echidna). Register fee is charged before the witness check in
+        /// <see cref="RegisterInternal"/>; notifications require <see cref="CallFlags.AllowNotify"/>.
+        /// </summary>
+        /// <param name="engine">The engine used to check witness and read data.</param>
+        /// <param name="pubkey">The public key of the candidate.</param>
+        /// <returns><see langword="true"/> if the candidate is registered; otherwise, <see langword="false"/>.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "registerCandidate")]
+        private bool RegisterCandidateV1(ApplicationEngine engine, ECPoint pubkey)
+        {
             // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
             engine.AddFee(GetRegisterPrice(engine.SnapshotCache), true);
             return RegisterInternal(engine, pubkey);
