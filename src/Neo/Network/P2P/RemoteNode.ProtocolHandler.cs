@@ -319,13 +319,23 @@ namespace Neo.Network.P2P
             switch (inventory)
             {
                 case Transaction transaction:
-                    if (!(_system.ContainsTransaction(transaction.Hash) != ContainsTransactionType.NotExist || _system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))))
+                    if (!(_system.ContainsTransaction(transaction.Hash) != ContainsTransactionType.NotExist ||
+                        _system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))))
+                    {
                         _system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
+                    }
                     break;
                 case Block block:
+                    var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
+                    if (block.Index > currentHeight &&
+                        block.Index - currentHeight > InvPayload.MaxHashesCount)
+                    {
+                        // Out of the accepted synchronization window: TaskManager was
+                        // already notified above so a matching task can still complete.
+                        break;
+                    }
                     UpdateLastBlockIndex(block.Index);
-                    if (block.Index > NativeContract.Ledger.CurrentIndex(_system.StoreView) + InvPayload.MaxHashesCount) return;
-                    _system.Blockchain.Tell(inventory);
+                    _system.Blockchain.Tell(block);
                     break;
                 default:
                     _system.Blockchain.Tell(inventory);
