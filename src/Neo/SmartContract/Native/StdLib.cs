@@ -15,8 +15,10 @@ using Microsoft.IdentityModel.Tokens;
 using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Json;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
 
@@ -247,9 +249,31 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
-        private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator)
+        private static string[] StringSplit(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str, string separator)
         {
-            return str.Split(separator);
+            // Case 1: Empty separator
+            if (string.IsNullOrEmpty(separator))
+            {
+                if (string.IsNullOrEmpty(str))
+                {
+                    return [];
+                }
+
+                if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
+                {
+                    // Split into individual characters (handling UTF-16 surrogate pairs correctly)
+                    var result = new List<string>(str.Length);
+                    for (var i = 0; i < str.Length; i += char.IsHighSurrogate(str[i]) ? 2 : 1)
+                    {
+                        result.Add(char.ConvertFromUtf32(char.ConvertToUtf32(str, i)));
+                    }
+
+                    return [.. result];
+                }
+            }
+
+            // Case 2: Non-empty separator (handles empty str properly by returning [""])
+            return str.Split(separator, StringSplitOptions.None);
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
