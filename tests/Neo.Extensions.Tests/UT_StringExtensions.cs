@@ -436,6 +436,80 @@ namespace Neo.Extensions.Tests
             Assert.IsNull(value);
         }
 
+        [TestMethod]
+        public void TestTryToStrictUtf8String_Success()
+        {
+            ReadOnlySpan<byte> span = "hello"u8;
+            Assert.IsTrue(span.TryToStrictUtf8String(out var value));
+            Assert.AreEqual("hello", value);
+        }
+
+        [TestMethod]
+        public void TestToStrictUtf8String_ByteArrayWithRange_InvalidUtf8_Throws()
+        {
+            byte[] invalidUtf8 = [0x41, 0xFF, 0xFE];
+            var ex = Assert.ThrowsExactly<DecoderFallbackException>(() => invalidUtf8.ToStrictUtf8String(0, 3));
+            Assert.IsTrue(ex.Message.Contains("Failed to decode byte array range"));
+            Assert.IsTrue(ex.Message.Contains("invalid UTF-8"));
+        }
+
+        [TestMethod]
+        public void TestToStrictUtf8String_ByteArrayWithRange_Null_Throws()
+        {
+            byte[]? nullArray = null;
+            var ex = Assert.ThrowsExactly<ArgumentNullException>(() => nullArray!.ToStrictUtf8String(0, 1));
+            Assert.AreEqual("value", ex.ParamName);
+        }
+
+        [TestMethod]
+        public void TestToStrictUtf8String_ByteArrayWithRange_LargeInvalid_ShowsLengthInMessage()
+        {
+            var large = new byte[50];
+            Array.Fill(large, (byte)0xFF);
+            var ex = Assert.ThrowsExactly<DecoderFallbackException>(() => large.ToStrictUtf8String(0, 50));
+            Assert.IsTrue(ex.Message.Contains("Length: 50 bytes"));
+            Assert.IsTrue(ex.Message.Contains("First 16:"));
+        }
+
+        [TestMethod]
+        public void TestToStrictUtf8String_ReadOnlySpan_LargeInvalid_ShowsLengthInMessage()
+        {
+            var large = new byte[40];
+            Array.Fill(large, (byte)0xFF);
+            var ex = Assert.ThrowsExactly<DecoderFallbackException>(() => ((ReadOnlySpan<byte>)large).ToStrictUtf8String());
+            Assert.IsTrue(ex.Message.Contains("Length: 40 bytes"));
+        }
+
+
+        [TestMethod]
+        public void TestHexToBytes_Span_OddLength_Throws()
+        {
+            var ex = Assert.ThrowsExactly<FormatException>(() => "abc".AsSpan().HexToBytes());
+            Assert.IsTrue(ex.Message.Contains("Failed to convert hex span to bytes"));
+        }
+
+        [TestMethod]
+        public void TestHexToBytesReversed_OddLength_Throws()
+        {
+            var ex = Assert.ThrowsExactly<FormatException>(() => "abc".AsSpan().HexToBytesReversed());
+            Assert.IsTrue(ex.Message.Contains("Failed to convert hex span to reversed bytes"));
+        }
+
+        [TestMethod]
+        public void TestTrimStartIgnoreCase_NoMatch_ReturnsOriginal()
+        {
+            Assert.AreEqual("hello", "hello".AsSpan().TrimStartIgnoreCase("0x").ToString());
+            Assert.AreEqual("0x", "0x".AsSpan().TrimStartIgnoreCase("00").ToString());
+        }
+
+        [TestMethod]
+        public void TestIsHex_NullAndInvalidChars()
+        {
+            Assert.IsFalse(((string?)null)!.IsHex());
+            Assert.IsFalse("0G".IsHex());
+            Assert.IsTrue("AbCdEf".IsHex());
+        }
+
         #endregion
     }
 }

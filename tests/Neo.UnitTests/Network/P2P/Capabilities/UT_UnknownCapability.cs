@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
             var capab = (NodeCapability)NodeCapability.DeserializeFrom(ref br);
 
             Assert.IsTrue(capab is UnknownCapability);
-            CollectionAssert.AreEqual(buffer, capab.ToArray());
+            Assert.AreSequenceEqual(buffer, capab.ToArray());
         }
     }
 }

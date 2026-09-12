@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Network.P2P
             config.MinDesiredConnections++;
 
             Assert.AreSame(config.Tcp, config.Tcp);
-            CollectionAssert.AreEqual(IPAddress.Any.GetAddressBytes(), config.Tcp.Address.GetAddressBytes());
+            Assert.AreSequenceEqual(IPAddress.Any.GetAddressBytes(), config.Tcp.Address.GetAddressBytes());
             Assert.AreEqual(21, config.Tcp.Port);
             Assert.AreEqual(11, config.MinDesiredConnections);
             Assert.AreEqual(41, config.MaxConnections);

@@ -846,7 +846,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(Check_PostPersist(cloneCache, persistingBlock));
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            Assert.HasCount(1, cloneCache.Find(storageKey).ToArray());
+            Assert.HasCount(0, cloneCache.Find(storageKey).ToArray());
         }
 
         [TestMethod]
@@ -997,7 +997,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 }));
                 cachedCommittee.Add((member, 200 * 10000));
             }
-            engine.SnapshotCache.GetOrAdd(new KeyBuilder(NativeContract.NEO.Id, 14), () => new StorageItem()).Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), ExecutionEngineLimits.Default);
+            engine.SnapshotCache.GetOrAdd(new KeyBuilder(NativeContract.NEO.Id, 14), () => new StorageItem()).Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(), ExecutionEngineLimits.Default);
 
             var item = engine.SnapshotCache.GetAndChange(new KeyBuilder(NativeContract.NEO.Id, 1), () => new StorageItem());
             item.Value = ((BigInteger)2100 * 10000L).ToByteArray();
@@ -1350,7 +1350,7 @@ namespace Neo.UnitTests.SmartContract.Native
             BigInteger st = trackable.Value.Item;
             Assert.AreEqual(0, st);
 
-            CollectionAssert.AreEqual(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)).ToArray(), trackable.Key.Key.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)).ToArray(), trackable.Key.Key.ToArray());
         }
 
         internal static void CheckBalance(byte[] account, KeyValuePair<StorageKey, DataCache.Trackable> trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
@@ -1358,13 +1358,13 @@ namespace Neo.UnitTests.SmartContract.Native
             var st = (Struct)BinarySerializer.Deserialize(trackable.Value.Item.Value, ExecutionEngineLimits.Default);
 
             Assert.HasCount(3, st);
-            CollectionAssert.AreEqual(new Type[] { typeof(Integer), typeof(Integer), typeof(ByteString) }, st.Select(u => u.GetType()).ToArray()); // Balance
+            Assert.AreSequenceEqual(new Type[] { typeof(Integer), typeof(Integer), typeof(ByteString) }, st.Select(u => u.GetType()).ToArray()); // Balance
 
             Assert.AreEqual(balance, st[0].GetInteger()); // Balance
             Assert.AreEqual(height, st[1].GetInteger());  // BalanceHeight
             Assert.AreEqual(voteTo, ECPoint.DecodePoint(st[2].GetSpan(), ECCurve.Secp256r1));  // Votes
 
-            CollectionAssert.AreEqual(new byte[] { 20 }.Concat(account).ToArray(), trackable.Key.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 20 }.Concat(account).ToArray(), trackable.Key.ToArray());
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)

@@ -47,12 +47,12 @@ namespace Neo.UnitTests.SmartContract
                 ms.Seek(0, SeekOrigin.Begin);
                 ms.Write(wrongMagic, 0, 4);
                 ISerializable newFile = (NefFile)RuntimeHelpers.GetUninitializedObject(typeof(NefFile));
-                Assert.ThrowsExactly<FormatException>(() =>
+                void DeserializeWrongMagic()
                 {
                     MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
-                    Assert.Fail();
-                });
+                }
+                Assert.ThrowsExactly<FormatException>(DeserializeWrongMagic);
             }
 
             file.CheckSum = 0;
@@ -61,12 +61,12 @@ namespace Neo.UnitTests.SmartContract
             {
                 ((ISerializable)file).Serialize(writer);
                 ISerializable newFile = (NefFile)RuntimeHelpers.GetUninitializedObject(typeof(NefFile));
-                Assert.ThrowsExactly<FormatException>(() =>
+                void DeserializeBadChecksum()
                 {
                     MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
-                    Assert.Fail();
-                });
+                }
+                Assert.ThrowsExactly<FormatException>(DeserializeBadChecksum);
             }
 
             file.Script = Array.Empty<byte>();
@@ -76,12 +76,12 @@ namespace Neo.UnitTests.SmartContract
             {
                 ((ISerializable)file).Serialize(writer);
                 ISerializable newFile = (NefFile)RuntimeHelpers.GetUninitializedObject(typeof(NefFile));
-                Assert.ThrowsExactly<ArgumentException>(() =>
+                void DeserializeEmptyScript()
                 {
                     MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
-                    Assert.Fail();
-                });
+                }
+                Assert.ThrowsExactly<ArgumentException>(DeserializeEmptyScript);
             }
 
             file.Script = new byte[] { 0x01, 0x02, 0x03 };
@@ -116,7 +116,7 @@ namespace Neo.UnitTests.SmartContract
             file = data.AsSerializable<NefFile>();
 
             Assert.AreEqual("".PadLeft(32, ' '), file.Compiler);
-            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, file.Script.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x01, 0x02, 0x03 }, file.Script.ToArray());
         }
 
         [TestMethod]

@@ -71,14 +71,14 @@ namespace Neo.UnitTests
             b.TryAdd(2);
 
             a.Remove(b);
-            CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
+            Assert.AreSequenceEqual(new int[] { 1, 3 }, a.ToArray());
 
             b.TryAdd(4);
             b.TryAdd(5);
             b.TryAdd(1);
             a.Remove(b);
 
-            CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
+            Assert.AreSequenceEqual(new int[] { 3 }, a.ToArray());
         }
 
         [TestMethod]

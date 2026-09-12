@@ -56,7 +56,7 @@ namespace Neo.UnitTests.Builders
             Assert.IsInstanceOfType<OracleResponse>(attr[0]);
             Assert.AreEqual(1ul, ((OracleResponse)attr[0]).Id);
             Assert.AreEqual(OracleResponseCode.Success, ((OracleResponse)attr[0]).Code);
-            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, ((OracleResponse)attr[0]).Result.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x01, 0x02, 0x03 }, ((OracleResponse)attr[0]).Result.ToArray());
         }
 
         [TestMethod]

@@ -23,16 +23,13 @@ namespace Neo.Extensions
         public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this GasToken gasToken, IReadOnlyStore snapshot)
         {
             ArgumentNullException.ThrowIfNull(gasToken);
-
             ArgumentNullException.ThrowIfNull(snapshot);
 
             var kb = StorageKey.Create(gasToken.Id, GasToken.Prefix_Account);
-            var kbLength = kb.Length;
 
             foreach (var (key, value) in snapshot.Find(kb, SeekDirection.Forward))
             {
-                var keyBytes = key.ToArray();
-                var addressHash = new UInt160(keyBytes.AsSpan(kbLength));
+                var addressHash = (UInt160)key;
                 yield return new(addressHash, value.GetInteroperable<AccountState>().Balance);
             }
         }

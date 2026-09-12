@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             JObject @object = (JObject)JToken.Parse(json);
 
             NEP6Contract nep6Contract = NEP6Contract.FromJson(@object);
-            CollectionAssert.AreEqual("2103ef891df4c0b7eefb937d21ea0fb88cde8e0d82a7ff11872b5e7047969dafb4eb68747476aa".HexToBytes(), nep6Contract.Script);
+            Assert.AreSequenceEqual("2103ef891df4c0b7eefb937d21ea0fb88cde8e0d82a7ff11872b5e7047969dafb4eb68747476aa".HexToBytes(), nep6Contract.Script);
             Assert.HasCount(1, nep6Contract.ParameterList);
             Assert.AreEqual(ContractParameterType.Signature, nep6Contract.ParameterList[0]);
             Assert.HasCount(1, nep6Contract.ParameterNames);

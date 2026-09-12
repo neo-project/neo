@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Deploy, ContractBasicMethod.DeployPCount);
             if (md is not null)
                 await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
-            engine.SendNotification(Hash, update ? "Update" : "Deploy", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+            engine.SendNotification(Hash, update ? "Update" : "Deploy", new Array() { contract.Hash.ToArray() });
         }
 
         internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
@@ -112,7 +112,7 @@ namespace Neo.SmartContract.Native
                     }
 
                     // Emit native contract notification
-                    engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+                    engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new Array() { contract.Hash.ToArray() });
                 }
             }
         }
@@ -269,8 +269,7 @@ namespace Neo.SmartContract.Native
 
             // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
             engine.AddFee(BigInteger.Max(engine.StoragePrice * (nefFile.Length + manifest.Length),
-                GetMinimumDeploymentFee(engine.SnapshotCache))
-                * ApplicationEngine.FeeFactor);
+                GetMinimumDeploymentFee(engine.SnapshotCache)), true);
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
@@ -336,7 +335,7 @@ namespace Neo.SmartContract.Native
             if (nefFile is null && manifest is null)
                 throw new ArgumentException("NEF file and manifest cannot both be null.");
 
-            engine.AddFee(engine.StoragePrice * ApplicationEngine.FeeFactor * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
+            engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)), true);
 
             var contractState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash!))
                 ?? throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
@@ -433,7 +432,7 @@ namespace Neo.SmartContract.Native
             }
 
             // Emit event.
-            engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
+            engine.SendNotification(Hash, "Destroy", new Array() { hash.ToArray() });
         }
     }
 }

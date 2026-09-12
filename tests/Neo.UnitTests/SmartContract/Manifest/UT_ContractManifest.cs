@@ -37,15 +37,13 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var path = Path.Combine("SmartContract", "Manifest", "TestFile", "SampleContract.manifest.json");
             var json = File.ReadAllText(path);
             var manifest = ContractManifest.Parse(json);
-
-            var counter = new ReferenceCounter();
-            var item = manifest.ToStackItem(counter);
+            var item = manifest.ToStackItem();
             var data = BinarySerializer.Serialize(item, 1024 * 1024, 4096);
 
-            Assert.ThrowsExactly<FormatException>(() => _ = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default, counter));
+            Assert.ThrowsExactly<FormatException>(() => _ = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default));
             Assert.ThrowsExactly<FormatException>(() => _ = BinarySerializer.Serialize(item, 1024 * 1024, 2048));
 
-            item = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default with { MaxStackSize = 4096 }, counter);
+            item = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default with { MaxStackSize = 4096 });
             var copy = item.ToInteroperable<ContractManifest>();
 
             Assert.AreEqual(manifest.ToJson().ToString(false), copy.ToJson().ToString(false));
@@ -278,7 +276,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             """;
             json = Regex.Replace(json, @"\s+", "");
             var manifest = ContractManifest.Parse(json);
-            var s = (Struct)manifest.ToStackItem(new ReferenceCounter());
+            var s = (Struct)manifest.ToStackItem();
             manifest = s.ToInteroperable<ContractManifest>();
 
             Assert.IsFalse(manifest.Permissions[0].Contract.IsWildcard);
@@ -363,14 +361,14 @@ namespace Neo.UnitTests.SmartContract.Manifest
             expected.Extra = (JObject)JToken.Parse(@"{""a"":123}");
 
             var clone = (ContractManifest)RuntimeHelpers.GetUninitializedObject(typeof(ContractManifest));
-            ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
+            ((IInteroperable)clone).FromStackItem(expected.ToStackItem());
 
             Assert.AreEqual(@"{""a"":123}", expected.Extra.ToString());
             Assert.AreEqual(expected.ToString(), clone.ToString());
 
             expected.Extra = null;
             clone = (ContractManifest)RuntimeHelpers.GetUninitializedObject(typeof(ContractManifest));
-            ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
+            ((IInteroperable)clone).FromStackItem(expected.ToStackItem());
 
             Assert.AreEqual(expected.Extra, clone.Extra);
             Assert.AreEqual(expected.ToString(), clone.ToString());
@@ -383,7 +381,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             check.Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(
                 ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001")),
                 ContractPermissionDescriptor.CreateWildcard());
-            var si = check.ToStackItem(null);
+            var si = check.ToStackItem();
 
             var actualTrusts = ((Array)si)[6];
 

@@ -34,14 +34,14 @@ namespace Neo.Extensions.Tests.Collections
 
             a.Remove(b);
 
-            CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
+            Assert.AreSequenceEqual(new int[] { 1, 3 }, a.ToArray());
 
             b[4] = null;
             b[5] = null;
             b[1] = null;
             a.Remove(b);
 
-            CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
+            Assert.AreSequenceEqual(new int[] { 3 }, a.ToArray());
         }
 
         [TestMethod]
@@ -61,14 +61,14 @@ namespace Neo.Extensions.Tests.Collections
 
             a.Remove(b);
 
-            CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
+            Assert.AreSequenceEqual(new int[] { 1, 3 }, a.ToArray());
 
             b.Add(4);
             b.Add(5);
             b.Add(1);
             a.Remove(b);
 
-            CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
+            Assert.AreSequenceEqual(new int[] { 3 }, a.ToArray());
         }
     }
 }

@@ -311,15 +311,15 @@ namespace Neo.Extensions.Tests.Factories
 
             var actualBytes1 = RandomNumberFactory.NextBytes(10);
             Assert.IsNotEmpty(actualBytes1);
-            CollectionAssert.AreNotEqual(notExpectedBytes, actualBytes1);
+            Assert.AreNotSequenceEqual(notExpectedBytes, actualBytes1);
             Assert.HasCount(10, actualBytes1);
 
             var actualBytes2 = RandomNumberFactory.NextBytes(10, cryptography: true);
             Assert.IsNotEmpty(actualBytes2);
-            CollectionAssert.AreNotEqual(notExpectedBytes, actualBytes2);
+            Assert.AreNotSequenceEqual(notExpectedBytes, actualBytes2);
             Assert.HasCount(10, actualBytes2);
 
-            CollectionAssert.AreNotEqual(actualBytes1, actualBytes2);
+            Assert.AreNotSequenceEqual(actualBytes1, actualBytes2);
         }
     }
 }

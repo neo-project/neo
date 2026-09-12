@@ -39,7 +39,7 @@ namespace Neo.UnitTests.Builders
 
             Assert.IsNotNull(witness);
             Assert.AreEqual(3, witness.InvocationScript.Length);
-            CollectionAssert.AreEqual(new byte[] { 0x21, 0x21, 0x21 }, witness.InvocationScript.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x21, 0x21, 0x21 }, witness.InvocationScript.ToArray());
         }
 
         [TestMethod]
@@ -51,7 +51,7 @@ namespace Neo.UnitTests.Builders
 
             Assert.IsNotNull(witness);
             Assert.AreEqual(3, witness.InvocationScript.Length);
-            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, witness.InvocationScript.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x01, 0x02, 0x03 }, witness.InvocationScript.ToArray());
         }
 
         [TestMethod]
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Builders
 
             Assert.IsNotNull(witness);
             Assert.AreEqual(3, witness.VerificationScript.Length);
-            CollectionAssert.AreEqual(new byte[] { 0x21, 0x21, 0x21 }, witness.VerificationScript.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x21, 0x21, 0x21 }, witness.VerificationScript.ToArray());
         }
 
         [TestMethod]
@@ -80,7 +80,7 @@ namespace Neo.UnitTests.Builders
 
             Assert.IsNotNull(witness);
             Assert.AreEqual(3, witness.VerificationScript.Length);
-            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, witness.VerificationScript.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x01, 0x02, 0x03 }, witness.VerificationScript.ToArray());
         }
     }
 }

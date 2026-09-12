@@ -30,7 +30,7 @@ namespace Neo.UnitTests.Wallets
                 privateKey[i] = RandomNumberFactory.NextByte();
             KeyPair keyPair = new KeyPair(privateKey);
             ECPoint publicKey = ECCurve.Secp256r1.G * privateKey;
-            CollectionAssert.AreEqual(privateKey, keyPair.PrivateKey);
+            Assert.AreSequenceEqual(privateKey, keyPair.PrivateKey);
             Assert.AreEqual(publicKey, keyPair.PublicKey);
 
             byte[] privateKey96 = new byte[96];
@@ -38,7 +38,7 @@ namespace Neo.UnitTests.Wallets
                 privateKey96[i] = RandomNumberFactory.NextByte();
             keyPair = new KeyPair(privateKey96);
             publicKey = ECPoint.DecodePoint(new byte[] { 0x04 }.Concat(privateKey96.Skip(privateKey96.Length - 96).Take(64)).ToArray(), ECCurve.Secp256r1);
-            CollectionAssert.AreEqual(privateKey96.Skip(64).Take(32).ToArray(), keyPair.PrivateKey);
+            Assert.AreSequenceEqual(privateKey96.Skip(64).Take(32).ToArray(), keyPair.PrivateKey);
             Assert.AreEqual(publicKey, keyPair.PublicKey);
 
             byte[] privateKey31 = new byte[31];

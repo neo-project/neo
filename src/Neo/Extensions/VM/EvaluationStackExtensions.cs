@@ -23,7 +23,7 @@ namespace Neo.Extensions
         /// <param name="stack">The <see cref="EvaluationStack"/> to convert.</param>
         /// <param name="maxSize">The maximum size in bytes of the result.</param>
         /// <returns>The <see cref="EvaluationStack"/> represented by a JSON object.</returns>
-        public static JArray ToJson(this EvaluationStack stack, int maxSize = int.MaxValue)
+        public static JArray ToJson(this EvaluationStack stack, int maxSize = StackItemExtensions.MaxToJsonSize)
         {
             if (maxSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxSize), "must be positive");
             maxSize -= 2/*[]*/+ Math.Max(0, (stack.Count - 1))/*,*/;

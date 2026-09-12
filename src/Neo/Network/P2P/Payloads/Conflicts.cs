@@ -15,6 +15,7 @@ using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -50,6 +51,14 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
+            // Ensure that there are no duplicated conflicting transactions in the attributes.
+
+            var conflicts = tx.Attributes.Where(u => u is Conflicts).Cast<Conflicts>().ToArray();
+            if (conflicts.Length != conflicts.Select(u => u.Hash).Distinct().Count())
+            {
+                return false;
+            }
+
             // Only check if conflicting transaction is on chain. It's OK if the
             // conflicting transaction was in the Conflicts attribute of some other
             // on-chain transaction.

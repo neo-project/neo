@@ -12,6 +12,7 @@
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -89,7 +90,8 @@ namespace Neo.Ledger
         public int Capacity { get; }
 
         /// <summary>
-        /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
+        /// Store all verified unsorted transactions' payers' fee currently in the memory pool.
+        /// Each payer is a tuple of primary and secondary accounts.
         /// </summary>
         private TransactionVerificationContext VerificationContext = new();
 
@@ -371,6 +373,24 @@ namespace Neo.Ledger
         }
 
         /// <summary>
+        /// Returns a tuple of accounts (primamry and secondary) that pay transaction fees.
+        /// If primary account is native Notary contract, the fees will be checked against
+        /// funds deposited by the secondary account to native Notary contract. For the rest
+        /// of cases the secondary account is null, and the primary account is used to track
+        /// an ordinary GAS balance.
+        /// </summary>
+        internal static (UInt160 Primary, UInt160? Secondary) GetPayer(Transaction tx, out bool isSponsored)
+        {
+            if (tx.Sender == NativeContract.Notary.Hash && tx.Signers.Length >= 2)
+            {
+                isSponsored = true;
+                return (tx.Sender, tx.Signers[1].Account);
+            }
+            isSponsored = false;
+            return (tx.Sender, null);
+        }
+
+        /// <summary>
         /// Checks whether there is no mismatch in Conflicts attributes between the current transaction
         /// and mempooled unsorted transactions. If true, then these unsorted transactions will be added
         /// into conflictsList.
@@ -380,6 +400,8 @@ namespace Neo.Ledger
         /// <returns>True if transaction fits the pool, otherwise false.</returns>
         private bool CheckConflicts(Transaction tx, out List<PoolItem> conflictsList)
         {
+            var payer = GetPayer(tx, out var isSponsored);
+            UInt160 author = isSponsored ? payer.Secondary! : payer.Primary;
             conflictsList = new();
             long conflictsFeeSum = 0;
             // Step 1: check if `tx` was in Conflicts attributes of unsorted transactions.
@@ -388,7 +410,7 @@ namespace Neo.Ledger
                 foreach (var hash in conflicting)
                 {
                     var unsortedTx = _unsortedTransactions[hash];
-                    if (unsortedTx.Tx.Signers.Select(s => s.Account).Contains(tx.Sender))
+                    if (ContainsAccount(unsortedTx.Tx.Signers, author))
                         conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
@@ -398,7 +420,7 @@ namespace Neo.Ledger
             {
                 if (_unsortedTransactions.TryGetValue(hash, out var unsortedTx))
                 {
-                    if (!tx.Signers.Select(p => p.Account).Intersect(unsortedTx.Tx.Signers.Select(p => p.Account)).Any()) return false;
+                    if (!HasCommonSigner(tx.Signers, unsortedTx.Tx.Signers)) return false;
                     conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
@@ -513,26 +535,27 @@ namespace Neo.Ledger
                 foreach (Transaction tx in block.Transactions)
                 {
                     if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerified(tx.Hash, out _);
-                    var conflictingSigners = tx.Signers.Select(s => s.Account);
                     foreach (var h in tx.GetAttributes<Conflicts>().Select(a => a.Hash))
                     {
-                        if (conflicts.TryGetValue(h, out var signersList))
+                        if (!conflicts.TryGetValue(h, out var signersList))
                         {
-                            signersList.AddRange(conflictingSigners);
-                            continue;
+                            signersList = new List<UInt160>(tx.Signers.Length);
+                            conflicts.Add(h, signersList);
                         }
-                        signersList = conflictingSigners.ToList();
-                        conflicts.Add(h, signersList);
+                        for (int i = 0; i < tx.Signers.Length; i++)
+                            signersList.Add(tx.Signers[i].Account);
                     }
                 }
 
                 // Then remove the transactions conflicting with the accepted ones.
                 // No need to modify VerificationContext as it will be reset afterwards.
-                var persisted = block.Transactions.Select(t => t.Hash);
+                var persisted = new HashSet<UInt256>(block.Transactions.Length);
+                foreach (var t in block.Transactions)
+                    persisted.Add(t.Hash);
                 var stale = new List<UInt256>();
                 foreach (var item in _sortedTransactions)
                 {
-                    if ((conflicts.TryGetValue(item.Tx.Hash, out var signersList) && signersList.Intersect(item.Tx.Signers.Select(s => s.Account)).Any()) || item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Any())
+                    if ((conflicts.TryGetValue(item.Tx.Hash, out var signersList) && HasCommonAccount(signersList, item.Tx.Signers)) || ContainsPersistedConflict(item.Tx, persisted))
                     {
                         stale.Add(item.Tx.Hash);
                         conflictingItems.Add(item.Tx);
@@ -689,6 +712,50 @@ namespace Neo.Ledger
             }
 
             return _unverifiedTransactions.Count > 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool ContainsAccount(Signer[] signers, UInt160 account)
+        {
+            for (int i = 0; i < signers.Length; i++)
+            {
+                if (signers[i].Account.Equals(account))
+                    return true;
+            }
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool HasCommonSigner(Signer[] left, Signer[] right)
+        {
+            for (int i = 0; i < left.Length; i++)
+            {
+                if (ContainsAccount(right, left[i].Account))
+                    return true;
+            }
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool HasCommonAccount(List<UInt160> accounts, Signer[] signers)
+        {
+            for (int i = 0; i < accounts.Count; i++)
+            {
+                if (ContainsAccount(signers, accounts[i]))
+                    return true;
+            }
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool ContainsPersistedConflict(Transaction tx, HashSet<UInt256> persisted)
+        {
+            foreach (var attr in tx.GetAttributes<Conflicts>())
+            {
+                if (persisted.Contains(attr.Hash))
+                    return true;
+            }
+            return false;
         }
 
         // This method is only for test purpose

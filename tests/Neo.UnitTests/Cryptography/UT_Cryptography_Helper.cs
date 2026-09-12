@@ -32,7 +32,7 @@ namespace Neo.UnitTests.Cryptography
             string input = "3vQB7B6MrGQZaxCuFg4oh";
             var result = input.Base58CheckDecode();
             byte[] helloWorld = { 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 };
-            CollectionAssert.AreEqual(helloWorld, result);
+            Assert.AreSequenceEqual(helloWorld, result);
 
             input = "3v";
             var action = () => input.Base58CheckDecode();
@@ -50,7 +50,7 @@ namespace Neo.UnitTests.Cryptography
             ReadOnlySpan<byte> input = "Hello, world!"u8;
             byte[] input2 = input.ToArray();
             Assert.AreEqual(input2.Murmur32(0), input.Murmur32(0));
-            CollectionAssert.AreEqual(input2.Murmur128(0), input.Murmur128(0));
+            Assert.AreSequenceEqual(input2.Murmur128(0), input.Murmur128(0));
         }
 
         [TestMethod]
@@ -59,9 +59,9 @@ namespace Neo.UnitTests.Cryptography
             var value = Encoding.ASCII.GetBytes("hello world");
             var result = value.Sha256(0, value.Length);
             Assert.AreEqual("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", result.ToHexString());
-            CollectionAssert.AreEqual(result, value.Sha256());
-            CollectionAssert.AreEqual(result, ((Span<byte>)value).Sha256());
-            CollectionAssert.AreEqual(result, ((ReadOnlySpan<byte>)value).Sha256());
+            Assert.AreSequenceEqual(result, value.Sha256());
+            Assert.AreSequenceEqual(result, ((Span<byte>)value).Sha256());
+            Assert.AreSequenceEqual(result, ((ReadOnlySpan<byte>)value).Sha256());
         }
 
         [TestMethod]
@@ -70,9 +70,9 @@ namespace Neo.UnitTests.Cryptography
             var value = Encoding.ASCII.GetBytes("hello world");
             var result = value.Sha512(0, value.Length);
             Assert.AreEqual("309ecc489c12d6eb4cc40f50c902f2b4d0ed77ee511a7c7a9bcd3ca86d4cd86f989dd35bc5ff499670da34255b45b0cfd830e81f605dcf7dc5542e93ae9cd76f", result.ToHexString());
-            CollectionAssert.AreEqual(result, value.Sha512());
-            CollectionAssert.AreEqual(result, ((Span<byte>)value).Sha512());
-            CollectionAssert.AreEqual(result, ((ReadOnlySpan<byte>)value).Sha512());
+            Assert.AreSequenceEqual(result, value.Sha512());
+            Assert.AreSequenceEqual(result, ((Span<byte>)value).Sha512());
+            Assert.AreSequenceEqual(result, ((ReadOnlySpan<byte>)value).Sha512());
         }
 
         [TestMethod]
@@ -81,8 +81,8 @@ namespace Neo.UnitTests.Cryptography
             var input = "Hello, world!"u8.ToArray();
             var result = input.Keccak256();
             Assert.AreEqual("b6e16d27ac5ab427a7f68900ac5559ce272dc6c37c82b3e052246c82244c50e4", result.ToHexString());
-            CollectionAssert.AreEqual(result, ((Span<byte>)input).Keccak256());
-            CollectionAssert.AreEqual(result, ((ReadOnlySpan<byte>)input).Keccak256());
+            Assert.AreSequenceEqual(result, ((Span<byte>)input).Keccak256());
+            Assert.AreSequenceEqual(result, ((ReadOnlySpan<byte>)input).Keccak256());
         }
 
         [TestMethod]

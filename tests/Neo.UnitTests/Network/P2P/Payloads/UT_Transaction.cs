@@ -866,8 +866,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(0x0000000005f5e100, tx2.SystemFee); // 1 GAS (long)BigInteger.Pow(10, 8)
             Assert.AreEqual(0x0000000000000001, tx2.NetworkFee);
             Assert.AreEqual(0x01020304u, tx2.ValidUntilBlock);
-            CollectionAssert.AreEqual(Array.Empty<TransactionAttribute>(), tx2.Attributes);
-            CollectionAssert.AreEqual(new Signer[]
+            Assert.AreSequenceEqual(Array.Empty<TransactionAttribute>(), tx2.Attributes);
+            Assert.AreSequenceEqual(new Signer[]
             {
                 new()
                 {

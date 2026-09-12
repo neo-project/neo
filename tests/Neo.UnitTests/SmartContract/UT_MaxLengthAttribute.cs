@@ -1,0 +1,38 @@
+// Copyright (C) 2015-2026 The Neo Project.
+//
+// UT_MaxLengthAttribute.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.SmartContract;
+using Neo.VM.Types;
+using System;
+
+namespace Neo.UnitTests.SmartContract
+{
+    [TestClass]
+    public class UT_MaxLengthAttribute
+    {
+        [TestMethod]
+        public void Validate_WithinLimit_DoesNotThrow()
+        {
+            var attr = new MaxLengthAttribute(4);
+            Assert.AreEqual(4, attr.MaxLength);
+            attr.Validate((ByteString)new byte[] { 1, 2, 3, 4 });
+        }
+
+        [TestMethod]
+        public void Validate_ExceedsLimit_Throws()
+        {
+            var attr = new MaxLengthAttribute(2);
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                attr.Validate((ByteString)new byte[] { 1, 2, 3 }));
+        }
+    }
+}

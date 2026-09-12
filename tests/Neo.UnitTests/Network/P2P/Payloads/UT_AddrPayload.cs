@@ -41,7 +41,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Timestamp = 1
             }]);
             var clone = test.ToArray().AsSerializable<AddrPayload>();
-            CollectionAssert.AreEqual(test.AddressList.Select(u => u.EndPoint).ToArray(), clone.AddressList.Select(u => u.EndPoint).ToArray());
+            Assert.AreSequenceEqual(test.AddressList.Select(u => u.EndPoint).ToArray(), clone.AddressList.Select(u => u.EndPoint).ToArray());
 
             Assert.ThrowsExactly<FormatException>(() => _ = new AddrPayload() { AddressList = [] }.ToArray().AsSerializable<AddrPayload>());
         }

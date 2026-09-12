@@ -11,10 +11,13 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -37,6 +40,39 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
             };
             Assert.AreEqual(42, test.Size);
+        }
+
+        [TestMethod]
+        public void CheckExtensiblePayload()
+        {
+            var dataLength = 0x1000000; // 16 MB
+            var data = new byte[dataLength];
+            var witness = new Witness
+            {
+                InvocationScript = Array.Empty<byte>(),
+                VerificationScript = Array.Empty<byte>(),
+            };
+
+            ExtensiblePayload MakePayload(int i)
+            {
+                data[0] = (byte)i; data[1] = (byte)(i >> 8); data[2] = (byte)(i >> 16); data[3] = (byte)(i >> 24);
+                return new ExtensiblePayload
+                {
+                    Category = "",
+                    ValidBlockStart = 0,
+                    ValidBlockEnd = uint.MaxValue,
+                    Sender = witness.ScriptHash, // un-whitelisted
+                    Data = data,
+                    Witness = witness,
+                };
+            }
+
+            var msgBuffer = Message.Create(MessageCommand.Extensible, MakePayload(0)).ToArray(true);
+            Message.TryDeserialize(Akka.IO.ByteString.FromBytes(msgBuffer), out var msg);
+            Assert.IsNotNull(msg);
+
+            var ext = msg.Payload as ExtensiblePayload;
+            Assert.IsTrue(ext.TryGetHash(out _));
         }
 
         [TestMethod]

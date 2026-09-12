@@ -88,9 +88,9 @@ namespace Neo.Network.P2P
         {
             foreach (var (actor, session) in sessions)
             {
-                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out var block))
+                if (session.ReceivedBlockHashes.TryGetValue(invalidBlock.Index, out var blockHash))
                 {
-                    if (block.Hash == invalidBlock.Hash)
+                    if (blockHash == invalidBlock.Hash)
                         actor.Tell(Tcp.Abort.Instance);
                 }
             }
@@ -140,9 +140,9 @@ namespace Neo.Network.P2P
             lastSeenPersistedIndex = block.Index;
 
             foreach (var (actor, session) in sessions)
-                if (session.ReceivedBlock.Remove(block.Index, out Block? receivedBlock))
+                if (session.ReceivedBlockHashes.Remove(block.Index, out var receivedBlockHash))
                 {
-                    if (block.Hash == receivedBlock.Hash)
+                    if (block.Hash == receivedBlockHash)
                         RequestTasks(actor, session);
                     else
                         actor.Tell(Tcp.Abort.Instance);
@@ -236,9 +236,9 @@ namespace Neo.Network.P2P
                 if (block is not null)
                 {
                     session.IndexTasks.Remove(block.Index);
-                    if (session.ReceivedBlock.TryGetValue(block.Index, out var blockOld))
+                    if (session.ReceivedBlockHashes.TryGetValue(block.Index, out var blockOldHash))
                     {
-                        if (block.Hash != blockOld.Hash)
+                        if (block.Hash != blockOldHash)
                         {
                             Sender.Tell(Tcp.Abort.Instance);
                             return;
@@ -246,7 +246,7 @@ namespace Neo.Network.P2P
                     }
                     else
                     {
-                        session.ReceivedBlock.Add(block.Index, block);
+                        session.ReceivedBlockHashes.Add(block.Index, block.Hash);
                     }
                 }
                 else
@@ -396,7 +396,7 @@ namespace Neo.Network.P2P
             else if (currentHeight < session.LastBlockIndex)
             {
                 uint startHeight = currentHeight + 1;
-                while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlock.ContainsKey(startHeight)) { startHeight++; }
+                while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlockHashes.ContainsKey(startHeight)) { startHeight++; }
                 if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
                 uint endHeight = startHeight;
                 while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight <= currentHeight + InvPayload.MaxHashesCount) { }

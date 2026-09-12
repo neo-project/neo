@@ -544,6 +544,13 @@ namespace Neo.Ledger
         {
             RelayResult rr = new(inventory, result);
             Sender.Tell(rr);
+
+            if (rr.Inventory is ExtensiblePayload && result != VerifyResult.Succeed)
+            {
+                // If the extensible payload is invalid, we don't want to publish it.
+                return;
+            }
+
             Context.System.EventStream.Publish(rr);
         }
 

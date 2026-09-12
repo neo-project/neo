@@ -91,10 +91,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
+        public override StackItem ToStackItem()
         {
-            var result = (Array)base.ToStackItem(referenceCounter);
-            result.Add(new Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));
+            var result = (Array)base.ToStackItem();
+            result.Add(new Array(Expressions.Select(p => p.ToStackItem())));
             return result;
         }
 

@@ -16,18 +16,21 @@ using System.Runtime.CompilerServices;
 namespace Neo.Extensions
 {
     /// <summary>
-    /// Defines methods to support the comparison of two <see cref="byte"/>[].
+    /// Defines methods to support the comparison of two <see cref="byte"/>[] or <see cref="ReadOnlySpan{Byte}"/>.
     /// </summary>
-    public class ByteArrayComparer : IComparer<byte[]>
+    public class ByteArrayComparer : IComparer<byte[]>, IComparer<ReadOnlySpan<byte>>
     {
         public static readonly ByteArrayComparer Default = new(1);
         public static readonly ByteArrayComparer Reverse = new(-1);
 
-        private readonly int _direction;
+        /// <summary>
+        /// Gets the direction of the comparison.
+        /// </summary>
+        protected readonly int Direction;
 
-        private ByteArrayComparer(int direction)
+        protected ByteArrayComparer(int direction)
         {
-            _direction = direction;
+            Direction = direction;
         }
 
         /// <inheritdoc />
@@ -37,15 +40,28 @@ namespace Neo.Extensions
             if (ReferenceEquals(x, y)) return 0;
 
             if (x is null) // y must not be null
-                return -y!.Length * _direction;
+                return -y!.Length * Direction;
 
             if (y is null) // x must not be null
-                return x.Length * _direction;
+                return x.Length * Direction;
 
             // Note: if "SequenceCompareTo" is "int.MinValue * -1", it
             // will overflow "int.MaxValue". Seeing how "int.MinValue * -1"
             // value would be "int.MaxValue + 1"
-            return unchecked(x.AsSpan().SequenceCompareTo(y.AsSpan()) * _direction);
+            return unchecked(x.AsSpan().SequenceCompareTo(y.AsSpan()) * Direction);
+        }
+
+        /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
+        {
+            // Note:
+            // - "SequenceCompareTo" already handles the empty/empty, empty/non-empty
+            // and non-empty/empty cases correctly, so no special-casing is needed here.
+            // - If "SequenceCompareTo" is "int.MinValue * -1", it
+            // will overflow "int.MaxValue". Seeing how "int.MinValue * -1"
+            // value would be "int.MaxValue + 1"
+            return unchecked(x.SequenceCompareTo(y) * Direction);
         }
     }
 }

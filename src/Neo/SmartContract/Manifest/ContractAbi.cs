@@ -44,12 +44,12 @@ namespace Neo.SmartContract.Manifest
             Events = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>()).ToArray();
         }
 
-        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+        public StackItem ToStackItem()
         {
-            return new Struct(referenceCounter)
+            return new Struct()
             {
-                new Array(referenceCounter, Methods.Select(p => p.ToStackItem(referenceCounter))),
-                new Array(referenceCounter, Events.Select(p => p.ToStackItem(referenceCounter))),
+                new Array(Methods.Select(p => p.ToStackItem())),
+                new Array(Events.Select(p => p.ToStackItem())),
             };
         }
 

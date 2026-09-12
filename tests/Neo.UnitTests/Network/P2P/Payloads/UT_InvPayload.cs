@@ -47,8 +47,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.HasCount(2, array);
             Assert.AreEqual(InventoryType.TX, array[0].Type);
             Assert.AreEqual(InventoryType.TX, array[1].Type);
-            CollectionAssert.AreEqual(hashes.Take(InvPayload.MaxHashesCount).ToArray(), array[0].Hashes);
-            CollectionAssert.AreEqual(hashes.Skip(InvPayload.MaxHashesCount).ToArray(), array[1].Hashes);
+            Assert.AreSequenceEqual(hashes.Take(InvPayload.MaxHashesCount).ToArray(), array[0].Hashes);
+            Assert.AreSequenceEqual(hashes.Skip(InvPayload.MaxHashesCount).ToArray(), array[1].Hashes);
         }
 
         [TestMethod]
@@ -58,7 +58,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var clone = test.ToArray().AsSerializable<InvPayload>();
 
             Assert.AreEqual(test.Type, clone.Type);
-            CollectionAssert.AreEqual(test.Hashes, clone.Hashes);
+            Assert.AreSequenceEqual(test.Hashes, clone.Hashes);
 
             Assert.ThrowsExactly<FormatException>(() => _ = InvPayload.Create((InventoryType)0xff, UInt256.Zero).ToArray().AsSerializable<InvPayload>());
         }

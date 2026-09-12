@@ -62,7 +62,7 @@ namespace Neo.UnitTests.Cryptography
             foreach (var entry in bitcoinTest)
             {
                 Assert.AreEqual(entry.Value, Base58.Encode(entry.Key.HexToBytes()));
-                CollectionAssert.AreEqual(entry.Key.HexToBytes(), Base58.Decode(entry.Value));
+                Assert.AreSequenceEqual(entry.Key.HexToBytes(), Base58.Decode(entry.Value));
             }
 
             var invalidBase58 = new string[] { "0", "O", "I", "l", "+", "/" };

@@ -124,8 +124,8 @@ namespace Neo.UnitTests.SmartContract
             byte[] byteArray7 = BinarySerializer.Serialize(stackItem72, ExecutionEngineLimits.Default);
             StackItem result7 = BinarySerializer.Deserialize(byteArray7, ExecutionEngineLimits.Default);
             Assert.AreEqual(((Map)stackItem72).Count, ((Map)result7).Count);
-            CollectionAssert.AreEqual(((Map)stackItem72).Keys.ToArray(), ((Map)result7).Keys.ToArray());
-            CollectionAssert.AreEqual(((Map)stackItem72).Values.ToArray(), ((Map)result7).Values.ToArray());
+            Assert.AreSequenceEqual(((Map)stackItem72).Keys.ToArray(), ((Map)result7).Keys.ToArray());
+            Assert.AreSequenceEqual(((Map)stackItem72).Values.ToArray(), ((Map)result7).Values.ToArray());
         }
     }
 }

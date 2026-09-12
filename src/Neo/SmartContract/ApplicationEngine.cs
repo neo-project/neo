@@ -72,7 +72,7 @@ namespace Neo.SmartContract
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
-        public const uint FeeFactor = 10000;
+        public static readonly BigInteger FeeFactor = 10000;
         private Dictionary<Type, object>? states;
         private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs>? notifications;
@@ -149,7 +149,16 @@ namespace Neo.SmartContract
         /// GAS spent to execute.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long FeeConsumed => (long)_feeConsumed.DivideCeiling(FeeFactor);
+        public long FeeConsumed
+        {
+            get
+            {
+                var consumed = _feeConsumed.DivideCeiling(FeeFactor);
+                if (consumed > long.MaxValue)
+                    return (long)(_feeAmount / FeeFactor);
+                return (long)consumed;
+            }
+        }
 
         /// <summary>
         /// Exec Fee Factor. In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
@@ -160,7 +169,16 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => (long)((_feeAmount - _feeConsumed) / FeeFactor);
+        public long GasLeft
+        {
+            get
+            {
+                if (_feeConsumed >= _feeAmount)
+                    return 0;
+                var left = (_feeAmount - _feeConsumed) / FeeFactor;
+                return left > long.MaxValue ? long.MaxValue : (long)left;
+            }
+        }
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
@@ -306,10 +324,20 @@ namespace Neo.SmartContract
                     var index = (int)key.GetInteger();
                     if (index < 0 || index >= array.Count)
                         throw new InvalidOperationException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                    var i = (int)index;
+                    var item = array[i];
                     array.RemoveAt(index);
+
+                    if (array.IsStackReferenced)
+                        engine.ReferenceCounter.RemoveStackReference(item);
                     break;
                 case Map map:
-                    map.Remove(key);
+                    var old = map.Remove(key);
+                    if (old is not null && map.IsStackReferenced)
+                    {
+                        engine.ReferenceCounter.RemoveStackReference(key);
+                        engine.ReferenceCounter.RemoveStackReference(old);
+                    }
                     break;
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
@@ -329,11 +357,27 @@ namespace Neo.SmartContract
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
                             throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                        if (array.IsStackReferenced)
+                            engine.ReferenceCounter.RemoveStackReference(array[index]);
                         array[index] = value;
+                        if (array.IsStackReferenced)
+                            engine.ReferenceCounter.AddStackReference(value);
                         break;
                     }
                 case Map map:
                     {
+                        if (map.IsStackReferenced)
+                        {
+                            if (!map.TryGetValue(key, out var value1))
+                            {
+                                engine.ReferenceCounter.AddStackReference(key);
+                            }
+                            else
+                            {
+                                engine.ReferenceCounter.RemoveStackReference(value1);
+                            }
+                            engine.ReferenceCounter.AddStackReference(value);
+                        }
                         map[key] = value;
                         break;
                     }
@@ -494,9 +538,15 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="picoGas">The amount of GAS, in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
-        protected internal void AddFee(BigInteger picoGas)
+        /// <param name="gas">The amount of GAS, either in the unit of Datoshi or in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
+        /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
+        protected internal void AddFee(BigInteger gas, bool applyFactor)
         {
+            if (gas < 0)
+            {
+                throw new InvalidOperationException("AddFee can't be negative.");
+            }
+
             // Check whitelist
 
             if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
@@ -505,7 +555,12 @@ namespace Neo.SmartContract
                 return;
             }
 
-            _feeConsumed = _feeConsumed + picoGas;
+            if (applyFactor)
+            {
+                gas *= FeeFactor;
+            }
+
+            _feeConsumed = _feeConsumed + gas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
@@ -572,7 +627,7 @@ namespace Neo.SmartContract
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
                 NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
             {
-                AddFee(fixedFee.Value * FeeFactor);
+                AddFee(fixedFee.Value, true);
                 state.WhiteListed = true;
             }
 
@@ -845,11 +900,11 @@ namespace Neo.SmartContract
                 string s => s,
                 BigInteger i => i,
                 JObject o => o.ToByteArray(false),
-                IInteroperable interoperable => interoperable.ToStackItem(ReferenceCounter),
+                IInteroperable interoperable => interoperable.ToStackItem(),
                 ISerializable i => i.ToArray(),
                 StackItem item => item,
-                (object a, object b) => new Struct(ReferenceCounter) { Convert(a), Convert(b) },
-                Array array => new VMArray(ReferenceCounter, array.OfType<object>().Select(p => Convert(p))),
+                (object a, object b) => new Struct() { Convert(a), Convert(b) },
+                Array array => new VMArray(array.OfType<object>().Select(p => Convert(p))),
                 _ => StackItem.FromInterface(value)
             };
         }
@@ -937,7 +992,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * _execFeeFactor);
+            AddFee(descriptor.FixedPrice * _execFeeFactor, false);
 
             int parameterCount = descriptor.Parameters.Count;
             object?[] parameters = parameterCount == 0 ? [] : ArrayPool<object?>.Shared.Rent(parameterCount);
@@ -963,7 +1018,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)

@@ -56,23 +56,13 @@ namespace Neo.Extensions.Tests.Exceptions
 
             var expectedMessage = "Hello World";
 
-            try
-            {
-                actualObject.TryCatchThrow<object, ArgumentException>(a => throw new ArgumentException(), expectedMessage);
-            }
-            catch (ArgumentException actualException)
-            {
-                Assert.AreEqual(expectedMessage, actualException.Message);
-            }
+            var actualException1 = Assert.ThrowsExactly<ArgumentException>(
+                () => actualObject.TryCatchThrow<object, ArgumentException>(a => throw new ArgumentException(), expectedMessage));
+            Assert.AreEqual(expectedMessage, actualException1.Message);
 
-            try
-            {
-                actualObject.TryCatchThrow<object, ArgumentException, ArgumentException>(a => throw new ArgumentException(), expectedMessage);
-            }
-            catch (ArgumentException actualException)
-            {
-                Assert.AreEqual(expectedMessage, actualException.Message);
-            }
+            var actualException2 = Assert.ThrowsExactly<ArgumentException>(
+                () => actualObject.TryCatchThrow<object, ArgumentException, ArgumentException>(a => throw new ArgumentException(), expectedMessage));
+            Assert.AreEqual(expectedMessage, actualException2.Message);
         }
     }
 }

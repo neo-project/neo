@@ -89,17 +89,17 @@ namespace Neo.SmartContract.Manifest
             Extra = (JObject?)JToken.Parse(@struct[7].GetSpan());
         }
 
-        public StackItem ToStackItem(IReferenceCounter? referenceCounter)
+        public StackItem ToStackItem()
         {
-            return new Struct(referenceCounter)
+            return new Struct()
             {
                 Name,
-                new Array(referenceCounter, Groups.Select(p => p.ToStackItem(referenceCounter))),
-                new Map(referenceCounter),
-                new Array(referenceCounter, SupportedStandards.Select(p => (StackItem)p)),
-                Abi.ToStackItem(referenceCounter),
-                new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
-                Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p => p.ToArray()?? StackItem.Null)),
+                new Array(Groups.Select(p => p.ToStackItem())),
+                new Map(),
+                new Array(SupportedStandards.Select(p => (StackItem)p)),
+                Abi.ToStackItem(),
+                new Array(Permissions.Select(p => p.ToStackItem())),
+                Trusts.IsWildcard ? StackItem.Null : new Array(Trusts.Select(p => p.ToArray()?? StackItem.Null)),
                 Extra is null ? "null" : Extra.ToByteArray(false)
             };
         }
@@ -184,7 +184,7 @@ namespace Neo.SmartContract.Manifest
             // Ensure that is serializable
             try
             {
-                _ = BinarySerializer.Serialize(ToStackItem(null), limits);
+                _ = BinarySerializer.Serialize(ToStackItem(), limits);
             }
             catch
             {

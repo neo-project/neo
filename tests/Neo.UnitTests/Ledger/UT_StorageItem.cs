@@ -118,7 +118,7 @@ namespace Neo.UnitTests.Ledger
             uut.Value = TestUtils.GetByteArray(10, 0x42);
             StorageItem dest = new StorageItem();
             dest.FromReplica(uut);
-            CollectionAssert.AreEqual(uut.Value.ToArray(), dest.Value.ToArray());
+            Assert.AreSequenceEqual(uut.Value.ToArray(), dest.Value.ToArray());
         }
     }
 }

@@ -52,12 +52,11 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="data">The byte array to parse.</param>
         /// <param name="limits">The limits for the deserialization.</param>
-        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ReadOnlyMemory<byte> data, ExecutionEngineLimits limits, IReferenceCounter? referenceCounter = null)
+        public static StackItem Deserialize(ReadOnlyMemory<byte> data, ExecutionEngineLimits limits)
         {
             MemoryReader reader = new(data);
-            return Deserialize(ref reader, (uint)Math.Min(data.Length, limits.MaxItemSize), limits.MaxStackSize, referenceCounter);
+            return Deserialize(ref reader, (uint)Math.Min(data.Length, limits.MaxItemSize), limits.MaxStackSize);
         }
 
         /// <summary>
@@ -65,11 +64,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="limits">The limits for the deserialization.</param>
-        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ref MemoryReader reader, ExecutionEngineLimits limits, IReferenceCounter? referenceCounter = null)
+        public static StackItem Deserialize(ref MemoryReader reader, ExecutionEngineLimits limits)
         {
-            return Deserialize(ref reader, limits.MaxItemSize, limits.MaxStackSize, referenceCounter);
+            return Deserialize(ref reader, limits.MaxItemSize, limits.MaxStackSize);
         }
 
         /// <summary>
@@ -78,9 +76,8 @@ namespace Neo.SmartContract
         /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="maxSize">The maximum size of the result.</param>
         /// <param name="maxItems">The max of items to serialize</param>
-        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, IReferenceCounter? referenceCounter = null)
+        public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems)
         {
             Stack<StackItem> deserialized = new();
             var undeserialized = 1;
@@ -136,19 +133,19 @@ namespace Neo.SmartContract
                     switch (placeholder.Type)
                     {
                         case StackItemType.Array:
-                            Array array = new(referenceCounter);
+                            Array array = new();
                             for (int i = 0; i < placeholder.ElementCount; i++)
                                 array.Add(stackTemp.Pop());
                             item = array;
                             break;
                         case StackItemType.Struct:
-                            Struct @struct = new(referenceCounter);
+                            Struct @struct = new();
                             for (int i = 0; i < placeholder.ElementCount; i++)
                                 @struct.Add(stackTemp.Pop());
                             item = @struct;
                             break;
                         case StackItemType.Map:
-                            Map map = new(referenceCounter);
+                            Map map = new();
                             for (int i = 0; i < placeholder.ElementCount; i++)
                             {
                                 var key = stackTemp.Pop();

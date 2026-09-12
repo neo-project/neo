@@ -25,8 +25,11 @@ namespace Neo.Ledger
     {
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
+        /// Key is a tuple of two accounts: primary and secondary. Primary account is used to track an
+        /// ordinary GAS balance. Secondary account is used to track the amount of funds deposited
+        /// to native Notary contract (in this case primary account is always Notary contract hash).
         /// </summary>
-        private readonly Dictionary<UInt160, BigInteger> _senderFee = [];
+        private readonly Dictionary<(UInt160, UInt160?), BigInteger> _senderFee = [];
 
         /// <summary>
         /// Store oracle responses
@@ -42,10 +45,11 @@ namespace Neo.Ledger
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null) _oracleResponses.Add(oracle.Id, tx.Hash);
 
-            if (_senderFee.TryGetValue(tx.Sender, out var value))
-                _senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
+            var payer = MemoryPool.GetPayer(tx, out var _);
+            if (_senderFee.TryGetValue(payer, out var value))
+                _senderFee[payer] = value + tx.SystemFee + tx.NetworkFee;
             else
-                _senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
+                _senderFee.Add(payer, tx.SystemFee + tx.NetworkFee);
         }
 
         /// <summary>
@@ -57,11 +61,18 @@ namespace Neo.Ledger
         /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
         public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot)
         {
-            var balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
-            _senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
+            var payer = MemoryPool.GetPayer(tx, out var isSponsored);
+            BigInteger balance = isSponsored ? NativeContract.Notary.BalanceOf(snapshot, payer.Secondary!)
+                : NativeContract.GAS.BalanceOf(snapshot, payer.Primary);
+            _senderFee.TryGetValue(payer, out var totalSenderFeeFromPool);
 
             var expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
-            foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
+            foreach (var conflictTx in conflictingTxs.Where(c =>
+            {
+                // Filter out those conflicts that will affect payer's fee sum (either standard GAS or notary deposit).
+                var conflictPayer = MemoryPool.GetPayer(c, out var _);
+                return conflictPayer.Primary == payer.Primary && conflictPayer.Secondary == payer.Secondary;
+            }))
                 expectedFee -= conflictTx.NetworkFee + conflictTx.SystemFee;
             if (balance < expectedFee) return false;
 
@@ -78,8 +89,9 @@ namespace Neo.Ledger
         /// <param name="tx">The <see cref="Transaction"/> to be removed.</param>
         public void RemoveTransaction(Transaction tx)
         {
-            if ((_senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0)
-                _senderFee.Remove(tx.Sender);
+            var payer = MemoryPool.GetPayer(tx, out var _);
+            if ((_senderFee[payer] -= tx.SystemFee + tx.NetworkFee) == 0)
+                _senderFee.Remove(payer);
 
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null)
