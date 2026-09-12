@@ -15,6 +15,7 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Network.RateLimiting;
 using Neo.Persistence;
 using Neo.Persistence.Providers;
 using Neo.Plugins;
@@ -98,6 +99,11 @@ namespace Neo
 
         internal RelayCache RelayCache { get; } = new(100);
         protected IStoreProvider StorageProvider { get; }
+
+        /// <summary>
+        /// Rate limiter for network connections.
+        /// </summary>
+        public IRateLimitter? RateLimitter { get; set; }
 
         private ImmutableList<object> _services = ImmutableList<object>.Empty;
         private readonly IStore _store;
