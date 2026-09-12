@@ -26,6 +26,7 @@ namespace Neo
     public record ProtocolSettings
     {
         private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
+        private readonly uint _maxTransactionValidityWindow;
 
         /// <summary>
         /// The magic number of the NEO network.
@@ -74,9 +75,25 @@ namespace Neo
         public TimeSpan TimePerBlock => TimeSpan.FromMilliseconds(MillisecondsPerBlock);
 
         /// <summary>
-        /// The maximum increment of the <see cref="Transaction.ValidUntilBlock"/> field.
+        /// The maximum block increment allowed for the <see cref="Transaction.ValidUntilBlock"/> field.
+        /// This is the legacy configuration name for <see cref="MaxTransactionValidityWindow"/>.
         /// </summary>
-        public uint MaxValidUntilBlockIncrement { get; init; }
+        public uint MaxValidUntilBlockIncrement
+        {
+            get => _maxTransactionValidityWindow;
+            init => _maxTransactionValidityWindow = value;
+        }
+
+        /// <summary>
+        /// The maximum validity window for a transaction, measured in blocks.
+        /// A transaction remains valid while its <see cref="Transaction.ValidUntilBlock"/> is greater
+        /// than the current block height and less than or equal to the current block height plus this value.
+        /// </summary>
+        public uint MaxTransactionValidityWindow
+        {
+            get => _maxTransactionValidityWindow;
+            init => _maxTransactionValidityWindow = value;
+        }
 
         /// <summary>
         /// Indicates the maximum number of transactions that can be contained in a block.
@@ -218,9 +235,9 @@ namespace Neo
                     : Default.SeedList,
                 MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
+                MaxValidUntilBlockIncrement = LoadMaxTransactionValidityWindow(section),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
-                MaxValidUntilBlockIncrement = section.GetValue("MaxValidUntilBlockIncrement", Default.MaxValidUntilBlockIncrement),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value!))).ToImmutableDictionary()
@@ -228,6 +245,14 @@ namespace Neo
             };
             CheckingHardfork(Custom);
             return Custom;
+        }
+
+        private static uint LoadMaxTransactionValidityWindow(IConfigurationSection section)
+        {
+            if (section.GetSection("MaxValidUntilBlockIncrement").Exists())
+                return section.GetValue("MaxValidUntilBlockIncrement", Default.MaxValidUntilBlockIncrement);
+
+            return section.GetValue("MaxTransactionValidityWindow", Default.MaxValidUntilBlockIncrement);
         }
 
         /// <summary>

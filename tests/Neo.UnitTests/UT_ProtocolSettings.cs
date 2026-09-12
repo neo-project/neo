@@ -227,6 +227,24 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void TestMaxTransactionValidityWindowAlias()
+        {
+            Assert.AreEqual(TestProtocolSettings.Default.MaxValidUntilBlockIncrement, TestProtocolSettings.Default.MaxTransactionValidityWindow);
+        }
+
+        [TestMethod]
+        public void TestMaxTransactionValidityWindowCanInitializeAlias()
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                MaxTransactionValidityWindow = 1234
+            };
+
+            Assert.AreEqual(1234u, settings.MaxValidUntilBlockIncrement);
+            Assert.AreEqual(1234u, settings.MaxTransactionValidityWindow);
+        }
+
+        [TestMethod]
         public void TestInitialGasDistribution()
         {
             Assert.IsGreaterThan(0ul, TestProtocolSettings.Default.InitialGasDistribution);
@@ -358,6 +376,57 @@ namespace Neo.UnitTests
 
             // If StandbyValidators is a derived property, comparing it as well
             Assert.AreSequenceEqual(TestProtocolSettings.Default.StandbyValidators.ToList(), loadedSetting.StandbyValidators.ToList());
+        }
+
+        [TestMethod]
+        public void TestLoadMaxTransactionValidityWindowAlias()
+        {
+            var file = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(file, """
+                {
+                    "ProtocolConfiguration": {
+                        "MaxTransactionValidityWindow": 1234
+                    }
+                }
+                """);
+
+                var loadedSetting = ProtocolSettings.Load(file);
+
+                Assert.AreEqual(1234u, loadedSetting.MaxValidUntilBlockIncrement);
+                Assert.AreEqual(1234u, loadedSetting.MaxTransactionValidityWindow);
+            }
+            finally
+            {
+                File.Delete(file);
+            }
+        }
+
+        [TestMethod]
+        public void TestLoadMaxValidUntilBlockIncrementTakesPrecedenceOverAlias()
+        {
+            var file = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(file, """
+                {
+                    "ProtocolConfiguration": {
+                        "MaxValidUntilBlockIncrement": 1234,
+                        "MaxTransactionValidityWindow": 5678
+                    }
+                }
+                """);
+
+                var loadedSetting = ProtocolSettings.Load(file);
+
+                Assert.AreEqual(1234u, loadedSetting.MaxValidUntilBlockIncrement);
+                Assert.AreEqual(1234u, loadedSetting.MaxTransactionValidityWindow);
+            }
+            finally
+            {
+                File.Delete(file);
+            }
         }
     }
 }

@@ -27,6 +27,8 @@
     "AddressVersion": 53,
     "MillisecondsPerBlock": 15000,
     "MaxTransactionsPerBlock": 512,
+    "MaxValidUntilBlockIncrement": 5760,
+    "MaxTransactionValidityWindow": 5760,
     "MemoryPoolMaxTransactions": 50000,
     "MaxTraceableBlocks": 2102400,
     "Hardforks": {},
