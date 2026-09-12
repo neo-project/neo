@@ -10,9 +10,11 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Persistence;
+using Neo.SmartContract;
+using System;
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.SmartContract;
 using System.Buffers.Binary;
 using System.Reflection;
 using System.Text;
@@ -22,6 +24,74 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_InteropDescriptor
     {
+        [TestMethod]
+        public void TestInvokeReturnsMethodResult()
+        {
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = new TestEngine(snapshot);
+            var descriptor = CreateDescriptor(nameof(TestEngine.AddTwoNumbers));
+
+            var result = descriptor.Invoke(engine, [2, 3]);
+
+            Assert.AreEqual(5, result);
+        }
+
+        [TestMethod]
+        public void TestInvokeReturnsNullForVoidMethod()
+        {
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = new TestEngine(snapshot);
+            var descriptor = CreateDescriptor(nameof(TestEngine.MarkFlag));
+
+            var result = descriptor.Invoke(engine, [true]);
+
+            Assert.IsNull(result);
+            Assert.IsTrue(engine.FlagWasMarked);
+        }
+
+        [TestMethod]
+        public void TestInvokeWrapsTargetException()
+        {
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = new TestEngine(snapshot);
+            var descriptor = CreateDescriptor(nameof(TestEngine.ThrowInvalidOperation));
+
+            var exception = Assert.ThrowsExactly<TargetInvocationException>(() => descriptor.Invoke(engine, []));
+
+            Assert.IsInstanceOfType<InvalidOperationException>(exception.InnerException);
+        }
+
+        private static InteropDescriptor CreateDescriptor(string methodName)
+        {
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var method = typeof(TestEngine).GetMethod(methodName, flags) ?? throw new AssertFailedException();
+
+            return new InteropDescriptor
+            {
+                Name = $"Test.{methodName}",
+                Handler = method,
+                FixedPrice = 0,
+                RequiredCallFlags = CallFlags.None
+            };
+        }
+
+        private sealed class TestEngine(DataCache snapshot) : ApplicationEngine(TriggerType.Application, null, snapshot, null, TestProtocolSettings.Default, 0)
+        {
+            public bool FlagWasMarked { get; private set; }
+
+            internal int AddTwoNumbers(int left, int right) => left + right;
+
+            internal void MarkFlag(bool value)
+            {
+                FlagWasMarked = value;
+            }
+
+            internal void ThrowInvalidOperation()
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
         public static void SampleHandler(int value) { }
 
         [TestMethod]
