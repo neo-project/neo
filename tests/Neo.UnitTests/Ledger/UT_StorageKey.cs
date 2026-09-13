@@ -100,7 +100,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Id_Set()
         {
-            int val = 1;
+            var val = 1;
             StorageKey uut = new() { Id = val };
             Assert.AreEqual(val, uut.Id);
         }
@@ -108,9 +108,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Key_Set()
         {
-            byte[] val = new byte[] { 0x42, 0x32 };
+            byte[] val = [0x42, 0x32];
             StorageKey uut = new() { Key = val };
-            Assert.AreEqual(2, uut.Key.Length);
+            Assert.HasCount(2, uut.Key);
             Assert.AreEqual(val[0], uut.Key.Span[0]);
             Assert.AreEqual(val[1], uut.Key.Span[1]);
         }
@@ -132,9 +132,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_SameKey()
         {
-            int val = 0x42000000;
-            byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
-            StorageKey newSk = new StorageKey
+            var val = 0x42000000;
+            var keyVal = TestUtils.GetByteArray(10, 0x42);
+            var newSk = new StorageKey
             {
                 Id = val,
                 Key = keyVal
@@ -146,9 +146,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_DiffHash_SameKey()
         {
-            int val = 0x42000000;
-            byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
-            StorageKey newSk = new StorageKey
+            var val = 0x42000000;
+            var keyVal = TestUtils.GetByteArray(10, 0x42);
+            var newSk = new StorageKey
             {
                 Id = val,
                 Key = keyVal
@@ -160,9 +160,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_DiffKey()
         {
-            int val = 0x42000000;
-            byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
-            StorageKey newSk = new StorageKey
+            var val = 0x42000000;
+            var keyVal = TestUtils.GetByteArray(10, 0x42);
+            var newSk = new StorageKey
             {
                 Id = val,
                 Key = keyVal
@@ -185,6 +185,79 @@ namespace Neo.UnitTests.Ledger
             StorageKey uut = new();
             Assert.IsFalse(uut.Equals(1u));
             Assert.IsTrue(uut.Equals((object)uut));
+        }
+
+        // Builds the serialized form (little-endian id + key), the same buffer ToArray() returns.
+        private static byte[] Serialized(int id, byte[] key)
+        {
+            var buffer = new byte[sizeof(int) + key.Length];
+            System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
+            key.CopyTo(buffer, sizeof(int));
+            return buffer;
+        }
+
+        [TestMethod]
+        public void StartsWith_CachedKey_MatchesSerializedForm()
+        {
+            // StorageKey.Create fills _cache eagerly.
+            var key = StorageKey.Create(1, 2, [3, 4]);
+            var serializedPrefix = Serialized(1, [2, 3]);
+            Assert.IsTrue(key.StartsWith(serializedPrefix));
+
+            // A prefix that matches only Key (without the 4-byte id) must not match.
+            Assert.IsFalse(key.StartsWith([2, 3]));
+        }
+
+        [TestMethod]
+        public void StartsWith_UncachedKey_MatchesSerializedForm()
+        {
+            // Object-initializer keys leave _cache empty until Build() runs.
+            var key = new StorageKey { Id = 1, Key = new byte[] { 2, 3, 4 } };
+            var serializedPrefix = Serialized(1, [2, 3]);
+            Assert.IsTrue(key.StartsWith(serializedPrefix));
+
+            // A prefix that matches only Key (without the 4-byte id) must not match.
+            Assert.IsFalse(key.StartsWith([2, 3]));
+        }
+
+        [TestMethod]
+        public void SequenceEqual_CachedKey_MatchesSerializedForm()
+        {
+            var key = StorageKey.Create(1, 2, [3, 4]);
+            Assert.IsTrue(key.SequenceEqual(Serialized(1, [2, 3, 4])));
+
+            // Key alone (without the 4-byte id) must not be considered equal.
+            Assert.IsFalse(key.SequenceEqual([2, 3, 4]));
+        }
+
+        [TestMethod]
+        public void SequenceEqual_UncachedKey_MatchesSerializedForm()
+        {
+            var key = new StorageKey { Id = 1, Key = new byte[] { 2, 3, 4 } };
+            Assert.IsTrue(key.SequenceEqual(Serialized(1, [2, 3, 4])));
+
+            // Key alone (without the 4-byte id) must not be considered equal.
+            Assert.IsFalse(key.SequenceEqual([2, 3, 4]));
+        }
+
+        [TestMethod]
+        public void Compare_CachedKey_MatchesSerializedForm()
+        {
+            var key = StorageKey.Create(1, 2, [3, 4]);
+            var comparer = ByteArrayComparer.Default;
+
+            Assert.AreEqual(0, key.Compare(comparer, Serialized(1, [2, 3, 4])));
+            Assert.IsGreaterThan(0, key.Compare(comparer, Serialized(1, [2, 3])));
+        }
+
+        [TestMethod]
+        public void Compare_UncachedKey_MatchesSerializedForm()
+        {
+            var key = new StorageKey { Id = 1, Key = new byte[] { 2, 3, 4 } };
+            var comparer = ByteArrayComparer.Default;
+
+            Assert.AreEqual(0, key.Compare(comparer, Serialized(1, [2, 3, 4])));
+            Assert.IsGreaterThan(0, key.Compare(comparer, Serialized(1, [2, 3])));
         }
     }
 }
