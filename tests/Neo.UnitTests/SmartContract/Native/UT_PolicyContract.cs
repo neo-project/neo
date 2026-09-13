@@ -881,7 +881,11 @@ namespace Neo.UnitTests.SmartContract.Native
                 ValidUntilBlock = 0
             };
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+            };
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: settings);
             engine.LoadScript(tx.Script);
 
             return engine;

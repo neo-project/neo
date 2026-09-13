@@ -78,7 +78,11 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
-            using var ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+            };
+            using var ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto();
@@ -109,7 +113,11 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+            };
+            using ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
             Debugger debugger = new(applicationEngine);
             applicationEngine.LoadScript(script);
             debugger.StepInto();
@@ -142,7 +150,11 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+            };
+            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto();
@@ -176,7 +188,11 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+            };
+            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto(); //push value
