@@ -11,7 +11,9 @@
 <p align="center">
    A modern distributed network for the Smart Economy.
   <br>
-  <a href="https://docs.neo.org/"><strong>Documentation »</strong></a>
+  <a href="docs/README.md"><strong>Documentation »</strong></a>
+  ·
+  <a href="https://developers.neo.org/"><strong>developers.neo.org</strong></a>
   <br>
   <br>
   <a href="https://github.com/neo-project/neo"><strong>Neo</strong></a>
@@ -99,16 +101,57 @@
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [Project structure](#project-structure)
-3. [Related projects](#related-projects)
-4. [Opening a new issue](#opening-a-new-issue)
-5. [Contributing](#contributing)
-6. [Bounty program](#bounty-program)
-7. [License](#license)
+2. [Documentation](#documentation)
+    1. [Documentation hub](docs/README.md)
+    2. [Getting started](docs/getting-started.md)
+    3. [Architecture](docs/architecture.md)
+    4. [Neo core (`neo-project/neo`)](docs/neo-core.md)
+    5. [Neo node (`neo-project/neo-node`)](docs/neo-node.md)
+    6. [NeoVM (`neo-project/neo-vm`)](docs/neo-vm.md)
+    7. [How to: build and test](docs/how-to/build-and-test.md)
+    8. [How to: run a node](docs/how-to/run-a-node.md)
+    9. [How to: smart contracts](docs/how-to/smart-contracts.md)
+    10. [How to: contribute](docs/how-to/contribute.md)
+    11. [Glossary](docs/glossary.md)
+    12. [Persistence architecture](docs/persistence-architecture.md)
+    13. [Serialization format](docs/serialization-format.md)
+    14. [Official docs notes](docs/reference/official-docs.md)
+3. [Project structure](#project-structure)
+4. [Related projects](#related-projects)
+5. [Opening a new issue](#opening-a-new-issue)
+6. [Contributing](#contributing)
+7. [Bounty program](#bounty-program)
+8. [License](#license)
 
 ## Overview
-This repository is a csharp implementation of the [neo](https://neo.org) blockchain. It is jointly maintained by the neo core developers and neo global development community.
-Visit the [tutorials](https://docs.neo.org) to get started.
+This repository is a csharp implementation of the [neo](https://neo.org) blockchain protocol **library**. It is jointly maintained by the neo core developers and neo global development community.
+
+It is **not** the program that starts a node. Neo-CLI lives in [neo-project/neo-node](https://github.com/neo-project/neo-node). The virtual machine lives in [neo-project/neo-vm](https://github.com/neo-project/neo-vm).
+
+If you are new, start here: **[docs/getting-started.md](docs/getting-started.md)**.
+
+Official N3 developer hub: [developers.neo.org](https://developers.neo.org/). (The older [docs.neo.org](https://docs.neo.org/) tutorials still exist; prefer developers.neo.org for current N3 APIs.)
+
+## Documentation
+
+Beginner-friendly guides in this repository (covers **neo**, **neo-node**, and **neo-vm**):
+
+| Guide | Description |
+| --- | --- |
+| [Documentation hub](docs/README.md) | Index of all local docs |
+| [Getting started](docs/getting-started.md) | What this repo is, what to clone, common mix-ups |
+| [Architecture](docs/architecture.md) | How neo + neo-node + neo-vm fit together |
+| [Neo core](docs/neo-core.md) | This library (`neo-project/neo`) |
+| [Neo node](docs/neo-node.md) | Neo-CLI and plugins (`neo-project/neo-node`) |
+| [NeoVM](docs/neo-vm.md) | Virtual machine (`neo-project/neo-vm`) |
+| [How to: build and test](docs/how-to/build-and-test.md) | `dotnet test` / publish all three repos |
+| [How to: run a node](docs/how-to/run-a-node.md) | Start Neo-CLI, RPC ports, plugins |
+| [How to: smart contracts](docs/how-to/smart-contracts.md) | NEF, deploy, invoke |
+| [How to: contribute](docs/how-to/contribute.md) | Branches, which repo to PR |
+| [Glossary](docs/glossary.md) | GAS, dBFT, NEF, hardfork, … |
+| [Persistence architecture](docs/persistence-architecture.md) | Stores and `DataCache` |
+| [Serialization format](docs/serialization-format.md) | Binary layout |
+| [Official docs notes](docs/reference/official-docs.md) | What we verified vs stale links |
 
 
 ## Project structure
@@ -131,9 +174,9 @@ An overview of the project folders can be seen below.
 ## Related projects
 Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler.
 
-* [neo:](https://github.com/neo-project/neo/) The core libraries for NEO.
-* [neo-node:](https://github.com/neo-project/neo-node/) The `node-cli` implementation to start a NEO node, and Plugins(including DBFT, RpcServer, Oracle, ApplicationLogs, etc.).
-* [neo-vm:](https://github.com/neo-project/neo-vm/) The Neo Virtual Machine implementation.
+* [neo:](https://github.com/neo-project/neo/) The core libraries for NEO. Guide: [docs/neo-core.md](docs/neo-core.md).
+* [neo-node:](https://github.com/neo-project/neo-node/) Neo-CLI and plugins (DBFT, RpcServer, Oracle, ApplicationLogs, storage engines, etc.). Guide: [docs/neo-node.md](docs/neo-node.md). How to run: [docs/how-to/run-a-node.md](docs/how-to/run-a-node.md).
+* [neo-vm:](https://github.com/neo-project/neo-vm/) The Neo Virtual Machine. Guide: [docs/neo-vm.md](docs/neo-vm.md).
 * [neo-express:](https://github.com/neo-project/neo-express/) A private net optimized for development scenarios.
 * [neo-devpack-dotnet:](https://github.com/neo-project/neo-devpack-dotnet/) These are the official tools used to convert a C# smart-contract into a *neo executable file*.
 * [neo-proposals:](https://github.com/neo-project/proposals) NEO Enhancement Proposals (NEPs) describe standards for the NEO platform, including core protocol specifications, client APIs, and contract standards.
