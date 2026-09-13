@@ -30,13 +30,13 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void AvailableTasks_And_ReceivedBlock_AreIndependentCollections()
+        public void AvailableTasks_And_ReceivedBlockHashes_AreIndependentCollections()
         {
             var session = FullNodeSession();
             var hash = UInt256.Zero;
             session.AvailableTasks.Add(hash);
             Assert.IsTrue(session.AvailableTasks.Contains(hash));
-            Assert.IsEmpty(session.ReceivedBlock);
+            Assert.IsEmpty(session.ReceivedBlockHashes);
             Assert.IsEmpty(session.InvTasks);
         }
 

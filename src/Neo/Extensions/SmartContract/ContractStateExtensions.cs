@@ -30,11 +30,9 @@ namespace Neo.Extensions
         public static StorageItem? GetStorage(this ContractState contractState, IReadOnlyStore snapshot, byte[] storageKey)
         {
             ArgumentNullException.ThrowIfNull(contractState);
-
             ArgumentNullException.ThrowIfNull(snapshot);
 
-            if (storageKey is null)
-                storageKey = [];
+            storageKey ??= [];
 
             if (snapshot.TryGet(StorageKey.CreateSearchPrefix(contractState.Id, storageKey), out var value))
             {
@@ -51,18 +49,17 @@ namespace Neo.Extensions
         /// <param name="snapshot">Snapshot of the database.</param>
         /// <param name="prefix">Prefix of the key.</param>
         /// <param name="seekDirection"></param>
+        /// <param name="skip">Number of entries to skip.</param>
         /// <returns>All storage of the given contract.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="contractState"/> or <paramref name="snapshot"/> is null</exception>
-        public static IEnumerable<(StorageKey Key, StorageItem Value)> FindStorage(this ContractState contractState, IReadOnlyStore snapshot, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward)
+        public static IEnumerable<(StorageKey Key, StorageItem Value)> FindStorage(this ContractState contractState, IReadOnlyStore snapshot, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward, int skip = 0)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(skip);
             ArgumentNullException.ThrowIfNull(contractState);
-
             ArgumentNullException.ThrowIfNull(snapshot);
+            prefix ??= [];
 
-            if (prefix is null)
-                prefix = [];
-
-            return snapshot.Find(StorageKey.CreateSearchPrefix(contractState.Id, prefix), seekDirection);
+            return snapshot.Find(StorageKey.CreateSearchPrefix(contractState.Id, prefix), seekDirection, skip);
         }
 
         /// <summary>
@@ -73,16 +70,16 @@ namespace Neo.Extensions
         /// <param name="prefix">Prefix of the key.</param>
         /// <param name="contractId">Id of the contract.</param>
         /// <param name="seekDirection"></param>
+        /// <param name="skip">Number of entries to skip.</param>
         /// <returns>All storage of the given contract.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="snapshot"/> is null</exception>
-        public static IEnumerable<(StorageKey Key, StorageItem Value)> FindContractStorage(this ContractManagement contractManagement, IReadOnlyStore snapshot, int contractId, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward)
+        public static IEnumerable<(StorageKey Key, StorageItem Value)> FindContractStorage(this ContractManagement contractManagement, IReadOnlyStore snapshot, int contractId, byte[]? prefix = null, SeekDirection seekDirection = SeekDirection.Forward, int skip = 0)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(skip);
             ArgumentNullException.ThrowIfNull(snapshot);
+            prefix ??= [];
 
-            if (prefix is null)
-                prefix = [];
-
-            return snapshot.Find(StorageKey.CreateSearchPrefix(contractId, prefix), seekDirection);
+            return snapshot.Find(StorageKey.CreateSearchPrefix(contractId, prefix), seekDirection, skip);
         }
     }
 }
