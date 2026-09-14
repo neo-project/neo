@@ -102,6 +102,52 @@ namespace Neo.UnitTests.SmartContract
             ExecuteAndAssertFault<InvalidOperationException>(script, settings, index: 30u);
         }
 
+        [TestMethod]
+        public void LimitsFor_DoesNotEnableIEquatableContent()
+        {
+            const uint GorgonEnable = 20u;
+            var settings = ProtocolSettings.Default with
+            {
+                Hardforks = ProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Gorgon, GorgonEnable)
+            };
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 30u,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            var limits = ApplicationEngine.LimitsFor(settings, snapshotCache, block);
+            Assert.IsTrue(limits.Has(VmFeatures.BoundedShift));
+            Assert.IsTrue(limits.Has(VmFeatures.StrictContainerAccess));
+            Assert.IsFalse(limits.Has(VmFeatures.IEquatableContent));
+        }
+
+        [TestMethod]
+        public void Equal_PackedArrays_StayReferenceEquality()
+        {
+            using var sb = new ScriptBuilder();
+            sb.EmitPush(1);
+            sb.EmitPush(1);
+            sb.Emit(OpCode.PACK);
+            sb.EmitPush(1);
+            sb.EmitPush(1);
+            sb.Emit(OpCode.PACK);
+            sb.Emit(OpCode.EQUAL);
+
+            var engine = Execute(sb.ToArray(), ProtocolSettings.Default, index: 0u);
+            Assert.AreEqual(VMState.HALT, engine.State);
+            Assert.IsFalse(engine.ResultStack.Pop().GetBoolean());
+        }
+
         private static byte[] BuildHasKeyLargeIndexScript()
         {
             // HASKEY pops: key (PrimitiveType), then x (Array/Map/Buffer/ByteString)
