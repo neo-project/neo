@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native
             foreach (var notary in notaries) await GAS.Mint(engine, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, false);
         }
 
-        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, ProtocolSettings settings, IReadOnlyStore? snapshot, uint blockHeight, ContractManifest manifest)
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, ProtocolSettings settings, IReadOnlyStore snapshot, uint blockHeight, ContractManifest manifest)
         {
             if (hfChecker(settings, snapshot, Hardfork.HF_Faun, blockHeight))
             {

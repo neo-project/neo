@@ -167,8 +167,10 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.Add(
                 StorageKey.Create(NativeContract.Policy.Id, 24 /* Prefix_Hardfork */, System.Text.Encoding.UTF8.GetBytes("Iara")),
                 new StorageItem(77u));
-            Assert.IsTrue(NativeContract.Policy.IsInitializeBlock(settings, snapshot, 77, out var iaraHfs));
-            Assert.IsTrue(iaraHfs!.Contains(Hardfork.HF_Iara));
+            Assert.IsFalse(NativeContract.Policy.IsInitializeBlock(settings, snapshot, 77, out var iaraHfs));
+            Assert.IsFalse(iaraHfs!.Contains(Hardfork.HF_Iara));
+            Assert.IsTrue(PolicyContract.TryGetActivationHeight(settings, snapshot, Hardfork.HF_Iara, 77, out var height));
+            Assert.AreEqual(77u, height);
         }
 
         [TestMethod]

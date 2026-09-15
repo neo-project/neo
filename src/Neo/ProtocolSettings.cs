@@ -29,7 +29,7 @@ namespace Neo
 
         /// <summary>
         /// The last hardfork that is activated exclusively via <see cref="Hardforks"/> configuration.
-        /// Later hardforks are activated on-chain via Policy.activateHardfork (neo#4580).
+        /// Later hardforks are activated on-chain via Policy's `activateHardfork` call.
         /// </summary>
         public const Hardfork LastConfigManagedHardfork = Hardfork.HF_Huyao;
 
@@ -105,7 +105,7 @@ namespace Neo
         /// <summary>
         /// Sets the block height from which a hardfork is activated.
         /// Entries after <see cref="LastConfigManagedHardfork"/> are not used at runtime;
-        /// those hardforks are activated on-chain via Policy.activateHardfork (neo#4580).
+        /// those hardforks are activated on-chain via call to Policy's `activateHardfork`.
         /// </summary>
         public required ImmutableDictionary<Hardfork, uint> Hardforks { get; init; }
 
@@ -267,10 +267,8 @@ namespace Neo
         private static void CheckingHardfork(ProtocolSettings settings)
         {
             foreach (var hf in settings.Hardforks.Keys)
-            {
                 if (hf > LastConfigManagedHardfork)
                     throw new ArgumentException($"Hardfork {hf} cannot be configured in ProtocolSettings; activate it via Policy.activateHardfork.");
-            }
 
             var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
             // Check for continuity in configured hardforks
@@ -296,7 +294,6 @@ namespace Neo
                     throw new ArgumentException($"Invalid hardfork configuration: {sortedHardforks[i]} is configured to activate at block {settings.Hardforks[sortedHardforks[i]]}, which is greater than {sortedHardforks[i + 1]} at block {settings.Hardforks[sortedHardforks[i + 1]]}. Earlier hardforks must activate at lower block numbers than later hardforks.");
                 }
             }
-
         }
 
         /// <summary>

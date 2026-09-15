@@ -108,7 +108,7 @@ namespace Neo.SmartContract.Native
                 await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
         }
 
-        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, ProtocolSettings settings, IReadOnlyStore? snapshot, uint blockHeight, ContractManifest manifest)
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, ProtocolSettings settings, IReadOnlyStore snapshot, uint blockHeight, ContractManifest manifest)
         {
             if (hfChecker(settings, snapshot, Hardfork.HF_Echidna, blockHeight))
             {

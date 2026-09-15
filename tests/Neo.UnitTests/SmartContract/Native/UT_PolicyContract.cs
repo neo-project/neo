@@ -890,8 +890,6 @@ namespace Neo.UnitTests.SmartContract.Native
             return engine;
         }
 
-        private const uint PrivateNetworkMagic = 0x4E455654u; // "NETV"
-
         private static ImmutableDictionary<Hardfork, uint> ConfigThroughHuyao(uint height = 0) =>
             new Dictionary<Hardfork, uint>
             {
@@ -1058,8 +1056,8 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_HuyaoInitialize_StoresConfigManagedHardforks()
         {
             var snapshot = _snapshotCache.CloneCache();
-            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Huyao, out var huyaoHeight));
-            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Aspidochelone, out _));
+            Assert.IsTrue(NativeContract.Policy.TryGetActivationHeightFromStorage(snapshot, Hardfork.HF_Huyao, out var huyaoHeight));
+            Assert.IsTrue(NativeContract.Policy.TryGetActivationHeightFromStorage(snapshot, Hardfork.HF_Aspidochelone, out _));
             Assert.IsTrue(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Huyao, huyaoHeight));
 
             var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Aspidochelone"));
@@ -1070,7 +1068,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_AfterHuyao_ConfigManagedHeightsComeFromPolicy()
         {
             var snapshot = _snapshotCache.CloneCache();
-            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Faun, out var policyHeight));
+            Assert.IsTrue(NativeContract.Policy.TryGetActivationHeightFromStorage(snapshot, Hardfork.HF_Faun, out var policyHeight));
 
             var settings = TestProtocolSettings.Default with
             {
@@ -1114,7 +1112,6 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshotCache.CloneCache();
             var settings = TestProtocolSettings.Default with
             {
-                Network = PrivateNetworkMagic,
                 Hardforks = ConfigThroughHuyao()
             };
             const uint blockIndex = 200;
@@ -1132,7 +1129,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
-            Assert.IsTrue(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Iara, out var height));
+            Assert.IsTrue(NativeContract.Policy.TryGetActivationHeightFromStorage(snapshot, Hardfork.HF_Iara, out var height));
             Assert.AreEqual(blockIndex + 1, height);
             Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex + 1));
             Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex));
@@ -1153,9 +1150,9 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_TryGetActivationHeight_ConfigManagedMissing()
         {
+            var snapshot = _snapshotCache.CloneCache();
             var settings = TestProtocolSettings.Default with
             {
-                Network = PrivateNetworkMagic,
                 Hardforks = new Dictionary<Hardfork, uint>
                 {
                     { Hardfork.HF_Aspidochelone, 0 },
@@ -1168,10 +1165,10 @@ namespace Neo.UnitTests.SmartContract.Native
                 }.ToImmutableDictionary()
             };
 
-            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Huyao, 0, out _));
-            Assert.IsTrue(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Faun, 0, out var height));
+            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, snapshot, Hardfork.HF_Huyao, 0, out _));
+            Assert.IsTrue(PolicyContract.TryGetActivationHeight(settings, snapshot, Hardfork.HF_Faun, 0, out var height));
             Assert.AreEqual(0u, height);
-            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, null, Hardfork.HF_Iara, 0, out _));
+            Assert.IsFalse(PolicyContract.TryGetActivationHeight(settings, snapshot, Hardfork.HF_Iara, 0, out _));
         }
 
         [TestMethod]
@@ -1204,7 +1201,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_TryGetHardforkHeight_Missing()
         {
             var snapshot = _snapshotCache.CloneCache();
-            Assert.IsFalse(NativeContract.Policy.TryGetHardforkHeight(snapshot, Hardfork.HF_Iara, out var height));
+            Assert.IsFalse(NativeContract.Policy.TryGetActivationHeightFromStorage(snapshot, Hardfork.HF_Iara, out var height));
             Assert.AreEqual(0u, height);
         }
 

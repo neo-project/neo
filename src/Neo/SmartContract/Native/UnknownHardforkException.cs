@@ -14,9 +14,10 @@ using System;
 namespace Neo.SmartContract.Native
 {
     /// <summary>
-    /// Thrown when a committee-signed transaction tries to activate an unknown hardfork.
-    /// Block persistence must rethrow this so outdated nodes stop following the chain
-    /// instead of only FAULTing the transaction (neo#4580).
+    /// Thrown when a committee-signed transaction tries to activate an unknown hardfork
+    /// via call to native Policy's `activateHardfork`. Block persistence must rethrow
+    /// this so outdated nodes stop following the chain instead of only FAULTing the
+    ///  transaction.
     /// </summary>
     public class UnknownHardforkException : InvalidOperationException
     {
@@ -30,7 +31,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="hardforkName">The unrecognized hardfork name.</param>
         public UnknownHardforkException(string hardforkName)
-            : base($"Unknown hardfork: {hardforkName}. Update node software to continue.")
+            : base($"Unknown hardfork: {hardforkName}. Update node software to the latest version to continue.")
         {
             HardforkName = hardforkName;
         }

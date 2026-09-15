@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native
 
         public override ImmutableHashSet<Hardfork?> Activations => [null, Hardfork.HF_Faun]; // Active from begining, but supported standards update at Faun.
 
-        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, ProtocolSettings settings, IReadOnlyStore? snapshot, uint blockHeight, ContractManifest manifest)
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, ProtocolSettings settings, IReadOnlyStore snapshot, uint blockHeight, ContractManifest manifest)
         {
             if (hfChecker(settings, snapshot, Hardfork.HF_Faun, blockHeight))
             {
