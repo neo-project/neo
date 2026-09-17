@@ -49,7 +49,7 @@ namespace Neo.SmartContract
         private static readonly long[] ReverseItemsBufW = { 9, 1690 };
         private static readonly long[] ReverseW = { 19, 1702 };
         private static readonly long[] RollW = { 5, 1910 };
-        private static readonly long[] SetitemW = { 96, 149, 2390 };
+        private static readonly long[] SetItemW = { 96, 149, 2390 };
         private static readonly long[] SizeW = { 100, 2693 };
         private static readonly long[] StW = { 98, 1599 };
         private static readonly long[] SubstrW = { 7, 2908 };
@@ -190,7 +190,7 @@ namespace Neo.SmartContract
         private static long ReverseItemsGas(RunStats args) => args.Type == StackItemType.Buffer ? ReverseItemsBufW[0] * args.Length + ReverseItemsBufW[1] : ReverseItemsArrW[0] * args.RefsDelta + ReverseItemsArrW[1] * args.Length + ReverseItemsArrW[2];
         private static long ReverseGas(RunStats args) => ReverseW[0] * args.Length + ReverseW[1];
         private static long RollGas(RunStats args) => RollW[0] * args.Length + RollW[1];
-        private static long SetItemGas(RunStats args) => SetitemW[0] * args.RefsDelta + SetitemW[1] * args.NClonedItems + SetitemW[2];
+        private static long SetItemGas(RunStats args) => SetItemW[0] * args.RefsDelta + SetItemW[1] * args.NClonedItems + SetItemW[2];
         private static long SizeGas(RunStats args) => SizeW[0] * args.RefsDelta + SizeW[1];
         private static long StGas(RunStats args) => StW[0] * args.RefsDelta + StW[1];
         private static long SubstrGas(RunStats args) => SubstrW[0] * args.Length + SubstrW[1];
