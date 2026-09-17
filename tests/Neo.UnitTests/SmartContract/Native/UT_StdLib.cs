@@ -17,7 +17,9 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using Array = System.Array;
 
@@ -348,15 +350,19 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.HasCount(10, engine.ResultStack);
 
+                // Results are LIFO (last EmitDynamicCall is popped first after null/123/1e3).
+                // Under HF_Huyao (Default), exact integer JSON parsing is enabled.
                 engine.ResultStack.Pop<Null>();
                 Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
                 Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 1000);
-                Assert.AreEqual("9007199254740992", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                // "9007199254740993" — pure int beyond 2^53 keeps full precision (was …992 via double).
+                Assert.AreEqual("9007199254740993", engine.ResultStack.Pop().GetInteger().ToString("R"));
                 Assert.AreEqual("43893649166666670000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
                 Assert.AreEqual("2221811666666666600000", engine.ResultStack.Pop().GetInteger().ToString("R"));
                 Assert.AreEqual("11039175000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
                 Assert.AreEqual("90719925474099300000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
-                Assert.AreEqual("90071992547409940000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                // "9.007199254740993e+34" — exact scientific integer (was …994… via double rounding).
+                Assert.AreEqual("90071992547409930000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
                 Assert.AreEqual("90071992547409930000000000000000000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
             }
 
@@ -398,6 +404,33 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
                 Assert.IsEmpty(engine.ResultStack);
             }
+        }
+
+        [TestMethod]
+        public void Json_Deserialize_PreHuyao_UsesDoublePrecision()
+        {
+            // Pre-HF_Huyao: large integers / borderline scientific tokens go through double
+            // and may lose precision (historical #4719 compatibility behavior).
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var preHuyao = TestProtocolSettings.Default with
+            {
+                Hardforks = Enum.GetValues<Hardfork>()
+                    .Where(hf => hf < Hardfork.HF_Huyao)
+                    .ToDictionary(hf => hf, _ => 0u)
+                    .ToImmutableDictionary()
+            };
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "9.007199254740993e+34");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "9007199254740993");
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: preHuyao);
+            Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual("9007199254740992", engine.ResultStack.Pop().GetInteger().ToString("R"));
+            Assert.AreEqual("90071992547409940000000000000000000", engine.ResultStack.Pop().GetInteger().ToString("R"));
         }
 
         [TestMethod]
