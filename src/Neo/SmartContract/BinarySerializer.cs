@@ -100,7 +100,9 @@ namespace Neo.SmartContract
                         break;
                     case StackItemType.Buffer:
                         var memory = reader.ReadVarMemory((int)maxSize);
-                        deserialized.Push(new Buffer(memory.Span));
+                        var buffer = new Buffer(memory.Span);
+                        buffer.KeepAlive();
+                        deserialized.Push(buffer);
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:

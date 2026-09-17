@@ -15,6 +15,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -36,6 +37,22 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(executed.GasConsumed >= 0);
             Assert.HasCount(1, executed.Stack);
             Assert.IsEmpty(executed.Notifications);
+        }
+
+        [TestMethod]
+        public void FromEngine_NewBuffer_PinsPooledMemory()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var sb = new ScriptBuilder();
+            sb.EmitPush(1);
+            sb.Emit(OpCode.NEWBUFFER);
+            using var engine = ApplicationEngine.Run(sb.ToArray(), snapshot);
+            Assert.AreEqual(VMState.HALT, engine.State);
+
+            var executed = new Blockchain.ApplicationExecuted(engine);
+            Assert.HasCount(1, executed.Stack);
+            Assert.IsInstanceOfType<Buffer>(executed.Stack[0]);
+            Assert.AreEqual(1, executed.Stack[0].GetSpan().Length);
         }
 
         [TestMethod]
