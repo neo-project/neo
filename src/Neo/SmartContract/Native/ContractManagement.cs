@@ -72,9 +72,9 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock!.Index, out var hfs))
+                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.SnapshotCache, engine.PersistingBlock!.Index, out var hfs))
                 {
-                    ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
+                    ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.SnapshotCache, engine.PersistingBlock.Index);
                     StorageItem? state = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, contract.Hash));
 
                     if (state is null)
