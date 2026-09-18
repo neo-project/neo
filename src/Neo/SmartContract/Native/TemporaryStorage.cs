@@ -372,9 +372,9 @@ namespace Neo.SmartContract.Native
                 Id = Id,
                 Key = key
             };
-            var permanentPrice = engine.CalculateChargableSize(skey, value, (StorageItem item) => { return IsTraceable(engine, item, out var _); }, out item);
+            var permanentPrice = (ulong)engine.CalculateChargableSize(skey, value, (StorageItem item) => { return IsTraceable(engine, item, out var _); }, out item) * engine.StoragePrice;
 
-            return (long)((ulong)(permanentPrice * engine.StoragePrice) * Math.Min((ulong)lifetime, MsPerYear) / MsPerYear);
+            return (long)(permanentPrice * Math.Max(0.1, Math.Min((ulong)lifetime, MsPerYear) / MsPerYear)); // in bounds of [0.1; 1]*permanentPrice.
         }
 
         /// <summary>
