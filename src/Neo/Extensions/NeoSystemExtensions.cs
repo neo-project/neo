@@ -61,23 +61,25 @@ namespace Neo
         }
 
         /// <summary>
-        /// Gets the upper increment size of blockchain height (in blocks) exceeding
-        /// that a transaction should fail validation.
+        /// Gets the maximum transaction validity window, measured in blocks.
+        /// A transaction fails validation if its ValidUntilBlock exceeds the current
+        /// block height plus this value.
         /// </summary>
         /// <param name="system">The NeoSystem instance.</param>
-        /// <returns>MaxValidUntilBlockIncrement value.</returns>
+        /// <returns>The current transaction validity window.</returns>
         public static uint GetMaxValidUntilBlockIncrement(this NeoSystem system)
         {
             return system.StoreView.GetMaxValidUntilBlockIncrement(system.Settings);
         }
 
         /// <summary>
-        /// Gets the upper increment size of blockchain height (in blocks) exceeding
-        /// that a transaction should fail validation.
+        /// Gets the maximum transaction validity window, measured in blocks.
+        /// A transaction fails validation if its ValidUntilBlock exceeds the current
+        /// block height plus this value.
         /// </summary>
         /// <param name="snapshot">The snapshot of the store.</param>
         /// <param name="settings">The protocol settings.</param>
-        /// <returns>MaxValidUntilBlockIncrement value.</returns>
+        /// <returns>The current transaction validity window.</returns>
         public static uint GetMaxValidUntilBlockIncrement(this IReadOnlyStore snapshot, ProtocolSettings settings)
         {
             try
