@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native
         /// <param name="engine">The execution engine.</param>
         /// <param name="key">The data key.</param>
         /// <param name="value">The data value.</param>
-        /// <param name="validTill">The timestamp (in milliseconds) after which the key-value pair will be removed from the temporary storage.</param>
+        /// <param name="validTill">The absolute timestamp (in milliseconds) reaching which the key-value pair will be removed from the temporary storage.</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void Put(ApplicationEngine engine, [MaxLength(ApplicationEngine.MaxStorageKeySize)] byte[] key, [MaxLength(ApplicationEngine.MaxStorageValueSize)] byte[] value, ulong validTill)
         {
@@ -94,7 +94,7 @@ namespace Neo.SmartContract.Native
 
             ContractState callingContract = GetContractState(engine.SnapshotCache, engine.CallingScriptHash!);
             StorageKey recordKey = MakeRecordStorageKey(callingContract.Id, key);
-            long lifetime = (long)(validTill - currTimestamp);
+            long lifetime = Math.Max(1, (long)(validTill - currTimestamp));
             engine.AddFee(CalculateStoragePrice(engine, recordKey.Key, value, lifetime, out var old), true);
             if (old is not null)
             {
@@ -389,10 +389,6 @@ namespace Neo.SmartContract.Native
             ulong maxValidTill = checked(timestamp + Policy.GetTemporaryStorageMaxTTL(engine.SnapshotCache));
             if (validTill > maxValidTill)
                 throw new ArgumentOutOfRangeException(nameof(validTill), $"validTill exceeds max limit: {validTill} vs {maxValidTill}");
-
-            ulong minValidTill = checked(timestamp + 2 * Policy.GetMillisecondsPerBlock(engine.SnapshotCache));
-            if (validTill < minValidTill)
-                throw new ArgumentOutOfRangeException(nameof(validTill), $"item is valid for less than 2*msPerBlock: {validTill} vs {minValidTill}");
         }
     }
 }

@@ -888,15 +888,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(7 * 24 * 60 * 60 * 1000, ret.GetInteger());
 
-            // Too low value.
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
-            {
-                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setTemporaryStorageMaxTTL", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
-            });
-
             // Too hight value.
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,

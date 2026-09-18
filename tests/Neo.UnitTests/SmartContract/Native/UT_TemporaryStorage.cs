@@ -73,15 +73,6 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] unknownKey = [0xCC];
             byte[] staleKey = [0xDD];
 
-            // put: validTill is too low.
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
-            {
-                CallFromContract(snapshot, persistingBlock, caller, "put",
-                    new ContractParameter(ContractParameterType.ByteArray) { Value = key1 },
-                    new ContractParameter(ContractParameterType.ByteArray) { Value = value1 },
-                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)2 * timePerBlock - 1 });
-            });
-
             // put: validTill exceeds MaxTTL
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             {

@@ -724,9 +724,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetTemporaryStorageMaxTTL(ApplicationEngine engine, ulong value)
         {
-            var lowerBound = 2 * GetMillisecondsPerBlock(engine.SnapshotCache);
-            if (value < lowerBound || value > MaxTemporaryStorageMaxTTL)
-                throw new ArgumentOutOfRangeException(nameof(value), $"TemporaryStorageMaxTTL must be between [{lowerBound}, {MaxTemporaryStorageMaxTTL}], got {value}");
+            if (value > MaxTemporaryStorageMaxTTL)
+                throw new ArgumentOutOfRangeException(nameof(value), $"TemporaryStorageMaxTTL must be between [0, {MaxTemporaryStorageMaxTTL}], got {value}");
 
             AssertCommittee(engine);
 
