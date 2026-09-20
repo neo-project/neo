@@ -130,7 +130,12 @@ namespace Neo
             var divisor = BigInteger.Pow(10, _decimals);
             var result = BigInteger.DivRem(_value, divisor, out var remainder);
             if (remainder == 0) return result.ToString();
-            return $"{result}.{remainder.ToString("d" + _decimals)}".TrimEnd('0');
+            // DivRem remainder has the sign of the dividend, so format the
+            // fractional part from |remainder| and restore the sign for (-1, 0).
+            var fraction = BigInteger.Abs(remainder).ToString("d" + _decimals);
+            if (result.IsZero && _value.Sign < 0)
+                return $"-0.{fraction}".TrimEnd('0');
+            return $"{result}.{fraction}".TrimEnd('0');
         }
 
         /// <summary>

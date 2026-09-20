@@ -1,5 +1,9 @@
 # Neo Persistence System - Class Relationships
 
+**Audience:** people changing stores, snapshots, or `DataCache`. If you are new to Neo, start with [Getting started](getting-started.md) and [Architecture](architecture.md). Persistence *engines* (LevelDB, RocksDB) are plugins in [neo-node](neo-node.md); this file describes the **interfaces in this library**.
+
+**Docs index:** [README](README.md)
+
 ## Interface Hierarchy
 
 ```
