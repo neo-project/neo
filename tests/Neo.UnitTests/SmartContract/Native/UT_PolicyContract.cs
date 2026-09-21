@@ -1096,6 +1096,27 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_ActivateHardfork_AlreadyScheduled_Rejected()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const uint blockIndex = 1000;
+            var block = CreateBlock(blockIndex);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var witness = new Nep17NativeContractExtensions.ManualWitness(committee);
+
+            NotifyEventArgs notification = null;
+            NativeContract.Policy.Call(snapshot, witness, block,
+                "activateHardfork",
+                (engine, args) => notification = args,
+                HardforkName("Iara"));
+
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+                NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara")));
+            Assert.Contains("is already scheduled", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [TestMethod]
         public void Check_ActivateHardfork_AlreadyEnabled_Rejected()
         {
             var snapshot = _snapshotCache.CloneCache();
@@ -1107,7 +1128,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
                 NativeContract.Policy.Call(snapshot, witness, CreateBlock(1001), "activateHardfork", HardforkName("Iara")));
-            Assert.Contains("already enabled", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("is already scheduled", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         [TestMethod]

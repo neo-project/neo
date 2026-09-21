@@ -761,8 +761,9 @@ namespace Neo.SmartContract.Native
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException("Cannot activate hardfork without a persisting block.");
 
-            if (engine.IsHardforkEnabled(hf))
-                throw new InvalidOperationException($"Hardfork {hardfork} is already enabled.");
+            var key = CreateHardforkKey(hf);
+            if (engine.SnapshotCache.Contains(key))
+                throw new InvalidOperationException($"Hardfork {hardfork} is already scheduled.");
 
             uint activationHeight = checked(engine.PersistingBlock.Index + 1);
             engine.SnapshotCache.Add(CreateHardforkKey(hf), new StorageItem(activationHeight));
