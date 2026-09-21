@@ -246,7 +246,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("Insufficient GAS.", exception.Message);
 
             var feeConsumedField = typeof(ApplicationEngine).GetField("_feeConsumed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-            Assert.AreEqual(excessFee, (BigInteger)feeConsumedField.GetValue(engine)!);
+            Assert.AreEqual(excessFee * ApplicationEngine.OpcodePriceMultiplier, (BigInteger)feeConsumedField.GetValue(engine)!);
             Assert.AreEqual(gas + 1, engine.FeeConsumed);
         }
     }
