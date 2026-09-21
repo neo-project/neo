@@ -424,10 +424,16 @@ namespace Neo.Network.P2P
             else if (currentHeight < session.LastBlockIndex)
             {
                 uint startHeight = currentHeight + 1;
-                while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlockHashes.ContainsKey(startHeight)) { startHeight++; }
-                // Avoid uint overflow: compare via subtraction (startHeight >= currentHeight here) instead of
-                // currentHeight + MaxHashesCount, which can wrap when currentHeight is near uint.MaxValue.
-                if (startHeight > session.LastBlockIndex || startHeight - currentHeight >= InvPayload.MaxHashesCount) return;
+                // Bound the scan by uint.MaxValue so it cannot wrap to 0 if every height up to
+                // uint.MaxValue is already tracked (mirrors the endHeight scan guard below).
+                while (startHeight < uint.MaxValue && (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlockHashes.ContainsKey(startHeight))) { startHeight++; }
+                // Avoid uint overflow: compare via subtraction (startHeight >= currentHeight here) instead of currentHeight + MaxHashesCount
+                // which can wrap when currentHeight is near uint.MaxValue.
+                // The loop above may leave startHeight == uint.MaxValue still tracked (it stopped there instead of wrapping) so re-check it explicitly rather than assuming it is free.
+                if (startHeight > session.LastBlockIndex ||
+                    startHeight - currentHeight >= InvPayload.MaxHashesCount ||
+                    globalIndexTasks.ContainsKey(startHeight) ||
+                    session.ReceivedBlockHashes.ContainsKey(startHeight)) return;
 
                 uint endHeight = startHeight;
                 while (endHeight < uint.MaxValue)

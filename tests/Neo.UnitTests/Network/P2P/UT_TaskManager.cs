@@ -1031,6 +1031,35 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
+        public void RequestTasks_DoesNotWrapStartHeightWhenTopHeightAlreadyAssigned()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = uint.MaxValue - 1;
+
+            var lastSeenPersistedIndexField = typeof(TaskManager).GetField("lastSeenPersistedIndex", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            lastSeenPersistedIndexField.SetValue(taskManager.UnderlyingActor, currentHeight);
+
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3; // skip GetHeaders
+
+            // The only height RequestTasks could offer (uint.MaxValue) is already assigned to
+            // another session. The startHeight-skipping loop used to increment past it with no
+            // upper bound wrapping uint.MaxValue + 1 back to 0 and requesting from height 0.
+            GetGlobalIndexTasks(taskManager)[uint.MaxValue] = 1;
+
+            var peer = RegisterPeer(taskManager, uint.MaxValue);
+
+            peer.ExpectNoMsg(TimeSpan.FromSeconds(1), CancellationToken.None);
+
+            var session = GetSessions(taskManager)[peer.Ref];
+            Assert.IsFalse(session.IndexTasks.ContainsKey(0), "The startHeight scan must not wrap and assign the already-processed height 0.");
+            Assert.AreEqual(1, GetGlobalIndexTasks(taskManager)[uint.MaxValue], "The pre-existing assignment at uint.MaxValue must be left untouched.");
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
         public void OnTaskCompleted_UnsolicitedBlockFromUnregisteredPeer_StillClearsGlobalTasks()
         {
             using var neoSystem = TestBlockchain.GetSystem();
