@@ -72,6 +72,8 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] value3 = [0x03];
             byte[] unknownKey = [0xCC];
             byte[] staleKey = [0xDD];
+            byte[] largeKey = new byte[ApplicationEngine.MaxStorageKeySize];
+            byte[] invalidLargeKey = new byte[ApplicationEngine.MaxStorageKeySize + 1];
 
             // put: validTill exceeds MaxTTL
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
@@ -80,6 +82,15 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.ByteArray) { Value = key1 },
                     new ContractParameter(ContractParameterType.ByteArray) { Value = value1 },
                     new ContractParameter(ContractParameterType.Integer) { Value = now + maxTTL + 1 });
+            });
+
+            // put: key size exceeds MaxStorageKeySize.
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                CallFromContract(snapshot, persistingBlock, caller, "put",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = invalidLargeKey },
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = value1 },
+                    new ContractParameter(ContractParameterType.Integer) { Value = now + maxTTL });
             });
 
             // put: good.
@@ -99,6 +110,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.ByteArray) { Value = staleKey },
                 new ContractParameter(ContractParameterType.ByteArray) { Value = value1 },
                 new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)validTillStale }));
+
+            // put: key has maximum allowed size.
+            Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = largeKey },
+                new ContractParameter(ContractParameterType.ByteArray) { Value = value1 },
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)validTill1 }));
 
             // get AA: good.
             var ret = CallFromContract(snapshot, persistingBlock, caller, "get",

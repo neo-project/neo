@@ -318,7 +318,7 @@ namespace Neo.SmartContract.Native
         /// <returns>Corresponding storage key.</returns>
         private StorageKey MakeRecordStorageKey(int contractId, ReadOnlySpan<byte> key)
         {
-            return new KeyBuilder(Id, Prefix_Record).AddLittleEndian(contractId).Add(key);
+            return new KeyBuilder(Id, Prefix_Record, 4 /* contractId*/ + ApplicationEngine.MaxStorageKeySize /* key */).AddLittleEndian(contractId).Add(key);
         }
 
         /// <summary>
@@ -329,7 +329,7 @@ namespace Neo.SmartContract.Native
         /// <returns>Corresponding storage key.</returns>
         private StorageKey MakeValidTillStorageKey(ulong validTill, ReadOnlySpan<byte> recordKey)
         {
-            return new KeyBuilder(Id, Prefix_ValidTill).AddBigEndian(validTill).Add(recordKey[1..]);
+            return new KeyBuilder(Id, Prefix_ValidTill, 8 /* validTill */ + 4 /* contractId */+ ApplicationEngine.MaxStorageKeySize /* key */).AddBigEndian(validTill).Add(recordKey[1..]);
         }
 
         /// <summary>
