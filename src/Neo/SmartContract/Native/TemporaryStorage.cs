@@ -17,6 +17,7 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
@@ -42,11 +43,6 @@ namespace Neo.SmartContract.Native
         /// The maximum size of temporary key-value records that can be removed per a single PostPersist.
         /// </summary>
         private const int MaxCleanupBatchSize = 10_000;
-
-        /// <summary>
-        /// The number of milliseconds in one year.
-        /// </summary>
-        private const ulong MsPerYear = 365 * 24 * 60 * 60 * 1_000UL;
 
         private readonly StorageKey _validTill;
 
@@ -94,7 +90,7 @@ namespace Neo.SmartContract.Native
 
             ContractState callingContract = GetContractState(engine.SnapshotCache, engine.CallingScriptHash!);
             StorageKey recordKey = MakeRecordStorageKey(callingContract.Id, key);
-            long lifetime = Math.Max(1, (long)(validTill - currTimestamp));
+            ulong lifetime = (ulong)Math.Max(1, (long)(validTill - currTimestamp));
             engine.AddFee(CalculateStoragePrice(engine, recordKey.Key, value, lifetime, out var old), true);
             if (old is not null)
             {
@@ -268,7 +264,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(validTill), $"new expiration point should be newer than the old one: {validTill} vs {oldValidTill}");
 
             byte[] value = oldRecord.Value[8..].ToArray();
-            long lifetime = checked((long)(validTill - oldValidTill));
+            ulong lifetime = checked(validTill - oldValidTill);
             engine.AddFee(CalculateStoragePrice(engine, recordKey.Key, value, lifetime, out var _), true);
 
             engine.SnapshotCache.Delete(MakeValidTillStorageKey(oldRecord.Value[..8].Span, recordKey.Key.Span));
@@ -365,20 +361,23 @@ namespace Neo.SmartContract.Native
         /// <param name="lifetime">The lifetime of the key-value pair in milliseconds.</param>
         /// <param name="item">The retrieved storage item (if already exists in the storage).</param>
         /// <returns>The storage price (need to apply FeeFactor to the return value).</returns>
-        private long CalculateStoragePrice(ApplicationEngine engine, ReadOnlyMemory<byte> key, byte[] value, long lifetime, out StorageItem? item)
+        private long CalculateStoragePrice(ApplicationEngine engine, ReadOnlyMemory<byte> key, byte[] value, ulong lifetime, out StorageItem? item)
         {
             StorageKey skey = new()
             {
                 Id = Id,
                 Key = key
             };
-            var permanentPrice = (ulong)engine.CalculateChargableSize(skey, value, (StorageItem item, out int chargableValueSize) =>
+            var permanentPrice = new BigInteger(engine.CalculateChargableSize(skey, value, (StorageItem item, out int chargableValueSize) =>
             {
                 chargableValueSize = item.Value.Length - 8; // 8-bytes TTL prefix is not charged.
                 return IsTraceable(engine, item, out var _);
-            }, out item) * engine.StoragePrice;
-
-            return (long)(permanentPrice * Math.Max(0.1, Math.Min((ulong)lifetime, MsPerYear) / MsPerYear)); // in bounds of [0.1; 1]*permanentPrice.
+            }, out item)) * engine.StoragePrice;
+            var min = permanentPrice / 10;
+            var actual = permanentPrice * new BigInteger(Math.Min(lifetime, PolicyContract.MaxTemporaryStorageMaxTTL) / PolicyContract.MaxTemporaryStorageMaxTTL);
+            if (actual < min)
+                actual = min;
+            return (long)min;
         }
 
         /// <summary>

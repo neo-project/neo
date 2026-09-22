@@ -89,9 +89,9 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// The maximum TemporaryStorageMaxTTL value that the committee can set.
-        /// It is set to be 30 days in milliseconds.
+        /// It is set to be 365 days in milliseconds.
         /// </summary>
-        public const ulong MaxTemporaryStorageMaxTTL = 30 * 24 * 60 * 60 * 1000UL;
+        public const ulong MaxTemporaryStorageMaxTTL = 365 * 24 * 60 * 60 * 1_000UL;
 
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_WhitelistedFeeContracts = 16;
