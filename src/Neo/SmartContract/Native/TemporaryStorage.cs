@@ -378,7 +378,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Ensures the provided validTill value fits the limit of [timestamp + 2*MSPerBlock, timestamp + MaxTTL].
+        /// Ensures the provided validTill value fits the limit of [0, timestamp + MaxTTL].
         /// </summary>
         /// <param name="engine">The engine used to read data.</param>
         /// <param name="validTill">The expiration timestamp in milliseconds.</param>

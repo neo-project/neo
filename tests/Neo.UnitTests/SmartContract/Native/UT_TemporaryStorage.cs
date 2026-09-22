@@ -70,8 +70,10 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] value2 = [0x02];
             byte[] key3 = [0xBB, 0x01];
             byte[] value3 = [0x03];
-            byte[] unknownKey = [0xCC];
-            byte[] staleKey = [0xDD];
+            byte[] key4 = [0xCC, 0x01];
+            byte[] value4 = [0x04];
+            byte[] unknownKey = [0xDD];
+            byte[] staleKey = [0xEE];
             byte[] largeKey = new byte[ApplicationEngine.MaxStorageKeySize];
             byte[] invalidLargeKey = new byte[ApplicationEngine.MaxStorageKeySize + 1];
 
@@ -106,6 +108,10 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.ByteArray) { Value = key3 },
                 new ContractParameter(ContractParameterType.ByteArray) { Value = value3 },
                 new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)validTill2 })); // same validTill2.
+            Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put", // valid at the current block only.
+                new ContractParameter(ContractParameterType.ByteArray) { Value = key4 },
+                new ContractParameter(ContractParameterType.ByteArray) { Value = value4 },
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)now }));
             Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
                 new ContractParameter(ContractParameterType.ByteArray) { Value = staleKey },
                 new ContractParameter(ContractParameterType.ByteArray) { Value = value1 },
@@ -129,6 +135,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.ByteArray) { Value = key1 });
             Assert.IsInstanceOfType<ByteString>(ret);
             Assert.AreSequenceEqual(value1, ret.GetSpan().ToArray());
+
+            // get entrie available at the current block only: good.
+            ret = CallFromContract(snapshot, persistingBlock, caller, "get",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = key4 });
+            Assert.IsInstanceOfType<ByteString>(ret);
+            Assert.AreSequenceEqual(value4, ret.GetSpan().ToArray());
 
             // getExpiration: unknown item.
             ret = CallFromContract(snapshot, persistingBlock, caller, "getExpiration",
