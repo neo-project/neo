@@ -293,7 +293,7 @@ namespace Neo.SmartContract
                 Key = key
             };
             int newDataSize = CalculateChargableSize(skey, value, null, out var item);
-            // Add item to the storage since CalculateStoragePrice doesn't mark item as changed/added.
+            // Add item to the storage since CalculateChargableSize doesn't mark item as changed/added.
             if (item is null)
                 SnapshotCache.Add(skey, item = new StorageItem());
             else
