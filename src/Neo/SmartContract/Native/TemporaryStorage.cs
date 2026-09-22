@@ -361,7 +361,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="key">The key used to store data.</param>
-        /// <param name="value">The stored value (without any prefix). </param>
+        /// <param name="value">The stored user-defined value (without any prefix). </param>
         /// <param name="lifetime">The lifetime of the key-value pair in milliseconds.</param>
         /// <param name="item">The retrieved storage item (if already exists in the storage).</param>
         /// <returns>The storage price (need to apply FeeFactor to the return value).</returns>
@@ -372,7 +372,11 @@ namespace Neo.SmartContract.Native
                 Id = Id,
                 Key = key
             };
-            var permanentPrice = (ulong)engine.CalculateChargableSize(skey, value, (StorageItem item) => { return IsTraceable(engine, item, out var _); }, out item) * engine.StoragePrice;
+            var permanentPrice = (ulong)engine.CalculateChargableSize(skey, value, (StorageItem item, out int chargableValueSize) =>
+            {
+                chargableValueSize = item.Value.Length - 8; // 8-bytes TTL prefix is not charged.
+                return IsTraceable(engine, item, out var _);
+            }, out item) * engine.StoragePrice;
 
             return (long)(permanentPrice * Math.Max(0.1, Math.Min((ulong)lifetime, MsPerYear) / MsPerYear)); // in bounds of [0.1; 1]*permanentPrice.
         }

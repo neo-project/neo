@@ -307,8 +307,9 @@ namespace Neo.SmartContract
         /// Defines whether the record should be considered as existing if found in the contract storage.
         /// </summary>
         /// <param name="record">The record.</param>
+        /// <param name="chargableValueSize">The actual size of record's value that should be charged.</param>
         /// <returns>Whether the record should be considered as existing if found in the contract storage.</returns>
-        public delegate bool IsRecordTraceable(StorageItem record);
+        public delegate bool IsRecordTraceable(StorageItem record, out int chargableValueSize);
 
         /// <summary>
         /// Calculates the size of the storage item (in bytes) that should be payed for by the user if stored
@@ -323,7 +324,8 @@ namespace Neo.SmartContract
         {
             int newDataSize;
             item = SnapshotCache.TryGet(skey);
-            if (item is null || (isTraceable is not null && !isTraceable(item)))
+            int chargableValueSize = item is null ? 0 : item.Value.Length;
+            if (item is null || (isTraceable is not null && !isTraceable(item, out chargableValueSize)))
             {
                 newDataSize = skey.Key.Length + value.Length;
             }
@@ -331,12 +333,12 @@ namespace Neo.SmartContract
             {
                 if (value.Length == 0)
                     newDataSize = 0;
-                else if (value.Length <= item.Value.Length)
+                else if (value.Length <= chargableValueSize)
                     newDataSize = (value.Length - 1) / 4 + 1;
-                else if (item.Value.Length == 0)
+                else if (chargableValueSize == 0)
                     newDataSize = value.Length;
                 else
-                    newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
+                    newDataSize = (chargableValueSize - 1) / 4 + 1 + value.Length - chargableValueSize;
             }
             return newDataSize;
         }
