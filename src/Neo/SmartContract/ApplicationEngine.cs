@@ -91,6 +91,11 @@ namespace Neo.SmartContract
         /// Charges VM instruction price after opcode execution. Applied starting from Huyao hardfork.
         /// </summary>
         private readonly Action<Instruction?, RunStats?>? _postExecuteInstruction;
+        /// <summary>
+        /// Denotes whether the currently executed context is whitelisted. Filled in prior to every
+        /// instruction execution.
+        /// </summary>
+        private bool _whitelisted;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -281,14 +286,24 @@ namespace Neo.SmartContract
             }
 
             if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Huyao, persistingIndex))
-                _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
+                _preExecuteInstruction = instruction =>
+                {
+                    _whitelisted = CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed ?? false;
+                    AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
+                };
             else
+            {
+                _preExecuteInstruction = instruction =>
+                {
+                    _whitelisted = CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed ?? false;
+                };
                 _postExecuteInstruction = (instruction, runStats) =>
                 {
                     var stats = runStats ?? new RunStats();
                     long price = instruction is null ? 0 : OpcodeV1((long)_execFeeFactor, instruction.OpCode, stats);
                     AddFemtoGas(price, false);
                 };
+            }
 
             if (persistingBlock is not null)
             {
@@ -595,11 +610,10 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("AddFemtoGas can't be negative.");
             }
 
-            // Check whitelist
-
-            if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
+            // Check whitelist.
+            if (_whitelisted)
             {
-                // The execution is whitelisted
+                // The execution is whitelisted.
                 return;
             }
 

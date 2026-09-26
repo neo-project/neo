@@ -860,6 +860,67 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(123_456, fixedFee);
         }
 
+        [TestMethod]
+        public void TestWhiteListFee_DynamicOpCodePrice()
+        {
+            // Ensure that dynamic fee charging mechanism (applied starting from Huyao) properly calculates the price of
+            // instruction that loads whitelisted context onto stack.
+            var snapshotCache = _snapshotCache.CloneCache();
+
+            // Create and whitelist contract A - the callee contract.
+            var calleeScript = new byte[] { (byte)OpCode.RET };
+            var calleeContract = TestUtils.GetContract(calleeScript, TestUtils.CreateManifest("foo", ContractParameterType.Void));
+            snapshotCache.DeleteContract(calleeContract.Hash);
+            snapshotCache.AddContract(calleeContract.Hash, calleeContract);
+
+            using (var setupEngine = CreateEngineWithCommitteeSigner(snapshotCache))
+            {
+                NativeContract.Policy.SetWhitelistFeeContract(setupEngine, calleeContract.Hash, "foo", 0, 0);
+                setupEngine.SnapshotCache.Commit();
+            }
+
+            // Create contract B - the caller contract that calls whitelisted contract A via CALLT.
+            var callerScript = new byte[] { (byte)OpCode.CALLT, 0x00, 0x00 };
+            var callerNef = new NefFile
+            {
+                Compiler = string.Empty,
+                Source = string.Empty,
+                Tokens =
+                [
+                    new MethodToken
+                    {
+                        Hash = calleeContract.Hash,
+                        Method = "foo",
+                        ParametersCount = 0,
+                        HasReturnValue = false,
+                        CallFlags = CallFlags.All
+                    }
+                ],
+                Script = callerScript
+            };
+            callerNef.CheckSum = NefFile.ComputeChecksum(callerNef);
+
+            var callerContract = new ContractState
+            {
+                Id = 123,
+                Hash = callerScript.ToScriptHash(),
+                Nef = callerNef,
+                Manifest = TestUtils.CreateManifest("main", ContractParameterType.Void)
+            };
+
+            // Execute contract B.
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 0).SetItem(Hardfork.HF_Huyao, 0)
+            });
+            engine.LoadContract(callerContract, callerContract.Manifest.Abi.GetMethod("main", 0)!, CallFlags.All);
+
+            // Check that CALLT price is properly charged.
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(0, engine.ResultStack.Count);
+            Assert.AreEqual(engine.OpcodeV1(NativeContract.Policy.GetExecFeeFactor(engine), OpCode.CALLT, new RunStats()), engine.FeeConsumed * ApplicationEngine.OpcodePriceMultiplier); // in the unit of femtoGas.
+        }
+
         private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[] script = null)
         {
             // Get committe public keys and calculate m
