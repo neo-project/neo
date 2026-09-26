@@ -269,5 +269,21 @@ namespace Neo.UnitTests.Wallets
             Assert.AreEqual(expectedMnemonic, Mnemonic.Parse(expectedMnemonic).ToString());
             Assert.AreSequenceEqual(seed, mnemonic.DeriveSeed(passphrase));
         }
+
+        [TestMethod]
+        public void Parse_RoundTrip_AllCultures()
+        {
+            // Shared words such as English/French "abandon" live at different
+            // indices. Parse must use the selected wordlist, not a merged map.
+            byte[] entropy = Convert.FromHexString("00000000000000000000000000000000");
+            string[] cultures = ["en", "fr", "es", "it", "cs", "pt", "zh", "ja", "ko", "zh-Hant"];
+            foreach (var name in cultures)
+            {
+                var created = Mnemonic.Create(entropy, new CultureInfo(name));
+                var parsed = Mnemonic.Parse(created.ToString());
+                Assert.AreEqual(created.ToString(), parsed.ToString(), name);
+                Assert.AreSequenceEqual(created.DeriveSeed(), parsed.DeriveSeed());
+            }
+        }
     }
 }
