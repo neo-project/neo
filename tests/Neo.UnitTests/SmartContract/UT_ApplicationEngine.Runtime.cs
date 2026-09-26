@@ -17,6 +17,8 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using Array = System.Array;
@@ -129,17 +131,24 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            Assert.AreEqual(BigInteger.Parse("271339657438512451304577787170704246350"), rand_1);
-            Assert.AreEqual(BigInteger.Parse("98548189559099075644778613728143131367"), rand_2);
-            Assert.AreEqual(BigInteger.Parse("247654688993873392544380234598471205121"), rand_3);
-            Assert.AreEqual(BigInteger.Parse("291082758879475329976578097236212073607"), rand_4);
-            Assert.AreEqual(BigInteger.Parse("247152297361212656635216876565962360375"), rand_5);
+            // HF_Huyao returns [0, 2^255 - 1] so the value always fits Neo VM's 32-byte integer.
+            var maxInclusive = (BigInteger.One << 255) - BigInteger.One;
+
+            Assert.IsTrue(rand_1 >= BigInteger.Zero && rand_1 <= maxInclusive);
+            Assert.IsTrue(rand_2 >= BigInteger.Zero && rand_2 <= maxInclusive);
+            Assert.IsTrue(rand_3 >= BigInteger.Zero && rand_3 <= maxInclusive);
+            Assert.IsTrue(rand_4 >= BigInteger.Zero && rand_4 <= maxInclusive);
+            Assert.IsTrue(rand_5 >= BigInteger.Zero && rand_5 <= maxInclusive);
 
             Assert.AreEqual(rand_6, rand_1);
             Assert.AreEqual(rand_7, rand_2);
             Assert.AreEqual(rand_8, rand_3);
             Assert.AreEqual(rand_9, rand_4);
             Assert.AreEqual(rand_10, rand_5);
+
+            // Consecutive draws in one engine must differ (counter advances twice per call).
+            Assert.AreNotEqual(rand_1, rand_2);
+            Assert.AreNotEqual(rand_2, rand_3);
         }
 
         [TestMethod]
@@ -176,17 +185,91 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            Assert.AreEqual(BigInteger.Parse("271339657438512451304577787170704246350"), rand_1);
-            Assert.AreEqual(BigInteger.Parse("98548189559099075644778613728143131367"), rand_2);
-            Assert.AreEqual(BigInteger.Parse("247654688993873392544380234598471205121"), rand_3);
-            Assert.AreEqual(BigInteger.Parse("291082758879475329976578097236212073607"), rand_4);
-            Assert.AreEqual(BigInteger.Parse("247152297361212656635216876565962360375"), rand_5);
+            var maxInclusive = (BigInteger.One << 255) - BigInteger.One;
+
+            Assert.IsTrue(rand_1 >= BigInteger.Zero && rand_1 <= maxInclusive);
+            Assert.IsTrue(rand_2 >= BigInteger.Zero && rand_2 <= maxInclusive);
+            Assert.IsTrue(rand_3 >= BigInteger.Zero && rand_3 <= maxInclusive);
+            Assert.IsTrue(rand_4 >= BigInteger.Zero && rand_4 <= maxInclusive);
+            Assert.IsTrue(rand_5 >= BigInteger.Zero && rand_5 <= maxInclusive);
 
             Assert.AreNotEqual(rand_6, rand_1);
             Assert.AreNotEqual(rand_7, rand_2);
             Assert.AreNotEqual(rand_8, rand_3);
             Assert.AreNotEqual(rand_9, rand_4);
             Assert.AreNotEqual(rand_10, rand_5);
+        }
+
+        [TestMethod]
+        public void TestGetRandom_Huyao_FitsVmIntegerAndRange()
+        {
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, _system.GenesisBlock,
+                settings: TestProtocolSettings.Default, gas: 1100_00000000);
+
+            var maxInclusive = (BigInteger.One << 255) - BigInteger.One;
+            var twoPow128 = BigInteger.One << 128;
+            var sawAbove128Bits = false;
+
+            for (var i = 0; i < 64; i++)
+            {
+                var value = engine.GetRandom();
+                Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, value);
+                Assert.IsLessThanOrEqualTo(maxInclusive, value);
+                // Neo VM integers are max 32 bytes (signed); high bit is cleared under HF_Huyao.
+                Assert.IsLessThanOrEqualTo(32, value.ToByteArray().Length);
+                if (value >= twoPow128)
+                    sawAbove128Bits = true;
+            }
+
+            // New path must be able to produce values outside the old 128-bit range.
+            Assert.IsTrue(sawAbove128Bits);
+        }
+
+        [TestMethod]
+        public void TestGetRandom_PreHuyao_Remains128Bit()
+        {
+            var settings = CreateProtocolSettingsUpTo(Hardfork.HF_Gorgon);
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, _system.GenesisBlock,
+                settings: settings, gas: 1100_00000000);
+
+            Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone));
+
+            var maxExclusive = BigInteger.One << 128;
+            for (var i = 0; i < 32; i++)
+            {
+                var value = engine.GetRandom();
+                Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, value);
+                Assert.IsLessThan(maxExclusive, value);
+            }
+        }
+
+        [TestMethod]
+        public void TestGetRandom_Huyao_IsDeterministicForSameSeed()
+        {
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
+            using var engine1 = ApplicationEngine.Create(TriggerType.Application, tx, null, _system.GenesisBlock,
+                settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, tx, null, _system.GenesisBlock,
+                settings: TestProtocolSettings.Default, gas: 1100_00000000);
+
+            for (var i = 0; i < 8; i++)
+                Assert.AreEqual(engine1.GetRandom(), engine2.GetRandom());
+        }
+
+        private static ProtocolSettings CreateProtocolSettingsUpTo(Hardfork maxEnabledHardfork)
+        {
+            var hardforks = Enum.GetValues(typeof(Hardfork))
+                .Cast<Hardfork>()
+                .Where(hf => hf <= maxEnabledHardfork)
+                .ToDictionary(hf => hf, _ => 0u);
+
+            return TestProtocolSettings.Default with
+            {
+                Hardforks = hardforks.ToImmutableDictionary()
+            };
         }
 
         [TestMethod]
