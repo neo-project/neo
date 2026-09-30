@@ -88,8 +88,8 @@ namespace Neo.SmartContract.Native
             ulong currTimestamp = engine.PersistingBlock!.Timestamp;
             ValidateValidTill(engine, validTill, currTimestamp);
 
-            ContractState callingContract = GetContractState(engine.SnapshotCache, engine.CallingScriptHash!);
-            StorageKey recordKey = MakeRecordStorageKey(callingContract.Id, key);
+            int callingContractId = GetContractId(engine.SnapshotCache, engine.CallingScriptHash!);
+            StorageKey recordKey = MakeRecordStorageKey(callingContractId, key);
             ulong lifetime = (ulong)Math.Max(1, (long)(validTill - currTimestamp));
             engine.AddFee(CalculateStoragePrice(engine, recordKey.Key, value, lifetime, out var old), true);
             if (old is not null)
@@ -160,8 +160,8 @@ namespace Neo.SmartContract.Native
         /// and its expiration timestamp (in milliseconds).</returns>
         private (byte[]? Value, ulong ValidTill) GetInternal(ApplicationEngine engine, UInt160 hash, byte[] key)
         {
-            ContractState contract = GetContractState(engine.SnapshotCache, hash);
-            StorageKey recordKey = MakeRecordStorageKey(contract.Id, key);
+            int contractId = GetContractId(engine.SnapshotCache, hash);
+            StorageKey recordKey = MakeRecordStorageKey(contractId, key);
             if (!engine.SnapshotCache.TryGet(recordKey, out var record))
                 return (null, 0);
 
@@ -179,8 +179,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void Delete(ApplicationEngine engine, [MaxLength(ApplicationEngine.MaxStorageKeySize)] byte[] key)
         {
-            ContractState callingContract = GetContractState(engine.SnapshotCache, engine.CallingScriptHash!);
-            StorageKey recordKey = MakeRecordStorageKey(callingContract.Id, key);
+            int callingContractId = GetContractId(engine.SnapshotCache, engine.CallingScriptHash!);
+            StorageKey recordKey = MakeRecordStorageKey(callingContractId, key);
             if (!engine.SnapshotCache.TryGet(recordKey, out var record))
                 return;
 
@@ -228,9 +228,9 @@ namespace Neo.SmartContract.Native
         {
             var direction = ApplicationEngine.ValidateFindOptions(options);
 
-            ContractState contract = GetContractState(engine.SnapshotCache, hash);
+            int contractId = GetContractId(engine.SnapshotCache, hash);
             var enumerator = engine.SnapshotCache
-                .Find(MakeRecordStorageKey(contract.Id, prefix), direction)
+                .Find(MakeRecordStorageKey(contractId, prefix), direction)
                 .Where(kvp => IsTraceable(engine, kvp.Value, out var _))
                 .Select(kvp => (new StorageKey() { Id = kvp.Key.Id, Key = kvp.Key.Key[(1 + 4)..] }, new StorageItem(kvp.Value.Value[8..].ToArray())))
                 .GetEnumerator();
@@ -254,8 +254,8 @@ namespace Neo.SmartContract.Native
             ulong currTimestamp = engine.PersistingBlock!.Timestamp;
             ValidateValidTill(engine, validTill, currTimestamp);
 
-            ContractState callingContract = GetContractState(engine.SnapshotCache, engine.CallingScriptHash!);
-            StorageKey recordKey = MakeRecordStorageKey(callingContract.Id, key);
+            int callingContractId = GetContractId(engine.SnapshotCache, engine.CallingScriptHash!);
+            StorageKey recordKey = MakeRecordStorageKey(callingContractId, key);
             var oldRecord = engine.SnapshotCache.TryGet(recordKey) ?? throw new InvalidOperationException("old record not found");
 
             if (!IsTraceable(engine, oldRecord, out var oldValidTill))
@@ -340,15 +340,15 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Retrieves the contract from the storage and throws exception in case of missing contract.
+        /// Retrieves the contract ID from the storage and throws exception in case of missing contract.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data from.</param>
         /// <param name="hash">The hash of the requested contract.</param>
-        /// <returns>The contract state.</returns>
+        /// <returns>The contract ID.</returns>
         /// <exception cref="InvalidOperationException"></exception>
-        private static ContractState GetContractState(DataCache snapshot, UInt160 hash)
+        private static int GetContractId(DataCache snapshot, UInt160 hash)
         {
-            return ContractManagement.GetContract(snapshot, hash)
+            return ContractManagement.GetContractId(snapshot, hash)
                 ?? throw new InvalidOperationException($"calling contract not found: {hash}");
         }
 
