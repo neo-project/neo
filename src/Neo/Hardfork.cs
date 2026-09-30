@@ -13,6 +13,7 @@ using System;
 
 namespace Neo
 {
+    [Flags]
     public enum Hardfork : byte
     {
         HF_Aspidochelone,
