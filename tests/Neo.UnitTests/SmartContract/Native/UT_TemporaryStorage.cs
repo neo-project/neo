@@ -393,6 +393,47 @@ namespace Neo.UnitTests.SmartContract.Native
             }
         }
 
+        [TestMethod]
+        public void Test_CalculateStoragePrice()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var persistingBlock = CreatePersistingBlock(snapshot, 0);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, TestProtocolSettings.Default, TestGas);
+
+            byte[] minKey = [0x00];
+            byte[] minValue = [];
+
+            var persistentStoragePrice = NativeContract.Policy.GetStoragePrice(snapshot);
+            Assert.IsPositive(persistentStoragePrice);
+            var minTempPrice = persistentStoragePrice / 10;
+            Assert.IsPositive(minTempPrice);
+
+            // TTL: 0.
+            // Size: 1 byte.
+            var minPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, 0, out var _);
+            Assert.AreEqual(1 * minTempPrice, minPrice);
+
+            // TTL: max.
+            // Size: 1 byte.
+            var maxPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, ulong.MaxValue, out var _);
+            Assert.AreEqual(persistentStoragePrice, maxPrice);
+
+            // TTL: 1/2 of year.
+            // Size: 1 byte.
+            var actual = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, PolicyContract.MaxTemporaryStorageMaxTTL / 2, out var _);
+            Assert.AreEqual(persistentStoragePrice / 2, actual);
+
+            // TTL: 10% of year.
+            // Size: 1 byte.
+            actual = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, PolicyContract.MaxTemporaryStorageMaxTTL / 10, out var _);
+            Assert.AreEqual(persistentStoragePrice / 10, actual);
+
+            // TTL: <10% of year.
+            // Size: 1 byte.
+            actual = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, PolicyContract.MaxTemporaryStorageMaxTTL / 10 - 1, out var _);
+            Assert.AreEqual(persistentStoragePrice / 10, actual);
+        }
+
         private static StackItem CallFromContract(DataCache snapshot, Block persistingBlock, UInt160 caller, string method, params ContractParameter[] args)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, TestProtocolSettings.Default, TestGas);

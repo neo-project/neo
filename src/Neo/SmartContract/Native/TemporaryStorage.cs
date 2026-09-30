@@ -361,7 +361,7 @@ namespace Neo.SmartContract.Native
         /// <param name="lifetime">The lifetime of the key-value pair in milliseconds.</param>
         /// <param name="item">The retrieved storage item (if already exists in the storage).</param>
         /// <returns>The storage price (need to apply FeeFactor to the return value).</returns>
-        private long CalculateStoragePrice(ApplicationEngine engine, ReadOnlyMemory<byte> key, byte[] value, ulong lifetime, out StorageItem? item)
+        public long CalculateStoragePrice(ApplicationEngine engine, ReadOnlyMemory<byte> key, byte[] value, ulong lifetime, out StorageItem? item)
         {
             StorageKey skey = new()
             {
@@ -374,10 +374,10 @@ namespace Neo.SmartContract.Native
                 return IsTraceable(engine, item, out var _);
             }, out item)) * engine.StoragePrice;
             var min = permanentPrice / 10;
-            var actual = permanentPrice * new BigInteger(Math.Min(lifetime, PolicyContract.MaxTemporaryStorageMaxTTL) / PolicyContract.MaxTemporaryStorageMaxTTL);
+            var actual = permanentPrice * new BigInteger(Math.Min(lifetime, PolicyContract.MaxTemporaryStorageMaxTTL)) / PolicyContract.MaxTemporaryStorageMaxTTL;
             if (actual < min)
                 actual = min;
-            return (long)min;
+            return (long)actual;
         }
 
         /// <summary>
