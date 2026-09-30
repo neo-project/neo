@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System;
+using System.Linq;
 
 namespace Neo
 {
@@ -54,13 +55,10 @@ namespace Neo
             if (string.IsNullOrEmpty(name))
                 return false;
 
-            foreach (Hardfork value in Enum.GetValues<Hardfork>())
+            if (Enum.TryParse(typeof(Hardfork), "HF_" + name, false, out var fork) && Enum.GetNames<Hardfork>().Any(n => n.Equals("HF_" + name, StringComparison.Ordinal)))
             {
-                if (GetName(value).Equals(name, StringComparison.Ordinal))
-                {
-                    hardfork = value;
-                    return true;
-                }
+                hardfork = (Hardfork)fork;
+                return true;
             }
 
             return false;
