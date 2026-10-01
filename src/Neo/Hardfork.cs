@@ -55,7 +55,7 @@ namespace Neo
             if (string.IsNullOrEmpty(name))
                 return false;
 
-            if (Enum.TryParse(typeof(Hardfork), "HF_" + name, false, out var fork) && Enum.GetNames<Hardfork>().Any(n => n.Equals("HF_" + name, StringComparison.Ordinal)))
+            if (Enum.TryParse(typeof(Hardfork), "HF_" + name, false, out var fork))
             {
                 hardfork = (Hardfork)fork;
                 return true;
