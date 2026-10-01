@@ -42,24 +42,27 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
             var settings = SmartAccountSettings();
+            var callee = AddContract(snapshot, new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.RET }, "value", ContractParameterType.Boolean);
 
             foreach (long limit in new[] { 0L, -1L })
             {
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot.CloneCache(), settings: settings, gas: 100);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot.CloneCache(), settings: settings, gas: 10_000_000);
                 using var script = new ScriptBuilder();
-                EmitBoundedCall(script, UInt160.Zero, "test", CallFlags.ReadOnly, limit);
+                EmitBoundedCall(script, callee.Hash, "value", CallFlags.ReadOnly, limit);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.Contains("The gas limit must be positive.", engine.FaultException?.ToString() ?? string.Empty);
             }
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot.CloneCache(), settings: settings, gas: 100))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot.CloneCache(), settings: settings, gas: 10_000_000))
             using (var script = new ScriptBuilder())
             {
-                EmitBoundedCall(script, UInt160.Zero, "test", CallFlags.ReadOnly, 101L);
+                EmitBoundedCall(script, callee.Hash, "value", CallFlags.ReadOnly, 10_000_001L);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.Contains("The bounded contract call gas limit exceeds the remaining transaction budget.", engine.FaultException?.ToString() ?? string.Empty);
             }
         }
 
@@ -68,15 +71,15 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
             var settings = SmartAccountSettings();
-            var callee = AddContract(snapshot, new byte[] { (byte)OpCode.JMP, 0xfe }, "loop", ContractParameterType.Void);
+            var callee = AddContract(snapshot, new byte[] { (byte)OpCode.JMP, 0 }, "loop", ContractParameterType.Void);
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings, gas: 1000_00000000);
             using var script = new ScriptBuilder();
-            EmitBoundedCall(script, callee.Hash, "loop", CallFlags.ReadOnly, 1L);
+            EmitBoundedCall(script, callee.Hash, "loop", CallFlags.ReadOnly, 1000L);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.FAULT, engine.Execute());
-            Assert.Contains("gas limit", engine.FaultException?.Message ?? string.Empty);
+            Assert.AreEqual("The bounded contract call gas limit has been exhausted.", engine.FaultException?.Message);
             Assert.IsLessThan(1000_00000000L, engine.FeeConsumed);
         }
 
@@ -85,18 +88,19 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
             var settings = SmartAccountSettings();
-            var callee = AddContract(snapshot, new byte[] { (byte)OpCode.JMP, 0xfe }, "loop", ContractParameterType.Void);
+            var callee = AddContract(snapshot, new byte[] { (byte)OpCode.JMP, 0 }, "loop", ContractParameterType.Void);
             using var outerScript = new ScriptBuilder();
             EmitOrdinaryCall(outerScript, callee.Hash, "loop", CallFlags.ReadOnly);
             var outer = AddContract(snapshot, outerScript.ToArray(), "call", ContractParameterType.Void);
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings, gas: 1000_00000000);
             using var script = new ScriptBuilder();
-            EmitBoundedCall(script, outer.Hash, "call", CallFlags.ReadOnly, 100L);
+            EmitBoundedCall(script, outer.Hash, "call", CallFlags.ReadOnly, 2_000_000L);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.FAULT, engine.Execute());
-            Assert.Contains("gas limit", engine.FaultException?.Message ?? string.Empty);
+            Assert.AreEqual("The bounded contract call gas limit has been exhausted.", engine.FaultException?.Message);
+            Assert.AreEqual(callee.Hash, engine.CurrentScriptHash);
         }
 
         [TestMethod]
@@ -104,7 +108,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
             var settings = SmartAccountSettings();
-            var callee = AddContract(snapshot, new byte[] { (byte)OpCode.JMP, 0xfe }, "loop", ContractParameterType.Void);
+            var callee = AddContract(snapshot, new byte[] { (byte)OpCode.JMP, 0 }, "loop", ContractParameterType.Void);
 
             using (var setupEngine = CreateEngineWithCommitteeSigner(snapshot))
             {
@@ -114,11 +118,11 @@ namespace Neo.UnitTests.SmartContract
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings, gas: 1000_00000000);
             using var script = new ScriptBuilder();
-            EmitBoundedCall(script, callee.Hash, "loop", CallFlags.ReadOnly, 1L);
+            EmitBoundedCall(script, callee.Hash, "loop", CallFlags.ReadOnly, 1000L);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.FAULT, engine.Execute());
-            Assert.Contains("gas limit", engine.FaultException?.Message ?? string.Empty);
+            Assert.AreEqual("The bounded contract call gas limit has been exhausted.", engine.FaultException?.Message);
         }
 
         [TestMethod]
@@ -142,18 +146,162 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
             var settings = SmartAccountSettings();
-            var callee = AddContract(snapshot, new byte[] { (byte)OpCode.JMP, 0xfe }, "loop", ContractParameterType.Void);
+            var callee = AddContract(snapshot, new byte[] { (byte)OpCode.JMP, 0 }, "loop", ContractParameterType.Void);
             using var outerScript = new ScriptBuilder();
-            EmitBoundedCall(outerScript, callee.Hash, "loop", CallFlags.ReadOnly, 2L);
+            EmitBoundedCall(outerScript, callee.Hash, "loop", CallFlags.ReadOnly, 2_000_000L);
             var outer = AddContract(snapshot, outerScript.ToArray(), "call", ContractParameterType.Void);
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings, gas: 1000_00000000);
             using var script = new ScriptBuilder();
-            EmitBoundedCall(script, outer.Hash, "call", CallFlags.ReadOnly, 1L);
+            EmitBoundedCall(script, outer.Hash, "call", CallFlags.ReadOnly, 2_000_000L);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.FAULT, engine.Execute());
-            Assert.Contains("gas limit", engine.FaultException?.Message ?? string.Empty);
+            Assert.Contains("The bounded contract call gas limit exceeds its parent gas limit.", engine.FaultException?.ToString() ?? string.Empty);
+        }
+
+        [TestMethod]
+        public void CallWithGasLimit_PropagatesBudgetThroughRuntimeLoadScript()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            byte[] loop = [(byte)OpCode.JMP, 0];
+            using var outerScript = new ScriptBuilder();
+            EmitLoadedScript(outerScript, loop);
+            var outer = AddContract(snapshot, outerScript.ToArray(), "call", ContractParameterType.Void);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: SmartAccountSettings(), gas: 5_000_000);
+            using var script = new ScriptBuilder();
+            EmitBoundedCall(script, outer.Hash, "call", CallFlags.ReadOnly, 2_000_000L);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+            Assert.AreEqual("The bounded contract call gas limit has been exhausted.", engine.FaultException?.Message);
+            Assert.AreEqual(loop.ToScriptHash(), engine.CurrentScriptHash);
+            Assert.IsGreaterThan(0L, engine.GasLeft);
+        }
+
+        [TestMethod]
+        public void CallWithGasLimit_PreservesLoadedScriptReturnAndCallerBudget()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var outerScript = new ScriptBuilder();
+            EmitLoadedScript(outerScript, [(byte)OpCode.PUSH1, (byte)OpCode.RET]);
+            var outer = AddContract(snapshot, outerScript.ToArray(), "call", ContractParameterType.Boolean);
+            var callee = AddContract(snapshot, [(byte)OpCode.PUSH1, (byte)OpCode.RET], "value", ContractParameterType.Boolean);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: SmartAccountSettings(), gas: 10_000_000);
+            using var script = new ScriptBuilder();
+            EmitBoundedCall(script, outer.Hash, "call", CallFlags.ReadOnly, 2_000_000L);
+            EmitOrdinaryCall(script, callee.Hash, "value", CallFlags.ReadOnly);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+            Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+        }
+
+        [TestMethod]
+        public void CallWithGasLimit_PropagatesBudgetThroughContractInitialization()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            byte[] script = [(byte)OpCode.JMP, 0, (byte)OpCode.PUSH1, (byte)OpCode.RET];
+            var manifest = new ContractManifest
+            {
+                Name = "Initialized",
+                Groups = [],
+                SupportedStandards = [],
+                Abi = new ContractAbi
+                {
+                    Methods =
+                    [
+                        new ContractMethodDescriptor
+                        {
+                            Name = ContractBasicMethod.Initialize,
+                            Parameters = [],
+                            ReturnType = ContractParameterType.Void,
+                            Offset = 0,
+                            Safe = false
+                        },
+                        new ContractMethodDescriptor
+                        {
+                            Name = "call",
+                            Parameters = [],
+                            ReturnType = ContractParameterType.Void,
+                            Offset = 2,
+                            Safe = false
+                        }
+                    ],
+                    Events = []
+                },
+                Permissions = [ContractPermission.DefaultPermission],
+                Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
+                Extra = null
+            };
+            var callee = AddContract(snapshot, script, manifest);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: SmartAccountSettings(), gas: 5_000_000);
+            using var caller = new ScriptBuilder();
+            EmitBoundedCall(caller, callee.Hash, "call", CallFlags.ReadOnly, 2_000_000L);
+            engine.LoadScript(caller.ToArray());
+
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+            Assert.AreEqual("The bounded contract call gas limit has been exhausted.", engine.FaultException?.Message);
+            Assert.IsGreaterThan(0L, engine.GasLeft);
+        }
+
+        [TestMethod]
+        public void CallWithGasLimit_WhitelistedCallerCannotEscapeViaRuntimeLoadScript()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var outerScript = new ScriptBuilder();
+            EmitLoadedScript(outerScript, [(byte)OpCode.JMP, 0]);
+            var outer = AddContract(snapshot, outerScript.ToArray(), "call", ContractParameterType.Void);
+
+            using (var setupEngine = CreateEngineWithCommitteeSigner(snapshot))
+            {
+                NativeContract.Policy.SetWhitelistFeeContract(setupEngine, outer.Hash, "call", 0, 0);
+                setupEngine.SnapshotCache.Commit();
+            }
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: SmartAccountSettings(), gas: 10_000_000);
+            using var caller = new ScriptBuilder();
+            EmitBoundedCall(caller, outer.Hash, "call", CallFlags.ReadOnly, 2_000_000L);
+            engine.LoadScript(caller.ToArray());
+
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+            Assert.AreEqual("The bounded contract call gas limit has been exhausted.", engine.FaultException?.Message);
+            Assert.AreEqual(new byte[] { (byte)OpCode.JMP, 0 }.ToScriptHash(), engine.CurrentScriptHash);
+            Assert.IsGreaterThan(0L, engine.GasLeft);
+        }
+
+        [TestMethod]
+        public void CallWithGasLimit_BoundsReturnInstructionAfterContextSwitch()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var settings = SmartAccountSettings() with
+            {
+                Hardforks = SmartAccountSettings().Hardforks.SetItem(Hardfork.HF_Huyao, 0)
+            };
+            var callee = AddContract(snapshot, [(byte)OpCode.RET], "return", ContractParameterType.Void);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings, gas: 10_000_000);
+            using var caller = new ScriptBuilder();
+            EmitBoundedCall(caller, callee.Hash, "return", CallFlags.ReadOnly, 1L);
+            engine.LoadScript(caller.ToArray());
+
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+            Assert.AreEqual("The bounded contract call gas limit has been exhausted.", engine.FaultException?.Message);
+            Assert.IsGreaterThan(0L, engine.GasLeft);
+        }
+
+        private static void EmitLoadedScript(ScriptBuilder script, byte[] loadedScript)
+        {
+            script.Emit(OpCode.PUSH0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(CallFlags.ReadOnly);
+            script.EmitPush(loadedScript);
+            script.EmitSysCall(ApplicationEngine.System_Runtime_LoadScript);
+            script.Emit(OpCode.RET);
         }
 
         private static ProtocolSettings SmartAccountSettings()
@@ -167,6 +315,14 @@ namespace Neo.UnitTests.SmartContract
         private static ContractState AddContract(DataCache snapshot, byte[] script, string method, ContractParameterType returnType)
         {
             var contract = TestUtils.GetContract(script, TestUtils.CreateManifest(method, returnType));
+            snapshot.DeleteContract(contract.Hash);
+            snapshot.AddContract(contract.Hash, contract);
+            return contract;
+        }
+
+        private static ContractState AddContract(DataCache snapshot, byte[] script, ContractManifest manifest)
+        {
+            var contract = TestUtils.GetContract(script, manifest);
             snapshot.DeleteContract(contract.Hash);
             snapshot.AddContract(contract.Hash, contract);
             return contract;

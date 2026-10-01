@@ -293,15 +293,18 @@ namespace Neo.SmartContract
                 };
             else
             {
+                ContractCallGasBudget? instructionBudget = null;
                 _preExecuteInstruction = instruction =>
                 {
                     _whitelisted = CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed ?? false;
+                    instructionBudget = CurrentContext?.GetState<ExecutionContextState>().ContractCallGasBudget;
                 };
                 _postExecuteInstruction = (instruction, runStats) =>
                 {
                     var stats = runStats ?? new RunStats();
                     long price = instruction is null ? 0 : OpcodeV1((long)_execFeeFactor, instruction.OpCode, stats);
-                    AddFemtoGas(price, false);
+                    // CALLT and RET may switch contexts before their opcode charge.
+                    AddFemtoGas(price, false, instructionBudget);
                 };
             }
 
@@ -605,7 +608,7 @@ namespace Neo.SmartContract
         /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
         protected internal void AddFemtoGas(BigInteger gas, bool applyFactor)
         {
-            AddFemtoGas(gas, applyFactor, null);
+            AddFemtoGas(gas, applyFactor, CurrentContext?.GetState<ExecutionContextState>().ContractCallGasBudget);
         }
 
         private void AddFemtoGas(BigInteger gas, bool applyFactor, ContractCallGasBudget? budgetOverride)
@@ -620,7 +623,7 @@ namespace Neo.SmartContract
                 gas *= FeeFactor;
             }
 
-            ContractCallGasBudget? budget = budgetOverride ?? CurrentContext?.GetState<ExecutionContextState>().ContractCallGasBudget;
+            ContractCallGasBudget? budget = budgetOverride;
             for (ContractCallGasBudget? current = budget; current is not null; current = current.Parent)
             {
                 if (current.Consumed + gas > current.Limit)

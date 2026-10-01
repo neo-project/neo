@@ -225,6 +225,7 @@ namespace Neo.SmartContract
                 p.CallingContext = CurrentContext;
                 p.CallFlags = callFlags & state.CallFlags & CallFlags.ReadOnly;
                 p.IsDynamicCall = true;
+                p.ContractCallGasBudget = state.ContractCallGasBudget;
             });
 
             for (int i = args.Count - 1; i >= 0; i--)
