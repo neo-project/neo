@@ -176,7 +176,7 @@ namespace Neo.SmartContract.Native
             var type = (StackItemType)reader.ReadByte(); // ContractState container type.
             if (type != StackItemType.Array)
                 return null;
-            int count = (int)reader.ReadVarInt(); // the number of items in ContainerState.
+            int count = (int)reader.ReadVarInt(); // the number of items in ContractState.
             if (count != 5)
                 return null;
             type = (StackItemType)reader.ReadByte(); // the type of the first item (contract ID).
