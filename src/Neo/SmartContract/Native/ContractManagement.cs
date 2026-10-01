@@ -177,7 +177,7 @@ namespace Neo.SmartContract.Native
             if (type != StackItemType.Array)
                 return null;
             int count = (int)reader.ReadVarInt(); // the number of items in ContractState.
-            if (count != 5)
+            if (count < 5)
                 return null;
             type = (StackItemType)reader.ReadByte(); // the type of the first item (contract ID).
             if (type != StackItemType.Integer)
