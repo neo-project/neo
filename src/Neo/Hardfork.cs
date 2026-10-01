@@ -21,6 +21,7 @@ namespace Neo
         HF_Faun,
         HF_Gorgon,
         HF_Huyao,
-        HF_Iara
+        HF_Iara,
+        HF_SmartAccountV1
     }
 }

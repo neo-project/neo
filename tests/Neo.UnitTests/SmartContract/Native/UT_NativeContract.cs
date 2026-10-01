@@ -18,6 +18,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -80,6 +81,14 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 10));
             Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 19));
             Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 20));
+
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_SmartAccountV1, DeprecatedIn = null }, TestProtocolSettings.Default.IsHardforkEnabled, 0));
+            var activated = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_SmartAccountV1, 10)
+            };
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_SmartAccountV1, DeprecatedIn = null }, activated.IsHardforkEnabled, 9));
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_SmartAccountV1, DeprecatedIn = null }, activated.IsHardforkEnabled, 10));
         }
 
         [TestMethod]

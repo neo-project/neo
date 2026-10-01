@@ -605,16 +605,14 @@ namespace Neo.SmartContract
         /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
         protected internal void AddFemtoGas(BigInteger gas, bool applyFactor)
         {
+            AddFemtoGas(gas, applyFactor, null);
+        }
+
+        private void AddFemtoGas(BigInteger gas, bool applyFactor, ContractCallGasBudget? budgetOverride)
+        {
             if (gas < 0)
             {
                 throw new InvalidOperationException("AddFemtoGas can't be negative.");
-            }
-
-            // Check whitelist.
-            if (_whitelisted)
-            {
-                // The execution is whitelisted.
-                return;
             }
 
             if (applyFactor)
@@ -622,9 +620,33 @@ namespace Neo.SmartContract
                 gas *= FeeFactor;
             }
 
-            _feeConsumed = _feeConsumed + gas;
+            ContractCallGasBudget? budget = budgetOverride ?? CurrentContext?.GetState<ExecutionContextState>().ContractCallGasBudget;
+            for (ContractCallGasBudget? current = budget; current is not null; current = current.Parent)
+            {
+                if (current.Consumed + gas > current.Limit)
+                    throw new InvalidOperationException("The bounded contract call gas limit has been exhausted.");
+            }
+
+            // Check whitelist only for the transaction-level budget. A bounded call is
+            // deliberately charged even when the callee is transaction-whitelisted.
+            if (_whitelisted)
+            {
+                foreach (ContractCallGasBudget? current in EnumerateBudgets(budget))
+                    current.Consumed += gas;
+                return;
+            }
+
+            _feeConsumed += gas;
+            foreach (ContractCallGasBudget? current in EnumerateBudgets(budget))
+                current.Consumed += gas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
+        }
+
+        private static IEnumerable<ContractCallGasBudget> EnumerateBudgets(ContractCallGasBudget? budget)
+        {
+            for (ContractCallGasBudget? current = budget; current is not null; current = current.Parent)
+                yield return current;
         }
 
         protected override void OnFault(Exception ex)
@@ -648,7 +670,7 @@ namespace Neo.SmartContract
             return CallContractInternal(contract, md, flags, hasReturnValue, args);
         }
 
-        private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
+        private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args, ContractCallGasBudget? gasBudget = null)
         {
             if (NativeContract.Policy.IsBlocked(SnapshotCache, contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
@@ -682,14 +704,18 @@ namespace Neo.SmartContract
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             if (hasReturnValue ^ (method.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
 
-            var contextNew = LoadContract(contract, method, flags & callingFlags);
+            gasBudget ??= state.ContractCallGasBudget;
+            var contextNew = LoadContract(contract, method, flags & callingFlags, gasBudget);
             state = contextNew.GetState<ExecutionContextState>();
             state.CallingContext = currentContext;
             // Check whitelist
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
                 NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
             {
-                AddFee(fixedFee.Value, true);
+                if (gasBudget is null)
+                    AddFee(fixedFee.Value, true);
+                else
+                    AddFemtoGas(fixedFee.Value * OpcodePriceMultiplier, true, gasBudget);
                 state.WhiteListed = true;
             }
 
@@ -891,6 +917,11 @@ namespace Neo.SmartContract
         /// <returns>The loaded context.</returns>
         public ExecutionContext LoadContract(ContractState contract, ContractMethodDescriptor method, CallFlags callFlags)
         {
+            return LoadContract(contract, method, callFlags, null);
+        }
+
+        internal ExecutionContext LoadContract(ContractState contract, ContractMethodDescriptor method, CallFlags callFlags, ContractCallGasBudget? gasBudget)
+        {
             ExecutionContext context = LoadScript(contract.Script,
                 rvcount: method.ReturnType == ContractParameterType.Void ? 0 : 1,
                 initialPosition: method.Offset,
@@ -906,6 +937,7 @@ namespace Neo.SmartContract
                         Nef = contract.Nef,
                         Manifest = contract.Manifest
                     };
+                    p.ContractCallGasBudget = gasBudget;
                 });
 
             // Call initialization
