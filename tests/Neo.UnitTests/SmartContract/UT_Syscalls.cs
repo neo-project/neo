@@ -172,6 +172,14 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = _snapshotCache.CloneCache();
 
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Gorgon, 1)
+                    .Remove(Hardfork.HF_Huyao)
+                    .Remove(Hardfork.HF_Iara)
+            };
+
             using (var script = new ScriptBuilder())
             {
                 script.Emit(OpCode.NOP);
@@ -185,10 +193,6 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var settings = TestProtocolSettings.Default with
-                {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
-                };
                 var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings, gas: 100_000_000);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -210,7 +214,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
                 engine.LoadScript(script.ToArray());
 
                 // Check the results

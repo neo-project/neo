@@ -162,6 +162,7 @@ namespace Neo.SmartContract
         /// Gets the name of the current platform.
         /// </summary>
         /// <returns>It always returns "NEO".</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 1680)]
         internal protected static string GetPlatform()
         {
             return "NEO";
@@ -172,6 +173,7 @@ namespace Neo.SmartContract
         /// Gets the magic number of the current network.
         /// </summary>
         /// <returns>The magic number of the current network.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 1518)]
         internal protected uint GetNetwork()
         {
             return ProtocolSettings.Network;
@@ -182,6 +184,7 @@ namespace Neo.SmartContract
         /// Gets the address version of the current network.
         /// </summary>
         /// <returns>The address version of the current network.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 1319)]
         internal protected byte GetAddressVersion()
         {
             return ProtocolSettings.AddressVersion;
@@ -192,6 +195,7 @@ namespace Neo.SmartContract
         /// Gets the timestamp of the current block.
         /// </summary>
         /// <returns>The timestamp of the current block.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 1396)]
         protected internal ulong GetTime()
         {
             if (PersistingBlock is null)
@@ -204,6 +208,7 @@ namespace Neo.SmartContract
         /// Gets the current script container.
         /// </summary>
         /// <returns>The current script container.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 5608)]
         protected internal StackItem GetScriptContainer()
         {
             if (ScriptContainer is not IInteroperable interop) throw new InvalidOperationException();
@@ -295,6 +300,7 @@ namespace Neo.SmartContract
         /// Gets the number of times the current contract has been called during the execution.
         /// </summary>
         /// <returns>The number of times the current contract has been called during the execution.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 3130)]
         protected internal int GetInvocationCounter()
         {
             if (!invocationCounter.TryGetValue(CurrentScriptHash!, out var counter))
@@ -309,6 +315,7 @@ namespace Neo.SmartContract
         /// Gets the next random number.
         /// </summary>
         /// <returns>The next random number.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 3148)]
         protected internal BigInteger GetRandom()
         {
             byte[] buffer;
@@ -324,7 +331,8 @@ namespace Neo.SmartContract
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
-            AddFee(price * _execFeeFactor, false);
+            if (!IsHardforkEnabled(Hardfork.HF_Huyao))
+                AddFee(price * _execFeeFactor, false);
             return new BigInteger(buffer, isUnsigned: true);
         }
 
@@ -333,6 +341,7 @@ namespace Neo.SmartContract
         /// Writes a log.
         /// </summary>
         /// <param name="state">The message of the log.</param>
+        [InteropPrice(Hardfork.HF_Huyao, 4896)]
         protected internal void RuntimeLog(byte[] state)
         {
             if (state.Length > MaxNotificationSize)
@@ -445,6 +454,7 @@ namespace Neo.SmartContract
         /// Burning GAS to benefit the NEO ecosystem.
         /// </summary>
         /// <param name="datoshi">The amount of GAS to burn, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
+        [InteropPrice(Hardfork.HF_Huyao, 1522)]
         protected internal void BurnGas(long datoshi)
         {
             if (datoshi <= 0)
