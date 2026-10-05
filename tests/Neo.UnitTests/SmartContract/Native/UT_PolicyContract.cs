@@ -864,6 +864,53 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_SetTemporaryStorageMaxTTL()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+
+            // Without committee signature.
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                "setTemporaryStorageMaxTTL", new ContractParameter(ContractParameterType.Integer) { Value = 30_000 });
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getTemporaryStorageMaxTTL");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(7 * 24 * 60 * 60 * 1000, ret.GetInteger());
+
+            // Too hight value.
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setTemporaryStorageMaxTTL", new ContractParameter(ContractParameterType.Integer) { Value = PolicyContract.MaxTemporaryStorageMaxTTL + 1 });
+            });
+
+            // With signature.
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setTemporaryStorageMaxTTL", new ContractParameter(ContractParameterType.Integer) { Value = 30_000 });
+            Assert.IsTrue(ret.IsNull);
+
+            // Check getter.
+            ret = NativeContract.Policy.Call(snapshot, "getTemporaryStorageMaxTTL");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(30_000, ret.GetInteger());
+        }
+
+        [TestMethod]
         public void TestWhiteListFee_DynamicOpCodePrice()
         {
             // Ensure that dynamic fee charging mechanism (applied starting from Huyao) properly calculates the price of
@@ -972,7 +1019,7 @@ namespace Neo.UnitTests.SmartContract.Native
             new(ContractParameterType.String) { Value = name };
 
         private static StorageKey IaraStorageKey() =>
-            StorageKey.Create(NativeContract.Policy.Id, 24 /* Prefix_Hardfork */, Encoding.UTF8.GetBytes("Iara"));
+            StorageKey.Create(NativeContract.Policy.Id, 25 /* Prefix_Hardfork */, Encoding.UTF8.GetBytes("Iara"));
 
         [TestMethod]
         public void Check_GetHardforkActivationHeight_DefaultUnset()
