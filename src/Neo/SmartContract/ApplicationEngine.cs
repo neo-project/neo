@@ -1081,8 +1081,9 @@ namespace Neo.SmartContract
         /// <returns>The price in the unit of femtoGAS.</returns>
         private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
         {
-            foreach (var price in descriptor.Prices)
+            for (int i = 0; i < descriptor.Prices.Count; i++)
             {
+                var price = descriptor.Prices[i];
                 if (IsHardforkEnabled(price.Since))
                     return price.Coefficient * _execFeeFactor;
             }
