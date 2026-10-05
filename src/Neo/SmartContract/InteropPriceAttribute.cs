@@ -25,8 +25,8 @@ namespace Neo.SmartContract
         public Hardfork Since { get; }
 
         /// <summary>
-        /// The price coefficient. It's multiplied by the execution fee factor
-        /// (in the unit of picoGAS) and gives the price in the unit of femtoGAS.
+        /// The price coefficient in the unit of 1e-11 GAS. It's multiplied by the execution
+        /// fee factor stored with 4 decimals and gives the price in the unit of femtoGAS.
         /// </summary>
         public long Coefficient { get; }
 
