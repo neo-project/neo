@@ -10,36 +10,66 @@
 // modifications are permitted.
 
 using Neo.VM.Types;
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract
 {
     /// <summary>
     /// Pins pooled <see cref="Buffer"/> memory that leaves the VM
-    /// (neo-vm#595 <c>IMemoryOwner</c>). Call before the engine disposes
-    /// items back to <see cref="System.Buffers.MemoryPool{T}"/>.
+    /// (neo-vm#595 <c>IMemoryOwner</c>). Also pins <see cref="ByteString"/>
+    /// when that type exposes <c>KeepAlive()</c>. Walks compounds iteratively
+    /// with reference equality so cyclic ResultStack graphs cannot overflow.
+    /// Call before the engine disposes items back to <see cref="System.Buffers.MemoryPool{T}"/>.
+    /// This type does not invoke <c>Cleanup()</c>.
     /// </summary>
     internal static class StackItemKeepAlive
     {
+        private static readonly Action<ByteString>? s_keepByteString = BindKeepAlive<ByteString>();
+
         public static void Keep(StackItem? item)
-        {
-            switch (item)
-            {
-                case Buffer buffer:
-                    buffer.KeepAlive();
-                    break;
-                case CompoundType compound:
-                    foreach (var child in compound.SubItems)
-                        Keep(child);
-                    break;
-            }
-        }
+            => Keep(item, new HashSet<CompoundType>(ReferenceEqualityComparer.Instance));
 
         public static void KeepAll(IEnumerable<StackItem> items)
         {
+            var visited = new HashSet<CompoundType>(ReferenceEqualityComparer.Instance);
             foreach (var item in items)
-                Keep(item);
+                Keep(item, visited);
+        }
+
+        private static void Keep(StackItem? item, HashSet<CompoundType> visited)
+        {
+            if (item is null)
+                return;
+
+            var pending = new Stack<StackItem>();
+            pending.Push(item);
+            while (pending.Count > 0)
+            {
+                switch (pending.Pop())
+                {
+                    case Buffer buffer:
+                        buffer.KeepAlive();
+                        break;
+                    case ByteString byteString:
+                        s_keepByteString?.Invoke(byteString);
+                        break;
+                    case CompoundType compound:
+                        if (!visited.Add(compound))
+                            break;
+                        foreach (var child in compound.SubItems)
+                            pending.Push(child);
+                        break;
+                }
+            }
+        }
+
+        private static Action<T>? BindKeepAlive<T>()
+        {
+            var method = typeof(T).GetMethod(nameof(Buffer.KeepAlive), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            return method?.CreateDelegate<Action<T>>();
         }
     }
 }

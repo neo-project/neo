@@ -14,7 +14,9 @@ using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Reflection;
 using Array = Neo.VM.Types.Array;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -62,6 +64,18 @@ namespace Neo.UnitTests.SmartContract
         {
             Assert.ThrowsExactly<FormatException>(() =>
                 BinarySerializer.Deserialize(ReadOnlyMemory<byte>.Empty, ExecutionEngineLimits.Default));
+        }
+
+        [TestMethod]
+        public void Deserialize_Buffer_DoesNotPinPoolMemory()
+        {
+            var original = new Buffer([(byte)0xA5]);
+            var bytes = BinarySerializer.Serialize(original, ExecutionEngineLimits.Default);
+            var item = BinarySerializer.Deserialize(bytes, ExecutionEngineLimits.Default);
+            Assert.IsInstanceOfType<Buffer>(item);
+            var keepAlive = typeof(Buffer).GetField("_keep_alive", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(keepAlive);
+            Assert.IsFalse((bool)keepAlive.GetValue(item)!);
         }
 
         private static StackItem RoundTrip(StackItem item)
