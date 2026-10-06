@@ -12,6 +12,7 @@
 #pragma warning disable IDE0051
 
 using Neo.Extensions;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
@@ -158,6 +159,33 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Gets ID of the contract with the specified hash. Does not perform full
+        /// contract state deserialization hence may be used as an optimized version
+        /// of GetContract is only ID is needed.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The contract hash.</param>
+        /// <returns>ID of the contract (if exists).</returns>
+        public int? GetContractId(IReadOnlyStore snapshot, UInt160 hash)
+        {
+            var key = CreateStorageKey(Prefix_Contract, hash);
+            if (!snapshot.TryGet(key, out var item))
+                return null;
+
+            MemoryReader reader = new(item.Value);
+            var type = (StackItemType)reader.ReadByte(); // ContractState container type.
+            if (type != StackItemType.Array)
+                return null;
+            int count = (int)reader.ReadVarInt(); // the number of items in ContractState.
+            if (count < 5)
+                return null;
+            type = (StackItemType)reader.ReadByte(); // the type of the first item (contract ID).
+            if (type != StackItemType.Integer)
+                return null;
+            return (int)new BigInteger(reader.ReadVarMemory(Integer.MaxSize).Span); // the ID itself.
+        }
+
+        /// <summary>
         /// Check if exists the deployed contract with the specified hash.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
@@ -189,7 +217,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>Iterator with hashes of all deployed contracts.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetContractHashes(IReadOnlyStore snapshot)
+        public IIterator GetContractHashes(IReadOnlyStore snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix;
             var prefixKey = CreateStorageKey(Prefix_ContractHash);

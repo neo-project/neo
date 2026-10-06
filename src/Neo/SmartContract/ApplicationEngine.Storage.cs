@@ -13,6 +13,7 @@ using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
 using System;
+using System.Linq;
 
 namespace Neo.SmartContract
 {
@@ -59,6 +60,11 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Storage_Find = Register("System.Storage.Find", nameof(Find), 1 << 15, CallFlags.ReadStates);
 
         /// <summary>
+        /// Finds storage entries with the specified prefix, starting at an inclusive suffix.
+        /// </summary>
+        public static readonly InteropDescriptor System_Storage_FindWithStart = Register("System.Storage.FindWithStart", nameof(FindWithStart), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Huyao);
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.Put.
         /// Puts a new entry into the storage.
         /// </summary>
@@ -81,6 +87,11 @@ namespace Neo.SmartContract
         /// Finds the entries from the storage.
         /// </summary>
         public static readonly InteropDescriptor System_Storage_Local_Find = Register("System.Storage.Local.Find", nameof(FindLocal), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Faun);
+
+        /// <summary>
+        /// Finds storage entries for the current contract, starting at an inclusive suffix.
+        /// </summary>
+        public static readonly InteropDescriptor System_Storage_Local_FindWithStart = Register("System.Storage.Local.FindWithStart", nameof(FindLocalWithStart), 1 << 15, CallFlags.ReadStates, Hardfork.HF_Huyao);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Storage.Local.Put.
@@ -180,6 +191,38 @@ namespace Neo.SmartContract
         /// <returns>An iterator for the results.</returns>
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
+            var direction = ValidateFindOptions(options);
+            var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
+            return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options);
+        }
+
+        /// <summary>
+        /// Finds storage entries with the specified prefix, starting at prefix + start (inclusive).
+        /// If that key does not exist, returns the next key in the requested direction.
+        /// </summary>
+        /// <param name="context">The context of the storage.</param>
+        /// <param name="prefix">The prefix of keys to find.</param>
+        /// <param name="start">The starting key suffix, relative to the prefix. An empty suffix starts at the prefix itself.</param>
+        /// <param name="options">The options of the search.</param>
+        /// <returns>An iterator restricted to the specified contract and prefix.</returns>
+        protected internal IIterator FindWithStart(StorageContext context, byte[] prefix, byte[] start, FindOptions options)
+        {
+            var direction = ValidateFindOptions(options);
+            var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
+            byte[] startKey = [.. prefixKey, .. start];
+            var entries = SnapshotCache.Seek(startKey, direction).TakeWhile(p => p.Key.StartsWith(prefixKey));
+            return new StorageIterator(entries.GetEnumerator(), prefix.Length, options);
+        }
+
+        /// <summary>
+        /// ValidateFindOptions ensures System.Storage.Find-alike options are valid and throws an exception otherwise.
+        /// </summary>
+        /// <param name="options">Storage iterator options to validate.</param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <returns>The direction of iteration.</returns>
+        internal static SeekDirection ValidateFindOptions(FindOptions options)
+        {
             if ((options & ~FindOptions.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(options), $"Invalid find options: {options}");
 
@@ -201,9 +244,7 @@ namespace Neo.SmartContract
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
                 throw new ArgumentException("PickField0 or PickField1 requires DeserializeValues", nameof(options));
 
-            var prefixKey = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
-            return new StorageIterator(SnapshotCache.Find(prefixKey, direction).GetEnumerator(), prefix.Length, options);
+            return options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
         }
 
         /// <summary>
@@ -216,6 +257,19 @@ namespace Neo.SmartContract
         protected internal IIterator FindLocal(byte[] prefix, FindOptions options)
         {
             return Find(GetReadOnlyContext(), prefix, options);
+        }
+
+        /// <summary>
+        /// The implementation of System.Storage.Local.FindWithStart.
+        /// Finds entries for the current contract, starting at prefix + start (inclusive).
+        /// </summary>
+        /// <param name="prefix">The prefix of keys to find.</param>
+        /// <param name="start">The starting key suffix, relative to the prefix.</param>
+        /// <param name="options">The options of the search.</param>
+        /// <returns>An iterator restricted to the current contract and specified prefix.</returns>
+        protected internal IIterator FindLocalWithStart(byte[] prefix, byte[] start, FindOptions options)
+        {
+            return FindWithStart(GetReadOnlyContext(), prefix, start, options);
         }
 
         /// <summary>
@@ -233,32 +287,60 @@ namespace Neo.SmartContract
                 throw new ArgumentException($"Value length {value.Length} exceeds maximum allowed size of {MaxStorageValueSize} bytes.", nameof(value));
             if (context.IsReadOnly) throw new ArgumentException("StorageContext is read-only", nameof(context));
 
-            int newDataSize;
             StorageKey skey = new()
             {
                 Id = context.Id,
                 Key = key
             };
-            var item = SnapshotCache.GetAndChange(skey);
+            int newDataSize = CalculateChargableSize(skey, value, null, out var item);
+            // Add item to the storage since CalculateChargableSize doesn't mark item as changed/added.
             if (item is null)
-            {
-                newDataSize = key.Length + value.Length;
                 SnapshotCache.Add(skey, item = new StorageItem());
+            else
+                item = SnapshotCache.GetAndChange(skey)!;
+
+            AddFee(newDataSize * StoragePrice, true);
+            item.Value = value;
+        }
+
+        /// <summary>
+        /// Defines whether the record should be considered as existing if found in the contract storage.
+        /// </summary>
+        /// <param name="record">The record.</param>
+        /// <param name="chargableValueSize">The actual size of record's value that should be charged.</param>
+        /// <returns>Whether the record should be considered as existing if found in the contract storage.</returns>
+        public delegate bool IsRecordTraceable(StorageItem record, out int chargableValueSize);
+
+        /// <summary>
+        /// Calculates the size of the storage item (in bytes) that should be payed for by the user if stored
+        /// in the contract storage.
+        /// </summary>
+        /// <param name="skey">The stored item key.</param>
+        /// <param name="value">The stored item value.</param>
+        /// <param name="isTraceable">An optional delegate defining whether the already-exists path should be applied to the calculations in case if item is already present in the storage.</param>
+        /// <param name="item">The old item stored by the given key (if exists).</param>
+        /// <returns>The number of bytes the user should pay for.</returns>
+        public int CalculateChargableSize(StorageKey skey, ReadOnlyMemory<byte> value, IsRecordTraceable? isTraceable, out StorageItem? item)
+        {
+            int newDataSize;
+            item = SnapshotCache.TryGet(skey);
+            int chargableValueSize = item is null ? 0 : item.Value.Length;
+            if (item is null || (isTraceable is not null && !isTraceable(item, out chargableValueSize)))
+            {
+                newDataSize = skey.Key.Length + value.Length;
             }
             else
             {
                 if (value.Length == 0)
                     newDataSize = 0;
-                else if (value.Length <= item.Value.Length)
+                else if (value.Length <= chargableValueSize)
                     newDataSize = (value.Length - 1) / 4 + 1;
-                else if (item.Value.Length == 0)
+                else if (chargableValueSize == 0)
                     newDataSize = value.Length;
                 else
-                    newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
+                    newDataSize = (chargableValueSize - 1) / 4 + 1 + value.Length - chargableValueSize;
             }
-            AddFee(newDataSize * StoragePrice, true);
-
-            item.Value = value;
+            return newDataSize;
         }
 
         /// <summary>
