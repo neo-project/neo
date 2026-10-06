@@ -109,6 +109,25 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        public void FindWithNegativeSkipTest()
+        {
+            using var store = new MemoryStore();
+            store.Put([0x01], [0x01]);
+            store.Put([0x02], [0x02]);
+
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+                _ = store.Find([], SeekDirection.Forward, -1).ToArray());
+
+            // Backward with an empty prefix yields nothing, the invalid offset must still be rejected.
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+                _ = store.Find([], SeekDirection.Backward, -1).ToArray());
+
+            using var snapshot = store.GetSnapshot();
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+                _ = snapshot.Find([], SeekDirection.Forward, -1).ToArray());
+        }
+
+        [TestMethod]
         public void NeoSystemStoreGetAndChange()
         {
             var storeView = _system.GetSnapshotCache();

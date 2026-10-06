@@ -4,6 +4,8 @@ Neo is an open-source project and it depends on its contributors and constant co
 
 Read this document to understand how issues are organized and how you can start contributing.
 
+A beginner walkthrough (including **which of neo / neo-node / neo-vm to change**) is in [docs/how-to/contribute.md](docs/how-to/contribute.md). Start from [docs/getting-started.md](docs/getting-started.md).
+
 *This document covers this repository only and does not include community repositories or repositories managed by NGD Shanghai and NGD Seattle.*
 
 ### Questions and Support
