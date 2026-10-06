@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using System;
-using System.Linq;
 
 namespace Neo
 {
@@ -55,13 +54,18 @@ namespace Neo
             if (string.IsNullOrEmpty(name))
                 return false;
 
-            if (Enum.TryParse(typeof(Hardfork), "HF_" + name, false, out var fork))
+            // [Flags] lets TryParse accept comma-separated aliases that collapse onto a
+            // named value ("Basilisk, HF_Cockatrice" == HF_Domovoi). Require the canonical name.
+            var key = "HF_" + name;
+            if (!Enum.TryParse(key, ignoreCase: false, out hardfork))
+                return false;
+            if (Enum.GetName(hardfork) != key)
             {
-                hardfork = (Hardfork)fork;
-                return true;
+                hardfork = default;
+                return false;
             }
 
-            return false;
+            return true;
         }
     }
 }

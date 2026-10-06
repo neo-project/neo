@@ -1370,8 +1370,13 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual("Huyao", Hardforks.GetName(Hardfork.HF_Huyao));
             Assert.IsFalse(Hardforks.TryParseExact(null, out _));
             Assert.IsFalse(Hardforks.TryParseExact("", out _));
+            Assert.IsFalse(Hardforks.TryParseExact("iara", out _));
+            Assert.IsFalse(Hardforks.TryParseExact("HF_Iara", out _));
+            Assert.IsFalse(Hardforks.TryParseExact("Basilisk, HF_Cockatrice", out _));
             Assert.IsTrue(Hardforks.TryParseExact("Iara", out var hf));
             Assert.AreEqual(Hardfork.HF_Iara, hf);
+            Assert.IsTrue(Hardforks.TryParseExact("Basilisk", out var basilisk));
+            Assert.AreEqual(Hardfork.HF_Basilisk, basilisk);
         }
 
         private static Block CreateBlock(uint index) => new()
