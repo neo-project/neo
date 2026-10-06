@@ -1015,38 +1015,11 @@ namespace Neo.UnitTests.SmartContract.Native
                 { Hardfork.HF_Huyao, height },
             }.ToImmutableDictionary();
 
-        private static ContractParameter HardforkName(string name)
-            => new(ContractParameterType.ByteArray) { Value = Encoding.UTF8.GetBytes(name) };
+        private static ContractParameter HardforkName(string name) =>
+            new(ContractParameterType.String) { Value = name };
 
         private static StorageKey IaraStorageKey() =>
             StorageKey.Create(NativeContract.Policy.Id, 25 /* Prefix_Hardfork */, Encoding.UTF8.GetBytes("Iara"));
-
-        [TestMethod]
-        public void Check_HardforkMethods_ManifestParameterIsByteArray()
-        {
-            var snapshot = _snapshotCache.CloneCache();
-            var state = NativeContract.Policy.GetContractState(TestProtocolSettings.Default, snapshot, 0);
-
-            string[] methodNames = ["activateHardfork", "getHardforkActivationHeight"];
-            foreach (var name in methodNames)
-            {
-                var method = state.Manifest.Abi.GetMethod(name, 1);
-                Assert.IsNotNull(method);
-                Assert.HasCount(1, method.Parameters);
-                Assert.AreEqual(ContractParameterType.ByteArray, method.Parameters[0].Type);
-                Assert.AreEqual((byte)0x12, (byte)method.Parameters[0].Type);
-            }
-
-            var utf8Name = HardforkName("Iara");
-            Assert.IsTrue(NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", utf8Name).IsNull);
-
-            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
-            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committee),
-                CreateBlock(1000), "activateHardfork", utf8Name);
-
-            var height = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", utf8Name);
-            Assert.AreEqual(1001, height.GetInteger());
-        }
 
         [TestMethod]
         public void Check_GetHardforkActivationHeight_DefaultUnset()
@@ -1376,7 +1349,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var method = typeof(PolicyContract).GetMethod("ActivateHardfork",
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             Assert.IsNotNull(method);
-            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => method.Invoke(NativeContract.Policy, [engine, Encoding.UTF8.GetBytes("Iara")]));
+            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => method.Invoke(NativeContract.Policy, [engine, "Iara"]));
             Assert.Contains("persisting block", ex.InnerException.Message, StringComparison.OrdinalIgnoreCase);
         }
 
