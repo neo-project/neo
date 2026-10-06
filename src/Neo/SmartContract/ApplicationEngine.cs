@@ -96,6 +96,10 @@ namespace Neo.SmartContract
         /// instruction execution.
         /// </summary>
         private bool _whitelisted;
+        /// <summary>
+        /// The index of the persisting block or the current ledger index if there is no persisting block.
+        /// </summary>
+        private readonly uint _persistingIndex;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -265,6 +269,7 @@ namespace Neo.SmartContract
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
 
             var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache));
+            _persistingIndex = persistingIndex;
 
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
@@ -1084,10 +1089,21 @@ namespace Neo.SmartContract
             for (int i = 0; i < descriptor.Prices.Count; i++)
             {
                 var price = descriptor.Prices[i];
-                if (IsHardforkEnabled(price.Since))
+                if (IsHardforkEnabledAtPersistingIndex(price.Since))
                     return price.Coefficient * _execFeeFactor;
             }
             return descriptor.FixedPrice * _execFeeFactor * OpcodePriceMultiplier;
+        }
+
+        /// <summary>
+        /// Determines whether the specified hardfork is enabled at the index of the persisting block
+        /// or at the current ledger index if there is no persisting block.
+        /// </summary>
+        /// <param name="hardfork">The hardfork to check.</param>
+        /// <returns><see langword="true"/> if the hardfork is enabled; otherwise, <see langword="false"/>.</returns>
+        private bool IsHardforkEnabledAtPersistingIndex(Hardfork hardfork)
+        {
+            return ProtocolSettings is not null && ProtocolSettings.IsHardforkEnabled(hardfork, _persistingIndex);
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)

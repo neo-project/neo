@@ -227,6 +227,31 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void System_Runtime_GetRandom_VerificationPriceBeforeHuyao()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
+            script.Emit(OpCode.DROP);
+
+            // Huyao is configured, but the ledger is still below its height. Verification
+            // engine has no persisting block, so the height must be taken from the ledger.
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, 100)
+            };
+            Assert.IsLessThan(100u, NativeContract.Ledger.CurrentIndex(snapshot));
+
+            var engine = ApplicationEngine.Create(TriggerType.Verification, null, snapshot, null, settings);
+            engine.LoadScript(script.ToArray(), configureState: p => p.CallFlags = CallFlags.ReadOnly);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            // GetRandom in-handler fee (1 << 13) + DROP (1 << 1), multiplied by ExecFeeFactor = 245820 datoshi.
+            Assert.AreEqual(245820, engine.FeeConsumed);
+        }
+
+        [TestMethod]
         public void System_Runtime_Log_PriceSinceHuyao()
         {
             var snapshot = _snapshotCache.CloneCache();
