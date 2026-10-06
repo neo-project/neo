@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -131,14 +133,19 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            // HF_Huyao returns [0, 2^255 - 1] so the value always fits Neo VM's 32-byte integer.
-            var maxInclusive = (BigInteger.One << 255) - BigInteger.One;
+            // HF_Huyao golden values for this tx hash / genesis nonce. Construction:
+            // nonceData = tx.Hash[0..16] XOR block.Nonce (low 8 bytes);
+            // call i: bytes[0..16) = Murmur128(nonceData, Network + 2*i),
+            //         bytes[16..32) = Murmur128(nonceData, Network + 2*i + 1),
+            //         bits[31] &= 0x7F; randomTimes advances twice per call.
+            Assert.AreEqual(BigInteger.Parse("33534211198943548558472321264694789029671372064702621743717023598471546586702"), rand_1);
+            Assert.AreEqual(BigInteger.Parse("41154285542726585114419198767952933807711832431147140604897229457249319026945"), rand_2);
+            Assert.AreEqual(BigInteger.Parse("46641813704003859731890326808356574657962657267629102537543021691727573878327"), rand_3);
+            Assert.AreEqual(BigInteger.Parse("15777209538702098679314297468784164305233878636509498116785826649421591919551"), rand_4);
+            Assert.AreEqual(BigInteger.Parse("48927915328026740026032377939915342260952298357769709073768565212730934397261"), rand_5);
 
-            Assert.IsTrue(rand_1 >= BigInteger.Zero && rand_1 <= maxInclusive);
-            Assert.IsTrue(rand_2 >= BigInteger.Zero && rand_2 <= maxInclusive);
-            Assert.IsTrue(rand_3 >= BigInteger.Zero && rand_3 <= maxInclusive);
-            Assert.IsTrue(rand_4 >= BigInteger.Zero && rand_4 <= maxInclusive);
-            Assert.IsTrue(rand_5 >= BigInteger.Zero && rand_5 <= maxInclusive);
+            Assert.AreEqual(ReconstructHuyaoRandom(tx, _system.GenesisBlock, callIndex: 0), rand_1);
+            Assert.AreEqual(ReconstructHuyaoRandom(tx, _system.GenesisBlock, callIndex: 1), rand_2);
 
             Assert.AreEqual(rand_6, rand_1);
             Assert.AreEqual(rand_7, rand_2);
@@ -185,13 +192,12 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            var maxInclusive = (BigInteger.One << 255) - BigInteger.One;
-
-            Assert.IsTrue(rand_1 >= BigInteger.Zero && rand_1 <= maxInclusive);
-            Assert.IsTrue(rand_2 >= BigInteger.Zero && rand_2 <= maxInclusive);
-            Assert.IsTrue(rand_3 >= BigInteger.Zero && rand_3 <= maxInclusive);
-            Assert.IsTrue(rand_4 >= BigInteger.Zero && rand_4 <= maxInclusive);
-            Assert.IsTrue(rand_5 >= BigInteger.Zero && rand_5 <= maxInclusive);
+            // engine_1 uses the same tx / genesis nonce as TestGetRandomSameBlock.
+            Assert.AreEqual(BigInteger.Parse("33534211198943548558472321264694789029671372064702621743717023598471546586702"), rand_1);
+            Assert.AreEqual(BigInteger.Parse("41154285542726585114419198767952933807711832431147140604897229457249319026945"), rand_2);
+            Assert.AreEqual(BigInteger.Parse("46641813704003859731890326808356574657962657267629102537543021691727573878327"), rand_3);
+            Assert.AreEqual(BigInteger.Parse("15777209538702098679314297468784164305233878636509498116785826649421591919551"), rand_4);
+            Assert.AreEqual(BigInteger.Parse("48927915328026740026032377939915342260952298357769709073768565212730934397261"), rand_5);
 
             Assert.AreNotEqual(rand_6, rand_1);
             Assert.AreNotEqual(rand_7, rand_2);
@@ -237,8 +243,16 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
             Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone));
 
+            // Exact Aspidochelone (128-bit) sequence for TestUtils.GetTransaction(UInt160.Zero)
+            // with the genesis block nonce. One Murmur128 per call; randomTimes += 1.
+            Assert.AreEqual(BigInteger.Parse("271339657438512451304577787170704246350"), engine.GetRandom());
+            Assert.AreEqual(BigInteger.Parse("98548189559099075644778613728143131367"), engine.GetRandom());
+            Assert.AreEqual(BigInteger.Parse("247654688993873392544380234598471205121"), engine.GetRandom());
+            Assert.AreEqual(BigInteger.Parse("291082758879475329976578097236212073607"), engine.GetRandom());
+            Assert.AreEqual(BigInteger.Parse("247152297361212656635216876565962360375"), engine.GetRandom());
+
             var maxExclusive = BigInteger.One << 128;
-            for (var i = 0; i < 32; i++)
+            for (var i = 0; i < 27; i++)
             {
                 var value = engine.GetRandom();
                 Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, value);
@@ -270,6 +284,21 @@ namespace Neo.UnitTests.SmartContract
             {
                 Hardforks = hardforks.ToImmutableDictionary()
             };
+        }
+
+        private static BigInteger ReconstructHuyaoRandom(Transaction tx, Block block, int callIndex)
+        {
+            var nonceData = tx.Hash.ToArray()[..16];
+            var blockNonce = BitConverter.GetBytes(block.Nonce);
+            for (var i = 0; i < 8; i++)
+                nonceData[i] ^= blockNonce[i];
+
+            var seedBase = TestProtocolSettings.Default.Network + (uint)(callIndex * 2);
+            var bits = new byte[32];
+            nonceData.Murmur128(seedBase).CopyTo(bits, 0);
+            nonceData.Murmur128(seedBase + 1).CopyTo(bits, 16);
+            bits[31] &= 0x7F;
+            return new BigInteger(bits);
         }
 
         [TestMethod]

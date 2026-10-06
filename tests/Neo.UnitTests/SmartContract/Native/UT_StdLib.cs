@@ -724,6 +724,49 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(maxValue, seen.Count);
         }
 
+        [TestMethod]
+        public void TestGetRandom_LargeMaxValue_ReachesUpperHalf()
+        {
+            // 32-byte signed encodings (maxValue >= 2^247). A 256-bit Lemire word with
+            // GetRandom() in [0, 2^255) can never produce a result >= maxValue/2.
+            AssertLargeRangeReachesUpperHalf((BigInteger.One << 255) - BigInteger.One);
+            AssertLargeRangeReachesUpperHalf(BigInteger.One << 247);
+        }
+
+        private static void AssertLargeRangeReachesUpperHalf(BigInteger maxValue)
+        {
+            const int samples = 64;
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using var script = new ScriptBuilder();
+            for (var i = 0; i < samples; i++)
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "getRandom", maxValue);
+
+            var tx = TransactionBuilder.CreateEmpty()
+                .Nonce((uint)Random.Shared.Next())
+                .Build();
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache,
+                settings: TestProtocolSettings.Default, gas: long.MaxValue);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(samples, engine.ResultStack.Count);
+
+            var half = maxValue / 2;
+            var sawUpperHalf = false;
+            for (var i = 0; i < samples; i++)
+            {
+                var value = engine.ResultStack.Pop<Integer>().GetInteger();
+                Assert.IsGreaterThanOrEqualTo(BigInteger.Zero, value);
+                Assert.IsLessThan(maxValue, value);
+                if (value >= half)
+                    sawUpperHalf = true;
+            }
+
+            Assert.IsTrue(sawUpperHalf);
+        }
+
         private static ProtocolSettings CreateProtocolSettingsUpTo(Hardfork maxEnabledHardfork)
         {
             var hardforks = Enum.GetValues(typeof(Hardfork))
