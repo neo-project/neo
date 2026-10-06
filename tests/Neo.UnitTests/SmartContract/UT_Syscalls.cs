@@ -227,6 +227,36 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void System_Runtime_Platform_PriceSinceHuyao()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Runtime_Platform);
+
+            long GetFee(ProtocolSettings settings)
+            {
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
+                engine.LoadScript(script.ToArray());
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual("NEO", engine.ResultStack.Pop().GetString());
+                return engine.FeeConsumed;
+            }
+
+            var feeBefore = GetFee(TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.Remove(Hardfork.HF_Huyao)
+            });
+            var feeAfter = GetFee(TestProtocolSettings.Default);
+
+            // 1 << 3 * ExecFeeFactor = 240 datoshi before Huyao.
+            Assert.AreEqual(240, feeBefore);
+            // 1680 * 1e-11 GAS * ExecFeeFactor = 50.4 datoshi since Huyao, rounded up.
+            Assert.AreEqual(51, feeAfter);
+            Assert.IsLessThan(feeBefore, feeAfter);
+        }
+
+        [TestMethod]
         public void System_Runtime_GetInvocationCounter()
         {
             var snapshot = _snapshotCache.CloneCache();
