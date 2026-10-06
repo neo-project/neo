@@ -733,11 +733,12 @@ namespace Neo.SmartContract.Native
         /// or <see langword="null"/> if the hardfork is unknown or not scheduled on-chain.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hardfork">The raw hardfork name (e.g. <c>Iara</c>).</param>
+        /// <param name="hardfork">UTF-8 raw hardfork name (e.g. <c>Iara</c>). ABI type is ByteArray.</param>
         [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger? GetHardforkActivationHeight(IReadOnlyStore snapshot, string hardfork)
+        public BigInteger? GetHardforkActivationHeight(IReadOnlyStore snapshot, byte[] hardfork)
         {
-            if (!Hardforks.TryParseExact(hardfork, out var hf))
+            var name = DecodeHardforkName(hardfork);
+            if (!Hardforks.TryParseExact(name, out var hf))
                 return null;
             if (!TryGetActivationHeightFromStorage(snapshot, hf, out var height))
                 return null;
@@ -755,33 +756,34 @@ namespace Neo.SmartContract.Native
         /// committee check so outdated nodes stop following the chain until they upgrade.
         /// </remarks>
         /// <param name="engine">The execution engine.</param>
-        /// <param name="hardfork">The raw hardfork name to activate (e.g. <c>Iara</c>).</param>
+        /// <param name="hardfork">UTF-8 raw hardfork name to activate (e.g. <c>Iara</c>). ABI type is ByteArray.</param>
         [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private void ActivateHardfork(ApplicationEngine engine, string hardfork)
+        private void ActivateHardfork(ApplicationEngine engine, byte[] hardfork)
         {
             // Committee first: a random sender must not be able to halt the node with a bogus name.
             AssertCommittee(engine);
 
-            if (!Hardforks.TryParseExact(hardfork, out var hf))
-                throw new UnknownHardforkException(hardfork);
+            var name = DecodeHardforkName(hardfork);
+            if (!Hardforks.TryParseExact(name, out var hf))
+                throw new UnknownHardforkException(name);
 
             // Config-managed hardforks (through Huyao) cannot be activated via Policy.
             if (hf <= ProtocolSettings.LastConfigManagedHardfork)
                 throw new InvalidOperationException(
-                    $"Hardfork {hardfork} must be activated via ProtocolSettings configuration, not Policy.");
+                    $"Hardfork {name} must be activated via ProtocolSettings configuration, not Policy.");
 
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException("Cannot activate hardfork without a persisting block.");
 
             var key = CreateHardforkKey(hf);
             if (engine.SnapshotCache.Contains(key))
-                throw new InvalidOperationException($"Hardfork {hardfork} is already scheduled.");
+                throw new InvalidOperationException($"Hardfork {name} is already scheduled.");
 
             uint activationHeight = checked(engine.PersistingBlock.Index + 1);
             engine.SnapshotCache.Add(CreateHardforkKey(hf), new StorageItem(activationHeight));
 
             engine.SendNotification(Hash, HardforkActivationScheduledEventName,
-                [hardfork, activationHeight]);
+                [name, activationHeight]);
         }
 
         /// <summary>
@@ -869,5 +871,8 @@ namespace Neo.SmartContract.Native
 
         private StorageKey CreateHardforkKey(Hardfork hardfork)
             => CreateStorageKey(Prefix_Hardfork, Encoding.UTF8.GetBytes(Hardforks.GetName(hardfork)));
+
+        private static string DecodeHardforkName(byte[]? hardfork)
+            => Encoding.UTF8.GetString(hardfork ?? []);
     }
 }
