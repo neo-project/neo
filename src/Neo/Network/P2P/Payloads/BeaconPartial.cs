@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography;
+using Neo.Cryptography.BLS12_381;
 using Neo.IO;
 using System;
 using System.IO;
@@ -20,7 +22,7 @@ namespace Neo.Network.P2P.Payloads
     /// </summary>
     public sealed class BeaconPartial : ISerializable
     {
-        public const int SignatureSize = 48;
+        public const int SignatureSize = RandomBeacon.G1CompressedSize;
 
         /// <summary>
         /// dBFT validator index (0-based). Combine uses Shamir x = index + 1.
@@ -34,11 +36,29 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (value is null || value.Length != SignatureSize)
                     throw new ArgumentException($"Partial signature must be {SignatureSize} bytes.", nameof(value));
+                try
+                {
+                    G1Affine.FromCompressed(value);
+                }
+                catch (FormatException)
+                {
+                    throw;
+                }
+                catch (ArithmeticException ex)
+                {
+                    throw new FormatException("Partial signature is not a compressed G1 point.", ex);
+                }
                 field = value;
             }
-        } = new byte[SignatureSize];
+        } = G1Affine.Generator.ToCompressed();
 
         public int Size => sizeof(byte) + SignatureSize;
+
+        /// <summary>
+        /// Parses <see cref="Signature"/> as a compressed G1 affine point.
+        /// </summary>
+        public G1Affine GetSignature()
+            => G1Affine.FromCompressed(Signature);
 
         public void Serialize(BinaryWriter writer)
         {

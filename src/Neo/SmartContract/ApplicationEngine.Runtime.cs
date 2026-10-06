@@ -307,8 +307,9 @@ namespace Neo.SmartContract
         /// <summary>
         /// The implementation of System.Runtime.GetRandom.
         /// Gets the next random number.
-        /// With a block beacon, the value is an unsigned 32-byte integer (at most 2^255 − 1).
-        /// Without a beacon, the historical Murmur128 (128-bit) path is used.
+        /// After <see cref="Hardfork.HF_Huyao"/>, a 32-byte block beacon yields an unsigned
+        /// 32-byte integer (at most 2^255 − 1). Otherwise the historical Murmur128 (128-bit)
+        /// path is used, even if a beacon is present.
         /// </summary>
         /// <returns>The next random number.</returns>
         protected internal BigInteger GetRandom()
@@ -316,11 +317,12 @@ namespace Neo.SmartContract
             byte[] buffer;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             long price;
-            if (_blockBeacon is { Length: Cryptography.RandomBeacon.Size })
+            if (_blockBeacon is { Length: Cryptography.RandomBeacon.Size }
+                && IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 ReadOnlySpan<byte> txHash = ScriptContainer is Transaction tx
                     ? tx.Hash.ToArray()
-                    : nonceData;
+                    : new byte[UInt256.Length];
                 buffer = Cryptography.RandomBeacon.Derive(_blockBeacon, ProtocolSettings.Network, txHash, randomTimes++);
                 price = 1 << 13;
             }
@@ -339,11 +341,11 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Returns the 32-byte block beacon, or empty when the engine has none (pre-RNP / tests).
+        /// Returns a copy of the 32-byte block beacon, or empty when the engine has none (pre-RNP / tests).
         /// </summary>
         protected internal byte[] GetBlockBeacon()
         {
-            return _blockBeacon ?? [];
+            return _blockBeacon is null ? [] : _blockBeacon.AsSpan().ToArray();
         }
 
         /// <summary>

@@ -19,6 +19,8 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using Array = System.Array;
@@ -212,7 +214,46 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(first, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 0), isUnsigned: true));
             Assert.AreEqual(second, new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 1), isUnsigned: true));
             Assert.AreEqual(Convert.ToHexString(beacon), Convert.ToHexString(engine.GetBlockBeacon()));
+            var copy = engine.GetBlockBeacon();
+            copy[0] ^= 0xff;
+            Assert.AreEqual(Convert.ToHexString(beacon), Convert.ToHexString(engine.GetBlockBeacon()));
+            Assert.AreEqual(new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, tx.Hash.ToArray(), 2), isUnsigned: true), engine.GetRandom());
             Assert.ThrowsExactly<ArgumentException>(() => engine.SetBlockBeacon(new byte[31]));
+        }
+
+        [TestMethod]
+        public void TestGetRandom_BeaconSet_HardforkOff_StaysOnMurmur()
+        {
+            var hardforks = Enum.GetValues<Hardfork>()
+                .Where(hf => hf < Hardfork.HF_Huyao)
+                .ToDictionary(hf => hf, _ => 0u);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = hardforks.ToImmutableDictionary()
+            };
+
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
+            var beacon = new byte[32];
+            beacon[0] = 0x42;
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, _system.GenesisBlock, settings: settings, gas: 1100_00000000);
+            engine.SetBlockBeacon(beacon);
+
+            Assert.AreEqual(BigInteger.Parse("271339657438512451304577787170704246350"), engine.GetRandom());
+            Assert.AreEqual(BigInteger.Parse("98548189559099075644778613728143131367"), engine.GetRandom());
+        }
+
+        [TestMethod]
+        public void TestGetRandom_Beacon_NonTransaction_UsesZeroHash()
+        {
+            var beacon = new byte[32];
+            beacon[0] = 0x11;
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            engine.SetBlockBeacon(beacon);
+
+            var actual = engine.GetRandom();
+            var expected = new BigInteger(RandomBeacon.Derive(beacon, TestProtocolSettings.Default.Network, new byte[UInt256.Length], 0), isUnsigned: true);
+            Assert.AreEqual(expected, actual);
         }
 
         [TestMethod]

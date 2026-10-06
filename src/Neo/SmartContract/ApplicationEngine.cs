@@ -279,15 +279,14 @@ namespace Neo.SmartContract
         /// <summary>
         /// Supplies a 32-byte consensus beacon for <see cref="GetRandom"/>.
         /// neo-node will set this from the aggregated DRB; unit tests inject a fixture.
+        /// The PRF path is used only after <see cref="Hardfork.HF_Huyao"/>.
         /// </summary>
-        internal void SetBlockBeacon(ReadOnlyMemory<byte> beacon)
+        public void SetBlockBeacon(ReadOnlyMemory<byte> beacon)
         {
             if (beacon.Length != Cryptography.RandomBeacon.Size)
                 throw new ArgumentException($"Beacon must be {Cryptography.RandomBeacon.Size} bytes.", nameof(beacon));
             _blockBeacon = beacon.ToArray();
         }
-
-        internal byte[]? GetBlockBeaconBytes() => _blockBeacon;
 
         #region JumpTable
 

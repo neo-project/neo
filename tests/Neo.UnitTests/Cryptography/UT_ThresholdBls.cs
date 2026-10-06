@@ -106,6 +106,73 @@ namespace Neo.UnitTests.Cryptography
             var sig = ThresholdBls.Sign(secret, message);
             Assert.IsFalse(ThresholdBls.Verify(G2Affine.Identity, message, sig));
             Assert.IsFalse(ThresholdBls.Verify(ThresholdBls.PublicKey(secret), message, G1Affine.Identity));
+            Assert.IsFalse(ThresholdBls.Verify(ThresholdBls.PublicKey(secret), message, new G1Affine(in Fp.One, in Fp.One)));
+        }
+
+        [TestMethod]
+        public void VerifyPartial_DropsBadShare()
+        {
+            const int n = 7;
+            const int k = 5;
+            var secret = RandomSecret();
+            var shares = ThresholdBls.SplitSecret(secret, n, k, RandomNumberGenerator.Create());
+            var message = RandomBeacon.ComputeRoundId(1, 200, 0);
+            var partials = shares
+                .Select((share, i) => ((byte)i, ThresholdBls.Sign(share, message), ThresholdBls.PublicKey(share)))
+                .ToArray();
+
+            Assert.IsTrue(ThresholdBls.VerifyPartial(partials[0].Item3, message, partials[0].Item2));
+            Assert.IsFalse(ThresholdBls.VerifyPartial(partials[0].Item3, message, partials[1].Item2));
+            Assert.IsFalse(ThresholdBls.VerifyPartial(partials[0].Item3, message, G1Affine.Identity));
+            Assert.IsFalse(ThresholdBls.VerifyPartial(partials[0].Item3, message, new G1Affine(in Fp.One, in Fp.One)));
+        }
+
+        [TestMethod]
+        public void Combine_RejectsBadPartial()
+        {
+            const int n = 4;
+            const int k = 3;
+            var secret = RandomSecret();
+            var shares = ThresholdBls.SplitSecret(secret, n, k, RandomNumberGenerator.Create());
+            var message = "rn"u8.ToArray();
+            var good = shares
+                .Take(k - 1)
+                .Select((share, i) => ((byte)i, ThresholdBls.Sign(share, message)))
+                .ToArray();
+
+            var withIdentity = good.Append(((byte)(k - 1), G1Affine.Identity)).ToArray();
+            Assert.ThrowsExactly<ArgumentException>(() => ThresholdBls.Combine(withIdentity, k));
+
+            var withOffCurve = good.Append(((byte)(k - 1), new G1Affine(in Fp.One, in Fp.One))).ToArray();
+            Assert.ThrowsExactly<ArgumentException>(() => ThresholdBls.Combine(withOffCurve, k));
+        }
+
+        [TestMethod]
+        public void Combine_NonContiguousKSubset_MatchesHonestSignature()
+        {
+            const int n = 7;
+            const int k = 5;
+            var secret = RandomSecret();
+            var shares = ThresholdBls.SplitSecret(secret, n, k, RandomNumberGenerator.Create());
+            var message = RandomBeacon.ComputeRoundId(0x4e454f33, 12_000_001, 1);
+            var honest = ThresholdBls.Sign(secret, message);
+            var partials = shares
+                .Select((share, i) => ((byte)i, ThresholdBls.Sign(share, message)))
+                .ToArray();
+
+            var subset = new[] { partials[0], partials[2], partials[4], partials[5], partials[6] };
+            var combined = ThresholdBls.Combine(subset, k);
+            Assert.IsTrue(combined.Equals(honest));
+            Assert.IsTrue(ThresholdBls.Verify(ThresholdBls.PublicKey(secret), message, combined));
+        }
+
+        [TestMethod]
+        public void FromCompressed_NonG1Stub_Fails()
+        {
+            var stub = new byte[48];
+            stub[0] = 0xab;
+            Assert.Throws<Exception>(() => G1Affine.FromCompressed(stub));
+            Assert.ThrowsExactly<FormatException>(() => G1Affine.FromCompressed(new byte[48]));
         }
 
         private static Scalar RandomSecret()

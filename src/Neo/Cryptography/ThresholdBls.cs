@@ -20,7 +20,7 @@ namespace Neo.Cryptography
 {
     /// <summary>
     /// Threshold BLS (G1 signatures, G2 public keys) for DRB partials.
-    /// Hash-to-G1 is a try-and-increment map (replace with RFC 9380 before mainnet).
+    /// Hash-to-G1 is the V1 try-and-increment map (not RFC 9380; replace with SSWU before any public network).
     /// Shamir x-coordinates are validatorIndex + 1 (x = 0 is the secret).
     /// </summary>
     public static class ThresholdBls
@@ -73,7 +73,7 @@ namespace Neo.Cryptography
 
         public static bool Verify(G2Affine publicKey, ReadOnlySpan<byte> message, G1Affine signature)
         {
-            if (signature.IsIdentity || publicKey.IsIdentity)
+            if (!IsValidG1(signature) || !IsValidG2(publicKey))
                 return false;
             var h = HashToG1(message);
             var g2 = G2Generator;
@@ -83,7 +83,15 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Verifies one Shamir share's G1 partial against that share's G2 public key.
+        /// neo-node should drop a failing share before <see cref="Combine"/>.
+        /// </summary>
+        public static bool VerifyPartial(G2Affine sharePk, ReadOnlySpan<byte> message, G1Affine partial)
+            => Verify(sharePk, message, partial);
+
+        /// <summary>
         /// Combines G1 partials. Each tuple uses a 0-based dBFT validator index.
+        /// Rejects identity, off-curve, and torsion points.
         /// </summary>
         public static G1Affine Combine(IReadOnlyList<(byte ValidatorIndex, G1Affine Partial)> partials, int threshold)
         {
@@ -97,6 +105,8 @@ namespace Neo.Cryptography
             var n = 0;
             foreach (var (index, sig) in partials)
             {
+                if (!IsValidG1(sig))
+                    throw new ArgumentException("Partial must be a non-identity, on-curve, torsion-free G1 point.", nameof(partials));
                 var x = index + 1;
                 if (!seen.Add(x))
                     throw new ArgumentException("Duplicate validator index.", nameof(partials));
@@ -121,7 +131,13 @@ namespace Neo.Cryptography
             return new G1Affine(acc);
         }
 
-        public static G1Affine HashToG1(ReadOnlySpan<byte> message)
+        /// <summary>
+        /// V1-only try-and-increment hash-to-G1. This is not RFC 9380 (no XMD, no SSWU).
+        /// Do not use on any public network; replace with hash_to_curve before testnet.
+        /// Map: big-endian <c>SHA256(DST‖m‖ctr) ‖ SHA256(DST‖m‖ctr⊕0x5a)[0:16]</c>,
+        /// <c>x[0] &amp;= 0x1f</c>, <c>y = sqrt(x³+B)</c> via <c>Fp.Sqrt = a^{(p+1)/4}</c>, then <c>ClearCofactor</c>.
+        /// </summary>
+        internal static G1Affine HashToG1(ReadOnlySpan<byte> message)
         {
             var dst = s_hashToG1Dst;
             for (var ctr = 0; ctr < 256; ctr++)
@@ -144,7 +160,7 @@ namespace Neo.Cryptography
                 {
                     x = Fp.FromBytes(xBytes);
                 }
-                catch (Exception)
+                catch (FormatException)
                 {
                     continue;
                 }
@@ -155,7 +171,7 @@ namespace Neo.Cryptography
                 {
                     y = rhs.Sqrt();
                 }
-                catch (Exception)
+                catch (ArithmeticException)
                 {
                     continue;
                 }
@@ -195,6 +211,12 @@ namespace Neo.Cryptography
             }
             return num * den.Invert();
         }
+
+        private static bool IsValidG1(in G1Affine point)
+            => !point.IsIdentity && point.IsOnCurve && point.IsTorsionFree;
+
+        private static bool IsValidG2(in G2Affine point)
+            => !point.IsIdentity && point.IsOnCurve && point.IsTorsionFree;
 
         private static Fp ComputeCurveB()
         {

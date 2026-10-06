@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Cryptography.BLS12_381;
 using System;
 using System.Numerics;
 
@@ -70,10 +71,22 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
+        public void Finalize_G1Affine_MatchesCompressedEncoding()
+        {
+            var rn = RandomBeacon.ComputeRoundId(1, 2, 0);
+            var point = G1Affine.Generator;
+            Assert.AreEqual(
+                Convert.ToHexString(RandomBeacon.Finalize(point.ToCompressed(), rn)),
+                Convert.ToHexString(RandomBeacon.Finalize(point, rn)));
+        }
+
+        [TestMethod]
         public void Finalize_RejectsEmptySignatureOrWrongRoundId()
         {
             var rn = RandomBeacon.ComputeRoundId(1, 2, 0);
             Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Finalize([], rn));
+            Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Finalize(new byte[1], rn));
+            Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Finalize(new byte[96], rn));
             Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Finalize(new byte[48], new byte[31]));
         }
 
@@ -84,6 +97,8 @@ namespace Neo.UnitTests.Cryptography
             var tx = new byte[32];
             Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Derive(new byte[31], 1, tx, 0));
             Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Derive(beacon, 1, [], 0));
+            Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Derive(beacon, 1, new byte[16], 0));
+            Assert.ThrowsExactly<ArgumentException>(() => RandomBeacon.Derive(beacon, 1, new byte[31], 0));
         }
     }
 }
