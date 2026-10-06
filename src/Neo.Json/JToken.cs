@@ -186,6 +186,13 @@ namespace Neo.Json
             };
         }
 
+        /// <summary>
+        /// Decimal-digit budget matching NeoVM 32-byte integers (~77 digits for 2^255).
+        /// Used to reject oversized integer-valued JSON numbers before <see cref="BigInteger.Pow"/>
+        /// or unbounded <see langword="stackalloc"/>.
+        /// </summary>
+        private const int MaxIntegerDecimalDigits = 78;
+
         private static JNumber ReadNumber(ref Utf8JsonReader reader, bool exactIntegers)
         {
             // Legacy / pre-HF_Huyao: always double (consensus-compatible with historical nodes).
@@ -193,6 +200,8 @@ namespace Neo.Json
                 return new JNumber(reader.GetDouble());
 
             // Prefer exact integer tokens so large values (e.g. token amounts) keep full precision.
+            // TryGetInt64 only succeeds for non-fractional, non-scientific spellings; other integer
+            // forms (trailing .0, 1e3, …) share the same 32-byte path via TryParseExactInteger.
             if (reader.TryGetInt64(out var int64))
             {
                 if (int64 >= JNumber.MIN_SAFE_INTEGER && int64 <= JNumber.MAX_SAFE_INTEGER)
@@ -200,65 +209,146 @@ namespace Neo.Json
                 return JNumber.FromBigInteger(int64);
             }
 
-            // Larger than Int64, or floating / scientific.
             var raw = GetRawNumberText(ref reader);
-
-            if (raw.Contains('e') || raw.Contains('E'))
+            if (TryParseExactInteger(raw, out var integer, out var overflow))
             {
-                if (TryParseScientificInteger(raw, out var sci) && JNumber.FitsMaxIntegerSize(sci))
-                    return JNumber.FromBigInteger(sci);
-                return new JNumber(reader.GetDouble());
-            }
-
-            if (raw.Contains('.'))
-                return new JNumber(reader.GetDouble());
-
-            // Pure integer longer than Int64: cap at NeoVM 32-byte integer size.
-            if (BigInteger.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var big))
-            {
-                if (!JNumber.FitsMaxIntegerSize(big))
+                if (!JNumber.FitsMaxIntegerSize(integer))
                     throw new FormatException($"JSON integer exceeds {JNumber.MaxIntegerSize}-byte limit.");
-                return JNumber.FromBigInteger(big);
+                return JNumber.FromBigInteger(integer);
             }
+
+            if (overflow)
+                throw new FormatException($"JSON integer exceeds {JNumber.MaxIntegerSize}-byte limit.");
 
             return new JNumber(reader.GetDouble());
         }
 
         /// <summary>
-        /// Parses scientific notation into an exact integer when the value has no fractional part
-        /// (e.g. <c>9.05E+28</c> → 905000…0).
+        /// Parses a JSON number as an exact integer when the mathematical value has no fractional
+        /// part, independent of spelling (decimal digits, trailing <c>.0</c>, or scientific form
+        /// such as <c>9.05E+28</c>). Returns <see langword="false"/> with <paramref name="overflow"/>
+        /// set when the value is an integer that cannot fit in <see cref="MaxIntegerDecimalDigits"/>.
         /// </summary>
-        private static bool TryParseScientificInteger(string raw, out BigInteger result)
+        private static bool TryParseExactInteger(ReadOnlySpan<char> raw, out BigInteger result, out bool overflow)
         {
             result = default;
-            var eIndex = raw.IndexOfAny(['e', 'E']);
-            if (eIndex <= 0) return false;
+            overflow = false;
 
-            if (!int.TryParse(raw.AsSpan(eIndex + 1), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var exp))
-                return false;
-            if (exp < 0) return false;
+            var eIndex = raw.IndexOfAny('e', 'E');
+            var mantissa = eIndex >= 0 ? raw[..eIndex] : raw;
+            var expSpan = eIndex >= 0 ? raw[(eIndex + 1)..] : ReadOnlySpan<char>.Empty;
+            var expNegative = expSpan.Length > 0 && expSpan[0] == '-';
 
-            var mantissa = raw.AsSpan(0, eIndex);
+            var negative = mantissa.Length > 0 && mantissa[0] == '-';
+            if (negative)
+                mantissa = mantissa[1..];
+
             var dot = mantissa.IndexOf('.');
-            BigInteger mant;
-            if (dot >= 0)
+            var intPart = dot >= 0 ? mantissa[..dot] : mantissa;
+            var fracPart = dot >= 0 ? mantissa[(dot + 1)..] : ReadOnlySpan<char>.Empty;
+
+            var firstInt = IndexOfNonZero(intPart);
+            var firstFrac = IndexOfNonZero(fracPart);
+            if (firstInt < 0 && firstFrac < 0)
             {
-                var scale = mantissa.Length - dot - 1;
-                Span<char> digits = stackalloc char[mantissa.Length - 1];
-                mantissa[..dot].CopyTo(digits);
-                mantissa[(dot + 1)..].CopyTo(digits[dot..]);
-                if (!BigInteger.TryParse(digits, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out mant))
-                    return false;
-                exp -= scale;
-                if (exp < 0) return false;
+                result = BigInteger.Zero;
+                return true;
             }
-            else if (!BigInteger.TryParse(mantissa, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out mant))
+
+            var lastInt = LastIndexOfNonZero(intPart);
+            var lastFrac = LastIndexOfNonZero(fracPart);
+            var lastConcat = lastFrac >= 0 ? intPart.Length + lastFrac : lastInt;
+            var firstConcat = firstInt >= 0 ? firstInt : intPart.Length + firstFrac;
+            var significantDigits = lastConcat - firstConcat + 1;
+            var trailingZeros = intPart.Length + fracPart.Length - lastConcat - 1;
+            var scaleAdjust = (long)trailingZeros - fracPart.Length;
+
+            var exponent = 0L;
+            if (eIndex >= 0)
             {
+                if (!long.TryParse(expSpan, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out exponent))
+                {
+                    if (expNegative)
+                        return false;
+                    overflow = true;
+                    return false;
+                }
+            }
+
+            // adjExp = scaleAdjust + exponent. Compare without adding values that may overflow long.
+            if (exponent < -scaleAdjust)
+                return false;
+
+            if (significantDigits > MaxIntegerDecimalDigits)
+            {
+                overflow = true;
                 return false;
             }
 
-            result = mant * BigInteger.Pow(10, exp);
+            var maxAdj = MaxIntegerDecimalDigits - significantDigits;
+            if (exponent > maxAdj - scaleAdjust)
+            {
+                overflow = true;
+                return false;
+            }
+
+            var adjExp = (int)(scaleAdjust + exponent);
+            Span<char> digits = stackalloc char[MaxIntegerDecimalDigits];
+            var n = CopySignificantDigits(intPart, fracPart, firstInt, lastInt, firstFrac, lastFrac, digits);
+            if (!BigInteger.TryParse(digits[..n], NumberStyles.None, CultureInfo.InvariantCulture, out var significand))
+                return false;
+
+            if (adjExp > 0)
+                significand *= BigInteger.Pow(10, adjExp);
+
+            result = negative ? -significand : significand;
             return true;
+        }
+
+        private static int IndexOfNonZero(ReadOnlySpan<char> digits)
+        {
+            for (var i = 0; i < digits.Length; i++)
+            {
+                if (digits[i] != '0')
+                    return i;
+            }
+            return -1;
+        }
+
+        private static int LastIndexOfNonZero(ReadOnlySpan<char> digits)
+        {
+            for (var i = digits.Length - 1; i >= 0; i--)
+            {
+                if (digits[i] != '0')
+                    return i;
+            }
+            return -1;
+        }
+
+        private static int CopySignificantDigits(
+            ReadOnlySpan<char> intPart,
+            ReadOnlySpan<char> fracPart,
+            int firstInt,
+            int lastInt,
+            int firstFrac,
+            int lastFrac,
+            Span<char> destination)
+        {
+            var n = 0;
+            if (firstInt >= 0)
+            {
+                var intEnd = lastFrac >= 0 ? intPart.Length : lastInt + 1;
+                intPart[firstInt..intEnd].CopyTo(destination);
+                n = intEnd - firstInt;
+            }
+            if (lastFrac >= 0)
+            {
+                var fracStart = firstInt >= 0 ? 0 : firstFrac;
+                var fracSlice = fracPart[fracStart..(lastFrac + 1)];
+                fracSlice.CopyTo(destination[n..]);
+                n += fracSlice.Length;
+            }
+            return n;
         }
 
         private static string GetRawNumberText(ref Utf8JsonReader reader)

@@ -327,19 +327,25 @@ namespace Neo.Json
 
         private bool EqualsNumber(double value)
         {
-            if (_integer is BigInteger bi)
+            if (TryGetBigInteger(out var thisBi))
             {
-                if (value % 1 != 0) return false;
-                if (value > MAX_SAFE_INTEGER || value < MIN_SAFE_INTEGER)
-                    return false; // cannot trust double equality outside safe range
-                return bi == (long)value;
+                if (!double.IsFinite(value) || value % 1 != 0)
+                    return false;
+                try
+                {
+                    return thisBi == (BigInteger)value;
+                }
+                catch (OverflowException)
+                {
+                    return false;
+                }
             }
             return _double.Equals(value);
         }
 
         public override int GetHashCode()
         {
-            if (_integer is BigInteger bi)
+            if (TryGetBigInteger(out var bi))
                 return bi.GetHashCode();
             return _double.GetHashCode();
         }

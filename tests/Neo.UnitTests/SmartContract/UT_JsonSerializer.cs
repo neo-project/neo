@@ -302,6 +302,12 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(((JNumber)((JArray)doubleJson)[0]!).HasExactBigInteger);
             var doubleItems = (Array)JsonSerializer.Deserialize(postEngine, doubleJson, ExecutionEngineLimits.Default);
             Assert.AreEqual(42, doubleItems[0].GetInteger());
+
+            // Trailing .0 / scientific spellings of 2^53+1 take the same exact path.
+            var spelled = JToken.Parse("[9007199254740993.0,9.007199254740993e+15]", exactIntegers: true)!;
+            var spelledItems = (Array)JsonSerializer.Deserialize(postEngine, spelled, ExecutionEngineLimits.Default);
+            Assert.AreEqual(new BigInteger(unsafeInt), spelledItems[0].GetInteger());
+            Assert.AreEqual(new BigInteger(unsafeInt), spelledItems[1].GetInteger());
         }
 
         [TestMethod]

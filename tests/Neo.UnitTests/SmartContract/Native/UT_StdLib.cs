@@ -434,6 +434,47 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Json_Deserialize_Huyao_IntegerSpellingIndependent()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "9007199254740993");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "9007199254740993.0");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "9.007199254740993e+15");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "0e1000000");
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+                Assert.AreEqual("9007199254740993", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                Assert.AreEqual("9007199254740993", engine.ResultStack.Pop().GetInteger().ToString("R"));
+                Assert.AreEqual("9007199254740993", engine.ResultStack.Pop().GetInteger().ToString("R"));
+            }
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "1e78");
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+            }
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "1e2147483647");
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                engine.LoadScript(script.ToArray());
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+            }
+        }
+
+        [TestMethod]
         public void Json_Serialize()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();

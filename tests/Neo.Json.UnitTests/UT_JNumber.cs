@@ -236,5 +236,57 @@ namespace Neo.Json.UnitTests
             var parsed = (JNumber)JToken.Parse("1e10", exactIntegers: true)!;
             Assert.AreEqual(new BigInteger(10_000_000_000), parsed.GetBigInteger());
         }
+
+        [TestMethod]
+        public void TestParse_ScientificInteger_CapsExponentBeforePow()
+        {
+            Assert.ThrowsExactly<FormatException>(() =>
+                JToken.Parse("1e2147483647", exactIntegers: true));
+
+            var zero = (JNumber)JToken.Parse("0e1000000", exactIntegers: true)!;
+            Assert.AreEqual(BigInteger.Zero, zero.GetBigInteger());
+
+            Assert.ThrowsExactly<FormatException>(() =>
+                JToken.Parse("1e78", exactIntegers: true));
+        }
+
+        [TestMethod]
+        public void TestParse_ExactInteger_IndependentOfSpelling()
+        {
+            const string digits = "9007199254740993";
+            var expected = BigInteger.Parse(digits);
+            var fromInt = (JNumber)JToken.Parse(digits, exactIntegers: true)!;
+            var fromTrailingDot = (JNumber)JToken.Parse(digits + ".0", exactIntegers: true)!;
+            var fromScientific = (JNumber)JToken.Parse("9.007199254740993e+15", exactIntegers: true)!;
+
+            Assert.AreEqual(expected, fromInt.GetBigInteger());
+            Assert.AreEqual(expected, fromTrailingDot.GetBigInteger());
+            Assert.AreEqual(expected, fromScientific.GetBigInteger());
+            Assert.IsTrue(fromInt.HasExactBigInteger);
+            Assert.IsTrue(fromTrailingDot.HasExactBigInteger);
+            Assert.IsTrue(fromScientific.HasExactBigInteger);
+
+            var tooBigDecimal = BigInteger.Pow(10, 78).ToString(CultureInfo.InvariantCulture);
+            Assert.ThrowsExactly<FormatException>(() =>
+                JToken.Parse(tooBigDecimal, exactIntegers: true));
+            Assert.ThrowsExactly<FormatException>(() =>
+                JToken.Parse("1.0e78", exactIntegers: true));
+        }
+
+        [TestMethod]
+        public void TestBigInteger_EqualsAndHashCode_ExactVersusPowerOfTwoDouble()
+        {
+            var exact = JNumber.FromBigInteger(1L << 54);
+            var fromDouble = new JNumber(1L << 54);
+
+            Assert.IsTrue(exact.Equals(fromDouble));
+            Assert.IsTrue(fromDouble.Equals(exact));
+            Assert.AreEqual(exact.GetHashCode(), fromDouble.GetHashCode());
+            Assert.IsTrue(exact.Equals((double)(1L << 54)));
+            Assert.IsTrue(exact.Equals(1L << 54));
+
+            var set = new HashSet<JNumber> { exact };
+            Assert.IsTrue(set.Contains(fromDouble));
+        }
     }
 }
