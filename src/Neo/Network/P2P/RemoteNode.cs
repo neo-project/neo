@@ -59,7 +59,7 @@ namespace Neo.Network.P2P
         public VersionPayload? Version { get; private set; }
 
         /// <summary>
-        /// The index of the last block sent by the remote node.
+        /// The latest known block index of the remote node used for synchronization.
         /// </summary>
         public uint LastBlockIndex { get; private set; } = 0;
 
