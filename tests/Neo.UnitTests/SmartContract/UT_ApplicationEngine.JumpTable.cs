@@ -92,10 +92,9 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 15u));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 30u));
 
-            // Case A: pre-Echidna => Overflow
+            // Case A/B: pre-Gorgon HASKEY uses HasKey_Before543 ((int)key.GetInteger()).
+            // StrictContainerAccess only covers index >= MaxItemSize, not this overflow.
             ExecuteAndAssertFault<OverflowException>(script, settings, index: 5u);
-
-            // Case B: Echidna enabled but pre-Gorgon => Overflow
             ExecuteAndAssertFault<OverflowException>(script, settings, index: 15u);
 
             // Case C: Gorgon enabled => InvalidOperationException
