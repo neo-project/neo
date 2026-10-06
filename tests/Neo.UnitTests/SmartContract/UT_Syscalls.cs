@@ -227,19 +227,19 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void System_Runtime_Platform_PriceSinceHuyao()
+        public void System_Runtime_Log_PriceSinceHuyao()
         {
             var snapshot = _snapshotCache.CloneCache();
 
             using var script = new ScriptBuilder();
-            script.EmitSysCall(ApplicationEngine.System_Runtime_Platform);
+            script.EmitPush("a");
+            script.EmitSysCall(ApplicationEngine.System_Runtime_Log);
 
             long GetFee(ProtocolSettings settings)
             {
                 var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(VMState.HALT, engine.Execute());
-                Assert.AreEqual("NEO", engine.ResultStack.Pop().GetString());
                 return engine.FeeConsumed;
             }
 
@@ -249,10 +249,11 @@ namespace Neo.UnitTests.SmartContract
             });
             var feeAfter = GetFee(TestProtocolSettings.Default);
 
-            // 1 << 3 * ExecFeeFactor = 240 datoshi before Huyao.
-            Assert.AreEqual(240, feeBefore);
-            // 1680 * 1e-11 GAS * ExecFeeFactor = 50.4 datoshi since Huyao, rounded up.
-            Assert.AreEqual(51, feeAfter);
+            // PUSHDATA1 (1 << 3) + Log (1 << 15), multiplied by ExecFeeFactor = 983280 datoshi before Huyao.
+            Assert.AreEqual(983280, feeBefore);
+            // PUSHDATA1 (1685) + Log (31767), multiplied by 1e-11 GAS * ExecFeeFactor = 1003.56 datoshi
+            // since Huyao, rounded up.
+            Assert.AreEqual(1004, feeAfter);
             Assert.IsLessThan(feeBefore, feeAfter);
         }
 

@@ -117,7 +117,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The trigger of the execution.
         /// </summary>
-        [InteropPrice(Hardfork.HF_Huyao, 1369)]
+        [InteropPrice(Hardfork.HF_Huyao, 8700)]
         public TriggerType Trigger { get; }
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        [InteropPrice(Hardfork.HF_Huyao, 1725)]
+        [InteropPrice(Hardfork.HF_Huyao, 8900)]
         public long GasLeft
         {
             get
@@ -202,13 +202,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the current context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
-        [InteropPrice(Hardfork.HF_Huyao, 1513)]
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public UInt160? CurrentScriptHash => CurrentContext?.GetScriptHash();
 
         /// <summary>
         /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
-        [InteropPrice(Hardfork.HF_Huyao, 4540)]
+        [InteropPrice(Hardfork.HF_Huyao, 9567)]
         public virtual UInt160? CallingScriptHash
         {
             get
@@ -222,7 +222,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
-        [InteropPrice(Hardfork.HF_Huyao, 1554)]
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public virtual UInt160? EntryScriptHash => EntryContext?.GetScriptHash();
 
         /// <summary>
