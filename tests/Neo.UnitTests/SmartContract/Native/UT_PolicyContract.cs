@@ -1018,6 +1018,8 @@ namespace Neo.UnitTests.SmartContract.Native
         private static ContractParameter HardforkName(string name) =>
             new(ContractParameterType.String) { Value = name };
 
+        private static readonly ContractParameter DefaultActivationDelay = new(ContractParameterType.Integer) { Value = 1 };
+
         private static StorageKey IaraStorageKey() =>
             StorageKey.Create(NativeContract.Policy.Id, 25 /* Prefix_Hardfork */, Encoding.UTF8.GetBytes("Iara"));
 
@@ -1042,7 +1044,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
-                    "activateHardfork", HardforkName("Iara"));
+                    "activateHardfork", HardforkName("Iara"), DefaultActivationDelay);
             });
             Assert.IsFalse(UnknownHardforkException.IsInstance(ex));
             Assert.Contains("committee", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -1057,7 +1059,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
-                    "activateHardfork", HardforkName("NotAHardfork"));
+                    "activateHardfork", HardforkName("NotAHardfork"), DefaultActivationDelay);
             });
             Assert.IsFalse(UnknownHardforkException.IsInstance(ex),
                 "Anyone must not be able to halt the node with an unknown hardfork name.");
@@ -1073,7 +1075,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                    "activateHardfork", HardforkName("Huyao"));
+                    "activateHardfork", HardforkName("Huyao"), DefaultActivationDelay);
             });
             Assert.Contains("ProtocolSettings", ex.Message);
         }
@@ -1088,7 +1090,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ex = Assert.ThrowsExactly<UnknownHardforkException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                    "activateHardfork", HardforkName("NotAHardfork"));
+                    "activateHardfork", HardforkName("NotAHardfork"), DefaultActivationDelay);
             });
             Assert.AreEqual("NotAHardfork", ex.HardforkName);
             Assert.Contains("Update node software", ex.Message);
@@ -1106,7 +1108,7 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "activateHardfork",
                 (engine, args) => notification = args,
-                HardforkName("Iara"));
+                HardforkName("Iara"), DefaultActivationDelay);
 
             var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
             Assert.AreEqual(blockIndex + 1, ret.GetInteger());
@@ -1130,12 +1132,12 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<UnknownHardforkException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                    "activateHardfork", HardforkName("iara"));
+                    "activateHardfork", HardforkName("iara"), DefaultActivationDelay);
             });
             Assert.ThrowsExactly<UnknownHardforkException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                    "activateHardfork", HardforkName("HF_Iara"));
+                    "activateHardfork", HardforkName("HF_Iara"), DefaultActivationDelay);
             });
 
             var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("iara"));
@@ -1217,10 +1219,10 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.Policy.Call(snapshot, witness, block,
                 "activateHardfork",
                 (engine, args) => notification = args,
-                HardforkName("Iara"));
+                HardforkName("Iara"), DefaultActivationDelay);
 
             var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
-                NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara")));
+                NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"), DefaultActivationDelay));
             Assert.Contains("is already scheduled", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
 
@@ -1232,11 +1234,76 @@ namespace Neo.UnitTests.SmartContract.Native
             var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
             var witness = new Nep17NativeContractExtensions.ManualWitness(committee);
 
-            NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"));
+            NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"), DefaultActivationDelay);
 
             var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
-                NativeContract.Policy.Call(snapshot, witness, CreateBlock(1001), "activateHardfork", HardforkName("Iara")));
+                NativeContract.Policy.Call(snapshot, witness, CreateBlock(1001), "activateHardfork", HardforkName("Iara"), DefaultActivationDelay));
             Assert.Contains("is already scheduled", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_RemoteActivation()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            uint blockIndex = 10;
+            var block = CreateBlock(blockIndex);
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var witness = new Nep17NativeContractExtensions.ManualWitness(committee);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = ConfigThroughHuyao()
+            };
+
+            NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"), new(ContractParameterType.Integer) { Value = 3 });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
+            Assert.AreEqual(blockIndex + 3, ret.GetInteger());
+
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex + 1));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex + 2));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Iara, blockIndex + 3));
+        }
+
+        [TestMethod]
+        public void Check_ActivateHardfork_Rescheduling()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            uint blockIndex = 10;
+            var block = CreateBlock(blockIndex);
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var witness = new Nep17NativeContractExtensions.ManualWitness(committee);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = ConfigThroughHuyao()
+            };
+
+            // Schedule at block 13.
+            NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"), new(ContractParameterType.Integer) { Value = 3 });
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
+            Assert.AreEqual(blockIndex + 3, ret.GetInteger());
+
+            // Reschedule to block 13 should fail since it's the same block.
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"), new(ContractParameterType.Integer) { Value = 3 })
+            );
+            Assert.Contains("is already scheduled", ex.Message, StringComparison.OrdinalIgnoreCase);
+
+            // Reschedule to block 10 should fail since it's the current block (already past).
+            var ex1 = Assert.Throws<ArgumentOutOfRangeException>(() =>
+                NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"), new(ContractParameterType.Integer) { Value = 0 })
+            );
+            Assert.Contains("Hardfork activation delay should be positive.", ex1.Message, StringComparison.OrdinalIgnoreCase);
+
+            // Reschedule to the earlier block 11 should be OK.
+            NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"), new(ContractParameterType.Integer) { Value = 1 });
+            ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
+            Assert.AreEqual(blockIndex + 1, ret.GetInteger());
+
+            // Reschedule to the later block 15 should be OK.
+            NativeContract.Policy.Call(snapshot, witness, block, "activateHardfork", HardforkName("Iara"), new(ContractParameterType.Integer) { Value = 5 });
+            ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
+            Assert.AreEqual(blockIndex + 5, ret.GetInteger());
         }
 
         [TestMethod]
@@ -1258,7 +1325,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 block,
                 settings);
             using var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.Policy.Hash, "activateHardfork", "Iara");
+            script.EmitDynamicCall(NativeContract.Policy.Hash, "activateHardfork", "Iara", 1);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
@@ -1324,7 +1391,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshotCache.CloneCache();
             var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
             NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committee),
-                CreateBlock(1000), "activateHardfork", HardforkName("Iara"));
+                CreateBlock(1000), "activateHardfork", HardforkName("Iara"), DefaultActivationDelay);
 
             var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
             Assert.AreEqual(1001, ret.GetInteger());
@@ -1349,7 +1416,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var method = typeof(PolicyContract).GetMethod("ActivateHardfork",
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             Assert.IsNotNull(method);
-            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => method.Invoke(NativeContract.Policy, [engine, "Iara"]));
+            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => method.Invoke(NativeContract.Policy, [engine, "Iara", (uint)1]));
             Assert.Contains("persisting block", ex.InnerException.Message, StringComparison.OrdinalIgnoreCase);
         }
 

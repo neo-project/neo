@@ -746,7 +746,9 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Activates a hardfork via committee-signed transaction. Activation takes effect
-        /// from the next block after the persisting block that includes this call.
+        /// since activationDelay blocks after the persisting block that includes this call.
+        /// If the specified hardfork is already scheduled, it reschedules the activation
+        /// height.
         /// </summary>
         /// <remarks>
         /// Introduced with <see cref="Hardfork.HF_Huyao"/>. Hardforks up to and including
@@ -756,9 +758,13 @@ namespace Neo.SmartContract.Native
         /// </remarks>
         /// <param name="engine">The execution engine.</param>
         /// <param name="hardfork">The raw hardfork name to activate (e.g. <c>Iara</c>).</param>
+        /// <param name="activationDelay">The number of blocks to pass before the hardfork activation.</param>
         [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private void ActivateHardfork(ApplicationEngine engine, string hardfork)
+        private void ActivateHardfork(ApplicationEngine engine, string hardfork, uint activationDelay)
         {
+            if (activationDelay < 1)
+                throw new ArgumentOutOfRangeException($"Hardfork activation delay should be positive.");
+
             // Committee first: a random sender must not be able to halt the node with a bogus name.
             AssertCommittee(engine);
 
@@ -773,12 +779,26 @@ namespace Neo.SmartContract.Native
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException("Cannot activate hardfork without a persisting block.");
 
-            var key = CreateHardforkKey(hf);
-            if (engine.SnapshotCache.Contains(key))
-                throw new InvalidOperationException($"Hardfork {hardfork} is already scheduled.");
+            var activationHeight = checked(engine.PersistingBlock.Index + activationDelay);
+            if (TryGetActivationHeightFromStorage(engine.SnapshotCache, hf, out var existingHeight) && existingHeight <= engine.PersistingBlock.Index || existingHeight == activationHeight)
+                throw new InvalidOperationException($"Hardfork {hardfork} is already scheduled at {existingHeight}.");
 
-            uint activationHeight = checked(engine.PersistingBlock.Index + 1);
-            engine.SnapshotCache.Add(CreateHardforkKey(hf), new StorageItem(activationHeight));
+            // Ensure the new activation height is aligned with other scheduled harfork heights.
+            foreach (var (otherKey, value) in engine.SnapshotCache.Find(CreateStorageKey(Prefix_Hardfork), SeekDirection.Forward))
+            {
+                var other = Encoding.UTF8.GetString(otherKey.Key[1..].Span);
+                if (!Hardforks.TryParseExact(other, out var otherHF))
+                    throw new InvalidOperationException($"An unknown hardfork {otherHF} is found in the Policy storage.");
+
+                if (otherHF <= ProtocolSettings.LastConfigManagedHardfork)
+                    continue;
+
+                var otherHeight = (uint)(BigInteger)value;
+                if ((otherHF < hf && otherHeight > activationHeight) || (otherHF > hf && otherHeight < activationHeight))
+                    throw new InvalidOperationException($"Hardfork {hardfork} scheduled at {activationHeight} conflicts with hardfork {Hardforks.GetName(otherHF)} scheduled at {otherHeight}.");
+            }
+
+            engine.SnapshotCache.GetAndChange(CreateHardforkKey(hf), () => new StorageItem()).Set(activationHeight);
 
             engine.SendNotification(Hash, HardforkActivationScheduledEventName,
                 [hardfork, activationHeight]);
