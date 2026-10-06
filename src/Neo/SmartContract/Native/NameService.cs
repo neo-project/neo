@@ -19,12 +19,11 @@ using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -36,7 +35,8 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class NameService : NonFungibleToken<NameState>
     {
-        private const int NameMaxLength = 64; // NEP-11 tokenId limit; name is the token id
+        private const int NameMaxLength = 64; // NEP-11 tokenId limit; SLD token names
+        private const int RecordNameMaxLength = 255; // original non-native NNS FQDN limit for records
         private const ulong OneYear = 365ul * TimeSpan.MillisecondsPerDay;
         private const ulong TenYears = OneYear * 10;
 
@@ -317,7 +317,7 @@ namespace Neo.SmartContract.Native
                 Expiration = engine.GetTime() + OneYear,
                 Admin = null
             };
-            await Mint(engine, tokenId, state, false);
+            await Mint(engine, tokenId, state, true);
             return true;
         }
 
@@ -472,7 +472,7 @@ namespace Neo.SmartContract.Native
         /// Caller must be the legacy contract (transfer of old name token to this native).
         /// Binds the domain under native NNS to <paramref name="from"/> (previous owner).
         /// </summary>
-        [ContractMethod(CpuFee = 1 << 17, StorageFee = 100, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "onNEP11Payment")]
+        [ContractMethod(CpuFee = 1 << 17, StorageFee = 100, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify, Name = "onNEP11Payment")]
         private async ContractTask OnNEP11Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, byte[] tokenId, StackItem data)
         {
             var caller = engine.CallingScriptHash
@@ -485,6 +485,10 @@ namespace Neo.SmartContract.Native
 
             tokenId = ValidateTokenId(tokenId);
             var name = Utility.StrictUTF8.GetString(tokenId);
+            var fragments = SplitAndCheck(name, false)
+                ?? throw new FormatException("The format of the name is incorrect.");
+            if (!engine.SnapshotCache.Contains(CreateStorageKey(Prefix_Root, Utility.StrictUTF8.GetBytes(fragments[^1]))))
+                throw new InvalidOperationException("The root does not exist.");
 
             // If already native-owned and not expired, reject; if expired, reclaim.
             var existing = GetTokenState(engine.SnapshotCache, tokenId);
@@ -503,7 +507,7 @@ namespace Neo.SmartContract.Native
                 Expiration = engine.GetTime() + OneYear,
                 Admin = null
             };
-            await Mint(engine, tokenId, state, false);
+            await Mint(engine, tokenId, state, true);
         }
 
         #endregion
@@ -516,20 +520,33 @@ namespace Neo.SmartContract.Native
             return DeserializePriceList(item.Value.Span);
         }
 
-        private static byte[] SerializePriceList(long[] prices)
+        internal static byte[] SerializePriceList(long[] prices)
         {
-            var pricesLength = prices.Length;
-            var prefixLengthBytes = MemoryMarshal.CreateSpan(ref Unsafe.As<int, byte>(ref pricesLength), sizeof(int));
-            var pricesArrayBytes = MemoryMarshal.CreateSpan(ref Unsafe.As<long, byte>(ref prices[0]), prices.Length * sizeof(long));
-            return [.. prefixLengthBytes, .. pricesArrayBytes];
+            if (prices.Length < 1)
+                throw new ArgumentException("The price list must contain at least 1 item.");
+            var data = new byte[sizeof(int) + prices.Length * sizeof(long)];
+            BinaryPrimitives.WriteInt32LittleEndian(data, prices.Length);
+            var dest = data.AsSpan(sizeof(int));
+            for (var i = 0; i < prices.Length; i++)
+                BinaryPrimitives.WriteInt64LittleEndian(dest.Slice(i * sizeof(long)), prices[i]);
+            return data;
         }
 
-
-        private static long[] DeserializePriceList(ReadOnlySpan<byte> data)
+        internal static long[] DeserializePriceList(ReadOnlySpan<byte> data)
         {
-            var pricesLength = Unsafe.As<byte, int>(ref MemoryMarshal.GetReference(data));
-            var pricesSpan = MemoryMarshal.CreateSpan(ref Unsafe.As<byte, long>(ref MemoryMarshal.GetReference(data[sizeof(int)..])), pricesLength);
-            return [.. pricesSpan];
+            if (data.Length < sizeof(int))
+                throw new FormatException("Invalid price list.");
+            var pricesLength = BinaryPrimitives.ReadInt32LittleEndian(data);
+            if (pricesLength < 1 || (uint)pricesLength > (uint)(data.Length - sizeof(int)) / sizeof(long))
+                throw new FormatException("Invalid price list.");
+            var expected = sizeof(int) + pricesLength * sizeof(long);
+            if (data.Length != expected)
+                throw new FormatException("Invalid price list.");
+            var prices = new long[pricesLength];
+            var src = data[sizeof(int)..];
+            for (var i = 0; i < pricesLength; i++)
+                prices[i] = BinaryPrimitives.ReadInt64LittleEndian(src.Slice(i * sizeof(long)));
+            return prices;
         }
 
         private StorageKey GetRecordKey(byte[] tokenKey, string name, RecordType type)
@@ -633,8 +650,9 @@ namespace Neo.SmartContract.Native
 
         private static string[]? SplitAndCheck(string name, bool allowMultipleFragments)
         {
+            var maxLength = allowMultipleFragments ? RecordNameMaxLength : NameMaxLength;
             var length = name.Length;
-            if (length < 3 || length > NameMaxLength) return null;
+            if (length < 3 || length > maxLength) return null;
             var fragments = name.Split('.');
             length = fragments.Length;
             if (length < 2 || length > 8) return null;

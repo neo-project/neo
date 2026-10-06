@@ -20,11 +20,11 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -287,6 +287,12 @@ namespace Neo.UnitTests.SmartContract.Native
             var transfer = methods.Values.Single(m => m.Name == "transfer");
             Assert.AreEqual(CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify, transfer.RequiredCallFlags);
 
+            var register = methods.Values.Single(m => m.Name == "register");
+            Assert.AreEqual(CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify, register.RequiredCallFlags);
+
+            var onNep11 = methods.Values.Single(m => m.Name == "onNEP11Payment");
+            Assert.AreEqual(CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify, onNep11.RequiredCallFlags);
+
             var setPrice = methods.Values.Single(m => m.Name == "setPrice");
             Assert.AreEqual(CallFlags.States, setPrice.RequiredCallFlags);
         }
@@ -491,6 +497,23 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId });
             Assert.IsInstanceOfType<Map>(props);
             Assert.AreEqual("bob.neo", ((Map)props)["name"].GetString());
+        }
+
+        [TestMethod]
+        public void Register_ToContractWithoutOnNEP11Payment_Faults()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var block = BlockAt(0, 10_000_000);
+            var contract = TestUtils.GetContract();
+            snapshot.AddContract(contract.Hash, contract);
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CallWithWitness(snapshot, block, [contract.Hash], "register",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = "recv.neo" },
+                        new ContractParameter(ContractParameterType.Hash160) { Value = contract.Hash }
+                    ]));
         }
 
         [TestMethod]
@@ -1021,6 +1044,64 @@ namespace Neo.UnitTests.SmartContract.Native
             AssertOwner(snapshot, expiredBlock, Utility.StrictUTF8.GetBytes(name), other);
         }
 
+        [TestMethod]
+        public void SplitAndCheck_TokenIdCap64_RecordFqdnCap255()
+        {
+            // Token ids stay at the NEP-11 64-byte cap. CheckFragment allows 63-char labels,
+            // so a 61-char label + '.' + "neo" is 65 bytes and is format-invalid for register.
+            // Record FQDNs use the original non-native NNS 255-byte cap, so a 63-char subdomain
+            // under alice.neo (73 bytes) is valid for setRecord.
+            var snapshot = _snapshotCache.CloneCache();
+            var owner = OwnerHash();
+            var block = BlockAt(0, 20_000_000);
+            var token65 = new string('a', 61) + ".neo";
+            Assert.AreEqual(65, token65.Length);
+
+            Assert.ThrowsExactly<FormatException>(() =>
+                CallWithWitness(snapshot, block, [owner], "register",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = token65 },
+                        new ContractParameter(ContractParameterType.Hash160) { Value = owner }
+                    ]));
+
+            var token64 = new string('b', 60) + ".neo";
+            Assert.AreEqual(64, token64.Length);
+            Assert.IsTrue(CallWithWitness(snapshot, block, [owner], "register",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = token64 },
+                    new ContractParameter(ContractParameterType.Hash160) { Value = owner }
+                ]).GetBoolean());
+
+            RegisterName(snapshot, block, owner, "alice.neo");
+            var record73 = new string('c', 63) + ".alice.neo";
+            Assert.AreEqual(73, record73.Length);
+            CallWithWitness(snapshot, block, [owner], "setRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = record73 },
+                    RecordTypeParam(RecordType.TXT),
+                    new ContractParameter(ContractParameterType.String) { Value = "ok" }
+                ]);
+            Assert.AreEqual("ok", CallWithWitness(snapshot, block, [], "getRecord",
+                args:
+                [
+                    new ContractParameter(ContractParameterType.String) { Value = record73 },
+                    RecordTypeParam(RecordType.TXT)
+                ]).GetString());
+
+            var record256 = new string('d', 256);
+            Assert.ThrowsExactly<FormatException>(() =>
+                CallWithWitness(snapshot, block, [owner], "setRecord",
+                    args:
+                    [
+                        new ContractParameter(ContractParameterType.String) { Value = record256 },
+                        RecordTypeParam(RecordType.TXT),
+                        new ContractParameter(ContractParameterType.String) { Value = "too-long" }
+                    ]));
+        }
+
         #endregion
 
         #region Migration success / legacy allowlist
@@ -1117,6 +1198,66 @@ namespace Neo.UnitTests.SmartContract.Native
                     RecordTypeParam(RecordType.TXT)
                 ]);
             Assert.IsTrue(rec.IsNull);
+        }
+
+        [TestMethod]
+        public void OnNEP11Payment_UnknownRoot_Throws()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var legacy = UInt160.Parse("0x3333333333333333333333333333333333333333");
+            var from = OwnerHash();
+            var block = BlockAt(0, 50_000_000);
+            var tokenId = Utility.StrictUTF8.GetBytes("foo.notneo");
+
+            CallWithWitness(snapshot, block, [committee], "addLegacyContract",
+                args: new ContractParameter(ContractParameterType.Hash160) { Value = legacy });
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CallWithCallingScript(snapshot, block, legacy, [from], "onNEP11Payment",
+                    new ContractParameter(ContractParameterType.Hash160) { Value = from },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)1 },
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = tokenId },
+                    new ContractParameter(ContractParameterType.Any) { Value = null }));
+        }
+
+        [TestMethod]
+        public void PriceList_LittleEndian_RoundTrip_AndTruncatedOverlongThrow()
+        {
+            long[] prices = [2_00000000, -1, -1, 200_00000000, 70_00000000];
+            var encoded = NameService.SerializePriceList(prices);
+            Assert.AreEqual(sizeof(int) + prices.Length * sizeof(long), encoded.Length);
+            Assert.AreEqual(prices.Length, BinaryPrimitives.ReadInt32LittleEndian(encoded));
+            Assert.AreEqual(prices[0], BinaryPrimitives.ReadInt64LittleEndian(encoded.AsSpan(sizeof(int))));
+            Assert.AreSequenceEqual(prices, NameService.DeserializePriceList(encoded));
+
+            Assert.ThrowsExactly<FormatException>(() => NameService.DeserializePriceList([]));
+            Assert.ThrowsExactly<FormatException>(() => NameService.DeserializePriceList(new byte[2]));
+
+            var truncated = new byte[sizeof(int) + sizeof(long)];
+            BinaryPrimitives.WriteInt32LittleEndian(truncated, 2);
+            Assert.ThrowsExactly<FormatException>(() => NameService.DeserializePriceList(truncated));
+
+            var overlong = new byte[sizeof(int) + sizeof(long)];
+            BinaryPrimitives.WriteInt32LittleEndian(overlong, 1000);
+            BinaryPrimitives.WriteInt64LittleEndian(overlong.AsSpan(sizeof(int)), prices[0]);
+            Assert.ThrowsExactly<FormatException>(() => NameService.DeserializePriceList(overlong));
+
+            var zeroLength = new byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32LittleEndian(zeroLength, 0);
+            Assert.ThrowsExactly<FormatException>(() => NameService.DeserializePriceList(zeroLength));
+
+            var snapshot = _snapshotCache.CloneCache();
+            var key = StorageKey.Create(NativeContract.NameService.Id, 0x11);
+            snapshot.GetAndChange(key)!.Value = truncated;
+            Assert.ThrowsExactly<FormatException>(() =>
+                NativeContract.NameService.Call(snapshot, "getPrice",
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)3 }));
+
+            snapshot.GetAndChange(key)!.Value = overlong;
+            Assert.ThrowsExactly<FormatException>(() =>
+                NativeContract.NameService.Call(snapshot, "getPrice",
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)3 }));
         }
 
         [TestMethod]
