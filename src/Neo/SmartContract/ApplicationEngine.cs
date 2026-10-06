@@ -96,6 +96,10 @@ namespace Neo.SmartContract
         /// instruction execution.
         /// </summary>
         private bool _whitelisted;
+        /// <summary>
+        /// True when the VM is running the implicit RET (IP past script end). Huyao does not charge that RET.
+        /// </summary>
+        private bool _implicitRet;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -1016,14 +1020,17 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
+            _implicitRet = CurrentContext?.CurrentInstruction is null;
             _preExecuteInstruction?.Invoke(instruction);
         }
 
         protected override void PostExecuteInstruction(Instruction? instruction, RunStats priceArgs)
         {
-            base.PostExecuteInstruction(instruction, priceArgs);
-            Diagnostic?.PostExecuteInstruction(instruction ?? Instruction.RET);
-            _postExecuteInstruction?.Invoke(instruction, priceArgs);
+            var executed = instruction ?? Instruction.RET;
+            base.PostExecuteInstruction(executed, priceArgs);
+            Diagnostic?.PostExecuteInstruction(executed);
+            // Huyao: implicit RET is free. neo-vm#592 may pass coalesced Instruction.RET.
+            _postExecuteInstruction?.Invoke(_implicitRet ? null : instruction, priceArgs);
         }
 
         private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
