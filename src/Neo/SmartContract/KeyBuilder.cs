@@ -110,6 +110,20 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
+        /// Adds part of the key to the builder in LittleEndian.
+        /// </summary>
+        /// <param name="key">Part of the key.</param>
+        /// <returns>A reference to this instance after the add operation has completed.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public KeyBuilder AddLittleEndian(int key)
+        {
+            Span<byte> data = stackalloc byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32LittleEndian(data, key);
+
+            return Add(data);
+        }
+
+        /// <summary>
         /// Adds part of the key to the builder in BigEndian.
         /// </summary>
         /// <param name="key">Part of the key.</param>
