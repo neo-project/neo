@@ -32,7 +32,6 @@ namespace Neo.UnitTests.SmartContract.Native
     public class UT_TemporaryStorage
     {
         private const long TestGas = 1_000_000_000_000_000;
-        private const ulong MaxTtl = 7ul * 24 * 60 * 60 * 1000;
         private const byte PrefixRecord = 0x01;
         private const byte PrefixValidTill = 0x02;
         private const int MaxCleanupBatchSize = 10_000;
