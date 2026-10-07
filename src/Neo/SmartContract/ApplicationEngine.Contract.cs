@@ -150,13 +150,17 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="pubKey">The public key of the account.</param>
         /// <returns>The hash of the account.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 41833)]
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
-                ? CheckSigPrice
-                : 1 << 8;
-            AddFee(fee * _execFeeFactor, false);
+            if (!IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+                BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+                    ? CheckSigPrice
+                    : 1 << 8;
+                AddFee(fee * _execFeeFactor, false);
+            }
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
