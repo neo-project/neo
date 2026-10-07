@@ -166,7 +166,18 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.CurrentSigners.
         /// Get the Signers of the current transaction.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_CurrentSigners = Register("System.Runtime.CurrentSigners", nameof(GetCurrentSigners), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_CurrentSigners = Register("System.Runtime.CurrentSigners", nameof(RuntimeCurrentSigners), 1 << 4, CallFlags.None);
+
+        /// <summary>
+        /// The price of System.Runtime.CurrentSigners per reference pushed onto the stack since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CurrentSignersPricePerRef = 2892;
+
+        /// <summary>
+        /// The base price of System.Runtime.CurrentSigners since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CurrentSignersBasePrice = 18429;
 
         /// <summary>
         /// The implementation of System.Runtime.Platform.
@@ -506,6 +517,22 @@ namespace Neo.SmartContract
                 return tx.Signers;
 
             return null;
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.CurrentSigners.
+        /// Pushes the Signers of the current transaction, or null if is not related to a transaction execution.
+        /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        protected internal void RuntimeCurrentSigners()
+        {
+            var r = ReferenceCounter.Count;
+            Push(Convert(GetCurrentSigners()));
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                var price = CurrentSignersPricePerRef * (ReferenceCounter.Count - r) + CurrentSignersBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
         }
 
         private static bool CheckItemType(StackItem item, ContractParameterType type)
