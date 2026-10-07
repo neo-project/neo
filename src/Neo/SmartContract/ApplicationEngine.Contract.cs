@@ -38,6 +38,17 @@ namespace Neo.SmartContract
         private const long ReadFromDiskPrice = 6799366;
 
         /// <summary>
+        /// The price of System.Contract.CreateMultisigAccount per public key since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CreateMultisigAccountPricePerKey = 10581;
+
+        /// <summary>
+        /// The base price of System.Contract.CreateMultisigAccount since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CreateMultisigAccountBasePrice = 62153;
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.CallNative.
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
@@ -158,11 +169,21 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
-                ? CheckSigPrice * pubKeys.Length
-                : 1 << 8;
-            AddFee(fee * _execFeeFactor, false);
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                if (m < 0)
+                    throw new ArgumentOutOfRangeException(nameof(m), "m must be positive and fit int32.");
+                var price = CreateMultisigAccountPricePerKey * pubKeys.Length + CreateMultisigAccountBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
+            else
+            {
+                // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+                BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+                    ? CheckSigPrice * pubKeys.Length
+                    : 1 << 8;
+                AddFee(fee * _execFeeFactor, false);
+            }
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 
