@@ -104,6 +104,16 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_LoadScript = Register("System.Runtime.LoadScript", nameof(RuntimeLoadScript), 1 << 15, CallFlags.AllowCall);
 
         /// <summary>
+        /// The price of System.Runtime.LoadScript per script byte since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long LoadScriptPricePerByte = 187;
+
+        /// <summary>
+        /// The base price of System.Runtime.LoadScript since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long LoadScriptBasePrice = 700000;
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.CheckWitness.
         /// Determines whether the specified account has witnessed the current transaction.
         /// </summary>
@@ -241,10 +251,16 @@ namespace Neo.SmartContract
         /// The implementation of System.Runtime.LoadScript.
         /// Loads a script at rumtime.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal void RuntimeLoadScript(byte[] script, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                var price = LoadScriptPricePerByte * script.Length + LoadScriptBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
 
             ExecutionContextState state = CurrentContext!.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
