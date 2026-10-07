@@ -134,7 +134,7 @@ namespace Neo
             MaxValidUntilBlockIncrement = 86400000 / 15000,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
-            TemporaryStorageMaxTTL = 7 * 24 * 60 * 60 * 1000,
+            TemporaryStorageMaxTTL = 365 * 24 * 60 * 60 * 1_000UL,
             InitialGasDistribution = 52_000_000_00000000,
             Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary()
         };
