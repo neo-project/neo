@@ -138,6 +138,7 @@ namespace Neo.SmartContract
         /// Gets the <see cref="CallFlags"/> of the current context.
         /// </summary>
         /// <returns>The <see cref="CallFlags"/> of the current context.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 5933)]
         protected internal CallFlags GetCallFlags()
         {
             var state = CurrentContext!.GetState<ExecutionContextState>();
