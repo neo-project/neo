@@ -28,6 +28,16 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
 
         /// <summary>
+        /// The price of System.Contract.Call since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long ContractCallPrice = 2205000;
+
+        /// <summary>
+        /// The price of a single read from disk since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long ReadFromDiskPrice = 6799366;
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.CallNative.
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
@@ -71,6 +81,7 @@ namespace Neo.SmartContract
         /// <param name="method">The method of the contract to be called.</param>
         /// <param name="callFlags">The <see cref="CallFlags"/> to be used to call the contract.</param>
         /// <param name="args">The arguments to be used.</param>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
             if (method.StartsWith('_')) throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
@@ -78,6 +89,14 @@ namespace Neo.SmartContract
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
             ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                var price = ContractCallPrice;
+                // Non-native contracts may be read from disk.
+                if (contract is null || contract.Id >= 0)
+                    price += ReadFromDiskPrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
