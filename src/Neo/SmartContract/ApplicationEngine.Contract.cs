@@ -111,6 +111,7 @@ namespace Neo.SmartContract
         /// Calls to a native contract.
         /// </summary>
         /// <param name="version">The version of the native contract to be called.</param>
+        [InteropPrice(Hardfork.HF_Huyao, 1130000)]
         protected internal void CallNativeContract(byte version)
         {
             NativeContract? contract = NativeContract.GetContract(CurrentScriptHash!);
