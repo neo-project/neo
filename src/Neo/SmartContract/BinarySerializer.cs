@@ -55,8 +55,20 @@ namespace Neo.SmartContract
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(ReadOnlyMemory<byte> data, ExecutionEngineLimits limits)
         {
+            return Deserialize(data, limits, out _);
+        }
+
+        /// <summary>
+        /// Deserializes a <see cref="StackItem"/> from byte array.
+        /// </summary>
+        /// <param name="data">The byte array to parse.</param>
+        /// <param name="limits">The limits for the deserialization.</param>
+        /// <param name="bytesRead">The total length of <see cref="ByteString"/> and <see cref="Buffer"/> items read.</param>
+        /// <returns>The deserialized <see cref="StackItem"/>.</returns>
+        internal static StackItem Deserialize(ReadOnlyMemory<byte> data, ExecutionEngineLimits limits, out int bytesRead)
+        {
             MemoryReader reader = new(data);
-            return Deserialize(ref reader, (uint)Math.Min(data.Length, limits.MaxItemSize), limits.MaxStackSize);
+            return Deserialize(ref reader, (uint)Math.Min(data.Length, limits.MaxItemSize), limits.MaxStackSize, out bytesRead);
         }
 
         /// <summary>
@@ -79,6 +91,20 @@ namespace Neo.SmartContract
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems)
         {
+            return Deserialize(ref reader, maxSize, maxItems, out _);
+        }
+
+        /// <summary>
+        /// Deserializes a <see cref="StackItem"/> from <see cref="MemoryReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+        /// <param name="maxSize">The maximum size of the result.</param>
+        /// <param name="maxItems">The max of items to serialize</param>
+        /// <param name="bytesRead">The total length of <see cref="ByteString"/> and <see cref="Buffer"/> items read.</param>
+        /// <returns>The deserialized <see cref="StackItem"/>.</returns>
+        private static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, out int bytesRead)
+        {
+            bytesRead = 0;
             Stack<StackItem> deserialized = new();
             var undeserialized = 1;
             while (undeserialized-- > 0)
@@ -96,11 +122,18 @@ namespace Neo.SmartContract
                         deserialized.Push(new BigInteger(reader.ReadVarMemory(Integer.MaxSize).Span));
                         break;
                     case StackItemType.ByteString:
-                        deserialized.Push(reader.ReadVarMemory((int)maxSize));
+                        {
+                            var memory = reader.ReadVarMemory((int)maxSize);
+                            bytesRead += memory.Length;
+                            deserialized.Push(memory);
+                        }
                         break;
                     case StackItemType.Buffer:
-                        var memory = reader.ReadVarMemory((int)maxSize);
-                        deserialized.Push(new Buffer(memory.Span));
+                        {
+                            var memory = reader.ReadVarMemory((int)maxSize);
+                            bytesRead += memory.Length;
+                            deserialized.Push(new Buffer(memory.Span));
+                        }
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:
