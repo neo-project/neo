@@ -110,6 +110,17 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", nameof(CheckWitness), 1 << 10, CallFlags.None);
 
         /// <summary>
+        /// The price of System.Runtime.CheckWitness per checked witness rule since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CheckWitnessPricePerRule = 297286;
+
+        /// <summary>
+        /// The base price of System.Runtime.CheckWitness since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CheckWitnessBasePrice = 1035000;
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetInvocationCounter.
         /// Gets the number of times the current contract has been called during the execution.
         /// </summary>
@@ -242,6 +253,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hashOrPubkey">The hash or public key of the account.</param>
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
             UInt160 hash = hashOrPubkey.Length switch
@@ -250,7 +262,10 @@ namespace Neo.SmartContract
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
                 _ => throw new ArgumentException("Invalid hashOrPubkey length", nameof(hashOrPubkey))
             };
-            return CheckWitnessInternal(hash);
+            var result = CheckWitnessInternal(hash, out var rulesChecked);
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+                AddFemtoGas((CheckWitnessPricePerRule * rulesChecked + CheckWitnessBasePrice) * _execFeeFactor, false);
+            return result;
         }
 
         /// <summary>
@@ -260,6 +275,18 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckWitnessInternal(UInt160 hash)
         {
+            return CheckWitnessInternal(hash, out _);
+        }
+
+        /// <summary>
+        /// Determines whether the specified account has witnessed the current transaction.
+        /// </summary>
+        /// <param name="hash">The hash of the account.</param>
+        /// <param name="rulesChecked">The number of checked <see cref="Signer.Rules"/>.</param>
+        /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
+        private bool CheckWitnessInternal(UInt160 hash, out int rulesChecked)
+        {
+            rulesChecked = 0;
             if (hash.Equals(CallingScriptHash)) return true;
 
             if (ScriptContainer is Transaction tx)
@@ -277,11 +304,18 @@ namespace Neo.SmartContract
                 }
                 Signer? signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
-                foreach (WitnessRule rule in signer.GetAllRules())
+                var rules = signer.GetAllRules().ToArray();
+                var explicitRules = signer.Scopes.HasFlag(WitnessScope.WitnessRules) ? signer.Rules!.Length : 0;
+                var implicitRules = rules.Length - explicitRules;
+                for (int i = 0; i < rules.Length; i++)
                 {
-                    if (rule.Condition.Match(this))
-                        return rule.Action == WitnessRuleAction.Allow;
+                    if (rules[i].Condition.Match(this))
+                    {
+                        rulesChecked = Math.Max(0, i + 1 - implicitRules);
+                        return rules[i].Action == WitnessRuleAction.Allow;
+                    }
                 }
+                rulesChecked = explicitRules;
                 return false;
             }
 
