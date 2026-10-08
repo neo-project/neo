@@ -1,5 +1,13 @@
 // Copyright (C) 2015-2026 The Neo Project.
-// Licensed under the MIT software license.
+//
+// UT_AccountManagement.TransactionCommitment.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
@@ -128,8 +136,10 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (int index in new[] { 2, 3 })
                 foreach (var value in invalid)
                 {
-                    var arguments = new Array([id.ToArray(), payload, 0, 0]); arguments[index] = value;
-                    using var engine = InvokeItems(snapshot, method, arguments);
+                    var arguments = new Array([id.ToArray(), payload, 0, 0])
+                    {
+                        [index] = value
+                    };                     using var engine = InvokeItems(snapshot, method, arguments);
                     Assert.AreEqual(VMState.FAULT, engine.State, $"{method} counter {index} accepted {value.Type}");
                     Assert.AreEqual(0, engine.Notifications.Count);
                 }

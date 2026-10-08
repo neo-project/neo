@@ -10,10 +10,9 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Ledger;
-using Neo.Cryptography;
-using Neo.Wallets;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -21,6 +20,7 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
+using Neo.Wallets;
 using System;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -145,7 +145,8 @@ namespace Neo.UnitTests.SmartContract.Native
                         ? [new Signer { Account = proxy, Scopes = WitnessScope.Global }]
                         : [new Signer { Account = Next, Scopes = WitnessScope.None },
                            new Signer { Account = proxy, Scopes = WitnessScope.CustomContracts, AllowedContracts = [NativeContract.StdLib.Hash] }],
-                    Attributes = [], Witnesses = []
+                    Attributes = [],
+                    Witnesses = []
                 };
                 using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, Block(1000), Settings, gas: 150_000_000);
                 engine.LoadScript(SmartAccountProtocol.CreateVerificationScript(id), configureState: state => state.CallFlags = CallFlags.ReadOnly);
