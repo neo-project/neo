@@ -139,7 +139,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     var arguments = new Array([id.ToArray(), payload, 0, 0])
                     {
                         [index] = value
-                    };                     using var engine = InvokeItems(snapshot, method, arguments);
+                    }; using var engine = InvokeItems(snapshot, method, arguments);
                     Assert.AreEqual(VMState.FAULT, engine.State, $"{method} counter {index} accepted {value.Type}");
                     Assert.AreEqual(0, engine.Notifications.Count);
                 }
