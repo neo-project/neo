@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
     public sealed partial class AccountManagement : NativeContract
     {
         private const long BaseCpuFee = 1 << 15;
-        private const string ParameterDigest = "2601e456d8d5a3f746c8cdcd6f90f19a62bf00bdfb856ef6f14be74a2b44f81a";
+        private const string ParameterDigest = "a55dfe56356cdb9f51d9139f7f6e617c8bf4bcaa3211fd69a53dc980d477c03e";
         private const byte ProxyPrefix = 0x11, PendingCallPrefix = 0x30, DependencyPrefix = 0x40;
         public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_SmartAccountV1];
 
@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Native
         [ContractEvent(Hardfork.HF_SmartAccountV1, 9, "RecoveryAddressChangeCancelled", "accountId", ContractParameterType.Hash160, "configurationNonce", ContractParameterType.Integer)]
         [ContractEvent(Hardfork.HF_SmartAccountV1, 10, "RecoveryProposed", "accountId", ContractParameterType.Hash160, "newCustodyAddress", ContractParameterType.Hash160, "executeAt", ContractParameterType.Integer, "configurationNonce", ContractParameterType.Integer)]
         [ContractEvent(Hardfork.HF_SmartAccountV1, 11, "RecoveryCancelled", "accountId", ContractParameterType.Hash160, "configurationNonce", ContractParameterType.Integer)]
-        [ContractEvent(Hardfork.HF_SmartAccountV1, 12, "RecoveryExecuted", "accountId", ContractParameterType.Hash160, "oldCustodyAddress", ContractParameterType.Hash160, "newCustodyAddress", ContractParameterType.Hash160, "configurationNonce", ContractParameterType.Integer)]
+        [ContractEvent(Hardfork.HF_SmartAccountV1, 12, "RecoveryExecuted", "accountId", ContractParameterType.Hash160, "oldCustodyAddress", ContractParameterType.Hash160, "newCustodyAddress", ContractParameterType.Hash160, "configurationNonce", ContractParameterType.Integer, "authorityEpoch", ContractParameterType.Integer)]
         [ContractEvent(Hardfork.HF_SmartAccountV1, 13, "AccountFrozen", "accountId", ContractParameterType.Hash160)]
         [ContractEvent(Hardfork.HF_SmartAccountV1, 14, "AccountUnfrozen", "accountId", ContractParameterType.Hash160)]
         [ContractEvent(Hardfork.HF_SmartAccountV1, 15, "UserOpExecuted", "accountId", ContractParameterType.Hash160, "targetContract", ContractParameterType.Hash160, "method", ContractParameterType.String, "nonce", ContractParameterType.Integer)]
@@ -52,14 +52,14 @@ namespace Neo.SmartContract.Native
         protected override void OnManifestCompose(IsHardforkEnabledDelegate checker, uint height, ContractManifest manifest)
         {
             if (checker(Hardfork.HF_SmartAccountV1, height))
-                manifest.Extra = new JObject { ["smartAccount"] = new JObject { ["abiVersion"] = 1, ["profileParameterDigest"] = ParameterDigest } };
+                manifest.Extra = new JObject { ["smartAccount"] = new JObject { ["abiVersion"] = SmartAccountProtocol.Version, ["profileParameterDigest"] = ParameterDigest } };
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
             if (hardfork == Hardfork.HF_SmartAccountV1)
                 engine.SnapshotCache.Add(CreateStorageKey(0), new StorageItem(BinarySerializer.Serialize(
-                    new Array([1, Convert.FromHexString(ParameterDigest)]), 128, 8)));
+                    new Array([(int)SmartAccountProtocol.Version, Convert.FromHexString(ParameterDigest)]), 128, 8)));
             return ContractTask.CompletedTask;
         }
 
@@ -92,6 +92,10 @@ namespace Neo.SmartContract.Native
             if (prior is not null && prior.ConfigurationNonce != state.ConfigurationNonce)
                 foreach (var kind in new[] { SmartAccountModuleKind.Verifier, SmartAccountModuleKind.Hook })
                     engine.SnapshotCache.Delete(RoleKey(PendingCallPrefix, state.AccountId, kind));
+            if (prior is not null && prior.AuthorityEpoch != state.AuthorityEpoch)
+                // Recovery must not parse stale dependency records or call revoked modules.
+                foreach (var kind in new[] { SmartAccountModuleKind.Verifier, SmartAccountModuleKind.Hook })
+                    engine.SnapshotCache.Delete(RoleKey(DependencyPrefix, state.AccountId, kind));
             Put(engine, AccountKey(state.AccountId), state.Serialize());
         }
         private void Notify(ApplicationEngine engine, string name, params StackItem[] fields) => engine.SendNotification(Hash, name, new Array(fields));
@@ -116,13 +120,19 @@ namespace Neo.SmartContract.Native
             if (value < 0 || value > SmartAccountProtocol.ExhaustedSequence) throw new FormatException("The stored channel cursor is invalid.");
             return value;
         }
-        [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.None)]
-        private static byte[] GetAuthorizationDomain(ApplicationEngine engine, UInt160 accountId) => SmartAccountProtocol.GetAuthorizationDomain(engine.ProtocolSettings.Network, accountId);
+        [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.ReadStates)]
+        private BigInteger GetAuthorityEpoch(IReadOnlyStore snapshot, UInt160 accountId) => RequireState(snapshot, accountId).AuthorityEpoch;
+        [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.ReadStates)]
+        private byte[] GetAuthorizationDomain(ApplicationEngine engine, UInt160 accountId)
+        {
+            var state = RequireState(engine.SnapshotCache, accountId);
+            return SmartAccountProtocol.GetAuthorizationDomain(engine.ProtocolSettings.Network, accountId, state.AuthorityEpoch, state.ConfigurationNonce);
+        }
         [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.ReadStates)]
         private byte[] GetOperationDigest(ApplicationEngine engine, UInt160 accountId, Array op)
         {
-            _ = RequireState(engine.SnapshotCache, accountId);
-            return SmartAccountProtocol.GetOperationDigest(engine.ProtocolSettings.Network, accountId, op);
+            var state = RequireState(engine.SnapshotCache, accountId);
+            return SmartAccountProtocol.GetOperationDigest(engine.ProtocolSettings.Network, accountId, op, state.AuthorityEpoch, state.ConfigurationNonce);
         }
         [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.None)]
         private static bool HasModuleContext(ApplicationEngine engine, UInt160 accountId, string moduleType, UInt160 module, string phase)
@@ -151,7 +161,7 @@ namespace Neo.SmartContract.Native
         }
         private SmartAccountModuleBinding Inspect(ApplicationEngine engine, UInt160 module, SmartAccountModuleKind kind, SmartAccountModuleBinding? expected = null)
         {
-            engine.AddFee((BigInteger)BaseCpuFee * engine.ExecFeeFactor, true);
+            engine.AddNativeCpuFee(BaseCpuFee);
             return SmartAccountModulePolicy.Inspect(engine.SnapshotCache, module, kind, expected);
         }
 
@@ -193,7 +203,7 @@ namespace Neo.SmartContract.Native
             Transition(engine, accountId, s => s.ProposeRecovery(newCustody, Now(engine), Witness(engine, s.RecoveryAddress)), "RecoveryProposed", (p, n) => [accountId.ToArray(), newCustody.ToArray(), new BigInteger(Now(engine) + SmartAccountState.CustodyRecoveryDelayMs), new BigInteger(n.ConfigurationNonce)]);
         [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.All)]
         private void ExecuteRecovery(ApplicationEngine engine, UInt160 accountId) =>
-            Transition(engine, accountId, s => s.ExecuteRecovery(Now(engine)), "RecoveryExecuted", (p, n) => [accountId.ToArray(), p.CustodyAddress.ToArray(), n.CustodyAddress.ToArray(), new BigInteger(n.ConfigurationNonce)]);
+            Transition(engine, accountId, s => s.ExecuteRecovery(Now(engine)), "RecoveryExecuted", (p, n) => [accountId.ToArray(), p.CustodyAddress.ToArray(), n.CustodyAddress.ToArray(), new BigInteger(n.ConfigurationNonce), new BigInteger(n.AuthorityEpoch)]);
         [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.All)]
         private void CancelRecovery(ApplicationEngine engine, UInt160 accountId) =>
             Transition(engine, accountId, s => s.CancelRecovery(Now(engine), Witness(engine, s.CustodyAddress), Witness(engine, s.RecoveryAddress)), "RecoveryCancelled", (p, n) => [accountId.ToArray(), new BigInteger(n.ConfigurationNonce)]);

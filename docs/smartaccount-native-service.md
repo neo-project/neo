@@ -1,3 +1,7 @@
+> ABI 2 supersedes the historical ABI 1 recovery/signature semantics described in
+> past receipts below. Current normative rules are in
+> [recovery and authority revocation](smartaccount-recovery-epoch.md).
+
 # Native AccountManagement service integration
 
 ## Purpose and release boundary
@@ -16,7 +20,7 @@ before a complete implementation or production-readiness claim.
 ## Architecture and records
 
 The native class owns storage, entrypoint authorization and callback sequencing.
-SmartAccountState owns the immutable thirteen-field account record; the protocol
+SmartAccountState owns the immutable fourteen-field ABI 2 account record; the protocol
 codec owns operation validation, identity and nonce arithmetic. InvocationContext
 owns one strongly typed, engine-local state instance for transient account locks
 and exact frame grants. Registration and every continuation reuse that instance;
@@ -53,6 +57,12 @@ separation and module admission before publishing state, reverse index and event
 Lifecycle methods use current ledger time, actual witnesses and the immutable
 state transitions, then persist all changes in the native invocation's snapshot.
 Every mutating account operation holds the same-account lock before external calls.
+
+Both execution entrypoints take exactly `(accountId, opOrOps, expectedAuthorityEpoch,
+expectedConfigurationNonce)`. There is no two-argument overload. The two counters
+are exact VM UInt64 Integers and must equal the current record in both Verification
+and Application before any callback or nonce update. Transaction witnesses thereby
+commit to the same authorization state as operation-digest signatures.
 
 UserOperation execution snapshots all caller input, checks status/deadline/nonce,
 validates code, authorizes, consumes nonce, calls hook-pre/target/hook-post/verifier-
@@ -124,7 +134,7 @@ matrix, complete VM refinement, or independent review.
 
 - No configured hardfork: AccountManagement has no callable ABI or state.
 - Register a custody-authorized empty-module account: deterministic accountId,
-  proxy index, Active state and configuration nonce zero.
+  proxy index, Active state, authority epoch zero and configuration nonce zero.
 - Propose and activate recovery-address rotation: immature confirmation faults;
   maturity succeeds, advances the epoch and clears all pending intents.
 - Submit an expired, repeated or reentrant operation: FAULT and no nonce change.
@@ -180,7 +190,9 @@ The private matrices rerun on this exact source-built assembly snapshot cover:
 - Twenty-five recovery/authorization transactions plus registration: fifteen
   HALT and ten expected persisted FAULT outcomes. Real joint witnesses enforce
   unfreeze, custody cancellation expires at maturity, and neutral-payer recovery
-  replaces custody while preserving account ID, proxy, domain and nonce history.
+  replaces custody while preserving account ID, proxy and nonce history. This is
+  a historical ABI 1 receipt: current ABI 2 recovery changes the authorization
+  domain, detaches all modules/pending intents and advances both counters.
   The retired custody key no longer authorizes execution or joint unfreeze.
 - Four current-runtime activation diagnostics, including future, disabled,
   active and exact live activation boundary cases. The historical regression

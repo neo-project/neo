@@ -668,11 +668,13 @@ namespace Neo.Wallets
                     {
                         throw new InvalidOperationException($"Smart contract execution failed for script '{Convert.ToBase64String(script.Span)}'. The execution faulted and cannot be completed.", engine.FaultException);
                     }
-                    tx.SystemFee = engine.FeeConsumed;
+                    tx.SystemFee = engine.MinimumRequiredFee;
                 }
 
                 tx.NetworkFee = tx.CalculateNetworkFee(snapshot, ProtocolSettings, this, maxGas);
-                if (value >= tx.SystemFee + tx.NetworkFee) return tx;
+                BigInteger totalFee = (BigInteger)tx.SystemFee + tx.NetworkFee;
+                if (totalFee > long.MaxValue) throw new InvalidOperationException("The combined transaction fees exceed the protocol limit.");
+                if (value >= totalFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS balance to cover system and network fees. Please ensure your account has enough GAS to pay for transaction fees.");
         }

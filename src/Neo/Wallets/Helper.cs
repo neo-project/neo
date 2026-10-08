@@ -112,6 +112,10 @@ namespace Neo.Wallets
             Func<UInt160, byte[]?>? accountScript, long maxExecutionCost = ApplicationEngine.TestModeGas)
         {
             var hashes = tx.GetScriptHashesForVerifying(snapshot);
+            if (tx.Witnesses is { Length: > 0 } && tx.Witnesses.Length != hashes.Length)
+                throw new ArgumentException("The witness count must match the signer count.", nameof(tx));
+            long executionLimit = Math.Min(maxExecutionCost, MaxVerificationGas);
+            if (executionLimit <= 0) throw new ArgumentOutOfRangeException(nameof(maxExecutionCost));
 
             // base size for transaction: includes const_header + signers + attributes + script + hashes
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize()
@@ -119,13 +123,15 @@ namespace Neo.Wallets
             int index = -1;
             var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(settings, snapshot, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
             BigInteger networkFee = 0;
+            BigInteger requiredVerificationFee = 0;
             foreach (var hash in hashes)
             {
                 index++;
                 var witnessScript = accountScript != null ? accountScript(hash) : null;
-                byte[]? invocationScript = null;
+                byte[]? invocationScript = tx.Witnesses is not null && index < tx.Witnesses.Length
+                    ? tx.Witnesses[index]?.InvocationScript.ToArray() : null;
 
-                if (tx.Witnesses != null && witnessScript is null)
+                if (tx.Witnesses is not null && index < tx.Witnesses.Length && witnessScript is null)
                 {
                     // Try to find the script in the witnesses
                     var witness = tx.Witnesses[index];
@@ -192,7 +198,7 @@ namespace Neo.Wallets
 
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx,
-                        snapshot.CloneCache(), settings: settings, gas: maxExecutionCost);
+                        snapshot.CloneCache(), settings: settings, gas: executionLimit - (long)networkFee);
 
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
@@ -202,8 +208,7 @@ namespace Neo.Wallets
                         if (engine.ResultStack.Count != 1) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                         _ = engine.ResultStack.Pop().GetBoolean(); // Ensure that the result is boolean
                     }
-                    maxExecutionCost -= engine.FeeConsumed;
-                    if (maxExecutionCost <= 0) throw new InvalidOperationException("Insufficient GAS.");
+                    requiredVerificationFee = BigInteger.Max(requiredVerificationFee, networkFee + engine.MinimumRequiredFee);
                     networkFee += engine.FeeConsumed;
                 }
                 else
@@ -220,9 +225,52 @@ namespace Neo.Wallets
                         size += sizeInv.GetVarSize() + sizeInv + witnessScript.GetVarSize();
                         networkFee += execFeeFactor * MultiSignatureContractCost(m, n);
                     }
+                    else
+                    {
+                        // Arbitrary non-empty witnesses (including native account proxies)
+                        // must be executed and sized; they are neither standard signatures
+                        // nor deployed-contract witnesses with an empty verification script.
+                        if (NativeContract.IsNative(hash) || witnessScript.AsSpan().ToScriptHash() != hash)
+                            throw new ArgumentException($"The verification script does not match account {hash}.", nameof(tx));
+                        Script verification;
+                        Script invocation;
+                        invocationScript ??= [];
+                        try
+                        {
+                            verification = new Script(witnessScript, true);
+                            invocation = new Script(invocationScript, true);
+                        }
+                        catch (BadScriptException error)
+                        {
+                            throw new ArgumentException("The custom witness script is malformed.", nameof(tx), error);
+                        }
+                        using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx,
+                            snapshot.CloneCache(), settings: settings, gas: executionLimit - (long)networkFee);
+                        engine.LoadScript(verification, configureState: state =>
+                        {
+                            state.CallFlags = CallFlags.ReadOnly;
+                            state.ScriptHash = hash;
+                        });
+                        engine.LoadScript(invocation, configureState: state => state.CallFlags = CallFlags.None);
+                        if (engine.Execute() != VMState.HALT || engine.ResultStack.Count != 1)
+                            throw new ArgumentException("The custom witness verification failed within the available GAS budget.", nameof(tx), engine.FaultException);
+                        bool valid;
+                        try { valid = engine.ResultStack.Peek().GetBoolean(); }
+                        catch (Exception error) when (error is InvalidCastException or InvalidOperationException)
+                        {
+                            throw new ArgumentException("The custom witness must return a Boolean-compatible result.", nameof(tx), error);
+                        }
+                        if (!valid) throw new ArgumentException("The custom witness verification returned false.", nameof(tx));
+                        size += invocationScript.GetVarSize() + witnessScript.GetVarSize();
+                        requiredVerificationFee = BigInteger.Max(requiredVerificationFee, networkFee + engine.MinimumRequiredFee);
+                        networkFee += engine.FeeConsumed;
+                    }
                 }
+                requiredVerificationFee = BigInteger.Max(requiredVerificationFee, networkFee);
+                if (requiredVerificationFee > executionLimit)
+                    throw new InvalidOperationException("The witnesses exceed the maximum verification GAS budget.");
             }
-            networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
+            networkFee = requiredVerificationFee + size * NativeContract.Policy.GetFeePerByte(snapshot);
             foreach (var attr in tx.Attributes)
             {
                 networkFee += attr.CalculateNetworkFee(snapshot, tx);

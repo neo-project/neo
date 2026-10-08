@@ -34,6 +34,33 @@ namespace Neo.SmartContract.Native
             MemoryReader reader = new(bytes);
             return (Array)BinarySerializer.Deserialize(ref reader, 8192, 8192);
         }
+        private static byte[] SnapshotResult(ApplicationEngine engine, StackItem result)
+        {
+            // Charge the same CPU price and enforce the same data limits as StdLib.serialize.
+            engine.AddNativeCpuFee(1 << 12);
+            return BinarySerializer.Serialize(result, engine.Limits);
+        }
+        private static StackItem ReadResult(ApplicationEngine engine, byte[] snapshot)
+        {
+            engine.AddNativeCpuFee(1 << 14);
+            // ByteString and Buffer backing memory must not alias the stored result snapshot.
+            return BinarySerializer.Deserialize(snapshot.AsSpan().ToArray(), engine.Limits);
+        }
+        // Validate before BigInteger's ordinary interop conversion can coerce Boolean/ByteString.
+        private sealed class ExecutionCounterAttribute : ValidatorAttribute
+        {
+            public override void Validate(StackItem item)
+            {
+                if (item is not Integer integer)
+                    throw new FormatException("SmartAccount execution counters must be UInt64 Integers.");
+                _ = SmartAccountEnvelope.ReadCounter(integer);
+            }
+        }
+        private static void RequireExecutionCounters(SmartAccountState state, ulong expectedAuthorityEpoch, ulong expectedConfigurationNonce)
+        {
+            if (state.AuthorityEpoch != expectedAuthorityEpoch || state.ConfigurationNonce != expectedConfigurationNonce)
+                throw new InvalidOperationException("The SmartAccount execution authority epoch or configuration nonce is stale.");
+        }
         private static void RequireLive(SmartAccountState state, Array operation, ulong now)
         {
             if (state.Status != SmartAccountStatus.Active || operation[4].GetInteger() < now)
@@ -88,26 +115,35 @@ namespace Neo.SmartContract.Native
             StackItem result;
             using (Context(engine).EnterTarget(id, target, engine.CurrentContext!.GetState<ExecutionContextState>()))
                 result = (await targetTask)!;
+            // Each root callback receives its own result graph. Neither one can rewrite
+            // the next callback's policy input or the value returned to the transaction.
+            byte[] resultSnapshot = SnapshotResult(engine, result);
             if (state.Hook is not null)
                 _ = await ModuleCall(engine, state, SmartAccountModuleKind.Hook, state.Hook, "postExecute",
-                    SmartAccountCallbackPhase.PostExecute, CallFlags.All, 250_000_000, false, id.ToArray(), ReadOperation(bytes), result);
+                    SmartAccountCallbackPhase.PostExecute, CallFlags.All, 250_000_000, false, id.ToArray(), ReadOperation(bytes), ReadResult(engine, resultSnapshot));
             if (state.Verifier is not null)
                 _ = await ModuleCall(engine, state, SmartAccountModuleKind.Verifier, state.Verifier, "postExecute",
-                    SmartAccountCallbackPhase.PostExecute, CallFlags.All, 100_000_000, false, id.ToArray(), ReadOperation(bytes), result);
+                    SmartAccountCallbackPhase.PostExecute, CallFlags.All, 100_000_000, false, id.ToArray(), ReadOperation(bytes), ReadResult(engine, resultSnapshot));
             Notify(engine, "UserOpExecuted", id.ToArray(), target.ToArray(), method, nonce);
-            return result;
+            return ReadResult(engine, resultSnapshot);
         }
         [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.All)]
-        private async ContractTask<StackItem> ExecuteUserOp(ApplicationEngine engine, UInt160 accountId, Array op)
+        private async ContractTask<StackItem> ExecuteUserOp(ApplicationEngine engine, UInt160 accountId, Array op,
+            [ExecutionCounter] BigInteger expectedAuthorityEpoch, [ExecutionCounter] BigInteger expectedConfigurationNonce)
         {
             RequireApplication(engine); using var locked = Context(engine).EnterAccount(accountId);
+            RequireExecutionCounters(RequireState(engine.SnapshotCache, accountId),
+                (ulong)expectedAuthorityEpoch, (ulong)expectedConfigurationNonce);
             byte[] bytes = SnapshotOperation(op);
             return (await ExecuteOne(engine, accountId, bytes))!;
         }
         [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.All)]
-        private async ContractTask<Array> ExecuteUserOps(ApplicationEngine engine, UInt160 accountId, Array ops)
+        private async ContractTask<Array> ExecuteUserOps(ApplicationEngine engine, UInt160 accountId, Array ops,
+            [ExecutionCounter] BigInteger expectedAuthorityEpoch, [ExecutionCounter] BigInteger expectedConfigurationNonce)
         {
             RequireApplication(engine); using var locked = Context(engine).EnterAccount(accountId);
+            RequireExecutionCounters(RequireState(engine.SnapshotCache, accountId),
+                (ulong)expectedAuthorityEpoch, (ulong)expectedConfigurationNonce);
             if (ops.Type != StackItemType.Array || ops.Count is 0 or > SmartAccountEnvelope.BatchMax)
                 throw new FormatException("A batch must be an exact non-empty Array of at most 32 operations.");
             var owned = ops.Select(p => p is Array op ? SnapshotOperation(op) : throw new FormatException("A batch entry must be an operation Array.")).ToArray();
@@ -123,8 +159,12 @@ namespace Neo.SmartContract.Native
             var state = RequireState(engine.SnapshotCache, accountId);
             if (engine.CallingScriptHash != state.AccountAddress)
                 throw new InvalidOperationException("Verification must originate from the account's exact proxy script.");
+            // UserOperation signatures authorize actions, not the transaction's fee fields.
+            if (tx.Sender == state.AccountAddress)
+                throw new InvalidOperationException("The SmartAccount proxy cannot be the transaction fee payer.");
             using var locked = Context(engine).EnterAccount(accountId);
             var envelope = SmartAccountEnvelope.Parse(accountId, tx.Script.Span);
+            RequireExecutionCounters(state, envelope.ExpectedAuthorityEpoch, envelope.ExpectedConfigurationNonce);
             envelope.ValidateNonces(channel => GetNonce(engine.SnapshotCache, accountId, channel));
             for (int i = 0; i < envelope.Count; i++)
             {

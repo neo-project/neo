@@ -70,6 +70,7 @@ namespace Neo.SmartContract
         // In the unit of femtoGAS, 1 femtoGAS = 1e-15 GAS
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
+        private BigInteger _minimumRequiredFee;
         // Decimals for fee calculation
         public static readonly BigInteger FeeFactor = 10000;
         private Dictionary<Type, object>? states;
@@ -171,6 +172,15 @@ namespace Neo.SmartContract
                 return (long)consumed;
             }
         }
+
+        /// <summary>
+        /// The minimum transaction budget, in datoshi, required by the observed execution,
+        /// including admission of fixed bounded-call limits. This can exceed FeeConsumed.
+        /// Only a successful execution supplies a fee quote. State or fee-dependent scripts
+        /// must still be replayed with the final transaction; faults retain FeeConsumed's limits.
+        /// </summary>
+        public long MinimumRequiredFee => Math.Max(FeeConsumed,
+            (long)_minimumRequiredFee.DivideCeiling(FeeFactor * OpcodePriceMultiplier));
 
         /// <summary>
         /// Exec Fee Factor. In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
@@ -601,6 +611,23 @@ namespace Neo.SmartContract
             AddFemtoGas(gas * OpcodePriceMultiplier, applyFactor);
         }
 
+        /// <summary>Charges CPU work in the currently resumed native frame.</summary>
+        internal void AddNativeCpuFee(long cpuFee)
+        {
+            if (cpuFee < 0) throw new ArgumentOutOfRangeException(nameof(cpuFee));
+            if (CurrentScriptHash is null || !NativeContract.IsNative(CurrentScriptHash))
+                throw new InvalidOperationException("Native CPU charging requires a current native frame.");
+            // Native continuations can execute during a completed child's RET. Its
+            // instruction exemption must not waive work performed by the resumed caller.
+            bool returningInstructionWhitelist = _whitelisted;
+            try
+            {
+                _whitelisted = CurrentContext!.GetState<ExecutionContextState>().WhiteListed;
+                AddFee(cpuFee * _execFeeFactor, false);
+            }
+            finally { _whitelisted = returningInstructionWhitelist; }
+        }
+
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
@@ -634,22 +661,16 @@ namespace Neo.SmartContract
             // deliberately charged even when the callee is transaction-whitelisted.
             if (_whitelisted)
             {
-                foreach (ContractCallGasBudget? current in EnumerateBudgets(budget))
+                for (ContractCallGasBudget? current = budget; current is not null; current = current.Parent)
                     current.Consumed += gas;
                 return;
             }
 
             _feeConsumed += gas;
-            foreach (ContractCallGasBudget? current in EnumerateBudgets(budget))
+            for (ContractCallGasBudget? current = budget; current is not null; current = current.Parent)
                 current.Consumed += gas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
-        }
-
-        private static IEnumerable<ContractCallGasBudget> EnumerateBudgets(ContractCallGasBudget? budget)
-        {
-            for (ContractCallGasBudget? current = budget; current is not null; current = current.Parent)
-                yield return current;
         }
 
         protected override void OnFault(Exception ex)

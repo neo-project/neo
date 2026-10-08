@@ -55,15 +55,15 @@ def vectors():
     assert service[::-1].hex() == "d9421d07adf206e9dc4be746a02e8e087fa61741"
     account = hash160(b"NeoSmartAccount\x01" + (123).to_bytes(4, "little") + service + address(1) + bytes(32))
     proxy = hash160(initialize(account) + b"\x11\xc0\x15" + initialize(b"verify") + initialize(service) + bytes.fromhex("41627d5b52"))
-    fresh = [1, account, proxy, address(1), address(2), binding(3), binding(4), 0, 0, None, None, None, None]
+    fresh = [2, account, proxy, address(1), address(2), binding(3), binding(4), 0, 0, None, None, None, None, 0]
     pending = copy.deepcopy(fresh)
-    pending[9:] = [[*binding(5), 10, 86400010, 0], [address(0), bytes(32), 10, 86400010, 0],
+    pending[9:13] = [[*binding(5), 10, 86400010, 0], [address(0), bytes(32), 10, 86400010, 0],
                    [address(6), 10, 86400010, 0], [address(7), 10, 604800010, 0]]
     exhausted = copy.deepcopy(fresh)
     exhausted[8] = (1 << 64) - 1
     fallback = copy.deepcopy(fresh)
     fallback[4], fallback[5], fallback[8] = address(0), None, 1
-    return {"schema": "smartaccount-state-v1-vectors", "networkMagic": 123,
+    return {"schema": "smartaccount-state-v2-vectors", "networkMagic": 123,
             "accountId": "0x" + account[::-1].hex(), "accountAddress": "0x" + proxy[::-1].hex(),
             "vectors": [{"name": name, "serializedState": serialize(state).hex(), "initializer": initialize(state).hex()}
                         for name, state in zip(("fresh", "all-intents", "exhausted-epoch", "native-witness-fallback"),
@@ -71,7 +71,7 @@ def vectors():
 
 
 if __name__ == "__main__":
-    destination = Path(__file__).with_name("smartaccount-state-v1.json")
+    destination = Path(__file__).with_name("smartaccount-state-v2.json")
     output = json.dumps(vectors(), indent=2) + "\n"
     if sys.argv[1:] == ["--check"]:
         assert destination.read_text() == output, "State fixture drift"

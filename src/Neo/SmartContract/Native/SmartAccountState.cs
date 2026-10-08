@@ -67,6 +67,7 @@ namespace Neo.SmartContract.Native
         internal SmartAccountModuleBinding? Hook { get; private init; }
         internal SmartAccountStatus Status { get; private init; }
         internal ulong ConfigurationNonce { get; private init; }
+        internal ulong AuthorityEpoch { get; private init; }
         private PendingModule? PendingVerifier { get; init; }
         private PendingModule? PendingHook { get; init; }
         private PendingAddress? PendingRecoveryAddress { get; init; }
@@ -115,7 +116,7 @@ namespace Neo.SmartContract.Native
             (int)SmartAccountProtocol.Version, AccountId.ToArray(), AccountAddress.ToArray(), CustodyAddress.ToArray(), RecoveryAddress.ToArray(),
             Optional(Verifier?.ToStackItem()), Optional(Hook?.ToStackItem()), (int)Status, new BigInteger(ConfigurationNonce),
             Optional(PendingVerifier?.ToStackItem()), Optional(PendingHook?.ToStackItem()),
-            Optional(PendingRecoveryAddress?.ToStackItem()), Optional(PendingRecovery?.ToStackItem())]);
+            Optional(PendingRecoveryAddress?.ToStackItem()), Optional(PendingRecovery?.ToStackItem()), new BigInteger(AuthorityEpoch)]);
 
         private static StackItem Optional(StackItem? value) => value ?? StackItem.Null;
         internal byte[] Serialize() => BinarySerializer.Serialize(ToStackItem(), MaximumSize, MaximumItems);
@@ -128,7 +129,7 @@ namespace Neo.SmartContract.Native
             try
             {
                 MemoryReader reader = new(bytes);
-                Array item = ExactArray(BinarySerializer.Deserialize(ref reader, MaximumSize, MaximumItems), 13);
+                Array item = ExactArray(BinarySerializer.Deserialize(ref reader, MaximumSize, MaximumItems), 14);
                 if (reader.Position != bytes.Length || Unsigned(item[0]) != SmartAccountProtocol.Version)
                     throw new FormatException("The account record version or byte extent is invalid.");
                 UInt160 identity = Address(item[1]);
@@ -148,11 +149,14 @@ namespace Neo.SmartContract.Native
                     Hook = ReadBinding(item[6]),
                     Status = (SmartAccountStatus)status,
                     ConfigurationNonce = epoch,
+                    AuthorityEpoch = Unsigned(item[13]),
                     PendingVerifier = ReadPendingModule(item[9], epoch),
                     PendingHook = ReadPendingModule(item[10], epoch),
                     PendingRecoveryAddress = ReadPendingAddress(item[11], epoch, ModuleChangeDelayMs),
                     PendingRecovery = ReadPendingAddress(item[12], epoch, CustodyRecoveryDelayMs)
                 };
+                if (result.AuthorityEpoch > result.ConfigurationNonce)
+                    throw new FormatException("The authority epoch cannot exceed the configuration counter.");
                 if (result.PendingRecoveryAddress is { } rotation)
                     ValidateAuthorities(custody, new UInt160(rotation.Address), proxy);
                 if (result.PendingRecovery is { } pending)
@@ -360,7 +364,10 @@ namespace Neo.SmartContract.Native
             var intent = PendingRecovery;
             Require(intent is not null, "No custody recovery is pending.");
             RequireMature(now, intent.MatureAt, intent.Epoch);
-            return Advance() with { Custody = intent.Address };
+            Require(AuthorityEpoch < ulong.MaxValue, "The authority epoch is exhausted.");
+            // Recovery revokes all old module authority without executing untrusted cleanup.
+            // Module storage remains unreachable through its former authority-epoch namespace.
+            return Advance() with { Custody = intent.Address, AuthorityEpoch = AuthorityEpoch + 1, Verifier = null, Hook = null };
         }
 
         internal SmartAccountState CancelRecovery(ulong now, bool custodyAuthorized, bool recoveryAuthorized)

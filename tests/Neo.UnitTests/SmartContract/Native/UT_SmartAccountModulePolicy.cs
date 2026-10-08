@@ -67,7 +67,34 @@ namespace Neo.UnitTests.SmartContract.Native
                 abi = [.. abi, domainMethod];
             }
             contract.Manifest.Abi.Methods = abi;
+            contract.Manifest.Extra = new JObject { ["smartAccount"] = new JObject { ["abiVersion"] = 2 } };
             return contract;
+        }
+
+        [TestMethod]
+        public void RejectsModulesWithoutExactRevocationAwareAbiVersion()
+        {
+            foreach (var kind in new[] { SmartAccountModuleKind.Verifier, SmartAccountModuleKind.Hook })
+            {
+                JToken[] invalid = [null, new JNumber(1), new JNumber(3), new JNumber(2.5), new JString("2"), new JBoolean(true)];
+                foreach (var version in invalid)
+                {
+                    var snapshot = TestBlockchain.GetTestSnapshotCache();
+                    var contract = Module(kind);
+                    contract.Manifest.Extra["smartAccount"]["abiVersion"] = version;
+                    Install(snapshot, contract);
+                    Assert.ThrowsExactly<InvalidOperationException>(() =>
+                        SmartAccountModulePolicy.Inspect(snapshot, contract.Hash, kind));
+                }
+                foreach (JObject extra in new JObject[] { null, new JObject(), new JObject { ["smartAccount"] = "2" } })
+                {
+                    var snapshot = TestBlockchain.GetTestSnapshotCache();
+                    var contract = Module(kind); contract.Manifest.Extra = extra;
+                    Install(snapshot, contract);
+                    Assert.ThrowsExactly<InvalidOperationException>(() =>
+                        SmartAccountModulePolicy.Inspect(snapshot, contract.Hash, kind));
+                }
+            }
         }
 
         private static void Install(DataCache snapshot, ContractState contract)

@@ -1,9 +1,14 @@
+> Current revision: ABI 2. Account records append `AuthorityEpoch` at index 13,
+> with record version 2. Mature recovery detaches both module roots and advances
+> both counters. See [the current recovery contract](smartaccount-recovery-epoch.md).
+> Historical ABI 1 validation receipts below do not establish ABI 2 behavior.
+
 # Native SmartAccount state and lifecycle
 
 ## Purpose and boundary
 
 `SmartAccountState` is the native profile's account-record codec and functional
-lifecycle state machine. It defines the exact thirteen-field storage value and
+lifecycle state machine. It defines the exact fourteen-field storage value and
 the register, delayed-configuration, freeze, and recovery transitions. It is
 not a registered native contract. The service must still supply real witness
 results, enforce the Application trigger and execution lock, validate module
@@ -15,15 +20,16 @@ These requirements are not replaced by this component's tests.
 The state is an exact Array, serialized with Neo's binary serializer:
 
 ```text
-[1, accountId, accountAddress, custodyAddress, recoveryAddress,
+[2, accountId, accountAddress, custodyAddress, recoveryAddress,
  verifier, hook, status, configurationNonce, pendingVerifier, pendingHook,
- pendingRecoveryAddr, pendingRecovery]
+ pendingRecoveryAddr, pendingRecovery, authorityEpoch]
 ```
 
 `Active = 0`, `Frozen = 1`; all other status values are invalid. Addresses are
 exact 20-byte ByteStrings; hashes are exact 32-byte ByteStrings. Integers must
 have the Integer type, not Boolean or ByteString coercions. The configuration
-nonce and timestamps are unsigned 64-bit values. Optional records use Null,
+nonce, authority epoch and timestamps are unsigned 64-bit values. The authority
+epoch cannot exceed the configuration nonce. Optional records use Null,
 not empty arrays or zero-valued module bindings. A module is `[contract, codeHash]`.
 A pending module is `[contractOrZero, codeHashOrZero, proposedAt, activateAt,
 expectedConfiguration]`. A pending address is `[address, proposedAt, matureAt,
@@ -32,7 +38,7 @@ expectedConfiguration]` with the fixed module or custody-recovery delay.
 Deserialization checks full byte consumption, canonical re-encoding, exact
 field counts/types, storage-key account binding, deterministic proxy address,
 valid authority relationships, proposal epoch and exact fixed delays. Decoding
-is capped at 1024 bytes and 64 stack items; every valid version-1 record fits
+is capped at 1024 bytes and 64 stack items; every valid version-2 record fits
 within those limits. No map, Struct, trailing bytes, oversized integer,
 alternate integer encoding, stale pending record, or future schema is accepted.
 Malformed stored state raises `FormatException`, never a partial/default record.
@@ -44,7 +50,7 @@ not mutate their inputs. `ToStackItem` and serialization return fresh values.
 ## Authority and transition rules
 
 Registration derives identity/address from network, custody and 32-byte salt,
-requires custody authorization, and starts Active at configuration nonce zero.
+requires custody authorization, and starts Active with configuration nonce and authority epoch zero.
 Custody is nonzero and cannot equal the derived proxy. Recovery is zero or
 distinct from both custody and that proxy. In particular, self-proxy recovery
 would make unfreezing require a witness that the frozen proxy cannot provide.
@@ -55,7 +61,7 @@ would make unfreezing require a witness that the frozen proxy cannot provide.
 | Activate proposed configuration | Permissionless after its exact delay; Active; no custody recovery pending; matching epoch |
 | Cancel proposed configuration | Current custody; proposal present; no active binding change or epoch increment |
 | Propose custody recovery | Configured recovery witness; Active or Frozen; new nonzero custody distinct from current custody, recovery and proxy |
-| Execute custody recovery | Permissionless after the fixed recovery delay; matching epoch; preserve modules, account identity/address and freeze status |
+| Execute custody recovery | Permissionless after the fixed recovery delay; matching epoch; revoke all modules; preserve account identity/address, nonce history and freeze status |
 | Cancel custody recovery | Recovery witness at any time; custody witness only strictly before maturity |
 | Freeze | Active account and configured recovery witness |
 | Unfreeze | Frozen account and custody witness, plus recovery witness if configured |
@@ -64,8 +70,9 @@ Reproposing replaces that pending intent and restarts the full delay. Repeating
 freeze/unfreeze in the same status faults rather than advancing the epoch.
 No authority is inferred merely because a Boolean argument is true: methods
 requiring recovery also require a configured recovery address. Boolean witness
-facts are an internal interface to the future native runtime, not a public ABI.
+facts are an internal interface to the native runtime, not a public ABI.
 
+Only recovery increments the authority epoch and clears the verifier/hook bindings.
 Every successful activation, recovery execution, freeze or unfreeze increments
 the configuration nonce and clears **all** pending intents. This makes epoch
 invalidation explicit and avoids stale recovery records blocking configuration.
@@ -87,7 +94,9 @@ module configuration when that native route is integrated.
 Module records validate local identity shape and reject native contracts; actual
 deployment, policy blocking, lifecycle ABI, code-hash matching, discovery, and
 cleanup require the native runtime. A calculated replacement state must not be
-persisted before all required bounded callbacks succeed. Callback failure must
+persisted before all required bounded callbacks succeed. Recovery is the explicit
+exception to module cleanup: it calls no module and removes native dependency
+registries atomically with the new authority epoch. Callback failure must
 fault the outer invocation, preserving the original account, child state,
 dependency registry and notifications. A pure state-machine return value is not
 proof of NeoVM transaction rollback.

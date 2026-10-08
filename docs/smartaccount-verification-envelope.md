@@ -1,4 +1,4 @@
-# SmartAccount verification envelope
+# SmartAccount ABI 2 verification envelope
 
 ## Purpose and integration boundary
 
@@ -9,20 +9,23 @@ any verifier is called, the native service must decode exactly one canonical
 executes input bytecode, invokes a contract, or accesses storage.
 
 This is not a native service registration or a complete witness verifier.
-The eventual `verify` entrypoint must additionally enforce the Verification
+The native `verify` entrypoint additionally enforces the Verification
 trigger, the proxy caller/address binding, active account state, deadline,
-module identity, bounded signature validation, and custody witness fallback.
+module identity, bounded signature validation, custody witness fallback, and equality
+of the committed authority epoch/configuration nonce with the current account record.
 Application execution must repeat authorization and enforce atomic state
 transitions. Those obligations must not be inferred from parser acceptance.
 
 ## Exact canonical grammar
 
-The complete script consists of a typed initializer for `op` or `ops`, followed
-by exactly these instructions:
+The complete script contains exactly the following inert initializers and call:
 
 ```text
+PUSH expectedConfigurationNonce
+PUSH expectedAuthorityEpoch
+INITIALIZE op or ops
 PUSH accountId
-PUSH 2
+PUSH 4
 PACK
 PUSH All
 PUSH "executeUserOp" or "executeUserOps"
@@ -30,7 +33,11 @@ PUSH AccountManagement.Hash
 SYSCALL System.Contract.Call
 ```
 
-There is no prefix or suffix. The typed initializer is recursive:
+The resulting argument Array is `[accountId, opOrOps, expectedAuthorityEpoch,
+expectedConfigurationNonce]`. Both counters must be exact VM Integers in the
+UInt64 range. The historical two-argument call is rejected, including when its
+operation has a valid signature. There is no additional prefix or suffix. The
+typed initializer is recursive:
 
 - Null: `PUSHNULL`.
 - Boolean: `PUSHT` or `PUSHF`, not an Integer followed by a conversion.
@@ -48,13 +55,14 @@ to generic `ContractParameter` objects can lose Struct information.
 
 ## API and errors
 
-`CreateApplicationScript(accountId, payload, isBatch)` accepts one six-field
+`CreateApplicationScript(accountId, payload, isBatch, expectedAuthorityEpoch, expectedConfigurationNonce)` accepts one six-field
 operation or an Array of 1 through 32 operations and returns fresh script bytes.
 It validates every operation before encoding. Every operation implicitly uses
 the one account ID in the envelope; a batch cannot supply per-operation IDs.
 
 `Parse(accountId, script)` matches the exact native/account/method/flag/syscall
-suffix, decodes only inert typed initializers, validates operation bounds, and
+suffix and exact four-field argument Array, decodes only inert typed initializers,
+validates operation bounds and unsigned counters, and
 requires byte equality with canonical re-encoding. Malformed, noncanonical,
 oversized, executable, truncated, or mismatched scripts raise `FormatException`.
 Inputs exceeding Neo's maximum transaction size are rejected before parsing.
@@ -81,7 +89,8 @@ alternative VM encodings.
 ## Resource and security model
 
 The decoder is an explicit stack walk, not recursive interpretation. It rejects
-unknown opcodes and bounds constructed depth to the maximum implied by batch,
+unknown opcodes and bounds constructed depth to the maximum implied by the
+outer call-argument Array, batch,
 operation, argument-list, and eight nested argument containers. Every byte is
 processed a bounded number of times. The script-size cap bounds transient
 allocation even for malformed inputs; validated operation limits bound retained
@@ -105,8 +114,9 @@ component. No mainnet or testnet action is required or authorized. A private
 NeoExpress test of inert initializer bytes is runtime evidence for that subset,
 not proof of native service activation or a complete VM/compiler refinement.
 
-The current receipt is
+The historical ABI 1 receipt is
 [`smartaccount-envelope-validation-20261006.json`](reports/smartaccount-envelope-validation-20261006.json).
+Its old two-argument execution bytes are not valid under current ABI 2.
 It records 104 focused tests, 1556 current-branch tests, 1566 latest-master
 overlay tests, and five compiled source mutations rejected by the tests.
 Envelope-component line/branch coverage is 99.43%/99.05%; the wire codec remains
@@ -114,3 +124,21 @@ at 100%/100%. The current host formal gate passed 17 modules, 209 closed
 declarations and 98 semantic mutations. The changed shadow-cursor proofs have
 not been rerun in the pinned container because its local daemon was unavailable;
 the previous container result is not claimed for the new source bytes.
+
+## Transaction witness revocation
+
+Operation-digest signatures and standard Neo transaction witnesses have distinct
+signing inputs. Custody fallback and NeoNativeVerifier may authorize only through
+the transaction witness. Committing both counters in the unsigned transaction
+script makes those signatures expire across account configuration and recovery,
+even if the same custody is restored and the operation nonce remains unused.
+
+Verification checks the commitment before callbacks and shadow nonce validation;
+Application repeats it before callbacks or nonce writes. A stale raw transaction
+with the proxy witness fails admission; a transaction using only an external
+custody/payer witness can reach Application and faults there. Neither path may
+refresh the signed script or reset a nonce lane. The exact stale-state error is
+`The SmartAccount execution authority epoch or configuration nonce is stale.`
+
+The state-independent codec does not establish that a commitment is current.
+The native service obtains current state and applies that final comparison.

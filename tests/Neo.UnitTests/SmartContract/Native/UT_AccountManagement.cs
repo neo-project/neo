@@ -64,9 +64,19 @@ namespace Neo.UnitTests.SmartContract.Native
             }
             else builder.EmitPush(value);
         }
+        private static SmartAccountState ReadAccountState(DataCache snapshot, UInt160 id) => SmartAccountState.Deserialize(id,
+            snapshot[new StorageKey { Id = NativeContract.AccountManagement.Id, Key = SmartAccountProtocol.GetAccountKey(id) }].Value);
+
         private static ApplicationEngine Invoke(DataCache snapshot, string method, object[] args, ulong time = 1000,
             UInt160[] signers = null, TriggerType trigger = TriggerType.Application, UInt160 target = null, Signer[] signerDetails = null)
         {
+            // Test convenience only: normal calls capture state before building the script.
+            // Explicit 4-argument calls and raw/script tests never refresh their commitment.
+            if (target is null && (method is "executeUserOp" or "executeUserOps") && args.Length == 2)
+            {
+                var state = ReadAccountState(snapshot, (UInt160)args[0]);
+                args = [.. args, new BigInteger(state.AuthorityEpoch), new BigInteger(state.ConfigurationNonce)];
+            }
             using var builder = new ScriptBuilder();
             Push(builder, args);
             builder.EmitPush(CallFlags.All).EmitPush(method).EmitPush(target ?? NativeContract.AccountManagement.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call);
@@ -99,7 +109,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 "callVerifier", "callHook", "callVerifierChild", "callHookChild", "cancelModuleCall", "getPendingModuleCall", "getModuleDependencies",
                 "setVerifierDependencies", "setHookDependencies", "clearVerifierDependencies", "clearHookDependencies", "freeze", "unfreeze", "executeRecovery" })
                 Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == method), method);
-            Assert.AreEqual(1, state.Manifest.Extra["smartAccount"]["abiVersion"].GetInt32());
+            Assert.AreEqual(2, state.Manifest.Extra["smartAccount"]["abiVersion"].GetInt32());
         }
 
         [TestMethod]
@@ -108,7 +118,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = Snapshot(); var id = Register(snapshot, Recovery);
             Assert.AreEqual(SmartAccountProtocol.GetAccountId(Settings.Network, Custody, new byte[32]), id);
             var state = (Array)Success(snapshot, "getAccount", [id]);
-            Assert.AreEqual(13, state.Count); Assert.AreEqual(BigInteger.Zero, state[8].GetInteger());
+            Assert.AreEqual(14, state.Count); Assert.AreEqual(BigInteger.Zero, state[8].GetInteger());
             Assert.AreSequenceEqual(SmartAccountProtocol.GetAccountAddress(id).ToArray(), Success(snapshot, "getAccountAddress", [id]).GetSpan().ToArray());
             Assert.AreEqual(BigInteger.Zero, Success(snapshot, "getNonce", [id, BigInteger.Zero]).GetInteger());
             using var duplicate = Invoke(snapshot, "registerAccount", [Custody, new byte[32], UInt160.Zero, UInt160.Zero, Recovery]);
@@ -177,7 +187,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 using var unknown = Invoke(snapshot, method, args); Assert.AreEqual(VMState.FAULT, unknown.State, method);
             }
             Assert.IsInstanceOfType<Null>(Success(snapshot, "getAccount", [Next]));
-            Assert.IsInstanceOfType<ByteString>(Success(snapshot, "getAuthorizationDomain", [Next]));
+            using var unknownDomain = Invoke(snapshot, "getAuthorizationDomain", [Next]);
+            Assert.AreEqual(VMState.FAULT, unknownDomain.State);
         }
 
         [TestMethod]

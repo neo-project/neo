@@ -39,13 +39,13 @@ namespace Neo.UnitTests.SmartContract.Native
         private static byte[] Tail(UInt160 account, string method = "executeUserOp", CallFlags flags = CallFlags.All)
         {
             using ScriptBuilder builder = new();
-            builder.EmitPush(account).EmitPush(2).Emit(OpCode.PACK);
+            builder.EmitPush(account).EmitPush(4).Emit(OpCode.PACK);
             builder.EmitPush(flags).EmitPush(method).EmitPush(Service);
             builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return builder.ToArray();
         }
 
-        private static byte[] WithPrefix(byte[] prefix) => [.. prefix, .. Tail(Account)];
+        private static byte[] WithPrefix(byte[] prefix) => [(byte)OpCode.PUSH0, (byte)OpCode.PUSH0, .. prefix, .. Tail(Account)];
         private static byte[] Prefix() => Convert.FromHexString("0c001010c20c0470696e670c144117a67f088e2ea046e74bdce906f2ad071d42d916c0");
 
         private static byte[] Serialized(StackItem item) => BinarySerializer.Serialize(item, Transaction.MaxTransactionSize, Transaction.MaxTransactionSize);
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void SingleEnvelopeMatchesIndependentGoldenBytes()
         {
             byte[] expected = WithPrefix(Prefix());
-            Assert.AreSequenceEqual(expected, SmartAccountEnvelope.CreateApplicationScript(Account, Operation(), false));
+            Assert.AreSequenceEqual(expected, SmartAccountEnvelope.CreateApplicationScript(Account, Operation(), false, 0, 0));
             var envelope = SmartAccountEnvelope.Parse(Account, expected);
             Assert.AreEqual(Account, envelope.AccountId);
             Assert.IsFalse(envelope.IsBatch);
@@ -65,7 +65,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void IndependentLanguageFixturesMatchBuilderParserAndVm()
         {
-            string path = Path.Combine(AppContext.BaseDirectory, "SmartContract", "Native", "TestFile", "smartaccount-envelope-v1.json");
+            string path = Path.Combine(AppContext.BaseDirectory, "SmartContract", "Native", "TestFile", "smartaccount-envelope-v2.json");
             using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
             foreach (JsonElement vector in document.RootElement.GetProperty("vectors").EnumerateArray())
             {
@@ -73,7 +73,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Array payload = (Array)BinarySerializer.Deserialize(serialized, ExecutionEngineLimits.Default);
                 bool batch = vector.GetProperty("isBatch").GetBoolean();
                 byte[] script = Convert.FromHexString(vector.GetProperty("applicationScript").GetString());
-                Assert.AreSequenceEqual(script, SmartAccountEnvelope.CreateApplicationScript(Account, payload, batch));
+                Assert.AreSequenceEqual(script, SmartAccountEnvelope.CreateApplicationScript(Account, payload, batch, 7, 11));
                 AssertInitializerValue(script, payload, batch);
             }
         }
@@ -84,7 +84,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void BatchPreservesOrderAndNonceShadow(int count)
         {
             Array batch = new(Enumerable.Range(0, count).Select(n => Operation(n)));
-            byte[] script = SmartAccountEnvelope.CreateApplicationScript(Account, batch, true);
+            byte[] script = SmartAccountEnvelope.CreateApplicationScript(Account, batch, true, 0, 0);
             var envelope = SmartAccountEnvelope.Parse(Account, script);
             Assert.IsTrue(envelope.IsBatch);
             Assert.AreEqual(count, envelope.Count);
@@ -101,7 +101,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void BatchCountOutsideProfileIsRejected(int count)
         {
             Array batch = new(Enumerable.Range(0, count).Select(n => Operation(n)));
-            Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, batch, true));
+            Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, batch, true, 0, 0));
         }
 
         [TestMethod]
@@ -111,15 +111,15 @@ namespace Neo.UnitTests.SmartContract.Native
             op[2] = new Array([new byte[4090]]);
             op[5] = new byte[1024];
             Array batch = new(Enumerable.Repeat(op, 32));
-            Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, batch, true));
+            Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, batch, true, 0, 0));
         }
 
         [TestMethod]
         public void InvalidPayloadTypesAndNullHostArgumentsAreRejected()
         {
-            Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, new Struct(Operation()), false));
-            Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, new Array([StackItem.Null]), true));
-            Assert.ThrowsExactly<ArgumentNullException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, null, false));
+            Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, new Struct(Operation()), false, 0, 0));
+            Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, new Array([StackItem.Null]), true, 0, 0));
+            Assert.ThrowsExactly<ArgumentNullException>(() => SmartAccountEnvelope.CreateApplicationScript(Account, null, false, 0, 0));
             Assert.ThrowsExactly<ArgumentNullException>(() => SmartAccountEnvelope.Parse(null, WithPrefix(Prefix())));
             var envelope = SmartAccountEnvelope.Parse(Account, WithPrefix(Prefix()));
             Assert.ThrowsExactly<ArgumentNullException>(() => envelope.ValidateNonces(null));
@@ -131,7 +131,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Array op = Operation();
             byte[] signature = [1, 2, 3];
             op[5] = signature;
-            byte[] script = SmartAccountEnvelope.CreateApplicationScript(Account, op, false);
+            byte[] script = SmartAccountEnvelope.CreateApplicationScript(Account, op, false, 0, 0);
             var envelope = SmartAccountEnvelope.Parse(Account, script);
             byte[] initial = Serialized(envelope.GetOperation(0));
             System.Array.Fill(script, (byte)0);
@@ -184,7 +184,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 case "wrong-method": script = [.. Prefix(), .. Tail(Account, "registerAccount")]; break;
                 case "wrong-service": script[^6] ^= 1; break;
                 case "wrong-syscall": script[^1] ^= 1; break;
-                case "wrong-count": script[Prefix().Length + 22] = (byte)OpCode.PUSH3; break;
+                case "wrong-count": script[Prefix().Length + 24] = (byte)OpCode.PUSH3; break;
                 case "batch-confusion": script = [.. Prefix(), .. Tail(Account, "executeUserOps")]; break;
                 case "prefix-nop": script = [(byte)OpCode.NOP, .. script]; break;
                 case "suffix-ret": script = [.. script, (byte)OpCode.RET]; break;
@@ -281,7 +281,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 ByteString.Empty, new byte[255], new byte[256], new Array(), new Struct(),
                 new Struct([true, new Array([1, "nested"])])
             ]);
-            byte[] script = SmartAccountEnvelope.CreateApplicationScript(Account, op, false);
+            byte[] script = SmartAccountEnvelope.CreateApplicationScript(Account, op, false, 0, 0);
             AssertInitializerValue(script, op, false);
         }
 
@@ -290,9 +290,13 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] suffix = Tail(Account, batch ? "executeUserOps" : "executeUserOp");
             using var engine = ApplicationEngine.Run(script[..^suffix.Length], TestBlockchain.GetTestSnapshotCache(), settings: TestProtocolSettings.Default);
             Assert.AreEqual(VMState.HALT, engine.State, engine.FaultException?.ToString());
-            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.AreEqual(3, engine.ResultStack.Count);
             Assert.AreSequenceEqual(Serialized(expected), Serialized(engine.ResultStack.Pop()));
+            var expectedEpoch = engine.ResultStack.Pop().GetInteger();
+            var expectedConfiguration = engine.ResultStack.Pop().GetInteger();
             var parsed = SmartAccountEnvelope.Parse(Account, script);
+            Assert.AreEqual(new BigInteger(parsed.ExpectedAuthorityEpoch), expectedEpoch);
+            Assert.AreEqual(new BigInteger(parsed.ExpectedConfigurationNonce), expectedConfiguration);
             StackItem reconstructed = batch ? new Array(Enumerable.Range(0, parsed.Count).Select(parsed.GetOperation)) : parsed.GetOperation(0);
             Assert.AreSequenceEqual(Serialized(expected), Serialized(reconstructed));
         }
@@ -307,10 +311,10 @@ namespace Neo.UnitTests.SmartContract.Native
                 op[2] = new Array([new Integer(random.NextInt64()), random.Next(2) == 1,
                     new byte[random.Next(0, 300)], new Struct([StackItem.Null, random.Next(-20000, 20000)])]);
                 op[5] = new byte[random.Next(0, 65)];
-                AssertInitializerValue(SmartAccountEnvelope.CreateApplicationScript(Account, op, false), op, false);
+                AssertInitializerValue(SmartAccountEnvelope.CreateApplicationScript(Account, op, false, 0, 0), op, false);
             }
             Array batch = new([Operation(0), Operation(1)]);
-            AssertInitializerValue(SmartAccountEnvelope.CreateApplicationScript(Account, batch, true), batch, true);
+            AssertInitializerValue(SmartAccountEnvelope.CreateApplicationScript(Account, batch, true, 0, 0), batch, true);
         }
 
         [TestMethod]
@@ -326,7 +330,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 try { parsed = SmartAccountEnvelope.Parse(Account, mutated); }
                 catch (FormatException) { continue; }
                 Assert.IsFalse(parsed.IsBatch);
-                Assert.AreSequenceEqual(mutated, SmartAccountEnvelope.CreateApplicationScript(Account, parsed.GetOperation(0), false));
+                Assert.AreSequenceEqual(mutated, SmartAccountEnvelope.CreateApplicationScript(Account, parsed.GetOperation(0), false, parsed.ExpectedAuthorityEpoch, parsed.ExpectedConfigurationNonce));
                 AssertInitializerValue(mutated, parsed.GetOperation(0), false);
             }
         }
@@ -336,7 +340,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var cursors = new Dictionary<BigInteger, BigInteger> { [0] = 3, [7] = 9 };
             Array batch = new([Operation(3), Operation((new BigInteger(7) << 64) + 9), Operation(4)]);
-            var envelope = SmartAccountEnvelope.Parse(Account, SmartAccountEnvelope.CreateApplicationScript(Account, batch, true));
+            var envelope = SmartAccountEnvelope.Parse(Account, SmartAccountEnvelope.CreateApplicationScript(Account, batch, true, 0, 0));
             int reads = 0;
             envelope.ValidateNonces(ch => { reads++; return cursors[ch]; });
             Assert.AreEqual(2, reads);
@@ -350,7 +354,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void DuplicateAndGapWithinBatchAreRejected(int second)
         {
             Array batch = new([Operation(0), Operation(second)]);
-            var envelope = SmartAccountEnvelope.Parse(Account, SmartAccountEnvelope.CreateApplicationScript(Account, batch, true));
+            var envelope = SmartAccountEnvelope.Parse(Account, SmartAccountEnvelope.CreateApplicationScript(Account, batch, true, 0, 0));
             Assert.ThrowsExactly<InvalidOperationException>(() => envelope.ValidateNonces(_ => 0));
         }
 
@@ -358,12 +362,38 @@ namespace Neo.UnitTests.SmartContract.Native
         public void BatchCannotCrossExhaustionOrWrapToZero()
         {
             Array batch = new([Operation(ulong.MaxValue), Operation(0)]);
-            var envelope = SmartAccountEnvelope.Parse(Account, SmartAccountEnvelope.CreateApplicationScript(Account, batch, true));
+            var envelope = SmartAccountEnvelope.Parse(Account, SmartAccountEnvelope.CreateApplicationScript(Account, batch, true, 0, 0));
             Assert.ThrowsExactly<InvalidOperationException>(() => envelope.ValidateNonces(_ => ulong.MaxValue));
-            var last = SmartAccountEnvelope.Parse(Account, SmartAccountEnvelope.CreateApplicationScript(Account, Operation(ulong.MaxValue), false));
+            var last = SmartAccountEnvelope.Parse(Account, SmartAccountEnvelope.CreateApplicationScript(Account, Operation(ulong.MaxValue), false, 0, 0));
             last.ValidateNonces(_ => ulong.MaxValue);
             Assert.ThrowsExactly<InvalidOperationException>(() => last.ValidateNonces(_ => BigInteger.One << 64));
             Assert.ThrowsExactly<FormatException>(() => last.ValidateNonces(_ => -1));
+        }
+
+        [TestMethod]
+        public void HistoricalTwoArgumentExecutionAndNonIntegerCountersAreRejected()
+        {
+            using var oldTail = new ScriptBuilder();
+            oldTail.EmitPush(Account).EmitPush(2).Emit(OpCode.PACK).EmitPush(CallFlags.All).EmitPush("executeUserOp")
+                .EmitPush(Service).EmitSysCall(ApplicationEngine.System_Contract_Call);
+            Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.Parse(Account, [.. Prefix(), .. oldTail.ToArray()]));
+            foreach (StackItem invalid in new StackItem[] { StackItem.Null, true, false, ByteString.Empty, -1, new Integer(BigInteger.One << 64) })
+                foreach (bool epoch in new[] { false, true })
+                {
+                    using var counters = new ScriptBuilder();
+                    void Emit(StackItem item)
+                    {
+                        if (item.IsNull) counters.Emit(OpCode.PUSHNULL);
+                        else if (item is Neo.VM.Types.Boolean) counters.EmitPush(item.GetBoolean());
+                        else if (item is ByteString) counters.EmitPush(item.GetSpan());
+                        else counters.EmitPush(item.GetInteger());
+                    }
+                    Emit(epoch ? new Integer(0) : invalid); Emit(epoch ? invalid : new Integer(0));
+                    byte[] script = [.. counters.ToArray(), .. Prefix(), .. Tail(Account)];
+                    Assert.ThrowsExactly<FormatException>(() => SmartAccountEnvelope.Parse(Account, script));
+                }
+            var valid = SmartAccountEnvelope.Parse(Account, SmartAccountEnvelope.CreateApplicationScript(Account, Operation(), false, 7, ulong.MaxValue));
+            Assert.AreEqual(7UL, valid.ExpectedAuthorityEpoch); Assert.AreEqual(ulong.MaxValue, valid.ExpectedConfigurationNonce);
         }
     }
 }

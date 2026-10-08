@@ -64,7 +64,7 @@ namespace Neo.UnitTests.SmartContract.Native
             EmptyIntents(state);
             foreach (var current in new[] { state, Fresh(false), Pending(), state.Freeze(true) })
             {
-                Assert.AreEqual(13, current.ToStackItem().Count);
+                Assert.AreEqual(14, current.ToStackItem().Count);
                 Assert.AreSequenceEqual(current.Serialize(), SmartAccountState.Deserialize(current.AccountId, current.Serialize()).Serialize());
             }
         }
@@ -72,7 +72,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void IndependentStateSerializationFixturesMatch()
         {
-            string path = Path.Combine(AppContext.BaseDirectory, "SmartContract", "Native", "TestFile", "smartaccount-state-v1.json");
+            string path = Path.Combine(AppContext.BaseDirectory, "SmartContract", "Native", "TestFile", "smartaccount-state-v2.json");
             using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
             SmartAccountState[] states = [Fresh(), Pending(), AtEpoch(ulong.MaxValue), Fresh(false).ProposeModule(SmartAccountModuleKind.Verifier, null, 0, true).ActivateModule(SmartAccountModuleKind.Verifier, SmartAccountState.ModuleChangeDelayMs)];
             int i = 0;
@@ -214,8 +214,9 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(state.AccountId, executed.AccountId);
                 Assert.AreEqual(state.AccountAddress, executed.AccountAddress);
                 Assert.AreEqual(state.RecoveryAddress, executed.RecoveryAddress);
-                Assert.AreEqual(state.Verifier.Contract, executed.Verifier.Contract);
-                Assert.AreEqual(state.Hook.CodeHash, executed.Hook.CodeHash);
+                Assert.IsNull(executed.Verifier);
+                Assert.IsNull(executed.Hook);
+                Assert.AreEqual(state.AuthorityEpoch + 1, executed.AuthorityEpoch);
                 Assert.AreEqual(state.ConfigurationNonce + 1, executed.ConfigurationNonce);
                 EmptyIntents(executed);
                 Invalid(() => pending.ProposeRecovery(Address(8), 20, true).ExecuteRecovery(mature));
@@ -298,11 +299,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void RecordTypesRangesAndAuthorityRelationsAreStrict()
         {
-            foreach (int index in new[] { 0, 7, 8 })
+            foreach (int index in new[] { 0, 7, 8, 13 })
                 foreach (StackItem bad in new StackItem[] { Boolean.True, ByteString.Empty, -1, BigInteger.One << 64 })
                 { var value = Fresh().ToStackItem(); value[index] = bad; Malformed(value); }
             foreach (int index in new[] { 0, 7 })
-            { var value = Fresh().ToStackItem(); value[index] = 2; Malformed(value); }
+            { var value = Fresh().ToStackItem(); value[index] = 3; Malformed(value); }
             foreach (int index in new[] { 1, 2, 3, 4 })
                 foreach (StackItem bad in new StackItem[] { new byte[19], new byte[21], 1, new Neo.VM.Types.Buffer(20) })
                 { var value = Fresh().ToStackItem(); value[index] = bad; Malformed(value); }
@@ -347,10 +348,27 @@ namespace Neo.UnitTests.SmartContract.Native
             var state = Pending(); byte[] bytes = state.Serialize();
             for (int i = 0; i < bytes.Length; i++)
                 Assert.ThrowsExactly<FormatException>(() => SmartAccountState.Deserialize(state.AccountId, bytes.AsMemory(0, i)));
-            foreach (byte[] bad in new byte[][] { [.. bytes, 0], new byte[1025], [0xff], [0x40, 0xfd, 13, 0, .. bytes.AsSpan(2)], [.. bytes.AsSpan(0, 4), 1, 0, .. bytes.AsSpan(5)] })
+            foreach (byte[] bad in new byte[][] { [.. bytes, 0], new byte[1025], [0xff], [0x40, 0xfd, 14, 0, .. bytes.AsSpan(2)], [.. bytes.AsSpan(0, 4), 1, 0, .. bytes.AsSpan(5)] })
                 Assert.ThrowsExactly<FormatException>(() => SmartAccountState.Deserialize(state.AccountId, bad));
             Array deep = new(); for (int i = 0; i < 70; i++) deep = new([deep]);
             Assert.ThrowsExactly<FormatException>(() => SmartAccountState.Deserialize(state.AccountId, Encode(deep)));
+        }
+
+        [TestMethod]
+        public void AuthorityEpochIsRecoveryOnlyAndNeverAliasesConfigurationNonce()
+        {
+            var state = Fresh();
+            var configured = state.CommitConfiguration();
+            Assert.AreEqual(0UL, configured.AuthorityEpoch);
+            Assert.AreEqual(1UL, configured.ConfigurationNonce);
+            var recovered = configured.ProposeRecovery(Address(7), 0, true).ExecuteRecovery(SmartAccountState.CustodyRecoveryDelayMs);
+            Assert.AreEqual(1UL, recovered.AuthorityEpoch);
+            Assert.AreEqual(2UL, recovered.ConfigurationNonce);
+            Assert.AreEqual(1UL, recovered.Freeze(true).AuthorityEpoch);
+            var invalid = Fresh().ToStackItem(); invalid[13] = 1; Malformed(invalid);
+            var legacy = Fresh().ToStackItem(); legacy.RemoveAt(13); legacy[0] = 1; Malformed(legacy);
+            var exhausted = AtEpoch(ulong.MaxValue).ToStackItem(); exhausted[13] = new BigInteger(ulong.MaxValue);
+            Invalid(() => Read(exhausted).ProposeRecovery(Address(7), 0, true));
         }
 
         [TestMethod]

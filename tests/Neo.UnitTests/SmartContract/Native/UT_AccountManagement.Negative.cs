@@ -32,6 +32,11 @@ namespace Neo.UnitTests.SmartContract.Native
         private static ApplicationEngine InvokeItems(DataCache snapshot, string method, Array args,
             TriggerType trigger = TriggerType.Application, bool ledgerTime = false, UInt160[] signers = null)
         {
+            if ((method is "executeUserOp" or "executeUserOps") && args.Count == 2)
+            {
+                var state = ReadAccountState(snapshot, new UInt160(args[0].GetSpan()));
+                args = new Array([.. args, new Integer(state.AuthorityEpoch), new Integer(state.ConfigurationNonce)]);
+            }
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", BinarySerializer.Serialize(args, 16384, 8192))
                 .EmitPush(CallFlags.All).EmitPush(method).EmitPush(NativeContract.AccountManagement.Hash)
@@ -175,7 +180,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 {
                     var bytes = engine.SnapshotCache[key].Value;
                     var record = (Array)BinarySerializer.Deserialize(bytes, ExecutionEngineLimits.Default);
-                    Assert.AreEqual(2, record.Count); Assert.AreEqual(BigInteger.One, record[0].GetInteger());
+                    Assert.AreEqual(2, record.Count); Assert.AreEqual(new BigInteger(2), record[0].GetInteger());
                     var expected = NativeContract.AccountManagement.GetContractState(Settings, 1).Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString();
                     Assert.AreSequenceEqual(Convert.FromHexString(expected), record[1].GetSpan().ToArray());
                     Assert.AreSequenceEqual(BinarySerializer.Serialize(record, 128, 8), bytes.ToArray());
@@ -296,9 +301,9 @@ namespace Neo.UnitTests.SmartContract.Native
         public void ConfigurationCapabilitiesArgumentsAndTimestampAreValidated()
         {
             var invalidMetadata = new Action<ContractState>[] {
-                m => m.Manifest.Extra = null,
-                m => m.Manifest.Extra = new JObject(),
-                m => m.Manifest.Extra["smartAccount"] = new JObject(),
+                // Missing ABI metadata is rejected earlier, during module admission.
+                // These cases retain ABI 2 and exercise configuration capability checks.
+                m => m.Manifest.Extra["smartAccount"]["configurationMethods"] = null,
                 m => m.Manifest.Extra["smartAccount"]["configurationMethods"] = new JArray(1),
                 m => m.Manifest.Extra["smartAccount"]["configurationMethods"] = new JArray("configure", "configure"),
                 m => m.Manifest.Extra["smartAccount"]["configurationMethods"] = new JArray("configure", "_private"),

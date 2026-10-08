@@ -11,6 +11,9 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Ledger;
+using Neo.Cryptography;
+using Neo.Wallets;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -104,7 +107,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 var tx = new Transaction
                 {
                     Version = 0,
-                    Script = SmartAccountEnvelope.CreateApplicationScript(id, payload, true),
+                    Script = SmartAccountEnvelope.CreateApplicationScript(id, payload, true, 0, 0),
                     Signers = [new Signer { Account = Custody, Scopes = WitnessScope.Global }],
                     Attributes = [],
                     Witnesses = []
@@ -124,11 +127,90 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void ProxyCannotAuthorizeItsOwnTransactionFees(bool batch)
+        {
+            var snapshot = Snapshot();
+            var id = RegisterWithModules(snapshot, ModuleFixture(snapshot, 121));
+            var proxy = SmartAccountProtocol.GetAccountAddress(id);
+            Array operation = new([NativeContract.StdLib.Hash.ToArray(), "serialize", new Array([7]),
+                BigInteger.Zero, new BigInteger(long.MaxValue), ByteString.Empty]);
+            foreach (bool proxyPays in new[] { true, false })
+            {
+                var tx = new Transaction
+                {
+                    Script = SmartAccountEnvelope.CreateApplicationScript(id, batch ? new Array([operation]) : operation, batch, 0, 0),
+                    Signers = proxyPays
+                        ? [new Signer { Account = proxy, Scopes = WitnessScope.Global }]
+                        : [new Signer { Account = Next, Scopes = WitnessScope.None },
+                           new Signer { Account = proxy, Scopes = WitnessScope.CustomContracts, AllowedContracts = [NativeContract.StdLib.Hash] }],
+                    Attributes = [], Witnesses = []
+                };
+                using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, Block(1000), Settings, gas: 150_000_000);
+                engine.LoadScript(SmartAccountProtocol.CreateVerificationScript(id), configureState: state => state.CallFlags = CallFlags.ReadOnly);
+                Assert.AreEqual(proxyPays ? VMState.FAULT : VMState.HALT, engine.Execute(), engine.FaultException?.ToString());
+                if (proxyPays) Assert.Contains("fee payer", engine.FaultException?.Message ?? string.Empty);
+                else Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                Assert.AreEqual(BigInteger.Zero, Success(snapshot, "getNonce", [id, BigInteger.Zero]).GetInteger());
+            }
+        }
+
+        [TestMethod]
+        public void ExternalSponsorAndStateBoundOperationSignaturesVerifyExactTransaction()
+        {
+            var snapshot = Snapshot();
+            byte[] userSecret = new byte[32]; userSecret[^1] = 2;
+            byte[] sponsorSecret = new byte[32]; sponsorSecret[^1] = 3;
+            var userKey = new KeyPair(userSecret); var sponsorKey = new KeyPair(sponsorSecret);
+            var verifier = ModuleFixture(snapshot, 122);
+            ReplaceBody(snapshot, verifier, "validateSignature", script =>
+            {
+                AssertPhase(script, "verifier", "validation");
+                script.EmitPush((byte)NamedCurveHash.secp256r1SHA256);
+                script.Emit(OpCode.LDARG1).EmitPush(5).Emit(OpCode.PICKITEM);
+                script.EmitPush(userKey.PublicKey.EncodePoint(true));
+                script.Emit(OpCode.LDARG1).Emit(OpCode.LDARG0).EmitPush(2).Emit(OpCode.PACK)
+                    .EmitPush(CallFlags.ReadOnly).EmitPush("getOperationDigest").EmitPush(NativeContract.AccountManagement.Hash)
+                    .EmitSysCall(ApplicationEngine.System_Contract_Call);
+                script.EmitPush(4).Emit(OpCode.PACK).EmitPush(CallFlags.ReadOnly).EmitPush("verifyWithECDsa")
+                    .EmitPush(NativeContract.CryptoLib.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call);
+            });
+            var id = RegisterWithModules(snapshot, verifier);
+            var proxy = SmartAccountProtocol.GetAccountAddress(id);
+            var unsigned = Operation(NativeContract.StdLib.Hash, "serialize", [7]);
+            byte[] digest = Success(snapshot, "getOperationDigest", [id, unsigned]).GetSpan().ToArray();
+            Array operation = new([NativeContract.StdLib.Hash.ToArray(), "serialize", new Array([7]),
+                BigInteger.Zero, new BigInteger(long.MaxValue), Crypto.Sign(digest, userKey)]);
+            byte[] payerScript = Contract.CreateSignatureRedeemScript(sponsorKey.PublicKey);
+            var tx = new Transaction
+            {
+                Script = SmartAccountEnvelope.CreateApplicationScript(id, operation, false, 0, 0),
+                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + 20,
+                Signers = [new Signer { Account = payerScript.ToScriptHash(), Scopes = WitnessScope.None },
+                    new Signer { Account = proxy, Scopes = WitnessScope.CustomContracts, AllowedContracts = [NativeContract.StdLib.Hash] }],
+                Attributes = [],
+                Witnesses = [new Witness { VerificationScript = payerScript, InvocationScript = new byte[66] },
+                    new Witness { VerificationScript = SmartAccountProtocol.CreateVerificationScript(id), InvocationScript = System.ReadOnlyMemory<byte>.Empty }]
+            };
+            tx.NetworkFee = tx.CalculateNetworkFee(snapshot, Settings);
+            using (var invocation = new ScriptBuilder()) tx.Witnesses[0].InvocationScript = invocation.EmitPush(tx.Sign(sponsorKey, Settings.Network)).ToArray();
+            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(Settings));
+            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(Settings, snapshot, null, []));
+            Assert.AreEqual(BigInteger.Zero, Success(snapshot, "getNonce", [id, 0]).GetInteger());
+            tx.SystemFee++;
+            Assert.AreEqual(VerifyResult.InvalidSignature, tx.VerifyStateIndependent(Settings));
+            tx.SystemFee--;
+            tx.Signers = [tx.Signers[1]]; tx.Witnesses = [tx.Witnesses[1]];
+            Assert.IsFalse(tx.VerifyWitnesses(Settings, snapshot, 150_000_000), "A valid UserOp signature must never authorize proxy fee payment.");
+        }
+
+        [TestMethod]
         public void NativeReentryFaultsAndCannotConsumeNonceOrRetainAuthority()
         {
             var snapshot = Snapshot(); var id = Register(snapshot);
             var inner = Operation(NativeContract.StdLib.Hash, "serialize", [7]);
-            using var failed = Invoke(snapshot, "executeUserOp", [id, Operation(NativeContract.AccountManagement.Hash, "executeUserOp", [id, inner])]);
+            using var failed = Invoke(snapshot, "executeUserOp", [id, Operation(NativeContract.AccountManagement.Hash, "executeUserOp", [id, inner, 0, 0])]);
             Assert.AreEqual(VMState.FAULT, failed.State);
             Assert.Contains("already executing", failed.FaultException.Message);
             Assert.AreEqual(BigInteger.Zero, Success(snapshot, "getNonce", [id, BigInteger.Zero]).GetInteger());

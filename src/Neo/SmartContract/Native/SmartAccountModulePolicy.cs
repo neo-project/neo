@@ -11,6 +11,7 @@
 
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
@@ -69,6 +70,9 @@ namespace Neo.SmartContract.Native
             if (expected is not null && expected.Contract != module)
                 throw new InvalidOperationException("The stored module identity does not match the requested module.");
             var contract = RequireDeployed(snapshot, module);
+            if (contract.Manifest.Extra?["smartAccount"] is not JObject profile ||
+                profile["abiVersion"] is not JNumber version || version.Value != 2)
+                throw new InvalidOperationException("The module must declare native SmartAccount ABI 2 with epoch-isolated authorization.");
             RequireMethod(contract, "supportsComposition", ContractParameterType.Boolean, true);
             RequireMethod(contract, "clearAccount", ContractParameterType.Void, false, ContractParameterType.Hash160);
             RequireMethod(contract, "postExecute", ContractParameterType.Void, null,

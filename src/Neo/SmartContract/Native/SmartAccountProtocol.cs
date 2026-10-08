@@ -29,7 +29,9 @@ namespace Neo.SmartContract.Native
     /// </summary>
     internal static class SmartAccountProtocol
     {
-        internal const byte Version = 1;
+        internal const byte Version = 2;
+        internal const byte IdentityVersion = 1;
+        internal const byte AuthorizationVersion = 2;
         internal const int SaltSize = 32;
         internal const int MethodBytesMax = 128;
         internal const int ArgumentCountMax = 64;
@@ -53,7 +55,7 @@ namespace Neo.SmartContract.Native
             RequireIdentity(custody);
             if (salt.Length != SaltSize)
                 throw new FormatException("The account salt must contain exactly 32 bytes.");
-            byte[] domain = CreateDomain("NeoSmartAccount"u8, network, custody);
+            byte[] domain = CreateDomain("NeoSmartAccount"u8, IdentityVersion, network, custody);
             byte[] material = new byte[domain.Length + salt.Length];
             domain.CopyTo(material, 0);
             salt.CopyTo(material.AsSpan(domain.Length));
@@ -72,18 +74,23 @@ namespace Neo.SmartContract.Native
 
         internal static UInt160 GetAccountAddress(UInt160 accountId) => CreateVerificationScript(accountId).ToScriptHash();
 
-        internal static byte[] GetAuthorizationDomain(uint network, UInt160 accountId)
+        internal static byte[] GetAuthorizationDomain(uint network, UInt160 accountId, ulong authorityEpoch, ulong configurationNonce)
         {
             RequireIdentity(accountId);
-            return CreateDomain("NeoSmartAccount/UserOperation"u8, network, accountId);
+            byte[] domain = CreateDomain("NeoSmartAccount/UserOperation"u8, AuthorizationVersion, network, accountId);
+            byte[] result = new byte[domain.Length + 2 * sizeof(ulong)];
+            domain.CopyTo(result, 0);
+            BinaryPrimitives.WriteUInt64LittleEndian(result.AsSpan(domain.Length), authorityEpoch);
+            BinaryPrimitives.WriteUInt64LittleEndian(result.AsSpan(domain.Length + sizeof(ulong)), configurationNonce);
+            return result;
         }
 
-        private static byte[] CreateDomain(ReadOnlySpan<byte> prefix, uint network, UInt160 identity)
+        private static byte[] CreateDomain(ReadOnlySpan<byte> prefix, byte version, uint network, UInt160 identity)
         {
             byte[] result = new byte[prefix.Length + 1 + sizeof(uint) + 2 * UInt160.Length];
             prefix.CopyTo(result);
             int offset = prefix.Length;
-            result[offset++] = Version;
+            result[offset++] = version;
             BinaryPrimitives.WriteUInt32LittleEndian(result.AsSpan(offset), network);
             offset += sizeof(uint);
             ServiceHash.ToArray().CopyTo(result, offset);
@@ -91,9 +98,9 @@ namespace Neo.SmartContract.Native
             return result;
         }
 
-        internal static byte[] GetOperationDigest(uint network, UInt160 accountId, StackItem operation)
+        internal static byte[] GetOperationDigest(uint network, UInt160 accountId, StackItem operation, ulong authorityEpoch, ulong configurationNonce)
         {
-            byte[] domain = GetAuthorizationDomain(network, accountId);
+            byte[] domain = GetAuthorizationDomain(network, accountId, authorityEpoch, configurationNonce);
             byte[] serialized = SerializeUnsignedOperation(operation);
             byte[] message = new byte[domain.Length + serialized.Length];
             domain.CopyTo(message, 0);

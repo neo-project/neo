@@ -136,6 +136,9 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException("The bounded contract call gas limit exceeds its parent gas limit.");
             }
 
+            // Quote the budget required by admission, not only the amount eventually spent.
+            // Observational only: the fixed child and ancestor limits remain unchanged.
+            _minimumRequiredFee = BigInteger.Max(_minimumRequiredFee, _feeConsumed + limit);
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
             var budgetForCall = new ContractCallGasBudget(limit, parent);
             ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args, budgetForCall);

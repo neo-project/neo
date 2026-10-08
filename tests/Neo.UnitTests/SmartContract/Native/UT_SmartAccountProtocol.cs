@@ -18,6 +18,8 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.IO;
+using System.Text.Json;
 using System.Numerics;
 using System.Text;
 using Array = Neo.VM.Types.Array;
@@ -82,7 +84,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void ZeroAccountIdentityIsRejected()
         {
             Assert.ThrowsExactly<FormatException>(() => SmartAccountProtocol.CreateVerificationScript(UInt160.Zero));
-            Assert.ThrowsExactly<FormatException>(() => SmartAccountProtocol.GetAuthorizationDomain(Network, UInt160.Zero));
+            Assert.ThrowsExactly<FormatException>(() => SmartAccountProtocol.GetAuthorizationDomain(Network, UInt160.Zero, 0, 0));
             Assert.ThrowsExactly<FormatException>(() => SmartAccountProtocol.GetAccountKey(UInt160.Zero));
             Assert.ThrowsExactly<FormatException>(() => SmartAccountProtocol.GetNonceKey(UInt160.Zero, 0));
         }
@@ -91,10 +93,27 @@ namespace Neo.UnitTests.SmartContract.Native
         public void PublishedOperationBytesAndDigestMatch()
         {
             Assert.AreEqual(UnsignedVector, Convert.ToHexStringLower(SmartAccountProtocol.SerializeUnsignedOperation(Operation())));
-            Assert.AreEqual("d6ebf5b7cf6fab6a59c10a969d3ad5d2f170e0c794d8e87eacabce20f70f62f9",
-                Convert.ToHexStringLower(SmartAccountProtocol.GetOperationDigest(Network, Account, Operation())));
-            Assert.AreEqual("4e656f536d6172744163636f756e742f557365724f7065726174696f6e01785634124117a67f088e2ea046e74bdce906f2ad071d42d9ac2000a06cb36878e05328fe553c56080033253e",
-                Convert.ToHexStringLower(SmartAccountProtocol.GetAuthorizationDomain(Network, Account)));
+            Assert.AreEqual("be6546454525ed1382f8d86380c5816fd24cf4f5674e00bc0e601af3a6952ea8",
+                Convert.ToHexStringLower(SmartAccountProtocol.GetOperationDigest(Network, Account, Operation(), 0, 0)));
+            Assert.AreEqual("4e656f536d6172744163636f756e742f557365724f7065726174696f6e02785634124117a67f088e2ea046e74bdce906f2ad071d42d9ac2000a06cb36878e05328fe553c56080033253e00000000000000000000000000000000",
+                Convert.ToHexStringLower(SmartAccountProtocol.GetAuthorizationDomain(Network, Account, 0, 0)));
+        }
+
+        [TestMethod]
+        public void IndependentAbi2AuthorityAndConfigurationVectorsMatch()
+        {
+            string path = Path.Combine(AppContext.BaseDirectory, "SmartContract", "Native", "TestFile", "smartaccount-authorization-v2.json");
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            foreach (var vector in document.RootElement.GetProperty("vectors").EnumerateArray())
+            {
+                ulong epoch = ulong.Parse(vector.GetProperty("authorityEpoch").GetString());
+                ulong nonce = ulong.Parse(vector.GetProperty("configurationNonce").GetString());
+                Assert.AreEqual(vector.GetProperty("domain").GetString(), Convert.ToHexStringLower(SmartAccountProtocol.GetAuthorizationDomain(Network, Account, epoch, nonce)));
+                Assert.AreEqual(vector.GetProperty("digest").GetString(), Convert.ToHexStringLower(SmartAccountProtocol.GetOperationDigest(Network, Account, Operation(), epoch, nonce)));
+            }
+            var baseline = SmartAccountProtocol.GetOperationDigest(Network, Account, Operation(), 0, 1);
+            Assert.IsFalse(baseline.SequenceEqual(SmartAccountProtocol.GetOperationDigest(Network, Account, Operation(), 1, 1)));
+            Assert.IsFalse(baseline.SequenceEqual(SmartAccountProtocol.GetOperationDigest(Network, Account, Operation(), 0, 2)));
         }
 
         [TestMethod]
@@ -119,7 +138,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void EverySignedFieldIsCommitted(int field)
         {
             Array op = Operation();
-            byte[] before = SmartAccountProtocol.GetOperationDigest(Network, Account, op);
+            byte[] before = SmartAccountProtocol.GetOperationDigest(Network, Account, op, 0, 0);
             op[field] = field switch
             {
                 0 => Account.ToArray(),
@@ -128,15 +147,15 @@ namespace Neo.UnitTests.SmartContract.Native
                 3 => new Integer(1),
                 _ => new Integer(1700000000001)
             };
-            Assert.AreNotEqual(Convert.ToHexString(before), Convert.ToHexString(SmartAccountProtocol.GetOperationDigest(Network, Account, op)));
+            Assert.AreNotEqual(Convert.ToHexString(before), Convert.ToHexString(SmartAccountProtocol.GetOperationDigest(Network, Account, op, 0, 0)));
         }
 
         [TestMethod]
         public void AuthorizationDomainSeparatesNetworksAndAccounts()
         {
-            byte[] initial = SmartAccountProtocol.GetOperationDigest(Network, Account, Operation());
-            Assert.AreNotEqual(Convert.ToHexString(initial), Convert.ToHexString(SmartAccountProtocol.GetOperationDigest(Network + 1, Account, Operation())));
-            Assert.AreNotEqual(Convert.ToHexString(initial), Convert.ToHexString(SmartAccountProtocol.GetOperationDigest(Network, Custody, Operation())));
+            byte[] initial = SmartAccountProtocol.GetOperationDigest(Network, Account, Operation(), 0, 0);
+            Assert.AreNotEqual(Convert.ToHexString(initial), Convert.ToHexString(SmartAccountProtocol.GetOperationDigest(Network + 1, Account, Operation(), 0, 0)));
+            Assert.AreNotEqual(Convert.ToHexString(initial), Convert.ToHexString(SmartAccountProtocol.GetOperationDigest(Network, Custody, Operation(), 0, 0)));
         }
 
         [TestMethod]

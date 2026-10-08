@@ -126,6 +126,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 ["smartAccount"] = new JObject
                 {
+                    ["abiVersion"] = 2,
                     ["configurationMethods"] = composite ? new JArray("configure", "roster", "clearRoster") : new JArray("configure")
                 }
             };
@@ -304,7 +305,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Success(snapshot, "proposeRecoveryAddress", [id, Next]); Success(snapshot, "cancelRecoveryAddress", [id]);
             Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery]); Success(snapshot, "cancelRecovery", [id]);
             Assert.AreEqual(new BigInteger(2), ((Array)Success(snapshot, "getAccount", [id]))[8].GetInteger());
-            Assert.AreEqual(BigInteger.One, Success(snapshot, "getVersion", []).GetInteger());
+            Assert.AreEqual(new BigInteger(2), Success(snapshot, "getVersion", []).GetInteger());
             Assert.IsInstanceOfType<ByteString>(Success(snapshot, "getOperationDigest", [id, Operation(NativeContract.StdLib.Hash, "serialize", [7])]));
             foreach (string role in new[] { "verifier", "hook", "unknown" })
                 Assert.IsFalse(Success(snapshot, "hasModuleContext", [id, role, verifier.Hash, "unknown"]).GetBoolean());
