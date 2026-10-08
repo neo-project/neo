@@ -1080,7 +1080,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// Gets the fixed price of the specified interoperable service. It's taken from the latest
-        /// enabled <see cref="InteropDescriptor.Prices"/> entry if any, from <see cref="InteropDescriptor.FixedPrice"/> otherwise.
+        /// enabled <see cref="InteropDescriptor.Prices"/> entry.
         /// </summary>
         /// <param name="descriptor">The descriptor of the interoperable service.</param>
         /// <returns>The price in the unit of femtoGAS.</returns>
@@ -1088,11 +1088,11 @@ namespace Neo.SmartContract
         {
             for (int i = 0; i < descriptor.Prices.Count; i++)
             {
-                var price = descriptor.Prices[i];
-                if (IsHardforkEnabledAtPersistingIndex(price.Since))
-                    return price.Coefficient * _execFeeFactor;
+                var (hardfork, price) = descriptor.Prices[i];
+                if (hardfork is null || IsHardforkEnabledAtPersistingIndex(hardfork.Value))
+                    return price * _execFeeFactor;
             }
-            return descriptor.FixedPrice * _execFeeFactor * OpcodePriceMultiplier;
+            return 0;
         }
 
         /// <summary>
@@ -1147,15 +1147,19 @@ namespace Neo.SmartContract
                 ?? throw new ArgumentException($"Handler {handler} is not found.", nameof(handler));
             var method = member as MethodInfo ?? ((PropertyInfo)member).GetMethod
                 ?? throw new ArgumentException($"Handler {handler} has no getter.", nameof(handler));
-            var prices = member.GetCustomAttributes<InteropPriceAttribute>().OrderByDescending(p => p.Since).ToArray();
-            if (prices.Select(p => p.Since).Distinct().Count() != prices.Length)
+            var attributes = member.GetCustomAttributes<InteropPriceAttribute>().ToArray();
+            if (attributes.Select(p => p.Since).Distinct().Count() != attributes.Length)
                 throw new ArgumentException($"Handler {handler} has several prices for the same hardfork.", nameof(handler));
+            var prices = attributes
+                .OrderByDescending(p => p.Since)
+                .Select(p => new KeyValuePair<Hardfork?, long>(p.Since, p.Coefficient))
+                .Append(new KeyValuePair<Hardfork?, long>(null, fixedPrice * OpcodePriceMultiplier))
+                .ToArray();
             var descriptor = new InteropDescriptor()
             {
                 Name = name,
                 Handler = method,
                 Hardfork = hardfork,
-                FixedPrice = fixedPrice,
                 Prices = prices,
                 RequiredCallFlags = requiredCallFlags
             };
