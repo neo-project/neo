@@ -32,7 +32,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Name = "System.Runtime.Log",
                 Handler = method,
-                FixedPrice = 1 << 15,
+                Prices = [new(null, (1 << 15) * ApplicationEngine.OpcodePriceMultiplier)],
                 RequiredCallFlags = CallFlags.AllowNotify
             };
 
@@ -50,7 +50,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Name = "Test.Method",
                 Handler = method,
-                FixedPrice = 0,
+                Prices = [new(null, 0)],
                 RequiredCallFlags = CallFlags.None,
                 Hardfork = Hardfork.HF_Aspidochelone
             };

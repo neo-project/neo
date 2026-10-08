@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,13 +56,25 @@ namespace Neo.SmartContract
         /// <summary>
         /// The fixed price for calling the interoperable service. It can be 0 if the interoperable service has a variable price.
         /// </summary>
-        public long FixedPrice { get; init; }
+        public long FixedPrice
+        {
+            get
+            {
+                foreach (var (hardfork, price) in Prices)
+                {
+                    if (hardfork is null)
+                        return price / ApplicationEngine.OpcodePriceMultiplier;
+                }
+                return 0;
+            }
+        }
 
         /// <summary>
-        /// The fixed prices starting from the specified hardforks,
-        /// ordered from the latest hardfork to the earliest one.
+        /// The fixed prices for calling the interoperable service in the unit of 1e-11 GAS mapped from the
+        /// hardforks they're applied from, ordered from the latest hardfork to the earliest one. The last entry
+        /// with <see langword="null"/> hardfork is applied if none of the other hardforks is enabled.
         /// </summary>
-        public IReadOnlyList<InteropPriceAttribute> Prices { get; init; } = [];
+        public IReadOnlyList<KeyValuePair<Hardfork?, long>> Prices { get; init; } = [];
 
         /// <summary>
         /// Required Hardfork to be active.
