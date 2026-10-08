@@ -392,7 +392,7 @@ namespace Neo.SmartContract
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
-            if (!IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            if (!IsHardforkEnabled(Hardfork.HF_Huyao))
                 AddFee(price * _execFeeFactor, false);
             return new BigInteger(buffer, isUnsigned: true);
         }
