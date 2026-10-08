@@ -70,7 +70,7 @@ namespace Neo.SmartContract
             if (n == 0) throw new ArgumentException("pubkeys array cannot be empty.");
             if (m == 0) throw new ArgumentException("signatures array cannot be empty.");
             if (m > n) throw new ArgumentException($"signatures count ({m}) cannot be greater than pubkeys count ({n}).");
-            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
                 AddFemtoGas(CheckSigPriceSinceHuyao * n * _execFeeFactor, false);
             else
                 AddFee(CheckSigPrice * n * _execFeeFactor, false);

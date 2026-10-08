@@ -256,7 +256,7 @@ namespace Neo.SmartContract
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
-            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 var price = LoadScriptPricePerByte * script.Length + LoadScriptBasePrice;
                 AddFemtoGas(price * _execFeeFactor, false);
@@ -290,7 +290,7 @@ namespace Neo.SmartContract
                 _ => throw new ArgumentException("Invalid hashOrPubkey length", nameof(hashOrPubkey))
             };
             var result = CheckWitnessInternal(hash, out var rulesChecked);
-            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
                 AddFemtoGas((CheckWitnessPricePerRule * rulesChecked + CheckWitnessBasePrice) * _execFeeFactor, false);
             return result;
         }
@@ -544,7 +544,7 @@ namespace Neo.SmartContract
         {
             var r = ReferenceCounter.Count;
             Push(Convert(GetCurrentSigners()));
-            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 var price = CurrentSignersPricePerRef * (ReferenceCounter.Count - r) + CurrentSignersBasePrice;
                 AddFemtoGas(price * _execFeeFactor, false);

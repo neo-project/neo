@@ -100,7 +100,7 @@ namespace Neo.SmartContract
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
             ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
-            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 var price = ContractCallPrice;
                 // Non-native contracts may be read from disk.
@@ -154,7 +154,7 @@ namespace Neo.SmartContract
         [InteropPrice(Hardfork.HF_Huyao, 41833)]
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
-            if (!IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            if (!IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                 BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
@@ -174,7 +174,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 if (m < 0)
                     throw new ArgumentOutOfRangeException(nameof(m), "m must be positive and fit int32.");

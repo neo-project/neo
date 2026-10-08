@@ -67,7 +67,7 @@ namespace Neo.SmartContract
             var value = iterator.Value();
             var refs = ReferenceCounter.Count;
             Push(value);
-            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 var bytes = iterator is StorageIterator storageIterator ? storageIterator.DeserializedLength : 0;
                 var price = IteratorValuePricePerRef * (ReferenceCounter.Count - refs) + IteratorValuePricePerByte * bytes + IteratorValueBasePrice;
