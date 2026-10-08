@@ -634,22 +634,16 @@ namespace Neo.SmartContract
             // deliberately charged even when the callee is transaction-whitelisted.
             if (_whitelisted)
             {
-                foreach (ContractCallGasBudget? current in EnumerateBudgets(budget))
+                for (ContractCallGasBudget? current = budget; current is not null; current = current.Parent)
                     current.Consumed += gas;
                 return;
             }
 
             _feeConsumed += gas;
-            foreach (ContractCallGasBudget? current in EnumerateBudgets(budget))
+            for (ContractCallGasBudget? current = budget; current is not null; current = current.Parent)
                 current.Consumed += gas;
             if (_feeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
-        }
-
-        private static IEnumerable<ContractCallGasBudget> EnumerateBudgets(ContractCallGasBudget? budget)
-        {
-            for (ContractCallGasBudget? current = budget; current is not null; current = current.Parent)
-                yield return current;
         }
 
         protected override void OnFault(Exception ex)

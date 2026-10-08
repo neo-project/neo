@@ -18,13 +18,95 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using System;
 using System.Collections.Immutable;
+using System.Numerics;
+using System.Reflection;
 
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
     public class UT_ApplicationEngine_BoundedCall
     {
+        [TestMethod]
+        [DataRow(0, false, false)]
+        [DataRow(0, true, false)]
+        [DataRow(1, false, false)]
+        [DataRow(1, true, false)]
+        [DataRow(3, false, false)]
+        [DataRow(3, true, false)]
+        [DataRow(0, false, true)]
+        [DataRow(0, true, true)]
+        [DataRow(1, false, true)]
+        [DataRow(1, true, true)]
+        [DataRow(3, false, true)]
+        [DataRow(3, true, true)]
+        public void AddFemtoGas_DoesNotAllocateForBudgetTraversal(int depth, bool whitelisted, bool applyFactor)
+        {
+            const int warmupCount = 256;
+            const int chargeCount = 4096;
+            // Keep all BigInteger arithmetic inline so this measures traversal allocation.
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, TestBlockchain.GetTestSnapshotCache(), settings: SmartAccountSettings(), gas: 100);
+            engine.LoadScript(new byte[] { (byte)OpCode.NOP });
+            var state = engine.CurrentContext.GetState<ExecutionContextState>();
+            for (int i = 0; i < depth; i++)
+                state.ContractCallGasBudget = new ContractCallGasBudget(int.MaxValue, state.ContractCallGasBudget);
+            typeof(ApplicationEngine).GetField("_whitelisted", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(engine, whitelisted);
+
+            for (int i = 0; i < warmupCount; i++)
+                engine.AddFemtoGas(BigInteger.One, applyFactor);
+            long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < chargeCount; i++)
+                engine.AddFemtoGas(BigInteger.One, applyFactor);
+            long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+
+            Assert.AreEqual(0L, allocatedBytes, "Fee charging must not allocate a budget iterator, including when no budget is active.");
+            BigInteger expected = (warmupCount + chargeCount) * (applyFactor ? ApplicationEngine.FeeFactor : BigInteger.One);
+            for (var budget = state.ContractCallGasBudget; budget is not null; budget = budget.Parent)
+                Assert.AreEqual(expected, budget.Consumed);
+            long expectedFee = whitelisted ? 0L : (long)expected.DivideCeiling(ApplicationEngine.FeeFactor * ApplicationEngine.OpcodePriceMultiplier);
+            Assert.AreEqual(expectedFee, engine.FeeConsumed);
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void AddFemtoGas_RejectsAncestorExhaustionBeforeChargingAnyBudget(bool whitelisted)
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, TestBlockchain.GetTestSnapshotCache(), settings: SmartAccountSettings(), gas: 100);
+            engine.LoadScript(new byte[] { (byte)OpCode.NOP });
+            var parent = new ContractCallGasBudget(5, null);
+            var child = new ContractCallGasBudget(10, parent);
+            engine.CurrentContext.GetState<ExecutionContextState>().ContractCallGasBudget = child;
+            typeof(ApplicationEngine).GetField("_whitelisted", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(engine, whitelisted);
+            engine.AddFemtoGas(5, false);
+            long feeBefore = engine.FeeConsumed;
+
+            var exception = Assert.ThrowsExactly<InvalidOperationException>(() => engine.AddFemtoGas(1, false));
+
+            Assert.AreEqual("The bounded contract call gas limit has been exhausted.", exception.Message);
+            Assert.AreEqual(new BigInteger(5), parent.Consumed);
+            Assert.AreEqual(new BigInteger(5), child.Consumed);
+            Assert.AreEqual(feeBefore, engine.FeeConsumed);
+        }
+
+        [TestMethod]
+        public void AddFemtoGas_PreservesBudgetChargesWhenTransactionGasIsExhausted()
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, TestBlockchain.GetTestSnapshotCache(), settings: SmartAccountSettings(), gas: 0);
+            engine.LoadScript(new byte[] { (byte)OpCode.NOP });
+            var parent = new ContractCallGasBudget(10, null);
+            var child = new ContractCallGasBudget(10, parent);
+            engine.CurrentContext.GetState<ExecutionContextState>().ContractCallGasBudget = child;
+
+            var exception = Assert.ThrowsExactly<InvalidOperationException>(() => engine.AddFemtoGas(1, false));
+
+            Assert.AreEqual("Insufficient GAS.", exception.Message);
+            Assert.AreEqual(BigInteger.One, parent.Consumed);
+            Assert.AreEqual(BigInteger.One, child.Consumed);
+            Assert.AreEqual(1L, engine.FeeConsumed);
+        }
+
         [TestMethod]
         public void CallWithGasLimit_IsInactiveBeforeSmartAccountActivation()
         {
