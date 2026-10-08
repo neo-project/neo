@@ -225,6 +225,7 @@ namespace Neo.SmartContract
                 p.CallingContext = CurrentContext;
                 p.CallFlags = callFlags & state.CallFlags & CallFlags.ReadOnly;
                 p.IsDynamicCall = true;
+                p.ContractCallGasBudget = state.ContractCallGasBudget;
             });
 
             for (int i = args.Count - 1; i >= 0; i--)
@@ -255,6 +256,14 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckWitnessInternal(UInt160 hash)
         {
+            // Anyone can request native SmartAccount dispatch. Its caller identity
+            // must never become a witness principal through the legacy fast path.
+            if (IsHardforkEnabled(Hardfork.HF_SmartAccountV1) && hash == NativeContract.AccountManagement.Hash)
+                return false;
+            if (Trigger == TriggerType.Application && IsHardforkEnabled(Hardfork.HF_SmartAccountV1) &&
+                NativeContract.AccountManagement.IsRegisteredProxy(SnapshotCache, hash) &&
+                !(GetState<SmartAccountInvocationContext>()?.IsWitnessAuthorized(this, hash) ?? false))
+                return false;
             if (hash.Equals(CallingScriptHash)) return true;
 
             if (ScriptContainer is Transaction tx)

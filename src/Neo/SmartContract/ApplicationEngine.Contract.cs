@@ -13,7 +13,9 @@ using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
@@ -26,6 +28,12 @@ namespace Neo.SmartContract
         /// Use it to call another contract dynamically.
         /// </summary>
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Contract.CallWithGasLimit.
+        /// Use it to call another contract with an independent gas budget.
+        /// </summary>
+        public static readonly InteropDescriptor System_Contract_CallWithGasLimit = Register("System.Contract.CallWithGasLimit", nameof(CallContractWithGasLimit), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall, Hardfork.HF_SmartAccountV1);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.CallNative.
@@ -85,6 +93,54 @@ namespace Neo.SmartContract
 
             ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
             context.GetState<ExecutionContextState>().IsDynamicCall = true;
+        }
+
+        /// <summary>
+        /// The implementation of System.Contract.CallWithGasLimit.
+        /// Use it to call another contract with a bounded budget. The budget is charged
+        /// independently of transaction-level gas whitelisting and is inherited by all
+        /// descendants of the bounded call.
+        /// </summary>
+        /// <param name="contractHash">The hash of the contract to be called.</param>
+        /// <param name="method">The method of the contract to be called.</param>
+        /// <param name="callFlags">The <see cref="CallFlags"/> to be used to call the contract.</param>
+        /// <param name="gasLimit">The maximum gas, in datoshi, available to this call and its descendants.</param>
+        /// <param name="args">The arguments to be used.</param>
+        protected internal void CallContractWithGasLimit(UInt160 contractHash, string method, CallFlags callFlags, long gasLimit, Array args)
+        {
+            _ = LoadBoundedContractCall(contractHash, method, callFlags, gasLimit, args);
+        }
+
+        private ExecutionContext LoadBoundedContractCall(UInt160 contractHash, string method, CallFlags callFlags, long gasLimit, IReadOnlyList<StackItem> args)
+        {
+            if (gasLimit <= 0)
+                throw new ArgumentOutOfRangeException(nameof(gasLimit), "The gas limit must be positive.");
+
+            if (method.StartsWith('_')) throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
+            if ((callFlags & ~CallFlags.All) != 0)
+                throw new ArgumentOutOfRangeException(nameof(callFlags));
+
+            ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
+            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
+            ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Count);
+            if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
+
+            BigInteger limit = new BigInteger(gasLimit) * FeeFactor * OpcodePriceMultiplier;
+            if (limit > _feeAmount - _feeConsumed)
+                throw new InvalidOperationException("The bounded contract call gas limit exceeds the remaining transaction budget.");
+
+            ContractCallGasBudget? parent = CurrentContext?.GetState<ExecutionContextState>().ContractCallGasBudget;
+            for (ContractCallGasBudget? budget = parent; budget is not null; budget = budget.Parent)
+            {
+                if (limit > budget.Limit - budget.Consumed)
+                    throw new InvalidOperationException("The bounded contract call gas limit exceeds its parent gas limit.");
+            }
+
+            bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
+            var budgetForCall = new ContractCallGasBudget(limit, parent);
+            ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args, budgetForCall);
+            context.GetState<ExecutionContextState>().IsDynamicCall = true;
+            return context;
         }
 
         /// <summary>

@@ -18,6 +18,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -81,6 +82,14 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 10));
             Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 19));
             Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Basilisk, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 20));
+
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_SmartAccountV1, DeprecatedIn = null }, TestProtocolSettings.Default.IsHardforkEnabled, 0));
+            var activated = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_SmartAccountV1, 10)
+            };
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_SmartAccountV1, DeprecatedIn = null }, activated.IsHardforkEnabled, 9));
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_SmartAccountV1, DeprecatedIn = null }, activated.IsHardforkEnabled, 10));
         }
 
         [TestMethod]
@@ -257,10 +266,15 @@ namespace Neo.UnitTests.SmartContract.Native
             };
             var snapshot = _snapshotCache.CloneCache();
 
-            // Ensure that all native contracts have proper state generated with an assumption that
-            // all hardforks enabled.
+            // Configured genesis natives retain their exact existing state. An
+            // opt-in native must be absent when its activation is not configured.
             foreach (var ctr in NativeContract.Contracts)
             {
+                if (!ctr.IsActive(TestProtocolSettings.Default, 0))
+                {
+                    Assert.IsNull(NativeContract.ContractManagement.GetContract(snapshot, ctr.Hash), ctr.Name);
+                    continue;
+                }
                 var state = Call_GetContract(snapshot, ctr.Hash, persistingBlock);
                 Assert.AreEqual(_nativeStates[ctr.Name], state.ToJson().ToString(), message: $"{ctr.Name} is wrong: {state.ToJson().ToString()}");
             }

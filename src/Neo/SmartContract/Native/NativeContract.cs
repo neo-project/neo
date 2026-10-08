@@ -115,6 +115,9 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public static TemporaryStorage TemporaryStorage { get; } = new();
 
+        /// <summary>Gets the independently activated SmartAccount native service.</summary>
+        public static AccountManagement AccountManagement { get; } = new();
+
         #endregion
 
         /// <summary>
@@ -345,6 +348,13 @@ namespace Neo.SmartContract.Native
 
             if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
             {
+                // SmartAccount is an independently activated protocol profile. An omitted
+                // activation entry keeps its native service disabled rather than silently
+                // treating it as a genesis activation. Existing hardforked native contracts
+                // retain the historical omission behavior.
+                if (ActiveIn == Hardfork.HF_SmartAccountV1)
+                    return false;
+
                 // If is not set in the configuration is treated as enabled from the genesis
                 activeIn = 0;
             }
