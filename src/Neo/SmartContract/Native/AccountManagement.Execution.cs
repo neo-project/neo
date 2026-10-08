@@ -66,21 +66,68 @@ namespace Neo.SmartContract.Native
             if (state.Status != SmartAccountStatus.Active || operation[4].GetInteger() < now)
                 throw new InvalidOperationException("The account is Frozen or the operation has expired.");
         }
-        private async ContractTask<StackItem> ModuleCall(ApplicationEngine engine, SmartAccountState state,
+        // Host-owned, bounded and operation-local. No VM graph is retained across callbacks.
+        private sealed record CompositeApproval(UInt160[] Children, byte[] Commitment)
+        {
+            internal Array ToStackItem() => new([Boolean.True,
+                new Array(Children.Select(child => (StackItem)child.ToArray())), new ByteString(Commitment.AsSpan().ToArray())]);
+        }
+        private static CompositeApproval ReadCompositeApproval(StackItem value, UInt160[] active)
+        {
+            if (value is not Array receipt || value.Type != StackItemType.Array || receipt.Count != 3 ||
+                receipt[0] is not Boolean approved || !approved.GetBoolean() ||
+                receipt[1] is not Array children || receipt[1].Type != StackItemType.Array || children.Count is 0 or > 2 ||
+                receipt[2] is not ByteString commitment || commitment.Size != UInt256.Length)
+                throw new InvalidOperationException("Invalid composite receipt shape, approval or commitment.");
+            UInt160[] owned = new UInt160[children.Count];
+            int next = 0;
+            for (int i = 0; i < children.Count; i++)
+            {
+                if (children[i] is not ByteString bytes || bytes.Size != UInt160.Length)
+                    throw new InvalidOperationException("Invalid composite receipt child identity.");
+                var child = new UInt160(bytes.GetSpan());
+                while (next < active.Length && active[next] != child) next++;
+                if (next == active.Length) throw new InvalidOperationException("Invalid composite receipt child order or membership.");
+                owned[i] = child; next++;
+            }
+            return new(owned, commitment.GetSpan().ToArray());
+        }
+        private ContractTask<StackItem> ModuleCall(ApplicationEngine engine, SmartAccountState state,
             SmartAccountModuleKind kind, SmartAccountModuleBinding module, string method, SmartAccountCallbackPhase phase,
-            CallFlags flags, long budget, bool inheritBudget, params StackItem[] args)
+            CallFlags flags, long budget, bool inheritBudget, params StackItem[] args) =>
+            ModuleCallWithApproval(engine, state, kind, module, method, phase, flags, budget, inheritBudget, null, args);
+
+        private async ContractTask<StackItem> ModuleCallWithApproval(ApplicationEngine engine, SmartAccountState state,
+            SmartAccountModuleKind kind, SmartAccountModuleBinding module, string method, SmartAccountCallbackPhase phase,
+            CallFlags flags, long budget, bool inheritBudget, CompositeApproval? approval, params StackItem[] args)
         {
             _ = Inspect(engine, module.Contract, kind, module);
             var children = phase is SmartAccountCallbackPhase.Validation or SmartAccountCallbackPhase.PreExecute or SmartAccountCallbackPhase.PostExecute
                 ? ActiveChildren(engine, state, kind) : System.Array.Empty<UInt160>();
+            if (kind == SmartAccountModuleKind.Verifier && children.Length != 0 &&
+                !SmartAccountModulePolicy.IsCompositeVerifier(engine.SnapshotCache, module.Contract))
+                throw new InvalidOperationException("A scalar verifier cannot grant composite child authority.");
+            if (approval is not null)
+            {
+                // Check all active pins above, including children outside the approved subset.
+                // Reparse our owned receipt against the current roster before granting any child.
+                children = ReadCompositeApproval(approval.ToStackItem(), children).Children;
+            }
             var task = inheritBudget
                 ? engine.CallFromNativeContractRawAsync(Hash, module.Contract, method, flags, true, args)
                 : engine.CallFromNativeContractWithGasLimitAsync(Hash, module.Contract, method, flags, budget, args);
             var anchor = engine.CurrentContext!.GetState<ExecutionContextState>();
-            using var grant = Context(engine).EnterModule(state.AccountId, kind, module.Contract, phase, anchor, children);
-            return (await task)!;
+            StackItem result;
+            using (Context(engine).EnterModule(state.AccountId, kind, module.Contract, phase, anchor, children))
+                result = (await task)!;
+            if (phase == SmartAccountCallbackPhase.PostExecute)
+            {
+                _ = Inspect(engine, module.Contract, kind, module);
+                _ = ActiveChildren(engine, state, kind);
+            }
+            return result;
         }
-        private async ContractTask Authorize(ApplicationEngine engine, SmartAccountState state, byte[] bytes)
+        private async ContractTask<CompositeApproval?> Authorize(ApplicationEngine engine, SmartAccountState state, byte[] bytes)
         {
             Array operation = ReadOperation(bytes);
             if (state.Verifier is null)
@@ -90,12 +137,16 @@ namespace Neo.SmartContract.Native
             }
             else
             {
+                _ = Inspect(engine, state.Verifier.Contract, SmartAccountModuleKind.Verifier, state.Verifier);
+                bool composite = SmartAccountModulePolicy.IsCompositeVerifier(engine.SnapshotCache, state.Verifier.Contract);
                 var result = await ModuleCall(engine, state, SmartAccountModuleKind.Verifier, state.Verifier,
-                    "validateSignature", SmartAccountCallbackPhase.Validation, CallFlags.ReadOnly, 100_000_000, false,
-                    state.AccountId.ToArray(), operation);
+                    composite ? "validateCompositeSignature" : "validateSignature", SmartAccountCallbackPhase.Validation,
+                    CallFlags.ReadOnly, 100_000_000, false, state.AccountId.ToArray(), operation);
+                if (composite) return ReadCompositeApproval(result!, ActiveChildren(engine, state, SmartAccountModuleKind.Verifier));
                 if (result is not Boolean boolean || !boolean.GetBoolean())
                     throw new InvalidOperationException("The verifier must return exactly Boolean true.");
             }
+            return null;
         }
         private async ContractTask<StackItem> ExecuteOne(ApplicationEngine engine, UInt160 id, byte[] bytes)
         {
@@ -104,7 +155,7 @@ namespace Neo.SmartContract.Native
             var nonce = operation[3].GetInteger(); var (channel, _) = SmartAccountProtocol.GetNonceParts(nonce);
             BigInteger next = SmartAccountProtocol.ConsumeNonce(nonce, GetNonce(engine.SnapshotCache, id, channel));
             if (state.Hook is not null) _ = Inspect(engine, state.Hook.Contract, SmartAccountModuleKind.Hook, state.Hook);
-            await Authorize(engine, state, bytes);
+            CompositeApproval? approval = await Authorize(engine, state, bytes);
             Put(engine, NonceKey(id, channel), next.ToByteArray());
             if (state.Hook is not null)
                 _ = await ModuleCall(engine, state, SmartAccountModuleKind.Hook, state.Hook, "preExecute",
@@ -122,8 +173,13 @@ namespace Neo.SmartContract.Native
                 _ = await ModuleCall(engine, state, SmartAccountModuleKind.Hook, state.Hook, "postExecute",
                     SmartAccountCallbackPhase.PostExecute, CallFlags.All, 250_000_000, false, id.ToArray(), ReadOperation(bytes), ReadResult(engine, resultSnapshot));
             if (state.Verifier is not null)
-                _ = await ModuleCall(engine, state, SmartAccountModuleKind.Verifier, state.Verifier, "postExecute",
-                    SmartAccountCallbackPhase.PostExecute, CallFlags.All, 100_000_000, false, id.ToArray(), ReadOperation(bytes), ReadResult(engine, resultSnapshot));
+            {
+                var arguments = new StackItem[] { id.ToArray(), ReadOperation(bytes), ReadResult(engine, resultSnapshot) };
+                if (approval is not null) arguments = [.. arguments, approval.ToStackItem()];
+                _ = await ModuleCallWithApproval(engine, state, SmartAccountModuleKind.Verifier, state.Verifier,
+                    approval is null ? "postExecute" : "postExecuteComposite", SmartAccountCallbackPhase.PostExecute,
+                    CallFlags.All, 100_000_000, false, approval, arguments);
+            }
             Notify(engine, "UserOpExecuted", id.ToArray(), target.ToArray(), method, nonce);
             return ReadResult(engine, resultSnapshot);
         }

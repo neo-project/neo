@@ -50,6 +50,9 @@ namespace Neo.SmartContract.Native
                 ?? throw new InvalidOperationException("The module is not deployed.");
         }
 
+        internal static bool IsCompositeVerifier(IReadOnlyStore snapshot, UInt160 module) =>
+            RequireDeployed(snapshot, module).Manifest.Extra!["smartAccount"]!["compositeVerifier"] is JBoolean marker && marker.Value;
+
         private static void RequireMethod(ContractState contract, string name, ContractParameterType result,
             bool? safe, params ContractParameterType[] parameters)
         {
@@ -73,6 +76,17 @@ namespace Neo.SmartContract.Native
             if (contract.Manifest.Extra?["smartAccount"] is not JObject profile ||
                 profile["abiVersion"] is not JNumber version || version.Value != 2)
                 throw new InvalidOperationException("The module must declare native SmartAccount ABI 2 with epoch-isolated authorization.");
+            if (profile["profileDigest"] is not JString digestValue || digestValue.GetString() != AccountManagement.ParameterDigest ||
+                profile["compositeVerifier"] is not JBoolean composite || (kind == SmartAccountModuleKind.Hook && composite.Value))
+                throw new InvalidOperationException("The module must declare the exact native SmartAccount profile digest and composite verifier capability.");
+            if (composite.Value)
+            {
+                RequireMethod(contract, "validateCompositeSignature", ContractParameterType.Array, false,
+                    ContractParameterType.Hash160, ContractParameterType.Array);
+                RequireMethod(contract, "postExecuteComposite", ContractParameterType.Void, false,
+                    ContractParameterType.Hash160, ContractParameterType.Array, ContractParameterType.Any, ContractParameterType.Array);
+                RequireMethod(contract, "getSignerDomains", ContractParameterType.Array, true, ContractParameterType.Hash160);
+            }
             RequireMethod(contract, "supportsComposition", ContractParameterType.Boolean, true);
             RequireMethod(contract, "clearAccount", ContractParameterType.Void, false, ContractParameterType.Hash160);
             RequireMethod(contract, "postExecute", ContractParameterType.Void, null,
@@ -101,6 +115,8 @@ namespace Neo.SmartContract.Native
             if (result is not Boolean boolean)
                 throw new InvalidOperationException("Module composition discovery must return an exact Boolean.");
             bool composite = boolean.GetBoolean();
+            if (kind == SmartAccountModuleKind.Verifier && composite != IsCompositeVerifier(engine.SnapshotCache, binding.Contract))
+                throw new InvalidOperationException("The verifier composition marker disagrees with its declared profile capability.");
             if (requireLeaf && composite)
                 throw new InvalidOperationException("Nested module composition is not supported.");
             if (!composite && kind == SmartAccountModuleKind.Verifier)

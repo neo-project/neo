@@ -66,8 +66,20 @@ namespace Neo.UnitTests.SmartContract.Native
                 domainMethod.Offset = domainsOffset;
                 abi = [.. abi, domainMethod];
             }
+            bool composite = kind == SmartAccountModuleKind.Verifier && marker?.FirstOrDefault() == (byte)OpCode.PUSHT;
+            if (composite) abi = [.. abi,
+                Method("validateCompositeSignature", ContractParameterType.Array, false, ContractParameterType.Hash160, ContractParameterType.Array),
+                Method("postExecuteComposite", ContractParameterType.Void, false, ContractParameterType.Hash160, ContractParameterType.Array, ContractParameterType.Any, ContractParameterType.Array)];
             contract.Manifest.Abi.Methods = abi;
-            contract.Manifest.Extra = new JObject { ["smartAccount"] = new JObject { ["abiVersion"] = 2 } };
+            contract.Manifest.Extra = new JObject
+            {
+                ["smartAccount"] = new JObject
+                {
+                    ["abiVersion"] = 2,
+                    ["profileDigest"] = NativeContract.AccountManagement.GetContractState(TestProtocolSettings.Default with { Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_SmartAccountV1, 0) }, 1).Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString(),
+                    ["compositeVerifier"] = composite
+                }
+            };
             return contract;
         }
 
@@ -95,6 +107,50 @@ namespace Neo.UnitTests.SmartContract.Native
                         SmartAccountModulePolicy.Inspect(snapshot, contract.Hash, kind));
                 }
             }
+        }
+
+        [TestMethod]
+        public void CompositeReceiptAdmissionRequiresProfileAndBothExactCallbacks()
+        {
+            foreach (string defect in new[] { "digest-missing", "digest-wrong", "digest-number", "marker-missing", "marker-integer", "validation-missing", "post-missing", "validation-safe", "post-return", "post-args" })
+            {
+                var snapshot = TestBlockchain.GetTestSnapshotCache();
+                var contract = Module(marker: [(byte)OpCode.PUSHT, (byte)OpCode.RET]);
+                switch (defect)
+                {
+                    case "digest-missing": contract.Manifest.Extra["smartAccount"]["profileDigest"] = null; break;
+                    case "digest-wrong": contract.Manifest.Extra["smartAccount"]["profileDigest"] = new string('0', 64); break;
+                    case "digest-number": contract.Manifest.Extra["smartAccount"]["profileDigest"] = 2; break;
+                    case "marker-missing": contract.Manifest.Extra["smartAccount"]["compositeVerifier"] = null; break;
+                    case "marker-integer": contract.Manifest.Extra["smartAccount"]["compositeVerifier"] = 1; break;
+                    case "validation-missing": contract.Manifest.Abi.Methods = contract.Manifest.Abi.Methods.Where(m => m.Name != "validateCompositeSignature").ToArray(); break;
+                    case "post-missing": contract.Manifest.Abi.Methods = contract.Manifest.Abi.Methods.Where(m => m.Name != "postExecuteComposite").ToArray(); break;
+                    case "validation-safe": contract.Manifest.Abi.GetMethod("validateCompositeSignature", 2).Safe = true; break;
+                    case "post-return": contract.Manifest.Abi.GetMethod("postExecuteComposite", 4).ReturnType = ContractParameterType.Array; break;
+                    case "post-args": contract.Manifest.Abi.GetMethod("postExecuteComposite", 4).Parameters[3].Type = ContractParameterType.Any; break;
+                }
+                Install(snapshot, contract);
+                Assert.ThrowsExactly<InvalidOperationException>(() => SmartAccountModulePolicy.Inspect(snapshot, contract.Hash, SmartAccountModuleKind.Verifier), defect);
+            }
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void CompositeReceiptAdmissionMarkerMustMatchPinnedManifest(bool runtimeComposite)
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var contract = Module(marker: [(byte)OpCode.PUSHT, (byte)OpCode.RET]);
+            contract.Manifest.Extra["smartAccount"]["compositeVerifier"] = !runtimeComposite;
+            contract.Nef.Script = new byte[] { (byte)(runtimeComposite ? OpCode.PUSHT : OpCode.PUSHF), (byte)OpCode.RET, (byte)OpCode.RET };
+            foreach (var method in contract.Manifest.Abi.Methods) method.Offset = 0;
+            contract.Nef.CheckSum = NefFile.ComputeChecksum(contract.Nef);
+            Install(snapshot, contract);
+            var binding = SmartAccountModulePolicy.Inspect(snapshot, contract.Hash, SmartAccountModuleKind.Verifier);
+            using var engine = Engine(snapshot);
+            var task = SmartAccountModulePolicy.DiscoverAsync(engine, binding, SmartAccountModuleKind.Verifier, false); Propagate(engine, task);
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+            Assert.Contains("composition marker", engine.FaultException.ToString());
         }
 
         private static void Install(DataCache snapshot, ContractState contract)

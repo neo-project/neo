@@ -248,7 +248,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<ArgumentException>(() => authority.EnterModule(Account, SmartAccountModuleKind.Verifier, Root, SmartAccountCallbackPhase.PreExecute, state));
             Assert.ThrowsExactly<ArgumentException>(() => authority.EnterModule(Account, SmartAccountModuleKind.Hook, Root, SmartAccountCallbackPhase.Validation, state));
             Assert.ThrowsExactly<ArgumentException>(() => authority.EnterModule(Account, SmartAccountModuleKind.Hook, Root, (SmartAccountCallbackPhase)99, state));
-            foreach (var roster in new[] { new[] { UInt160.Zero }, new[] { Root }, new[] { Child, Child }, new[] { NativeContract.GAS.Hash }, Enumerable.Range(20, 11).Select(n => Address((byte)n)).ToArray() })
+            foreach (var roster in new[] { new[] { UInt160.Zero }, new[] { Root }, new[] { Child, Child }, new[] { NativeContract.GAS.Hash }, Enumerable.Range(20, 4).Select(n => Address((byte)n)).ToArray() })
                 Assert.ThrowsExactly<ArgumentException>(() => authority.EnterModule(Account, SmartAccountModuleKind.Verifier, Root, SmartAccountCallbackPhase.Validation, state, roster));
             Assert.ThrowsExactly<ArgumentException>(() => authority.EnterModule(Account, SmartAccountModuleKind.Hook, Root, SmartAccountCallbackPhase.PreExecute, state, Enumerable.Range(20, 9).Select(n => Address((byte)n)).ToArray()));
             state.Contract = null;
@@ -298,7 +298,7 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (var kind in new[] { SmartAccountModuleKind.Verifier, SmartAccountModuleKind.Hook })
             {
                 var phase = kind == SmartAccountModuleKind.Hook ? SmartAccountCallbackPhase.PreExecute : SmartAccountCallbackPhase.PostExecute;
-                var children = Enumerable.Range(20, kind == SmartAccountModuleKind.Hook ? 8 : 10).Select(n => Address((byte)n)).ToArray();
+                var children = Enumerable.Range(20, kind == SmartAccountModuleKind.Hook ? 8 : 3).Select(n => Address((byte)n)).ToArray();
                 using var grant = authority.EnterModule(Account, kind, Root, phase, caller.GetState<ExecutionContextState>(), children);
                 Query(engine, Context(engine, children[^1], caller));
                 Assert.IsTrue(Module(authority, engine, module: children[^1], kind: kind, phase: phase));

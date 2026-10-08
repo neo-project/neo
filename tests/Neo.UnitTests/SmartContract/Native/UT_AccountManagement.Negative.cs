@@ -139,7 +139,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = Snapshot(); var root = ModuleFixture(snapshot, 150, hook, composite: true);
             var id = RegisterWithModules(snapshot, hook ? null : root, hook ? root : null);
-            string route = hook ? "callHook" : "callVerifier", role = hook ? "hook" : "verifier"; int capacity = hook ? 8 : 10;
+            string route = hook ? "callHook" : "callVerifier", role = hook ? "hook" : "verifier"; int capacity = hook ? 8 : 3;
             var leaves = Enumerable.Range(0, capacity + 1).Select(i => ModuleFixture(snapshot, 151 + i, hook)).ToArray();
             ulong now = 1000;
             foreach (var child in leaves.Take(capacity))

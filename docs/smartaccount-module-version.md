@@ -6,7 +6,12 @@ the current `getAuthorityEpoch(accountId)` in its storage namespace. Reinstallin
 an old module must not restore pre-recovery keys or policy state.
 
 Before lifecycle discovery or callbacks, admission requires the exact numeric
-manifest declaration `extra.smartAccount.abiVersion = 2`. Missing declarations,
+manifest declaration `extra.smartAccount.abiVersion = 2`, exact lowercase
+`extra.smartAccount.profileDigest` equal to the service parameter digest, and
+an exact Boolean `extra.smartAccount.compositeVerifier`. Hooks set the Boolean
+false; verifier discovery must agree with it. Composite verifier admission also
+requires both new exact receipt callback signatures. These requirements reject
+older ABI-2 artifacts even when the numeric ABI version matches. Missing declarations,
 ABI 1, strings, booleans and other versions are rejected. The declaration is
 included in the existing NEF plus canonical-manifest code identity, so changing
 it invalidates installed bindings. This is a compatibility gate, not a proof

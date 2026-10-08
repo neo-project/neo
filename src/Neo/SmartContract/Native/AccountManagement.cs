@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
     public sealed partial class AccountManagement : NativeContract
     {
         private const long BaseCpuFee = 1 << 15;
-        private const string ParameterDigest = "a55dfe56356cdb9f51d9139f7f6e617c8bf4bcaa3211fd69a53dc980d477c03e";
+        internal const string ParameterDigest = "4201b02f571b7415121467d67343a8189b8070ad795a82424c0403782d22b1b4";
         private const byte ProxyPrefix = 0x11, PendingCallPrefix = 0x30, DependencyPrefix = 0x40;
         public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_SmartAccountV1];
 

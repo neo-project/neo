@@ -46,7 +46,14 @@ array order, permissions, metadata or NEF bytes does.
   It does not assume a configured root has a usable signer set.
 
 Inspection and every discovery query recheck current code identity and policy.
-Verifier validation accepts ReadOnly regardless of the ABI safe bit. The profile
+Ordinary verifier validation accepts ReadOnly regardless of the ABI safe bit.
+Composite verifiers require non-safe `validateCompositeSignature(Hash160, Array)
+-> Array` and `postExecuteComposite(Hash160, Array, Any, Array) -> Void`; native
+validation still runs ReadOnly. Exact profile digest and Boolean composite
+metadata are part of admission and pinned code identity. Verifier discovery must
+match that Boolean. Execution selects the pinned capability without invoking a
+maintenance-budget discovery callback during Verification. The receipt lifetime
+and limits are specified in [composite receipts](smartaccount-composite-receipts.md). The profile
 requires clearAccount to be non-safe and discovery to be safe; it does not impose
 a safe-bit value on preExecute or postExecute. Normal Neo safe-method restrictions
 still apply even when the requested callback flags are All.

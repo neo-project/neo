@@ -91,7 +91,7 @@ namespace Neo.SmartContract.Native
             if (root is null || !SameBinding(root, storedRoot)) throw new FormatException("The dependency registry has a stale root.");
             var enrolled = ExactArray(record[1]).Select(DecodeBinding).ToArray();
             var active = ExactArray(record[2]).Select(p => new UInt160(Bytes(p, UInt160.Length))).ToArray();
-            int maximum = kind == SmartAccountModuleKind.Verifier ? 10 : 8;
+            int maximum = kind == SmartAccountModuleKind.Verifier ? 3 : 8;
             if (enrolled.Length > maximum || active.Length > maximum || enrolled.Select(p => p.Contract).Distinct().Count() != enrolled.Length ||
                 active.Distinct().Count() != active.Length || enrolled.Any(p => p.Contract == root.Contract) || active.Any(p => !enrolled.Any(e => e.Contract == p)))
                 throw new FormatException("The dependency registry has an invalid leaf roster.");
@@ -114,7 +114,9 @@ namespace Neo.SmartContract.Native
         {
             var contract = ContractManagement.GetContract(engine.SnapshotCache, root.Contract)!;
             string name = kind == SmartAccountModuleKind.Verifier ? "MultiSigVerifier" : "MultiHook";
-            if (contract.Manifest.Name != name) throw new InvalidOperationException("The declared composite profile is not supported.");
+            if (contract.Manifest.Name != name ||
+                (kind == SmartAccountModuleKind.Verifier && !SmartAccountModulePolicy.IsCompositeVerifier(engine.SnapshotCache, root.Contract)))
+                throw new InvalidOperationException("The declared composite profile is not supported.");
         }
         private async ContractTask<bool> Discover(ApplicationEngine engine, SmartAccountModuleBinding binding, SmartAccountModuleKind kind,
             bool leaf, bool inherit)
@@ -123,6 +125,8 @@ namespace Neo.SmartContract.Native
             if (!inherit) return await SmartAccountModulePolicy.DiscoverAsync(engine, binding, kind, leaf);
             var result = await engine.CallFromNativeContractRawAsync(Hash, binding.Contract, "supportsComposition", CallFlags.ReadOnly, true);
             if (result is not Boolean flag || (leaf && flag.GetBoolean())) throw new InvalidOperationException("Invalid or nested module composition marker.");
+            if (kind == SmartAccountModuleKind.Verifier && flag.GetBoolean() != SmartAccountModulePolicy.IsCompositeVerifier(engine.SnapshotCache, binding.Contract))
+                throw new InvalidOperationException("Invalid verifier composition marker for the declared profile capability.");
             if (leaf && kind == SmartAccountModuleKind.Verifier)
             {
                 var method = ContractManagement.GetContract(engine.SnapshotCache, binding.Contract)!.Manifest.Abi.GetMethod("getSignerDomains", 1);
@@ -157,6 +161,20 @@ namespace Neo.SmartContract.Native
                 foreach (var domain in (await Domains(engine, id, binding, inherit))!)
                     if (!seen.Add(domain)) throw new InvalidOperationException("Verifier children share a signer domain.");
             }
+            if (seen.Count > 3) throw new InvalidOperationException("The composite verifier exceeds three aggregate signer domains.");
+        }
+        private async ContractTask CheckRootDomains(ApplicationEngine engine, UInt160 id, Dependencies registry)
+        {
+            if (registry.Active.Length == 0) return;
+            var root = registry.Root!;
+            var result = await engine.CallFromNativeContractWithGasLimitAsync(Hash, root.Contract, "getSignerDomains", CallFlags.ReadOnly,
+                SmartAccountModulePolicy.MaintenanceBudget, id.ToArray());
+            _ = Inspect(engine, root.Contract, SmartAccountModuleKind.Verifier, root);
+            var declared = ExactArray(result!);
+            if (declared.Count is 0 or > 3) throw new InvalidOperationException("The composite verifier signer-domain declaration exceeds its bound.");
+            HashSet<UInt256> unique = new();
+            foreach (var value in declared)
+                if (!unique.Add(new UInt256(Bytes(value, UInt256.Length)))) throw new InvalidOperationException("Duplicate root signer domain.");
         }
         private async ContractTask CleanupRoot(ApplicationEngine engine, SmartAccountState state, SmartAccountModuleKind kind)
         {
@@ -176,7 +194,7 @@ namespace Neo.SmartContract.Native
             if (!Context(engine).IsModuleAuthorized(engine, id, kind, root.Contract, SmartAccountCallbackPhase.Configuration))
                 throw new InvalidOperationException("Only the active root configuration invocation can publish dependencies.");
             RequireCompositeProfile(engine, root, kind);
-            int maximum = kind == SmartAccountModuleKind.Verifier ? 10 : 8;
+            int maximum = kind == SmartAccountModuleKind.Verifier ? 3 : 8;
             ExactArray(children);
             if (children.Count > maximum) throw new InvalidOperationException("The child roster exceeds its profile bound.");
             var active = children.Select(p => new UInt160(Bytes(p, UInt160.Length))).ToArray();
@@ -239,7 +257,7 @@ namespace Neo.SmartContract.Native
             if (configured is not JArray list || list.Any(p => p is not JString) ||
                 list.Select(p => p!.GetString()).Distinct(StringComparer.Ordinal).Count() != list.Count)
                 throw new InvalidOperationException("The module must declare unique configuration capabilities.");
-            string[] reserved = ["validateSignature", "preExecute", "postExecute", "clearAccount", "supportsComposition", "getSignerDomains"];
+            string[] reserved = ["validateCompositeSignature", "postExecuteComposite", "validateSignatureForPostExecute", "validateSignature", "preExecute", "postExecute", "clearAccount", "supportsComposition", "getSignerDomains"];
             var names = list.Select(p => p!.GetString()).ToArray();
             var matches = contract.Manifest.Abi.Methods.Where(p => p.Name == method && p.Parameters.Length == arguments).ToArray();
             if (names.Any(p => p.StartsWith('_') || reserved.Contains(p)) || !names.Contains(method) || matches.Length != 1 ||
@@ -297,14 +315,19 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException("The module call intent is immature, changed or stale.");
             if (child is not null && !registry.Enrolled.Any(p => p.Contract == child))
             {
-                if (registry.Enrolled.Length >= (kind == SmartAccountModuleKind.Verifier ? 10 : 8)) throw new InvalidOperationException("The enrolled leaf roster is full.");
+                if (registry.Enrolled.Length >= (kind == SmartAccountModuleKind.Verifier ? 3 : 8)) throw new InvalidOperationException("The enrolled leaf roster is full.");
                 registry = registry with { Enrolled = [.. registry.Enrolled, selected] }; WriteDependencies(engine, id, kind, registry);
             }
             var result = await ModuleCall(engine, state, kind, selected, method, SmartAccountCallbackPhase.Configuration,
                 CallFlags.All, SmartAccountModulePolicy.MaintenanceBudget, false, ownedArgs.ToArray());
             _ = Inspect(engine, selected.Contract, kind, selected);
             if (selected.Contract != root.Contract) _ = Inspect(engine, root.Contract, kind, root);
-            if (kind == SmartAccountModuleKind.Verifier) await CheckDomains(engine, id, ReadDependencies(engine.SnapshotCache, state, kind), false);
+            if (kind == SmartAccountModuleKind.Verifier)
+            {
+                var current = ReadDependencies(engine.SnapshotCache, state, kind);
+                await CheckDomains(engine, id, current, false);
+                await CheckRootDomains(engine, id, current);
+            }
             Save(engine, advanced);
             return result!;
         }

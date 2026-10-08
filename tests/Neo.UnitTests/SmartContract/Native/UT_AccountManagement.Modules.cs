@@ -80,6 +80,24 @@ namespace Neo.UnitTests.SmartContract.Native
                 AssertPhase(script, role, "postExecute"); if (abortPost) script.Emit(OpCode.ABORT);
                 if (delegatedChild is not null) Delegate("postExecute", 3, false);
             }, ContractParameterType.Hash160, ContractParameterType.Array, ContractParameterType.Any);
+            if (composite && !hook)
+            {
+                Method("validateCompositeSignature", ContractParameterType.Array, false, () =>
+                {
+                    AssertPhase(script, role, "validation");
+                    if (delegatedChild is not null) { Delegate("validateSignature", 2, true); script.Emit(OpCode.ASSERT); }
+                    script.EmitPush(new byte[32]);
+                    script.EmitPush("verifier").Emit(OpCode.LDARG0).EmitPush(2).Emit(OpCode.PACK)
+                        .EmitPush(CallFlags.ReadOnly).EmitPush("getModuleDependencies").EmitPush(NativeContract.AccountManagement.Hash)
+                        .EmitSysCall(ApplicationEngine.System_Contract_Call).EmitPush(2).Emit(OpCode.PICKITEM);
+                    script.EmitPush(true).EmitPush(3).Emit(OpCode.PACK);
+                }, ContractParameterType.Hash160, ContractParameterType.Array);
+                Method("postExecuteComposite", ContractParameterType.Void, false, () =>
+                {
+                    AssertPhase(script, role, "postExecute"); if (abortPost) script.Emit(OpCode.ABORT);
+                    if (delegatedChild is not null) Delegate("postExecute", 3, false);
+                }, ContractParameterType.Hash160, ContractParameterType.Array, ContractParameterType.Any, ContractParameterType.Array);
+            }
             Method("clearAccount", ContractParameterType.Void, false, () =>
             {
                 AssertPhase(script, role, "cleanup");
@@ -127,6 +145,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 ["smartAccount"] = new JObject
                 {
                     ["abiVersion"] = 2,
+                    ["profileDigest"] = NativeContract.AccountManagement.GetContractState(Settings, 1).Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString(),
+                    ["compositeVerifier"] = composite && !hook,
                     ["configurationMethods"] = composite ? new JArray("configure", "roster", "clearRoster") : new JArray("configure")
                 }
             };

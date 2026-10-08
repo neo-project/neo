@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
             RequireAnchor(module, anchor);
             if (!ValidPhase(kind, phase) || NativeContract.IsNative(module) || module == SmartAccountProtocol.ServiceHash)
                 throw new ArgumentException("The module kind, phase or native identity is invalid.");
-            int maximum = kind == SmartAccountModuleKind.Verifier ? 10 : 8;
+            int maximum = kind == SmartAccountModuleKind.Verifier ? 3 : 8;
             if (children is not null && (children.Count > maximum ||
                 (children.Count > 0 && phase is SmartAccountCallbackPhase.Configuration or SmartAccountCallbackPhase.Cleanup)))
                 throw new ArgumentException("The callback phase or roster size does not permit delegation.", nameof(children));

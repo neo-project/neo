@@ -1,3 +1,8 @@
+> The current unreleased ABI-2 composite profile uses per-operation approval
+> receipts, at most three configured children and two selected approvals.
+> See [composite receipts](smartaccount-composite-receipts.md). Historical runtime
+> counts below do not establish this updated profile's performance or readiness.
+
 > ABI 2 supersedes the historical ABI 1 recovery/signature semantics described in
 > past receipts below. Current normative rules are in
 > [recovery and authority revocation](smartaccount-recovery-epoch.md).

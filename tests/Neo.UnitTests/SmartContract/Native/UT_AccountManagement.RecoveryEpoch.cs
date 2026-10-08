@@ -58,6 +58,9 @@ namespace Neo.UnitTests.SmartContract.Native
             object[] configure = [id, child.Hash, "configure", new object[] { 17 }];
             Success(snapshot, "callVerifierChild", configure);
             Success(snapshot, "callVerifierChild", configure, 1000 + SmartAccountState.ModuleChangeDelayMs);
+            object[] roster = [id, "roster", new object[] { new object[] { child.Hash } }];
+            Success(snapshot, "callVerifier", roster);
+            Success(snapshot, "callVerifier", roster, 1000 + SmartAccountState.ModuleChangeDelayMs);
             Success(snapshot, "executeUserOp", [id, Operation(NativeContract.StdLib.Hash, "serialize", [7])]);
             var otherChannel = new BigInteger(3);
             var op = Operation(NativeContract.StdLib.Hash, "serialize", [8]); op[3] = otherChannel << 64;
