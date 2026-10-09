@@ -227,7 +227,7 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void System_Runtime_GetRandom_VerificationPriceBeforeHuyao()
+        public void System_Runtime_GetRandom_VerificationPrice()
         {
             var snapshot = _snapshotCache.CloneCache();
 
@@ -235,20 +235,27 @@ namespace Neo.UnitTests.SmartContract
             script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
             script.Emit(OpCode.DROP);
 
+            long GetFee(uint huyaoHeight)
+            {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, huyaoHeight)
+                };
+                var engine = ApplicationEngine.Create(TriggerType.Verification, null, snapshot, null, settings);
+                engine.LoadScript(script.ToArray(), configureState: p => p.CallFlags = CallFlags.ReadOnly);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                return engine.FeeConsumed;
+            }
+
             // Huyao is configured, but the ledger is still below its height. Verification
             // engine has no persisting block, so the height must be taken from the ledger.
-            var settings = TestProtocolSettings.Default with
-            {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, 100)
-            };
             Assert.IsLessThan(100u, NativeContract.Ledger.CurrentIndex(snapshot));
-
-            var engine = ApplicationEngine.Create(TriggerType.Verification, null, snapshot, null, settings);
-            engine.LoadScript(script.ToArray(), configureState: p => p.CallFlags = CallFlags.ReadOnly);
-            Assert.AreEqual(VMState.HALT, engine.Execute());
-
             // GetRandom in-handler fee (1 << 13) + DROP (1 << 1), multiplied by the default ExecFeeFactor (30) = 245820 datoshi.
-            Assert.AreEqual(245820, engine.FeeConsumed);
+            Assert.AreEqual(245820, GetFee(100));
+
+            // GetRandom (15833) + DROP (99 * 1 + 1486), multiplied by 1e-11 GAS * the default ExecFeeFactor (30) = 522.54
+            // datoshi since Huyao, rounded up.
+            Assert.AreEqual(523, GetFee(0));
         }
 
         [TestMethod]
