@@ -1132,8 +1132,8 @@ namespace Neo.SmartContract
                 ?? throw new ArgumentException($"Handler {handler} is not found.", nameof(handler));
             var method = member as MethodInfo ?? ((PropertyInfo)member).GetMethod
                 ?? throw new ArgumentException($"Handler {handler} has no getter.", nameof(handler));
-            var attributes = member.GetCustomAttributes<InteropPriceAttribute>().ToArray();
-            if (attributes.Select(p => p.Since).Distinct().Count() != attributes.Length)
+            var attributes = member.GetCustomAttributes<InteropPriceAttribute>();
+            if (attributes.Select(p => p.Since).Distinct().Count() != attributes.Count())
                 throw new ArgumentException($"Handler {handler} has several prices for the same hardfork.", nameof(handler));
             var prices = attributes
                 .OrderByDescending(p => p.Since)
