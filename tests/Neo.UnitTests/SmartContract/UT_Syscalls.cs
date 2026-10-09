@@ -247,7 +247,7 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(script.ToArray(), configureState: p => p.CallFlags = CallFlags.ReadOnly);
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
-            // GetRandom in-handler fee (1 << 13) + DROP (1 << 1), multiplied by ExecFeeFactor = 245820 datoshi.
+            // GetRandom in-handler fee (1 << 13) + DROP (1 << 1), multiplied by the default ExecFeeFactor (30) = 245820 datoshi.
             Assert.AreEqual(245820, engine.FeeConsumed);
         }
 
