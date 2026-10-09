@@ -406,7 +406,7 @@ namespace Neo.SmartContract
             SendNotification(CurrentScriptHash!, name, state, out var count);
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                price = NotifyPricePerItem * count + NotifyBasePrice;
+                var price = NotifyPricePerItem * count + NotifyBasePrice;
                 AddFemtoGas(price * _execFeeFactor, false);
             }
         }
