@@ -1222,8 +1222,11 @@ namespace Neo.SmartContract
             if (ProtocolSettings == null)
                 return false;
 
-            var persistingIndex = PersistingBlock?.Index ?? (SnapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(SnapshotCache) + 1 /* Ledger.CurrentIndex returns already persisted block, hence use +1 to define _persisting_ block index */);
-            return ProtocolSettings.IsHardforkEnabled(hardfork, persistingIndex);
+            // Return true if PersistingBlock is null and Hardfork is enabled
+            if (PersistingBlock is null)
+                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
+
+            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
         }
     }
 }
