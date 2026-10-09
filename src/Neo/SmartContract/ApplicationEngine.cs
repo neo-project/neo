@@ -1137,7 +1137,7 @@ namespace Neo.SmartContract
             var prices = attributes
                 .OrderByDescending(p => p.Since)
                 .Select(p => new KeyValuePair<Hardfork?, long>(p.Since, p.Coefficient))
-                .Append(new KeyValuePair<Hardfork?, long>(null, fixedPrice * OpcodePriceMultiplier))
+                .Append(new KeyValuePair<Hardfork?, long>(null, fixedPrice * OpcodePriceMultiplier)) // the fixed price is in the unit of 1e-8 GAS, scale it to 1e-11 GAS
                 .ToArray();
             var descriptor = new InteropDescriptor()
             {
