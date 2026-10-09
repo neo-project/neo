@@ -57,7 +57,7 @@ namespace Neo.UnitTests.SmartContract
 
             Assert.HasCount(1, descriptor.Parameters);
             Assert.AreEqual(typeof(int), descriptor.Parameters[0].Type);
-            Assert.AreEqual(0, descriptor.FixedPrice);
+            Assert.AreEqual(0, descriptor.Prices[^1].Value);
             Assert.AreEqual(CallFlags.None, descriptor.RequiredCallFlags);
             Assert.AreEqual(Hardfork.HF_Aspidochelone, descriptor.Hardfork);
             Assert.AreSame(method, descriptor.Handler);
