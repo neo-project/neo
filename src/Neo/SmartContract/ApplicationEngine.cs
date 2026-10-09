@@ -21,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -1087,7 +1088,7 @@ namespace Neo.SmartContract
                 if (hardfork is null || IsHardforkEnabled(hardfork.Value))
                     return price * _execFeeFactor;
             }
-            return 0;
+            throw new UnreachableException($"Price of {descriptor.Name} isn't found.");
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
