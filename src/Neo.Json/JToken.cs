@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Numerics;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -128,8 +130,15 @@ namespace Neo.Json
         /// </summary>
         /// <param name="value">The byte array that contains the JSON token.</param>
         /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
+        /// <param name="exactIntegers">
+        /// When <see langword="true"/>, integer JSON numbers (including values outside the IEEE-754
+        /// safe range and integer-valued scientific notation) are stored exactly via
+        /// <see cref="BigInteger"/>. When <see langword="false"/> (default), numbers use
+        /// <see cref="double"/> only — the historical behavior required for consensus before
+        /// <c>HF_Huyao</c> enables exact integers in <c>StdLib.jsonDeserialize</c>.
+        /// </param>
         /// <returns>The parsed JSON token.</returns>
-        public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 64)
+        public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 64, bool exactIntegers = false)
         {
             var reader = new Utf8JsonReader(value, new JsonReaderOptions
             {
@@ -139,7 +148,7 @@ namespace Neo.Json
             });
             try
             {
-                var json = Read(ref reader);
+                var json = Read(ref reader, exactIntegers: exactIntegers);
                 if (reader.Read()) throw new FormatException("Read json token failed");
                 return json;
             }
@@ -154,29 +163,212 @@ namespace Neo.Json
         /// </summary>
         /// <param name="value">The <see cref="string"/> that contains the JSON token.</param>
         /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
+        /// <param name="exactIntegers">See <see cref="Parse(ReadOnlySpan{byte}, int, bool)"/>.</param>
         /// <returns>The parsed JSON token.</returns>
-        public static JToken? Parse(string value, int max_nest = 64)
+        public static JToken? Parse(string value, int max_nest = 64, bool exactIntegers = false)
         {
-            return Parse(StrictUTF8.GetBytes(value), max_nest);
+            return Parse(StrictUTF8.GetBytes(value), max_nest, exactIntegers);
         }
 
-        private static JToken? Read(ref Utf8JsonReader reader, bool skipReading = false)
+        private static JToken? Read(ref Utf8JsonReader reader, bool skipReading = false, bool exactIntegers = false)
         {
             if (!skipReading && !reader.Read()) throw new FormatException("Read json token failed");
             return reader.TokenType switch
             {
                 JsonTokenType.False => false,
                 JsonTokenType.Null => Null,
-                JsonTokenType.Number => reader.GetDouble(),
-                JsonTokenType.StartArray => ReadArray(ref reader),
-                JsonTokenType.StartObject => ReadObject(ref reader),
+                JsonTokenType.Number => ReadNumber(ref reader, exactIntegers),
+                JsonTokenType.StartArray => ReadArray(ref reader, exactIntegers),
+                JsonTokenType.StartObject => ReadObject(ref reader, exactIntegers),
                 JsonTokenType.String => ReadString(ref reader),
                 JsonTokenType.True => true,
                 _ => throw new FormatException($"Unexpected token {reader.TokenType}"),
             };
         }
 
-        private static JArray ReadArray(ref Utf8JsonReader reader)
+        /// <summary>
+        /// Decimal-digit budget matching NeoVM 32-byte integers (~77 digits for 2^255).
+        /// Used to reject oversized integer-valued JSON numbers before <see cref="BigInteger.Pow"/>
+        /// or unbounded <see langword="stackalloc"/>.
+        /// </summary>
+        private const int MaxIntegerDecimalDigits = 78;
+
+        private static JNumber ReadNumber(ref Utf8JsonReader reader, bool exactIntegers)
+        {
+            // Legacy / pre-HF_Huyao: always double (consensus-compatible with historical nodes).
+            if (!exactIntegers)
+                return new JNumber(reader.GetDouble());
+
+            // Prefer exact integer tokens so large values (e.g. token amounts) keep full precision.
+            // TryGetInt64 only succeeds for non-fractional, non-scientific spellings; other integer
+            // forms (trailing .0, 1e3, …) share the same 32-byte path via TryParseExactInteger.
+            if (reader.TryGetInt64(out var int64))
+            {
+                if (int64 >= JNumber.MIN_SAFE_INTEGER && int64 <= JNumber.MAX_SAFE_INTEGER)
+                    return new JNumber((double)int64);
+                return JNumber.FromBigInteger(int64);
+            }
+
+            var raw = GetRawNumberText(ref reader);
+            if (TryParseExactInteger(raw, out var integer, out var overflow))
+            {
+                if (!JNumber.FitsMaxIntegerSize(integer))
+                    throw new FormatException($"JSON integer exceeds {JNumber.MaxIntegerSize}-byte limit.");
+                return JNumber.FromBigInteger(integer);
+            }
+
+            if (overflow)
+                throw new FormatException($"JSON integer exceeds {JNumber.MaxIntegerSize}-byte limit.");
+
+            return new JNumber(reader.GetDouble());
+        }
+
+        /// <summary>
+        /// Parses a JSON number as an exact integer when the mathematical value has no fractional
+        /// part, independent of spelling (decimal digits, trailing <c>.0</c>, or scientific form
+        /// such as <c>9.05E+28</c>). Returns <see langword="false"/> with <paramref name="overflow"/>
+        /// set when the value is an integer that cannot fit in <see cref="MaxIntegerDecimalDigits"/>.
+        /// </summary>
+        private static bool TryParseExactInteger(ReadOnlySpan<char> raw, out BigInteger result, out bool overflow)
+        {
+            result = default;
+            overflow = false;
+
+            var eIndex = raw.IndexOfAny('e', 'E');
+            var mantissa = eIndex >= 0 ? raw[..eIndex] : raw;
+            var expSpan = eIndex >= 0 ? raw[(eIndex + 1)..] : ReadOnlySpan<char>.Empty;
+            var expNegative = expSpan.Length > 0 && expSpan[0] == '-';
+
+            var negative = mantissa.Length > 0 && mantissa[0] == '-';
+            if (negative)
+                mantissa = mantissa[1..];
+
+            var dot = mantissa.IndexOf('.');
+            var intPart = dot >= 0 ? mantissa[..dot] : mantissa;
+            var fracPart = dot >= 0 ? mantissa[(dot + 1)..] : ReadOnlySpan<char>.Empty;
+
+            var firstInt = IndexOfNonZero(intPart);
+            var firstFrac = IndexOfNonZero(fracPart);
+            if (firstInt < 0 && firstFrac < 0)
+            {
+                result = BigInteger.Zero;
+                return true;
+            }
+
+            var lastInt = LastIndexOfNonZero(intPart);
+            var lastFrac = LastIndexOfNonZero(fracPart);
+            var lastConcat = lastFrac >= 0 ? intPart.Length + lastFrac : lastInt;
+            var firstConcat = firstInt >= 0 ? firstInt : intPart.Length + firstFrac;
+            var significantDigits = lastConcat - firstConcat + 1;
+            var trailingZeros = intPart.Length + fracPart.Length - lastConcat - 1;
+            var scaleAdjust = (long)trailingZeros - fracPart.Length;
+
+            var exponent = 0L;
+            if (eIndex >= 0)
+            {
+                if (!long.TryParse(expSpan, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out exponent))
+                {
+                    if (expNegative)
+                        return false;
+                    overflow = true;
+                    return false;
+                }
+            }
+
+            // adjExp = scaleAdjust + exponent. Compare without adding values that may overflow long.
+            if (exponent < -scaleAdjust)
+                return false;
+
+            if (significantDigits > MaxIntegerDecimalDigits)
+            {
+                overflow = true;
+                return false;
+            }
+
+            var maxAdj = MaxIntegerDecimalDigits - significantDigits;
+            if (exponent > maxAdj - scaleAdjust)
+            {
+                overflow = true;
+                return false;
+            }
+
+            var adjExp = (int)(scaleAdjust + exponent);
+            Span<char> digits = stackalloc char[MaxIntegerDecimalDigits];
+            var n = CopySignificantDigits(intPart, fracPart, firstInt, lastInt, firstFrac, lastFrac, digits);
+            if (!BigInteger.TryParse(digits[..n], NumberStyles.None, CultureInfo.InvariantCulture, out var significand))
+                return false;
+
+            if (adjExp > 0)
+                significand *= BigInteger.Pow(10, adjExp);
+
+            result = negative ? -significand : significand;
+            return true;
+        }
+
+        private static int IndexOfNonZero(ReadOnlySpan<char> digits)
+        {
+            for (var i = 0; i < digits.Length; i++)
+            {
+                if (digits[i] != '0')
+                    return i;
+            }
+            return -1;
+        }
+
+        private static int LastIndexOfNonZero(ReadOnlySpan<char> digits)
+        {
+            for (var i = digits.Length - 1; i >= 0; i--)
+            {
+                if (digits[i] != '0')
+                    return i;
+            }
+            return -1;
+        }
+
+        private static int CopySignificantDigits(
+            ReadOnlySpan<char> intPart,
+            ReadOnlySpan<char> fracPart,
+            int firstInt,
+            int lastInt,
+            int firstFrac,
+            int lastFrac,
+            Span<char> destination)
+        {
+            var n = 0;
+            if (firstInt >= 0)
+            {
+                var intEnd = lastFrac >= 0 ? intPart.Length : lastInt + 1;
+                intPart[firstInt..intEnd].CopyTo(destination);
+                n = intEnd - firstInt;
+            }
+            if (lastFrac >= 0)
+            {
+                var fracStart = firstInt >= 0 ? 0 : firstFrac;
+                var fracSlice = fracPart[fracStart..(lastFrac + 1)];
+                fracSlice.CopyTo(destination[n..]);
+                n += fracSlice.Length;
+            }
+            return n;
+        }
+
+        private static string GetRawNumberText(ref Utf8JsonReader reader)
+        {
+            if (!reader.HasValueSequence)
+                return StrictUTF8.GetString(reader.ValueSpan);
+
+            // Multi-segment number tokens are rare; reassemble without System.Buffers helpers.
+            var length = checked((int)reader.ValueSequence.Length);
+            var buffer = new byte[length];
+            var offset = 0;
+            foreach (var segment in reader.ValueSequence)
+            {
+                segment.Span.CopyTo(buffer.AsSpan(offset));
+                offset += segment.Length;
+            }
+            return StrictUTF8.GetString(buffer);
+        }
+
+        private static JArray ReadArray(ref Utf8JsonReader reader, bool exactIntegers)
         {
             var array = new JArray();
             while (reader.Read())
@@ -186,14 +378,14 @@ namespace Neo.Json
                     case JsonTokenType.EndArray:
                         return array;
                     default:
-                        array.Add(Read(ref reader, skipReading: true));
+                        array.Add(Read(ref reader, skipReading: true, exactIntegers: exactIntegers));
                         break;
                 }
             }
             throw new FormatException("Unterminated array");
         }
 
-        private static JObject ReadObject(ref Utf8JsonReader reader)
+        private static JObject ReadObject(ref Utf8JsonReader reader, bool exactIntegers)
         {
             JObject obj = new();
             while (reader.Read())
@@ -207,7 +399,7 @@ namespace Neo.Json
                         if (obj.Properties.ContainsKey(name))
                             throw new FormatException($"Duplicate property name: {name}");
 
-                        var value = Read(ref reader);
+                        var value = Read(ref reader, exactIntegers: exactIntegers);
                         obj.Properties.Add(name, value);
                         break;
                     default:
@@ -300,6 +492,16 @@ namespace Neo.Json
         }
 
         public static implicit operator JToken(double value)
+        {
+            return (JNumber)value;
+        }
+
+        public static implicit operator JToken(long value)
+        {
+            return (JNumber)value;
+        }
+
+        public static implicit operator JToken(BigInteger value)
         {
             return (JNumber)value;
         }
