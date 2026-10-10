@@ -248,6 +248,10 @@ namespace Neo
         {
             foreach (Hardfork hf in AllHardforks)
             {
+                // SmartAccount is an independently activated protocol profile. It must not
+                // become active merely because an older configuration omits its height.
+                if (hf == Hardfork.HF_SmartAccountV1)
+                    continue;
                 if (!hardForks.ContainsKey(hf))
                 {
                     hardForks[hf] = 0;
