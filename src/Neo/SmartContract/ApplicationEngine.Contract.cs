@@ -28,6 +28,27 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
 
         /// <summary>
+        /// The price of System.Contract.Call since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long ContractCallPrice = 2205000;
+
+        /// <summary>
+        /// The price of a single read from disk since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long ReadFromDiskPrice = 6799366;
+
+        /// <summary>
+        /// The price of System.Contract.CreateMultisigAccount per public key since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CreateMultisigAccountPricePerKey = 10581;
+
+        /// <summary>
+        /// The base price of System.Contract.CreateMultisigAccount since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CreateMultisigAccountBasePrice = 62153;
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.CallNative.
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
@@ -71,6 +92,7 @@ namespace Neo.SmartContract
         /// <param name="method">The method of the contract to be called.</param>
         /// <param name="callFlags">The <see cref="CallFlags"/> to be used to call the contract.</param>
         /// <param name="args">The arguments to be used.</param>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
             if (method.StartsWith('_')) throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
@@ -78,6 +100,14 @@ namespace Neo.SmartContract
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
             ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                var price = ContractCallPrice;
+                // Non-native contracts may be read from disk.
+                if (contract is null || contract.Id >= 0)
+                    price += ReadFromDiskPrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
@@ -92,6 +122,7 @@ namespace Neo.SmartContract
         /// Calls to a native contract.
         /// </summary>
         /// <param name="version">The version of the native contract to be called.</param>
+        [InteropPrice(Hardfork.HF_Huyao, 1130000)]
         protected internal void CallNativeContract(byte version)
         {
             NativeContract? contract = NativeContract.GetContract(CurrentScriptHash!);
@@ -107,6 +138,7 @@ namespace Neo.SmartContract
         /// Gets the <see cref="CallFlags"/> of the current context.
         /// </summary>
         /// <returns>The <see cref="CallFlags"/> of the current context.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 5933)]
         protected internal CallFlags GetCallFlags()
         {
             var state = CurrentContext!.GetState<ExecutionContextState>();
@@ -119,13 +151,17 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="pubKey">The public key of the account.</param>
         /// <returns>The hash of the account.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 41833)]
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
-                ? CheckSigPrice
-                : 1 << 8;
-            AddFee(fee * _execFeeFactor, false);
+            if (!IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+                BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+                    ? CheckSigPrice
+                    : 1 << 8;
+                AddFee(fee * _execFeeFactor, false);
+            }
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
@@ -138,11 +174,21 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
-                ? CheckSigPrice * pubKeys.Length
-                : 1 << 8;
-            AddFee(fee * _execFeeFactor, false);
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                if (m < 0)
+                    throw new ArgumentOutOfRangeException(nameof(m), "m must be positive and fit int32.");
+                var price = CreateMultisigAccountPricePerKey * pubKeys.Length + CreateMultisigAccountBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
+            else
+            {
+                // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+                BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+                    ? CheckSigPrice * pubKeys.Length
+                    : 1 << 8;
+                AddFee(fee * _execFeeFactor, false);
+            }
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 

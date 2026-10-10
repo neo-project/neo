@@ -96,6 +96,10 @@ namespace Neo.SmartContract
         /// instruction execution.
         /// </summary>
         private bool _whitelisted;
+        /// <summary>
+        /// The index of the persisting block or the current ledger index if there is no persisting block.
+        /// </summary>
+        private readonly uint _persistingIndex;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -117,6 +121,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The trigger of the execution.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 8700)]
         public TriggerType Trigger { get; }
 
         /// <summary>
@@ -181,6 +186,7 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 8900)]
         public long GasLeft
         {
             get
@@ -200,11 +206,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the current context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public UInt160? CurrentScriptHash => CurrentContext?.GetScriptHash();
 
         /// <summary>
         /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9567)]
         public virtual UInt160? CallingScriptHash
         {
             get
@@ -218,6 +226,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public virtual UInt160? EntryScriptHash => EntryContext?.GetScriptHash();
 
         /// <summary>
@@ -260,6 +269,7 @@ namespace Neo.SmartContract
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
 
             var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache));
+            _persistingIndex = persistingIndex;
 
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
@@ -1057,7 +1067,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * _execFeeFactor, false);
+            AddFemtoGas(GetSysCallPrice(descriptor), false);
 
             object?[] parameters = new object?[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -1066,6 +1076,34 @@ namespace Neo.SmartContract
             object? returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
+        }
+
+        /// <summary>
+        /// Gets the fixed price of the specified interoperable service. It's taken from the latest
+        /// enabled <see cref="InteropDescriptor.Prices"/> entry if any, from <see cref="InteropDescriptor.FixedPrice"/> otherwise.
+        /// </summary>
+        /// <param name="descriptor">The descriptor of the interoperable service.</param>
+        /// <returns>The price in the unit of femtoGAS.</returns>
+        private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
+        {
+            for (int i = 0; i < descriptor.Prices.Count; i++)
+            {
+                var price = descriptor.Prices[i];
+                if (IsHardforkEnabledAtPersistingIndex(price.Since))
+                    return price.Coefficient * _execFeeFactor;
+            }
+            return descriptor.FixedPrice * _execFeeFactor * OpcodePriceMultiplier;
+        }
+
+        /// <summary>
+        /// Determines whether the specified hardfork is enabled at the index of the persisting block
+        /// or at the current ledger index if there is no persisting block.
+        /// </summary>
+        /// <param name="hardfork">The hardfork to check.</param>
+        /// <returns><see langword="true"/> if the hardfork is enabled; otherwise, <see langword="false"/>.</returns>
+        private bool IsHardforkEnabledAtPersistingIndex(Hardfork hardfork)
+        {
+            return ProtocolSettings is not null && ProtocolSettings.IsHardforkEnabled(hardfork, _persistingIndex);
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
@@ -1104,15 +1142,21 @@ namespace Neo.SmartContract
         protected static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, Hardfork? hardfork = null)
         {
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-            var method = typeof(ApplicationEngine).GetMethod(handler, flags)
-                ?? typeof(ApplicationEngine).GetProperty(handler, flags)?.GetMethod
+            MemberInfo member = (MemberInfo?)typeof(ApplicationEngine).GetMethod(handler, flags)
+                ?? typeof(ApplicationEngine).GetProperty(handler, flags)
                 ?? throw new ArgumentException($"Handler {handler} is not found.", nameof(handler));
+            var method = member as MethodInfo ?? ((PropertyInfo)member).GetMethod
+                ?? throw new ArgumentException($"Handler {handler} has no getter.", nameof(handler));
+            var prices = member.GetCustomAttributes<InteropPriceAttribute>().OrderByDescending(p => p.Since).ToArray();
+            if (prices.Select(p => p.Since).Distinct().Count() != prices.Length)
+                throw new ArgumentException($"Handler {handler} has several prices for the same hardfork.", nameof(handler));
             var descriptor = new InteropDescriptor()
             {
                 Name = name,
                 Handler = method,
                 Hardfork = hardfork,
                 FixedPrice = fixedPrice,
+                Prices = prices,
                 RequiredCallFlags = requiredCallFlags
             };
             services ??= [];

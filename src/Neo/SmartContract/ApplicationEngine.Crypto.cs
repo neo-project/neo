@@ -25,6 +25,11 @@ namespace Neo.SmartContract
         public const long CheckSigPrice = 1 << 15;
 
         /// <summary>
+        /// The price of a single signature verification since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CheckSigPriceSinceHuyao = 2326967;
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckSig.
         /// Checks the signature for the current script container.
         /// </summary>
@@ -43,6 +48,7 @@ namespace Neo.SmartContract
         /// <param name="pubkey">The public key of the account.</param>
         /// <param name="signature">The signature of the current script container.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, CheckSigPriceSinceHuyao)]
         protected internal bool CheckSig(byte[] pubkey, byte[] signature)
         {
             if (IsHardforkEnabled(Hardfork.HF_Gorgon))
@@ -64,7 +70,10 @@ namespace Neo.SmartContract
             if (n == 0) throw new ArgumentException("pubkeys array cannot be empty.");
             if (m == 0) throw new ArgumentException("signatures array cannot be empty.");
             if (m > n) throw new ArgumentException($"signatures count ({m}) cannot be greater than pubkeys count ({n}).");
-            AddFee(CheckSigPrice * n * _execFeeFactor, false);
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+                AddFemtoGas(CheckSigPriceSinceHuyao * n * _execFeeFactor, false);
+            else
+                AddFee(CheckSigPrice * n * _execFeeFactor, false);
             var isGorgon = IsHardforkEnabled(Hardfork.HF_Gorgon);
             for (int i = 0, j = 0; i < m && j < n;)
             {

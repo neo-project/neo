@@ -104,10 +104,31 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_LoadScript = Register("System.Runtime.LoadScript", nameof(RuntimeLoadScript), 1 << 15, CallFlags.AllowCall);
 
         /// <summary>
+        /// The price of System.Runtime.LoadScript per script byte since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long LoadScriptPricePerByte = 187;
+
+        /// <summary>
+        /// The base price of System.Runtime.LoadScript since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long LoadScriptBasePrice = 700000;
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.CheckWitness.
         /// Determines whether the specified account has witnessed the current transaction.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", nameof(CheckWitness), 1 << 10, CallFlags.None);
+
+        /// <summary>
+        /// The price of System.Runtime.CheckWitness per checked witness rule since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CheckWitnessPricePerRule = 297286;
+
+        /// <summary>
+        /// The base price of System.Runtime.CheckWitness since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CheckWitnessBasePrice = 1035000;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetInvocationCounter.
@@ -155,13 +176,25 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.CurrentSigners.
         /// Get the Signers of the current transaction.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_CurrentSigners = Register("System.Runtime.CurrentSigners", nameof(GetCurrentSigners), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_CurrentSigners = Register("System.Runtime.CurrentSigners", nameof(RuntimeCurrentSigners), 1 << 4, CallFlags.None);
+
+        /// <summary>
+        /// The price of System.Runtime.CurrentSigners per reference pushed onto the stack since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CurrentSignersPricePerRef = 2892;
+
+        /// <summary>
+        /// The base price of System.Runtime.CurrentSigners since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CurrentSignersBasePrice = 18429;
 
         /// <summary>
         /// The implementation of System.Runtime.Platform.
         /// Gets the name of the current platform.
         /// </summary>
         /// <returns>It always returns "NEO".</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 8867)]
         internal protected static string GetPlatform()
         {
             return "NEO";
@@ -172,6 +205,7 @@ namespace Neo.SmartContract
         /// Gets the magic number of the current network.
         /// </summary>
         /// <returns>The magic number of the current network.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 9833)]
         internal protected uint GetNetwork()
         {
             return ProtocolSettings.Network;
@@ -182,6 +216,7 @@ namespace Neo.SmartContract
         /// Gets the address version of the current network.
         /// </summary>
         /// <returns>The address version of the current network.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 8867)]
         internal protected byte GetAddressVersion()
         {
             return ProtocolSettings.AddressVersion;
@@ -192,6 +227,7 @@ namespace Neo.SmartContract
         /// Gets the timestamp of the current block.
         /// </summary>
         /// <returns>The timestamp of the current block.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 9033)]
         protected internal ulong GetTime()
         {
             if (PersistingBlock is null)
@@ -204,6 +240,7 @@ namespace Neo.SmartContract
         /// Gets the current script container.
         /// </summary>
         /// <returns>The current script container.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 36533)]
         protected internal StackItem GetScriptContainer()
         {
             if (ScriptContainer is not IInteroperable interop) throw new InvalidOperationException();
@@ -214,10 +251,16 @@ namespace Neo.SmartContract
         /// The implementation of System.Runtime.LoadScript.
         /// Loads a script at rumtime.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal void RuntimeLoadScript(byte[] script, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                var price = LoadScriptPricePerByte * script.Length + LoadScriptBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
 
             ExecutionContextState state = CurrentContext!.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
@@ -237,6 +280,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hashOrPubkey">The hash or public key of the account.</param>
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
             UInt160 hash = hashOrPubkey.Length switch
@@ -245,7 +289,10 @@ namespace Neo.SmartContract
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
                 _ => throw new ArgumentException("Invalid hashOrPubkey length", nameof(hashOrPubkey))
             };
-            return CheckWitnessInternal(hash);
+            var result = CheckWitnessInternal(hash, out var rulesChecked);
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+                AddFemtoGas((CheckWitnessPricePerRule * rulesChecked + CheckWitnessBasePrice) * _execFeeFactor, false);
+            return result;
         }
 
         /// <summary>
@@ -255,6 +302,18 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckWitnessInternal(UInt160 hash)
         {
+            return CheckWitnessInternal(hash, out _);
+        }
+
+        /// <summary>
+        /// Determines whether the specified account has witnessed the current transaction.
+        /// </summary>
+        /// <param name="hash">The hash of the account.</param>
+        /// <param name="rulesChecked">The number of checked <see cref="Signer.Rules"/>.</param>
+        /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
+        private bool CheckWitnessInternal(UInt160 hash, out int rulesChecked)
+        {
+            rulesChecked = 0;
             if (hash.Equals(CallingScriptHash)) return true;
 
             if (ScriptContainer is Transaction tx)
@@ -272,11 +331,18 @@ namespace Neo.SmartContract
                 }
                 Signer? signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
-                foreach (WitnessRule rule in signer.GetAllRules())
+                var rules = signer.GetAllRules().ToArray();
+                var explicitRules = signer.Scopes.HasFlag(WitnessScope.WitnessRules) ? signer.Rules!.Length : 0;
+                var implicitRules = rules.Length - explicitRules;
+                for (int i = 0; i < rules.Length; i++)
                 {
-                    if (rule.Condition.Match(this))
-                        return rule.Action == WitnessRuleAction.Allow;
+                    if (rules[i].Condition.Match(this))
+                    {
+                        rulesChecked = Math.Max(0, i + 1 - implicitRules);
+                        return rules[i].Action == WitnessRuleAction.Allow;
+                    }
                 }
+                rulesChecked = explicitRules;
                 return false;
             }
 
@@ -295,6 +361,7 @@ namespace Neo.SmartContract
         /// Gets the number of times the current contract has been called during the execution.
         /// </summary>
         /// <returns>The number of times the current contract has been called during the execution.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 10267)]
         protected internal int GetInvocationCounter()
         {
             if (!invocationCounter.TryGetValue(CurrentScriptHash!, out var counter))
@@ -309,6 +376,7 @@ namespace Neo.SmartContract
         /// Gets the next random number.
         /// </summary>
         /// <returns>The next random number.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 15833)]
         protected internal BigInteger GetRandom()
         {
             byte[] buffer;
@@ -324,7 +392,8 @@ namespace Neo.SmartContract
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
-            AddFee(price * _execFeeFactor, false);
+            if (!IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+                AddFee(price * _execFeeFactor, false);
             return new BigInteger(buffer, isUnsigned: true);
         }
 
@@ -333,6 +402,7 @@ namespace Neo.SmartContract
         /// Writes a log.
         /// </summary>
         /// <param name="state">The message of the log.</param>
+        [InteropPrice(Hardfork.HF_Huyao, 31767)]
         protected internal void RuntimeLog(byte[] state)
         {
             if (state.Length > MaxNotificationSize)
@@ -445,6 +515,7 @@ namespace Neo.SmartContract
         /// Burning GAS to benefit the NEO ecosystem.
         /// </summary>
         /// <param name="datoshi">The amount of GAS to burn, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
+        [InteropPrice(Hardfork.HF_Huyao, 3067)]
         protected internal void BurnGas(long datoshi)
         {
             if (datoshi <= 0)
@@ -462,6 +533,22 @@ namespace Neo.SmartContract
                 return tx.Signers;
 
             return null;
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.CurrentSigners.
+        /// Pushes the Signers of the current transaction, or null if is not related to a transaction execution.
+        /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        protected internal void RuntimeCurrentSigners()
+        {
+            var r = ReferenceCounter.Count;
+            Push(Convert(GetCurrentSigners()));
+            if (IsHardforkEnabledAtPersistingIndex(Hardfork.HF_Huyao))
+            {
+                var price = CurrentSignersPricePerRef * (ReferenceCounter.Count - r) + CurrentSignersBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
         }
 
         private static bool CheckItemType(StackItem item, ContractParameterType type)

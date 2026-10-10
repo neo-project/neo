@@ -58,6 +58,12 @@ namespace Neo.SmartContract
         public long FixedPrice { get; init; }
 
         /// <summary>
+        /// The fixed prices starting from the specified hardforks,
+        /// ordered from the latest hardfork to the earliest one.
+        /// </summary>
+        public IReadOnlyList<InteropPriceAttribute> Prices { get; init; } = [];
+
+        /// <summary>
         /// Required Hardfork to be active.
         /// </summary>
         public Hardfork? Hardfork { get; init; }
