@@ -189,5 +189,29 @@ namespace Neo.SmartContract.Native
                 ]
             };
         }
+        public ContractEventAttribute(Hardfork activeIn, int order, string name,
+            string arg1Name, ContractParameterType arg1Value,
+            string arg2Name, ContractParameterType arg2Value,
+            string arg3Name, ContractParameterType arg3Value,
+            string arg4Name, ContractParameterType arg4Value,
+            string arg5Name, ContractParameterType arg5Value)
+            : this(activeIn, order, name, arg1Name, arg1Value, arg2Name, arg2Value, arg3Name, arg3Value, arg4Name, arg4Value)
+        {
+            Descriptor.Parameters = [.. Descriptor.Parameters,
+                new ContractParameterDefinition { Name = arg5Name, Type = arg5Value }];
+        }
+        public ContractEventAttribute(Hardfork activeIn, int order, string name,
+            string arg1Name, ContractParameterType arg1Value,
+            string arg2Name, ContractParameterType arg2Value,
+            string arg3Name, ContractParameterType arg3Value,
+            string arg4Name, ContractParameterType arg4Value,
+            string arg5Name, ContractParameterType arg5Value,
+            string arg6Name, ContractParameterType arg6Value)
+            : this(activeIn, order, name, arg1Name, arg1Value, arg2Name, arg2Value, arg3Name, arg3Value, arg4Name, arg4Value)
+        {
+            Descriptor.Parameters = [.. Descriptor.Parameters,
+                new ContractParameterDefinition { Name = arg5Name, Type = arg5Value },
+                new ContractParameterDefinition { Name = arg6Name, Type = arg6Value }];
+        }
     }
 }

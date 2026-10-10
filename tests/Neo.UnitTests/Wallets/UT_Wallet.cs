@@ -297,7 +297,7 @@ namespace Neo.UnitTests.Wallets
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var wallet = new MyWallet();
-            var contract = Contract.Create([ContractParameterType.Boolean], [1]);
+            var contract = Contract.CreateSignatureContract(glkey.PublicKey);
             var account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
 
@@ -378,7 +378,7 @@ namespace Neo.UnitTests.Wallets
             Action action = () => wallet.MakeTransaction(snapshotCache, Array.Empty<byte>(), null, null, []);
             Assert.ThrowsExactly<InvalidOperationException>(action);
 
-            var contract = Contract.Create([ContractParameterType.Boolean], [1]);
+            var contract = Contract.CreateSignatureContract(glkey.PublicKey);
             var account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
 

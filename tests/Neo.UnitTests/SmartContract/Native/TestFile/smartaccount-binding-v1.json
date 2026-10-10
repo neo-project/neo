@@ -1,0 +1,45 @@
+{
+  "nefBase64": "TkVGMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIJQDQwmXE=",
+  "manifest": {
+    "name": "BindingVector",
+    "groups": [],
+    "features": {},
+    "supportedstandards": [],
+    "abi": {
+      "methods": [
+        {
+          "name": "supportsComposition",
+          "parameters": [],
+          "returntype": "Boolean",
+          "offset": 0,
+          "safe": true
+        }
+      ],
+      "events": []
+    },
+    "permissions": [
+      {
+        "contract": "*",
+        "methods": "*"
+      }
+    ],
+    "trusts": [],
+    "extra": {
+      "z": 0,
+      "a": {
+        "2": "é",
+        "10": 0.000001
+      },
+      "😀": [
+        true,
+        false,
+        null,
+        "<>&/ ",
+        1e+21,
+        "é"
+      ]
+    }
+  },
+  "canonicalManifestUtf8": "{\"abi\":{\"events\":[],\"methods\":[{\"name\":\"supportsComposition\",\"offset\":0,\"parameters\":[],\"returntype\":\"Boolean\",\"safe\":true}]},\"extra\":{\"a\":{\"10\":0.000001,\"2\":\"é\"},\"z\":0,\"😀\":[true,false,null,\"<>&/ \",1e+21,\"é\"]},\"features\":{},\"groups\":[],\"name\":\"BindingVector\",\"permissions\":[{\"contract\":\"*\",\"methods\":\"*\"}],\"supportedstandards\":[],\"trusts\":[]}",
+  "codeHashWireHex": "9d7688789f282a493768c6fd28cb48abb5c3788448cf6d1945305332e2d9af80"
+}
