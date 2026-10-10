@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -23,7 +22,6 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -32,7 +30,6 @@ namespace Neo.UnitTests.SmartContract.Native
     public class UT_TemporaryStorage
     {
         private const long TestGas = 1_000_000_000_000_000;
-        private const ulong MaxTtl = 7ul * 24 * 60 * 60 * 1000;
         private const byte PrefixRecord = 0x01;
         private const byte PrefixValidTill = 0x02;
         private const int MaxCleanupBatchSize = 10_000;
