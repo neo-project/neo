@@ -360,7 +360,7 @@ namespace Neo.SmartContract.Native
         /// <param name="value">The stored user-defined value (without any prefix). </param>
         /// <param name="lifetime">The lifetime of the key-value pair in milliseconds.</param>
         /// <param name="item">The retrieved storage item (if already exists in the storage).</param>
-        /// <returns>The storage price (need to apply FeeFactor to the return value).</returns>
+        /// <returns>The storage price in the units of Datoshi (need to apply FeeFactor to the return value).</returns>
         public long CalculateStoragePrice(ApplicationEngine engine, ReadOnlyMemory<byte> key, byte[] value, ulong lifetime, out StorageItem? item)
         {
             StorageKey skey = new()
