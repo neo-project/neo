@@ -61,8 +61,19 @@ namespace Neo.SmartContract.Native
                 .FirstOrDefault() ?? [];
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "designateAsRole")]
+        private void DesignateAsRoleV0(ApplicationEngine engine, Role role, ECPoint[] nodes)
+        {
+            DesignateAsRoleInternal(engine, role, nodes, includeNodeLists: false);
+        }
+
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "designateAsRole")]
+        private void DesignateAsRoleV1(ApplicationEngine engine, Role role, ECPoint[] nodes)
+        {
+            DesignateAsRoleInternal(engine, role, nodes, includeNodeLists: true);
+        }
+
+        private void DesignateAsRoleInternal(ApplicationEngine engine, Role role, ECPoint[] nodes, bool includeNodeLists)
         {
             if (nodes.Length == 0 || nodes.Length > 32)
                 throw new ArgumentException($"Nodes count {nodes.Length} must be between 1 and 32", nameof(nodes));
@@ -85,7 +96,9 @@ namespace Neo.SmartContract.Native
             list.AddRange(nodes);
             list.Sort();
             engine.SnapshotCache.Add(key, new StorageItem(list));
-            if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+
+            // Notification shape is versioned via dual ContractMethod (pre/post Echidna), not a runtime HF check (#4455).
+            if (includeNodeLists)
             {
                 var oldNodes = new VM.Types.Array(GetDesignatedByRole(engine.SnapshotCache, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
                 var newNodes = new VM.Types.Array(nodes.Select(u => (ByteString)u.EncodePoint(true)));
