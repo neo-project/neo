@@ -38,7 +38,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                Assert.AreEqual(0_00001024L, ApplicationEngine.System_Runtime_CheckWitness.FixedPrice);
+                Assert.AreEqual(0_00001024L * ApplicationEngine.OpcodePriceMultiplier, ApplicationEngine.System_Runtime_CheckWitness.Prices[^1].Value);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -46,7 +46,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                Assert.AreEqual(0_00000016L, ApplicationEngine.System_Storage_GetContext.FixedPrice);
+                Assert.AreEqual(0_00000016L * ApplicationEngine.OpcodePriceMultiplier, ApplicationEngine.System_Storage_GetContext.Prices[^1].Value);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                Assert.AreEqual(32768L, ApplicationEngine.System_Storage_Get.FixedPrice);
+                Assert.AreEqual(32768L * ApplicationEngine.OpcodePriceMultiplier, ApplicationEngine.System_Storage_Get.Prices[^1].Value);
             }
         }
 

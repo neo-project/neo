@@ -21,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -117,6 +118,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The trigger of the execution.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 8700)]
         public TriggerType Trigger { get; }
 
         /// <summary>
@@ -181,6 +183,7 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 8900)]
         public long GasLeft
         {
             get
@@ -200,11 +203,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the current context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public UInt160? CurrentScriptHash => CurrentContext?.GetScriptHash();
 
         /// <summary>
         /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9567)]
         public virtual UInt160? CallingScriptHash
         {
             get
@@ -218,6 +223,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public virtual UInt160? EntryScriptHash => EntryContext?.GetScriptHash();
 
         /// <summary>
@@ -1057,7 +1063,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * _execFeeFactor, false);
+            AddFemtoGas(GetSysCallPrice(descriptor), false);
 
             object?[] parameters = new object?[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -1066,6 +1072,23 @@ namespace Neo.SmartContract
             object? returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
+        }
+
+        /// <summary>
+        /// Gets the fixed price of the specified interoperable service. It's taken from the latest
+        /// enabled <see cref="InteropDescriptor.Prices"/> entry.
+        /// </summary>
+        /// <param name="descriptor">The descriptor of the interoperable service.</param>
+        /// <returns>The price in the unit of femtoGAS.</returns>
+        private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
+        {
+            for (int i = 0; i < descriptor.Prices.Count; i++)
+            {
+                var (hardfork, price) = descriptor.Prices[i];
+                if (hardfork is null || IsHardforkEnabled(hardfork.Value))
+                    return price * _execFeeFactor;
+            }
+            throw new UnreachableException($"Price of {descriptor.Name} isn't found.");
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
@@ -1104,15 +1127,25 @@ namespace Neo.SmartContract
         protected static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, Hardfork? hardfork = null)
         {
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-            var method = typeof(ApplicationEngine).GetMethod(handler, flags)
-                ?? typeof(ApplicationEngine).GetProperty(handler, flags)?.GetMethod
+            MemberInfo member = (MemberInfo?)typeof(ApplicationEngine).GetMethod(handler, flags)
+                ?? typeof(ApplicationEngine).GetProperty(handler, flags)
                 ?? throw new ArgumentException($"Handler {handler} is not found.", nameof(handler));
+            var method = member as MethodInfo ?? ((PropertyInfo)member).GetMethod
+                ?? throw new ArgumentException($"Handler {handler} has no getter.", nameof(handler));
+            var attributes = member.GetCustomAttributes<InteropPriceAttribute>();
+            if (attributes.Select(p => p.Since).Distinct().Count() != attributes.Count())
+                throw new ArgumentException($"Handler {handler} has several prices for the same hardfork.", nameof(handler));
+            var prices = attributes
+                .OrderByDescending(p => p.Since)
+                .Select(p => new KeyValuePair<Hardfork?, long>(p.Since, p.Coefficient))
+                .Append(new KeyValuePair<Hardfork?, long>(null, fixedPrice * OpcodePriceMultiplier)) // the fixed price is in the unit of 1e-8 GAS, scale it to 1e-11 GAS
+                .ToArray();
             var descriptor = new InteropDescriptor()
             {
                 Name = name,
                 Handler = method,
                 Hardfork = hardfork,
-                FixedPrice = fixedPrice,
+                Prices = prices,
                 RequiredCallFlags = requiredCallFlags
             };
             services ??= [];
