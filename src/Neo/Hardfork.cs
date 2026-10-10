@@ -9,8 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+
 namespace Neo
 {
+    [Flags]
     public enum Hardfork : byte
     {
         HF_Aspidochelone,
@@ -21,6 +24,48 @@ namespace Neo
         HF_Faun,
         HF_Gorgon,
         HF_Huyao,
+        /// <summary>
+        /// First hardfork that can be activated via Policy's `activateHardfork` call.
+        /// </summary>
         HF_Iara
+    }
+
+    /// <summary>
+    /// Helpers for the raw hardfork names used by Policy (e.g. <c>Iara</c>, not <c>HF_Iara</c>).
+    /// </summary>
+    public static class Hardforks
+    {
+        /// <summary>
+        /// Returns the on-chain name of a hardfork (the enum identifier without the <c>HF_</c> prefix).
+        /// </summary>
+        public static string GetName(Hardfork hardfork)
+        {
+            var name = hardfork.ToString();
+            return name.StartsWith("HF_", StringComparison.Ordinal) ? name[3..] : name;
+        }
+
+        /// <summary>
+        /// Parses a Policy hardfork name. Only the full raw name is accepted
+        /// (case-sensitive), e.g. <c>Iara</c>, not <c>iara</c> or <c>HF_Iara</c>.
+        /// </summary>
+        public static bool TryParseExact(string? name, out Hardfork hardfork)
+        {
+            hardfork = default;
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            // [Flags] lets TryParse accept comma-separated aliases that collapse onto a
+            // named value ("Basilisk, HF_Cockatrice" == HF_Domovoi). Require the canonical name.
+            var key = "HF_" + name;
+            if (!Enum.TryParse(key, ignoreCase: false, out hardfork))
+                return false;
+            if (Enum.GetName(hardfork) != key)
+            {
+                hardfork = default;
+                return false;
+            }
+
+            return true;
+        }
     }
 }

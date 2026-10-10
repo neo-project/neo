@@ -13,6 +13,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -116,7 +118,8 @@ namespace Neo.UnitTests
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Faun, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 10));
             Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Huyao, 10));
-            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Iara, 10));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Iara, 10));
+            Assert.IsFalse(settings.Hardforks.ContainsKey(Hardfork.HF_Iara));
         }
 
         [TestMethod]
@@ -127,6 +130,17 @@ namespace Neo.UnitTests
             File.WriteAllText(file, json);
             Assert.ThrowsExactly<ArgumentException>(() => _ = ProtocolSettings.Load(file));
             File.Delete(file);
+        }
+
+        [TestMethod]
+        public void Load_PostHuyaoHardfork_Throws()
+        {
+            string json = CreateHFSettings("\"HF_Aspidochelone\": 0, \"HF_Basilisk\": 0, \"HF_Cockatrice\": 0, \"HF_Domovoi\": 0, \"HF_Echidna\": 0, \"HF_Faun\": 0, \"HF_Gorgon\": 0, \"HF_Huyao\": 0, \"HF_Iara\": 10");
+            var file = Path.GetTempFileName();
+            File.WriteAllText(file, json);
+            var ex = Assert.ThrowsExactly<ArgumentException>(() => _ = ProtocolSettings.Load(file));
+            File.Delete(file);
+            Assert.Contains("HF_Iara", ex.Message);
         }
 
         internal static string CreateHFSettings(string hf)
