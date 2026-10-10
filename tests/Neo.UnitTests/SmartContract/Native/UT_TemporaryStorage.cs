@@ -394,44 +394,50 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Test_CalculateStoragePrice()
+        [DataRow(new byte[] { 0x00 }, new byte[] { }, 0ul, 10_000)] // TTL: 0, size: 1 byte
+        [DataRow(new byte[] { 0x00 }, new byte[] { }, ulong.MaxValue, 100_000)] // TTL: max, size: 1 byte
+        [DataRow(new byte[] { 0x00 }, new byte[] { }, PolicyContract.MaxTemporaryStorageMaxTTL, 100_000)] // TTL: year, size: 1 byte
+        [DataRow(new byte[] { 0x00 }, new byte[] { }, PolicyContract.MaxTemporaryStorageMaxTTL / 2, 50_000)] // TTL: 1/2 of a year, size: 1 byte
+        [DataRow(new byte[] { 0x00 }, new byte[] { }, PolicyContract.MaxTemporaryStorageMaxTTL / 10, 10_000)] // TTL: 10% of a year, size: 1 byte
+        [DataRow(new byte[] { 0x00 }, new byte[] { }, PolicyContract.MaxTemporaryStorageMaxTTL / 10 - 1, 10_000)] // TTL: <10% of a year, size: 1 byte
+        [DataRow(new byte[] { 0x00 }, new byte[] { }, PolicyContract.MaxTemporaryStorageMaxTTL / 10 + 1, 10_000)] // TTL: >10% of a year, size: 1 byte
+        [DataRow(new byte[] { 0x00, 0x01 }, new byte[] { 0x01, 0x02, 0x03 }, 0ul, 50_000)] // TTL: 0, size: 5 bytes
+        [DataRow(new byte[] { 0x00, 0x01 }, new byte[] { 0x01, 0x02, 0x03 }, ulong.MaxValue, 500_000)] // TTL: max, size: 5 bytes
+        [DataRow(new byte[] { 0x00, 0x01 }, new byte[] { 0x01, 0x02, 0x03 }, PolicyContract.MaxTemporaryStorageMaxTTL / 2, 250_000)] // TTL: 1/2 of a year, size: 5 bytes
+        [DataRow(new byte[] { 0x00, 0x01 }, new byte[] { 0x01, 0x02, 0x03 }, PolicyContract.MaxTemporaryStorageMaxTTL, 500_000)] // TTL: year, size: 5 bytes
+        [DataRow(new byte[] { 0x00, 0x01 }, new byte[] { 0x01, 0x02, 0x03 }, PolicyContract.MaxTemporaryStorageMaxTTL + 1, 500_000)] // TTL: >year, size: 5 bytes
+        [DataRow(new byte[] { 0x00, 0x01 }, new byte[] { 0x01, 0x02, 0x03, 0x04 }, PolicyContract.MaxTemporaryStorageMaxTTL / 10, 60_000)] // TTL: 10% of a year, size: 6 bytes
+        public void TestCalculateStoragePrice(byte[] key, byte[] value, ulong lifetime, long expectedPrice)
         {
             var snapshot = _snapshotCache.CloneCache();
             var persistingBlock = CreatePersistingBlock(snapshot, 0);
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, TestProtocolSettings.Default, TestGas);
 
-            byte[] minKey = [0x00];
-            byte[] minValue = [];
+            var actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, lifetime, out var _);
+            Assert.AreEqual(expectedPrice, actualPrice);
+        }
 
-            var persistentStoragePrice = NativeContract.Policy.GetStoragePrice(snapshot);
-            Assert.IsPositive(persistentStoragePrice);
-            var minTempPrice = persistentStoragePrice / 10;
-            Assert.IsPositive(minTempPrice);
+        [TestMethod]
+        public void TestCalculateStoragePrice_MaxSize()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var persistingBlock = CreatePersistingBlock(snapshot, 0);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, TestProtocolSettings.Default, TestGas);
 
-            // TTL: 0.
-            // Size: 1 byte.
-            var minPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, 0, out var _);
-            Assert.AreEqual(1 * minTempPrice, minPrice);
-
-            // TTL: max.
-            // Size: 1 byte.
-            var maxPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, ulong.MaxValue, out var _);
-            Assert.AreEqual(persistentStoragePrice, maxPrice);
-
-            // TTL: 1/2 of year.
-            // Size: 1 byte.
-            var actual = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, PolicyContract.MaxTemporaryStorageMaxTTL / 2, out var _);
-            Assert.AreEqual(persistentStoragePrice / 2, actual);
-
-            // TTL: 10% of year.
-            // Size: 1 byte.
-            actual = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, PolicyContract.MaxTemporaryStorageMaxTTL / 10, out var _);
-            Assert.AreEqual(persistentStoragePrice / 10, actual);
-
-            // TTL: <10% of year.
-            // Size: 1 byte.
-            actual = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, minKey, minValue, PolicyContract.MaxTemporaryStorageMaxTTL / 10 - 1, out var _);
-            Assert.AreEqual(persistentStoragePrice / 10, actual);
+            byte[] key = new byte[1 + 4 + ApplicationEngine.MaxStorageKeySize];
+            byte[] value = new byte[8 + ApplicationEngine.MaxStorageValueSize];
+            var actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, 0, out var _); // TTL: 0
+            Assert.AreEqual(656_120_000, actualPrice);
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, PolicyContract.MaxTemporaryStorageMaxTTL / 10, out var _); // TTL: 10% of a year
+            Assert.AreEqual(656_120_000, actualPrice);
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, PolicyContract.MaxTemporaryStorageMaxTTL / 2, out var _); // TTL: 1/2 of a year
+            Assert.AreEqual(3_280_600_000, actualPrice);
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, PolicyContract.MaxTemporaryStorageMaxTTL, out var _); // TTL: year
+            Assert.AreEqual(6_561_200_000, actualPrice);
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, PolicyContract.MaxTemporaryStorageMaxTTL + 1, out var _); // TTL: >year
+            Assert.AreEqual(6_561_200_000, actualPrice);
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, ulong.MaxValue, out var _); // TTL: max
+            Assert.AreEqual(6_561_200_000, actualPrice);
         }
 
         private static StackItem CallFromContract(DataCache snapshot, Block persistingBlock, UInt160 caller, string method, params ContractParameter[] args)
