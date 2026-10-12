@@ -308,13 +308,34 @@ namespace Neo.SmartContract
         /// The implementation of System.Runtime.GetRandom.
         /// Gets the next random number.
         /// </summary>
-        /// <returns>The next random number.</returns>
+        /// <returns>
+        /// Before <see cref="Hardfork.HF_Huyao"/>: an unsigned 128-bit value in <c>[0, 2^128)</c>.
+        /// From <see cref="Hardfork.HF_Huyao"/>: a non-negative value in <c>[0, 2^255 - 1]</c>
+        /// (255 significant bits so the result always fits Neo VM's 32-byte integer limit).
+        /// </returns>
         protected internal BigInteger GetRandom()
         {
             byte[] buffer;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             long price;
-            if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
+            {
+                // Same seed construction as Aspidochelone (Network + call counter), but two
+                // independent Murmur128 draws so we get 256 bits of material without inventing
+                // a separate PRNG. Clear the high bit so the value stays in [0, 2^255 - 1]
+                // and always serializes within MaxIntegerSize (32-byte signed).
+                Span<byte> bits = stackalloc byte[32];
+                Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++)
+                    .CopyTo(bits);
+                Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++)
+                    .CopyTo(bits[16..]);
+                bits[31] &= 0x7F;
+
+                price = 1 << 13;
+                AddFee(price * _execFeeFactor, false);
+                return new BigInteger(bits);
+            }
+            else if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
                 buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + randomTimes++);
                 price = 1 << 13;

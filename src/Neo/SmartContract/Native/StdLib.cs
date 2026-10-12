@@ -275,5 +275,41 @@ namespace Neo.SmartContract.Native
 
             return count;
         }
+
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 13)]
+        private static BigInteger GetRandom(ApplicationEngine engine, BigInteger maxValue)
+        {
+            if (maxValue.Sign < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxValue));
+
+            if (maxValue <= BigInteger.One)
+                return BigInteger.Zero;
+
+            // Lemire mapping of engine.GetRandom() onto [0, maxValue).
+            // Word size L is always 255 — the entropy of System.Runtime.GetRandom under
+            // HF_Huyao — not min(ceil_log2(maxValue), 255) and not .NET GetByteCount()*8.
+            // GetByteCount() is two's-complement length and becomes 32 (256 bits) when
+            // maxValue >= 2^247, one bit more than GetRandom() supplies; then
+            // (maxValue * x) >> 256 is strictly less than maxValue/2.
+            // neo-go must use L = 255 and x = GetRandom() in [0, 2^255).
+            const int wordBits = 255;
+            var wordModulus = BigInteger.One << wordBits;
+
+            var randomProduct = maxValue * engine.GetRandom();
+            var lowPart = randomProduct % wordModulus;
+
+            if (lowPart < maxValue)
+            {
+                var threshold = (wordModulus - maxValue) % maxValue;
+
+                while (lowPart < threshold)
+                {
+                    randomProduct = maxValue * engine.GetRandom();
+                    lowPart = randomProduct % wordModulus;
+                }
+            }
+
+            return randomProduct >> wordBits;
+        }
     }
 }
