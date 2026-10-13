@@ -37,6 +37,7 @@ namespace Neo.SmartContract
         /// <param name="coefficient">The price coefficient.</param>
         public InteropPriceAttribute(Hardfork since, long coefficient)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(coefficient);
             Since = since;
             Coefficient = coefficient;
         }
