@@ -259,7 +259,7 @@ namespace Neo.SmartContract
             DynamicPriceTable = dynamicPriceTable ?? DefaultDynamicPriceTable.Clone();
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
 
-            var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache));
+            var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache) + 1 /* Ledger.CurrentIndex returns already persisted block, hence use +1 to define _persisting_ block index */);
 
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
@@ -1189,11 +1189,8 @@ namespace Neo.SmartContract
             if (ProtocolSettings == null)
                 return false;
 
-            // Return true if PersistingBlock is null and Hardfork is enabled
-            if (PersistingBlock is null)
-                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
-
-            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
+            var persistingIndex = PersistingBlock?.Index ?? (SnapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(SnapshotCache) + 1 /* Ledger.CurrentIndex returns already persisted block, hence use +1 to define _persisting_ block index */);
+            return ProtocolSettings.IsHardforkEnabled(hardfork, persistingIndex);
         }
     }
 }
