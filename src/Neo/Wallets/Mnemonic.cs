@@ -32,6 +32,7 @@ namespace Neo.Wallets
     /// </remarks>
     public class Mnemonic : IReadOnlyList<string>
     {
+        const string ChecksumMismatchMessage = "Invalid mnemonic: checksum does not match.";
         static readonly Dictionary<string, string[]> s_wordlists = new();
         readonly string[] words;
 
@@ -133,7 +134,7 @@ namespace Neo.Wallets
                 bool bitFromHash = (hash[byteIndex] & (1 << bitInByte)) != 0;
                 bool bitFromChecksum = (checksum[byteIndex] & (1 << bitInByte)) != 0;
                 if (bitFromHash != bitFromChecksum)
-                    throw new ArgumentException("Invalid mnemonic: checksum does not match.", nameof(words));
+                    throw new ArgumentException(ChecksumMismatchMessage, nameof(words));
             }
             this.words = words;
         }
@@ -194,12 +195,14 @@ namespace Neo.Wallets
         /// </summary>
         /// <remarks>The mnemonic phrase must use words from a single supported wordlist. The method trims
         /// whitespace and splits the phrase on whitespace characters. Only phrases with a word count that is a multiple of
-        /// 3 and between 12 and 24 words (inclusive) are considered valid.</remarks>
+        /// 3 and between 12 and 24 words (inclusive) are considered valid. Words shared by more than one wordlist are
+        /// resolved by checksum: an earlier wordlist that contains every word but fails the checksum does not reject a
+        /// later wordlist that matches.</remarks>
         /// <param name="mnemonic">The mnemonic phrase to parse. Must consist of 12, 15, 18, 21, or 24 space-separated words from a supported
         /// wordlist.</param>
         /// <returns>A Mnemonic instance representing the parsed mnemonic phrase.</returns>
-        /// <exception cref="ArgumentException">Thrown if the mnemonic is null, empty, contains an invalid number of words, or includes words not found in any
-        /// supported wordlist.</exception>
+        /// <exception cref="ArgumentException">Thrown if the mnemonic is null, empty, contains an invalid number of words, includes words not found in any
+        /// supported wordlist, or no candidate wordlist has a matching checksum.</exception>
         public static Mnemonic Parse(string mnemonic)
         {
             string[] words = mnemonic.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -207,9 +210,24 @@ namespace Neo.Wallets
                 throw new ArgumentException("Mnemonic word count should be between 12 and 24.", nameof(mnemonic));
             if (words.Length % 3 != 0)
                 throw new ArgumentException("Mnemonic word count should be a multiple of 3.", nameof(mnemonic));
+            ArgumentException? checksumMismatch = null;
             foreach (var (_, wordlist) in s_wordlists)
-                if (words.All(p => wordlist.Contains(p)))
+            {
+                if (!words.All(p => wordlist.Contains(p)))
+                    continue;
+                try
+                {
                     return new(words, wordlist);
+                }
+                catch (ArgumentException ex) when (ex.Message.StartsWith(ChecksumMismatchMessage, StringComparison.Ordinal))
+                {
+                    // Shared words such as English/French "abandon" have different indexes.
+                    // Keep searching so a valid later wordlist is not rejected.
+                    checksumMismatch ??= ex;
+                }
+            }
+            if (checksumMismatch is not null)
+                throw checksumMismatch;
             throw new ArgumentException("The mnemonic contains words that are not in the wordlist.", nameof(mnemonic));
         }
 

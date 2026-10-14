@@ -285,5 +285,28 @@ namespace Neo.UnitTests.Wallets
                 Assert.AreSequenceEqual(created.DeriveSeed(), parsed.DeriveSeed());
             }
         }
+
+        [TestMethod]
+        public void Parse_EnglishMnemonicOfFrenchSharedWords_Succeeds()
+        {
+            // All 12 words exist in both the English and French lists, at different indexes.
+            // The entropy is valid English and invalid French, so Parse must accept it.
+            byte[] entropy = Convert.FromHexString("19649487be13dfe8369b8a56187d3910");
+            const string phrase = "bonus caution capable label digital village surprise image figure sentence exact capable";
+            Mnemonic created = Mnemonic.Create(entropy, new CultureInfo("en"));
+            Assert.AreEqual(phrase, created.ToString());
+
+            Mnemonic parsed = Mnemonic.Parse(phrase);
+            Assert.AreEqual(phrase, parsed.ToString());
+        }
+
+        [TestMethod]
+        public void Parse_SharedWordsWithBadChecksum_Throws()
+        {
+            // "abandon" is in both English and French. Twelve of them fail every checksum,
+            // so a miss on the earlier wordlist must still reject the phrase.
+            const string phrase = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon";
+            Assert.ThrowsExactly<ArgumentException>(() => Mnemonic.Parse(phrase));
+        }
     }
 }
