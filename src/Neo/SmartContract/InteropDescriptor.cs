@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,22 +51,6 @@ namespace Neo.SmartContract
         /// The parameters of the interoperable service.
         /// </summary>
         public IReadOnlyList<InteropParameterDescriptor> Parameters => field ??= Handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList().AsReadOnly();
-
-        /// <summary>
-        /// The fixed price for calling the interoperable service. It can be 0 if the interoperable service has a variable price.
-        /// </summary>
-        public long FixedPrice
-        {
-            get
-            {
-                foreach (var (hardfork, price) in Prices)
-                {
-                    if (hardfork is null)
-                        return price / ApplicationEngine.OpcodePriceMultiplier;
-                }
-                return 0;
-            }
-        }
 
         /// <summary>
         /// The fixed prices for calling the interoperable service in the unit of 1e-11 GAS mapped from the

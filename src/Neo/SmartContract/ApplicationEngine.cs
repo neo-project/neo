@@ -21,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -264,7 +265,7 @@ namespace Neo.SmartContract
             DynamicPriceTable = dynamicPriceTable ?? DefaultDynamicPriceTable.Clone();
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
 
-            var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache));
+            var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache) + 1 /* Ledger.CurrentIndex returns already persisted block, hence use +1 to define _persisting_ block index */);
 
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
@@ -1081,13 +1082,14 @@ namespace Neo.SmartContract
         /// <returns>The price in the unit of femtoGAS.</returns>
         private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
         {
-            for (int i = 0; i < descriptor.Prices.Count; i++)
+            var prices = descriptor.Prices;
+            for (int i = 0; i < prices.Count; i++)
             {
-                var (hardfork, price) = descriptor.Prices[i];
+                var (hardfork, price) = prices[i];
                 if (hardfork is null || IsHardforkEnabled(hardfork.Value))
                     return price * _execFeeFactor;
             }
-            return 0;
+            throw new UnreachableException($"Price of {descriptor.Name} isn't found.");
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
@@ -1131,13 +1133,13 @@ namespace Neo.SmartContract
                 ?? throw new ArgumentException($"Handler {handler} is not found.", nameof(handler));
             var method = member as MethodInfo ?? ((PropertyInfo)member).GetMethod
                 ?? throw new ArgumentException($"Handler {handler} has no getter.", nameof(handler));
-            var attributes = member.GetCustomAttributes<InteropPriceAttribute>().ToArray();
-            if (attributes.Select(p => p.Since).Distinct().Count() != attributes.Length)
+            var attributes = member.GetCustomAttributes<InteropPriceAttribute>();
+            if (attributes.Select(p => p.Since).Distinct().Count() != attributes.Count())
                 throw new ArgumentException($"Handler {handler} has several prices for the same hardfork.", nameof(handler));
             var prices = attributes
                 .OrderByDescending(p => p.Since)
                 .Select(p => new KeyValuePair<Hardfork?, long>(p.Since, p.Coefficient))
-                .Append(new KeyValuePair<Hardfork?, long>(null, fixedPrice * OpcodePriceMultiplier))
+                .Append(new KeyValuePair<Hardfork?, long>(null, fixedPrice * OpcodePriceMultiplier)) // the fixed price is in the unit of 1e-8 GAS, scale it to 1e-11 GAS
                 .ToArray();
             var descriptor = new InteropDescriptor()
             {
