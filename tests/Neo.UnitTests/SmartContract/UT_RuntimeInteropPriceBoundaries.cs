@@ -63,7 +63,8 @@ namespace Neo.UnitTests.SmartContract
                     if (newer is not null)
                         Assert.IsTrue(newer.Value > fork.Value, $"{descriptor.Name} prices are not ordered from the latest hardfork.");
                     newer = fork;
-                    Assert.IsGreaterThan(0, descriptor.Prices[i].Value, descriptor.Name);
+                    // Zero is allowed for interops charging their dynamic price in-place.
+                    Assert.IsGreaterThanOrEqualTo(0, descriptor.Prices[i].Value, descriptor.Name);
                 }
             }
 
@@ -71,11 +72,11 @@ namespace Neo.UnitTests.SmartContract
             AssertPrice(ApplicationEngine.System_Runtime_GetRandom, 0, 15833);
             AssertPrice(ApplicationEngine.System_Runtime_GetScriptContainer, 1 << 3, 36533);
             AssertPrice(ApplicationEngine.System_Runtime_BurnGas, 1 << 4, 3067);
-            // Not repriced: still a single pre-Huyao entry, so native-adjacent syscalls keep their old fee.
-            Assert.HasCount(1, ApplicationEngine.System_Runtime_CheckWitness.Prices);
-            Assert.HasCount(1, ApplicationEngine.System_Runtime_CurrentSigners.Prices);
-            Assert.HasCount(1, ApplicationEngine.System_Contract_Call.Prices);
-            Assert.HasCount(1, ApplicationEngine.System_Contract_CallNative.Prices);
+            // Dynamic prices are charged in-place, so the descriptor price is zero since Huyao.
+            AssertPrice(ApplicationEngine.System_Runtime_CheckWitness, 1 << 10, 0);
+            AssertPrice(ApplicationEngine.System_Runtime_CurrentSigners, 1 << 4, 0);
+            AssertPrice(ApplicationEngine.System_Contract_Call, 1 << 15, 0);
+            AssertPrice(ApplicationEngine.System_Contract_CallNative, 0, 1130000);
         }
 
         [TestMethod]
@@ -260,13 +261,14 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void UnpricedRuntimeSyscallsKeepTheSameFeeAcrossHuyao()
+        public void CurrentSignersPriceDependsOnPushedReferences()
         {
             long before = Run(Syscall(ApplicationEngine.System_Runtime_CurrentSigners), Settings(HuyaoHeight), 1_000_000, BlockAt(HuyaoHeight - 1)).Fee;
             long after = Run(Syscall(ApplicationEngine.System_Runtime_CurrentSigners), Settings(HuyaoHeight), 1_000_000, BlockAt(HuyaoHeight)).Fee;
 
             Assert.AreEqual(LegacyDatoshi(1 << 4), before);
-            Assert.AreEqual(before, after);
+            // No container, so a single Null is pushed: 2892 per reference + 18429.
+            Assert.AreEqual(HuyaoDatoshi(2892 + 18429), after);
         }
 
         [TestMethod]
