@@ -410,6 +410,33 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        [DataRow("a + combining tilde", new byte[] { 0x61, 0xCC, 0x83 }, 1, 2)]
+        [DataRow("thumbsup + skin tone", new byte[] { 0xF0, 0x9F, 0x91, 0x8D, 0xF0, 0x9F, 0x8F, 0xBD }, 1, 2)]
+        [DataRow("family ZWJ", new byte[] { 0xF0, 0x9F, 0x91, 0xA8, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA9, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA7, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA6 }, 1, 7)]
+        [DataRow("flag US", new byte[] { 0xF0, 0x9F, 0x87, 0xBA, 0xF0, 0x9F, 0x87, 0xB8 }, 1, 2)]
+        [DataRow("e + two combining marks", new byte[] { 0x65, 0xCC, 0x81, 0xCC, 0x82 }, 1, 3)]
+        public void StrLen_CodePointsAfterHuyao(string name, byte[] input, int graphemes, int codePoints)
+        {
+            // These sequences are one grapheme and more than one code point.
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", input);
+
+            using var before = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: SettingsWithoutHuyao());
+            before.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, before.Execute(), name);
+            Assert.HasCount(1, before.ResultStack);
+            Assert.AreEqual(graphemes, before.ResultStack.Pop().GetInteger(), name);
+
+            using var after = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+            after.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, after.Execute(), name);
+            Assert.HasCount(1, after.ResultStack);
+            Assert.AreEqual(codePoints, after.ResultStack.Pop().GetInteger(), name);
+        }
+
+        [TestMethod]
         public void TestInvalidUtf8Sequence()
         {
             // Simulating invalid UTF-8 byte (0xff) decoded as a UTF-16 char

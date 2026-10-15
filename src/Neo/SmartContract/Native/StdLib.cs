@@ -269,10 +269,13 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
-        private static int StrLen([MaxLength(MaxInputLength)] string str)
+        private static int StrLen(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str)
         {
-            // return the length of the string in elements
-            // it should return 1 for both  "🦆" and "ã"
+            // Grapheme breaks follow the runtime's Unicode version, so two nodes can disagree.
+            // From Huyao, count code points. Those counts do not depend on that version.
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
+                return str.EnumerateRunes().Count();
+
             return new StringInfo(str).LengthInTextElements;
         }
     }
