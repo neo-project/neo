@@ -263,8 +263,10 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual("b", arr[1].GetString());
 
             arr = engine.ResultStack.Pop<VM.Types.Array>();
-            Assert.HasCount(1, arr);
-            Assert.AreEqual("abc", arr[0].GetString());
+            Assert.HasCount(3, arr);
+            Assert.AreEqual("a", arr[0].GetString());
+            Assert.AreEqual("b", arr[1].GetString());
+            Assert.AreEqual("c", arr[2].GetString());
 
             arr = engine.ResultStack.Pop<VM.Types.Array>();
             Assert.HasCount(5, arr);
