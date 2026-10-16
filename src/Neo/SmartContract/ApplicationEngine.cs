@@ -139,7 +139,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
-        /// Use <see cref="GetPersistingIndex"/> to get the index of persisting block.
+        /// Use <see cref="GetPersistingIndex()"/> to get the index of persisting block.
         /// </summary>
         public Block? PersistingBlock { get; }
 
@@ -785,7 +785,7 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable? container, DataCache snapshot, Block? persistingBlock = null, ProtocolSettings? settings = null, long gas = TestModeGas, IDiagnostic? diagnostic = null)
         {
-            var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+            var index = GetPersistingIndex(persistingBlock, snapshot);
             settings ??= ProtocolSettings.Default;
             // Adjust jump table according persistingBlock
 
@@ -1236,7 +1236,18 @@ namespace Neo.SmartContract
         /// <returns>Index of the persisting block.</returns>
         public uint GetPersistingIndex()
         {
-            return PersistingBlock?.Index ?? (SnapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(SnapshotCache) + 1 /* Ledger.CurrentIndex returns already persisted block, hence use +1 to define _persisting_ block index */);
+            return GetPersistingIndex(PersistingBlock, SnapshotCache);
+        }
+
+        /// <summary>
+        /// Retrieves index of the persisting block from the given argument (if provided),
+        /// otherwise from the native Ledger's contract (if <see cref="SnapshotCache"/> is set),
+        /// otherwise 0.
+        /// </summary>
+        /// <returns>Index of the persisting block.</returns>
+        public static uint GetPersistingIndex(Block? persistingBlock, DataCache? snapshot)
+        {
+            return persistingBlock?.Index ?? (snapshot is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshot) + 1 /* Ledger.CurrentIndex returns already persisted block, hence use +1 to define _persisting_ block index */);
         }
     }
 }
