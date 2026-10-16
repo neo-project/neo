@@ -268,7 +268,7 @@ namespace Neo.SmartContract
 
             var persistingIndex = GetPersistingIndex();
 
-            if (snapshotCache is null || persistingIndex  == 0)
+            if (snapshotCache is null || persistingIndex == 0)
             {
                 // Policy storage isn't available yet (genesis or no snapshot): fall back to the defaults.
                 _execFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
