@@ -110,6 +110,7 @@ namespace Neo.SmartContract
         /// Gets the storage context for the current contract.
         /// </summary>
         /// <returns>The storage context for the current contract.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 12200)]
         protected internal StorageContext GetStorageContext()
         {
             ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!)
@@ -126,6 +127,7 @@ namespace Neo.SmartContract
         /// Gets the readonly storage context for the current contract.
         /// </summary>
         /// <returns>The storage context for the current contract.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 11933)]
         protected internal StorageContext GetReadOnlyContext()
         {
             ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash!)
@@ -143,6 +145,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="context">The storage context to convert.</param>
         /// <returns>The readonly storage context.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 11233)]
         protected internal static StorageContext AsReadOnly(StorageContext context)
         {
             if (!context.IsReadOnly)
@@ -161,6 +164,7 @@ namespace Neo.SmartContract
         /// <param name="context">The context of the storage.</param>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The value of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, ReadFromDiskPrice)]
         protected internal ReadOnlyMemory<byte>? Get(StorageContext context, byte[] key)
         {
             return SnapshotCache.TryGet(new StorageKey
@@ -176,6 +180,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The value of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, ReadFromDiskPrice)]
         protected internal ReadOnlyMemory<byte>? GetLocal(byte[] key)
         {
             return Get(GetReadOnlyContext(), key);
@@ -189,6 +194,7 @@ namespace Neo.SmartContract
         /// <param name="prefix">The prefix of keys to find.</param>
         /// <param name="options">The options of the search.</param>
         /// <returns>An iterator for the results.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, ReadFromDiskPrice)]
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
             var direction = ValidateFindOptions(options);
@@ -205,6 +211,7 @@ namespace Neo.SmartContract
         /// <param name="start">The starting key suffix, relative to the prefix. An empty suffix starts at the prefix itself.</param>
         /// <param name="options">The options of the search.</param>
         /// <returns>An iterator restricted to the specified contract and prefix.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, ReadFromDiskPrice)]
         protected internal IIterator FindWithStart(StorageContext context, byte[] prefix, byte[] start, FindOptions options)
         {
             var direction = ValidateFindOptions(options);
@@ -254,6 +261,7 @@ namespace Neo.SmartContract
         /// <param name="prefix">The prefix of keys to find.</param>
         /// <param name="options">The options of the search.</param>
         /// <returns>An iterator for the results.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, ReadFromDiskPrice)]
         protected internal IIterator FindLocal(byte[] prefix, FindOptions options)
         {
             return Find(GetReadOnlyContext(), prefix, options);
@@ -267,6 +275,7 @@ namespace Neo.SmartContract
         /// <param name="start">The starting key suffix, relative to the prefix.</param>
         /// <param name="options">The options of the search.</param>
         /// <returns>An iterator restricted to the current contract and specified prefix.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, ReadFromDiskPrice)]
         protected internal IIterator FindLocalWithStart(byte[] prefix, byte[] start, FindOptions options)
         {
             return FindWithStart(GetReadOnlyContext(), prefix, start, options);
