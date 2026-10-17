@@ -282,7 +282,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void StringElementLength()
+        public void StrLen()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
@@ -291,14 +291,43 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "ã");
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "a");
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
-            engine.LoadScript(script.ToArray());
+            foreach (var engine in new List<ApplicationEngine>() {
+                ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default with { Hardforks = TestProtocolSettings.Default.Hardforks.Remove(Hardfork.HF_Huyao)}),
+                ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default with { Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, 1)})})
+            {
+                engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.HasCount(3, engine.ResultStack);
-            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
-            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
-            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(3, engine.ResultStack);
+                Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+                Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+                Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+            }
+        }
+
+        [TestMethod]
+        [DataRow("a + combining tilde", new byte[] { 0x61, 0xCC, 0x83 }, 1, 2)]
+        [DataRow("thumbsup + skin tone", new byte[] { 0xF0, 0x9F, 0x91, 0x8D, 0xF0, 0x9F, 0x8F, 0xBD }, 1, 2)]
+        [DataRow("family ZWJ", new byte[] { 0xF0, 0x9F, 0x91, 0xA8, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA9, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA7, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA6 }, 1, 7)]
+        [DataRow("flag US", new byte[] { 0xF0, 0x9F, 0x87, 0xBA, 0xF0, 0x9F, 0x87, 0xB8 }, 1, 2)]
+        [DataRow("e + two combining marks", new byte[] { 0x65, 0xCC, 0x81, 0xCC, 0x82 }, 1, 3)]
+        public void StrLen_HuyaoDependent(string name, byte[] input, int expectedGrapheme, int expectedCodepoints)
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", input);
+
+            foreach (var (engine, expected) in new List<(ApplicationEngine, int)>() {
+                (ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default with { Hardforks = TestProtocolSettings.Default.Hardforks.Remove(Hardfork.HF_Huyao)}), expectedGrapheme),
+                (ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default with { Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, 1)}), expectedCodepoints)})
+            {
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.HasCount(1, engine.ResultStack);
+                Assert.AreEqual(expected, engine.ResultStack.Pop().GetInteger());
+            }
         }
 
         [TestMethod]
