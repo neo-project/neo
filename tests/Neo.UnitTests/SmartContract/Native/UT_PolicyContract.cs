@@ -886,7 +886,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, "getTemporaryStorageMaxTTL");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            Assert.AreEqual(7 * 24 * 60 * 60 * 1000, ret.GetInteger());
+            Assert.AreEqual(365 * 24 * 60 * 60 * 1000UL, ret.GetInteger());
 
             // Too hight value.
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
