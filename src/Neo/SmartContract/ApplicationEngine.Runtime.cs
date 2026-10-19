@@ -331,18 +331,23 @@ namespace Neo.SmartContract
                 }
                 Signer? signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
-                var rules = signer.GetAllRules().ToArray();
-                var explicitRules = signer.Scopes.HasFlag(WitnessScope.WitnessRules) ? signer.Rules!.Length : 0;
-                var implicitRules = rules.Length - explicitRules;
-                for (int i = 0; i < rules.Length; i++)
+                foreach (WitnessRule rule in signer.GetScopeRules())
                 {
-                    if (rules[i].Condition.Match(this))
-                    {
-                        rulesCount = Math.Max(0, i + 1 - implicitRules);
-                        return rules[i].Action == WitnessRuleAction.Allow;
-                    }
+                    if (rule.Condition.Match(this))
+                        return rule.Action == WitnessRuleAction.Allow;
                 }
-                rulesCount = explicitRules;
+                if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
+                {
+                    for (int i = 0; i < signer.Rules!.Length; i++)
+                    {
+                        if (signer.Rules[i].Condition.Match(this))
+                        {
+                            rulesCount = i + 1;
+                            return signer.Rules[i].Action == WitnessRuleAction.Allow;
+                        }
+                    }
+                    rulesCount = signer.Rules.Length;
+                }
                 return false;
             }
 
