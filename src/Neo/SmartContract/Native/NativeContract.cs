@@ -39,7 +39,7 @@ namespace Neo.SmartContract.Native
             {
                 if (NativeContracts.TryGetValue(native.Id, out var value)) return value;
 
-                uint index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.SnapshotCache) : engine.PersistingBlock.Index;
+                uint index = engine.GetPersistingIndex();
                 CacheEntry methods = native.GetAllowedMethods(PolicyContract.IsHardforkEnabled, engine.ProtocolSettings, engine.SnapshotCache, index);
                 NativeContracts[native.Id] = methods;
                 return methods;

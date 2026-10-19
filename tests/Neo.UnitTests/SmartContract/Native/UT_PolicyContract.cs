@@ -889,7 +889,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, "getTemporaryStorageMaxTTL");
             Assert.IsInstanceOfType(ret, typeof(Integer));
-            Assert.AreEqual(7 * 24 * 60 * 60 * 1000, ret.GetInteger());
+            Assert.AreEqual(365 * 24 * 60 * 60 * 1000UL, ret.GetInteger());
 
             // Too hight value.
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
@@ -1339,10 +1339,14 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_ApplicationEngine_IsHardforkEnabled_WithoutPersistingBlock()
         {
             var snapshot = _snapshotCache.CloneCache();
-            snapshot.Add(IaraStorageKey(), new StorageItem(42u));
+            var iaraActivation = snapshot.GetAndChange(IaraStorageKey(), () => new StorageItem(42u));
 
             var settings = TestProtocolSettings.Default with { Hardforks = ConfigThroughHuyao() };
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, settings);
+            Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+
+            iaraActivation.Set(1);
             Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Iara));
             Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Huyao));
         }

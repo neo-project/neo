@@ -235,12 +235,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestTemporaryStorageMaxTTL()
-        {
-            Assert.IsGreaterThan(0u, TestProtocolSettings.Default.TemporaryStorageMaxTTL);
-        }
-
-        [TestMethod]
         public void TestMaxValidUntilBlockIncrement()
         {
             Assert.IsGreaterThan(0u, TestProtocolSettings.Default.MaxValidUntilBlockIncrement);
@@ -333,12 +327,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestDefaultTemporaryStorageMaxTTL()
-        {
-            Assert.AreEqual(ProtocolSettings.Default.TemporaryStorageMaxTTL, TestProtocolSettings.Default.TemporaryStorageMaxTTL);
-        }
-
-        [TestMethod]
         public void TestDefaultMaxValidUntilBlockIncrementValue()
         {
             Assert.AreEqual(ProtocolSettings.Default.MaxValidUntilBlockIncrement, TestProtocolSettings.Default.MaxValidUntilBlockIncrement);
@@ -378,7 +366,6 @@ namespace Neo.UnitTests
             Assert.AreEqual(TestProtocolSettings.Default.MaxTransactionsPerBlock, loadedSetting.MaxTransactionsPerBlock);
             Assert.AreEqual(TestProtocolSettings.Default.MemoryPoolMaxTransactions, loadedSetting.MemoryPoolMaxTransactions);
             Assert.AreEqual(TestProtocolSettings.Default.MaxTraceableBlocks, loadedSetting.MaxTraceableBlocks);
-            Assert.AreEqual(TestProtocolSettings.Default.TemporaryStorageMaxTTL, loadedSetting.TemporaryStorageMaxTTL);
             Assert.AreEqual(TestProtocolSettings.Default.MaxValidUntilBlockIncrement, loadedSetting.MaxValidUntilBlockIncrement);
             Assert.AreEqual(TestProtocolSettings.Default.InitialGasDistribution, loadedSetting.InitialGasDistribution);
             Assert.AreSequenceEqual(TestProtocolSettings.Default.Hardforks, loadedSetting.Hardforks);

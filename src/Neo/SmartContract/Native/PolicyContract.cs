@@ -188,7 +188,7 @@ namespace Neo.SmartContract.Native
 
             if (hardfork == Hardfork.HF_Huyao)
             {
-                engine.SnapshotCache.Add(_tempStorageMaxTTL, new StorageItem(engine.ProtocolSettings.TemporaryStorageMaxTTL));
+                engine.SnapshotCache.Add(_tempStorageMaxTTL, new StorageItem(MaxTemporaryStorageMaxTTL));
 
                 // Persist config-managed A–H activation heights so later checks can use Policy storage.
                 foreach (Hardfork hf in Enum.GetValues<Hardfork>())

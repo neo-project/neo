@@ -14,6 +14,7 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
@@ -75,6 +76,33 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(0u, engine.PersistingBlock.Version);
             Assert.AreEqual(system.GenesisBlock.Hash, engine.PersistingBlock.PrevHash);
             Assert.AreEqual(new UInt256(), engine.PersistingBlock.MerkleRoot);
+        }
+
+        [TestMethod]
+        public void TestGetPersistingIndex()
+        {
+            // With persisting block.
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = null!,
+                    Index = 10,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = null!
+            };
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, persistingBlock, settings: TestProtocolSettings.Default);
+            Assert.AreEqual(10u, engine.GetPersistingIndex());
+
+            // With snapshot.
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12); // mock current block in the Ledger contract.
+            snapshotCache.Add(storageKey, new(new HashIndexState { Hash = UInt256.Zero, Index = 10 }));
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, null, settings: TestProtocolSettings.Default);
+            Assert.AreEqual(11u, engine.GetPersistingIndex());
         }
 
         [TestMethod]

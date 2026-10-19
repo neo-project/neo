@@ -29,6 +29,86 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions.Benchmarks",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Json.Benchmarks", "benchmarks\Neo.Json.Benchmarks\Neo.Json.Benchmarks.csproj", "{5F984D2B-793F-4683-B53A-80050E6E0286}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dir", "dir", "{5B8CE1AB-26CC-4990-AD5D-7EA5355A2CCD}"
+	ProjectSection(SolutionItems) = preProject
+		benchmarks\Directory.Build.props = benchmarks\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dir", "dir", "{C0045E70-C35D-4E50-8DEB-A32758D551A2}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dir", "dir", "{915DF664-3503-45EF-B3F6-6694D02AED8A}"
+	ProjectSection(SolutionItems) = preProject
+		tests\.editorconfig = tests\.editorconfig
+		tests\AssemblyInfo.cs = tests\AssemblyInfo.cs
+		tests\Directory.Build.props = tests\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".root", ".root", "{8718809E-FFAD-4895-B405-C6D9EA7111D5}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		CONTRIBUTING.md = CONTRIBUTING.md
+		LICENSE = LICENSE
+		nuget.config = nuget.config
+		README.md = README.md
+		SECURITY.md = SECURITY.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{B1F7826B-7B1E-49C8-AF61-F21C628A7D21}"
+	ProjectSection(SolutionItems) = preProject
+		.github\PULL_REQUEST_TEMPLATE.md = .github\PULL_REQUEST_TEMPLATE.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ISSUE_TEMPLATE", "ISSUE_TEMPLATE", "{822DBC67-3344-459C-BB04-647021E36FA5}"
+	ProjectSection(SolutionItems) = preProject
+		.github\ISSUE_TEMPLATE\bug_report.md = .github\ISSUE_TEMPLATE\bug_report.md
+		.github\ISSUE_TEMPLATE\feature-or-enhancement-request.md = .github\ISSUE_TEMPLATE\feature-or-enhancement-request.md
+		.github\ISSUE_TEMPLATE\questions.md = .github\ISSUE_TEMPLATE\questions.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{F7AAF252-6903-4410-AD0B-BD79816CAFF7}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\auto-labels.yml = .github\workflows\auto-labels.yml
+		.github\workflows\main.yml = .github\workflows\main.yml
+		.github\workflows\pkgs-delete.yml = .github\workflows\pkgs-delete.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{5AF0467E-356B-4CBF-B0EF-F57F0374D3AB}"
+	ProjectSection(SolutionItems) = preProject
+		docs\architecture.md = docs\architecture.md
+		docs\getting-started.md = docs\getting-started.md
+		docs\glossary.md = docs\glossary.md
+		docs\neo-core.md = docs\neo-core.md
+		docs\neo-node.md = docs\neo-node.md
+		docs\neo-vm.md = docs\neo-vm.md
+		docs\persistence-architecture.md = docs\persistence-architecture.md
+		docs\README.md = docs\README.md
+		docs\serialization-format.md = docs\serialization-format.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "how-to", "how-to", "{BF9E3DC2-48D5-40D7-8028-DAD0DE7DA60E}"
+	ProjectSection(SolutionItems) = preProject
+		docs\how-to\build-and-test.md = docs\how-to\build-and-test.md
+		docs\how-to\contribute.md = docs\how-to\contribute.md
+		docs\how-to\run-a-node.md = docs\how-to\run-a-node.md
+		docs\how-to\smart-contracts.md = docs\how-to\smart-contracts.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reference", "reference", "{3BF53898-96AB-4836-9B17-6179D63A8465}"
+	ProjectSection(SolutionItems) = preProject
+		docs\reference\official-docs.md = docs\reference\official-docs.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".devcontainer", ".devcontainer", "{0D62B053-5BD6-40C7-BE87-887E15010E09}"
+	ProjectSection(SolutionItems) = preProject
+		.devcontainer\devcontainer.dockerfile = .devcontainer\devcontainer.dockerfile
+		.devcontainer\devcontainer.json = .devcontainer\devcontainer.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,6 +170,16 @@ Global
 		{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{B6CB2559-10F9-41AC-8D58-364BFEF9688B} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
 		{5F984D2B-793F-4683-B53A-80050E6E0286} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
+		{5B8CE1AB-26CC-4990-AD5D-7EA5355A2CCD} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
+		{C0045E70-C35D-4E50-8DEB-A32758D551A2} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
+		{915DF664-3503-45EF-B3F6-6694D02AED8A} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
+		{B1F7826B-7B1E-49C8-AF61-F21C628A7D21} = {8718809E-FFAD-4895-B405-C6D9EA7111D5}
+		{822DBC67-3344-459C-BB04-647021E36FA5} = {B1F7826B-7B1E-49C8-AF61-F21C628A7D21}
+		{F7AAF252-6903-4410-AD0B-BD79816CAFF7} = {B1F7826B-7B1E-49C8-AF61-F21C628A7D21}
+		{5AF0467E-356B-4CBF-B0EF-F57F0374D3AB} = {8718809E-FFAD-4895-B405-C6D9EA7111D5}
+		{BF9E3DC2-48D5-40D7-8028-DAD0DE7DA60E} = {5AF0467E-356B-4CBF-B0EF-F57F0374D3AB}
+		{3BF53898-96AB-4836-9B17-6179D63A8465} = {5AF0467E-356B-4CBF-B0EF-F57F0374D3AB}
+		{0D62B053-5BD6-40C7-BE87-887E15010E09} = {8718809E-FFAD-4895-B405-C6D9EA7111D5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
