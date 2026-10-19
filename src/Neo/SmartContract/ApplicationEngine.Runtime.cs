@@ -289,9 +289,9 @@ namespace Neo.SmartContract
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
                 _ => throw new ArgumentException("Invalid hashOrPubkey length", nameof(hashOrPubkey))
             };
-            var result = CheckWitnessInternal(hash, out var rulesChecked);
+            var result = CheckWitnessInternal(hash, out var rulesCount);
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
-                AddFemtoGas((CheckWitnessPricePerRule * rulesChecked + CheckWitnessBasePrice) * _execFeeFactor, false);
+                AddFemtoGas((CheckWitnessPricePerRule * rulesCount + CheckWitnessBasePrice) * _execFeeFactor, false);
             return result;
         }
 
@@ -309,11 +309,11 @@ namespace Neo.SmartContract
         /// Determines whether the specified account has witnessed the current transaction.
         /// </summary>
         /// <param name="hash">The hash of the account.</param>
-        /// <param name="rulesChecked">The number of checked <see cref="Signer.Rules"/>.</param>
+        /// <param name="rulesCount">The number of checked <see cref="Signer.Rules"/>.</param>
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
-        private bool CheckWitnessInternal(UInt160 hash, out int rulesChecked)
+        private bool CheckWitnessInternal(UInt160 hash, out int rulesCount)
         {
-            rulesChecked = 0;
+            rulesCount = 0;
             if (hash.Equals(CallingScriptHash)) return true;
 
             if (ScriptContainer is Transaction tx)
@@ -338,11 +338,11 @@ namespace Neo.SmartContract
                 {
                     if (rules[i].Condition.Match(this))
                     {
-                        rulesChecked = Math.Max(0, i + 1 - implicitRules);
+                        rulesCount = Math.Max(0, i + 1 - implicitRules);
                         return rules[i].Action == WitnessRuleAction.Allow;
                     }
                 }
-                rulesChecked = explicitRules;
+                rulesCount = explicitRules;
                 return false;
             }
 
