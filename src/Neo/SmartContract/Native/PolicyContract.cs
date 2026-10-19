@@ -176,7 +176,7 @@ namespace Neo.SmartContract.Native
 
             if (hardfork == Hardfork.HF_Huyao)
             {
-                engine.SnapshotCache.Add(_tempStorageMaxTTL, new StorageItem(engine.ProtocolSettings.TemporaryStorageMaxTTL));
+                engine.SnapshotCache.Add(_tempStorageMaxTTL, new StorageItem(MaxTemporaryStorageMaxTTL));
             }
             return ContractTask.CompletedTask;
         }
