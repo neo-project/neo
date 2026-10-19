@@ -18,6 +18,7 @@ using Neo.Json;
 using Neo.VM.Types;
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -247,33 +248,35 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
-        private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator)
+        private static string[] StringSplit(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str, string separator)
         {
-            return str.Split(separator);
+            return StringSplit(engine, str, separator, false);
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
-        private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
+        private static string[] StringSplit(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
         {
-            StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
-            return str.Split(separator, options);
-        }
-
-        [ContractMethod(CpuFee = 1 << 8)]
-        private static int StrLen([MaxLength(MaxInputLength)] string str)
-        {
-            // return the length of the string in elements
-            // it should return 1 for both  "🦆" and "ã"
-
-            TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(str);
-            int count = 0;
-
-            while (enumerator.MoveNext())
+            // Huyao: empty separator splits by Unicode scalar values (Go strings.Split).
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao) && string.IsNullOrEmpty(separator))
             {
-                count++;
+                if (string.IsNullOrEmpty(str))
+                    return [];
+
+                return [.. str.EnumerateRunes().Select(static r => r.ToString())];
             }
 
-            return count;
+            return str.Split(separator, removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None);
+        }
+
+        [ContractMethod(CpuFee = 1 << 8)]
+        private static int StrLen(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str)
+        {
+            // Grapheme breaks follow the runtime's Unicode version, so two nodes can disagree.
+            // From Huyao, count code points. Those counts do not depend on that version.
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
+                return str.EnumerateRunes().Count();
+
+            return new StringInfo(str).LengthInTextElements;
         }
     }
 }

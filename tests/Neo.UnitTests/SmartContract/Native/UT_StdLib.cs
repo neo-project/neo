@@ -17,7 +17,9 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using Array = System.Array;
 
@@ -245,26 +247,58 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
+            var emojiString = "A😀\U0001F44D" + char.ConvertFromUtf32(0x1f680);
+
             using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", string.Empty, string.Empty, true);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", string.Empty, ",", false);
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abcbbbd", "b", true);
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abcbbbd", "b", false);
-            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abc", "");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abc", string.Empty);
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "a,b", ",");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", emojiString, string.Empty);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", emojiString, "\ud83d\ude00");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", emojiString, "😀");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", emojiString, $"{char.ConvertFromUtf32(0x1f680)}");
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.HasCount(4, engine.ResultStack);
+            Assert.HasCount(10, engine.ResultStack);
 
             var arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(2, arr);
+            Assert.AreEqual("A😀👍", arr[0].GetString());
+            Assert.AreEqual(string.Empty, arr[1].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(2, arr);
+            Assert.AreEqual("A", arr[0].GetString());
+            Assert.AreEqual("👍🚀", arr[1].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(2, arr);
+            Assert.AreEqual("A", arr[0].GetString());
+            Assert.AreEqual("👍🚀", arr[1].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(4, arr);
+            Assert.AreEqual("A", arr[0].GetString());
+            Assert.AreEqual("😀", arr[1].GetString());
+            Assert.AreEqual("👍", arr[2].GetString());
+            Assert.AreEqual("🚀", arr[3].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
             Assert.HasCount(2, arr);
             Assert.AreEqual("a", arr[0].GetString());
             Assert.AreEqual("b", arr[1].GetString());
 
             arr = engine.ResultStack.Pop<VM.Types.Array>();
-            Assert.HasCount(1, arr);
-            Assert.AreEqual("abc", arr[0].GetString());
+            Assert.HasCount(3, arr);
+            Assert.AreEqual("a", arr[0].GetString());
+            Assert.AreEqual("b", arr[1].GetString());
+            Assert.AreEqual("c", arr[2].GetString());
 
             arr = engine.ResultStack.Pop<VM.Types.Array>();
             Assert.HasCount(5, arr);
@@ -279,6 +313,80 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual("a", arr[0].GetString());
             Assert.AreEqual("c", arr[1].GetString());
             Assert.AreEqual("d", arr[2].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(1, arr);
+            Assert.AreEqual(string.Empty, arr[0].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.IsEmpty(arr);
+        }
+
+        [TestMethod]
+        public void StringSplit_EmptySeparator_PreHuyao()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abc", string.Empty);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "abc", string.Empty, true);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", string.Empty, string.Empty);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", string.Empty, string.Empty, true);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: SettingsWithoutHuyao());
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(4, engine.ResultStack);
+
+            var arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.IsEmpty(arr);
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(1, arr);
+            Assert.AreEqual(string.Empty, arr[0].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(1, arr);
+            Assert.AreEqual("abc", arr[0].GetString());
+
+            arr = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.HasCount(1, arr);
+            Assert.AreEqual("abc", arr[0].GetString());
+        }
+
+        [TestMethod]
+        public void StrLen()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "abcbbbd");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "😀");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "ãã");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", $"{char.ConvertFromUtf32(0x1F600)}");
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.HasCount(4, engine.ResultStack);
+
+            // (Grinning Face Emoji -> U+1F600)
+            var count = engine.ResultStack.Pop<Integer>();
+            Assert.AreEqual(1, count.GetInteger());
+
+            // "ãã"
+            count = engine.ResultStack.Pop<Integer>();
+            Assert.AreEqual(2, count.GetInteger());
+
+            // "😀"
+            count = engine.ResultStack.Pop<Integer>();
+            Assert.AreEqual(1, count.GetInteger());
+
+            // "abcbbbd"
+            count = engine.ResultStack.Pop<Integer>();
+            Assert.AreEqual(7, count.GetInteger());
         }
 
         [TestMethod]
@@ -299,6 +407,33 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
             Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+        }
+
+        [TestMethod]
+        [DataRow("a + combining tilde", new byte[] { 0x61, 0xCC, 0x83 }, 1, 2)]
+        [DataRow("thumbsup + skin tone", new byte[] { 0xF0, 0x9F, 0x91, 0x8D, 0xF0, 0x9F, 0x8F, 0xBD }, 1, 2)]
+        [DataRow("family ZWJ", new byte[] { 0xF0, 0x9F, 0x91, 0xA8, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA9, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA7, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA6 }, 1, 7)]
+        [DataRow("flag US", new byte[] { 0xF0, 0x9F, 0x87, 0xBA, 0xF0, 0x9F, 0x87, 0xB8 }, 1, 2)]
+        [DataRow("e + two combining marks", new byte[] { 0x65, 0xCC, 0x81, 0xCC, 0x82 }, 1, 3)]
+        public void StrLen_CodePointsAfterHuyao(string name, byte[] input, int graphemes, int codePoints)
+        {
+            // These sequences are one grapheme and more than one code point.
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", input);
+
+            using var before = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: SettingsWithoutHuyao());
+            before.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, before.Execute(), name);
+            Assert.HasCount(1, before.ResultStack);
+            Assert.AreEqual(graphemes, before.ResultStack.Pop().GetInteger(), name);
+
+            using var after = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+            after.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, after.Execute(), name);
+            Assert.HasCount(1, after.ResultStack);
+            Assert.AreEqual(codePoints, after.ResultStack.Pop().GetInteger(), name);
         }
 
         [TestMethod]
@@ -558,6 +693,19 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
             Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
             Assert.AreEqual(3, engine.ResultStack.Pop<Integer>());
+        }
+
+        private static ProtocolSettings SettingsWithoutHuyao()
+        {
+            // ApplicationEngine.IsHardforkEnabled with a null persisting block is
+            // ProtocolSettings.Hardforks.ContainsKey, so Huyao must be omitted.
+            var hardforks = Enum.GetValues<Hardfork>()
+                .Where(hf => hf < Hardfork.HF_Huyao)
+                .ToDictionary(hf => hf, _ => 0u);
+            return TestProtocolSettings.Default with
+            {
+                Hardforks = hardforks.ToImmutableDictionary()
+            };
         }
     }
 }
