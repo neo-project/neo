@@ -85,5 +85,18 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.Integer) { Value = neo.Id });
             Assert.IsFalse(byId.IsNull);
         }
+
+        [TestMethod]
+        public void GetContractId()
+        {
+            var iter = NativeContract.ContractManagement.GetContractHashes(_snapshot);
+            while (iter.Next())
+            {
+                var hash = new UInt160(iter.Value().GetSpan());
+                var cs = NativeContract.ContractManagement.GetContract(_snapshot, hash);
+                var id = NativeContract.ContractManagement.GetContractId(_snapshot, hash);
+                Assert.AreEqual(cs.Id, id);
+            }
+        }
     }
 }

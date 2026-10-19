@@ -21,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -67,7 +68,7 @@ namespace Neo.SmartContract
 
         private static Dictionary<uint, InteropDescriptor>? services;
         // Total amount of GAS spent to execute.
-        // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
+        // In the unit of femtoGAS, 1 femtoGAS = 1e-15 GAS
         private readonly BigInteger _feeAmount;
         private BigInteger _feeConsumed;
         // Decimals for fee calculation
@@ -83,6 +84,19 @@ namespace Neo.SmartContract
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
+        /// <summary>
+        /// Charges VM instruction price prior to opcode execution. Applied before Huyao hardfork.
+        /// </summary>
+        private readonly Action<Instruction>? _preExecuteInstruction;
+        /// <summary>
+        /// Charges VM instruction price after opcode execution. Applied starting from Huyao hardfork.
+        /// </summary>
+        private readonly Action<Instruction?, RunStats?>? _postExecuteInstruction;
+        /// <summary>
+        /// Denotes whether the currently executed context is whitelisted. Filled in prior to every
+        /// instruction execution.
+        /// </summary>
+        private bool _whitelisted;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -104,6 +118,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The trigger of the execution.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 8700)]
         public TriggerType Trigger { get; }
 
         /// <summary>
@@ -152,9 +167,9 @@ namespace Neo.SmartContract
         {
             get
             {
-                var consumed = _feeConsumed.DivideCeiling(FeeFactor);
+                var consumed = _feeConsumed.DivideCeiling(FeeFactor * OpcodePriceMultiplier);
                 if (consumed > long.MaxValue)
-                    return (long)(_feeAmount / FeeFactor);
+                    return (long)(_feeAmount / (FeeFactor * OpcodePriceMultiplier));
                 return (long)consumed;
             }
         }
@@ -168,13 +183,14 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 8900)]
         public long GasLeft
         {
             get
             {
                 if (_feeConsumed >= _feeAmount)
                     return 0;
-                var left = (_feeAmount - _feeConsumed) / FeeFactor;
+                var left = (_feeAmount - _feeConsumed) / (FeeFactor * OpcodePriceMultiplier);
                 return left > long.MaxValue ? long.MaxValue : (long)left;
             }
         }
@@ -187,11 +203,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the current context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public UInt160? CurrentScriptHash => CurrentContext?.GetScriptHash();
 
         /// <summary>
         /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9567)]
         public virtual UInt160? CallingScriptHash
         {
             get
@@ -205,6 +223,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public virtual UInt160? EntryScriptHash => EntryContext?.GetScriptHash();
 
         /// <summary>
@@ -229,9 +248,11 @@ namespace Neo.SmartContract
         /// </param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
+        /// <param name="dynamicPriceTable">The dynamic price table to be used by the <see cref="ApplicationEngine"/> since Huyao hardfork.</param>
         protected ApplicationEngine(
             TriggerType trigger, IVerifiable? container, DataCache snapshotCache, Block? persistingBlock,
-            ProtocolSettings settings, long gas, IDiagnostic? diagnostic = null, JumpTable? jumpTable = null)
+            ProtocolSettings settings, long gas, IDiagnostic? diagnostic = null, JumpTable? jumpTable = null,
+            DynamicPriceTable? dynamicPriceTable = null)
             : base(jumpTable ?? DefaultJumpTable)
         {
             Trigger = trigger;
@@ -239,18 +260,21 @@ namespace Neo.SmartContract
             originalSnapshotCache = snapshotCache;
             PersistingBlock = persistingBlock;
             ProtocolSettings = settings;
-            _feeAmount = gas * FeeFactor; // PicoGAS
+            _feeAmount = gas * FeeFactor * OpcodePriceMultiplier; // FemtoGAS
             Diagnostic = diagnostic;
+            DynamicPriceTable = dynamicPriceTable ?? DefaultDynamicPriceTable.Clone();
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+
+            var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache) + 1 /* Ledger.CurrentIndex returns already persisted block, hence use +1 to define _persisting_ block index */);
+
             if (snapshotCache is null || persistingBlock?.Index == 0)
             {
+                // Policy storage isn't available yet (genesis or no snapshot): fall back to the defaults.
                 _execFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
                 StoragePrice = PolicyContract.DefaultStoragePrice;
             }
             else
             {
-                var persistingIndex = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshotCache);
-
                 if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Faun, persistingIndex))
                 {
                     // The values doesn't have the decimals stored
@@ -265,6 +289,26 @@ namespace Neo.SmartContract
                 }
 
                 StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
+            }
+
+            if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Huyao, persistingIndex))
+                _preExecuteInstruction = instruction =>
+                {
+                    _whitelisted = CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed ?? false;
+                    AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
+                };
+            else
+            {
+                _preExecuteInstruction = instruction =>
+                {
+                    _whitelisted = CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed ?? false;
+                };
+                _postExecuteInstruction = (instruction, runStats) =>
+                {
+                    var stats = runStats ?? new RunStats();
+                    long price = instruction is null ? 0 : OpcodeV1((long)_execFeeFactor, instruction.OpCode, stats);
+                    AddFemtoGas(price, false);
+                };
             }
 
             if (persistingBlock is not null)
@@ -313,7 +357,7 @@ namespace Neo.SmartContract
             return table;
         }
 
-        private static void Remove_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void Remove_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -331,7 +375,7 @@ namespace Neo.SmartContract
                         engine.ReferenceCounter.RemoveStackReference(item);
                     break;
                 case Map map:
-                    var old = map.Remove(key);
+                    var old = map.Remove(key, out _);
                     if (old is not null && map.IsStackReferenced)
                     {
                         engine.ReferenceCounter.RemoveStackReference(key);
@@ -343,10 +387,10 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void SetItem_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void SetItem_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
             var value = engine.Pop();
-            if (value is Struct s) value = s.Clone(engine.Limits);
+            if (value is Struct s) value = s.Clone(engine.Limits, out var _);
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
             switch (x)
@@ -355,7 +399,10 @@ namespace Neo.SmartContract
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
-                            throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).", out int _);
+                            return;
+                        }
                         if (array.IsStackReferenced)
                             engine.ReferenceCounter.RemoveStackReference(array[index]);
                         array[index] = value;
@@ -384,7 +431,10 @@ namespace Neo.SmartContract
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
-                            throw new CatchableException($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).", out int _);
+                            return;
+                        }
                         if (value is not PrimitiveType p)
                             throw new InvalidOperationException($"Only primitive type values can be set in {nameof(Buffer)} in {instruction.OpCode}.");
                         var b = (int)p.GetInteger();
@@ -398,7 +448,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -408,14 +458,20 @@ namespace Neo.SmartContract
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
-                            throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).", out int _);
+                            return;
+                        }
                         engine.Push(array[index]);
                         break;
                     }
                 case Map map:
                     {
                         if (!map.TryGetValue(key, out var value))
-                            throw new CatchableException($"Key {key} not found in {nameof(Map)}.");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"Key {key} not found in {nameof(Map)}.", out int _);
+                            return;
+                        }
                         engine.Push(value);
                         break;
                     }
@@ -424,7 +480,10 @@ namespace Neo.SmartContract
                         var byteArray = primitive.GetSpan();
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= byteArray.Length)
-                            throw new CatchableException($"The index of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length}).", out int _);
+                            return;
+                        }
                         engine.Push((BigInteger)byteArray[index]);
                         break;
                     }
@@ -432,7 +491,10 @@ namespace Neo.SmartContract
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
-                            throw new CatchableException($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                        {
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).", out int _);
+                            return;
+                        }
                         engine.Push((BigInteger)buffer.InnerBuffer.Span[index]);
                         break;
                     }
@@ -441,7 +503,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void HasKey_Before543(ExecutionEngine engine, Instruction instruction)
+        private static void HasKey_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -487,7 +549,7 @@ namespace Neo.SmartContract
         }
 
 
-        protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        protected static void OnCallT(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
             if (engine is ApplicationEngine app)
             {
@@ -511,7 +573,7 @@ namespace Neo.SmartContract
             }
         }
 
-        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
             if (engine is ApplicationEngine app)
             {
@@ -525,11 +587,9 @@ namespace Neo.SmartContract
                 }
 
                 app.OnSysCall(interop);
+                return;
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
 
         #endregion
@@ -537,20 +597,29 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="gas">The amount of GAS, either in the unit of Datoshi or in the unit of picoGAS, 1 picoGAS = 1e-12 GAS, to be added.</param>
+        /// <param name="gas">The amount of GAS to add, in datoshi (applyFactor=true) or picoGAS (applyFactor=false); internally this is tracked in femtoGAS.</param>
         /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
         protected internal void AddFee(BigInteger gas, bool applyFactor)
         {
+            AddFemtoGas(gas * OpcodePriceMultiplier, applyFactor);
+        }
+
+        /// <summary>
+        /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
+        /// </summary>
+        /// <param name="gas">The amount of GAS, in the unit of femtoGAS, 1 femtoGAS = 1e-15 GAS, to be added.</param>
+        /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
+        protected internal void AddFemtoGas(BigInteger gas, bool applyFactor)
+        {
             if (gas < 0)
             {
-                throw new InvalidOperationException("AddFee can't be negative.");
+                throw new InvalidOperationException("AddFemtoGas can't be negative.");
             }
 
-            // Check whitelist
-
-            if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
+            // Check whitelist.
+            if (_whitelisted)
             {
-                // The execution is whitelisted
+                // The execution is whitelisted.
                 return;
             }
 
@@ -750,9 +819,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <param name="_">The opcode parameters for dynamic pricing (unused).</param>
         /// <remarks>Pop 3, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
+        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
             var count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -777,9 +847,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <param name="_">The opcode parameters for dynamic pricing (unused).</param>
         /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSHL(ExecutionEngine engine, Instruction instruction)
+        private static void VulnerableSHL(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
             var shift = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(shift);
@@ -795,9 +866,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <param name="_">The opcode parameters for dynamic pricing (unused).</param>
         /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VulnerableSHR(ExecutionEngine engine, Instruction instruction)
+        private static void VulnerableSHR(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
             var shift = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(shift);
@@ -991,7 +1063,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * _execFeeFactor, false);
+            AddFemtoGas(GetSysCallPrice(descriptor), false);
 
             object?[] parameters = new object?[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -1002,16 +1074,35 @@ namespace Neo.SmartContract
                 Push(Convert(returnValue));
         }
 
+        /// <summary>
+        /// Gets the fixed price of the specified interoperable service. It's taken from the latest
+        /// enabled <see cref="InteropDescriptor.Prices"/> entry.
+        /// </summary>
+        /// <param name="descriptor">The descriptor of the interoperable service.</param>
+        /// <returns>The price in the unit of femtoGAS.</returns>
+        private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
+        {
+            var prices = descriptor.Prices;
+            for (int i = 0; i < prices.Count; i++)
+            {
+                var (hardfork, price) = prices[i];
+                if (hardfork is null || IsHardforkEnabled(hardfork.Value))
+                    return price * _execFeeFactor;
+            }
+            throw new UnreachableException($"Price of {descriptor.Name} isn't found.");
+        }
+
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
+            _preExecuteInstruction?.Invoke(instruction);
         }
 
-        protected override void PostExecuteInstruction(Instruction instruction)
+        protected override void PostExecuteInstruction(Instruction? instruction, RunStats priceArgs)
         {
-            base.PostExecuteInstruction(instruction);
-            Diagnostic?.PostExecuteInstruction(instruction);
+            base.PostExecuteInstruction(instruction, priceArgs);
+            Diagnostic?.PostExecuteInstruction(instruction ?? Instruction.RET);
+            _postExecuteInstruction?.Invoke(instruction, priceArgs);
         }
 
         private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
@@ -1037,15 +1128,25 @@ namespace Neo.SmartContract
         protected static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, Hardfork? hardfork = null)
         {
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-            var method = typeof(ApplicationEngine).GetMethod(handler, flags)
-                ?? typeof(ApplicationEngine).GetProperty(handler, flags)?.GetMethod
+            MemberInfo member = (MemberInfo?)typeof(ApplicationEngine).GetMethod(handler, flags)
+                ?? typeof(ApplicationEngine).GetProperty(handler, flags)
                 ?? throw new ArgumentException($"Handler {handler} is not found.", nameof(handler));
+            var method = member as MethodInfo ?? ((PropertyInfo)member).GetMethod
+                ?? throw new ArgumentException($"Handler {handler} has no getter.", nameof(handler));
+            var attributes = member.GetCustomAttributes<InteropPriceAttribute>();
+            if (attributes.Select(p => p.Since).Distinct().Count() != attributes.Count())
+                throw new ArgumentException($"Handler {handler} has several prices for the same hardfork.", nameof(handler));
+            var prices = attributes
+                .OrderByDescending(p => p.Since)
+                .Select(p => new KeyValuePair<Hardfork?, long>(p.Since, p.Coefficient))
+                .Append(new KeyValuePair<Hardfork?, long>(null, fixedPrice * OpcodePriceMultiplier)) // the fixed price is in the unit of 1e-8 GAS, scale it to 1e-11 GAS
+                .ToArray();
             var descriptor = new InteropDescriptor()
             {
                 Name = name,
                 Handler = method,
                 Hardfork = hardfork,
-                FixedPrice = fixedPrice,
+                Prices = prices,
                 RequiredCallFlags = requiredCallFlags
             };
             services ??= [];
@@ -1122,11 +1223,8 @@ namespace Neo.SmartContract
             if (ProtocolSettings == null)
                 return false;
 
-            // Return true if PersistingBlock is null and Hardfork is enabled
-            if (PersistingBlock is null)
-                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
-
-            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
+            var persistingIndex = PersistingBlock?.Index ?? (SnapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(SnapshotCache) + 1 /* Ledger.CurrentIndex returns already persisted block, hence use +1 to define _persisting_ block index */);
+            return ProtocolSettings.IsHardforkEnabled(hardfork, persistingIndex);
         }
     }
 }

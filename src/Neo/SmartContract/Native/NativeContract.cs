@@ -110,6 +110,11 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public static Treasury Treasury { get; } = new();
 
+        /// <summary>
+        /// Gets the instance of the <see cref="TemporaryStorage"/> class.
+        /// </summary>
+        public static TemporaryStorage TemporaryStorage { get; } = new();
+
         #endregion
 
         /// <summary>

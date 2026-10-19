@@ -1,5 +1,9 @@
 # Neo Serialization Format
 
+**Audience:** protocol and plugin developers. Beginners: [Getting started](getting-started.md). This format is implemented in `src/Neo.IO` in **this** repository (`neo-project/neo`).
+
+**Docs index:** [README](README.md)
+
 This document describes the binary serialization format used by the Neo blockchain platform. The format is designed for efficient serialization and deserialization of blockchain data structures.
 
 ## Overview

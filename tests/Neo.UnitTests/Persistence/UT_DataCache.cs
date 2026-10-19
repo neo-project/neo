@@ -263,6 +263,57 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        public void TestFindBackwardRejectsNegativeSkip()
+        {
+            using var store = new MemoryStore();
+            using var cache = new StoreCache(store);
+            byte[] prefix = [0x00, 0x00, 0x00, 0x00];
+            store.Put([0x00, 0x00, 0x00, 0x00, 0x01], [0x01]);
+
+            // Seek / forward Find throw ArgumentOutOfRangeException; backward Find currently returns all hits.
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+                _ = cache.Find(prefix, SeekDirection.Backward, -1).ToList());
+        }
+
+        [TestMethod]
+        public void TestFindRangeSkipDoesNotCountDeletedOverlayKeys()
+        {
+            using var store = new MemoryStore();
+            using var cache = new StoreCache(store);
+
+            store.Put(s_key1.ToArray(), s_value1.ToArray());
+            store.Put(s_key2.ToArray(), s_value2.ToArray());
+            store.Put(s_key3.ToArray(), s_value3.ToArray());
+
+            cache.Delete(s_key2);
+
+            // Range [key1, key4) visible: key1, key3. skip=2 must yield nothing.
+            // Today: store skip=2 consumes key1+deleted key2 → yields key3.
+            var results = cache.FindRange(s_key1.ToArray(), s_key4.ToArray(), SeekDirection.Forward, 2)
+                .Select(p => p.Key).ToList();
+            Assert.IsEmpty(results);
+        }
+
+        [TestMethod]
+        public void TestFindSkipDoesNotCountDeletedOverlayKeys()
+        {
+            using var store = new MemoryStore();
+            using var cache = new StoreCache(store);
+
+            store.Put(s_key1.ToArray(), s_value1.ToArray());
+            store.Put(s_key2.ToArray(), s_value2.ToArray());
+            store.Put(s_key3.ToArray(), s_value3.ToArray());
+
+            cache.Delete(s_key1); // overlay-only; cached.Length == 0, skip is forwarded to the store
+
+            // Visible view: key2, key3. skip=1 must yield key3 only.
+            // Today: store skip=1 consumes deleted key1 → yields key2, key3.
+            var results = cache.Find(SeekDirection.Forward, 1).Select(p => p.Key).ToList();
+            Assert.HasCount(1, results);
+            Assert.AreEqual(s_key3, results[0]);
+        }
+
+        [TestMethod]
         public void TestFindRange()
         {
             var store = new MemoryStore();
@@ -413,18 +464,112 @@ namespace Neo.UnitTests.Persistence
             store.Put(s_key4.ToArray(), s_value3.ToArray());
 
             var items = myDataCache.Find(SeekDirection.Forward).GetEnumerator();
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key1, items.Current.Key);
 
             myDataCache.TryGet(s_key3); // GETLINE
 
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key2, items.Current.Key);
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key3, items.Current.Key);
-            items.MoveNext();
+            Assert.IsTrue(items.MoveNext());
             Assert.AreEqual(s_key4, items.Current.Key);
             Assert.IsFalse(items.MoveNext());
+        }
+
+        [TestMethod]
+        public void TestFindInvalidWithOffset()
+        {
+            using var store = new MemoryStore();
+            using var myDataCache = new StoreCache(store);
+            myDataCache.Add(s_key1, s_value1);
+
+            store.Put(s_key2.ToArray(), s_value2.ToArray());
+            store.Put(s_key3.ToArray(), s_value3.ToArray());
+            store.Put(s_key4.ToArray(), s_value3.ToArray());
+
+            var items = myDataCache.Find(SeekDirection.Forward, 1).GetEnumerator();
+            Assert.IsTrue(items.MoveNext());
+            Assert.AreEqual(s_key2, items.Current.Key);
+
+            myDataCache.TryGet(s_key3); // GETLINE
+
+            Assert.IsTrue(items.MoveNext());
+            Assert.AreEqual(s_key3, items.Current.Key);
+            Assert.IsTrue(items.MoveNext());
+            Assert.AreEqual(s_key4, items.Current.Key);
+            Assert.IsFalse(items.MoveNext());
+        }
+
+        /// <summary>
+        /// Verifies that Find(prefix, Backward, start) counts <paramref name="start"/> against
+        /// prefix-matching keys only, not against the backward seekPrefix sentinel.
+        /// For a backward scan the internal seekPrefix is keyPrefix with its last non-0xFF byte
+        /// incremented. If that sentinel key exists in the store it must not consume a start slot.
+        /// Exercises the empty-overlay (direct SeekInternal) path.
+        /// </summary>
+        [TestMethod]
+        public void TestFindBackwardWithStartSkipsOnlySentinelKey_EmptyCache()
+        {
+            using var store = new MemoryStore();
+            using var cache = new StoreCache(store);
+
+            // prefix = [0x00, 0x00, 0x00, 0x00]  (4-byte, matches StorageKey layout)
+            // backward seekPrefix = [0x00, 0x00, 0x00, 0x01]  (last byte incremented)
+            var prefix = new byte[] { 0x00, 0x00, 0x00, 0x00 };
+            var key1 = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x01 }; // prefix match, "smaller"
+            var key2 = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x02 }; // prefix match, "larger"
+            var sentinel = new byte[] { 0x00, 0x00, 0x00, 0x01 };       // exactly the backward seekPrefix
+
+            store.Put(key1, [0x01]);
+            store.Put(key2, [0x02]);
+            store.Put(sentinel, [0xFF]); // this key must NOT consume the start offset
+
+            // Backward order without start: key2, key1.
+            // With start=1 the first prefix match (key2) must be skipped → only key1 returned.
+            var results = cache.Find(prefix, SeekDirection.Backward, 1).ToList();
+
+            Assert.HasCount(1, results,
+                "start=1 should skip exactly one prefix-matching key (key2); " +
+                "the sentinel must not count toward the start offset.");
+            Assert.IsTrue(results[0].Key.ToArray().SequenceEqual(key1),
+                "The remaining result must be key1, not key2.");
+        }
+
+        /// <summary>
+        /// Same as <see cref="TestFindBackwardWithStartSkipsOnlySentinelKey_EmptyCache"/> but
+        /// exercised through the overlay-merge code path: the cache dictionary is non-empty so
+        /// Seek uses the merged iterator with a local skip counter instead of forwarding start
+        /// directly to SeekInternal.
+        /// </summary>
+        [TestMethod]
+        public void TestFindBackwardWithStartSkipsOnlySentinelKey_WithOverlay()
+        {
+            using var store = new MemoryStore();
+            using var cache = new StoreCache(store);
+
+            var prefix = new byte[] { 0x00, 0x00, 0x00, 0x00 };
+            var key1 = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x01 };
+            var key2 = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x02 };
+            var sentinel = new byte[] { 0x00, 0x00, 0x00, 0x01 };
+
+            store.Put(key1, [0x01]);
+            store.Put(key2, [0x02]);
+            store.Put(sentinel, [0xFF]);
+
+            // Add an unrelated key to the overlay so that cachedKeySet.Count > 0,
+            // which forces Seek to use the merged iterator path with a local skip counter.
+            StorageKey overlayKey = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
+            cache.Add(overlayKey, new StorageItem([0xAA]));
+
+            var results = cache.Find(prefix, SeekDirection.Backward, 1).ToList();
+
+            Assert.HasCount(1, results,
+                "start=1 should skip exactly one prefix-matching key (key2) even with a non-empty overlay; " +
+                "the sentinel must not count toward the start offset.");
+            Assert.IsTrue(results[0].Key.ToArray().SequenceEqual(key1),
+                "The remaining result must be key1, not key2.");
         }
     }
 }

@@ -18,4 +18,9 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.cs" Visible="false" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Always reference so VSTest can resolve the "junit" logger (not only on CI). -->
+    <PackageReference Include="JunitXml.TestLogger" Version="8.0.0" />
+  </ItemGroup>
 </Project>
