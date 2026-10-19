@@ -176,8 +176,6 @@ namespace Neo.SmartContract
         {
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                if (m < 0)
-                    throw new ArgumentOutOfRangeException(nameof(m), "m must be positive and fit int32.");
                 var price = CreateMultisigAccountPricePerKey * pubKeys.Length + CreateMultisigAccountBasePrice;
                 AddFemtoGas(price * _execFeeFactor, false);
             }
