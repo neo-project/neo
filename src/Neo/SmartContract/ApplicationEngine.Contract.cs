@@ -100,15 +100,15 @@ namespace Neo.SmartContract
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
             ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
+            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 var price = ContractCallPrice;
                 // Non-native contracts may be read from disk.
-                if (contract is null || contract.Id >= 0)
+                if (contract.Id >= 0)
                     price += ReadFromDiskPrice;
                 AddFemtoGas(price * _execFeeFactor, false);
             }
-            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
