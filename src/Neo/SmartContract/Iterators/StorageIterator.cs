@@ -23,12 +23,6 @@ namespace Neo.SmartContract.Iterators
         private readonly int prefixLength;
         private readonly FindOptions options;
 
-        /// <summary>
-        /// The total length of <see cref="ByteString"/> and <see cref="VM.Types.Buffer"/> items produced by
-        /// deserializing the current value, 0 if <see cref="FindOptions.DeserializeValues"/> isn't used.
-        /// </summary>
-        public int DeserializedLength { get; private set; }
-
         public StorageIterator(IEnumerator<(StorageKey, StorageItem)> enumerator, int prefixLength, FindOptions options)
         {
             this.enumerator = enumerator;
@@ -46,7 +40,7 @@ namespace Neo.SmartContract.Iterators
             return enumerator.MoveNext();
         }
 
-        public StackItem Value()
+        public StackItem Value(out int bytesDeserialized)
         {
             ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
             ReadOnlyMemory<byte> value = enumerator.Current.Value.Value;
@@ -54,13 +48,10 @@ namespace Neo.SmartContract.Iterators
             if (options.HasFlag(FindOptions.RemovePrefix))
                 key = key[prefixLength..];
 
-            DeserializedLength = 0;
+            bytesDeserialized = 0;
             StackItem item = value;
             if (options.HasFlag(FindOptions.DeserializeValues))
-            {
-                item = BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default, out var deserializedLength);
-                DeserializedLength = deserializedLength;
-            }
+                item = BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default, out bytesDeserialized);
 
             if (options.HasFlag(FindOptions.PickField0))
                 item = ((Array)item)[0];

@@ -171,9 +171,9 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsInstanceOfType<InteropInterface>(engine.ResultStack[0]);
             var iter = engine.ResultStack[0].GetInterface<object>() as StorageIterator;
             Assert.IsTrue(iter.Next());
-            Assert.AreSequenceEqual(key1, iter.Value().GetSpan().ToArray());
+            Assert.AreSequenceEqual(key1, iter.Value(out _).GetSpan().ToArray());
             Assert.IsTrue(iter.Next());
-            Assert.AreSequenceEqual(key2, iter.Value().GetSpan().ToArray());
+            Assert.AreSequenceEqual(key2, iter.Value(out _).GetSpan().ToArray());
             Assert.IsFalse(iter.Next());
 
             // find AA-prefixed values: OK, remove prefix.
@@ -189,11 +189,11 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsInstanceOfType<InteropInterface>(engine2.ResultStack[0]);
             iter = engine2.ResultStack[0].GetInterface<object>() as StorageIterator;
             Assert.IsTrue(iter.Next());
-            Assert.AreSequenceEqual(new byte[] { 0x01 }, ((Struct)iter.Value())[0].GetSpan().ToArray());
-            Assert.AreSequenceEqual(value1, ((Struct)iter.Value())[1].GetSpan().ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x01 }, ((Struct)iter.Value(out _))[0].GetSpan().ToArray());
+            Assert.AreSequenceEqual(value1, ((Struct)iter.Value(out _))[1].GetSpan().ToArray());
             Assert.IsTrue(iter.Next());
-            Assert.AreSequenceEqual(new byte[] { 0x02 }, ((Struct)iter.Value())[0].GetSpan().ToArray());
-            Assert.AreSequenceEqual(value2, ((Struct)iter.Value())[1].GetSpan().ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x02 }, ((Struct)iter.Value(out _))[0].GetSpan().ToArray());
+            Assert.AreSequenceEqual(value2, ((Struct)iter.Value(out _))[1].GetSpan().ToArray());
             Assert.IsFalse(iter.Next());
 
             // renew: good.
@@ -326,7 +326,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             List<byte[]> values = [];
             while (iter.Next())
-                values.Add(iter.Value().GetSpan().ToArray());
+                values.Add(iter.Value(out _).GetSpan().ToArray());
             Assert.AreEqual(freshCount, values.Count);
         }
 

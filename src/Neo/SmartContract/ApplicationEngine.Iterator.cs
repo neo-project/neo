@@ -64,12 +64,11 @@ namespace Neo.SmartContract
         [InteropPrice(Hardfork.HF_Huyao, 0)]
         internal protected void IteratorValue(IIterator iterator)
         {
-            var value = iterator.Value();
+            var value = iterator.Value(out var bytes);
             var refs = ReferenceCounter.Count;
             Push(value);
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                var bytes = iterator is StorageIterator storageIterator ? storageIterator.DeserializedLength : 0;
                 var price = IteratorValuePricePerRef * (ReferenceCounter.Count - refs) + IteratorValuePricePerByte * bytes + IteratorValueBasePrice;
                 AddFemtoGas(price * _execFeeFactor, false);
             }
