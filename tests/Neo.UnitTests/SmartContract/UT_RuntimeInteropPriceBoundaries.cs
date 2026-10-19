@@ -63,7 +63,8 @@ namespace Neo.UnitTests.SmartContract
                     if (newer is not null)
                         Assert.IsTrue(newer.Value > fork.Value, $"{descriptor.Name} prices are not ordered from the latest hardfork.");
                     newer = fork;
-                    Assert.IsGreaterThan(0, descriptor.Prices[i].Value, descriptor.Name);
+                    // Zero is allowed for interops charging their dynamic price in-place.
+                    Assert.IsGreaterThanOrEqualTo(0, descriptor.Prices[i].Value, descriptor.Name);
                 }
             }
 
