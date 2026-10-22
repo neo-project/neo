@@ -350,7 +350,7 @@ namespace Neo.SmartContract
             StaticCoefficients[(byte)OpCode.POW] = 8277;
             StaticCoefficients[(byte)OpCode.SQRT] = 33802;
             StaticCoefficients[(byte)OpCode.MODMUL] = 8136;
-            StaticCoefficients[(byte)OpCode.MODPOW] = 12300;
+            StaticCoefficients[(byte)OpCode.MODPOW] = 1648443;
             StaticCoefficients[(byte)OpCode.SHL] = 3711;
             StaticCoefficients[(byte)OpCode.SHR] = 4315;
             StaticCoefficients[(byte)OpCode.NOT] = 1262;
