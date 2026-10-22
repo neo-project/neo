@@ -223,6 +223,66 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Test_PutGetRenewDelete_LargeKey()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var caller = NativeContract.GAS.Hash;
+
+            var maxTTL = (ulong)NativeContract.Policy.Call(snapshot, "getTemporaryStorageMaxTTL").GetInteger();
+            ulong now = 1;
+            var persistingBlock = CreatePersistingBlock(snapshot, now);
+
+            // Ensure large keys are properly handled by put (overwrite scenario), renew and delete.
+            foreach (int keyLen in new[] {
+                52, // last length fitting default 64-byte KeyBuilder.
+                53, // first length overflowing 64-byte KeyBuilder.
+                ApplicationEngine.MaxStorageKeySize // max allowed length.
+            })
+            {
+                byte[] keyRenew = new byte[keyLen];
+                keyRenew[0] = (byte)keyLen;
+                keyRenew[1] = 0x01;
+                Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = keyRenew },
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = new byte[0] },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)now }));
+                Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "renew",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = keyRenew },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(now + maxTTL / 2) }));
+                Assert.AreEqual(new BigInteger(now + maxTTL / 2), CallFromContract(snapshot, persistingBlock, caller, "getExpiration",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = keyRenew })?.GetInteger());
+
+                byte[] keyOverwrite = new byte[keyLen];
+                keyOverwrite[0] = (byte)keyLen;
+                keyOverwrite[1] = 0x02;
+                Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = keyOverwrite },
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = new byte[0] },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)now }));
+                Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = keyOverwrite },
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = new byte[] { 0x01 } },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(now + maxTTL) }));
+                var val = CallFromContract(snapshot, persistingBlock, caller, "get",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = keyOverwrite });
+                Assert.IsInstanceOfType<ByteString>(val);
+                Assert.AreSequenceEqual(new byte[] { 0x01 }, val.GetSpan().ToArray());
+
+                byte[] keyDelete = new byte[keyLen];
+                keyDelete[0] = (byte)keyLen;
+                keyDelete[1] = 0x03;
+                Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = keyDelete },
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = new byte[0] },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)now }));
+                Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "delete",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = keyDelete }));
+                Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "get",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = keyDelete }));
+            }
+        }
+
+        [TestMethod]
         public void Test_DeleteAndOverwrite_RemoveValidTillIndex()
         {
             var snapshot = _snapshotCache.CloneCache();
@@ -348,8 +408,15 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.ByteArray) { Value = value },
                     new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)now + 2 * timePerBlock + i }));
             }
+            // Put large key to the storage.
+            byte[] largeKey = new byte[ApplicationEngine.MaxStorageKeySize];
+            largeKey[0] = 3 * count + 1;
+            Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = largeKey },
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = value },
+                    new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)now + 1 }));
 
-            // Check all values are retrievable at the current timestamp.
+            // Check all values (including large key) are retrievable at the current timestamp.
             for (int i = 0; i < 3 * count; i++)
             {
                 var ret = CallFromContract(snapshot, persistingBlock, caller, "get",
@@ -357,8 +424,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.IsInstanceOfType<ByteString>(ret);
                 Assert.AreSequenceEqual(value, ret.GetSpan().ToArray());
             }
+            var retLarge = CallFromContract(snapshot, persistingBlock, caller, "get",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = largeKey });
+            Assert.IsInstanceOfType<ByteString>(retLarge);
+            Assert.AreSequenceEqual(value, retLarge.GetSpan().ToArray());
 
-            // Run persist at (now + 2 * TimePerBlock + 2 * maxCleanupBatchSize). 2/3 of all items should be marked as stale and removed.
+            // Run persist at (now + 2 * TimePerBlock + 2 * maxCleanupBatchSize). 2/3 of all items plus large key should be marked as stale and removed.
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
 
@@ -380,6 +451,10 @@ namespace Neo.UnitTests.SmartContract.Native
                 var entry = engine.SnapshotCache.TryGet(key);
                 Assert.IsNull(entry);
             }
+            Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "get",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = largeKey }));
+            Assert.IsNull(engine.SnapshotCache.TryGet(new KeyBuilder(NativeContract.TemporaryStorage.Id, prefixRecord, 8 + ApplicationEngine.MaxStorageKeySize).AddLittleEndian(NativeContract.GAS.Id).Add(largeKey)));
+
             // Ensure the rest 1/3 of items are still retrievable.
             for (int i = 2 * count; i < 3 * count; i++)
             {
