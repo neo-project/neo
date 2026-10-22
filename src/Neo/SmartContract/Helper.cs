@@ -321,6 +321,7 @@ namespace Neo.SmartContract
         internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, UInt160 hash, Witness witness, long datoshi, out long fee)
         {
             fee = 0;
+            if (witness is null) return false;
             Script invocationScript;
             try
             {

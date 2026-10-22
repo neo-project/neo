@@ -40,6 +40,15 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void VerifyWitnesses_NullWitnessReturnsFalse()
+        {
+            var payload = new ExtensiblePayload { Category = "dBFT", Sender = UInt160.Zero, Witness = null! };
+            Assert.IsFalse(payload.VerifyWitnesses(TestProtocolSettings.Default, _snapshotCache, 150000000));
+            Assert.IsFalse(payload.VerifyWitness(TestProtocolSettings.Default, _snapshotCache, UInt160.Zero, null!, 150000000, out var fee));
+            Assert.AreEqual(0L, fee);
+        }
+
+        [TestMethod]
         public void TestGetContractHash()
         {
             var nef = new NefFile()
